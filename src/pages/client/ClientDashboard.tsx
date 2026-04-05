@@ -63,8 +63,8 @@ export default function ClientDashboard() {
       {/* Welcome */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Welcome, {profile.display_name.split(' ')[0]}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{profile.company} · Here's your support overview.</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('client_dashboard.title')}, {profile.display_name.split(' ')[0]}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{profile.company} · {t('client_dashboard.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <Link to="/client/new-request">
