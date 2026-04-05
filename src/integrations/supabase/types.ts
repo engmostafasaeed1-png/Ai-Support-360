@@ -262,6 +262,7 @@ export type Database = {
             | null
           bio: string | null
           created_at: string
+          credly_username: string | null
           currency: string | null
           cv_url: string | null
           hourly_rate: number | null
@@ -287,6 +288,7 @@ export type Database = {
             | null
           bio?: string | null
           created_at?: string
+          credly_username?: string | null
           currency?: string | null
           cv_url?: string | null
           hourly_rate?: number | null
@@ -312,6 +314,7 @@ export type Database = {
             | null
           bio?: string | null
           created_at?: string
+          credly_username?: string | null
           currency?: string | null
           cv_url?: string | null
           hourly_rate?: number | null
