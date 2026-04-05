@@ -1,27 +1,27 @@
+import { useTranslation } from 'react-i18next';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Eye, LogIn, X } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 export default function GuestBanner() {
+  const { t } = useTranslation();
   const { isGuest, guestRole, exitGuestMode } = useGuestMode();
   const navigate = useNavigate();
-  const { t } = useTranslation();
 
   if (!isGuest) return null;
 
   const roleLabels: Record<string, string> = {
-    client: t('auth.role_client', 'Client'),
-    consultant: t('auth.role_consultant', 'Consultant'),
-    admin: 'Admin',
+    client: t('guest.role_client'),
+    consultant: t('guest.role_consultant'),
+    admin: t('guest.role_admin'),
   };
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-5 py-3 rounded-2xl bg-accent/95 text-accent-foreground shadow-lg backdrop-blur-md border border-accent/20 animate-fade-in">
       <Eye className="w-4 h-4 shrink-0" />
       <span className="text-sm font-medium">
-        Guest Mode — {roleLabels[guestRole || 'client']} View
+        {t('guest.banner_label')} — {roleLabels[guestRole || 'client']} {t('guest.banner_view')}
       </span>
       <Button
         size="sm"
@@ -33,7 +33,7 @@ export default function GuestBanner() {
         }}
       >
         <LogIn className="w-3 h-3 me-1" />
-        Sign Up
+        {t('guest.signup_btn')}
       </Button>
       <button
         onClick={() => {

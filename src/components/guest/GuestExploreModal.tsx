@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -9,39 +10,40 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-const roles = [
-  {
-    value: 'client' as const,
-    icon: Users,
-    title: 'Client Dashboard',
-    desc: 'Browse consultants, submit tickets, book sessions, and manage payments.',
-    path: '/client',
-    color: 'text-blue-500',
-    bg: 'bg-blue-500/10 border-blue-500/20',
-  },
-  {
-    value: 'consultant' as const,
-    icon: Briefcase,
-    title: 'Consultant Dashboard',
-    desc: 'View cases, manage calendar, track earnings, and handle profile.',
-    path: '/consultant',
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-500/10 border-emerald-500/20',
-  },
-  {
-    value: 'admin' as const,
-    icon: Shield,
-    title: 'Admin Dashboard',
-    desc: 'Manage users, approve consultants, view analytics, and handle tickets.',
-    path: '/admin',
-    color: 'text-amber-500',
-    bg: 'bg-amber-500/10 border-amber-500/20',
-  },
-];
-
 export default function GuestExploreModal({ open, onOpenChange }: Props) {
+  const { t } = useTranslation();
   const { enterGuestMode } = useGuestMode();
   const navigate = useNavigate();
+
+  const roles = [
+    {
+      value: 'client' as const,
+      icon: Users,
+      title: t('guest.role_client'),
+      desc: t('guest.role_client_desc'),
+      path: '/client',
+      color: 'text-blue-500',
+      bg: 'bg-blue-500/10 border-blue-500/20',
+    },
+    {
+      value: 'consultant' as const,
+      icon: Briefcase,
+      title: t('guest.role_consultant'),
+      desc: t('guest.role_consultant_desc'),
+      path: '/consultant',
+      color: 'text-emerald-500',
+      bg: 'bg-emerald-500/10 border-emerald-500/20',
+    },
+    {
+      value: 'admin' as const,
+      icon: Shield,
+      title: t('guest.role_admin'),
+      desc: t('guest.role_admin_desc'),
+      path: '/admin',
+      color: 'text-amber-500',
+      bg: 'bg-amber-500/10 border-amber-500/20',
+    },
+  ];
 
   const handleSelect = (role: typeof roles[number]) => {
     enterGuestMode(role.value);
@@ -53,10 +55,8 @@ export default function GuestExploreModal({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center">Explore as Guest</DialogTitle>
-          <DialogDescription className="text-center">
-            Choose a role to explore all features with sample data — no sign-up required.
-          </DialogDescription>
+          <DialogTitle className="text-center">{t('guest.modal_title')}</DialogTitle>
+          <DialogDescription className="text-center">{t('guest.modal_desc')}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 mt-2">
           {roles.map((role) => (
@@ -64,7 +64,7 @@ export default function GuestExploreModal({ open, onOpenChange }: Props) {
               key={role.value}
               onClick={() => handleSelect(role)}
               className={cn(
-                'w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left hover:scale-[1.02]',
+                'w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-start hover:scale-[1.02]',
                 role.bg
               )}
             >
