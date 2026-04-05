@@ -192,7 +192,9 @@
     "integrations": "Integrations",
     "onboarding": "Onboarding",
     "onboarding_complete": "Onboarding",
-    "completed": "Done"
+    "completed": "Done",
+    "environments": "Environments",
+    "remote_access": "Remote Access"
   },
   "client_dashboard": {
     "title": "Welcome back",
