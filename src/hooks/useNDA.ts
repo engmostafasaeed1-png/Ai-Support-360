@@ -27,7 +27,7 @@ export function useNDATemplate() {
   const saveTemplate = useCallback(async (content: string) => {
     const { error } = await supabase
       .from('platform_settings')
-      .update({ value: content as any, updated_at: new Date().toISOString() })
+      .update({ value: content, updated_at: new Date().toISOString() })
       .eq('key', 'nda_template');
 
     if (error) {
