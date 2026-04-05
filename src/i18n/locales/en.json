@@ -341,7 +341,8 @@
     "online": "online",
     "offline_label": "offline",
     "verified_only": "Verified Only",
-    "credly_only": "Credly Verified Only"
+    "credly_only": "Credly Verified Only",
+    "credly_first": "Credly Verified First"
   },
   "consultant_profile": {
     "back": "Back to Marketplace",

@@ -341,7 +341,8 @@
     "online": "متصل",
     "offline_label": "غير متصل",
     "verified_only": "الموثقون فقط",
-    "credly_only": "موثقو Credly فقط"
+    "credly_only": "موثقو Credly فقط",
+    "credly_first": "موثقو Credly أولاً"
   },
   "consultant_profile": {
     "back": "العودة إلى السوق",
