@@ -42,7 +42,7 @@ export default function AdminDashboard() {
                 )}
               </div>
               <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
-              <p className="text-xs text-muted-foreground">{kpi.label}</p>
+              <p className="text-xs text-muted-foreground">{t(kpi.labelKey)}</p>
             </CardContent>
           </Card>
         ))}
