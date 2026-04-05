@@ -3,11 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, Star, BadgeCheck, Zap, Heart, Filter, Map, LayoutGrid, Wifi, WifiOff } from 'lucide-react';
-import { useState, lazy, Suspense } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
-
-const ConsultantMap = lazy(() => import('@/components/client/ConsultantMap'));
+import ConsultantMap from '@/components/client/ConsultantMap';
 
 const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
   verified: { icon: BadgeCheck, color: 'text-accent' },
