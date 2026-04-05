@@ -69,12 +69,12 @@ export default function ClientDashboard() {
         <div className="flex gap-2">
           <Link to="/client/new-request">
             <Button className="gradient-primary border-0" size="sm">
-              <TicketPlus className="w-4 h-4 me-1" /> New Support Request
+              <TicketPlus className="w-4 h-4 me-1" /> {t('client_dashboard.new_request')}
             </Button>
           </Link>
           <Link to="/client/consultants">
             <Button variant="outline" size="sm">
-              <Users className="w-4 h-4 me-1" /> Browse Consultants
+              <Users className="w-4 h-4 me-1" /> {t('consultants_page.title')}
             </Button>
           </Link>
         </div>
@@ -105,9 +105,9 @@ export default function ClientDashboard() {
         {/* Recent Tickets */}
         <Card className="lg:col-span-2 rounded-2xl border-border/50">
           <CardHeader className="flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-semibold">Recent Tickets</CardTitle>
+            <CardTitle className="text-base font-semibold">{t('tickets_page.title')}</CardTitle>
             <Link to="/client/tickets">
-              <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
+              <Button variant="ghost" size="sm" className="text-xs">{t('client_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1" /></Button>
             </Link>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -167,7 +167,7 @@ export default function ClientDashboard() {
         <CardHeader className="flex-row items-center justify-between pb-2">
           <CardTitle className="text-base font-semibold">{t('consultant_dashboard.upcoming_sessions')}</CardTitle>
           <Link to="/client/sessions">
-            <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
+              <Button variant="ghost" size="sm" className="text-xs">{t('client_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1" /></Button>
           </Link>
         </CardHeader>
         <CardContent>
@@ -192,7 +192,7 @@ export default function ClientDashboard() {
                     <span className="text-xs font-medium text-foreground">
                       {time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                     </span>
-                    <Button size="sm" className="gradient-primary border-0 text-xs h-7">Join</Button>
+                    <Button size="sm" className="gradient-primary border-0 text-xs h-7">{t('consultant_dashboard.join_session')}</Button>
                   </div>
                 </div>
               );
@@ -206,7 +206,7 @@ export default function ClientDashboard() {
         <CardHeader className="flex-row items-center justify-between pb-2">
           <CardTitle className="text-base font-semibold">{t('client_dashboard.recommended_consultants')}</CardTitle>
           <Link to="/client/consultants">
-            <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
+            <Button variant="ghost" size="sm" className="text-xs">{t('client_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1" /></Button>
           </Link>
         </CardHeader>
         <CardContent>
