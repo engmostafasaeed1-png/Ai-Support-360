@@ -825,5 +825,17 @@
     "role_admin": "Admin Dashboard",
     "role_admin_desc": "Manage users, approve consultants, view analytics, and handle tickets.",
     "onboarding_demo": "Great job! In a real account, your profile would be saved. Sign up to get started!"
+  },
+  "credly": {
+    "title": "Credly Badges",
+    "description": "Link your Credly profile to automatically verify and display your digital badges.",
+    "placeholder": "Enter your Credly username",
+    "link": "Link",
+    "unlink": "Unlink",
+    "linked_as": "Linked as",
+    "active": "Active",
+    "expired": "Expired",
+    "refresh": "Load badges",
+    "error_fetch": "Failed to fetch badges from Credly"
   }
 }

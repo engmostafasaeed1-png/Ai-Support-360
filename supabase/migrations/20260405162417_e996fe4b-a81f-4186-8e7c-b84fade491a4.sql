@@ -1,0 +1,1 @@
+ALTER TABLE public.consultants ADD COLUMN credly_username TEXT DEFAULT NULL;
