@@ -19,6 +19,7 @@ import ClientDashboard from "./pages/client/ClientDashboard.tsx";
 import NewRequestPage from "./pages/client/NewRequestPage.tsx";
 import TicketsPage from "./pages/client/TicketsPage.tsx";
 import ConsultantsPage from "./pages/client/ConsultantsPage.tsx";
+import ConsultantProfilePage from "./pages/client/ConsultantProfilePage.tsx";
 import PaymentsPage from "./pages/client/PaymentsPage.tsx";
 import ClientChatPage from "./pages/client/ClientChatPage.tsx";
 import ClientOnboardingPage from "./pages/client/ClientOnboardingPage.tsx";
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="new-request" element={<NewRequestPage />} />
             <Route path="tickets" element={<TicketsPage />} />
             <Route path="consultants" element={<ConsultantsPage />} />
+            <Route path="consultants/:id" element={<ConsultantProfilePage />} />
             <Route path="payments" element={<PaymentsPage />} />
             <Route path="chat" element={<ClientChatPage />} />
             <Route path="chat/:sessionId" element={<ChatSessionPage role="client" />} />
