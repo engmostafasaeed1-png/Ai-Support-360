@@ -48,7 +48,7 @@ export default function NDAManagementPage() {
     // Fetch NDA agreements with consultant and client names
     const { data, error } = await supabase
       .from('nda_agreements')
-      .select('id, consultant_id, client_id, signature_type, signature_data, signed_at, nda_content')
+      .select('id, consultant_id, client_id, signature_type, signature_data, signed_at, nda_content, revoked_at')
       .order('signed_at', { ascending: false });
 
     if (error || !data) {
