@@ -187,7 +187,8 @@
     "approvals": "Approvals",
     "analytics": "Analytics",
     "logout": "Sign Out",
-    "more": "More"
+    "more": "More",
+    "integrations": "Integrations"
   },
   "client_dashboard": {
     "title": "Welcome back",
