@@ -637,6 +637,13 @@
     "action_items": "عناصر العمل",
     "chat_history": "سجل المحادثة",
     "no_messages": "لا توجد رسائل بعد",
-    "unknown_consultant": "مستشار"
+    "unknown_consultant": "مستشار",
+    "cancel_session": "إلغاء",
+    "cancel_confirm_title": "إلغاء هذه الجلسة؟",
+    "cancel_confirm_desc": "لا يمكن التراجع عن هذا الإجراء. سيتم إخطار المستشار.",
+    "cancel_yes": "نعم، إلغاء",
+    "cancel_no": "إبقاء الجلسة",
+    "cancelled_success": "تم إلغاء الجلسة بنجاح",
+    "cancel_error": "فشل إلغاء الجلسة"
   }
 }
