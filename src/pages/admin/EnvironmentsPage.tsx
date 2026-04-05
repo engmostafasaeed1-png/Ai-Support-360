@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -34,6 +34,7 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
   onSubmit: (data: any) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [name, setName] = useState(env?.name || '');
   const [guacamoleUrl, setGuacamoleUrl] = useState(env?.guacamole_url || '');
   const [clientId, setClientId] = useState(env?.client_id || '');
@@ -42,7 +43,6 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
   const [osType, setOsType] = useState(env?.os_type || 'Windows Server 2022');
   const [notes, setNotes] = useState(env?.notes || '');
 
-  // Fetch clients (users with client role)
   const { data: clients } = useQuery({
     queryKey: ['admin-clients-list'],
     queryFn: async () => {
@@ -61,7 +61,6 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
     },
   });
 
-  // Fetch consultants
   const { data: consultants } = useQuery({
     queryKey: ['admin-consultants-list'],
     queryFn: async () => {
@@ -95,18 +94,18 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium text-foreground">Name</label>
+        <label className="text-sm font-medium text-foreground">{t('admin.env_label_name', 'Name')}</label>
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Production Server 01" />
       </div>
       <div>
-        <label className="text-sm font-medium text-foreground">Guacamole URL</label>
+        <label className="text-sm font-medium text-foreground">{t('admin.env_label_url', 'Guacamole URL')}</label>
         <Input value={guacamoleUrl} onChange={(e) => setGuacamoleUrl(e.target.value)} placeholder="https://guac.example.com/#/client/..." />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm font-medium text-foreground">Client</label>
+          <label className="text-sm font-medium text-foreground">{t('admin.env_label_client', 'Client')}</label>
           <Select value={clientId} onValueChange={setClientId}>
-            <SelectTrigger><SelectValue placeholder="Select client..." /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('admin.env_select_client', 'Select client...')} /></SelectTrigger>
             <SelectContent>
               {(clients || []).map(c => (
                 <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
@@ -115,11 +114,11 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
           </Select>
         </div>
         <div>
-          <label className="text-sm font-medium text-foreground">Consultant (optional)</label>
+          <label className="text-sm font-medium text-foreground">{t('admin.env_label_consultant', 'Consultant (optional)')}</label>
           <Select value={consultantId || 'none'} onValueChange={(v) => setConsultantId(v === 'none' ? '' : v)}>
-            <SelectTrigger><SelectValue placeholder="Select consultant..." /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('admin.env_select_consultant', 'Select consultant...')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">— None —</SelectItem>
+              <SelectItem value="none">{t('admin.env_none', '— None —')}</SelectItem>
               {(consultants || []).map(c => (
                 <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
               ))}
@@ -129,29 +128,29 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm font-medium text-foreground">Status</label>
+          <label className="text-sm font-medium text-foreground">{t('admin.env_label_status', 'Status')}</label>
           <Select value={status} onValueChange={(v: any) => setStatus(v)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="maintenance">Maintenance</SelectItem>
+              <SelectItem value="active">{t('admin.env_status_active', 'Active')}</SelectItem>
+              <SelectItem value="inactive">{t('admin.env_status_inactive', 'Inactive')}</SelectItem>
+              <SelectItem value="maintenance">{t('admin.env_status_maintenance', 'Maintenance')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div>
-          <label className="text-sm font-medium text-foreground">OS Type</label>
+          <label className="text-sm font-medium text-foreground">{t('admin.env_label_os', 'OS Type')}</label>
           <Input value={osType} onChange={(e) => setOsType(e.target.value)} placeholder="Windows Server 2022" />
         </div>
       </div>
       <div>
-        <label className="text-sm font-medium text-foreground">Notes</label>
-        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Additional notes..." rows={2} />
+        <label className="text-sm font-medium text-foreground">{t('admin.env_label_notes', 'Notes')}</label>
+        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="..." rows={2} />
       </div>
       <DialogFooter>
-        <DialogClose asChild><Button variant="outline" onClick={onCancel}>Cancel</Button></DialogClose>
+        <DialogClose asChild><Button variant="outline" onClick={onCancel}>{t('common.cancel', 'Cancel')}</Button></DialogClose>
         <Button className="gradient-primary border-0" onClick={handleSubmit}>
-          {env ? 'Update' : 'Create'}
+          {env ? t('common.update', 'Update') : t('common.create', 'Create')}
         </Button>
       </DialogFooter>
     </div>
@@ -217,16 +216,16 @@ export default function EnvironmentsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Server className="w-6 h-6 text-primary" /> Remote Environments
+            <Server className="w-6 h-6 text-primary" /> {t('admin.env_title', 'Remote Environments')}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage VMware/Windows environments for consultant access</p>
+          <p className="text-sm text-muted-foreground mt-1">{t('admin.env_subtitle', 'Manage VMware/Windows environments for consultant access')}</p>
         </div>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="gradient-primary border-0 gap-1.5"><Plus className="w-4 h-4" /> Add Environment</Button>
+            <Button className="gradient-primary border-0 gap-1.5"><Plus className="w-4 h-4" /> {t('admin.env_add', 'Add Environment')}</Button>
           </DialogTrigger>
           <DialogContent className="rounded-2xl">
-            <DialogHeader><DialogTitle>Create Environment</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t('admin.env_create_title', 'Create Environment')}</DialogTitle></DialogHeader>
             <EnvironmentForm
               onSubmit={(data) => { createEnv.mutate(data); setCreateOpen(false); }}
               onCancel={() => setCreateOpen(false)}
@@ -239,8 +238,8 @@ export default function EnvironmentsPage() {
         <Card className="rounded-2xl border-border/50">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <Monitor className="w-12 h-12 text-muted-foreground/40 mb-3" />
-            <p className="text-muted-foreground">No remote environments configured yet</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">Add your first VMware/Windows environment above</p>
+            <p className="text-muted-foreground">{t('admin.env_empty', 'No remote environments configured yet')}</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">{t('admin.env_empty_hint', 'Add your first VMware/Windows environment above')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -260,8 +259,8 @@ export default function EnvironmentsPage() {
                       </div>
                       <p className="text-xs text-muted-foreground">{env.os_type}</p>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
-                        <span>Client: <span className="font-medium text-foreground">{clientMap[env.client_id] || '—'}</span></span>
-                        <span>Consultant: <span className="font-medium text-foreground">{env.consultant_id ? (consultantMap[env.consultant_id] || '—') : 'Unassigned'}</span></span>
+                        <span>{t('admin.env_client_label', 'Client')}: <span className="font-medium text-foreground">{clientMap[env.client_id] || '—'}</span></span>
+                        <span>{t('admin.env_consultant_label', 'Consultant')}: <span className="font-medium text-foreground">{env.consultant_id ? (consultantMap[env.consultant_id] || '—') : t('admin.env_unassigned', 'Unassigned')}</span></span>
                       </div>
                       <p className="text-xs text-muted-foreground/60 mt-1 truncate max-w-md">{env.guacamole_url}</p>
                       {env.notes && <p className="text-xs text-muted-foreground mt-2">{env.notes}</p>}
@@ -282,7 +281,7 @@ export default function EnvironmentsPage() {
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="rounded-2xl">
-                        <DialogHeader><DialogTitle>Edit Environment</DialogTitle></DialogHeader>
+                        <DialogHeader><DialogTitle>{t('admin.env_edit_title', 'Edit Environment')}</DialogTitle></DialogHeader>
                         <EnvironmentForm
                           env={env}
                           onSubmit={(data) => updateEnv.mutate({ id: env.id, ...data })}
@@ -298,13 +297,13 @@ export default function EnvironmentsPage() {
                       </AlertDialogTrigger>
                       <AlertDialogContent className="rounded-2xl">
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Environment</AlertDialogTitle>
-                          <AlertDialogDescription>This will permanently remove "{env.name}". This action cannot be undone.</AlertDialogDescription>
+                          <AlertDialogTitle>{t('admin.env_delete_title', 'Delete Environment')}</AlertDialogTitle>
+                          <AlertDialogDescription>{t('admin.env_delete_desc', 'This will permanently remove "{{name}}". This action cannot be undone.', { name: env.name })}</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
                           <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => deleteEnv.mutate(env.id)}>
-                            Delete
+                            {t('common.delete', 'Delete')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

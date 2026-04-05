@@ -58,11 +58,11 @@ export default function AdminIntegrationsPage() {
   };
 
   const statCards = [
-    { label: 'Total Integrations', value: stats.total, icon: Plug, color: 'text-primary' },
-    { label: 'Active', value: stats.active, icon: CheckCircle2, color: 'text-emerald-500' },
-    { label: 'Errors', value: stats.errors, icon: AlertTriangle, color: 'text-destructive' },
-    { label: 'Syncs (Success)', value: stats.syncSuccess, icon: Activity, color: 'text-blue-500' },
-    { label: 'Syncs (Failed)', value: stats.syncFailed, icon: XCircle, color: 'text-orange-500' },
+    { label: t('admin.int_total', 'Total Integrations'), value: stats.total, icon: Plug, color: 'text-primary' },
+    { label: t('admin.int_active', 'Active'), value: stats.active, icon: CheckCircle2, color: 'text-emerald-500' },
+    { label: t('admin.int_errors', 'Errors'), value: stats.errors, icon: AlertTriangle, color: 'text-destructive' },
+    { label: t('admin.int_sync_success', 'Syncs (Success)'), value: stats.syncSuccess, icon: Activity, color: 'text-blue-500' },
+    { label: t('admin.int_sync_failed', 'Syncs (Failed)'), value: stats.syncFailed, icon: XCircle, color: 'text-orange-500' },
   ];
 
   return (
@@ -91,32 +91,32 @@ export default function AdminIntegrationsPage() {
 
       <Tabs defaultValue="integrations">
         <TabsList>
-          <TabsTrigger value="integrations">All Integrations</TabsTrigger>
-          <TabsTrigger value="sync-log">Sync Activity Log</TabsTrigger>
+          <TabsTrigger value="integrations">{t('admin.int_tab_all', 'All Integrations')}</TabsTrigger>
+          <TabsTrigger value="sync-log">{t('admin.int_tab_sync', 'Sync Activity Log')}</TabsTrigger>
         </TabsList>
 
         {/* Integrations Tab */}
         <TabsContent value="integrations">
           <Card className="border-border/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Client Integrations</CardTitle>
+              <CardTitle className="text-base">{t('admin.int_card_title', 'Client Integrations')}</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {loadingIntegrations ? (
-                <div className="p-8 text-center text-muted-foreground">Loading…</div>
+                <div className="p-8 text-center text-muted-foreground">{t('common.loading', 'Loading...')}</div>
               ) : integrations.length === 0 ? (
-                <div className="p-8 text-center text-muted-foreground">No integrations configured yet.</div>
+                <div className="p-8 text-center text-muted-foreground">{t('admin.int_no_integrations', 'No integrations configured yet.')}</div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Platform</TableHead>
-                        <TableHead>Client ID</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Sync</TableHead>
-                        <TableHead>Last Synced</TableHead>
-                        <TableHead>Created</TableHead>
+                        <TableHead>{t('admin.int_col_platform', 'Platform')}</TableHead>
+                        <TableHead>{t('admin.int_col_client_id', 'Client ID')}</TableHead>
+                        <TableHead>{t('admin.int_col_status', 'Status')}</TableHead>
+                        <TableHead>{t('admin.int_col_sync', 'Sync')}</TableHead>
+                        <TableHead>{t('admin.int_col_last_synced', 'Last Synced')}</TableHead>
+                        <TableHead>{t('admin.int_col_created', 'Created')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -139,10 +139,10 @@ export default function AdminIntegrationsPage() {
                           <TableCell>
                             {int.sync_enabled ? (
                               <Badge variant="secondary" className="text-xs gap-1">
-                                <RefreshCw className="w-3 h-3" /> Auto
+                                <RefreshCw className="w-3 h-3" /> {t('admin.int_sync_auto', 'Auto')}
                               </Badge>
                             ) : (
-                              <span className="text-xs text-muted-foreground">Manual</span>
+                              <span className="text-xs text-muted-foreground">{t('admin.int_sync_manual', 'Manual')}</span>
                             )}
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">
@@ -165,24 +165,24 @@ export default function AdminIntegrationsPage() {
         <TabsContent value="sync-log">
           <Card className="border-border/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Recent Sync Activity</CardTitle>
+              <CardTitle className="text-base">{t('admin.int_sync_title', 'Recent Sync Activity')}</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {loadingLogs ? (
-                <div className="p-8 text-center text-muted-foreground">Loading…</div>
+                <div className="p-8 text-center text-muted-foreground">{t('common.loading', 'Loading...')}</div>
               ) : syncLogs.length === 0 ? (
-                <div className="p-8 text-center text-muted-foreground">No sync activity yet.</div>
+                <div className="p-8 text-center text-muted-foreground">{t('admin.int_no_sync', 'No sync activity yet.')}</div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Time</TableHead>
-                        <TableHead>Direction</TableHead>
-                        <TableHead>Action</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>External ID</TableHead>
-                        <TableHead>Error</TableHead>
+                        <TableHead>{t('admin.int_col_time', 'Time')}</TableHead>
+                        <TableHead>{t('admin.int_col_direction', 'Direction')}</TableHead>
+                        <TableHead>{t('admin.int_col_action', 'Action')}</TableHead>
+                        <TableHead>{t('admin.int_col_status', 'Status')}</TableHead>
+                        <TableHead>{t('admin.int_col_external_id', 'External ID')}</TableHead>
+                        <TableHead>{t('admin.int_col_error', 'Error')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -193,7 +193,7 @@ export default function AdminIntegrationsPage() {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="text-xs capitalize">
-                              {log.direction === 'inbound' ? '← In' : '→ Out'}
+                              {log.direction === 'inbound' ? t('admin.int_dir_in', '← In') : t('admin.int_dir_out', '→ Out')}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-sm">{log.action}</TableCell>
