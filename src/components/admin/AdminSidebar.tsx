@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Users, Kanban, UserCheck, BarChart3,
-  Settings, Shield, Globe, LogOut, Plug, Server,
+  Settings, Shield, Globe, LogOut, Plug, Server, ClipboardList,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
@@ -21,6 +21,7 @@ const menuItems = [
   { key: 'analytics', icon: BarChart3, path: '/admin/analytics' },
   { key: 'integrations', icon: Plug, path: '/admin/integrations' },
   { key: 'environments', icon: Server, path: '/admin/environments' },
+  { key: 'environment_logs', icon: ClipboardList, path: '/admin/environment-logs' },
   { key: 'settings', icon: Settings, path: '/admin/settings' },
 ];
 
