@@ -129,7 +129,11 @@ export default function SessionsPage() {
                             {session.session_type?.replace('_', ' ')}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 mt-1.5 text-sm">
+                        <p className="text-sm font-medium text-foreground mt-1 flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5 text-muted-foreground" />
+                          {(session as any).consultant_name}
+                        </p>
+                        <div className="flex items-center gap-3 mt-1 text-sm">
                           <div className="flex items-center gap-1 text-muted-foreground">
                             <Clock className="w-3.5 h-3.5" />
                             {session.scheduled_at
