@@ -5,7 +5,7 @@ import { MessageSquare, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const mockSessions = [
-  { id: 'demo-session-1', consultant: 'Sarah Johnson', module: 'S/4HANA', lastMessage: 'I'll look into the migration error now.', time: '2 min ago', unread: 3, status: 'active' },
+  { id: 'demo-session-1', consultant: 'Sarah Johnson', module: 'S/4HANA', lastMessage: "I'll look into the migration error now.", time: '2 min ago', unread: 3, status: 'active' },
   { id: 'demo-session-2', consultant: 'Lisa Chen', module: 'FI/CO', lastMessage: 'The posting date issue should be resolved.', time: '1 hr ago', unread: 0, status: 'active' },
   { id: 'demo-session-3', consultant: 'David Park', module: 'BTP', lastMessage: 'Session completed. Please rate your experience.', time: '2 days ago', unread: 0, status: 'completed' },
 ];

@@ -5,7 +5,7 @@ import { Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const mockSessions = [
-  { id: 'demo-session-1', client: 'Ahmed Al-Rashidi', module: 'S/4HANA', lastMessage: 'Thank you, I'll test the fix now.', time: '5 min ago', unread: 1, status: 'active' },
+  { id: 'demo-session-1', client: 'Ahmed Al-Rashidi', module: 'S/4HANA', lastMessage: "Thank you, I'll test the fix now.", time: '5 min ago', unread: 1, status: 'active' },
   { id: 'demo-session-2', client: 'Fatima Al-Zahrani', module: 'FI/CO', lastMessage: 'The report looks correct now!', time: '3 hr ago', unread: 0, status: 'active' },
   { id: 'demo-session-3', client: 'Noura Al-Otaibi', module: 'MM', lastMessage: 'Can we schedule a follow-up?', time: '1 day ago', unread: 2, status: 'active' },
 ];
