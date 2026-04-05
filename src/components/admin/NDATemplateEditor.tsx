@@ -2,31 +2,22 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileSignature, Save, Info, Eye, Pencil } from 'lucide-react';
+import { FileSignature, Save, Info, Eye, Pencil, Settings2 } from 'lucide-react';
 import { useNDATemplate } from '@/hooks/useNDA';
 
-const SAMPLE_DATA: Record<string, string> = {
-  '{{consultant_name}}': 'Ahmed Al-Rashid',
-  '{{consultant_email}}': 'ahmed.rashid@example.com',
-  '{{client_name}}': 'Sarah Johnson',
-  '{{client_company}}': 'Acme Corporation',
-  '{{client_industry}}': 'Manufacturing',
-  '{{sap_modules}}': 'SAP FI, SAP MM, SAP SD',
-  '{{date}}': new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }),
-};
-
 const PLACEHOLDERS = [
-  { tag: '{{consultant_name}}', label: 'Consultant Name' },
-  { tag: '{{consultant_email}}', label: 'Consultant Email' },
-  { tag: '{{client_name}}', label: 'Client Name' },
-  { tag: '{{client_company}}', label: 'Client Company' },
-  { tag: '{{client_industry}}', label: 'Client Industry' },
-  { tag: '{{sap_modules}}', label: 'SAP Modules' },
-  { tag: '{{date}}', label: 'Signing Date' },
+  { tag: '{{consultant_name}}', label: 'Consultant Name', defaultValue: 'Ahmed Al-Rashid' },
+  { tag: '{{consultant_email}}', label: 'Consultant Email', defaultValue: 'ahmed.rashid@example.com' },
+  { tag: '{{client_name}}', label: 'Client Name', defaultValue: 'Sarah Johnson' },
+  { tag: '{{client_company}}', label: 'Client Company', defaultValue: 'Acme Corporation' },
+  { tag: '{{client_industry}}', label: 'Client Industry', defaultValue: 'Manufacturing' },
+  { tag: '{{sap_modules}}', label: 'SAP Modules', defaultValue: 'SAP FI, SAP MM, SAP SD' },
+  { tag: '{{date}}', label: 'Signing Date', defaultValue: new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) },
 ];
 
 export default function NDATemplateEditor() {
@@ -35,6 +26,10 @@ export default function NDATemplateEditor() {
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState(false);
+  const [showSampleEditor, setShowSampleEditor] = useState(false);
+  const [sampleData, setSampleData] = useState<Record<string, string>>(() =>
+    Object.fromEntries(PLACEHOLDERS.map((p) => [p.tag, p.defaultValue]))
+  );
 
   useEffect(() => { setDraft(template); }, [template]);
 
@@ -48,23 +43,38 @@ export default function NDATemplateEditor() {
 
   const previewContent = useMemo(() => {
     let content = draft;
-    for (const [placeholder, value] of Object.entries(SAMPLE_DATA)) {
+    for (const [placeholder, value] of Object.entries(sampleData)) {
       content = content.split(placeholder).join(value);
     }
     return content;
-  }, [draft]);
+  }, [draft, sampleData]);
+
+  const resetSampleData = () => {
+    setSampleData(Object.fromEntries(PLACEHOLDERS.map((p) => [p.tag, p.defaultValue])));
+  };
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center gap-3 pb-2">
         <FileSignature className="w-5 h-5 text-primary" />
         <CardTitle className="text-base">{t('admin.nda_title', 'NDA Template')}</CardTitle>
-        <div className="ms-auto">
+        <div className="ms-auto flex gap-1.5">
+          {previewing && (
+            <Button
+              variant={showSampleEditor ? 'secondary' : 'outline'}
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => setShowSampleEditor(!showSampleEditor)}
+            >
+              <Settings2 className="w-3.5 h-3.5" />
+              {t('admin.nda_sample_data', 'Sample Data')}
+            </Button>
+          )}
           <Button
             variant={previewing ? 'default' : 'outline'}
             size="sm"
             className="gap-1.5 text-xs"
-            onClick={() => setPreviewing(!previewing)}
+            onClick={() => { setPreviewing(!previewing); setShowSampleEditor(false); }}
           >
             {previewing ? <Pencil className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             {previewing ? t('admin.nda_edit', 'Edit') : t('admin.nda_preview', 'Preview')}
@@ -97,6 +107,33 @@ export default function NDATemplateEditor() {
                 >
                   {p.tag}
                 </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Editable Sample Data */}
+        {previewing && showSampleEditor && (
+          <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                <Settings2 className="w-4 h-4 text-primary" />
+                {t('admin.nda_custom_sample', 'Customize Sample Data')}
+              </div>
+              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={resetSampleData}>
+                {t('common.reset', 'Reset')}
+              </Button>
+            </div>
+            <div className="grid gap-2">
+              {PLACEHOLDERS.map((p) => (
+                <div key={p.tag} className="grid grid-cols-[120px_1fr] items-center gap-2">
+                  <label className="text-xs text-muted-foreground truncate" title={p.tag}>{p.label}</label>
+                  <Input
+                    value={sampleData[p.tag] ?? ''}
+                    onChange={(e) => setSampleData((prev) => ({ ...prev, [p.tag]: e.target.value }))}
+                    className="h-8 text-xs"
+                  />
+                </div>
               ))}
             </div>
           </div>
