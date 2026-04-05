@@ -195,8 +195,8 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
 
             <DialogFooter className="gap-2">
               <Button variant="ghost" onClick={() => setStep(2)}>{t('booking.back')}</Button>
-              <Button onClick={handleConfirm} className="gradient-primary border-0">
-                {t('booking.confirm')}
+              <Button onClick={handleConfirm} disabled={isSubmitting} className="gradient-primary border-0">
+                {isSubmitting ? t('booking.submitting') : t('booking.confirm')}
               </Button>
             </DialogFooter>
           </div>
