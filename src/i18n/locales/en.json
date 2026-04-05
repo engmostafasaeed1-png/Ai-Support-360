@@ -628,7 +628,9 @@
     "sessions": "sessions",
     "active": "active",
     "suspended": "suspended",
-    "pending": "pending"
+    "pending": "pending",
+    "saving": "Saving...",
+    "reset": "Reset"
   },
   "booking": {
     "title": "Book a Session",
@@ -896,7 +898,14 @@
     "nda_empty": "No signed NDAs found.",
     "nda_view_title": "Signed NDA Details",
     "nda_signature": "Signature",
-    "nda_download": "Download Signature"
+    "nda_download": "Download Signature",
+    "nda_placeholders_title": "Available Placeholders",
+    "nda_placeholders_desc": "Use these placeholders in the template — they will be auto-filled with real data when the consultant signs.",
+    "nda_edit": "Edit",
+    "nda_preview": "Preview",
+    "nda_preview_label": "Preview with sample data",
+    "nda_sample_data": "Sample Data",
+    "nda_custom_sample": "Customize Sample Data"
   },
   "maintenance": {
     "banner": "The platform is currently undergoing scheduled maintenance. Some features may be temporarily unavailable."
