@@ -38,6 +38,7 @@ import UsersPage from "./pages/admin/UsersPage.tsx";
 import TicketKanbanPage from "./pages/admin/TicketKanbanPage.tsx";
 import ConsultantApprovalsPage from "./pages/admin/ConsultantApprovalsPage.tsx";
 import AnalyticsPage from "./pages/admin/AnalyticsPage.tsx";
+import AdminIntegrationsPage from "./pages/admin/AdminIntegrationsPage.tsx";
 import LoginPage from "./pages/auth/LoginPage.tsx";
 import SignupPage from "./pages/auth/SignupPage.tsx";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.tsx";
@@ -95,6 +96,7 @@ const App = () => (
               <Route path="tickets" element={<TicketKanbanPage />} />
               <Route path="approvals" element={<ConsultantApprovalsPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="integrations" element={<AdminIntegrationsPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
