@@ -331,11 +331,49 @@ export default function ConsultantsPage() {
         </p>
       </div>
 
-      {/* Map View */}
-      {view === 'map' && <ConsultantMap consultants={filtered} />}
+      {/* Map View — split layout */}
+      {view === 'map' && (
+        <div className="flex flex-col gap-4">
+          {/* Legend */}
+          <div className="flex items-center gap-5 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-green-500 inline-block" /> {t('consultants.available')}</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-muted-foreground/40 inline-block" /> {t('consultants.offline')}</span>
+            <span className="ms-auto text-[10px]">{filtered.filter(c => c.available).length} online · {filtered.filter(c => !c.available).length} offline</span>
+          </div>
+          <div className="grid lg:grid-cols-[1fr_320px] gap-4">
+            <ConsultantMap consultants={filtered} />
+            {/* Side list */}
+            <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+              {filtered.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => navigate(`/client/consultants/${c.id}`)}
+                  className="w-full text-start p-3 rounded-xl border border-border/50 hover:border-accent/40 transition-all flex items-center gap-3 bg-card"
+                >
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">{c.avatar}</div>
+                    <span className={`absolute -top-0.5 -end-0.5 w-3 h-3 rounded-full border-2 border-card ${c.available ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{c.specialty}</p>
+                  </div>
+                  <div className="text-end shrink-0">
+                    <p className="text-sm font-bold text-foreground">${c.rate}</p>
+                    <div className="flex items-center gap-0.5 justify-end">
+                      <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                      <span className="text-[10px] text-muted-foreground">{c.rating}</span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Grid View */}
-      {filtered.length === 0 ? (
+      {view !== 'map' && filtered.length === 0 ? (
         <Card className="rounded-2xl border-border/50">
           <CardContent className="p-12 text-center">
             <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
@@ -344,8 +382,8 @@ export default function ConsultantsPage() {
             <Button variant="outline" size="sm" className="mt-4" onClick={clearFilters}>Clear All Filters</Button>
           </CardContent>
         </Card>
-      ) : (
-        <div className={`grid md:grid-cols-2 gap-4 ${view === 'map' ? 'mt-4' : ''}`}>
+      ) : view !== 'map' ? (
+        <div className="grid md:grid-cols-2 gap-4">
           {filtered.map((c) => (
             <Card key={c.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all group">
               <CardContent className="p-5">
@@ -421,7 +459,7 @@ export default function ConsultantsPage() {
             </Card>
           ))}
         </div>
-      )}
+      ) : null}
 
       {/* Booking Modal */}
       {bookingConsultant && (
