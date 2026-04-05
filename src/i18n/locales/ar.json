@@ -620,5 +620,23 @@
     "status_completed": "مكتملة",
     "status_cancelled": "ملغية",
     "unknown_consultant": "مستشار"
+  },
+  "session_detail": {
+    "back": "العودة للجلسات",
+    "not_found": "الجلسة غير موجودة",
+    "join_session": "انضمام للجلسة",
+    "schedule": "الجدول",
+    "scheduled_at": "الموعد",
+    "started_at": "بدأت",
+    "ended_at": "انتهت",
+    "duration": "المدة",
+    "minutes": "دقيقة",
+    "notes_title": "الملاحظات",
+    "no_notes": "لا توجد ملاحظات لهذه الجلسة",
+    "ai_summary": "ملخص الذكاء الاصطناعي",
+    "action_items": "عناصر العمل",
+    "chat_history": "سجل المحادثة",
+    "no_messages": "لا توجد رسائل بعد",
+    "unknown_consultant": "مستشار"
   }
 }
