@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { mockActivityFeed } from '@/data/clientMockData';
@@ -15,6 +16,18 @@ function timeAgo(dateStr: string) {
 
 export function useActivityFeed() {
   const { isGuest } = useGuestMode();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (isGuest) return;
+    const channel = supabase
+      .channel('activity-feed-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['activity-feed'] });
+      })
+      .subscribe();
+    return () => { channel.unsubscribe(); };
+  }, [isGuest, queryClient]);
 
   return useQuery({
     queryKey: ['activity-feed'],

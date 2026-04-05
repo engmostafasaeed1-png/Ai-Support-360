@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { adminStats, adminUsers, kanbanTickets } from '@/data/adminMockData';
@@ -81,6 +82,18 @@ export function useAdminUsers() {
 
 export function useAdminTickets() {
   const { isGuest } = useGuestMode();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (isGuest) return;
+    const channel = supabase
+      .channel('admin-tickets-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['admin-tickets-kanban'] });
+      })
+      .subscribe();
+    return () => { channel.unsubscribe(); };
+  }, [isGuest, queryClient]);
 
   return useQuery({
     queryKey: ['admin-tickets-kanban'],
