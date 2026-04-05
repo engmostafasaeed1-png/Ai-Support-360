@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Check, ChevronLeft, ChevronRight, Building2, Settings2, Cpu, ClipboardCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import SapModulesStep from './steps/SapModulesStep';
 import ReviewStep from './steps/ReviewStep';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useGuestMode } from '@/contexts/GuestModeContext';
 
 export interface ClientOnboardingData {
   companyName: string;
@@ -39,6 +41,8 @@ const stepIcons = [Building2, Settings2, Cpu, ClipboardCheck];
 
 export default function ClientOnboarding() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { isGuest } = useGuestMode();
   const [currentStep, setCurrentStep] = useState(0);
   const [data, setData] = useState<ClientOnboardingData>(initialData);
   const [submitting, setSubmitting] = useState(false);
@@ -55,6 +59,11 @@ export default function ClientOnboarding() {
   };
 
   const handleSubmit = async () => {
+    if (isGuest) {
+      toast.success(t('guest.onboarding_demo'));
+      navigate('/client');
+      return;
+    }
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();

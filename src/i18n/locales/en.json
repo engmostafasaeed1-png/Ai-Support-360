@@ -805,6 +805,7 @@
     "role_consultant": "Consultant Dashboard",
     "role_consultant_desc": "View cases, manage calendar, track earnings, and handle profile.",
     "role_admin": "Admin Dashboard",
-    "role_admin_desc": "Manage users, approve consultants, view analytics, and handle tickets."
+    "role_admin_desc": "Manage users, approve consultants, view analytics, and handle tickets.",
+    "onboarding_demo": "Great job! In a real account, your profile would be saved. Sign up to get started!"
   }
 }
