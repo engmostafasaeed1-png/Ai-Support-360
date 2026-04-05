@@ -335,6 +335,44 @@ export type Database = {
         }
         Relationships: []
       }
+      environment_connections: {
+        Row: {
+          created_at: string
+          environment_id: string
+          guacamole_url: string
+          id: string
+          is_default: boolean
+          name: string
+          protocol: Database["public"]["Enums"]["guac_protocol"]
+        }
+        Insert: {
+          created_at?: string
+          environment_id: string
+          guacamole_url: string
+          id?: string
+          is_default?: boolean
+          name: string
+          protocol?: Database["public"]["Enums"]["guac_protocol"]
+        }
+        Update: {
+          created_at?: string
+          environment_id?: string
+          guacamole_url?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          protocol?: Database["public"]["Enums"]["guac_protocol"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "environment_connections_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "remote_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       environment_sessions: {
         Row: {
           connected_at: string
@@ -1152,6 +1190,7 @@ export type Database = {
       article_status: "draft" | "published" | "archived"
       availability_status: "available" | "busy" | "offline"
       environment_status: "active" | "inactive" | "maintenance"
+      guac_protocol: "rdp" | "ssh" | "vnc"
       integration_platform: "zendesk" | "freshdesk" | "jira" | "servicenow"
       integration_status: "active" | "inactive" | "error"
       interview_status: "pending" | "in_progress" | "completed" | "reviewed"
@@ -1314,6 +1353,7 @@ export const Constants = {
       article_status: ["draft", "published", "archived"],
       availability_status: ["available", "busy", "offline"],
       environment_status: ["active", "inactive", "maintenance"],
+      guac_protocol: ["rdp", "ssh", "vnc"],
       integration_platform: ["zendesk", "freshdesk", "jira", "servicenow"],
       integration_status: ["active", "inactive", "error"],
       interview_status: ["pending", "in_progress", "completed", "reviewed"],
