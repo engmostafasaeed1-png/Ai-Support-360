@@ -194,7 +194,8 @@
     "onboarding_complete": "Onboarding",
     "completed": "Done",
     "environments": "Environments",
-    "remote_access": "Remote Access"
+    "remote_access": "Remote Access",
+    "environment_logs": "Session Logs"
   },
   "client_dashboard": {
     "title": "Welcome back",

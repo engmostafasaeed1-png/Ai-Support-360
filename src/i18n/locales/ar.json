@@ -194,7 +194,8 @@
     "onboarding_complete": "الإعداد الأولي",
     "completed": "مكتمل",
     "environments": "البيئات",
-    "remote_access": "الوصول عن بُعد"
+    "remote_access": "الوصول عن بُعد",
+    "environment_logs": "سجل الجلسات"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",
