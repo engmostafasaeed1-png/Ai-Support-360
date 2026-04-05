@@ -1,0 +1,15 @@
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+export function useLogout() {
+  const navigate = useNavigate();
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+    toast.success('Signed out successfully');
+  };
+
+  return logout;
+}
