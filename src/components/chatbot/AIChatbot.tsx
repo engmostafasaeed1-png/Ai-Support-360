@@ -1,13 +1,14 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  MessageSquare, X, Send, Loader2, Trash2, Bot, User, Sparkles, Minimize2,
+  MessageSquare, X, Send, Loader2, Trash2, Bot, User, Sparkles, Minimize2, TicketPlus,
 } from 'lucide-react';
 import { useTriageChat } from '@/hooks/useTriageChat';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 export default function AIChatbot() {
