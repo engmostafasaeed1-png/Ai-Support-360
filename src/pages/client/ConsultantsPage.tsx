@@ -3,11 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, Star, BadgeCheck, Zap, Heart, Filter, Map, LayoutGrid, Wifi, WifiOff } from 'lucide-react';
-import { useState, lazy, Suspense } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
-
-const ConsultantMap = lazy(() => import('@/components/client/ConsultantMap'));
+import ConsultantMap from '@/components/client/ConsultantMap';
 
 const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
   verified: { icon: BadgeCheck, color: 'text-accent' },
@@ -35,7 +34,7 @@ export default function ConsultantsPage() {
         {/* Realtime indicator */}
         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium ${realtimeConnected ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
           {realtimeConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-          {realtimeConnected ? 'Live' : 'Connecting...'}
+          {realtimeConnected ? t('consultants_page.live') : t('consultants_page.connecting')}
         </div>
       </div>
 
@@ -66,9 +65,7 @@ export default function ConsultantsPage() {
 
       {/* Map View */}
       {view === 'map' && (
-        <Suspense fallback={<div className="h-[420px] rounded-2xl bg-muted animate-pulse" />}>
-          <ConsultantMap consultants={filtered} />
-        </Suspense>
+        <ConsultantMap consultants={filtered} />
       )}
 
       {/* Grid View */}
@@ -108,7 +105,7 @@ export default function ConsultantsPage() {
                       return (
                         <span key={badge} className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-muted">
                           <BIcon className={`w-2.5 h-2.5 ${config.color}`} />
-                          {badge.replace('_', ' ')}
+                          {t(`consultants.${badge}`)}
                         </span>
                       );
                     })}

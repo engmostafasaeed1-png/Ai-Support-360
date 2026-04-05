@@ -314,7 +314,9 @@
     "reviews": "تقييم",
     "match": "تطابق",
     "map_view": "عرض الخريطة",
-    "grid_view": "عرض شبكي"
+    "grid_view": "عرض شبكي",
+    "live": "مباشر",
+    "connecting": "جاري الاتصال..."
   },
   "payments_page": {
     "title": "المدفوعات",
