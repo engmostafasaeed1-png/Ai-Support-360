@@ -52,6 +52,7 @@ const App = () => (
             <Route path="chat" element={<ConsultantChatPage />} />
             <Route path="chat/:sessionId" element={<ChatSessionPage role="consultant" />} />
             <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="onboarding" element={<OnboardingPage />} />
           </Route>
           <Route path="/client" element={<ClientLayout />}>
             <Route index element={<ClientDashboard />} />
