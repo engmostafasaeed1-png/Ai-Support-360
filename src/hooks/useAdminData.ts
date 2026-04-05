@@ -6,8 +6,25 @@ import { adminStats, adminUsers, kanbanTickets } from '@/data/adminMockData';
 
 export function useAdminStats() {
   const { isGuest } = useGuestMode();
+  const queryClient = useQueryClient();
 
-  return useQuery({
+  useEffect(() => {
+    if (isGuest) return;
+    const channel = supabase
+      .channel('admin-stats-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'consultants' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      })
+      .subscribe();
+    return () => { channel.unsubscribe(); };
+  }, [isGuest, queryClient]);
+
     queryKey: ['admin-stats'],
     queryFn: async () => {
       const [
