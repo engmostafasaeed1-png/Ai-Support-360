@@ -688,5 +688,22 @@
     "po_processing": "قيد المعالجة",
     "po_pending": "قيد الانتظار",
     "po_failed": "فشل"
+  },
+  "payout": {
+    "title": "طلب سحب",
+    "subtitle": "سحب أرباحك المتاحة",
+    "available_balance": "الرصيد المتاح",
+    "amount_label": "مبلغ السحب",
+    "method_label": "طريقة السحب",
+    "bank_transfer": "تحويل بنكي",
+    "paypal": "باي بال",
+    "stripe": "سترايب",
+    "exceeds": "المبلغ يتجاوز الرصيد المتاح",
+    "cancel": "إلغاء",
+    "submit": "طلب السحب",
+    "submitting": "جاري الإرسال...",
+    "success_title": "تم طلب السحب!",
+    "success_desc": "طلب السحب بمبلغ ${{amount}} قيد المعالجة.",
+    "error": "فشل طلب السحب"
   }
 }
