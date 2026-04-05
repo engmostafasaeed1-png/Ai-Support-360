@@ -143,24 +143,24 @@ export default function ConsultantsPage() {
       </div>
 
       {/* Online/Offline Status Bar */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
         <button
           onClick={() => setAvailabilityFilter(availabilityFilter === 'all' ? 'all' : 'all')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${availabilityFilter === 'all' ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs md:text-sm font-medium transition-all whitespace-nowrap ${availabilityFilter === 'all' ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
         >
-          <Users className="w-4 h-4" />
+          <Users className="w-3.5 h-3.5" />
           All ({consultants.length})
         </button>
         <button
           onClick={() => setAvailabilityFilter(availabilityFilter === 'online' ? 'all' : 'online')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${availabilityFilter === 'online' ? 'bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs md:text-sm font-medium transition-all whitespace-nowrap ${availabilityFilter === 'online' ? 'bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
         >
           <Circle className="w-3 h-3 fill-green-500 text-green-500" />
           Online ({onlineCount})
         </button>
         <button
           onClick={() => setAvailabilityFilter(availabilityFilter === 'offline' ? 'all' : 'offline')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${availabilityFilter === 'offline' ? 'bg-muted text-foreground border border-border' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs md:text-sm font-medium transition-all whitespace-nowrap ${availabilityFilter === 'offline' ? 'bg-muted text-foreground border border-border' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
         >
           <Circle className="w-3 h-3 fill-muted-foreground/40 text-muted-foreground/40" />
           Offline ({offlineCount})
