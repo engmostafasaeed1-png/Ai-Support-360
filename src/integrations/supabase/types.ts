@@ -168,48 +168,72 @@ export type Database = {
       client_profiles: {
         Row: {
           communication_preference: string | null
+          company_description: string | null
+          company_logo_url: string | null
           company_name: string | null
           company_size: string | null
+          company_website: string | null
           created_at: string
+          headquarters: string | null
           id: string
           industry: string | null
+          key_contacts: Json | null
           onboarding_completed: boolean | null
           phone: string | null
           preferred_language: string | null
+          sap_hosting_type: string | null
           sap_landscape: string | null
+          sap_module_versions: Json | null
           sap_modules: string[] | null
+          sap_system_ids: string[] | null
           timezone: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           communication_preference?: string | null
+          company_description?: string | null
+          company_logo_url?: string | null
           company_name?: string | null
           company_size?: string | null
+          company_website?: string | null
           created_at?: string
+          headquarters?: string | null
           id?: string
           industry?: string | null
+          key_contacts?: Json | null
           onboarding_completed?: boolean | null
           phone?: string | null
           preferred_language?: string | null
+          sap_hosting_type?: string | null
           sap_landscape?: string | null
+          sap_module_versions?: Json | null
           sap_modules?: string[] | null
+          sap_system_ids?: string[] | null
           timezone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           communication_preference?: string | null
+          company_description?: string | null
+          company_logo_url?: string | null
           company_name?: string | null
           company_size?: string | null
+          company_website?: string | null
           created_at?: string
+          headquarters?: string | null
           id?: string
           industry?: string | null
+          key_contacts?: Json | null
           onboarding_completed?: boolean | null
           phone?: string | null
           preferred_language?: string | null
+          sap_hosting_type?: string | null
           sap_landscape?: string | null
+          sap_module_versions?: Json | null
           sap_modules?: string[] | null
+          sap_system_ids?: string[] | null
           timezone?: string | null
           updated_at?: string
           user_id?: string
@@ -1073,6 +1097,53 @@ export type Database = {
           },
           {
             foreignKeyName: "sessions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_documents: {
+        Row: {
+          comment: string | null
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          mime_type: string | null
+          ticket_id: string
+          uploaded_by: string
+          version: number
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          ticket_id: string
+          uploaded_by: string
+          version?: number
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          ticket_id?: string
+          uploaded_by?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_documents_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
