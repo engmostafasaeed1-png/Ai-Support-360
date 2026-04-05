@@ -22,6 +22,7 @@ const menuItems = [
   { key: 'sessions', icon: Calendar, path: '/client/sessions' },
   { key: 'payments', icon: CreditCard, path: '/client/payments' },
   { key: 'invoices', icon: FileText, path: '/client/invoices' },
+  { key: 'integrations', icon: Plug, path: '/client/integrations' },
   { key: 'knowledge', icon: BookOpen, path: '/client/knowledge' },
   { key: 'notifications', icon: Bell, path: '/client/notifications' },
   { key: 'settings', icon: Settings, path: '/client/settings' },
