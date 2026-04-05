@@ -25,19 +25,6 @@ const menuItems = [
   { key: 'settings', icon: Settings, path: '/consultant/settings' },
 ];
 
-const labels: Record<string, string> = {
-  dashboard: 'Dashboard',
-  cases: 'Cases',
-  calendar: 'Calendar',
-  earnings: 'Earnings',
-  chat: 'Messages',
-  reviews: 'Reviews',
-  profile: 'Profile',
-  verification: 'Verification',
-  knowledge: 'Knowledge Base',
-  notifications: 'Notifications',
-  settings: 'Settings',
-};
 
 export default function ConsultantSidebar() {
   const { state } = useSidebar();
