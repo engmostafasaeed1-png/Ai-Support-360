@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useClientTickets } from '@/hooks/useClientTickets';
-import { Search, ArrowUpRight, TicketPlus, Ticket } from 'lucide-react';
+import { Search, ArrowUpRight, TicketPlus, Ticket, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import TicketDocuments from '@/components/client/TicketDocuments';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -28,6 +29,7 @@ const statusColors: Record<string, string> = {
 export default function TicketsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
   const { data: tickets, isLoading } = useClientTickets();
 
   const filtered = (tickets || []).filter((t) => {
@@ -84,7 +86,7 @@ export default function TicketsPage() {
           </Card>
         ) : (
           filtered.map((ticket) => (
-            <Card key={ticket.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
+            <Card key={ticket.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all overflow-hidden">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -99,10 +101,21 @@ export default function TicketsPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>{ticket.urgency}</Badge>
                     <Badge variant="secondary" className={`text-[10px] ${statusColors[ticket.status]}`}>{ticket.status.replace(/_/g, ' ')}</Badge>
-                    <Button variant="ghost" size="icon"><ArrowUpRight className="w-4 h-4" /></Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setExpandedTicket(expandedTicket === ticket.id ? null : ticket.id)}
+                    >
+                      {expandedTicket === ticket.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </Button>
                   </div>
                 </div>
               </CardContent>
+              {expandedTicket === ticket.id && (
+                <div className="px-5 pb-5 border-t border-border/20 pt-4">
+                  <TicketDocuments ticketId={ticket.id} />
+                </div>
+              )}
             </Card>
           ))
         )}
