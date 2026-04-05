@@ -16,6 +16,8 @@ const Index = () => {
       <Navbar />
       <HeroSection />
       <ExploreServicesSection />
+      <HowItWorksSection />
+      <WhyQurtubaSection />
       <ConsultantsSection />
       <TestimonialsSection />
       <PricingSection />
