@@ -637,6 +637,13 @@
     "action_items": "Action Items",
     "chat_history": "Chat History",
     "no_messages": "No messages yet",
-    "unknown_consultant": "Consultant"
+    "unknown_consultant": "Consultant",
+    "cancel_session": "Cancel",
+    "cancel_confirm_title": "Cancel this session?",
+    "cancel_confirm_desc": "This action cannot be undone. The consultant will be notified.",
+    "cancel_yes": "Yes, Cancel",
+    "cancel_no": "Keep Session",
+    "cancelled_success": "Session cancelled successfully",
+    "cancel_error": "Failed to cancel session"
   }
 }
