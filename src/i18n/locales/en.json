@@ -881,7 +881,22 @@
     "settings_2fa": "Require 2FA for Admins",
     "settings_audit": "Audit Logging",
     "nda_title": "NDA Template",
-    "nda_description": "Edit the Non-Disclosure Agreement template that consultants must sign before working with each client."
+    "nda_description": "Edit the Non-Disclosure Agreement template that consultants must sign before working with each client.",
+    "nda_management_title": "NDA Management",
+    "nda_management_subtitle": "View all signed Non-Disclosure Agreements between consultants and clients.",
+    "nda_total": "Total NDAs Signed",
+    "nda_drawn": "Drawn Signatures",
+    "nda_typed": "Typed Signatures",
+    "nda_search": "Search by consultant or client name...",
+    "nda_consultant": "Consultant",
+    "nda_client": "Client",
+    "nda_sig_type": "Signature Type",
+    "nda_date": "Date Signed",
+    "nda_actions": "Actions",
+    "nda_empty": "No signed NDAs found.",
+    "nda_view_title": "Signed NDA Details",
+    "nda_signature": "Signature",
+    "nda_download": "Download Signature"
   },
   "maintenance": {
     "banner": "The platform is currently undergoing scheduled maintenance. Some features may be temporarily unavailable."
