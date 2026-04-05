@@ -60,6 +60,18 @@ export default function ConsultantsPage() {
         </div>
       </div>
 
+      {/* Active industry filter */}
+      {industryFilter && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs bg-accent/10 text-accent">
+            {t(`industries.${industryFilter}`)}
+            <button onClick={() => setSearchParams({})} className="hover:text-destructive transition-colors">
+              <X className="w-3 h-3" />
+            </button>
+          </Badge>
+        </div>
+      )}
+
       {/* Tab filters */}
       <div className="flex gap-2">
         {['best_match', 'fastest_available', 'budget_fit'].map((tab, i) => (
