@@ -41,11 +41,11 @@ export default function MobileBottomNav({ items, moreItems = [] }: MobileBottomN
               <Link
                 key={item.key}
                 to={item.path}
-                className={`flex flex-col items-center gap-0.5 px-2 py-1 min-w-0 transition-colors ${
+                className={`flex flex-col items-center gap-0.5 px-2 py-1 min-w-0 transition-all active:scale-90 active:opacity-70 duration-150 ${
                   isActive ? 'text-accent' : 'text-muted-foreground'
                 }`}
               >
-                <item.icon className="w-5 h-5 shrink-0" />
+                <item.icon className={`w-5 h-5 shrink-0 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
                 <span className="text-[10px] font-medium truncate max-w-[56px]">
                   {t(item.labelKey)}
                 </span>
@@ -55,7 +55,7 @@ export default function MobileBottomNav({ items, moreItems = [] }: MobileBottomN
           {moreItems.length > 0 && (
             <button
               onClick={() => setOpen(true)}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1 min-w-0 transition-colors ${
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 min-w-0 transition-all active:scale-90 active:opacity-70 duration-150 ${
                 isMoreActive ? 'text-accent' : 'text-muted-foreground'
               }`}
             >
