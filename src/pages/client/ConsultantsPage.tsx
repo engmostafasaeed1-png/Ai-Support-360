@@ -347,7 +347,7 @@ export default function ConsultantsPage() {
           <div className="flex items-center gap-5 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-green-500 inline-block" /> {t('consultants.available')}</span>
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-muted-foreground/40 inline-block" /> {t('consultants.offline')}</span>
-            <span className="ms-auto text-[10px]">{filtered.filter(c => c.available).length} online · {filtered.filter(c => !c.available).length} offline</span>
+            <span className="ms-auto text-[10px]">{filtered.filter(c => c.available).length} {t('consultants_page.online')} · {filtered.filter(c => !c.available).length} {t('consultants_page.offline_label')}</span>
           </div>
           <div className="grid lg:grid-cols-[1fr_320px] gap-4">
             <ConsultantMap consultants={filtered} selectedId={mapSelectedId} onSelectConsultant={setMapSelectedId} />
