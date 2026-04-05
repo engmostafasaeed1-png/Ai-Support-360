@@ -342,14 +342,15 @@ export default function ConsultantsPage() {
             <span className="ms-auto text-[10px]">{filtered.filter(c => c.available).length} online · {filtered.filter(c => !c.available).length} offline</span>
           </div>
           <div className="grid lg:grid-cols-[1fr_320px] gap-4">
-            <ConsultantMap consultants={filtered} />
+            <ConsultantMap consultants={filtered} selectedId={mapSelectedId} onSelectConsultant={setMapSelectedId} />
             {/* Side list */}
             <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
               {filtered.map(c => (
                 <button
                   key={c.id}
-                  onClick={() => navigate(`/client/consultants/${c.id}`)}
-                  className="w-full text-start p-3 rounded-xl border border-border/50 hover:border-accent/40 transition-all flex items-center gap-3 bg-card"
+                  id={`map-list-${c.id}`}
+                  onClick={() => { setMapSelectedId(c.id); }}
+                  className={`w-full text-start p-3 rounded-xl border transition-all flex items-center gap-3 ${mapSelectedId === c.id ? 'border-accent bg-accent/5 ring-2 ring-accent/20' : 'border-border/50 hover:border-accent/40 bg-card'}`}
                 >
                   <div className="relative">
                     <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">{c.avatar}</div>
