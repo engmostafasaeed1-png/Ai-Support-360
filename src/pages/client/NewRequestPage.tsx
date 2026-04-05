@@ -297,7 +297,13 @@ export default function NewRequestPage() {
         ))}
       </div>
 
-      {/* Step 1: SAP Module */}
+      {/* AI Model Selector */}
+      <div className="flex items-center gap-2">
+        <Brain className="w-4 h-4 text-muted-foreground" />
+        <span className="text-xs font-medium text-muted-foreground">{t('ai.engine', 'AI Engine')}:</span>
+        <AIModelSelector value={selectedModel} onChange={setSelectedModel} compact />
+      </div>
+
       {step === 0 && (
         <Card className="rounded-2xl border-border/50">
           <CardHeader><CardTitle className="text-base">{t('ticket_create.select_module')}</CardTitle></CardHeader>
