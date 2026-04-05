@@ -10,6 +10,7 @@ import { useTriageChat } from '@/hooks/useTriageChat';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
 
 function parseTicketSummary(content: string) {
   const titleMatch = content.match(/\*\*Title\*\*:\s*(.+)/i);
@@ -29,6 +30,7 @@ export default function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [showHistory, setShowHistory] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<AIModelId>(DEFAULT_MODEL);
   const {
     messages, isLoading, sendMessage, clearChat,
     conversations, conversationId, loadConversation,
@@ -54,7 +56,7 @@ export default function AIChatbot() {
     const text = input.trim();
     if (!text || isLoading) return;
     setInput('');
-    sendMessage(text);
+    sendMessage(text, selectedModel);
   };
 
   const handleCreateTicket = useCallback((content: string) => {
