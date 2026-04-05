@@ -905,7 +905,13 @@
     "nda_preview": "Preview",
     "nda_preview_label": "Preview with sample data",
     "nda_sample_data": "Sample Data",
-    "nda_custom_sample": "Customize Sample Data"
+    "nda_custom_sample": "Customize Sample Data",
+    "nda_active": "Active NDAs",
+    "nda_revoked_count": "Revoked NDAs",
+    "nda_revoke_title": "Revoke NDA",
+    "nda_revoke_desc": "This will invalidate the NDA between {{consultant}} and {{client}}. The consultant will need to sign a new NDA to continue working with this client.",
+    "nda_revoke_confirm": "Revoke NDA",
+    "nda_export_csv": "Export CSV"
   },
   "maintenance": {
     "banner": "The platform is currently undergoing scheduled maintenance. Some features may be temporarily unavailable."

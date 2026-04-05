@@ -905,7 +905,13 @@
     "nda_preview": "معاينة",
     "nda_preview_label": "معاينة ببيانات تجريبية",
     "nda_sample_data": "بيانات تجريبية",
-    "nda_custom_sample": "تخصيص البيانات التجريبية"
+    "nda_custom_sample": "تخصيص البيانات التجريبية",
+    "nda_active": "اتفاقيات نشطة",
+    "nda_revoked_count": "اتفاقيات ملغاة",
+    "nda_revoke_title": "إلغاء الاتفاقية",
+    "nda_revoke_desc": "سيؤدي هذا إلى إبطال اتفاقية عدم الإفصاح بين {{consultant}} و{{client}}. سيحتاج المستشار إلى توقيع اتفاقية جديدة لمواصلة العمل مع هذا العميل.",
+    "nda_revoke_confirm": "إلغاء الاتفاقية",
+    "nda_export_csv": "تصدير CSV"
   },
   "maintenance": {
     "banner": "المنصة تخضع حالياً لصيانة مجدولة. قد تكون بعض الميزات غير متاحة مؤقتاً."
