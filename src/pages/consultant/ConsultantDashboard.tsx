@@ -52,8 +52,8 @@ export default function ConsultantDashboard() {
       {/* Welcome */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Welcome back, {profile.display_name.split(' ')[0]}</h1>
-          <p className="text-sm text-muted-foreground mt-1">Here's your activity overview for today.</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('consultant_dashboard.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('consultant_dashboard.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1.5 text-sm text-green-600 font-medium">
