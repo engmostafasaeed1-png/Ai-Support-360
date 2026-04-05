@@ -76,7 +76,7 @@ export function useTriageChat() {
     return newId;
   }, [userId, conversationId, loadConversations]);
 
-  const sendMessage = useCallback(async (input: string) => {
+  const sendMessage = useCallback(async (input: string, model?: string) => {
     const userMsg: Message = { role: 'user', content: input };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
@@ -97,7 +97,7 @@ export function useTriageChat() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: updatedMessages }),
+        body: JSON.stringify({ messages: updatedMessages, model }),
         signal: controller.signal,
       });
 
