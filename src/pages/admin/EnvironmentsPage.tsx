@@ -41,6 +41,44 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
   const [osType, setOsType] = useState(env?.os_type || 'Windows Server 2022');
   const [notes, setNotes] = useState(env?.notes || '');
 
+  // Fetch clients (users with client role)
+  const { data: clients } = useQuery({
+    queryKey: ['admin-clients-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'client');
+      if (error) throw error;
+      const userIds = (data || []).map(r => r.user_id);
+      if (userIds.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', userIds);
+      return (profiles || []).map(p => ({ id: p.user_id, name: p.display_name || p.user_id }));
+    },
+  });
+
+  // Fetch consultants
+  const { data: consultants } = useQuery({
+    queryKey: ['admin-consultants-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('consultants')
+        .select('id, user_id');
+      if (error) throw error;
+      const userIds = (data || []).map(c => c.user_id);
+      if (userIds.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', userIds);
+      const profileMap = Object.fromEntries((profiles || []).map(p => [p.user_id, p.display_name]));
+      return (data || []).map(c => ({ id: c.id, name: profileMap[c.user_id] || c.user_id }));
+    },
+  });
+
   const handleSubmit = () => {
     onSubmit({
       name,
@@ -65,12 +103,27 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm font-medium text-foreground">Client ID</label>
-          <Input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="Client user UUID" />
+          <label className="text-sm font-medium text-foreground">Client</label>
+          <Select value={clientId} onValueChange={setClientId}>
+            <SelectTrigger><SelectValue placeholder="Select client..." /></SelectTrigger>
+            <SelectContent>
+              {(clients || []).map(c => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
-          <label className="text-sm font-medium text-foreground">Consultant ID (optional)</label>
-          <Input value={consultantId} onChange={(e) => setConsultantId(e.target.value)} placeholder="Consultant UUID" />
+          <label className="text-sm font-medium text-foreground">Consultant (optional)</label>
+          <Select value={consultantId || 'none'} onValueChange={(v) => setConsultantId(v === 'none' ? '' : v)}>
+            <SelectTrigger><SelectValue placeholder="Select consultant..." /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">— None —</SelectItem>
+              {(consultants || []).map(c => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
