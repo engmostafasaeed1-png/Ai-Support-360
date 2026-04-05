@@ -189,7 +189,9 @@
     "logout": "تسجيل الخروج",
     "more": "المزيد",
     "integrations": "التكاملات",
-    "onboarding": "الإعداد الأولي"
+    "onboarding": "الإعداد الأولي",
+    "onboarding_complete": "الإعداد الأولي",
+    "completed": "مكتمل"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",

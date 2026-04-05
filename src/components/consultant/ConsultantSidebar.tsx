@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Briefcase, Calendar, CreditCard, Star,
-  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, ClipboardList,
+  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, ClipboardList, CheckCircle2,
 } from 'lucide-react';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,9 +51,7 @@ export default function ConsultantSidebar() {
     });
   }, [isGuest]);
 
-  const visibleItems = menuItems.filter(item =>
-    item.key !== 'onboarding' || (!onboardingDone)
-  );
+  const visibleItems = menuItems;
 
   return (
     <Sidebar collapsible="icon" className="border-e border-border/50">
@@ -82,8 +80,19 @@ export default function ConsultantSidebar() {
                         className={`hover:bg-sidebar-accent/50 ${isActive ? 'bg-sidebar-accent text-sidebar-primary font-medium' : ''}`}
                         activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                       >
-                        <item.icon className="w-4 h-4 me-2 shrink-0" />
-                        {!collapsed && <span>{t(`sidebar.${item.key}`)}</span>}
+                        {item.key === 'onboarding' && onboardingDone ? (
+                          <CheckCircle2 className="w-4 h-4 me-2 shrink-0 text-green-500" />
+                        ) : (
+                          <item.icon className="w-4 h-4 me-2 shrink-0" />
+                        )}
+                        {!collapsed && (
+                          <span className="flex items-center gap-2">
+                            {item.key === 'onboarding' && onboardingDone ? t('sidebar.onboarding_complete', 'Onboarding') : t(`sidebar.${item.key}`)}
+                            {item.key === 'onboarding' && onboardingDone && (
+                              <span className="text-[10px] font-medium bg-green-500/10 text-green-600 px-1.5 py-0.5 rounded-full">{t('sidebar.completed', 'Done')}</span>
+                            )}
+                          </span>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
