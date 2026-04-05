@@ -347,7 +347,13 @@
     "offline_label": "offline",
     "verified_only": "Verified Only",
     "credly_only": "Credly Verified Only",
-    "credly_first": "Credly Verified First"
+    "credly_first": "Credly Verified First",
+    "sort_best_match": "Best Match",
+    "sort_rating": "Highest Rating",
+    "sort_price_low": "Price: Low → High",
+    "sort_price_high": "Price: High → Low",
+    "sort_fastest": "Available First",
+    "all_modules": "All Modules"
   },
   "consultant_profile": {
     "back": "Back to Marketplace",

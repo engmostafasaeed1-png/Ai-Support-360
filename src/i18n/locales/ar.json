@@ -347,7 +347,13 @@
     "offline_label": "غير متصل",
     "verified_only": "الموثقون فقط",
     "credly_only": "موثقو Credly فقط",
-    "credly_first": "موثقو Credly أولاً"
+    "credly_first": "موثقو Credly أولاً",
+    "sort_best_match": "الأفضل تطابقاً",
+    "sort_rating": "الأعلى تقييماً",
+    "sort_price_low": "السعر: من الأقل للأعلى",
+    "sort_price_high": "السعر: من الأعلى للأقل",
+    "sort_fastest": "المتاح أولاً",
+    "all_modules": "جميع الوحدات"
   },
   "consultant_profile": {
     "back": "العودة إلى السوق",
