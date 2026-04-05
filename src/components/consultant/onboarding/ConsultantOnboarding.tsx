@@ -70,7 +70,7 @@ export default function ConsultantOnboarding() {
     if (isGuest) {
       fireConfetti();
       toast.success(t('guest.onboarding_demo'));
-      setTimeout(() => navigate('/consultant'), 1200);
+      setTimeout(() => navigate('/consultant?welcome=true'), 1200);
       return;
     }
     setSubmitting(true);
@@ -153,7 +153,7 @@ export default function ConsultantOnboarding() {
 
       fireConfetti();
       toast.success(t('onboarding.success'));
-      setTimeout(() => navigate('/consultant'), 1200);
+      setTimeout(() => navigate('/consultant?welcome=true'), 1200);
     } catch (err) {
       console.error(err);
       toast.error(t('onboarding.error_generic'));
