@@ -781,6 +781,8 @@ export type Database = {
           id: string
           ip_address: string | null
           nda_content: string
+          revoked_at: string | null
+          revoked_by: string | null
           signature_data: string
           signature_type: string
           signed_at: string
@@ -792,6 +794,8 @@ export type Database = {
           id?: string
           ip_address?: string | null
           nda_content: string
+          revoked_at?: string | null
+          revoked_by?: string | null
           signature_data: string
           signature_type?: string
           signed_at?: string
@@ -803,6 +807,8 @@ export type Database = {
           id?: string
           ip_address?: string | null
           nda_content?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
           signature_data?: string
           signature_type?: string
           signed_at?: string
