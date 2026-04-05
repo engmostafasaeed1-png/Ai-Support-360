@@ -15,6 +15,7 @@ const menuItems = [
   { key: 'new_request', icon: TicketPlus, path: '/client/new-request' },
   { key: 'tickets', icon: Briefcase, path: '/client/tickets' },
   { key: 'consultants', icon: Users, path: '/client/consultants' },
+  { key: 'chat', icon: MessageSquare, path: '/client/chat' },
   { key: 'sessions', icon: Calendar, path: '/client/sessions' },
   { key: 'payments', icon: CreditCard, path: '/client/payments' },
   { key: 'invoices', icon: FileText, path: '/client/invoices' },
