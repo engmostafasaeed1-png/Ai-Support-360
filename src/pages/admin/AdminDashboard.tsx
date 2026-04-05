@@ -1,0 +1,118 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Users, Ticket, DollarSign, Clock, Star, TrendingUp, UserCheck, AlertTriangle } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { adminStats, revenueData, ticketsByStatus, ticketsByModule } from '@/data/adminMockData';
+
+const kpis = [
+  { label: 'Total Users', value: adminStats.totalUsers.toLocaleString(), icon: Users, change: '+12%' },
+  { label: 'Active Consultants', value: adminStats.activeConsultants.toString(), icon: UserCheck, change: '+8%' },
+  { label: 'Open Tickets', value: adminStats.openTickets.toString(), icon: Ticket, change: '-5%' },
+  { label: 'Monthly Revenue', value: `$${(adminStats.revenue / 1000).toFixed(0)}K`, icon: DollarSign, change: '+18%' },
+  { label: 'Avg Resolution', value: adminStats.avgResolutionTime, icon: Clock, change: '-12%' },
+  { label: 'Satisfaction', value: `${adminStats.satisfaction}/5`, icon: Star, change: '+3%' },
+  { label: 'Tickets This Month', value: adminStats.ticketsThisMonth.toString(), icon: TrendingUp, change: '+22%' },
+  { label: 'Pending Approvals', value: adminStats.pendingApprovals.toString(), icon: AlertTriangle, change: '' },
+];
+
+export default function AdminDashboard() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
+        <p className="text-sm text-muted-foreground">Platform overview and key metrics</p>
+      </div>
+
+      {/* KPI Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {kpis.map((kpi) => (
+          <Card key={kpi.label} className="border-border/50">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
+                  <kpi.icon className="w-4 h-4 text-accent" />
+                </div>
+                {kpi.change && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5">
+                    {kpi.change}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
+              <p className="text-xs text-muted-foreground">{kpi.label}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Revenue Chart */}
+        <Card className="border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Revenue vs Expenses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={revenueData}>
+                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v / 1000}K`} />
+                <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
+                <Bar dataKey="revenue" fill="hsl(217, 91%, 60%)" radius={[4, 4, 0, 0]} name="Revenue" />
+                <Bar dataKey="expenses" fill="hsl(214, 32%, 91%)" radius={[4, 4, 0, 0]} name="Expenses" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Tickets by Status */}
+        <Card className="border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Tickets by Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-6">
+              <ResponsiveContainer width="50%" height={220}>
+                <PieChart>
+                  <Pie data={ticketsByStatus} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={3}>
+                    {ticketsByStatus.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="space-y-2 flex-1">
+                {ticketsByStatus.map((s) => (
+                  <div key={s.name} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                      <span className="text-muted-foreground">{s.name}</span>
+                    </div>
+                    <span className="font-medium text-foreground">{s.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tickets by Module */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Tickets by SAP Module</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={ticketsByModule} layout="vertical">
+              <XAxis type="number" tick={{ fontSize: 12 }} />
+              <YAxis dataKey="module" type="category" tick={{ fontSize: 12 }} width={70} />
+              <Tooltip />
+              <Bar dataKey="count" fill="hsl(226, 53%, 22%)" radius={[0, 4, 4, 0]} name="Tickets" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
