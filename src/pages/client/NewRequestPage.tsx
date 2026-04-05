@@ -128,7 +128,7 @@ export default function NewRequestPage() {
     setAiLoading('categorize');
     try {
       const { data, error } = await supabase.functions.invoke('ai-ticket', {
-        body: { action: 'categorize', title: form.title, description: form.description, sap_module: form.sap_module },
+        body: { action: 'categorize', title: form.title, description: form.description, sap_module: form.sap_module, model: selectedModel },
       });
       if (error) throw error;
       if (data?.result) setAiCategorization(data.result);
@@ -137,13 +137,13 @@ export default function NewRequestPage() {
     } finally {
       setAiLoading(null);
     }
-  }, [form.title, form.description, form.sap_module]);
+  }, [form.title, form.description, form.sap_module, selectedModel]);
 
   const runAiSummary = useCallback(async () => {
     setAiLoading('summary');
     try {
       const { data, error } = await supabase.functions.invoke('ai-ticket', {
-        body: { action: 'summarize', title: form.title, description: form.description, sap_module: form.sap_module, urgency: form.urgency },
+        body: { action: 'summarize', title: form.title, description: form.description, sap_module: form.sap_module, urgency: form.urgency, model: selectedModel },
       });
       if (error) throw error;
       if (data?.result) setAiSummary(data.result);
@@ -152,13 +152,13 @@ export default function NewRequestPage() {
     } finally {
       setAiLoading(null);
     }
-  }, [form.title, form.description, form.sap_module, form.urgency]);
+  }, [form.title, form.description, form.sap_module, form.urgency, selectedModel]);
 
   const runAiMatch = useCallback(async () => {
     setAiLoading('match');
     try {
       const { data, error } = await supabase.functions.invoke('ai-ticket', {
-        body: { action: 'match', title: form.title, description: form.description, sap_module: form.sap_module, urgency: form.urgency },
+        body: { action: 'match', title: form.title, description: form.description, sap_module: form.sap_module, urgency: form.urgency, model: selectedModel },
       });
       if (error) throw error;
       if (data?.result) setAiMatch(data.result);
@@ -167,7 +167,7 @@ export default function NewRequestPage() {
     } finally {
       setAiLoading(null);
     }
-  }, [form.title, form.description, form.sap_module, form.urgency]);
+  }, [form.title, form.description, form.sap_module, form.urgency, selectedModel]);
 
   const runAiMatchConsultants = useCallback(async () => {
     setAiLoading('match_consultants');
@@ -180,6 +180,7 @@ export default function NewRequestPage() {
           sap_module: form.sap_module,
           urgency: form.urgency,
           preferred_language: form.preferred_language,
+          model: selectedModel,
         },
       });
       if (error) throw error;
@@ -190,7 +191,7 @@ export default function NewRequestPage() {
     } finally {
       setAiLoading(null);
     }
-  }, [form.title, form.description, form.sap_module, form.urgency, form.preferred_language]);
+  }, [form.title, form.description, form.sap_module, form.urgency, form.preferred_language, selectedModel]);
 
   const handleNext = () => {
     if (step === 1 && !aiCategorization && form.description.length > 15) {
