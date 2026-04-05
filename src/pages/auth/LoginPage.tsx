@@ -62,6 +62,9 @@ export default function LoginPage() {
               {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {t('auth.login_btn')}
             </Button>
+            <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-foreground">
+              {t('auth.forgot_link')}
+            </Link>
             <p className="text-sm text-muted-foreground">
               {t('auth.no_account')}{' '}
               <Link to="/signup" className="text-primary font-medium hover:underline">{t('auth.signup_link')}</Link>
