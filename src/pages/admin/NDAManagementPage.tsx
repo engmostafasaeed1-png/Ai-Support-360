@@ -27,6 +27,7 @@ interface NDARecord {
   signature_data: string;
   signed_at: string;
   nda_content: string;
+  revoked_at: string | null;
 }
 
 export default function NDAManagementPage() {
