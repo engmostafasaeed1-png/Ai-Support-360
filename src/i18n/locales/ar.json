@@ -339,7 +339,9 @@
     "live": "مباشر",
     "connecting": "جاري الاتصال...",
     "online": "متصل",
-    "offline_label": "غير متصل"
+    "offline_label": "غير متصل",
+    "verified_only": "الموثقون فقط",
+    "credly_only": "موثقو Credly فقط"
   },
   "consultant_profile": {
     "back": "العودة إلى السوق",
