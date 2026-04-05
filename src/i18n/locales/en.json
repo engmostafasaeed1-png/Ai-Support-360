@@ -1018,5 +1018,9 @@
     "required_description": "You must sign a Non-Disclosure Agreement before providing support to this client.",
     "sign_now": "Sign NDA Now",
     "signed_badge": "NDA Signed"
+  },
+  "ai": {
+    "engine": "AI Engine",
+    "select_model": "Select AI Model"
   }
 }
