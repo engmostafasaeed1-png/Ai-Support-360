@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, TicketPlus, Briefcase, Users, Calendar,
-  CreditCard, FileText, BookOpen, Bell, Settings, Globe,
+  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 
