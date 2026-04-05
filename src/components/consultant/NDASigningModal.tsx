@@ -29,14 +29,17 @@ export default function NDASigningModal({
   const { signNDA } = useNDAAgreement(consultantId, clientId);
 
   const [consultantName, setConsultantName] = useState('');
+  const [consultantEmail, setConsultantEmail] = useState('');
   const [clientCompany, setClientCompany] = useState('');
   const [clientDisplayName, setClientDisplayName] = useState(clientName || '');
+  const [clientIndustry, setClientIndustry] = useState('');
+  const [clientSapModules, setClientSapModules] = useState('');
 
   // Fetch consultant & client details when modal opens
   useEffect(() => {
     if (!open) return;
 
-    // Fetch consultant display name
+    // Fetch consultant details
     supabase
       .from('consultants')
       .select('user_id')
@@ -50,6 +53,11 @@ export default function NDASigningModal({
             .eq('user_id', data.user_id)
             .maybeSingle()
             .then(({ data: p }) => setConsultantName(p?.display_name || ''));
+
+          // Get consultant email from auth
+          supabase.auth.getUser().then(({ data: authData }) => {
+            setConsultantEmail(authData?.user?.email || '');
+          });
         }
       });
 
@@ -63,20 +71,27 @@ export default function NDASigningModal({
 
     supabase
       .from('client_profiles')
-      .select('company_name')
+      .select('company_name, industry, sap_modules')
       .eq('user_id', clientId)
       .maybeSingle()
-      .then(({ data }) => setClientCompany(data?.company_name || ''));
+      .then(({ data }) => {
+        setClientCompany(data?.company_name || '');
+        setClientIndustry(data?.industry || '');
+        setClientSapModules((data?.sap_modules || []).join(', '));
+      });
   }, [open, consultantId, clientId, clientName]);
 
   // Replace placeholders in template
   const filledTemplate = useMemo(() => {
     return template
       .replace(/\{\{consultant_name\}\}/g, consultantName || '_______________')
+      .replace(/\{\{consultant_email\}\}/g, consultantEmail || '_______________')
       .replace(/\{\{client_name\}\}/g, clientDisplayName || '_______________')
       .replace(/\{\{client_company\}\}/g, clientCompany || '_______________')
+      .replace(/\{\{client_industry\}\}/g, clientIndustry || '_______________')
+      .replace(/\{\{sap_modules\}\}/g, clientSapModules || '_______________')
       .replace(/\{\{date\}\}/g, new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }));
-  }, [template, consultantName, clientDisplayName, clientCompany]);
+  }, [template, consultantName, consultantEmail, clientDisplayName, clientCompany, clientIndustry, clientSapModules]);
 
   const [sigType, setSigType] = useState<'draw' | 'type'>('type');
   const [typedName, setTypedName] = useState('');
