@@ -93,6 +93,7 @@ export default function ClientOnboarding() {
 
       if (error) throw error;
       toast.success(t('client_onboarding.success'));
+      navigate('/client');
     } catch (err) {
       console.error(err);
       toast.error(t('onboarding.error_generic'));
