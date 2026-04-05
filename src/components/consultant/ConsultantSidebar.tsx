@@ -31,6 +31,7 @@ export default function ConsultantSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { toggleLanguage, currentLang } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <Sidebar collapsible="icon" className="border-e border-border/50">
