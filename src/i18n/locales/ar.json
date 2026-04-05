@@ -188,7 +188,8 @@
     "analytics": "التحليلات",
     "logout": "تسجيل الخروج",
     "more": "المزيد",
-    "integrations": "التكاملات"
+    "integrations": "التكاملات",
+    "onboarding": "الإعداد الأولي"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",
