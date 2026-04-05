@@ -10,7 +10,7 @@ import { mockRecommendedConsultants } from '@/data/clientMockData';
 import { mockConsultantDetailData } from '@/data/consultantDetailMockData';
 import {
   Star, MapPin, Clock, Globe, Shield, Award, Video,
-  MessageSquare, Monitor, ChevronLeft, CalendarDays, BadgeCheck
+  MessageSquare, Monitor, ChevronLeft, CalendarDays, BadgeCheck, ExternalLink
 } from 'lucide-react';
 import { useState } from 'react';
 import BookingModal from '@/components/client/BookingModal';
@@ -75,7 +75,20 @@ export default function ConsultantProfilePage() {
                       <span className="text-muted-foreground">{detail.languages.join(', ')}</span>
                     </div>
                   </div>
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    {consultant.credly_username && (
+                      <a
+                        href={`https://www.credly.com/users/${consultant.credly_username}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors gap-1 cursor-pointer">
+                          <Award className="w-3 h-3" />
+                          {t('consultants.credly_verified', 'Credly Verified')}
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </Badge>
+                      </a>
+                    )}
                     {consultant.badges.map(badge => (
                       <Badge key={badge} variant="secondary" className="text-xs">
                         {t(`consultants.${badge}`)}
