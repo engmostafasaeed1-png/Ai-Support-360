@@ -259,6 +259,10 @@ export default function EnvironmentsPage() {
                         <Badge variant={statusColors[env.status]}>{env.status}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">{env.os_type}</p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
+                        <span>Client: <span className="font-medium text-foreground">{clientMap[env.client_id] || '—'}</span></span>
+                        <span>Consultant: <span className="font-medium text-foreground">{env.consultant_id ? (consultantMap[env.consultant_id] || '—') : 'Unassigned'}</span></span>
+                      </div>
                       <p className="text-xs text-muted-foreground/60 mt-1 truncate max-w-md">{env.guacamole_url}</p>
                       {env.notes && <p className="text-xs text-muted-foreground mt-2">{env.notes}</p>}
                     </div>
