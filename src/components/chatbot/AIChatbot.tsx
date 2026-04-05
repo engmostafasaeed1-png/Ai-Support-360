@@ -198,7 +198,7 @@ export default function AIChatbot() {
                 )}
 
                 {messages.map((msg, i) => (
-                  <div key={i} className="space-y-1.5">
+                  <div key={i} className="space-y-1.5 animate-fade-in">
                     <div
                       className={cn(
                         'flex gap-2.5',
