@@ -41,7 +41,7 @@ export const mockCases = [
     client: 'Saudi Petrochemical Corp',
     sap_module: 'SAP S/4HANA',
     urgency: 'high' as const,
-    status: 'in_progress' as const,
+  status: 'in_progress' as string,
     created_at: '2026-04-03T10:00:00Z',
     sla_deadline: '2026-04-05T18:00:00Z',
   },
