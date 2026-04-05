@@ -224,9 +224,17 @@ export default function NDAManagementPage() {
                   <TableCell className="font-medium">{nda.consultant_name}</TableCell>
                   <TableCell>{nda.client_name}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="text-[10px]">
-                      {nda.signature_type === 'draw' ? '✍️ ' + t('nda.draw_signature', 'Draw') : '⌨️ ' + t('nda.type_signature', 'Type')}
-                    </Badge>
+                    {nda.revoked_at ? (
+                      <Badge variant="destructive" className="text-[10px] gap-1">
+                        <ShieldOff className="w-3 h-3" />
+                        {t('admin.nda_revoked', 'Revoked')}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-[10px] gap-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        <ShieldCheck className="w-3 h-3" />
+                        {t('admin.nda_active_badge', 'Active')}
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -243,6 +251,12 @@ export default function NDAManagementPage() {
                       </Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => downloadSignature(nda)}>
                         <Download className="w-4 h-4" />
+                      </Button>
+                      {!nda.revoked_at && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setRevokeNda(nda)}>
+                          <ShieldOff className="w-4 h-4" />
+                        </Button>
+                      )}
                       </Button>
                     </div>
                   </TableCell>
