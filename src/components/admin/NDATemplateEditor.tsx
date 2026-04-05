@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileSignature, Save } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { FileSignature, Save, Info } from 'lucide-react';
 import { useNDATemplate } from '@/hooks/useNDA';
 
 export default function NDATemplateEditor() {
@@ -33,6 +34,40 @@ export default function NDATemplateEditor() {
         <p className="text-sm text-muted-foreground">
           {t('admin.nda_description', 'Edit the Non-Disclosure Agreement template that consultants must sign before working with each client.')}
         </p>
+
+        {/* Placeholder Reference */}
+        <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
+          <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+            <Info className="w-4 h-4 text-primary" />
+            {t('admin.nda_placeholders_title', 'Available Placeholders')}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {t('admin.nda_placeholders_desc', 'Use these placeholders in the template — they will be auto-filled with real data when the consultant signs.')}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { tag: '{{consultant_name}}', label: 'Consultant Name' },
+              { tag: '{{consultant_email}}', label: 'Consultant Email' },
+              { tag: '{{client_name}}', label: 'Client Name' },
+              { tag: '{{client_company}}', label: 'Client Company' },
+              { tag: '{{client_industry}}', label: 'Client Industry' },
+              { tag: '{{sap_modules}}', label: 'SAP Modules' },
+              { tag: '{{date}}', label: 'Signing Date' },
+            ].map((p) => (
+              <Badge
+                key={p.tag}
+                variant="secondary"
+                className="text-[11px] font-mono cursor-pointer select-all"
+                title={p.label}
+                onClick={() => {
+                  navigator.clipboard.writeText(p.tag);
+                }}
+              >
+                {p.tag}
+              </Badge>
+            ))}
+          </div>
+        </div>
         {loading ? (
           <Skeleton className="h-48 w-full" />
         ) : (
