@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { mockConsultantProfile, mockSkills } from '@/data/consultantMockData';
 import { User, Globe, Clock, DollarSign, Save } from 'lucide-react';
+import AvatarUpload from '@/components/profile/AvatarUpload';
 
 export default function ProfilePage() {
   const p = mockConsultantProfile;
@@ -25,9 +26,7 @@ export default function ProfilePage() {
         {/* Profile Card */}
         <Card className="rounded-2xl border-border/50">
           <CardContent className="p-6 text-center">
-            <div className="w-20 h-20 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 text-primary-foreground text-2xl font-bold">
-              {p.avatar}
-            </div>
+            <AvatarUpload />
             <h3 className="text-lg font-bold text-foreground">{p.display_name}</h3>
             <p className="text-sm text-muted-foreground mt-1">SAP S/4HANA Finance Expert</p>
             <div className="flex items-center justify-center gap-2 mt-3">
