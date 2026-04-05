@@ -2,7 +2,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
-import { Search, LayoutDashboard, Users, Kanban, UserCheck, BarChart3, Settings } from 'lucide-react';
+import { Search, LayoutDashboard, Users, Kanban, UserCheck, BarChart3, Settings, Plug } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 
@@ -15,6 +15,7 @@ const bottomNavItems = [
 
 const moreNavItems = [
   { key: 'analytics', icon: BarChart3, path: '/admin/analytics', labelKey: 'sidebar.analytics' },
+  { key: 'integrations', icon: Plug, path: '/admin/integrations', labelKey: 'sidebar.integrations' },
   { key: 'settings', icon: Settings, path: '/admin/settings', labelKey: 'sidebar.settings' },
 ];
 

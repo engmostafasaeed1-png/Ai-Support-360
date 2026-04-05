@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Users, Kanban, UserCheck, BarChart3,
-  Settings, Shield, Globe, LogOut,
+  Settings, Shield, Globe, LogOut, Plug,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
@@ -19,6 +19,7 @@ const menuItems = [
   { key: 'ticket_board', icon: Kanban, path: '/admin/tickets' },
   { key: 'approvals', icon: UserCheck, path: '/admin/approvals' },
   { key: 'analytics', icon: BarChart3, path: '/admin/analytics' },
+  { key: 'integrations', icon: Plug, path: '/admin/integrations' },
   { key: 'settings', icon: Settings, path: '/admin/settings' },
 ];
 
