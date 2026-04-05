@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FileSignature, PenTool, Type } from 'lucide-react';
+import { FileSignature, PenTool, Type, AlertTriangle } from 'lucide-react';
 import { useNDATemplate, useNDAAgreement } from '@/hooks/useNDA';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 
 interface NDASigningModalProps {
