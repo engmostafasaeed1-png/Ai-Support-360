@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -157,6 +158,7 @@ export default function ConsultantDashboard() {
   ];
 
   return (
+    <PullToRefresh>
     <div className="space-y-6">
       {/* Welcome */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -375,5 +377,6 @@ export default function ConsultantDashboard() {
         </CardContent>
       </Card>
     </div>
+    </PullToRefresh>
   );
 }

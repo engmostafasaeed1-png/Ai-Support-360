@@ -60,6 +60,7 @@ export default function ClientDashboard() {
   ];
 
   return (
+    <PullToRefresh>
     <div className="space-y-6">
       {/* Welcome */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -259,5 +260,6 @@ export default function ClientDashboard() {
         </CardContent>
       </Card>
     </div>
+    </PullToRefresh>
   );
 }
