@@ -1,14 +1,29 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  MessageSquare, X, Send, Loader2, Trash2, Bot, User, Sparkles, Minimize2,
+  MessageSquare, X, Send, Loader2, Trash2, Bot, User, Sparkles, Minimize2, TicketPlus,
 } from 'lucide-react';
 import { useTriageChat } from '@/hooks/useTriageChat';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+
+function parseTicketSummary(content: string) {
+  const titleMatch = content.match(/\*\*Title\*\*:\s*(.+)/i);
+  const moduleMatch = content.match(/\*\*SAP Module\*\*:\s*(.+)/i);
+  const urgencyMatch = content.match(/\*\*Urgency\*\*:\s*(\w+)/i);
+  const descMatch = content.match(/\*\*Description\*\*:\s*(.+)/i);
+  if (!titleMatch && !moduleMatch) return null;
+  return {
+    title: titleMatch?.[1]?.trim() || '',
+    module: moduleMatch?.[1]?.trim() || '',
+    urgency: urgencyMatch?.[1]?.trim().toLowerCase() || 'medium',
+    description: descMatch?.[1]?.trim() || '',
+  };
+}
 
 export default function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,6 +31,7 @@ export default function AIChatbot() {
   const { messages, isLoading, sendMessage, clearChat } = useTriageChat();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -33,6 +49,18 @@ export default function AIChatbot() {
     setInput('');
     sendMessage(text);
   };
+
+  const handleCreateTicket = useCallback((content: string) => {
+    const parsed = parseTicketSummary(content);
+    if (!parsed) return;
+    const params = new URLSearchParams();
+    if (parsed.title) params.set('title', parsed.title);
+    if (parsed.module) params.set('module', parsed.module);
+    if (parsed.urgency) params.set('urgency', parsed.urgency);
+    if (parsed.description) params.set('description', parsed.description);
+    setIsOpen(false);
+    navigate(`/client/new-request?${params.toString()}`);
+  }, [navigate]);
 
   return (
     <>
@@ -102,39 +130,52 @@ export default function AIChatbot() {
             )}
 
             {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={cn(
-                  'flex gap-2.5',
-                  msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-                )}
-              >
-                <div className={cn(
-                  'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
-                  msg.role === 'user' ? 'bg-primary/10' : 'bg-accent/10'
-                )}>
-                  {msg.role === 'user' ? (
-                    <User className="w-3.5 h-3.5 text-primary" />
-                  ) : (
-                    <Bot className="w-3.5 h-3.5 text-accent" />
-                  )}
-                </div>
+              <div key={i} className="space-y-1.5">
                 <div
                   className={cn(
-                    'max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm',
-                    msg.role === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-tr-md'
-                      : 'bg-muted/50 text-foreground rounded-tl-md'
+                    'flex gap-2.5',
+                    msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'
                   )}
                 >
-                  {msg.role === 'assistant' ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>hr]:my-2">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p>{msg.content}</p>
-                  )}
+                  <div className={cn(
+                    'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
+                    msg.role === 'user' ? 'bg-primary/10' : 'bg-accent/10'
+                  )}>
+                    {msg.role === 'user' ? (
+                      <User className="w-3.5 h-3.5 text-primary" />
+                    ) : (
+                      <Bot className="w-3.5 h-3.5 text-accent" />
+                    )}
+                  </div>
+                  <div
+                    className={cn(
+                      'max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm',
+                      msg.role === 'user'
+                        ? 'bg-primary text-primary-foreground rounded-tr-md'
+                        : 'bg-muted/50 text-foreground rounded-tl-md'
+                    )}
+                  >
+                    {msg.role === 'assistant' ? (
+                      <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>hr]:my-2">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p>{msg.content}</p>
+                    )}
+                  </div>
                 </div>
+                {msg.role === 'assistant' && parseTicketSummary(msg.content) && (
+                  <div className="flex" style={{ paddingInlineStart: '2.375rem' }}>
+                    <Button
+                      size="sm"
+                      className="gap-1.5 h-7 text-xs rounded-lg gradient-primary border-0"
+                      onClick={() => handleCreateTicket(msg.content)}
+                    >
+                      <TicketPlus className="w-3 h-3" />
+                      Create Ticket
+                    </Button>
+                  </div>
+                )}
               </div>
             ))}
 
