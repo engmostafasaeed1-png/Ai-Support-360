@@ -773,6 +773,50 @@ export type Database = {
           },
         ]
       }
+      nda_agreements: {
+        Row: {
+          client_id: string
+          consultant_id: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          nda_content: string
+          signature_data: string
+          signature_type: string
+          signed_at: string
+        }
+        Insert: {
+          client_id: string
+          consultant_id: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          nda_content: string
+          signature_data: string
+          signature_type?: string
+          signed_at?: string
+        }
+        Update: {
+          client_id?: string
+          consultant_id?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          nda_content?: string
+          signature_data?: string
+          signature_type?: string
+          signed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nda_agreements_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
