@@ -16,6 +16,7 @@ const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
 };
 
 export default function ConsultantsPage() {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [view, setView] = useState<'grid' | 'map'>('grid');
