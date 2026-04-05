@@ -43,6 +43,7 @@ export function useNDATemplate() {
 
 export function useNDAAgreement(consultantId?: string, clientId?: string) {
   const [signed, setSigned] = useState(false);
+  const [wasRevoked, setWasRevoked] = useState(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -57,8 +58,9 @@ export function useNDAAgreement(consultantId?: string, clientId?: string) {
       .limit(1)
       .maybeSingle()
       .then(({ data }) => {
-        // Only consider signed if an NDA exists and is not revoked
-        setSigned(!!data && !(data as any).revoked_at);
+        const revoked = !!data && !!(data as any).revoked_at;
+        setSigned(!!data && !revoked);
+        setWasRevoked(revoked);
         setLoading(false);
       });
   }, [consultantId, clientId]);
