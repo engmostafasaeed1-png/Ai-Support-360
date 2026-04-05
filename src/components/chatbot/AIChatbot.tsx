@@ -309,6 +309,9 @@ export default function AIChatbot() {
 
               {/* Input */}
               <div className="px-3 py-3 border-t border-border/40 bg-card/90 backdrop-blur shrink-0">
+                <div className="flex items-center justify-between mb-2">
+                  <AIModelSelector value={selectedModel} onChange={setSelectedModel} compact />
+                </div>
                 <form
                   onSubmit={(e) => { e.preventDefault(); handleSend(); }}
                   className="flex items-center gap-2"
