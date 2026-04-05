@@ -105,7 +105,7 @@ export default function ClientDashboard() {
         {/* Recent Tickets */}
         <Card className="lg:col-span-2 rounded-2xl border-border/50">
           <CardHeader className="flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-semibold">Recent Tickets</CardTitle>
+            <CardTitle className="text-base font-semibold">{t('tickets_page.title')}</CardTitle>
             <Link to="/client/tickets">
               <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
             </Link>
