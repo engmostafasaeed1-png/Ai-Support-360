@@ -16,6 +16,7 @@ export interface ConsultantLive {
   lat: number;
   lng: number;
   city: string;
+  industries: string[];
 }
 
 /**
