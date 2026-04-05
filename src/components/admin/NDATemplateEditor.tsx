@@ -49,7 +49,7 @@ export default function NDATemplateEditor() {
   const previewContent = useMemo(() => {
     let content = draft;
     for (const [placeholder, value] of Object.entries(SAMPLE_DATA)) {
-      content = content.replaceAll(placeholder, value);
+      content = content.split(placeholder).join(value);
     }
     return content;
   }, [draft]);
