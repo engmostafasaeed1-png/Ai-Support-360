@@ -141,7 +141,7 @@ export default function ClientDashboard() {
         {/* Activity Feed */}
         <Card className="rounded-2xl border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Activity Feed</CardTitle>
+            <CardTitle className="text-base font-semibold">{t('client_dashboard.recent_activity')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {mockActivityFeed.map((activity) => {
