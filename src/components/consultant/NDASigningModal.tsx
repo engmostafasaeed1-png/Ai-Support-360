@@ -27,7 +27,7 @@ export default function NDASigningModal({
 }: NDASigningModalProps) {
   const { t } = useTranslation();
   const { template, loading: templateLoading } = useNDATemplate();
-  const { signNDA } = useNDAAgreement(consultantId, clientId);
+  const { signNDA, wasRevoked } = useNDAAgreement(consultantId, clientId);
 
   const [consultantName, setConsultantName] = useState('');
   const [consultantEmail, setConsultantEmail] = useState('');
