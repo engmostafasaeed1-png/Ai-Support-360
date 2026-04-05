@@ -214,7 +214,21 @@
     "earnings_overview": "نظرة عامة على الأرباح",
     "join_session": "انضمام",
     "view_case": "عرض",
-    "minutes": "دقيقة"
+    "minutes": "دقيقة",
+    "view_all": "عرض الكل",
+    "available": "متاح",
+    "manage_availability": "إدارة التوفر",
+    "total_earned": "إجمالي الأرباح",
+    "pending_amount": "قيد الانتظار",
+    "sessions_count": "القادمة",
+    "earnings_label": "الأرباح",
+    "no_sessions": "لا توجد جلسات قادمة",
+    "no_cases": "لا توجد حالات نشطة",
+    "recent_reviews": "التقييمات الأخيرة",
+    "no_comment": "بدون تعليق",
+    "upcoming": "قادمة",
+    "avg": "المتوسط",
+    "reviews_label": "تقييمات"
   },
   "admin_dashboard": {
     "title": "لوحة تحكم المدير",
