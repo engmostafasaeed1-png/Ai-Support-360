@@ -70,7 +70,7 @@ export default function AdminDashboard() {
         {/* Tickets by Status */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Tickets by Status</CardTitle>
+            <CardTitle className="text-base">{t('admin_dashboard.tickets_by_status')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-6">
