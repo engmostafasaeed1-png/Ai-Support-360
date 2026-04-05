@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Check, ChevronLeft, ChevronRight, User, Cpu, Award, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import CertificationsStep from './steps/CertificationsStep';
 import AvailabilityStep from './steps/AvailabilityStep';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useGuestMode } from '@/contexts/GuestModeContext';
 
 export interface OnboardingData {
   // Profile
