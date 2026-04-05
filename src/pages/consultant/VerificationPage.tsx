@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,9 @@ import {
   ShieldCheck, Upload, CheckCircle, Clock, XCircle, AlertTriangle,
   FileText, Award, Brain,
 } from 'lucide-react';
+import CredlyBadgesSection from '@/components/consultant/CredlyBadgesSection';
+import { supabase } from '@/integrations/supabase/client';
+import { useGuestMode } from '@/contexts/GuestModeContext';
 
 const verificationSteps = [
   { key: 'identity', label: 'Identity Verification', desc: 'Upload government-issued ID', status: 'completed' },
@@ -41,10 +45,29 @@ const verificationBadge: Record<string, { label: string; color: string }> = {
 };
 
 export default function VerificationPage() {
+  const { isGuest } = useGuestMode();
   const profile = mockConsultantProfile;
   const vBadge = verificationBadge[profile.verification_status];
   const completedSteps = verificationSteps.filter((s) => s.status === 'completed').length;
   const progress = Math.round((completedSteps / verificationSteps.length) * 100);
+  const [credlyUsername, setCredlyUsername] = useState<string | undefined>(undefined);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (isGuest) return;
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      setUserId(user.id);
+      supabase
+        .from('consultants')
+        .select('credly_username')
+        .eq('user_id', user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data && (data as any).credly_username) setCredlyUsername((data as any).credly_username);
+        });
+    });
+  }, [isGuest]);
 
   return (
     <div className="space-y-6">
@@ -132,6 +155,9 @@ export default function VerificationPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Credly Badges */}
+      <CredlyBadgesSection initialUsername={credlyUsername} consultantUserId={userId} />
 
       {/* Certifications */}
       <Card className="rounded-2xl border-border/50">
