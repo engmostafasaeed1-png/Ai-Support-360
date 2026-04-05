@@ -28,14 +28,6 @@ export default function ConsultantProfilePage() {
   const consultant = mockRecommendedConsultants.find(c => c.id === id);
   const detail = mockConsultantDetailData;
 
-  if (!consultant) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">{t('consultant_profile.not_found')}</p>
-      </div>
-    );
-  }
-
   // Fetch Credly badges if consultant has a credly_username
   useEffect(() => {
     if (!consultant?.credly_username) return;
@@ -59,6 +51,14 @@ export default function ConsultantProfilePage() {
     };
     fetchCredly();
   }, [consultant?.credly_username]);
+
+  if (!consultant) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">{t('consultant_profile.not_found')}</p>
+      </div>
+    );
+  }
 
   const statusColor = consultant.available ? 'bg-green-500' : 'bg-muted-foreground';
 
