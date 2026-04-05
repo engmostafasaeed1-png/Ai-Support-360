@@ -45,6 +45,8 @@ const stepIcons = [User, Cpu, Award, Clock];
 
 export default function ConsultantOnboarding() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { isGuest } = useGuestMode();
   const [currentStep, setCurrentStep] = useState(0);
   const [data, setData] = useState<OnboardingData>(initialData);
   const [submitting, setSubmitting] = useState(false);
@@ -61,6 +63,11 @@ export default function ConsultantOnboarding() {
   };
 
   const handleSubmit = async () => {
+    if (isGuest) {
+      toast.success(t('guest.onboarding_demo'));
+      navigate('/consultant');
+      return;
+    }
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();

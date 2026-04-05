@@ -41,6 +41,8 @@ const stepIcons = [Building2, Settings2, Cpu, ClipboardCheck];
 
 export default function ClientOnboarding() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { isGuest } = useGuestMode();
   const [currentStep, setCurrentStep] = useState(0);
   const [data, setData] = useState<ClientOnboardingData>(initialData);
   const [submitting, setSubmitting] = useState(false);
@@ -57,6 +59,11 @@ export default function ClientOnboarding() {
   };
 
   const handleSubmit = async () => {
+    if (isGuest) {
+      toast.success(t('guest.onboarding_demo'));
+      navigate('/client');
+      return;
+    }
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
