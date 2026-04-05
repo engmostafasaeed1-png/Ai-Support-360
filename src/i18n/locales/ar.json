@@ -493,7 +493,17 @@
     "error_generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
     "progress_title": "أكمل إعداد حسابك",
     "progress_desc": "أنهِ الإعداد لفتح جميع الميزات",
-    "continue": "متابعة"
+    "continue": "متابعة",
+    "steps_done": "خطوات مكتملة",
+    "check_company": "اسم الشركة",
+    "check_size": "حجم الشركة",
+    "check_industry": "القطاع",
+    "check_phone": "رقم الهاتف",
+    "check_modules": "وحدات SAP",
+    "check_name": "الاسم المعروض",
+    "check_bio": "النبذة المهنية",
+    "check_rate": "السعر بالساعة",
+    "check_skills": "مهارات SAP"
   },
   "client_onboarding": {
     "title": "إعداد حسابك",

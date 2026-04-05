@@ -493,7 +493,17 @@
     "error_generic": "Something went wrong. Please try again.",
     "progress_title": "Complete your setup",
     "progress_desc": "Finish onboarding to unlock all features",
-    "continue": "Continue"
+    "continue": "Continue",
+    "steps_done": "steps completed",
+    "check_company": "Company name",
+    "check_size": "Company size",
+    "check_industry": "Industry",
+    "check_phone": "Phone number",
+    "check_modules": "SAP modules",
+    "check_name": "Display name",
+    "check_bio": "Professional bio",
+    "check_rate": "Hourly rate",
+    "check_skills": "SAP skills"
   },
   "client_onboarding": {
     "title": "Set Up Your Account",
