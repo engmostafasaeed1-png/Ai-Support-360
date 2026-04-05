@@ -58,7 +58,7 @@ export default function HeroSection() {
               onClick={() => setExploreOpen(true)}
             >
               <Eye className="w-4 h-4 me-2" />
-              Explore as Guest
+              {t('guest.explore_btn')}
             </Button>
           </div>
           <GuestExploreModal open={exploreOpen} onOpenChange={setExploreOpen} />

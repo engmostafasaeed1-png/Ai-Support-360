@@ -83,7 +83,7 @@ export default function LoginPage() {
               className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <Eye className="w-4 h-4" />
-              Explore as Guest
+              {t('guest.explore_btn')}
             </button>
           </CardFooter>
         </form>
