@@ -41,7 +41,7 @@ export default function ConsultantSidebar() {
             <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shrink-0">
               <span className="text-sm font-bold text-primary-foreground">Q</span>
             </div>
-            {!collapsed && <span className="font-bold text-sm text-sidebar-foreground">Consultant Portal</span>}
+            {!collapsed && <span className="font-bold text-sm text-sidebar-foreground">{t('sidebar.consultant_portal')}</span>}
           </Link>
         </div>
 
