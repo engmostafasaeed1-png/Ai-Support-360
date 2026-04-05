@@ -58,6 +58,14 @@ export default function ConsultantsPage() {
 
   const { consultants, realtimeConnected } = useRealtimeConsultants();
 
+  // Auto-scroll side list when a map marker is clicked
+  useEffect(() => {
+    if (mapSelectedId) {
+      const el = document.getElementById(`map-list-${mapSelectedId}`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [mapSelectedId]);
+
   const onlineCount = consultants.filter(c => c.available).length;
   const offlineCount = consultants.filter(c => !c.available).length;
 
