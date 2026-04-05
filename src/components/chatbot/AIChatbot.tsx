@@ -163,8 +163,18 @@ export default function AIChatbot() {
                     <p>{msg.content}</p>
                   )}
                 </div>
-              </div>
-            ))}
+                {msg.role === 'assistant' && parseTicketSummary(msg.content) && (
+                  <div className="flex mt-1.5" style={{ marginInlineStart: '2.375rem' }}>
+                    <Button
+                      size="sm"
+                      className="gap-1.5 h-7 text-xs rounded-lg gradient-primary border-0"
+                      onClick={() => handleCreateTicket(msg.content)}
+                    >
+                      <TicketPlus className="w-3 h-3" />
+                      Create Ticket
+                    </Button>
+                  </div>
+                )}
 
             {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
               <div className="flex gap-2.5">
