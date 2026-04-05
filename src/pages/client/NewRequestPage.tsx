@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +10,9 @@ import { sapModules, issueTypes } from '@/data/clientMockData';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
-  ArrowLeft, ArrowRight, Check, Upload, Sparkles, Brain,
+  ArrowLeft, ArrowRight, Check, Sparkles, Brain,
   Clock, AlertTriangle, Info, Loader2, Zap, Target, List,
+  Star, BadgeCheck, Circle, Users, Crown, ChevronRight,
 } from 'lucide-react';
 
 interface AiCategorization {
@@ -35,6 +37,31 @@ interface AiMatch {
   matching_rationale: string;
 }
 
+interface ConsultantRecommendation {
+  consultant_id: string;
+  match_score: number;
+  match_reason: string;
+  strengths: string[];
+  skill_match_score?: number;
+  availability_score?: number;
+  name: string;
+  avatar_url?: string;
+  hourly_rate: number;
+  currency: string;
+  rating: number;
+  total_reviews: number;
+  availability: string;
+  response_time_minutes: number;
+  languages: string[];
+  verification_status: string;
+  top_skills: string[];
+}
+
+interface AiMatchConsultants {
+  recommendations: ConsultantRecommendation[];
+  overall_rationale: string;
+}
+
 const urgencyLevels = [
   { value: 'low', label: 'urgency_low', desc: 'urgency_low_desc', color: 'border-muted hover:border-muted-foreground' },
   { value: 'medium', label: 'urgency_medium', desc: 'urgency_medium_desc', color: 'border-yellow-300 hover:border-yellow-500' },
@@ -50,6 +77,7 @@ const sessionTypes = [
 
 export default function NewRequestPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     sap_module: '', issue_type: '', title: '', description: '',
@@ -59,6 +87,7 @@ export default function NewRequestPage() {
   const [aiCategorization, setAiCategorization] = useState<AiCategorization | null>(null);
   const [aiSummary, setAiSummary] = useState<AiSummary | null>(null);
   const [aiMatch, setAiMatch] = useState<AiMatch | null>(null);
+  const [aiRecommendations, setAiRecommendations] = useState<AiMatchConsultants | null>(null);
   const [aiLoading, setAiLoading] = useState<string | null>(null);
 
   const steps = [
@@ -116,14 +145,37 @@ export default function NewRequestPage() {
     }
   }, [form.title, form.description, form.sap_module, form.urgency]);
 
+  const runAiMatchConsultants = useCallback(async () => {
+    setAiLoading('match_consultants');
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-ticket', {
+        body: {
+          action: 'match_consultants',
+          title: form.title,
+          description: form.description,
+          sap_module: form.sap_module,
+          urgency: form.urgency,
+          preferred_language: form.preferred_language,
+        },
+      });
+      if (error) throw error;
+      if (data?.result) setAiRecommendations(data.result);
+    } catch (err) {
+      console.error('AI consultant matching failed:', err);
+      toast.error('Could not load expert recommendations');
+    } finally {
+      setAiLoading(null);
+    }
+  }, [form.title, form.description, form.sap_module, form.urgency, form.preferred_language]);
+
   const handleNext = () => {
     if (step === 1 && !aiCategorization && form.description.length > 15) {
       runAiCategorize();
     }
     if (step === 2) {
-      // Run summary + match when entering review
       runAiSummary();
       runAiMatch();
+      runAiMatchConsultants();
     }
     if (step < steps.length - 1) setStep(step + 1);
   };
@@ -154,16 +206,42 @@ export default function NewRequestPage() {
     }
   };
 
+  // ====== SUCCESS PAGE WITH RECOMMENDATIONS ======
   if (submitted) {
     return (
-      <div className="max-w-2xl mx-auto py-16 text-center">
-        <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-          <Check className="w-10 h-10 text-green-600" />
+      <div className="max-w-3xl mx-auto space-y-6 py-8">
+        <div className="text-center">
+          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
+            <Check className="w-10 h-10 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">{t('ticket_create.submitted_title')}</h2>
+          <p className="text-muted-foreground mb-6">{t('ticket_create.submitted_desc')}</p>
         </div>
-        <h2 className="text-2xl font-bold mb-2">{t('ticket_create.submitted_title')}</h2>
-        <p className="text-muted-foreground mb-6">{t('ticket_create.submitted_desc')}</p>
+
+        {/* AI Recommended Consultants */}
+        {aiRecommendations && aiRecommendations.recommendations.length > 0 && (
+          <Card className="rounded-2xl border-accent/20 bg-accent/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Crown className="w-4 h-4 text-accent" />
+                AI-Recommended Experts for Your Ticket
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">{aiRecommendations.overall_rationale}</p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
+                <RecommendationCard key={rec.consultant_id} rec={rec} rank={i + 1} navigate={navigate} />
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         <div className="flex gap-3 justify-center">
-          <Button onClick={() => { setSubmitted(false); setStep(0); setForm({ sap_module: '', issue_type: '', title: '', description: '', urgency: 'medium', preferred_session: 'video', preferred_language: 'en' }); setAiCategorization(null); setAiSummary(null); setAiMatch(null); }} variant="outline">
+          <Button onClick={() => {
+            setSubmitted(false); setStep(0);
+            setForm({ sap_module: '', issue_type: '', title: '', description: '', urgency: 'medium', preferred_session: 'video', preferred_language: 'en' });
+            setAiCategorization(null); setAiSummary(null); setAiMatch(null); setAiRecommendations(null);
+          }} variant="outline">
             {t('ticket_create.submit_another')}
           </Button>
           <Button className="gradient-primary border-0" asChild>
@@ -236,7 +314,6 @@ export default function NewRequestPage() {
               <Textarea value={form.description} onChange={e => updateForm('description', e.target.value)} placeholder={t('ticket_create.desc_placeholder')} rows={5} className="rounded-xl" maxLength={2000} />
             </div>
 
-            {/* AI Analyze button */}
             {form.description.length > 15 && !aiCategorization && (
               <Button variant="outline" size="sm" onClick={runAiCategorize} disabled={aiLoading === 'categorize'} className="gap-1.5">
                 {aiLoading === 'categorize' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
@@ -244,7 +321,6 @@ export default function NewRequestPage() {
               </Button>
             )}
 
-            {/* AI Categorization Result */}
             {aiCategorization && (
               <div className="p-4 rounded-xl bg-accent/5 border border-accent/20">
                 <div className="flex items-center gap-2 mb-3">
@@ -411,7 +487,7 @@ export default function NewRequestPage() {
             </Card>
           )}
 
-          {/* AI Consultant Match */}
+          {/* AI Consultant Match Criteria */}
           {(aiLoading === 'match' || aiMatch) && (
             <Card className="rounded-2xl border-accent/20 bg-accent/5">
               <CardContent className="p-4">
@@ -442,6 +518,38 @@ export default function NewRequestPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* AI Recommended Consultants */}
+          {(aiLoading === 'match_consultants' || aiRecommendations) && (
+            <Card className="rounded-2xl border-accent/20 bg-gradient-to-br from-accent/5 to-primary/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Crown className="w-4 h-4 text-accent" />
+                  AI-Recommended Experts
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {aiLoading === 'match_consultants' ? (
+                  <div className="flex items-center gap-3 py-6 justify-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-accent" />
+                    <span className="text-sm text-muted-foreground">Analyzing consultants and ranking best matches...</span>
+                  </div>
+                ) : aiRecommendations && aiRecommendations.recommendations.length > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground mb-3">{aiRecommendations.overall_rationale}</p>
+                    {aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
+                      <RecommendationCard key={rec.consultant_id} rec={rec} rank={i + 1} navigate={navigate} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center">
+                    <Users className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">No matching consultants found. Our team will manually assign an expert.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
@@ -459,6 +567,99 @@ export default function NewRequestPage() {
             <Check className="w-4 h-4 me-1" /> {t('ticket_create.submit_request')}
           </Button>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ====== Recommendation Card Component ======
+function RecommendationCard({ rec, rank, navigate }: { rec: ConsultantRecommendation; rank: number; navigate: (path: string) => void }) {
+  const getScoreColor = (score: number) => {
+    if (score >= 90) return 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400';
+    if (score >= 75) return 'text-accent bg-accent/10';
+    return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400';
+  };
+
+  const getRankBadge = (r: number) => {
+    if (r === 1) return { label: 'Best Match', cls: 'bg-gradient-to-r from-yellow-400 to-amber-500 text-white' };
+    if (r === 2) return { label: '#2', cls: 'bg-muted text-foreground' };
+    if (r === 3) return { label: '#3', cls: 'bg-muted text-foreground' };
+    return { label: `#${r}`, cls: 'bg-muted text-muted-foreground' };
+  };
+
+  const rankBadge = getRankBadge(rank);
+  const initials = rec.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+  return (
+    <div className="p-4 rounded-xl bg-background border border-border/50 hover:border-accent/30 hover:shadow-sm transition-all">
+      <div className="flex items-start gap-3">
+        {/* Avatar */}
+        <div className="relative shrink-0">
+          {rec.avatar_url ? (
+            <img src={rec.avatar_url} alt={rec.name} className="w-12 h-12 rounded-xl object-cover" />
+          ) : (
+            <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
+              {initials}
+            </div>
+          )}
+          <span className={`absolute -top-1 -end-1 w-3.5 h-3.5 rounded-full border-2 border-background ${rec.availability === 'available' ? 'bg-green-500' : rec.availability === 'busy' ? 'bg-yellow-500' : 'bg-muted-foreground/40'}`} />
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className="font-semibold text-sm text-foreground">{rec.name}</h4>
+            <Badge className={`text-[9px] px-1.5 py-0 h-4 ${rankBadge.cls}`}>{rankBadge.label}</Badge>
+            {rec.verification_status === 'verified' && (
+              <BadgeCheck className="w-3.5 h-3.5 text-accent shrink-0" />
+            )}
+          </div>
+
+          {/* Match Score */}
+          <div className="flex items-center gap-2 mt-1">
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${getScoreColor(rec.match_score)}`}>
+              {rec.match_score}% match
+            </span>
+            <div className="flex items-center gap-1">
+              <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+              <span className="text-xs font-medium">{rec.rating}</span>
+              <span className="text-[10px] text-muted-foreground">({rec.total_reviews})</span>
+            </div>
+            {rec.availability === 'available' && (
+              <span className="text-[10px] text-green-600 font-medium flex items-center gap-0.5">
+                <Circle className="w-1.5 h-1.5 fill-green-500 text-green-500" /> Online
+              </span>
+            )}
+          </div>
+
+          {/* Match reason */}
+          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{rec.match_reason}</p>
+
+          {/* Strengths & Skills */}
+          <div className="flex flex-wrap gap-1 mt-2">
+            {rec.strengths?.slice(0, 3).map((s, i) => (
+              <Badge key={i} variant="secondary" className="text-[9px] bg-accent/10 text-accent">{s}</Badge>
+            ))}
+          </div>
+
+          {/* Bottom row */}
+          <div className="flex items-center justify-between mt-2.5">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">${rec.hourly_rate}<span className="font-normal text-muted-foreground">/hr</span></span>
+              {rec.response_time_minutes > 0 && (
+                <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" />{rec.response_time_minutes}min avg</span>
+              )}
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-[10px] gap-1"
+              onClick={() => navigate(`/client/consultants/${rec.consultant_id}`)}
+            >
+              View Profile <ChevronRight className="w-3 h-3" />
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
