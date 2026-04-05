@@ -70,7 +70,7 @@ export default function PaymentsPage() {
                   <div className="flex items-center gap-3 justify-between sm:justify-end">
                     <div className="text-start sm:text-end">
                       <p className="text-sm font-bold text-foreground">${Number(payment.amount).toLocaleString()}</p>
-                      <p className="text-[10px] text-muted-foreground">VAT: ${Number(payment.vat_amount || 0).toLocaleString()}</p>
+                      <p className="text-[10px] text-muted-foreground">VAT: ${Number(payment.vat || 0).toLocaleString()}</p>
                     </div>
                     <Badge variant="secondary" className={`text-[10px] ${payment.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                       {payment.status}
