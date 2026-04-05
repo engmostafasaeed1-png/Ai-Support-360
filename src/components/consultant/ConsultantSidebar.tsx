@@ -10,11 +10,12 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Briefcase, Calendar, CreditCard, Star,
-  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
+  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, ClipboardList,
 } from 'lucide-react';
 
 const menuItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/consultant' },
+  { key: 'onboarding', icon: ClipboardList, path: '/consultant/onboarding' },
   { key: 'cases', icon: Briefcase, path: '/consultant/cases' },
   { key: 'calendar', icon: Calendar, path: '/consultant/calendar' },
   { key: 'earnings', icon: CreditCard, path: '/consultant/earnings' },
