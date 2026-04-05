@@ -36,6 +36,8 @@ import ConsultantApprovalsPage from "./pages/admin/ConsultantApprovalsPage.tsx";
 import AnalyticsPage from "./pages/admin/AnalyticsPage.tsx";
 import LoginPage from "./pages/auth/LoginPage.tsx";
 import SignupPage from "./pages/auth/SignupPage.tsx";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.tsx";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage.tsx";
 
 const queryClient = new QueryClient();
 
