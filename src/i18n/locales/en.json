@@ -788,5 +788,19 @@
     "ind_government_count": "40+ experts",
     "ind_telecom_count": "30+ experts",
     "ind_logistics_count": "25+ experts"
+  },
+  "guest": {
+    "explore_btn": "Explore as Guest",
+    "banner_label": "Guest Mode",
+    "banner_view": "View",
+    "signup_btn": "Sign Up",
+    "modal_title": "Explore as Guest",
+    "modal_desc": "Choose a role to explore all features with sample data — no sign-up required.",
+    "role_client": "Client Dashboard",
+    "role_client_desc": "Browse consultants, submit tickets, book sessions, and manage payments.",
+    "role_consultant": "Consultant Dashboard",
+    "role_consultant_desc": "View cases, manage calendar, track earnings, and handle profile.",
+    "role_admin": "Admin Dashboard",
+    "role_admin_desc": "Manage users, approve consultants, view analytics, and handle tickets."
   }
 }
