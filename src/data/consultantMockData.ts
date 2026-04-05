@@ -34,58 +34,16 @@ export const mockEarnings = {
   ],
 };
 
-export const mockCases = [
-  {
-    id: 't1',
-    title: 'S/4HANA Finance month-end close issue',
-    client: 'Saudi Petrochemical Corp',
-    sap_module: 'SAP S/4HANA',
-    urgency: 'high' as const,
-  status: 'in_progress' as string,
-    created_at: '2026-04-03T10:00:00Z',
-    sla_deadline: '2026-04-05T18:00:00Z',
-  },
-  {
-    id: 't2',
-    title: 'Fiori Launchpad configuration error',
-    client: 'GCC Retail Group',
-    sap_module: 'SAP Fiori/UX',
-    urgency: 'medium' as const,
-    status: 'matched' as const,
-    created_at: '2026-04-04T08:30:00Z',
-    sla_deadline: '2026-04-06T12:00:00Z',
-  },
-  {
-    id: 't3',
-    title: 'MM Purchase Order workflow stuck',
-    client: 'Riyadh National Bank',
-    sap_module: 'SAP MM',
-    urgency: 'critical' as const,
-    status: 'in_progress' as const,
-    created_at: '2026-04-04T14:00:00Z',
-    sla_deadline: '2026-04-05T10:00:00Z',
-  },
-  {
-    id: 't4',
-    title: 'FI/CO cost center report discrepancy',
-    client: 'Al-Faisal Industries',
-    sap_module: 'SAP FI/CO',
-    urgency: 'low' as const,
-    status: 'resolved' as const,
-    created_at: '2026-03-28T09:00:00Z',
-    sla_deadline: '2026-04-01T18:00:00Z',
-    resolved_at: '2026-03-30T16:00:00Z',
-  },
-  {
-    id: 't5',
-    title: 'BTP Integration Suite connectivity',
-    client: 'Jeddah Logistics Co',
-    sap_module: 'SAP BTP/CPI',
-    urgency: 'medium' as const,
-    status: 'new' as const,
-    created_at: '2026-04-05T06:00:00Z',
-    sla_deadline: '2026-04-07T12:00:00Z',
-  },
+export const mockCases: Array<{
+  id: string; title: string; client: string; sap_module: string;
+  urgency: string; status: string; created_at: string; sla_deadline: string;
+  resolved_at?: string;
+}> = [
+  { id: 't1', title: 'S/4HANA Finance month-end close issue', client: 'Saudi Petrochemical Corp', sap_module: 'SAP S/4HANA', urgency: 'high', status: 'in_progress', created_at: '2026-04-03T10:00:00Z', sla_deadline: '2026-04-05T18:00:00Z' },
+  { id: 't2', title: 'Fiori Launchpad configuration error', client: 'GCC Retail Group', sap_module: 'SAP Fiori/UX', urgency: 'medium', status: 'matched', created_at: '2026-04-04T08:30:00Z', sla_deadline: '2026-04-06T12:00:00Z' },
+  { id: 't3', title: 'MM Purchase Order workflow stuck', client: 'Riyadh National Bank', sap_module: 'SAP MM', urgency: 'critical', status: 'in_progress', created_at: '2026-04-04T14:00:00Z', sla_deadline: '2026-04-05T10:00:00Z' },
+  { id: 't4', title: 'FI/CO cost center report discrepancy', client: 'Al-Faisal Industries', sap_module: 'SAP FI/CO', urgency: 'low', status: 'resolved', created_at: '2026-03-28T09:00:00Z', sla_deadline: '2026-04-01T18:00:00Z', resolved_at: '2026-03-30T16:00:00Z' },
+  { id: 't5', title: 'BTP Integration Suite connectivity', client: 'Jeddah Logistics Co', sap_module: 'SAP BTP/CPI', urgency: 'medium', status: 'new', created_at: '2026-04-05T06:00:00Z', sla_deadline: '2026-04-07T12:00:00Z' },
 ];
 
 export const mockSessions = [
