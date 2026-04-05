@@ -13,7 +13,11 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileSignature, Search, Download, Eye, Calendar } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { FileSignature, Search, Download, Eye, Calendar, ShieldOff, ShieldCheck } from 'lucide-react';
 
 interface NDARecord {
   id: string;
@@ -23,6 +27,7 @@ interface NDARecord {
   signature_data: string;
   signed_at: string;
   nda_content: string;
+  revoked_at: string | null;
 }
 
 export default function NDAManagementPage() {
@@ -31,6 +36,8 @@ export default function NDAManagementPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [viewNda, setViewNda] = useState<NDARecord | null>(null);
+  const [revokeNda, setRevokeNda] = useState<NDARecord | null>(null);
+  const [revoking, setRevoking] = useState(false);
 
   useEffect(() => {
     fetchNDAs();
@@ -41,7 +48,7 @@ export default function NDAManagementPage() {
     // Fetch NDA agreements with consultant and client names
     const { data, error } = await supabase
       .from('nda_agreements')
-      .select('id, consultant_id, client_id, signature_type, signature_data, signed_at, nda_content')
+      .select('id, consultant_id, client_id, signature_type, signature_data, signed_at, nda_content, revoked_at')
       .order('signed_at', { ascending: false });
 
     if (error || !data) {
@@ -78,6 +85,7 @@ export default function NDAManagementPage() {
       signature_data: n.signature_data,
       signed_at: n.signed_at,
       nda_content: n.nda_content,
+      revoked_at: n.revoked_at,
     }));
 
     setNdas(records);
@@ -108,6 +116,21 @@ export default function NDAManagementPage() {
       link.download = `nda-signature-${nda.id.slice(0, 8)}.txt`;
       link.click();
       URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleRevoke = async () => {
+    if (!revokeNda) return;
+    setRevoking(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from('nda_agreements')
+      .update({ revoked_at: new Date().toISOString(), revoked_by: user?.id } as any)
+      .eq('id', revokeNda.id);
+    setRevoking(false);
+    setRevokeNda(null);
+    if (!error) {
+      setNdas(prev => prev.map(n => n.id === revokeNda.id ? { ...n, revoked_at: new Date().toISOString() } : n));
     }
   };
 
@@ -142,9 +165,17 @@ export default function NDAManagementPage() {
         <Card className="rounded-2xl">
           <CardContent className="p-4 text-center">
             <p className="text-2xl font-bold text-foreground">
-              {ndas.filter(n => n.signature_type === 'type').length}
+              {ndas.filter(n => !n.revoked_at).length}
             </p>
-            <p className="text-xs text-muted-foreground">{t('admin.nda_typed', 'Typed Signatures')}</p>
+            <p className="text-xs text-muted-foreground">{t('admin.nda_active', 'Active NDAs')}</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-destructive">
+              {ndas.filter(n => !!n.revoked_at).length}
+            </p>
+            <p className="text-xs text-muted-foreground">{t('admin.nda_revoked_count', 'Revoked NDAs')}</p>
           </CardContent>
         </Card>
       </div>
@@ -167,7 +198,7 @@ export default function NDAManagementPage() {
             <TableRow>
               <TableHead>{t('admin.nda_consultant', 'Consultant')}</TableHead>
               <TableHead>{t('admin.nda_client', 'Client')}</TableHead>
-              <TableHead>{t('admin.nda_sig_type', 'Signature Type')}</TableHead>
+              <TableHead>{t('admin.nda_status', 'Status')}</TableHead>
               <TableHead>{t('admin.nda_date', 'Date Signed')}</TableHead>
               <TableHead className="text-end">{t('admin.nda_actions', 'Actions')}</TableHead>
             </TableRow>
@@ -193,9 +224,17 @@ export default function NDAManagementPage() {
                   <TableCell className="font-medium">{nda.consultant_name}</TableCell>
                   <TableCell>{nda.client_name}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="text-[10px]">
-                      {nda.signature_type === 'draw' ? '✍️ ' + t('nda.draw_signature', 'Draw') : '⌨️ ' + t('nda.type_signature', 'Type')}
-                    </Badge>
+                    {nda.revoked_at ? (
+                      <Badge variant="destructive" className="text-[10px] gap-1">
+                        <ShieldOff className="w-3 h-3" />
+                        {t('admin.nda_revoked', 'Revoked')}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-[10px] gap-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        <ShieldCheck className="w-3 h-3" />
+                        {t('admin.nda_active_badge', 'Active')}
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -213,6 +252,11 @@ export default function NDAManagementPage() {
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => downloadSignature(nda)}>
                         <Download className="w-4 h-4" />
                       </Button>
+                      {!nda.revoked_at && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setRevokeNda(nda)}>
+                          <ShieldOff className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -280,6 +324,31 @@ export default function NDAManagementPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Revoke Confirmation */}
+      <AlertDialog open={!!revokeNda} onOpenChange={() => setRevokeNda(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('admin.nda_revoke_title', 'Revoke NDA')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('admin.nda_revoke_desc', 'This will invalidate the NDA between {{consultant}} and {{client}}. The consultant will need to sign a new NDA to continue working with this client.', {
+                consultant: revokeNda?.consultant_name,
+                client: revokeNda?.client_name,
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleRevoke}
+              disabled={revoking}
+            >
+              {revoking ? t('common.loading', 'Loading...') : t('admin.nda_revoke_confirm', 'Revoke NDA')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
