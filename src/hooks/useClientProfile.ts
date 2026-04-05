@@ -36,7 +36,13 @@ export function useClientProfileData() {
         .eq('user_id', session.user.id)
         .maybeSingle();
       if (error) throw error;
-      return data as ClientProfile | null;
+      if (!data) return null;
+      return {
+        ...data,
+        sap_system_ids: (data as any).sap_system_ids || [],
+        sap_module_versions: (data as any).sap_module_versions || {},
+        key_contacts: ((data as any).key_contacts || []) as ClientProfile['key_contacts'],
+      } as unknown as ClientProfile;
     },
   });
 }
