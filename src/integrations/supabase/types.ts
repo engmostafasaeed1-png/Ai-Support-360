@@ -332,6 +332,111 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_sync_log: {
+        Row: {
+          action: string
+          created_at: string
+          direction: Database["public"]["Enums"]["sync_direction"]
+          entity_type: string
+          error_message: string | null
+          external_ticket_id: string | null
+          id: string
+          integration_id: string
+          local_ticket_id: string | null
+          payload: Json | null
+          status: Database["public"]["Enums"]["sync_status"]
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          direction: Database["public"]["Enums"]["sync_direction"]
+          entity_type?: string
+          error_message?: string | null
+          external_ticket_id?: string | null
+          id?: string
+          integration_id: string
+          local_ticket_id?: string | null
+          payload?: Json | null
+          status?: Database["public"]["Enums"]["sync_status"]
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          direction?: Database["public"]["Enums"]["sync_direction"]
+          entity_type?: string
+          error_message?: string | null
+          external_ticket_id?: string | null
+          id?: string
+          integration_id?: string
+          local_ticket_id?: string | null
+          payload?: Json | null
+          status?: Database["public"]["Enums"]["sync_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_sync_log_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_sync_log_local_ticket_id_fkey"
+            columns: ["local_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integrations: {
+        Row: {
+          api_key_encrypted: string
+          client_id: string
+          created_at: string
+          external_project_id: string | null
+          id: string
+          last_synced_at: string | null
+          platform: Database["public"]["Enums"]["integration_platform"]
+          platform_url: string
+          settings: Json
+          status: Database["public"]["Enums"]["integration_status"]
+          sync_enabled: boolean
+          updated_at: string
+          webhook_secret: string | null
+        }
+        Insert: {
+          api_key_encrypted: string
+          client_id: string
+          created_at?: string
+          external_project_id?: string | null
+          id?: string
+          last_synced_at?: string | null
+          platform: Database["public"]["Enums"]["integration_platform"]
+          platform_url: string
+          settings?: Json
+          status?: Database["public"]["Enums"]["integration_status"]
+          sync_enabled?: boolean
+          updated_at?: string
+          webhook_secret?: string | null
+        }
+        Update: {
+          api_key_encrypted?: string
+          client_id?: string
+          created_at?: string
+          external_project_id?: string | null
+          id?: string
+          last_synced_at?: string | null
+          platform?: Database["public"]["Enums"]["integration_platform"]
+          platform_url?: string
+          settings?: Json
+          status?: Database["public"]["Enums"]["integration_status"]
+          sync_enabled?: boolean
+          updated_at?: string
+          webhook_secret?: string | null
+        }
+        Relationships: []
+      }
       interview_answers: {
         Row: {
           ai_feedback: string | null
@@ -961,6 +1066,8 @@ export type Database = {
       app_role: "client" | "consultant" | "admin"
       article_status: "draft" | "published" | "archived"
       availability_status: "available" | "busy" | "offline"
+      integration_platform: "zendesk" | "freshdesk" | "jira" | "servicenow"
+      integration_status: "active" | "inactive" | "error"
       interview_status: "pending" | "in_progress" | "completed" | "reviewed"
       message_type: "text" | "file" | "voice_note" | "system"
       payment_status: "pending" | "completed" | "refunded" | "disputed"
@@ -973,6 +1080,8 @@ export type Database = {
         | "cancelled"
       session_status: "scheduled" | "in_progress" | "completed" | "cancelled"
       session_type: "chat" | "video" | "screen_share"
+      sync_direction: "inbound" | "outbound"
+      sync_status: "success" | "failed" | "pending" | "skipped"
       ticket_status:
         | "new"
         | "under_review"
@@ -1118,6 +1227,8 @@ export const Constants = {
       app_role: ["client", "consultant", "admin"],
       article_status: ["draft", "published", "archived"],
       availability_status: ["available", "busy", "offline"],
+      integration_platform: ["zendesk", "freshdesk", "jira", "servicenow"],
+      integration_status: ["active", "inactive", "error"],
       interview_status: ["pending", "in_progress", "completed", "reviewed"],
       message_type: ["text", "file", "voice_note", "system"],
       payment_status: ["pending", "completed", "refunded", "disputed"],
@@ -1131,6 +1242,8 @@ export const Constants = {
       ],
       session_status: ["scheduled", "in_progress", "completed", "cancelled"],
       session_type: ["chat", "video", "screen_share"],
+      sync_direction: ["inbound", "outbound"],
+      sync_status: ["success", "failed", "pending", "skipped"],
       ticket_status: [
         "new",
         "under_review",
