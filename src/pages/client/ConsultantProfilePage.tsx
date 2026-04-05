@@ -20,6 +20,7 @@ export default function ConsultantProfilePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   const consultant = mockRecommendedConsultants.find(c => c.id === id);
   const detail = mockConsultantDetailData;
