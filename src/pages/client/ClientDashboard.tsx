@@ -74,7 +74,7 @@ export default function ClientDashboard() {
   const recommendedConsultants = isGuest ? mockRecommendedConsultants : (
     realtimeConsultants.length > 0 ? realtimeConsultants.slice(0, 6).map(c => ({
       ...c, avatar: c.name.split(' ').map(w => w[0]).join('').slice(0, 2),
-      reviews: c.totalReviews || 0, badges: c.badges || [], credly_username: c.credly_username,
+      reviews: c.reviews || 0, badges: c.badges || [], credly_username: c.credly_username,
     })) : mockRecommendedConsultants
   );
 
