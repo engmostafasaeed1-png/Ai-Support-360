@@ -43,13 +43,14 @@ export function useConsultantCases() {
         id: t.id,
         title: t.title,
         client: 'Client',
+        client_id: t.client_id,
         sap_module: t.sap_module,
         urgency: t.urgency || 'medium',
         status: t.status || 'new',
         created_at: t.created_at,
         sla_deadline: t.sla_deadline || '',
         resolved_at: t.resolved_at || undefined,
-      })) as typeof mockCases;
+      }));
     },
     enabled: !isGuest,
     placeholderData: isGuest ? mockCases : undefined,
