@@ -186,7 +186,8 @@
     "ticket_board": "Ticket Board",
     "approvals": "Approvals",
     "analytics": "Analytics",
-    "logout": "Sign Out"
+    "logout": "Sign Out",
+    "more": "More"
   },
   "client_dashboard": {
     "title": "Welcome back",
