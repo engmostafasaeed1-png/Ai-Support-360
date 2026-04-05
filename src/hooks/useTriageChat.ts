@@ -1,19 +1,90 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
-type Message = { role: 'user' | 'assistant'; content: string };
+export type Message = { role: 'user' | 'assistant'; content: string };
+export type Conversation = { id: string; title: string; updated_at: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-triage-chat`;
 
 export function useTriageChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Check auth state
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Load conversation list for authenticated users
+  const loadConversations = useCallback(async () => {
+    if (!userId) { setConversations([]); return; }
+    const { data } = await supabase
+      .from('chatbot_conversations')
+      .select('id, title, updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(20);
+    setConversations((data as Conversation[]) ?? []);
+  }, [userId]);
+
+  useEffect(() => { loadConversations(); }, [loadConversations]);
+
+  // Load a specific conversation
+  const loadConversation = useCallback(async (id: string) => {
+    const { data } = await supabase
+      .from('chatbot_messages')
+      .select('role, content')
+      .eq('conversation_id', id)
+      .order('created_at', { ascending: true });
+    if (data) {
+      setMessages(data as Message[]);
+      setConversationId(id);
+    }
+  }, []);
+
+  // Persist a message to the DB
+  const persistMessage = useCallback(async (msg: Message, convId: string) => {
+    if (!userId) return;
+    await supabase.from('chatbot_messages').insert({
+      conversation_id: convId,
+      role: msg.role,
+      content: msg.content,
+    });
+  }, [userId]);
+
+  // Ensure a conversation exists, create if needed
+  const ensureConversation = useCallback(async (firstMessage: string): Promise<string | null> => {
+    if (!userId) return null;
+    if (conversationId) return conversationId;
+    const title = firstMessage.slice(0, 80) || 'New conversation';
+    const { data, error } = await supabase
+      .from('chatbot_conversations')
+      .insert({ user_id: userId, title })
+      .select('id')
+      .single();
+    if (error || !data) return null;
+    const newId = data.id;
+    setConversationId(newId);
+    loadConversations();
+    return newId;
+  }, [userId, conversationId, loadConversations]);
 
   const sendMessage = useCallback(async (input: string) => {
     const userMsg: Message = { role: 'user', content: input };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
     setIsLoading(true);
+
+    // Persist user message
+    const convId = await ensureConversation(input);
+    if (convId) persistMessage(userMsg, convId);
 
     let assistantSoFar = '';
     const controller = new AbortController();
@@ -106,6 +177,11 @@ export function useTriageChat() {
           } catch { /* ignore */ }
         }
       }
+
+      // Persist assistant message
+      if (assistantSoFar && convId) {
+        persistMessage({ role: 'assistant', content: assistantSoFar }, convId);
+      }
     } catch (err: any) {
       if (err.name !== 'AbortError') {
         setMessages(prev => [
@@ -117,13 +193,31 @@ export function useTriageChat() {
       setIsLoading(false);
       abortRef.current = null;
     }
-  }, [messages]);
+  }, [messages, ensureConversation, persistMessage]);
 
   const clearChat = useCallback(() => {
     abortRef.current?.abort();
     setMessages([]);
+    setConversationId(null);
     setIsLoading(false);
   }, []);
 
-  return { messages, isLoading, sendMessage, clearChat };
+  const deleteConversation = useCallback(async (id: string) => {
+    await supabase.from('chatbot_conversations').delete().eq('id', id);
+    if (conversationId === id) clearChat();
+    loadConversations();
+  }, [conversationId, clearChat, loadConversations]);
+
+  const newChat = useCallback(() => {
+    abortRef.current?.abort();
+    setMessages([]);
+    setConversationId(null);
+    setIsLoading(false);
+  }, []);
+
+  return {
+    messages, isLoading, sendMessage, clearChat,
+    conversations, conversationId, loadConversation,
+    deleteConversation, newChat, userId,
+  };
 }

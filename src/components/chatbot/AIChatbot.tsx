@@ -2,10 +2,9 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  MessageSquare, X, Send, Loader2, Trash2, Bot, User, Sparkles, Minimize2, TicketPlus,
+  X, Send, Loader2, Trash2, Bot, User, Sparkles, TicketPlus,
+  History, Plus, ChevronLeft,
 } from 'lucide-react';
 import { useTriageChat } from '@/hooks/useTriageChat';
 import { useNavigate } from 'react-router-dom';
@@ -28,7 +27,12 @@ function parseTicketSummary(content: string) {
 export default function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
-  const { messages, isLoading, sendMessage, clearChat } = useTriageChat();
+  const [showHistory, setShowHistory] = useState(false);
+  const {
+    messages, isLoading, sendMessage, clearChat,
+    conversations, conversationId, loadConversation,
+    deleteConversation, newChat, userId,
+  } = useTriageChat();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -40,8 +44,8 @@ export default function AIChatbot() {
   }, [messages]);
 
   useEffect(() => {
-    if (isOpen) inputRef.current?.focus();
-  }, [isOpen]);
+    if (isOpen && !showHistory) inputRef.current?.focus();
+  }, [isOpen, showHistory]);
 
   const handleSend = () => {
     const text = input.trim();
@@ -62,9 +66,13 @@ export default function AIChatbot() {
     navigate(`/client/new-request?${params.toString()}`);
   }, [navigate]);
 
+  const handleLoadConversation = (id: string) => {
+    loadConversation(id);
+    setShowHistory(false);
+  };
+
   return (
     <>
-      {/* FAB */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -74,158 +82,220 @@ export default function AIChatbot() {
         </button>
       )}
 
-      {/* Chat window */}
       {isOpen && (
         <div className="fixed bottom-0 end-0 sm:bottom-6 sm:end-6 z-50 w-full sm:w-[380px] h-[100dvh] sm:h-[560px] sm:rounded-2xl bg-background border border-border/60 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-200">
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40 bg-card/90 backdrop-blur shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Bot className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-foreground">Qurtuba AI</h3>
-              <p className="text-[10px] text-muted-foreground">SAP Ticket Triage Assistant</p>
-            </div>
+            {showHistory ? (
+              <>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowHistory(false)}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <h3 className="text-sm font-semibold text-foreground flex-1">Chat History</h3>
+              </>
+            ) : (
+              <>
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-foreground">Qurtuba AI</h3>
+                  <p className="text-[10px] text-muted-foreground">SAP Ticket Triage Assistant</p>
+                </div>
+              </>
+            )}
             <div className="flex items-center gap-1">
-              {messages.length > 0 && (
+              {!showHistory && userId && (
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowHistory(true)} title="Chat history">
+                  <History className="w-3.5 h-3.5 text-muted-foreground" />
+                </Button>
+              )}
+              {!showHistory && messages.length > 0 && (
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={newChat} title="New chat">
+                  <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+                </Button>
+              )}
+              {!showHistory && messages.length > 0 && (
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={clearChat} title="Clear chat">
                   <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
               )}
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsOpen(false)}>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setIsOpen(false); setShowHistory(false); }}>
                 <X className="w-4 h-4 text-muted-foreground" />
               </Button>
             </div>
           </div>
 
-          {/* Messages */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-            {messages.length === 0 && (
-              <div className="text-center pt-8 space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-                  <Sparkles className="w-8 h-8 text-primary" />
+          {/* History panel */}
+          {showHistory ? (
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+              {conversations.length === 0 ? (
+                <div className="text-center pt-12">
+                  <History className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">No previous chats</p>
                 </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-foreground">How can I help?</h4>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Describe your SAP issue and I'll help prepare a support ticket with the right module and urgency.
-                  </p>
-                </div>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {[
-                    'My SAP FI posting is failing',
-                    'MM purchase order stuck',
-                    'Basis system performance issue',
-                  ].map((q) => (
-                    <button
-                      key={q}
-                      onClick={() => sendMessage(q)}
-                      className="text-[11px] px-3 py-1.5 rounded-full border border-border/50 bg-muted/30 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all"
-                    >
-                      {q}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {messages.map((msg, i) => (
-              <div key={i} className="space-y-1.5">
-                <div
-                  className={cn(
-                    'flex gap-2.5',
-                    msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-                  )}
-                >
-                  <div className={cn(
-                    'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
-                    msg.role === 'user' ? 'bg-primary/10' : 'bg-accent/10'
-                  )}>
-                    {msg.role === 'user' ? (
-                      <User className="w-3.5 h-3.5 text-primary" />
-                    ) : (
-                      <Bot className="w-3.5 h-3.5 text-accent" />
-                    )}
-                  </div>
+              ) : (
+                conversations.map((conv) => (
                   <div
+                    key={conv.id}
                     className={cn(
-                      'max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm',
-                      msg.role === 'user'
-                        ? 'bg-primary text-primary-foreground rounded-tr-md'
-                        : 'bg-muted/50 text-foreground rounded-tl-md'
+                      'flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all hover:bg-muted/50',
+                      conversationId === conv.id ? 'border-primary/30 bg-primary/5' : 'border-border/40'
                     )}
                   >
-                    {msg.role === 'assistant' ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>hr]:my-2">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
-                      </div>
-                    ) : (
-                      <p>{msg.content}</p>
-                    )}
-                  </div>
-                </div>
-                {msg.role === 'assistant' && parseTicketSummary(msg.content) && (
-                  <div className="flex" style={{ paddingInlineStart: '2.375rem' }}>
-                    <Button
-                      size="sm"
-                      className="gap-1.5 h-7 text-xs rounded-lg gradient-primary border-0"
-                      onClick={() => handleCreateTicket(msg.content)}
+                    <button
+                      className="flex-1 min-w-0 text-start"
+                      onClick={() => handleLoadConversation(conv.id)}
                     >
-                      <TicketPlus className="w-3 h-3" />
-                      Create Ticket
+                      <p className="text-sm font-medium text-foreground truncate">{conv.title}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {new Date(conv.updated_at).toLocaleDateString()}
+                      </p>
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 shrink-0"
+                      onClick={(e) => { e.stopPropagation(); deleteConversation(conv.id); }}
+                    >
+                      <Trash2 className="w-3 h-3 text-muted-foreground" />
                     </Button>
                   </div>
-                )}
-              </div>
-            ))}
-
-            {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
-              <div className="flex gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-                  <Bot className="w-3.5 h-3.5 text-accent" />
-                </div>
-                <div className="bg-muted/50 rounded-2xl rounded-tl-md px-4 py-3">
-                  <div className="flex gap-1">
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:0ms]" />
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:150ms]" />
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:300ms]" />
+                ))
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Messages */}
+              <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+                {messages.length === 0 && (
+                  <div className="text-center pt-8 space-y-4">
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+                      <Sparkles className="w-8 h-8 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground">How can I help?</h4>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Describe your SAP issue and I'll help prepare a support ticket with the right module and urgency.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {[
+                        'My SAP FI posting is failing',
+                        'MM purchase order stuck',
+                        'Basis system performance issue',
+                      ].map((q) => (
+                        <button
+                          key={q}
+                          onClick={() => sendMessage(q)}
+                          className="text-[11px] px-3 py-1.5 rounded-full border border-border/50 bg-muted/30 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all"
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Input */}
-          <div className="px-3 py-3 border-t border-border/40 bg-card/90 backdrop-blur shrink-0">
-            <form
-              onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-              className="flex items-center gap-2"
-            >
-              <Input
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Describe your SAP issue..."
-                className="flex-1 h-10 rounded-xl text-sm bg-muted/30 border-border/30"
-                disabled={isLoading}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                className="h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 shrink-0"
-                disabled={!input.trim() || isLoading}
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
                 )}
-              </Button>
-            </form>
-            <p className="text-[9px] text-muted-foreground/60 text-center mt-1.5">
-              Powered by Qurtuba AI · Responses may be inaccurate
-            </p>
-          </div>
+
+                {messages.map((msg, i) => (
+                  <div key={i} className="space-y-1.5">
+                    <div
+                      className={cn(
+                        'flex gap-2.5',
+                        msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+                      )}
+                    >
+                      <div className={cn(
+                        'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
+                        msg.role === 'user' ? 'bg-primary/10' : 'bg-accent/10'
+                      )}>
+                        {msg.role === 'user' ? (
+                          <User className="w-3.5 h-3.5 text-primary" />
+                        ) : (
+                          <Bot className="w-3.5 h-3.5 text-accent" />
+                        )}
+                      </div>
+                      <div
+                        className={cn(
+                          'max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm',
+                          msg.role === 'user'
+                            ? 'bg-primary text-primary-foreground rounded-tr-md'
+                            : 'bg-muted/50 text-foreground rounded-tl-md'
+                        )}
+                      >
+                        {msg.role === 'assistant' ? (
+                          <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>hr]:my-2">
+                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                          </div>
+                        ) : (
+                          <p>{msg.content}</p>
+                        )}
+                      </div>
+                    </div>
+                    {msg.role === 'assistant' && parseTicketSummary(msg.content) && (
+                      <div className="flex" style={{ paddingInlineStart: '2.375rem' }}>
+                        <Button
+                          size="sm"
+                          className="gap-1.5 h-7 text-xs rounded-lg gradient-primary border-0"
+                          onClick={() => handleCreateTicket(msg.content)}
+                        >
+                          <TicketPlus className="w-3 h-3" />
+                          Create Ticket
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
+                  <div className="flex gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                      <Bot className="w-3.5 h-3.5 text-accent" />
+                    </div>
+                    <div className="bg-muted/50 rounded-2xl rounded-tl-md px-4 py-3">
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:0ms]" />
+                        <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:150ms]" />
+                        <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:300ms]" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Input */}
+              <div className="px-3 py-3 border-t border-border/40 bg-card/90 backdrop-blur shrink-0">
+                <form
+                  onSubmit={(e) => { e.preventDefault(); handleSend(); }}
+                  className="flex items-center gap-2"
+                >
+                  <Input
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Describe your SAP issue..."
+                    className="flex-1 h-10 rounded-xl text-sm bg-muted/30 border-border/30"
+                    disabled={isLoading}
+                  />
+                  <Button
+                    type="submit"
+                    size="icon"
+                    className="h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 shrink-0"
+                    disabled={!input.trim() || isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </Button>
+                </form>
+                <p className="text-[9px] text-muted-foreground/60 text-center mt-1.5">
+                  Powered by Qurtuba AI · Responses may be inaccurate
+                </p>
+              </div>
+            </>
+          )}
         </div>
       )}
     </>
