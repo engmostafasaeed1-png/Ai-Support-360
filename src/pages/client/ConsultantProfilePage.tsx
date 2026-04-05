@@ -177,8 +177,9 @@ export default function ConsultantProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
+                {/* Manual certifications */}
                 {detail.certifications.map((cert, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-border/30">
+                  <div key={`manual-${i}`} className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-border/30">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
                         <BadgeCheck className="w-5 h-5 text-accent" />
@@ -194,6 +195,63 @@ export default function ConsultantProfilePage() {
                       </Badge>
                     )}
                   </div>
+                ))}
+
+                {/* Credly badges loading skeleton */}
+                {credlyLoading && (
+                  <>
+                    {[1, 2].map(i => (
+                      <div key={`skel-${i}`} className="flex items-center gap-3 p-3 rounded-xl bg-muted/20 border border-border/30">
+                        <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
+                        <div className="flex-1 space-y-1.5">
+                          <Skeleton className="h-3.5 w-3/4" />
+                          <Skeleton className="h-3 w-1/2" />
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {/* Credly synced badges */}
+                {credlyBadges.map((badge) => (
+                  <a
+                    key={`credly-${badge.id}`}
+                    href={badge.badge_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-3 rounded-xl bg-orange-50/50 dark:bg-orange-950/10 border border-orange-200/40 dark:border-orange-800/30 hover:bg-orange-100/50 dark:hover:bg-orange-950/20 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      {badge.image_url ? (
+                        <img src={badge.image_url} alt={badge.name} className="w-10 h-10 rounded-xl object-contain shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                          <Award className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-foreground group-hover:text-orange-700 dark:group-hover:text-orange-400 transition-colors">
+                          {badge.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {badge.issuer}
+                          {badge.issued_at && ` • ${new Date(badge.issued_at).getFullYear()}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {badge.is_active ? (
+                        <Badge variant="secondary" className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-[10px] gap-0.5">
+                          <Award className="w-2.5 h-2.5" /> Credly
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground">
+                          {t('credly.expired', 'Expired')}
+                        </Badge>
+                      )}
+                      <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </a>
                 ))}
               </div>
             </CardContent>
