@@ -3,6 +3,8 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { GuestModeProvider } from "./contexts/GuestModeContext.tsx";
+import GuestBanner from "./components/guest/GuestBanner.tsx";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ConsultantLayout from "./components/consultant/ConsultantLayout.tsx";
@@ -49,51 +51,54 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/consultant" element={<ProtectedRoute requiredRole="consultant"><ConsultantLayout /></ProtectedRoute>}>
-            <Route index element={<ConsultantDashboard />} />
-            <Route path="cases" element={<CasesPage />} />
-            <Route path="calendar" element={<CalendarPage />} />
-            <Route path="earnings" element={<EarningsPage />} />
-            <Route path="verification" element={<VerificationPage />} />
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="chat" element={<ConsultantChatPage />} />
-            <Route path="chat/:sessionId" element={<ChatSessionPage role="consultant" />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="onboarding" element={<OnboardingPage />} />
-          </Route>
-          <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
-            <Route index element={<ClientDashboard />} />
-            <Route path="new-request" element={<NewRequestPage />} />
-            <Route path="tickets" element={<TicketsPage />} />
-            <Route path="consultants" element={<ConsultantsPage />} />
-            <Route path="consultants/:id" element={<ConsultantProfilePage />} />
-            <Route path="payments" element={<PaymentsPage />} />
-            <Route path="sessions" element={<SessionsPage />} />
-            <Route path="sessions/:sessionId" element={<SessionDetailPage />} />
-            <Route path="chat" element={<ClientChatPage />} />
-            <Route path="chat/:sessionId" element={<ChatSessionPage role="client" />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="onboarding" element={<ClientOnboardingPage />} />
-          </Route>
-          <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<UsersPage />} />
-            <Route path="tickets" element={<TicketKanbanPage />} />
-            <Route path="approvals" element={<ConsultantApprovalsPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-          </Route>
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <GuestModeProvider>
+          <GuestBanner />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/consultant" element={<ProtectedRoute requiredRole="consultant"><ConsultantLayout /></ProtectedRoute>}>
+              <Route index element={<ConsultantDashboard />} />
+              <Route path="cases" element={<CasesPage />} />
+              <Route path="calendar" element={<CalendarPage />} />
+              <Route path="earnings" element={<EarningsPage />} />
+              <Route path="verification" element={<VerificationPage />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="chat" element={<ConsultantChatPage />} />
+              <Route path="chat/:sessionId" element={<ChatSessionPage role="consultant" />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="onboarding" element={<OnboardingPage />} />
+            </Route>
+            <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
+              <Route index element={<ClientDashboard />} />
+              <Route path="new-request" element={<NewRequestPage />} />
+              <Route path="tickets" element={<TicketsPage />} />
+              <Route path="consultants" element={<ConsultantsPage />} />
+              <Route path="consultants/:id" element={<ConsultantProfilePage />} />
+              <Route path="payments" element={<PaymentsPage />} />
+              <Route path="sessions" element={<SessionsPage />} />
+              <Route path="sessions/:sessionId" element={<SessionDetailPage />} />
+              <Route path="chat" element={<ClientChatPage />} />
+              <Route path="chat/:sessionId" element={<ChatSessionPage role="client" />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="onboarding" element={<ClientOnboardingPage />} />
+            </Route>
+            <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<UsersPage />} />
+              <Route path="tickets" element={<TicketKanbanPage />} />
+              <Route path="approvals" element={<ConsultantApprovalsPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+            </Route>
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </GuestModeProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

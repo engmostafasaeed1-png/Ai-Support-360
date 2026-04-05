@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Users, Briefcase } from 'lucide-react';
+import { Loader2, Users, Briefcase, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import GuestExploreModal from '@/components/guest/GuestExploreModal';
 
 type Role = 'client' | 'consultant';
 
@@ -23,6 +24,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [exploreOpen, setExploreOpen] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,8 +124,17 @@ export default function SignupPage() {
               {t('auth.have_account')}{' '}
               <Link to="/login" className="text-primary font-medium hover:underline">{t('auth.login_link')}</Link>
             </p>
+            <button
+              type="button"
+              onClick={() => setExploreOpen(true)}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Eye className="w-4 h-4" />
+              Explore as Guest
+            </button>
           </CardFooter>
         </form>
+        <GuestExploreModal open={exploreOpen} onOpenChange={setExploreOpen} />
       </Card>
     </div>
   );
