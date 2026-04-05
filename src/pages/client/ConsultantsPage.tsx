@@ -459,7 +459,7 @@ export default function ConsultantsPage() {
             </Card>
           ))}
         </div>
-      )}
+      ) : null}
 
       {/* Booking Modal */}
       {bookingConsultant && (
