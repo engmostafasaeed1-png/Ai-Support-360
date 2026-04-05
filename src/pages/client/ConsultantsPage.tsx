@@ -108,7 +108,7 @@ export default function ConsultantsPage() {
                       return (
                         <span key={badge} className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-muted">
                           <BIcon className={`w-2.5 h-2.5 ${config.color}`} />
-                          {badge.replace('_', ' ')}
+                          {t(`consultants.${badge}`)}
                         </span>
                       );
                     })}
