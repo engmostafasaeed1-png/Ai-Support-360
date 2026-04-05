@@ -29,7 +29,7 @@ export default function AdminDashboard() {
       {/* KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {kpis.map((kpi) => (
-          <Card key={kpi.label} className="border-border/50">
+          <Card key={kpi.labelKey} className="border-border/50">
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-2">
                 <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
