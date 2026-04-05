@@ -192,7 +192,7 @@ export default function ClientDashboard() {
                     <span className="text-xs font-medium text-foreground">
                       {time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                     </span>
-                    <Button size="sm" className="gradient-primary border-0 text-xs h-7">Join</Button>
+                    <Button size="sm" className="gradient-primary border-0 text-xs h-7">{t('consultant_dashboard.join_session')}</Button>
                   </div>
                 </div>
               );
