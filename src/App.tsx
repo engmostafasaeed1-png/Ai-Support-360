@@ -12,6 +12,7 @@ import CalendarPage from "./pages/consultant/CalendarPage.tsx";
 import EarningsPage from "./pages/consultant/EarningsPage.tsx";
 import VerificationPage from "./pages/consultant/VerificationPage.tsx";
 import ProfilePage from "./pages/consultant/ProfilePage.tsx";
+import OnboardingPage from "./pages/consultant/OnboardingPage.tsx";
 import ConsultantChatPage from "./pages/consultant/ConsultantChatPage.tsx";
 import ClientLayout from "./components/client/ClientLayout.tsx";
 import ClientDashboard from "./pages/client/ClientDashboard.tsx";
