@@ -34,16 +34,17 @@ const sessionTypeIcons: Record<string, typeof Video> = {
 };
 
 export default function ConsultantDashboard() {
+  const { t } = useTranslation();
   const profile = mockConsultantProfile;
   const earnings = mockEarnings;
   const activeCases = mockCases.filter((c) => c.status !== 'resolved' && c.status !== 'closed');
   const upcomingSessions = mockSessions.filter((s) => s.status === 'scheduled');
 
   const kpis = [
-    { label: 'Monthly Earnings', value: `$${earnings.thisMonth.toLocaleString()}`, icon: DollarSign, trend: '+12%', up: true },
-    { label: 'Active Cases', value: activeCases.length.toString(), icon: Briefcase, trend: '+2', up: true },
-    { label: 'Avg Response', value: `${profile.response_time_minutes} min`, icon: Clock, trend: '-3 min', up: true },
-    { label: 'Rating', value: profile.rating.toString(), icon: Star, trend: `${profile.total_reviews} reviews`, up: true },
+    { labelKey: 'consultant_dashboard.this_month', value: `$${earnings.thisMonth.toLocaleString()}`, icon: DollarSign, trend: '+12%', up: true },
+    { labelKey: 'consultant_dashboard.active_cases', value: activeCases.length.toString(), icon: Briefcase, trend: '+2', up: true },
+    { labelKey: 'consultant_dashboard.response_time', value: `${profile.response_time_minutes} ${t('consultant_dashboard.minutes')}`, icon: Clock, trend: '-3 min', up: true },
+    { labelKey: 'consultant_dashboard.avg_rating', value: profile.rating.toString(), icon: Star, trend: `${profile.total_reviews} reviews`, up: true },
   ];
 
   return (
