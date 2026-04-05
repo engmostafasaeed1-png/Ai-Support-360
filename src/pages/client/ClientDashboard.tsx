@@ -45,16 +45,17 @@ const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
 };
 
 export default function ClientDashboard() {
+  const { t } = useTranslation();
   const profile = mockClientProfile;
   const openTickets = mockClientTickets.filter((t) => t.status !== 'resolved' && t.status !== 'closed');
   const pendingPayments = mockClientPayments.filter((p) => p.status === 'pending');
   const activeSessions = mockClientSessions.filter((s) => s.status === 'scheduled');
 
   const kpis = [
-    { label: 'Open Tickets', value: openTickets.length.toString(), icon: Briefcase, trend: '+1 today', up: true },
-    { label: 'Active Sessions', value: activeSessions.length.toString(), icon: Calendar, trend: '2 upcoming', up: true },
-    { label: 'Pending Payments', value: `$${pendingPayments.reduce((a, p) => a + p.amount, 0)}`, icon: CreditCard, trend: '1 invoice', up: false },
-    { label: 'Resolved This Month', value: '4', icon: CheckCircle, trend: '+25%', up: true },
+    { labelKey: 'client_dashboard.open_tickets', value: openTickets.length.toString(), icon: Briefcase, trend: '+1 today', up: true },
+    { labelKey: 'client_dashboard.active_sessions', value: activeSessions.length.toString(), icon: Calendar, trend: '2 upcoming', up: true },
+    { labelKey: 'client_dashboard.pending_payments', value: `$${pendingPayments.reduce((a, p) => a + p.amount, 0)}`, icon: CreditCard, trend: '1 invoice', up: false },
+    { labelKey: 'client_dashboard.resolved', value: '4', icon: CheckCircle, trend: '+25%', up: true },
   ];
 
   return (
