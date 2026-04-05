@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import {
   Briefcase, Clock, CreditCard, CheckCircle, TrendingUp, TrendingDown,
   ChevronRight, Star, BadgeCheck, Zap, TicketPlus, Users,
-  Calendar, DollarSign, FileText, Video, MessageSquare, Monitor,
+  Calendar, DollarSign, FileText, Video, MessageSquare, Monitor, Award, ExternalLink,
 } from 'lucide-react';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import OnboardingProgressCard from '@/components/onboarding/OnboardingProgressCard';
@@ -238,6 +238,18 @@ export default function ClientDashboard() {
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-3">
+                  {c.credly_username && (
+                    <a
+                      href={`https://www.credly.com/users/${c.credly_username}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
+                    >
+                      <Award className="w-2.5 h-2.5" />
+                      {t('consultants.credly_verified', 'Credly Verified')}
+                      <ExternalLink className="w-2 h-2" />
+                    </a>
+                  )}
                   {c.badges.map((badge) => {
                     const config = badgeConfig[badge];
                     if (!config) return null;
