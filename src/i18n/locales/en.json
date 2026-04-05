@@ -490,7 +490,10 @@
     "day_saturday": "Saturday",
     "success": "Profile setup complete! Your application is now under review.",
     "error_auth": "Please sign in to continue",
-    "error_generic": "Something went wrong. Please try again."
+    "error_generic": "Something went wrong. Please try again.",
+    "progress_title": "Complete your setup",
+    "progress_desc": "Finish onboarding to unlock all features",
+    "continue": "Continue"
   },
   "client_onboarding": {
     "title": "Set Up Your Account",
