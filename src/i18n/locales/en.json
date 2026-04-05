@@ -505,7 +505,9 @@
     "check_name": "Display name",
     "check_bio": "Professional bio",
     "check_rate": "Hourly rate",
-    "check_skills": "SAP skills"
+    "check_skills": "SAP skills",
+    "welcome_title": "🎉 Welcome aboard!",
+    "welcome_body": "Your profile setup is complete. You're all set to get started!"
   },
   "client_onboarding": {
     "title": "Set Up Your Account",
