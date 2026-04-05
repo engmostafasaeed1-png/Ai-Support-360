@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileSignature, Save } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { FileSignature, Save, Info } from 'lucide-react';
 import { useNDATemplate } from '@/hooks/useNDA';
 
 export default function NDATemplateEditor() {
