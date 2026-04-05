@@ -16,11 +16,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Monitor, Plus, Pencil, Trash2, Server } from 'lucide-react';
+import { Monitor, Plus, Pencil, Trash2, Server, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   useRemoteEnvironments, useCreateEnvironment, useUpdateEnvironment, useDeleteEnvironment,
   type RemoteEnvironment,
 } from '@/hooks/useRemoteEnvironments';
+import ConnectionsManager from '@/components/remote/ConnectionsManager';
 
 const statusColors: Record<string, 'default' | 'secondary' | 'destructive'> = {
   active: 'default',
@@ -165,6 +166,7 @@ export default function EnvironmentsPage() {
   const deleteEnv = useDeleteEnvironment();
   const [editEnv, setEditEnv] = useState<RemoteEnvironment | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [expandedEnv, setExpandedEnv] = useState<string | null>(null);
 
   if (isLoading) {
     return (
