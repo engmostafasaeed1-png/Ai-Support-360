@@ -3,11 +3,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Star, BadgeCheck, Zap, Heart, Filter, Map, LayoutGrid, Wifi, WifiOff, X } from 'lucide-react';
-import { useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import {
+  Search, Star, BadgeCheck, Zap, Heart, Filter, Map, LayoutGrid,
+  Wifi, WifiOff, X, ChevronDown, ChevronUp, Clock, Globe, DollarSign,
+  Users, Circle,
+} from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
 import ConsultantMap from '@/components/client/ConsultantMap';
+import { sapModules } from '@/data/clientMockData';
 
 const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
   verified: { icon: BadgeCheck, color: 'text-accent' },
@@ -15,41 +24,174 @@ const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
   fast_responder: { icon: Zap, color: 'text-green-500' },
 };
 
+const languages = [
+  { value: 'all', label: 'All Languages' },
+  { value: 'en', label: 'English' },
+  { value: 'ar', label: 'Arabic' },
+  { value: 'fr', label: 'French' },
+  { value: 'de', label: 'German' },
+];
+
+type SortOption = 'best_match' | 'rating' | 'price_low' | 'price_high' | 'fastest';
+
 export default function ConsultantsPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const industryFilter = searchParams.get('industry');
+
   const [search, setSearch] = useState('');
   const [view, setView] = useState<'grid' | 'map'>('grid');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Filter states
+  const [availabilityFilter, setAvailabilityFilter] = useState<'all' | 'online' | 'offline'>('all');
+  const [moduleFilter, setModuleFilter] = useState<string>('all');
+  const [minRating, setMinRating] = useState(0);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
+  const [languageFilter, setLanguageFilter] = useState('all');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>('best_match');
+
   const { consultants, realtimeConnected } = useRealtimeConsultants();
 
-  const filtered = consultants.filter((c) => {
-    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.specialty.toLowerCase().includes(search.toLowerCase());
-    const matchesIndustry = !industryFilter || ('industries' in c && (c as any).industries?.includes(industryFilter));
-    return matchesSearch && matchesIndustry;
-  });
+  const onlineCount = consultants.filter(c => c.available).length;
+  const offlineCount = consultants.filter(c => !c.available).length;
+
+  const filtered = useMemo(() => {
+    let result = consultants.filter((c) => {
+      const matchesSearch =
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.specialty.toLowerCase().includes(search.toLowerCase());
+      const matchesIndustry = !industryFilter || c.industries?.includes(industryFilter);
+      const matchesAvailability =
+        availabilityFilter === 'all' ||
+        (availabilityFilter === 'online' && c.available) ||
+        (availabilityFilter === 'offline' && !c.available);
+      const matchesModule =
+        moduleFilter === 'all' || c.specialty.toLowerCase().includes(moduleFilter.toLowerCase());
+      const matchesRating = c.rating >= minRating;
+      const matchesPrice = c.rate >= priceRange[0] && c.rate <= priceRange[1];
+      const matchesVerified = !verifiedOnly || c.badges.includes('verified');
+
+      return matchesSearch && matchesIndustry && matchesAvailability && matchesModule && matchesRating && matchesPrice && matchesVerified;
+    });
+
+    // Sort
+    switch (sortBy) {
+      case 'rating':
+        result.sort((a, b) => b.rating - a.rating);
+        break;
+      case 'price_low':
+        result.sort((a, b) => a.rate - b.rate);
+        break;
+      case 'price_high':
+        result.sort((a, b) => b.rate - a.rate);
+        break;
+      case 'fastest':
+        result.sort((a, b) => (a.available === b.available ? 0 : a.available ? -1 : 1));
+        break;
+      default:
+        result.sort((a, b) => b.matchScore - a.matchScore);
+    }
+
+    return result;
+  }, [consultants, search, industryFilter, availabilityFilter, moduleFilter, minRating, priceRange, languageFilter, verifiedOnly, sortBy]);
+
+  const activeFilterCount = [
+    availabilityFilter !== 'all',
+    moduleFilter !== 'all',
+    minRating > 0,
+    priceRange[0] > 0 || priceRange[1] < 500,
+    languageFilter !== 'all',
+    verifiedOnly,
+  ].filter(Boolean).length;
+
+  const clearFilters = () => {
+    setAvailabilityFilter('all');
+    setModuleFilter('all');
+    setMinRating(0);
+    setPriceRange([0, 500]);
+    setLanguageFilter('all');
+    setVerifiedOnly(false);
+    setSearchParams({});
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{t('consultants_page.title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t('consultants_page.subtitle')}</p>
         </div>
-        {/* Realtime indicator */}
-        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium ${realtimeConnected ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium ${realtimeConnected ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-muted text-muted-foreground'}`}>
           {realtimeConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
           {realtimeConnected ? t('consultants_page.live') : t('consultants_page.connecting')}
         </div>
       </div>
 
+      {/* Online/Offline Status Bar */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => setAvailabilityFilter(availabilityFilter === 'all' ? 'all' : 'all')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${availabilityFilter === 'all' ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+        >
+          <Users className="w-4 h-4" />
+          All ({consultants.length})
+        </button>
+        <button
+          onClick={() => setAvailabilityFilter(availabilityFilter === 'online' ? 'all' : 'online')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${availabilityFilter === 'online' ? 'bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+        >
+          <Circle className="w-3 h-3 fill-green-500 text-green-500" />
+          Online ({onlineCount})
+        </button>
+        <button
+          onClick={() => setAvailabilityFilter(availabilityFilter === 'offline' ? 'all' : 'offline')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${availabilityFilter === 'offline' ? 'bg-muted text-foreground border border-border' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+        >
+          <Circle className="w-3 h-3 fill-muted-foreground/40 text-muted-foreground/40" />
+          Offline ({offlineCount})
+        </button>
+      </div>
+
+      {/* Search + Filter toggle + View */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder={t('consultants_page.search_placeholder')} value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9 rounded-xl h-10" />
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5"><Filter className="w-3.5 h-3.5" /> {t('consultants_page.filters')}</Button>
+        <Button
+          variant={showFilters ? 'default' : 'outline'}
+          size="sm"
+          className="gap-1.5"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <Filter className="w-3.5 h-3.5" />
+          {t('consultants_page.filters')}
+          {activeFilterCount > 0 && (
+            <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] rounded-full bg-primary text-primary-foreground">
+              {activeFilterCount}
+            </Badge>
+          )}
+          {showFilters ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        </Button>
+
+        {/* Sort */}
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+          <SelectTrigger className="w-44 rounded-xl h-10 text-xs">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="best_match">Best Match</SelectItem>
+            <SelectItem value="rating">Highest Rating</SelectItem>
+            <SelectItem value="price_low">Price: Low → High</SelectItem>
+            <SelectItem value="price_high">Price: High → Low</SelectItem>
+            <SelectItem value="fastest">Available First</SelectItem>
+          </SelectContent>
+        </Select>
+
         <div className="flex rounded-lg border border-border overflow-hidden">
           <button onClick={() => setView('grid')} className={`p-2 transition-colors ${view === 'grid' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}>
             <LayoutGrid className="w-4 h-4" />
@@ -60,109 +202,224 @@ export default function ConsultantsPage() {
         </div>
       </div>
 
-      {/* Active industry filter */}
-      {industryFilter && (
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs bg-accent/10 text-accent">
-            {t(`industries.${industryFilter}`)}
-            <button onClick={() => setSearchParams({})} className="hover:text-destructive transition-colors">
-              <X className="w-3 h-3" />
-            </button>
-          </Badge>
+      {/* Expandable Filter Panel */}
+      {showFilters && (
+        <Card className="rounded-2xl border-border/50 animate-fade-in">
+          <CardContent className="p-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {/* SAP Module */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5" /> SAP Module
+                </Label>
+                <Select value={moduleFilter} onValueChange={setModuleFilter}>
+                  <SelectTrigger className="rounded-xl h-9 text-xs">
+                    <SelectValue placeholder="All Modules" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Modules</SelectItem>
+                    {sapModules.map(m => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Language */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5" /> Language
+                </Label>
+                <Select value={languageFilter} onValueChange={setLanguageFilter}>
+                  <SelectTrigger className="rounded-xl h-9 text-xs">
+                    <SelectValue placeholder="All Languages" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages.map(l => (
+                      <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Min Rating */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Star className="w-3.5 h-3.5" /> Min Rating: {minRating > 0 ? `${minRating}+` : 'Any'}
+                </Label>
+                <div className="flex items-center gap-1.5 pt-1">
+                  {[0, 3, 3.5, 4, 4.5].map(r => (
+                    <button
+                      key={r}
+                      onClick={() => setMinRating(r)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${minRating === r ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+                    >
+                      {r === 0 ? 'Any' : `${r}+`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <DollarSign className="w-3.5 h-3.5" /> Price: ${priceRange[0]} – ${priceRange[1]}/hr
+                </Label>
+                <Slider
+                  value={priceRange}
+                  onValueChange={(v) => setPriceRange(v as [number, number])}
+                  min={0}
+                  max={500}
+                  step={10}
+                  className="pt-2"
+                />
+              </div>
+            </div>
+
+            {/* Extra toggles */}
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Switch id="verified-only" checked={verifiedOnly} onCheckedChange={setVerifiedOnly} />
+                  <Label htmlFor="verified-only" className="text-xs cursor-pointer">Verified Only</Label>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={clearFilters}>
+                <X className="w-3 h-3 me-1" /> Clear All Filters
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Active filter chips */}
+      {(industryFilter || activeFilterCount > 0) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {industryFilter && (
+            <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs bg-accent/10 text-accent">
+              Industry: {t(`industries.${industryFilter}`)}
+              <button onClick={() => setSearchParams({})} className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
+            </Badge>
+          )}
+          {moduleFilter !== 'all' && (
+            <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs bg-accent/10 text-accent">
+              {moduleFilter}
+              <button onClick={() => setModuleFilter('all')} className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
+            </Badge>
+          )}
+          {minRating > 0 && (
+            <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs bg-accent/10 text-accent">
+              Rating: {minRating}+
+              <button onClick={() => setMinRating(0)} className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
+            </Badge>
+          )}
+          {verifiedOnly && (
+            <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs bg-accent/10 text-accent">
+              Verified Only
+              <button onClick={() => setVerifiedOnly(false)} className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
+            </Badge>
+          )}
         </div>
       )}
 
-      {/* Tab filters */}
-      <div className="flex gap-2">
-        {['best_match', 'fastest_available', 'budget_fit'].map((tab, i) => (
-          <Button key={tab} size="sm" variant={i === 0 ? 'default' : 'outline'} className={`text-xs rounded-full ${i === 0 ? 'gradient-primary border-0' : ''}`}>
-            {t(`consultants_page.${tab}`)}
-          </Button>
-        ))}
+      {/* Results count */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {filtered.length} consultant{filtered.length !== 1 ? 's' : ''} found
+        </p>
       </div>
 
       {/* Map View */}
-      {view === 'map' && (
-        <ConsultantMap consultants={filtered} />
-      )}
+      {view === 'map' && <ConsultantMap consultants={filtered} />}
 
       {/* Grid View */}
-      <div className={`grid md:grid-cols-2 gap-4 ${view === 'map' ? 'mt-4' : ''}`}>
-        {filtered.map((c) => (
-          <Card key={c.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
-            <CardContent className="p-5">
-              <div className="flex items-start gap-4">
-                <div className="relative">
-                  <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0">
-                    {c.avatar}
+      {filtered.length === 0 ? (
+        <Card className="rounded-2xl border-border/50">
+          <CardContent className="p-12 text-center">
+            <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+            <h3 className="font-semibold text-foreground">No consultants found</h3>
+            <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or search criteria</p>
+            <Button variant="outline" size="sm" className="mt-4" onClick={clearFilters}>Clear All Filters</Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className={`grid md:grid-cols-2 gap-4 ${view === 'map' ? 'mt-4' : ''}`}>
+          {filtered.map((c) => (
+            <Card key={c.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all group">
+              <CardContent className="p-5">
+                <div className="flex items-start gap-4">
+                  <div className="relative">
+                    <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0">
+                      {c.avatar}
+                    </div>
+                    <span className={`absolute -top-1 -end-1 w-4 h-4 rounded-full border-2 border-card transition-colors ${c.available ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
                   </div>
-                  {/* Live status dot on avatar */}
-                  <span className={`absolute -top-1 -end-1 w-4 h-4 rounded-full border-2 border-card ${c.available ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-foreground">{c.name}</h3>
-                    <Button variant="ghost" size="icon" className="shrink-0">
-                      <Heart className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{c.specialty}</p>
-                  {'city' in c && <p className="text-xs text-muted-foreground">{c.city}</p>}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-foreground">{c.name}</h3>
+                      <Button variant="ghost" size="icon" className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Heart className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{c.specialty}</p>
+                    {'city' in c && <p className="text-xs text-muted-foreground">{c.city}</p>}
 
-                  <div className="flex items-center gap-2 mt-2">
-                    <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                    <span className="text-sm font-semibold text-foreground">{c.rating}</span>
-                    <span className="text-xs text-muted-foreground">({c.reviews} {t('consultants_page.reviews')})</span>
-                  </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                      <span className="text-sm font-semibold text-foreground">{c.rating}</span>
+                      <span className="text-xs text-muted-foreground">({c.reviews} {t('consultants_page.reviews')})</span>
+                    </div>
 
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {c.badges.map((badge) => {
-                      const config = badgeConfig[badge];
-                      if (!config) return null;
-                      const BIcon = config.icon;
-                      return (
-                        <span key={badge} className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-muted">
-                          <BIcon className={`w-2.5 h-2.5 ${config.color}`} />
-                          {t(`consultants.${badge}`)}
-                        </span>
-                      );
-                    })}
-                  </div>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {c.badges.map((badge) => {
+                        const config = badgeConfig[badge];
+                        if (!config) return null;
+                        const BIcon = config.icon;
+                        return (
+                          <span key={badge} className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-muted">
+                            <BIcon className={`w-2.5 h-2.5 ${config.color}`} />
+                            {t(`consultants.${badge}`)}
+                          </span>
+                        );
+                      })}
+                    </div>
 
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="flex items-center gap-4">
-                      <div>
-                        <span className="text-lg font-bold text-foreground">${c.rate}</span>
-                        <span className="text-xs text-muted-foreground">/hr</span>
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <span className="text-lg font-bold text-foreground">${c.rate}</span>
+                          <span className="text-xs text-muted-foreground">/hr</span>
+                        </div>
+                        <Badge variant="secondary" className="text-[10px] bg-accent/10 text-accent">
+                          {c.matchScore}% {t('consultants_page.match')}
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" className="text-[10px] bg-accent/10 text-accent">
-                        {c.matchScore}% {t('consultants_page.match')}
-                      </Badge>
+                      <div className="flex gap-2">
+                        {c.available ? (
+                          <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                            {t('consultants.available')}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                            {t('consultants.offline')}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      {c.available ? (
-                        <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                          {t('consultants.available')}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground font-medium">
-                          {t('consultants.offline')}
-                        </span>
-                      )}
-                    </div>
-                  </div>
 
-                  <div className="flex gap-2 mt-3">
-                    <Button size="sm" className="gradient-primary border-0 flex-1 text-xs">{t('consultants_page.book_session')}</Button>
-                    <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => navigate(`/client/consultants/${c.id}`)}>{t('consultants_page.view_profile')}</Button>
+                    <div className="flex gap-2 mt-3">
+                      <Button size="sm" className="gradient-primary border-0 flex-1 text-xs">{t('consultants_page.book_session')}</Button>
+                      <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => navigate(`/client/consultants/${c.id}`)}>{t('consultants_page.view_profile')}</Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
