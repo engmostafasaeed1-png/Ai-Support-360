@@ -53,6 +53,6 @@ export function useConsultantCases() {
       }));
     },
     enabled: !isGuest,
-    placeholderData: isGuest ? mockCases : undefined,
+    placeholderData: isGuest ? mockCases.map(c => ({ ...c, client_id: '' })) : undefined,
   });
 }
