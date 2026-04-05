@@ -235,6 +235,7 @@ export default function EarningsPage() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
