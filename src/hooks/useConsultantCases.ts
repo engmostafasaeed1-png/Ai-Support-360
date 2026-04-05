@@ -49,10 +49,10 @@ export function useConsultantCases() {
         status: t.status || 'new',
         created_at: t.created_at,
         sla_deadline: t.sla_deadline || '',
-        resolved_at: t.resolved_at || undefined,
+        resolved_at: t.resolved_at || '',
       }));
     },
     enabled: !isGuest,
-    placeholderData: isGuest ? mockCases.map(c => ({ ...c, client_id: '' })) : undefined,
+    placeholderData: isGuest ? mockCases.map(c => ({ ...c, client_id: '' })) as any : undefined,
   });
 }
