@@ -339,7 +339,9 @@
     "live": "Live",
     "connecting": "Connecting...",
     "online": "online",
-    "offline_label": "offline"
+    "offline_label": "offline",
+    "verified_only": "Verified Only",
+    "credly_only": "Credly Verified Only"
   },
   "consultant_profile": {
     "back": "Back to Marketplace",

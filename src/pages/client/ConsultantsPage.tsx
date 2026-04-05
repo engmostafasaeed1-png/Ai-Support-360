@@ -53,6 +53,7 @@ export default function ConsultantsPage() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
   const [languageFilter, setLanguageFilter] = useState('all');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [credlyOnly, setCredlyOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('best_match');
   const [bookingConsultant, setBookingConsultant] = useState<{ id: string; name: string; rate: number } | null>(null);
   const [mapSelectedId, setMapSelectedId] = useState<string | null>(null);
@@ -85,8 +86,9 @@ export default function ConsultantsPage() {
       const matchesRating = c.rating >= minRating;
       const matchesPrice = c.rate >= priceRange[0] && c.rate <= priceRange[1];
       const matchesVerified = !verifiedOnly || c.badges.includes('verified');
+      const matchesCredly = !credlyOnly || !!c.credly_username;
 
-      return matchesSearch && matchesIndustry && matchesAvailability && matchesModule && matchesRating && matchesPrice && matchesVerified;
+      return matchesSearch && matchesIndustry && matchesAvailability && matchesModule && matchesRating && matchesPrice && matchesVerified && matchesCredly;
     });
 
     // Sort
@@ -108,7 +110,7 @@ export default function ConsultantsPage() {
     }
 
     return result;
-  }, [consultants, search, industryFilter, availabilityFilter, moduleFilter, minRating, priceRange, languageFilter, verifiedOnly, sortBy]);
+  }, [consultants, search, industryFilter, availabilityFilter, moduleFilter, minRating, priceRange, languageFilter, verifiedOnly, credlyOnly, sortBy]);
 
   const activeFilterCount = [
     availabilityFilter !== 'all',
@@ -117,6 +119,7 @@ export default function ConsultantsPage() {
     priceRange[0] > 0 || priceRange[1] < 500,
     languageFilter !== 'all',
     verifiedOnly,
+    credlyOnly,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -126,6 +129,7 @@ export default function ConsultantsPage() {
     setPriceRange([0, 500]);
     setLanguageFilter('all');
     setVerifiedOnly(false);
+    setCredlyOnly(false);
     setSearchParams({});
   };
 
@@ -293,7 +297,14 @@ export default function ConsultantsPage() {
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
                   <Switch id="verified-only" checked={verifiedOnly} onCheckedChange={setVerifiedOnly} />
-                  <Label htmlFor="verified-only" className="text-xs cursor-pointer">Verified Only</Label>
+                  <Label htmlFor="verified-only" className="text-xs cursor-pointer">{t('consultants_page.verified_only', 'Verified Only')}</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch id="credly-only" checked={credlyOnly} onCheckedChange={setCredlyOnly} />
+                  <Label htmlFor="credly-only" className="text-xs cursor-pointer flex items-center gap-1">
+                    <Award className="w-3.5 h-3.5 text-orange-500" />
+                    {t('consultants_page.credly_only', 'Credly Verified Only')}
+                  </Label>
                 </div>
               </div>
               <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={clearFilters}>
@@ -327,8 +338,15 @@ export default function ConsultantsPage() {
           )}
           {verifiedOnly && (
             <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs bg-accent/10 text-accent">
-              Verified Only
+              {t('consultants_page.verified_only', 'Verified Only')}
               <button onClick={() => setVerifiedOnly(false)} className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
+            </Badge>
+          )}
+          {credlyOnly && (
+            <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+              <Award className="w-3 h-3" />
+              {t('consultants_page.credly_only', 'Credly Verified Only')}
+              <button onClick={() => setCredlyOnly(false)} className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
             </Badge>
           )}
         </div>
