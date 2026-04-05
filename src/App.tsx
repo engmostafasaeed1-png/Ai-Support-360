@@ -23,6 +23,7 @@ import ConsultantProfilePage from "./pages/client/ConsultantProfilePage.tsx";
 import PaymentsPage from "./pages/client/PaymentsPage.tsx";
 import ClientChatPage from "./pages/client/ClientChatPage.tsx";
 import ClientOnboardingPage from "./pages/client/ClientOnboardingPage.tsx";
+import SessionsPage from "./pages/client/SessionsPage.tsx";
 import ChatSessionPage from "./pages/chat/ChatSessionPage.tsx";
 import NotificationsPage from "./pages/notifications/NotificationsPage.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
