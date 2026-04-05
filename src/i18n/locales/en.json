@@ -599,7 +599,10 @@
     "next": "Next",
     "back": "Back",
     "confirm": "Confirm Booking",
+    "submitting": "Booking...",
     "confirmed_title": "Session Booked!",
-    "confirmed_desc": "Your session with {{name}} has been confirmed."
+    "confirmed_desc": "Your session with {{name}} has been confirmed.",
+    "login_required": "Please log in to book a session.",
+    "error": "Booking failed"
   }
 }
