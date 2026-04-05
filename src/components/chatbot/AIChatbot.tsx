@@ -11,12 +11,27 @@ import { useTriageChat } from '@/hooks/useTriageChat';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
+function parseTicketSummary(content: string) {
+  const titleMatch = content.match(/\*\*Title\*\*:\s*(.+)/i);
+  const moduleMatch = content.match(/\*\*SAP Module\*\*:\s*(.+)/i);
+  const urgencyMatch = content.match(/\*\*Urgency\*\*:\s*(\w+)/i);
+  const descMatch = content.match(/\*\*Description\*\*:\s*(.+)/i);
+  if (!titleMatch && !moduleMatch) return null;
+  return {
+    title: titleMatch?.[1]?.trim() || '',
+    module: moduleMatch?.[1]?.trim() || '',
+    urgency: urgencyMatch?.[1]?.trim().toLowerCase() || 'medium',
+    description: descMatch?.[1]?.trim() || '',
+  };
+}
+
 export default function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const { messages, isLoading, sendMessage, clearChat } = useTriageChat();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -34,6 +49,18 @@ export default function AIChatbot() {
     setInput('');
     sendMessage(text);
   };
+
+  const handleCreateTicket = useCallback((content: string) => {
+    const parsed = parseTicketSummary(content);
+    if (!parsed) return;
+    const params = new URLSearchParams();
+    if (parsed.title) params.set('title', parsed.title);
+    if (parsed.module) params.set('module', parsed.module);
+    if (parsed.urgency) params.set('urgency', parsed.urgency);
+    if (parsed.description) params.set('description', parsed.description);
+    setIsOpen(false);
+    navigate(`/client/new-request?${params.toString()}`);
+  }, [navigate]);
 
   return (
     <>
