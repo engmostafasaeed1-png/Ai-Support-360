@@ -13,7 +13,11 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileSignature, Search, Download, Eye, Calendar } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { FileSignature, Search, Download, Eye, Calendar, ShieldOff, ShieldCheck } from 'lucide-react';
 
 interface NDARecord {
   id: string;
