@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, TicketPlus, Briefcase, Users, Calendar,
-  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
+  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, Plug,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
