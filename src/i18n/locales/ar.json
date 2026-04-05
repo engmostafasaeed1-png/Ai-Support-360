@@ -299,14 +299,19 @@
     "no_tickets": "لم يتم العثور على تذاكر"
   },
   "consultants_page": {
-    "title": "البحث عن مستشارين",
-    "subtitle": "تصفح خبراء SAP المعتمدين",
-    "search": "البحث بالاسم، الوحدة...",
+    "title": "سوق المستشارين",
+    "subtitle": "ابحث واحجز أفضل خبراء SAP لاحتياجاتك.",
+    "search_placeholder": "البحث بالاسم أو المهارة أو الوحدة...",
+    "filters": "تصفية",
     "best_match": "الأفضل تطابقاً",
-    "fastest": "الأسرع",
+    "fastest_available": "الأسرع توفراً",
     "budget_fit": "الأنسب للميزانية",
     "book_session": "حجز جلسة",
-    "view_profile": "عرض الملف الشخصي"
+    "view_profile": "عرض الملف الشخصي",
+    "reviews": "تقييم",
+    "match": "تطابق",
+    "map_view": "عرض الخريطة",
+    "grid_view": "عرض شبكي"
   },
   "payments_page": {
     "title": "المدفوعات",

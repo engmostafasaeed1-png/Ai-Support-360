@@ -299,14 +299,19 @@
     "no_tickets": "No tickets found"
   },
   "consultants_page": {
-    "title": "Find Consultants",
-    "subtitle": "Browse verified SAP experts",
-    "search": "Search by name, module...",
+    "title": "Consultant Marketplace",
+    "subtitle": "Find and book the best SAP experts for your needs.",
+    "search_placeholder": "Search by name, skill, or module...",
+    "filters": "Filters",
     "best_match": "Best Match",
-    "fastest": "Fastest",
+    "fastest_available": "Fastest Available",
     "budget_fit": "Budget Fit",
     "book_session": "Book Session",
-    "view_profile": "View Profile"
+    "view_profile": "View Profile",
+    "reviews": "reviews",
+    "match": "match",
+    "map_view": "Map View",
+    "grid_view": "Grid View"
   },
   "payments_page": {
     "title": "Payments",
