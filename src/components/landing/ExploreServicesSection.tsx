@@ -90,8 +90,6 @@ export default function ExploreServicesSection() {
                 <div
                   key={key}
                   className="group relative p-5 rounded-2xl bg-card border border-border/40 hover:border-accent/40 hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden"
-                  onMouseEnter={() => setHoveredSolution(key)}
-                  onMouseLeave={() => setHoveredSolution(null)}
                 >
                   {/* Glow effect on hover */}
                   <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
