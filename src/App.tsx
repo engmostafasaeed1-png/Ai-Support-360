@@ -62,6 +62,7 @@ const App = () => (
       <BrowserRouter>
         <GuestModeProvider>
           <GuestBanner />
+          <AIChatbot />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/pricing" element={<PricingPage />} />
