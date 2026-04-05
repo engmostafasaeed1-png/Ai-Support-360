@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +19,7 @@ import {
 } from 'recharts';
 import { format } from 'date-fns';
 import { mockEarnings } from '@/data/consultantMockData';
+import PayoutModal from '@/components/consultant/PayoutModal';
 
 const paymentStatusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   completed: 'default',
