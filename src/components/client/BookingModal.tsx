@@ -17,6 +17,7 @@ interface BookingModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   consultantName: string;
+  consultantId: string;
   rate: number;
   availableSlots: { time: string; duration: number; type: string }[];
 }
