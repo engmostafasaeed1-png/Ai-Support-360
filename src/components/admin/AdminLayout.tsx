@@ -2,7 +2,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
-import { Search, LayoutDashboard, Users, Kanban, UserCheck, BarChart3 } from 'lucide-react';
+import { Search, LayoutDashboard, Users, Kanban, UserCheck, BarChart3, Settings } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 
@@ -11,7 +11,11 @@ const bottomNavItems = [
   { key: 'users', icon: Users, path: '/admin/users', labelKey: 'sidebar.users' },
   { key: 'tickets', icon: Kanban, path: '/admin/tickets', labelKey: 'sidebar.ticket_board' },
   { key: 'approvals', icon: UserCheck, path: '/admin/approvals', labelKey: 'sidebar.approvals' },
+];
+
+const moreNavItems = [
   { key: 'analytics', icon: BarChart3, path: '/admin/analytics', labelKey: 'sidebar.analytics' },
+  { key: 'settings', icon: Settings, path: '/admin/settings', labelKey: 'sidebar.settings' },
 ];
 
 export default function AdminLayout() {
@@ -40,7 +44,7 @@ export default function AdminLayout() {
             <Outlet />
           </main>
         </div>
-        <MobileBottomNav items={bottomNavItems} />
+        <MobileBottomNav items={bottomNavItems} moreItems={moreNavItems} />
       </div>
     </SidebarProvider>
   );

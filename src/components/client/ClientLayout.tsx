@@ -2,7 +2,11 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import ClientSidebar from '@/components/client/ClientSidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { Outlet } from 'react-router-dom';
-import { Search, AlertTriangle, LayoutDashboard, TicketPlus, Users, MessageSquare, Settings } from 'lucide-react';
+import {
+  Search, AlertTriangle, LayoutDashboard, TicketPlus, Users,
+  MessageSquare, Settings, Briefcase, Calendar, CreditCard,
+  FileText, BookOpen, Bell,
+} from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +17,15 @@ const bottomNavItems = [
   { key: 'new_request', icon: TicketPlus, path: '/client/new-request', labelKey: 'sidebar.new_request' },
   { key: 'consultants', icon: Users, path: '/client/consultants', labelKey: 'sidebar.consultants' },
   { key: 'chat', icon: MessageSquare, path: '/client/chat', labelKey: 'sidebar.chat' },
+];
+
+const moreNavItems = [
+  { key: 'tickets', icon: Briefcase, path: '/client/tickets', labelKey: 'sidebar.tickets' },
+  { key: 'sessions', icon: Calendar, path: '/client/sessions', labelKey: 'sidebar.sessions' },
+  { key: 'payments', icon: CreditCard, path: '/client/payments', labelKey: 'sidebar.payments' },
+  { key: 'invoices', icon: FileText, path: '/client/invoices', labelKey: 'sidebar.invoices' },
+  { key: 'knowledge', icon: BookOpen, path: '/client/knowledge', labelKey: 'sidebar.knowledge' },
+  { key: 'notifications', icon: Bell, path: '/client/notifications', labelKey: 'sidebar.notifications' },
   { key: 'settings', icon: Settings, path: '/client/settings', labelKey: 'sidebar.settings' },
 ];
 
@@ -50,7 +63,7 @@ export default function ClientLayout() {
             <Outlet />
           </main>
         </div>
-        <MobileBottomNav items={bottomNavItems} />
+        <MobileBottomNav items={bottomNavItems} moreItems={moreNavItems} />
       </div>
     </SidebarProvider>
   );
