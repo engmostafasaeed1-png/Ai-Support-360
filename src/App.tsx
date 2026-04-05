@@ -25,6 +25,7 @@ import ClientChatPage from "./pages/client/ClientChatPage.tsx";
 import ClientOnboardingPage from "./pages/client/ClientOnboardingPage.tsx";
 import SessionsPage from "./pages/client/SessionsPage.tsx";
 import SessionDetailPage from "./pages/client/SessionDetailPage.tsx";
+import SettingsPage from "./pages/client/SettingsPage.tsx";
 import ChatSessionPage from "./pages/chat/ChatSessionPage.tsx";
 import NotificationsPage from "./pages/notifications/NotificationsPage.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
@@ -79,6 +80,7 @@ const App = () => (
             <Route path="chat" element={<ClientChatPage />} />
             <Route path="chat/:sessionId" element={<ChatSessionPage role="client" />} />
             <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="settings" element={<SettingsPage />} />
             <Route path="onboarding" element={<ClientOnboardingPage />} />
           </Route>
           <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
