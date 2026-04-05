@@ -12,6 +12,7 @@ import ReviewStep from './steps/ReviewStep';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import { fireConfetti } from '@/lib/confetti';
 
 export interface ClientOnboardingData {
   companyName: string;
@@ -60,8 +61,9 @@ export default function ClientOnboarding() {
 
   const handleSubmit = async () => {
     if (isGuest) {
+      fireConfetti();
       toast.success(t('guest.onboarding_demo'));
-      navigate('/client');
+      setTimeout(() => navigate('/client'), 1200);
       return;
     }
     setSubmitting(true);
@@ -92,8 +94,9 @@ export default function ClientOnboarding() {
       }, { onConflict: 'user_id' });
 
       if (error) throw error;
+      fireConfetti();
       toast.success(t('client_onboarding.success'));
-      navigate('/client');
+      setTimeout(() => navigate('/client'), 1200);
     } catch (err) {
       console.error(err);
       toast.error(t('onboarding.error_generic'));
