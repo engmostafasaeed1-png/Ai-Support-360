@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FileSignature, PenTool, Type } from 'lucide-react';
+import { FileSignature, PenTool, Type, AlertTriangle } from 'lucide-react';
 import { useNDATemplate, useNDAAgreement } from '@/hooks/useNDA';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 
 interface NDASigningModalProps {
@@ -26,7 +27,7 @@ export default function NDASigningModal({
 }: NDASigningModalProps) {
   const { t } = useTranslation();
   const { template, loading: templateLoading } = useNDATemplate();
-  const { signNDA } = useNDAAgreement(consultantId, clientId);
+  const { signNDA, wasRevoked } = useNDAAgreement(consultantId, clientId);
 
   const [consultantName, setConsultantName] = useState('');
   const [consultantEmail, setConsultantEmail] = useState('');
@@ -206,6 +207,15 @@ export default function NDASigningModal({
             </p>
           )}
         </DialogHeader>
+
+        {wasRevoked && (
+          <Alert variant="destructive" className="border-destructive/50">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              {t('nda.revoked_warning', 'Your previous NDA for this client was revoked by an administrator. Please review and sign the updated agreement below to continue providing support.')}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* NDA Content */}
         <ScrollArea className="flex-1 max-h-[280px] border rounded-lg p-4 bg-muted/30">
