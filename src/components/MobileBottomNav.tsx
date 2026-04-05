@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Globe } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { useLanguage } from '@/hooks/useLanguage';
+import { Separator } from '@/components/ui/separator';
 import type { LucideIcon } from 'lucide-react';
 
 interface NavItem {
@@ -22,6 +24,7 @@ export default function MobileBottomNav({ items, moreItems = [] }: MobileBottomN
   const isMobile = useIsMobile();
   const location = useLocation();
   const { t } = useTranslation();
+  const { toggleLanguage, currentLang } = useLanguage();
   const [open, setOpen] = useState(false);
 
   if (!isMobile) return null;
@@ -90,6 +93,14 @@ export default function MobileBottomNav({ items, moreItems = [] }: MobileBottomN
               );
             })}
           </div>
+          <Separator />
+          <button
+            onClick={() => { toggleLanguage(); setOpen(false); }}
+            className="flex items-center gap-3 w-full px-3 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Globe className="w-5 h-5" />
+            <span>{currentLang === 'en' ? 'العربية' : 'English'}</span>
+          </button>
         </SheetContent>
       </Sheet>
     </>
