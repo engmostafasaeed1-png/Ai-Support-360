@@ -27,7 +27,11 @@ export default function LoginPage() {
       toast.error(error.message);
       return;
     }
-    // Redirect based on role
+    // Redirect to original page or role-based default
+    if (from) {
+      navigate(from);
+      return;
+    }
     const { data: roles } = await supabase.from('user_roles').select('role').limit(1);
     const role = roles?.[0]?.role;
     if (role === 'consultant') navigate('/consultant');
