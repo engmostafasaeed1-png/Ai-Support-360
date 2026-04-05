@@ -618,6 +618,7 @@
     "status_scheduled": "مجدولة",
     "status_in_progress": "قيد التنفيذ",
     "status_completed": "مكتملة",
-    "status_cancelled": "ملغية"
+    "status_cancelled": "ملغية",
+    "unknown_consultant": "مستشار"
   }
 }
