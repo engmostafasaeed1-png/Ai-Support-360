@@ -331,7 +331,9 @@
     "map_view": "Map View",
     "grid_view": "Grid View",
     "live": "Live",
-    "connecting": "Connecting..."
+    "connecting": "Connecting...",
+    "online": "online",
+    "offline_label": "offline"
   },
   "consultant_profile": {
     "back": "Back to Marketplace",

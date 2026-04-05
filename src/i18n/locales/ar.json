@@ -331,7 +331,9 @@
     "map_view": "عرض الخريطة",
     "grid_view": "عرض شبكي",
     "live": "مباشر",
-    "connecting": "جاري الاتصال..."
+    "connecting": "جاري الاتصال...",
+    "online": "متصل",
+    "offline_label": "غير متصل"
   },
   "consultant_profile": {
     "back": "العودة إلى السوق",
