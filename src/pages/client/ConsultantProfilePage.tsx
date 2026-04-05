@@ -13,6 +13,7 @@ import {
   MessageSquare, Monitor, ChevronLeft, CalendarDays, BadgeCheck
 } from 'lucide-react';
 import { useState } from 'react';
+import BookingModal from '@/components/client/BookingModal';
 
 export default function ConsultantProfilePage() {
   const { id } = useParams<{ id: string }>();
