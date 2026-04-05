@@ -1,7 +1,8 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import ClientSidebar from '@/components/client/ClientSidebar';
 import { Outlet } from 'react-router-dom';
-import { Bell, Search, AlertTriangle } from 'lucide-react';
+import { Search, AlertTriangle } from 'lucide-react';
+import NotificationBell from '@/components/notifications/NotificationBell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
@@ -30,10 +31,7 @@ export default function ClientLayout() {
                   Emergency Support
                 </Button>
               </Link>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 end-1.5 w-2 h-2 rounded-full bg-accent" />
-              </Button>
+              <NotificationBell basePath="/client" />
               <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
                 KO
               </div>

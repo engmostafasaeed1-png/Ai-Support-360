@@ -369,6 +369,15 @@
     "top_consultants": "Top Consultants",
     "improvement": "improvement"
   },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "mark_all_read": "Mark all as read",
+    "view_all": "View all notifications",
+    "new": "New",
+    "unread_count": "{{count}} unread notification(s)",
+    "all_read": "You're all caught up!"
+  },
   "common": {
     "search": "Search",
     "save": "Save",
