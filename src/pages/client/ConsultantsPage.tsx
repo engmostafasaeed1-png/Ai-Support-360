@@ -422,6 +422,18 @@ export default function ConsultantsPage() {
           ))}
         </div>
       )}
+
+      {/* Booking Modal */}
+      {bookingConsultant && (
+        <BookingModal
+          open={!!bookingConsultant}
+          onOpenChange={(open) => { if (!open) setBookingConsultant(null); }}
+          consultantName={bookingConsultant.name}
+          consultantId={bookingConsultant.id}
+          rate={bookingConsultant.rate}
+          availableSlots={[]}
+        />
+      )}
     </div>
   );
 }
