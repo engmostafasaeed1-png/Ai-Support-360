@@ -198,7 +198,7 @@ export default function NDASigningModal({
             <p className="text-muted-foreground">{t('nda.loading', 'Loading...')}</p>
           ) : (
             <pre className="whitespace-pre-wrap text-sm font-sans text-foreground leading-relaxed">
-              {template}
+              {filledTemplate}
             </pre>
           )}
         </ScrollArea>
