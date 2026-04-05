@@ -4,8 +4,8 @@ import { useCallback, useEffect } from 'react';
 export function useLanguage() {
   const { i18n } = useTranslation();
 
-  const isRTL = i18n.language === 'ar';
-  const currentLang = i18n.language;
+  const isRTL = i18n.language?.startsWith('ar');
+  const currentLang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
 
   useEffect(() => {
     document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
