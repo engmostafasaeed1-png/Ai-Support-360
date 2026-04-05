@@ -369,6 +369,15 @@
     "top_consultants": "أفضل المستشارين",
     "improvement": "تحسن"
   },
+  "notifications": {
+    "title": "الإشعارات",
+    "empty": "لا توجد إشعارات بعد",
+    "mark_all_read": "تعيين الكل كمقروء",
+    "view_all": "عرض جميع الإشعارات",
+    "new": "جديد",
+    "unread_count": "{{count}} إشعار(ات) غير مقروءة",
+    "all_read": "لا توجد إشعارات جديدة!"
+  },
   "common": {
     "search": "بحث",
     "save": "حفظ",
