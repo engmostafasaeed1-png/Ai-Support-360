@@ -55,7 +55,7 @@ export default function MobileBottomNav({ items, moreItems = [] }: MobileBottomN
           {moreItems.length > 0 && (
             <button
               onClick={() => setOpen(true)}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1 min-w-0 transition-colors ${
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 min-w-0 transition-all active:scale-90 active:opacity-70 duration-150 ${
                 isMoreActive ? 'text-accent' : 'text-muted-foreground'
               }`}
             >
