@@ -51,6 +51,6 @@ export function useConsultantProfile() {
       };
     },
     enabled: !isGuest,
-    placeholderData: isGuest ? mockConsultantProfile : undefined,
+    placeholderData: isGuest ? { ...mockConsultantProfile, avatar_url: null, credly_username: null } : undefined,
   });
 }

@@ -75,7 +75,7 @@ export function useAdminUsers() {
       }));
     },
     enabled: !isGuest,
-    placeholderData: isGuest ? adminUsers : undefined,
+    placeholderData: isGuest ? (adminUsers as any) : undefined,
   });
 }
 

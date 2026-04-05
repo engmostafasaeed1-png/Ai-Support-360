@@ -30,7 +30,7 @@ export function useClientTickets() {
         urgency: t.urgency || 'medium',
         status: t.status || 'new',
         created_at: t.created_at,
-        consultant: t.consultants?.profiles?.display_name || null,
+        consultant: t.consultants?.profiles?.display_name || undefined,
       }));
     },
     enabled: !isGuest,

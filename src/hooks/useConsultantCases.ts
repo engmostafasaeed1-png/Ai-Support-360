@@ -38,8 +38,8 @@ export function useConsultantCases() {
         status: t.status || 'new',
         created_at: t.created_at,
         sla_deadline: t.sla_deadline || '',
-        resolved_at: t.resolved_at,
-      }));
+        resolved_at: t.resolved_at || undefined,
+      })) as typeof mockCases;
     },
     enabled: !isGuest,
     placeholderData: isGuest ? mockCases : undefined,
