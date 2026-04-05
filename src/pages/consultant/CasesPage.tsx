@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useConsultantCases } from '@/hooks/useConsultantCases';
-import { Search, Filter, ArrowUpRight, Clock } from 'lucide-react';
-import { useState } from 'react';
+import { Search, Filter, ArrowUpRight, Clock, FileSignature, ShieldCheck } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { supabase } from '@/integrations/supabase/client';
+import NDASigningModal from '@/components/consultant/NDASigningModal';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -25,9 +28,51 @@ const statusColors: Record<string, string> = {
 };
 
 export default function CasesPage() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const { data: cases, isLoading } = useConsultantCases();
+  const { data: cases, isLoading, refetch } = useConsultantCases();
+
+  // NDA state
+  const [consultantId, setConsultantId] = useState<string | null>(null);
+  const [signedClients, setSignedClients] = useState<Set<string>>(new Set());
+  const [ndaModal, setNdaModal] = useState<{ open: boolean; clientId: string; clientName: string }>({
+    open: false, clientId: '', clientName: '',
+  });
+
+  // Fetch consultant ID and signed NDAs
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: consultant } = await supabase
+        .from('consultants')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!consultant) return;
+      setConsultantId(consultant.id);
+
+      const { data: ndas } = await supabase
+        .from('nda_agreements')
+        .select('client_id')
+        .eq('consultant_id', consultant.id);
+      if (ndas) {
+        setSignedClients(new Set(ndas.map((n: any) => n.client_id)));
+      }
+    })();
+  }, []);
+
+  const refreshNDAs = async () => {
+    if (!consultantId) return;
+    const { data: ndas } = await supabase
+      .from('nda_agreements')
+      .select('client_id')
+      .eq('consultant_id', consultantId);
+    if (ndas) {
+      setSignedClients(new Set(ndas.map((n: any) => n.client_id)));
+    }
+  };
 
   const filtered = (cases || []).filter((c) => {
     const matchSearch = c.title.toLowerCase().includes(search.toLowerCase()) || c.client.toLowerCase().includes(search.toLowerCase());
@@ -78,6 +123,8 @@ export default function CasesPage() {
           filtered.map((ticket) => {
             const slaTime = ticket.sla_deadline ? new Date(ticket.sla_deadline) : null;
             const isOverdue = slaTime && slaTime < new Date() && ticket.status !== 'resolved' && ticket.status !== 'closed';
+            const clientId = (ticket as any).client_id;
+            const ndaSigned = clientId ? signedClients.has(clientId) : false;
 
             return (
               <Card key={ticket.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
@@ -101,6 +148,28 @@ export default function CasesPage() {
                           {isOverdue && ' (Overdue)'}
                         </div>
                       )}
+
+                      {/* NDA Status */}
+                      {clientId && (
+                        <div className="mt-2">
+                          {ndaSigned ? (
+                            <Badge variant="secondary" className="bg-green-100 text-green-700 gap-1 text-[10px]">
+                              <ShieldCheck className="w-3 h-3" />
+                              {t('nda.signed_badge', 'NDA Signed')}
+                            </Badge>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50"
+                              onClick={() => setNdaModal({ open: true, clientId, clientName: ticket.client })}
+                            >
+                              <FileSignature className="w-3.5 h-3.5" />
+                              {t('nda.sign_now', 'Sign NDA Now')}
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>
@@ -120,6 +189,17 @@ export default function CasesPage() {
           })
         )}
       </div>
+
+      {consultantId && (
+        <NDASigningModal
+          open={ndaModal.open}
+          onOpenChange={(open) => setNdaModal(prev => ({ ...prev, open }))}
+          consultantId={consultantId}
+          clientId={ndaModal.clientId}
+          clientName={ndaModal.clientName}
+          onSigned={refreshNDAs}
+        />
+      )}
     </div>
   );
 }
