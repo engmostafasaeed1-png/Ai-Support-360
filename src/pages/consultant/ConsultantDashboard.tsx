@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   DollarSign, Briefcase, Clock, Star, TrendingUp, TrendingDown,
   Calendar, Video, MessageSquare, Monitor, ArrowUpRight, ChevronRight,
