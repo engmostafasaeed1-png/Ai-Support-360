@@ -17,7 +17,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { FileSignature, Search, Download, Eye, Calendar, ShieldOff, ShieldCheck } from 'lucide-react';
+import { FileSignature, Search, Download, Eye, Calendar, ShieldOff, ShieldCheck, FileDown } from 'lucide-react';
 
 interface NDARecord {
   id: string;
@@ -134,16 +134,41 @@ export default function NDAManagementPage() {
     }
   };
 
+  const exportCSV = () => {
+    const headers = ['Consultant', 'Client', 'Signature Type', 'Date Signed', 'Status'];
+    const rows = ndas.map(n => [
+      n.consultant_name,
+      n.client_name,
+      n.signature_type,
+      new Date(n.signed_at).toISOString(),
+      n.revoked_at ? 'Revoked' : 'Active',
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `nda-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <FileSignature className="w-6 h-6 text-primary" />
-          {t('admin.nda_management_title', 'NDA Management')}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {t('admin.nda_management_subtitle', 'View all signed Non-Disclosure Agreements between consultants and clients.')}
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <FileSignature className="w-6 h-6 text-primary" />
+            {t('admin.nda_management_title', 'NDA Management')}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {t('admin.nda_management_subtitle', 'View all signed Non-Disclosure Agreements between consultants and clients.')}
+          </p>
+        </div>
+        <Button variant="outline" className="gap-2" onClick={exportCSV} disabled={ndas.length === 0}>
+          <FileDown className="w-4 h-4" />
+          {t('admin.nda_export_csv', 'Export CSV')}
+        </Button>
       </div>
 
       {/* Stats */}
