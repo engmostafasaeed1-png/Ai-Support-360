@@ -15,10 +15,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <HeroSection />
-      <CategoriesSection />
-      <HowItWorksSection />
-      <WhyQurtubaSection />
-      <IndustriesSection />
+      <ExploreServicesSection />
       <ConsultantsSection />
       <TestimonialsSection />
       <PricingSection />
