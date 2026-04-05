@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { GuestModeProvider } from "./contexts/GuestModeContext.tsx";
 import GuestBanner from "./components/guest/GuestBanner.tsx";
 import AIChatbot from "./components/chatbot/AIChatbot.tsx";
+import MaintenanceBanner from "./components/MaintenanceBanner.tsx";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ConsultantLayout from "./components/consultant/ConsultantLayout.tsx";
@@ -62,6 +63,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <GuestModeProvider>
+          <MaintenanceBanner />
           <GuestBanner />
           <AIChatbot />
           <Routes>
