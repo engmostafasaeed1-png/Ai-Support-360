@@ -30,6 +30,7 @@ const labels: Record<string, string> = {
   cases: 'Cases',
   calendar: 'Calendar',
   earnings: 'Earnings',
+  chat: 'Messages',
   reviews: 'Reviews',
   profile: 'Profile',
   verification: 'Verification',
