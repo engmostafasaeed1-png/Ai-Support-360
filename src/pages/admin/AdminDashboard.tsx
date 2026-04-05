@@ -2,22 +2,27 @@ import { useTranslation } from 'react-i18next';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Ticket, DollarSign, Clock, Star, TrendingUp, UserCheck, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { adminStats, revenueData, ticketsByStatus, ticketsByModule } from '@/data/adminMockData';
+import { useAdminStats } from '@/hooks/useAdminData';
+import { revenueData, ticketsByStatus, ticketsByModule } from '@/data/adminMockData';
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
+  const { data: stats, isLoading } = useAdminStats();
+
+  const s = stats || { totalUsers: 0, activeConsultants: 0, openTickets: 0, revenue: 0, avgResolutionTime: '—', satisfaction: 0, ticketsThisMonth: 0, pendingApprovals: 0 };
 
   const kpis = [
-    { labelKey: 'admin_dashboard.total_users', value: adminStats.totalUsers.toLocaleString(), icon: Users, change: '+12%' },
-    { labelKey: 'admin_dashboard.active_consultants', value: adminStats.activeConsultants.toString(), icon: UserCheck, change: '+8%' },
-    { labelKey: 'admin_dashboard.open_tickets', value: adminStats.openTickets.toString(), icon: Ticket, change: '-5%' },
-    { labelKey: 'admin_dashboard.monthly_revenue', value: `$${(adminStats.revenue / 1000).toFixed(0)}K`, icon: DollarSign, change: '+18%' },
-    { labelKey: 'admin_dashboard.avg_resolution', value: adminStats.avgResolutionTime, icon: Clock, change: '-12%' },
-    { labelKey: 'admin_dashboard.satisfaction', value: `${adminStats.satisfaction}/5`, icon: Star, change: '+3%' },
-    { labelKey: 'admin_dashboard.tickets_this_month', value: adminStats.ticketsThisMonth.toString(), icon: TrendingUp, change: '+22%' },
-    { labelKey: 'admin_dashboard.pending_approvals', value: adminStats.pendingApprovals.toString(), icon: AlertTriangle, change: '' },
+    { labelKey: 'admin_dashboard.total_users', value: s.totalUsers.toLocaleString(), icon: Users, change: '' },
+    { labelKey: 'admin_dashboard.active_consultants', value: s.activeConsultants.toString(), icon: UserCheck, change: '' },
+    { labelKey: 'admin_dashboard.open_tickets', value: s.openTickets.toString(), icon: Ticket, change: '' },
+    { labelKey: 'admin_dashboard.monthly_revenue', value: `$${(s.revenue / 1000).toFixed(0)}K`, icon: DollarSign, change: '' },
+    { labelKey: 'admin_dashboard.avg_resolution', value: s.avgResolutionTime, icon: Clock, change: '' },
+    { labelKey: 'admin_dashboard.satisfaction', value: `${s.satisfaction}/5`, icon: Star, change: '' },
+    { labelKey: 'admin_dashboard.tickets_this_month', value: s.ticketsThisMonth.toString(), icon: TrendingUp, change: '' },
+    { labelKey: 'admin_dashboard.pending_approvals', value: s.pendingApprovals.toString(), icon: AlertTriangle, change: '' },
   ];
 
   return (
@@ -28,7 +33,6 @@ export default function AdminDashboard() {
         <p className="text-sm text-muted-foreground">{t('admin_dashboard.subtitle')}</p>
       </div>
 
-      {/* KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {kpis.map((kpi) => (
           <Card key={kpi.labelKey} className="border-border/50">
@@ -37,13 +41,10 @@ export default function AdminDashboard() {
                 <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
                   <kpi.icon className="w-4 h-4 text-accent" />
                 </div>
-                {kpi.change && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5">
-                    {kpi.change}
-                  </Badge>
-                )}
               </div>
-              <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
+              {isLoading ? <Skeleton className="h-8 w-16" /> : (
+                <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
+              )}
               <p className="text-xs text-muted-foreground">{t(kpi.labelKey)}</p>
             </CardContent>
           </Card>
@@ -51,7 +52,6 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Revenue Chart */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">{t('admin_dashboard.revenue_vs_expenses')}</CardTitle>
@@ -69,7 +69,6 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Tickets by Status */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">{t('admin_dashboard.tickets_by_status')}</CardTitle>
@@ -102,7 +101,6 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Tickets by Module */}
       <Card className="border-border/50">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('admin_dashboard.tickets_by_module')}</CardTitle>
