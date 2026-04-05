@@ -32,21 +32,51 @@ const TIME_SLOTS = [
   '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'
 ];
 
-export default function BookingModal({ open, onOpenChange, consultantName, rate, availableSlots }: BookingModalProps) {
+export default function BookingModal({ open, onOpenChange, consultantName, consultantId, rate, availableSlots }: BookingModalProps) {
   const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState('');
   const [sessionType, setSessionType] = useState('video');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const reset = () => { setStep(1); setSelectedDate(undefined); setSelectedTime(''); setSessionType('video'); };
 
-  const handleConfirm = () => {
-    toast.success(t('booking.confirmed_title'), {
-      description: t('booking.confirmed_desc', { name: consultantName }),
-    });
-    onOpenChange(false);
-    reset();
+  const handleConfirm = async () => {
+    setIsSubmitting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error(t('booking.login_required'));
+        setIsSubmitting(false);
+        return;
+      }
+
+      const [hours, minutes] = selectedTime.split(':').map(Number);
+      const scheduledAt = new Date(selectedDate!);
+      scheduledAt.setHours(hours, minutes, 0, 0);
+
+      const { error } = await supabase.from('sessions').insert({
+        client_id: user.id,
+        consultant_id: consultantId,
+        session_type: sessionType as 'chat' | 'video' | 'screen_share',
+        scheduled_at: scheduledAt.toISOString(),
+        status: 'scheduled',
+        duration_minutes: 60,
+      });
+
+      if (error) throw error;
+
+      toast.success(t('booking.confirmed_title'), {
+        description: t('booking.confirmed_desc', { name: consultantName }),
+      });
+      onOpenChange(false);
+      reset();
+    } catch (err: any) {
+      toast.error(t('booking.error'), { description: err.message });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

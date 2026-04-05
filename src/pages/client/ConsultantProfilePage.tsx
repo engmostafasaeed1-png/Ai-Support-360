@@ -354,6 +354,7 @@ export default function ConsultantProfilePage() {
         open={bookingOpen}
         onOpenChange={setBookingOpen}
         consultantName={consultant.name}
+        consultantId={consultant.id}
         rate={consultant.rate}
         availableSlots={detail.availableSlots}
       />
