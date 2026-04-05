@@ -11,8 +11,8 @@ export default function PaymentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Payments & Invoices</h1>
-        <p className="text-sm text-muted-foreground mt-1">View payment history and download invoices.</p>
+        <h1 className="text-xl md:text-2xl font-bold text-foreground">Payments & Invoices</h1>
+        <p className="text-xs md:text-sm text-muted-foreground mt-1">View payment history and download invoices.</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -41,25 +41,25 @@ export default function PaymentsPage() {
         <CardContent>
           <div className="space-y-3">
             {mockClientPayments.map((payment) => (
-              <div key={payment.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-border/30">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+              <div key={payment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-muted/20 border border-border/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
                     <FileText className="w-5 h-5 text-accent" />
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{payment.invoice}</p>
-                    <p className="text-xs text-muted-foreground">{payment.consultant} · {new Date(payment.date).toLocaleDateString()}</p>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{payment.invoice}</p>
+                    <p className="text-xs text-muted-foreground truncate">{payment.consultant} · {new Date(payment.date).toLocaleDateString()}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-end">
+                <div className="flex items-center gap-3 justify-between sm:justify-end">
+                  <div className="text-start sm:text-end">
                     <p className="text-sm font-bold text-foreground">${payment.amount.toLocaleString()}</p>
                     <p className="text-[10px] text-muted-foreground">VAT: ${payment.vat}</p>
                   </div>
                   <Badge variant="secondary" className={`text-[10px] ${payment.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                     {payment.status}
                   </Badge>
-                  <Button variant="ghost" size="icon" title="Download Invoice">
+                  <Button variant="ghost" size="icon" title="Download Invoice" className="shrink-0">
                     <Download className="w-4 h-4" />
                   </Button>
                 </div>

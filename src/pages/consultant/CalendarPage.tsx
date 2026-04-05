@@ -33,18 +33,18 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Session Calendar</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your upcoming and past sessions.</p>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">Session Calendar</h1>
+          <p className="text-xs md:text-sm text-muted-foreground mt-1">Manage your upcoming and past sessions.</p>
         </div>
-        <Button className="gradient-primary border-0" size="sm">Set Availability</Button>
+        <Button className="gradient-primary border-0 w-full sm:w-auto" size="sm">Set Availability</Button>
       </div>
 
       {/* Week View */}
       <Card className="rounded-2xl border-border/50">
         <CardContent className="p-5">
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {weekDates.map((date, i) => {
               const isToday = date.toDateString() === today.toDateString();
               const daySessions = mockSessions.filter((s) => {
@@ -54,10 +54,10 @@ export default function CalendarPage() {
               return (
                 <div
                   key={i}
-                  className={`text-center p-3 rounded-xl transition-all ${isToday ? 'bg-accent/10 border border-accent/30' : 'bg-muted/30'}`}
+                  className={`text-center p-1.5 sm:p-3 rounded-xl transition-all ${isToday ? 'bg-accent/10 border border-accent/30' : 'bg-muted/30'}`}
                 >
                   <div className="text-xs text-muted-foreground mb-1">{days[i]}</div>
-                  <div className={`text-lg font-bold ${isToday ? 'text-accent' : 'text-foreground'}`}>{date.getDate()}</div>
+                  <div className={`text-sm sm:text-lg font-bold ${isToday ? 'text-accent' : 'text-foreground'}`}>{date.getDate()}</div>
                   {daySessions.length > 0 && (
                     <div className="mt-2 flex justify-center gap-1">
                       {daySessions.map((_, j) => (

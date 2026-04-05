@@ -131,10 +131,10 @@ export default function ConsultantsPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('consultants_page.title')}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{t('consultants_page.subtitle')}</p>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">{t('consultants_page.title')}</h1>
+          <p className="text-xs md:text-sm text-muted-foreground mt-1">{t('consultants_page.subtitle')}</p>
         </div>
         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium ${realtimeConnected ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-muted text-muted-foreground'}`}>
           {realtimeConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
@@ -143,24 +143,24 @@ export default function ConsultantsPage() {
       </div>
 
       {/* Online/Offline Status Bar */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
         <button
           onClick={() => setAvailabilityFilter(availabilityFilter === 'all' ? 'all' : 'all')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${availabilityFilter === 'all' ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs md:text-sm font-medium transition-all whitespace-nowrap ${availabilityFilter === 'all' ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
         >
-          <Users className="w-4 h-4" />
+          <Users className="w-3.5 h-3.5" />
           All ({consultants.length})
         </button>
         <button
           onClick={() => setAvailabilityFilter(availabilityFilter === 'online' ? 'all' : 'online')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${availabilityFilter === 'online' ? 'bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs md:text-sm font-medium transition-all whitespace-nowrap ${availabilityFilter === 'online' ? 'bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
         >
           <Circle className="w-3 h-3 fill-green-500 text-green-500" />
           Online ({onlineCount})
         </button>
         <button
           onClick={() => setAvailabilityFilter(availabilityFilter === 'offline' ? 'all' : 'offline')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${availabilityFilter === 'offline' ? 'bg-muted text-foreground border border-border' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs md:text-sm font-medium transition-all whitespace-nowrap ${availabilityFilter === 'offline' ? 'bg-muted text-foreground border border-border' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
         >
           <Circle className="w-3 h-3 fill-muted-foreground/40 text-muted-foreground/40" />
           Offline ({offlineCount})
@@ -168,21 +168,21 @@ export default function ConsultantsPage() {
       </div>
 
       {/* Search + Filter toggle + View */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[140px]">
           <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder={t('consultants_page.search_placeholder')} value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9 rounded-xl h-10" />
+          <Input placeholder={t('consultants_page.search_placeholder')} value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9 rounded-xl h-10 text-sm" />
         </div>
         <Button
           variant={showFilters ? 'default' : 'outline'}
           size="sm"
-          className="gap-1.5"
+          className="gap-1 h-10"
           onClick={() => setShowFilters(!showFilters)}
         >
           <Filter className="w-3.5 h-3.5" />
-          {t('consultants_page.filters')}
+          <span className="hidden sm:inline">{t('consultants_page.filters')}</span>
           {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] rounded-full bg-primary text-primary-foreground">
+            <Badge variant="secondary" className="ml-0.5 h-5 w-5 p-0 flex items-center justify-center text-[10px] rounded-full bg-primary text-primary-foreground">
               {activeFilterCount}
             </Badge>
           )}
@@ -191,7 +191,7 @@ export default function ConsultantsPage() {
 
         {/* Sort */}
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-          <SelectTrigger className="w-44 rounded-xl h-10 text-xs">
+          <SelectTrigger className="w-32 sm:w-44 rounded-xl h-10 text-xs">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
@@ -217,7 +217,7 @@ export default function ConsultantsPage() {
       {showFilters && (
         <Card className="rounded-2xl border-border/50 animate-fade-in">
           <CardContent className="p-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {/* SAP Module */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
@@ -349,10 +349,10 @@ export default function ConsultantsPage() {
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-muted-foreground/40 inline-block" /> {t('consultants.offline')}</span>
             <span className="ms-auto text-[10px]">{filtered.filter(c => c.available).length} {t('consultants_page.online')} · {filtered.filter(c => !c.available).length} {t('consultants_page.offline_label')}</span>
           </div>
-          <div className="grid lg:grid-cols-[1fr_320px] gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
             <ConsultantMap consultants={filtered} selectedId={mapSelectedId} onSelectConsultant={setMapSelectedId} />
             {/* Side list */}
-            <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-[300px] lg:max-h-[420px] overflow-y-auto pr-1">
               {filtered.map(c => (
                 <button
                   key={c.id}
