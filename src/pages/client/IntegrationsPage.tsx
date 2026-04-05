@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
   Link2, Unlink, RefreshCw, CheckCircle2, XCircle, Clock,
-  ArrowLeftRight, ExternalLink, Settings2, Trash2, Shield,
+  ArrowLeftRight, ExternalLink, Settings2, Trash2, Shield, Copy, Webhook,
 } from 'lucide-react';
 
 interface PlatformConfig {
@@ -107,6 +107,17 @@ export default function IntegrationsPage() {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [connected, setConnected] = useState(mockConnected);
 
+  const getWebhookUrl = (platformId: string, integrationId: string) => {
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'your-project';
+    return `https://${projectId}.supabase.co/functions/v1/integration-webhook/${platformId}/${integrationId}`;
+  };
+
+  const copyWebhookUrl = (platformId: string) => {
+    const url = getWebhookUrl(platformId, 'your-integration-id');
+    navigator.clipboard.writeText(url);
+    toast.success('Webhook URL copied to clipboard!');
+  };
+
   const handleConnect = () => {
     if (!connectDialog) return;
     toast.success(`${connectDialog.name} connected successfully!`);
@@ -193,7 +204,7 @@ export default function IntegrationsPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="pt-0">
+                <CardContent className="pt-0 space-y-3">
                   <div className="flex items-center gap-6 text-sm">
                     <div className="flex items-center gap-1.5">
                       <ArrowLeftRight className="w-4 h-4 text-muted-foreground" />
@@ -209,6 +220,24 @@ export default function IntegrationsPage() {
                       }} />
                       <span className="text-muted-foreground text-xs">Auto-sync</span>
                     </div>
+                  </div>
+                  {/* Webhook URL */}
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                      <Webhook className="w-3.5 h-3.5" />
+                      Inbound Webhook URL
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 text-[11px] bg-background rounded px-2 py-1.5 border border-border/50 text-foreground truncate">
+                        {getWebhookUrl(platformId, 'int_xxxxxxxx')}
+                      </code>
+                      <Button size="sm" variant="ghost" className="shrink-0 h-7 w-7 p-0" onClick={() => copyWebhookUrl(platformId)}>
+                        <Copy className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Paste this URL in your {platform.name} webhook settings for real-time inbound sync.
+                    </p>
                   </div>
                 </CardContent>
               </Card>
