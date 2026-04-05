@@ -46,7 +46,7 @@ export default function ConsultantSidebar() {
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/50">Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/50">{t('sidebar.menu')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
