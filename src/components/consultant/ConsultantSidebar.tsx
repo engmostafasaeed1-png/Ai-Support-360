@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useLogout } from '@/hooks/useLogout';
 import { NavLink } from '@/components/NavLink';
 import { useLocation, Link } from 'react-router-dom';
 import {
@@ -8,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Briefcase, Calendar, CreditCard, Star,
-  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare,
+  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
 } from 'lucide-react';
 
 const menuItems = [

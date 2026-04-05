@@ -7,9 +7,10 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Users, Kanban, UserCheck, BarChart3,
-  Settings, Shield, Globe,
+  Settings, Shield, Globe, LogOut,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useLogout } from '@/hooks/useLogout';
 
 const menuItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/admin' },

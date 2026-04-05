@@ -7,9 +7,10 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, TicketPlus, Briefcase, Users, Calendar,
-  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare,
+  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useLogout } from '@/hooks/useLogout';
 
 const menuItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/client' },
