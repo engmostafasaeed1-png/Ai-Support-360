@@ -583,5 +583,23 @@
     "active": "active",
     "suspended": "suspended",
     "pending": "pending"
+  },
+  "booking": {
+    "title": "Book a Session",
+    "subtitle": "Schedule a session with {{name}}",
+    "select_date": "Select a Date",
+    "select_time": "Choose a Time Slot",
+    "session_type": "Session Type",
+    "review": "Review Your Booking",
+    "consultant": "Consultant",
+    "date": "Date",
+    "time": "Time",
+    "type": "Type",
+    "estimated_cost": "Estimated Cost",
+    "next": "Next",
+    "back": "Back",
+    "confirm": "Confirm Booking",
+    "confirmed_title": "Session Booked!",
+    "confirmed_desc": "Your session with {{name}} has been confirmed."
   }
 }
