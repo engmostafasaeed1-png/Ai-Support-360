@@ -7,9 +7,10 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, TicketPlus, Briefcase, Users, Calendar,
-  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare,
+  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useLogout } from '@/hooks/useLogout';
 
 const menuItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/client' },
@@ -31,6 +32,7 @@ export default function ClientSidebar() {
   const location = useLocation();
   const { toggleLanguage, currentLang } = useLanguage();
   const { t } = useTranslation();
+  const logout = useLogout();
 
   return (
     <Sidebar collapsible="icon" className="border-e border-border/50">
@@ -71,13 +73,20 @@ export default function ClientSidebar() {
         </SidebarGroup>
 
         {!collapsed && (
-          <div className="mt-auto p-4 border-t border-sidebar-border">
+          <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
             <button
               onClick={toggleLanguage}
               className="flex items-center gap-2 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
             >
               <Globe className="w-3.5 h-3.5" />
               {currentLang === 'en' ? 'العربية' : 'English'}
+            </button>
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 text-xs text-destructive hover:text-destructive/80 transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              {t('sidebar.logout')}
             </button>
           </div>
         )}

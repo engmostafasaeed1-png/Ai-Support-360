@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useLogout } from '@/hooks/useLogout';
 import { NavLink } from '@/components/NavLink';
 import { useLocation, Link } from 'react-router-dom';
 import {
@@ -8,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Briefcase, Calendar, CreditCard, Star,
-  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare,
+  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
 } from 'lucide-react';
 
 const menuItems = [
@@ -32,6 +33,7 @@ export default function ConsultantSidebar() {
   const location = useLocation();
   const { toggleLanguage, currentLang } = useLanguage();
   const { t } = useTranslation();
+  const logout = useLogout();
 
   return (
     <Sidebar collapsible="icon" className="border-e border-border/50">
@@ -72,13 +74,20 @@ export default function ConsultantSidebar() {
         </SidebarGroup>
 
         {!collapsed && (
-          <div className="mt-auto p-4 border-t border-sidebar-border">
+          <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
             <button
               onClick={toggleLanguage}
               className="flex items-center gap-2 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
             >
               <Globe className="w-3.5 h-3.5" />
               {currentLang === 'en' ? 'العربية' : 'English'}
+            </button>
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 text-xs text-destructive hover:text-destructive/80 transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              {t('sidebar.logout')}
             </button>
           </div>
         )}
