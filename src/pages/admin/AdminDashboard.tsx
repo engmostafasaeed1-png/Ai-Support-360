@@ -52,7 +52,7 @@ export default function AdminDashboard() {
         {/* Revenue Chart */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Revenue vs Expenses</CardTitle>
+            <CardTitle className="text-base">{t('admin_dashboard.revenue_vs_expenses')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
