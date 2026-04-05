@@ -29,6 +29,7 @@ const labels: Record<string, string> = {
   new_request: 'New Request',
   tickets: 'My Tickets',
   consultants: 'Consultants',
+  chat: 'Messages',
   sessions: 'Sessions',
   payments: 'Payments',
   invoices: 'Invoices',
