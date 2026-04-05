@@ -688,5 +688,22 @@
     "po_processing": "Processing",
     "po_pending": "Pending",
     "po_failed": "Failed"
+  },
+  "payout": {
+    "title": "Request Payout",
+    "subtitle": "Withdraw your available earnings",
+    "available_balance": "Available Balance",
+    "amount_label": "Amount to Withdraw",
+    "method_label": "Payout Method",
+    "bank_transfer": "Bank Transfer",
+    "paypal": "PayPal",
+    "stripe": "Stripe",
+    "exceeds": "Amount exceeds available balance",
+    "cancel": "Cancel",
+    "submit": "Request Payout",
+    "submitting": "Submitting...",
+    "success_title": "Payout Requested!",
+    "success_desc": "Your payout of ${{amount}} is being processed.",
+    "error": "Payout request failed"
   }
 }
