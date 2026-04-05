@@ -129,7 +129,7 @@ export default function ConsultantDashboard() {
         {/* Upcoming Sessions */}
         <Card className="rounded-2xl border-border/50">
           <CardHeader className="flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-semibold">Upcoming Sessions</CardTitle>
+            <CardTitle className="text-base font-semibold">{t('consultant_dashboard.upcoming_sessions')}</CardTitle>
             <Link to="/consultant/calendar">
               <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
             </Link>
