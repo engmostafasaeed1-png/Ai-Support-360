@@ -151,6 +151,33 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
 
       if (error) throw error;
 
+      // Notify client
+      const dateLabel = format(selectedDate!, 'MMM d, yyyy');
+      await supabase.from('notifications').insert({
+        user_id: user.id,
+        title: 'Session Booked',
+        body: `Your ${sessionType.replace('_', ' ')} session with ${consultantName} is scheduled for ${dateLabel} at ${selectedTime}.`,
+        type: 'booking',
+        link: '/client/sessions',
+      });
+
+      // Notify consultant (look up their user_id)
+      const { data: consultant } = await supabase
+        .from('consultants')
+        .select('user_id')
+        .eq('id', consultantId)
+        .single();
+
+      if (consultant) {
+        await supabase.from('notifications').insert({
+          user_id: consultant.user_id,
+          title: 'New Session Booking',
+          body: `A client booked a ${sessionType.replace('_', ' ')} session for ${dateLabel} at ${selectedTime}.`,
+          type: 'booking',
+          link: '/consultant/calendar',
+        });
+      }
+
       setConfirmed(true);
       toast.success(t('booking.confirmed_title'), {
         description: t('booking.confirmed_desc', { name: consultantName }),
