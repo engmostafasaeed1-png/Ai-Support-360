@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
@@ -39,18 +40,19 @@ const userGrowth = [
 ];
 
 export default function AnalyticsPage() {
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Platform Analytics</h1>
-        <p className="text-sm text-muted-foreground">Deep insights into platform performance</p>
+        <h1 className="text-2xl font-bold text-foreground">{t('analytics_page.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('analytics_page.subtitle')}</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Daily Tickets */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Daily Ticket Volume</CardTitle>
+            <CardTitle className="text-base">{t('analytics_page.daily_ticket_volume')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
@@ -65,12 +67,11 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        {/* Response Time Trend */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Avg Response Time</CardTitle>
-              <Badge variant="secondary" className="text-[10px]">↓ 42% improvement</Badge>
+              <CardTitle className="text-base">{t('analytics_page.avg_response_time')}</CardTitle>
+              <Badge variant="secondary" className="text-[10px]">↓ 42% {t('analytics_page.improvement')}</Badge>
             </div>
           </CardHeader>
           <CardContent>
@@ -91,10 +92,9 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        {/* User Growth */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">User Growth</CardTitle>
+            <CardTitle className="text-base">{t('analytics_page.user_growth')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
@@ -109,10 +109,9 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        {/* Top Consultants */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Top Consultants</CardTitle>
+            <CardTitle className="text-base">{t('analytics_page.top_consultants')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -124,7 +123,7 @@ export default function AnalyticsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground">{c.name}</p>
-                    <p className="text-xs text-muted-foreground">{c.sessions} sessions · ⭐ {c.rating}</p>
+                    <p className="text-xs text-muted-foreground">{c.sessions} {t('common.sessions')} · ⭐ {c.rating}</p>
                   </div>
                   <span className="text-sm font-bold text-foreground">${c.revenue.toLocaleString()}</span>
                 </div>
