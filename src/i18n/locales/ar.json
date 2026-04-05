@@ -97,7 +97,8 @@
     "verified": "موثق",
     "offline": "غير متصل",
     "book_session": "حجز جلسة",
-    "view_profile": "عرض الملف الشخصي"
+    "view_profile": "عرض الملف الشخصي",
+    "credly_verified": "موثق من Credly"
   },
   "testimonials": {
     "title": "ماذا يقول عملاؤنا",
