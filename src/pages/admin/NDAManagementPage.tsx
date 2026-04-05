@@ -30,15 +30,15 @@ export default function NDAManagementPage() {
 
     if (error || !data) { setLoading(false); return; }
 
-    const consultantIds = [...new Set(data.map((n: any) => n.consultant_id))];
-    const clientIds = [...new Set(data.map((n: any) => n.client_id))];
+    const consultantIds = [...new Set(data.map((n) => n.consultant_id))];
+    const clientIds = [...new Set(data.map((n) => n.client_id))];
 
     const { data: consultants } = await supabase
       .from('consultants')
       .select('id, user_id')
       .in('id', consultantIds);
 
-    const consultantUserIds = (consultants || []).map((c: any) => c.user_id);
+    const consultantUserIds = (consultants || []).map((c) => c.user_id);
     const allUserIds = [...new Set([...consultantUserIds, ...clientIds])];
 
     const { data: profiles } = await supabase
@@ -46,10 +46,10 @@ export default function NDAManagementPage() {
       .select('user_id, display_name')
       .in('user_id', allUserIds);
 
-    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p.display_name || 'Unknown']));
-    const consultantUserMap = new Map((consultants || []).map((c: any) => [c.id, c.user_id]));
+    const profileMap = new Map((profiles || []).map((p) => [p.user_id, p.display_name || 'Unknown']));
+    const consultantUserMap = new Map((consultants || []).map((c) => [c.id, c.user_id]));
 
-    setNdas(data.map((n: any) => ({
+    setNdas(data.map((n) => ({
       id: n.id,
       consultant_name: profileMap.get(consultantUserMap.get(n.consultant_id) || '') || 'Unknown',
       client_name: profileMap.get(n.client_id) || 'Unknown',
@@ -93,7 +93,7 @@ export default function NDAManagementPage() {
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from('nda_agreements')
-      .update({ revoked_at: new Date().toISOString(), revoked_by: user?.id } as any)
+      .update({ revoked_at: new Date().toISOString(), revoked_by: user?.id })
       .eq('id', revokeNda.id);
     setRevoking(false);
     setRevokeNda(null);

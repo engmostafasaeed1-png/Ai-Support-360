@@ -27,7 +27,7 @@ export function useNDATemplate() {
   const saveTemplate = useCallback(async (content: string) => {
     const { error } = await supabase
       .from('platform_settings')
-      .update({ value: content as any, updated_at: new Date().toISOString() })
+      .update({ value: content, updated_at: new Date().toISOString() })
       .eq('key', 'nda_template');
 
     if (error) {
@@ -58,7 +58,7 @@ export function useNDAAgreement(consultantId?: string, clientId?: string) {
       .limit(1)
       .maybeSingle()
       .then(({ data }) => {
-        const revoked = !!data && !!(data as any).revoked_at;
+        const revoked = !!data && !!data.revoked_at;
         setSigned(!!data && !revoked);
         setWasRevoked(revoked);
         setLoading(false);
@@ -73,7 +73,7 @@ export function useNDAAgreement(consultantId?: string, clientId?: string) {
       signature_data: signatureData,
       signature_type: signatureType,
       nda_content: ndaContent,
-    } as any);
+    });
 
     if (error) {
       toast({ title: 'Error', description: 'Failed to sign NDA', variant: 'destructive' });
