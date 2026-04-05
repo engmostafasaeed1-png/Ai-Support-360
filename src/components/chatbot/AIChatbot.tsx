@@ -10,6 +10,7 @@ import { useTriageChat } from '@/hooks/useTriageChat';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
 
 function parseTicketSummary(content: string) {
   const titleMatch = content.match(/\*\*Title\*\*:\s*(.+)/i);
@@ -29,6 +30,7 @@ export default function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [showHistory, setShowHistory] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<AIModelId>(DEFAULT_MODEL);
   const {
     messages, isLoading, sendMessage, clearChat,
     conversations, conversationId, loadConversation,
@@ -54,7 +56,7 @@ export default function AIChatbot() {
     const text = input.trim();
     if (!text || isLoading) return;
     setInput('');
-    sendMessage(text);
+    sendMessage(text, selectedModel);
   };
 
   const handleCreateTicket = useCallback((content: string) => {
@@ -226,7 +228,7 @@ export default function AIChatbot() {
                       ].map((q) => (
                         <button
                           key={q}
-                          onClick={() => sendMessage(q)}
+                          onClick={() => sendMessage(q, selectedModel)}
                           className="text-[11px] px-3 py-1.5 rounded-full border border-border/50 bg-muted/30 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all"
                         >
                           {q}
@@ -307,6 +309,9 @@ export default function AIChatbot() {
 
               {/* Input */}
               <div className="px-3 py-3 border-t border-border/40 bg-card/90 backdrop-blur shrink-0">
+                <div className="flex items-center justify-between mb-2">
+                  <AIModelSelector value={selectedModel} onChange={setSelectedModel} compact />
+                </div>
                 <form
                   onSubmit={(e) => { e.preventDefault(); handleSend(); }}
                   className="flex items-center gap-2"

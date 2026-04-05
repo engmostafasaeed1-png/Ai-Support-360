@@ -14,6 +14,7 @@ import {
   Clock, AlertTriangle, Info, Loader2, Zap, Target, List,
   Star, BadgeCheck, Circle, Users, Crown, ChevronRight,
 } from 'lucide-react';
+import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
 
 interface AiCategorization {
   suggested_module: string;
@@ -85,6 +86,7 @@ export default function NewRequestPage() {
     urgency: 'medium', preferred_session: 'video', preferred_language: 'en',
   });
   const [submitted, setSubmitted] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<AIModelId>(DEFAULT_MODEL);
 
   // Auto-fill from chatbot query params
   useEffect(() => {
@@ -126,7 +128,7 @@ export default function NewRequestPage() {
     setAiLoading('categorize');
     try {
       const { data, error } = await supabase.functions.invoke('ai-ticket', {
-        body: { action: 'categorize', title: form.title, description: form.description, sap_module: form.sap_module },
+        body: { action: 'categorize', title: form.title, description: form.description, sap_module: form.sap_module, model: selectedModel },
       });
       if (error) throw error;
       if (data?.result) setAiCategorization(data.result);
@@ -135,13 +137,13 @@ export default function NewRequestPage() {
     } finally {
       setAiLoading(null);
     }
-  }, [form.title, form.description, form.sap_module]);
+  }, [form.title, form.description, form.sap_module, selectedModel]);
 
   const runAiSummary = useCallback(async () => {
     setAiLoading('summary');
     try {
       const { data, error } = await supabase.functions.invoke('ai-ticket', {
-        body: { action: 'summarize', title: form.title, description: form.description, sap_module: form.sap_module, urgency: form.urgency },
+        body: { action: 'summarize', title: form.title, description: form.description, sap_module: form.sap_module, urgency: form.urgency, model: selectedModel },
       });
       if (error) throw error;
       if (data?.result) setAiSummary(data.result);
@@ -150,13 +152,13 @@ export default function NewRequestPage() {
     } finally {
       setAiLoading(null);
     }
-  }, [form.title, form.description, form.sap_module, form.urgency]);
+  }, [form.title, form.description, form.sap_module, form.urgency, selectedModel]);
 
   const runAiMatch = useCallback(async () => {
     setAiLoading('match');
     try {
       const { data, error } = await supabase.functions.invoke('ai-ticket', {
-        body: { action: 'match', title: form.title, description: form.description, sap_module: form.sap_module, urgency: form.urgency },
+        body: { action: 'match', title: form.title, description: form.description, sap_module: form.sap_module, urgency: form.urgency, model: selectedModel },
       });
       if (error) throw error;
       if (data?.result) setAiMatch(data.result);
@@ -165,7 +167,7 @@ export default function NewRequestPage() {
     } finally {
       setAiLoading(null);
     }
-  }, [form.title, form.description, form.sap_module, form.urgency]);
+  }, [form.title, form.description, form.sap_module, form.urgency, selectedModel]);
 
   const runAiMatchConsultants = useCallback(async () => {
     setAiLoading('match_consultants');
@@ -178,6 +180,7 @@ export default function NewRequestPage() {
           sap_module: form.sap_module,
           urgency: form.urgency,
           preferred_language: form.preferred_language,
+          model: selectedModel,
         },
       });
       if (error) throw error;
@@ -188,7 +191,7 @@ export default function NewRequestPage() {
     } finally {
       setAiLoading(null);
     }
-  }, [form.title, form.description, form.sap_module, form.urgency, form.preferred_language]);
+  }, [form.title, form.description, form.sap_module, form.urgency, form.preferred_language, selectedModel]);
 
   const handleNext = () => {
     if (step === 1 && !aiCategorization && form.description.length > 15) {
@@ -294,7 +297,13 @@ export default function NewRequestPage() {
         ))}
       </div>
 
-      {/* Step 1: SAP Module */}
+      {/* AI Model Selector */}
+      <div className="flex items-center gap-2">
+        <Brain className="w-4 h-4 text-muted-foreground" />
+        <span className="text-xs font-medium text-muted-foreground">{t('ai.engine', 'AI Engine')}:</span>
+        <AIModelSelector value={selectedModel} onChange={setSelectedModel} compact />
+      </div>
+
       {step === 0 && (
         <Card className="rounded-2xl border-border/50">
           <CardHeader><CardTitle className="text-base">{t('ticket_create.select_module')}</CardTitle></CardHeader>

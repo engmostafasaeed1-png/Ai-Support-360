@@ -6,12 +6,26 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function aiRequest(apiKey: string, systemPrompt: string, userPrompt: string, tools: any[], toolChoice: any) {
+const VALID_MODELS = [
+  "google/gemini-3-flash-preview",
+  "google/gemini-2.5-flash-lite",
+  "google/gemini-2.5-flash",
+  "google/gemini-2.5-pro",
+  "google/gemini-3.1-pro-preview",
+  "openai/gpt-5-nano",
+  "openai/gpt-5-mini",
+  "openai/gpt-5",
+  "openai/gpt-5.2",
+];
+
+const DEFAULT_MODEL = "google/gemini-3-flash-preview";
+
+function aiRequest(apiKey: string, systemPrompt: string, userPrompt: string, tools: any[], toolChoice: any, model: string) {
   return fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
+      model,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -37,9 +51,11 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { action, title, description, sap_module, urgency, preferred_language } = await req.json();
+    const { action, title, description, sap_module, urgency, preferred_language, model } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const selectedModel = model && VALID_MODELS.includes(model) ? model : DEFAULT_MODEL;
 
     if (action === "categorize") {
       const response = await aiRequest(
@@ -65,7 +81,8 @@ serve(async (req) => {
             }
           }
         }],
-        { type: "function", function: { name: "categorize_ticket" } }
+        { type: "function", function: { name: "categorize_ticket" } },
+        selectedModel
       );
 
       if (!response.ok) {
@@ -101,7 +118,8 @@ serve(async (req) => {
             }
           }
         }],
-        { type: "function", function: { name: "summarize_ticket" } }
+        { type: "function", function: { name: "summarize_ticket" } },
+        selectedModel
       );
 
       if (!response.ok) {
@@ -115,7 +133,6 @@ serve(async (req) => {
       });
 
     } else if (action === "match") {
-      // Step 1: Get abstract matching requirements from AI
       const response = await aiRequest(
         LOVABLE_API_KEY,
         "You are an SAP consultant matching engine. Recommend the best consultant profile traits for this ticket.",
@@ -138,7 +155,8 @@ serve(async (req) => {
             }
           }
         }],
-        { type: "function", function: { name: "match_consultant" } }
+        { type: "function", function: { name: "match_consultant" } },
+        selectedModel
       );
 
       if (!response.ok) {
@@ -152,12 +170,10 @@ serve(async (req) => {
       });
 
     } else if (action === "match_consultants") {
-      // ====== Advanced AI Matching: Query real consultants and rank them ======
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseKey);
 
-      // Fetch consultants with their skills, certifications, and profiles
       const { data: consultants, error: consultantsError } = await supabase
         .from("consultants")
         .select(`
@@ -175,27 +191,23 @@ serve(async (req) => {
         });
       }
 
-      // Fetch skills for these consultants
       const consultantIds = consultants.map(c => c.id);
       const { data: skills } = await supabase
         .from("consultant_skills")
         .select("consultant_id, sap_module, proficiency_level, years_experience, certified")
         .in("consultant_id", consultantIds);
 
-      // Fetch certifications
       const { data: certs } = await supabase
         .from("certifications")
         .select("consultant_id, name, verified")
         .in("consultant_id", consultantIds);
 
-      // Fetch display names
       const userIds = consultants.map(c => c.user_id);
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, display_name, avatar_url")
         .in("user_id", userIds);
 
-      // Build enriched consultant profiles for AI
       const enrichedConsultants = consultants.map(c => {
         const consultantSkills = (skills || []).filter(s => s.consultant_id === c.id);
         const consultantCerts = (certs || []).filter(cert => cert.consultant_id === c.id);
@@ -229,7 +241,6 @@ serve(async (req) => {
         };
       });
 
-      // Step 2: Ask AI to rank consultants
       const rankResponse = await aiRequest(
         LOVABLE_API_KEY,
         `You are an advanced SAP consultant matching engine. You must rank the provided consultants against the client's ticket requirements.
@@ -287,7 +298,8 @@ Rank the top consultants for this ticket.`,
             }
           }
         }],
-        { type: "function", function: { name: "rank_consultants" } }
+        { type: "function", function: { name: "rank_consultants" } },
+        selectedModel
       );
 
       if (!rankResponse.ok) {
@@ -299,7 +311,6 @@ Rank the top consultants for this ticket.`,
       const rankData = await rankResponse.json();
       const rankResult = parseToolResult(rankData);
 
-      // Enrich recommendations with consultant profile data
       if (rankResult?.recommendations) {
         rankResult.recommendations = rankResult.recommendations.map((rec: any) => {
           const consultant = enrichedConsultants.find(c => c.id === rec.consultant_id);

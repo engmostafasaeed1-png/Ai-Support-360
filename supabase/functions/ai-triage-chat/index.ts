@@ -6,6 +6,20 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const VALID_MODELS = [
+  "google/gemini-3-flash-preview",
+  "google/gemini-2.5-flash-lite",
+  "google/gemini-2.5-flash",
+  "google/gemini-2.5-pro",
+  "google/gemini-3.1-pro-preview",
+  "openai/gpt-5-nano",
+  "openai/gpt-5-mini",
+  "openai/gpt-5",
+  "openai/gpt-5.2",
+];
+
+const DEFAULT_MODEL = "google/gemini-3-flash-preview";
+
 const SYSTEM_PROMPT = `You are Qurtuba AI, the smart SAP support triage assistant for Qurtuba Talks — a premium SAP consulting platform.
 
 Your role is to help users describe their SAP issues clearly and prepare them to submit a support ticket. You should:
@@ -39,7 +53,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages, model } = await req.json();
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return new Response(
@@ -47,6 +61,8 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const selectedModel = model && VALID_MODELS.includes(model) ? model : DEFAULT_MODEL;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -60,10 +76,10 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: selectedModel,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          ...messages.slice(-20), // Keep last 20 messages for context
+          ...messages.slice(-20),
         ],
         stream: true,
       }),
