@@ -113,7 +113,7 @@ export default function SessionsPage() {
             const status = session.status || 'scheduled';
 
             return (
-              <Card key={session.id} className="rounded-2xl border-border/50 hover:border-primary/30 transition-colors">
+              <Card key={session.id} className="rounded-2xl border-border/50 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => navigate(`/client/sessions/${session.id}`)}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4 min-w-0">

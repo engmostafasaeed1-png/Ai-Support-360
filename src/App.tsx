@@ -24,6 +24,7 @@ import PaymentsPage from "./pages/client/PaymentsPage.tsx";
 import ClientChatPage from "./pages/client/ClientChatPage.tsx";
 import ClientOnboardingPage from "./pages/client/ClientOnboardingPage.tsx";
 import SessionsPage from "./pages/client/SessionsPage.tsx";
+import SessionDetailPage from "./pages/client/SessionDetailPage.tsx";
 import ChatSessionPage from "./pages/chat/ChatSessionPage.tsx";
 import NotificationsPage from "./pages/notifications/NotificationsPage.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
