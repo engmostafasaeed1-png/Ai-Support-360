@@ -224,7 +224,10 @@ export default function AIChatbot() {
                         )}
                       >
                         {msg.role === 'assistant' ? (
-                          <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>hr]:my-2">
+                          <div className={cn(
+                            "prose prose-sm dark:prose-invert max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>hr]:my-2",
+                            isLoading && i === messages.length - 1 && "chatbot-streaming"
+                          )}>
                             <ReactMarkdown>{msg.content}</ReactMarkdown>
                           </div>
                         ) : (
