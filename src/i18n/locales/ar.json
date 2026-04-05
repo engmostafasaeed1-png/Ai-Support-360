@@ -583,5 +583,23 @@
     "active": "نشط",
     "suspended": "موقوف",
     "pending": "معلق"
+  },
+  "booking": {
+    "title": "حجز جلسة",
+    "subtitle": "جدولة جلسة مع {{name}}",
+    "select_date": "اختر تاريخاً",
+    "select_time": "اختر وقتاً",
+    "session_type": "نوع الجلسة",
+    "review": "مراجعة الحجز",
+    "consultant": "المستشار",
+    "date": "التاريخ",
+    "time": "الوقت",
+    "type": "النوع",
+    "estimated_cost": "التكلفة التقديرية",
+    "next": "التالي",
+    "back": "رجوع",
+    "confirm": "تأكيد الحجز",
+    "confirmed_title": "تم حجز الجلسة!",
+    "confirmed_desc": "تم تأكيد جلستك مع {{name}}."
   }
 }

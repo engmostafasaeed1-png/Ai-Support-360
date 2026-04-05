@@ -13,12 +13,14 @@ import {
   MessageSquare, Monitor, ChevronLeft, CalendarDays, BadgeCheck
 } from 'lucide-react';
 import { useState } from 'react';
+import BookingModal from '@/components/client/BookingModal';
 
 export default function ConsultantProfilePage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   const consultant = mockRecommendedConsultants.find(c => c.id === id);
   const detail = mockConsultantDetailData;
@@ -97,7 +99,7 @@ export default function ConsultantProfilePage() {
                       <span className="text-xs text-muted-foreground">/hr</span>
                     </div>
                   </div>
-                  <Button className="gradient-primary border-0 w-full md:w-auto" size="lg">
+                  <Button className="gradient-primary border-0 w-full md:w-auto" size="lg" onClick={() => setBookingOpen(true)}>
                     <Video className="w-4 h-4 me-1" /> {t('consultant_profile.book_session')}
                   </Button>
                 </div>
@@ -245,7 +247,7 @@ export default function ConsultantProfilePage() {
                         </div>
                       </button>
                     ))}
-                    <Button className="w-full gradient-primary border-0 mt-4">
+                    <Button className="w-full gradient-primary border-0 mt-4" onClick={() => setBookingOpen(true)}>
                       {t('consultant_profile.book_session')}
                     </Button>
                   </div>
@@ -347,6 +349,14 @@ export default function ConsultantProfilePage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <BookingModal
+        open={bookingOpen}
+        onOpenChange={setBookingOpen}
+        consultantName={consultant.name}
+        rate={consultant.rate}
+        availableSlots={detail.availableSlots}
+      />
     </div>
   );
 }
