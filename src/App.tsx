@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GuestModeProvider } from "./contexts/GuestModeContext.tsx";
 import GuestBanner from "./components/guest/GuestBanner.tsx";
+import AIChatbot from "./components/chatbot/AIChatbot.tsx";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ConsultantLayout from "./components/consultant/ConsultantLayout.tsx";
