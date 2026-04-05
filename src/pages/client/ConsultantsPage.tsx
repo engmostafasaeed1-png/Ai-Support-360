@@ -54,6 +54,7 @@ export default function ConsultantsPage() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('best_match');
   const [bookingConsultant, setBookingConsultant] = useState<{ id: string; name: string; rate: number } | null>(null);
+  const [mapSelectedId, setMapSelectedId] = useState<string | null>(null);
 
   const { consultants, realtimeConnected } = useRealtimeConsultants();
 
