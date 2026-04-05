@@ -866,5 +866,18 @@
     "prompt_fi": "My SAP FI posting is failing",
     "prompt_mm": "MM purchase order stuck",
     "prompt_basis": "Basis system performance issue"
+  },
+  "admin": {
+    "settings_title": "Platform Settings",
+    "settings_subtitle": "Manage global platform configuration",
+    "settings_general": "General",
+    "settings_maintenance": "Maintenance Mode",
+    "settings_registration": "Open Registration",
+    "settings_notifications": "Notifications",
+    "settings_email_notif": "Email Notifications",
+    "settings_admin_alerts": "Admin Alerts",
+    "settings_security": "Security",
+    "settings_2fa": "Require 2FA for Admins",
+    "settings_audit": "Audit Logging"
   }
 }
