@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAdminSettings } from '@/hooks/useAdminSettings';
+import NDATemplateEditor from '@/components/admin/NDATemplateEditor';
 
 const sections = [
   {
@@ -70,6 +71,8 @@ export default function AdminSettingsPage() {
           </Card>
         ))}
       </div>
+
+      <NDATemplateEditor />
     </div>
   );
 }
