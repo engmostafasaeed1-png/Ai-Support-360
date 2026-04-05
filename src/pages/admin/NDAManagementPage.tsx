@@ -36,6 +36,8 @@ export default function NDAManagementPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [viewNda, setViewNda] = useState<NDARecord | null>(null);
+  const [revokeNda, setRevokeNda] = useState<NDARecord | null>(null);
+  const [revoking, setRevoking] = useState(false);
 
   useEffect(() => {
     fetchNDAs();
