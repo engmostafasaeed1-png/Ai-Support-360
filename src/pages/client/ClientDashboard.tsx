@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,16 +45,17 @@ const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
 };
 
 export default function ClientDashboard() {
+  const { t } = useTranslation();
   const profile = mockClientProfile;
   const openTickets = mockClientTickets.filter((t) => t.status !== 'resolved' && t.status !== 'closed');
   const pendingPayments = mockClientPayments.filter((p) => p.status === 'pending');
   const activeSessions = mockClientSessions.filter((s) => s.status === 'scheduled');
 
   const kpis = [
-    { label: 'Open Tickets', value: openTickets.length.toString(), icon: Briefcase, trend: '+1 today', up: true },
-    { label: 'Active Sessions', value: activeSessions.length.toString(), icon: Calendar, trend: '2 upcoming', up: true },
-    { label: 'Pending Payments', value: `$${pendingPayments.reduce((a, p) => a + p.amount, 0)}`, icon: CreditCard, trend: '1 invoice', up: false },
-    { label: 'Resolved This Month', value: '4', icon: CheckCircle, trend: '+25%', up: true },
+    { labelKey: 'client_dashboard.open_tickets', value: openTickets.length.toString(), icon: Briefcase, trend: '+1 today', up: true },
+    { labelKey: 'client_dashboard.active_sessions', value: activeSessions.length.toString(), icon: Calendar, trend: '2 upcoming', up: true },
+    { labelKey: 'client_dashboard.pending_payments', value: `$${pendingPayments.reduce((a, p) => a + p.amount, 0)}`, icon: CreditCard, trend: '1 invoice', up: false },
+    { labelKey: 'client_dashboard.resolved', value: '4', icon: CheckCircle, trend: '+25%', up: true },
   ];
 
   return (
@@ -61,8 +63,8 @@ export default function ClientDashboard() {
       {/* Welcome */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Welcome, {profile.display_name.split(' ')[0]}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{profile.company} · Here's your support overview.</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('client_dashboard.title')}, {profile.display_name.split(' ')[0]}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{profile.company} · {t('client_dashboard.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <Link to="/client/new-request">
@@ -93,7 +95,7 @@ export default function ClientDashboard() {
                 </span>
               </div>
               <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
-              <div className="text-xs text-muted-foreground mt-1">{kpi.label}</div>
+              <div className="text-xs text-muted-foreground mt-1">{t(kpi.labelKey)}</div>
             </CardContent>
           </Card>
         ))}
@@ -139,7 +141,7 @@ export default function ClientDashboard() {
         {/* Activity Feed */}
         <Card className="rounded-2xl border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Activity Feed</CardTitle>
+            <CardTitle className="text-base font-semibold">{t('client_dashboard.recent_activity')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {mockActivityFeed.map((activity) => {
@@ -163,7 +165,7 @@ export default function ClientDashboard() {
       {/* Upcoming Sessions */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader className="flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base font-semibold">Upcoming Sessions</CardTitle>
+          <CardTitle className="text-base font-semibold">{t('consultant_dashboard.upcoming_sessions')}</CardTitle>
           <Link to="/client/sessions">
             <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
           </Link>
@@ -202,7 +204,7 @@ export default function ClientDashboard() {
       {/* Recommended Consultants */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader className="flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base font-semibold">Recommended Consultants</CardTitle>
+          <CardTitle className="text-base font-semibold">{t('client_dashboard.recommended_consultants')}</CardTitle>
           <Link to="/client/consultants">
             <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
           </Link>

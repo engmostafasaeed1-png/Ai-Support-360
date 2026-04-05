@@ -1,32 +1,35 @@
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, Ticket, DollarSign, Clock, Star, TrendingUp, UserCheck, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { adminStats, revenueData, ticketsByStatus, ticketsByModule } from '@/data/adminMockData';
 
-const kpis = [
-  { label: 'Total Users', value: adminStats.totalUsers.toLocaleString(), icon: Users, change: '+12%' },
-  { label: 'Active Consultants', value: adminStats.activeConsultants.toString(), icon: UserCheck, change: '+8%' },
-  { label: 'Open Tickets', value: adminStats.openTickets.toString(), icon: Ticket, change: '-5%' },
-  { label: 'Monthly Revenue', value: `$${(adminStats.revenue / 1000).toFixed(0)}K`, icon: DollarSign, change: '+18%' },
-  { label: 'Avg Resolution', value: adminStats.avgResolutionTime, icon: Clock, change: '-12%' },
-  { label: 'Satisfaction', value: `${adminStats.satisfaction}/5`, icon: Star, change: '+3%' },
-  { label: 'Tickets This Month', value: adminStats.ticketsThisMonth.toString(), icon: TrendingUp, change: '+22%' },
-  { label: 'Pending Approvals', value: adminStats.pendingApprovals.toString(), icon: AlertTriangle, change: '' },
-];
-
 export default function AdminDashboard() {
+  const { t } = useTranslation();
+
+  const kpis = [
+    { labelKey: 'admin_dashboard.total_users', value: adminStats.totalUsers.toLocaleString(), icon: Users, change: '+12%' },
+    { labelKey: 'admin_dashboard.active_consultants', value: adminStats.activeConsultants.toString(), icon: UserCheck, change: '+8%' },
+    { labelKey: 'admin_dashboard.open_tickets', value: adminStats.openTickets.toString(), icon: Ticket, change: '-5%' },
+    { labelKey: 'admin_dashboard.monthly_revenue', value: `$${(adminStats.revenue / 1000).toFixed(0)}K`, icon: DollarSign, change: '+18%' },
+    { labelKey: 'admin_dashboard.avg_resolution', value: adminStats.avgResolutionTime, icon: Clock, change: '-12%' },
+    { labelKey: 'admin_dashboard.satisfaction', value: `${adminStats.satisfaction}/5`, icon: Star, change: '+3%' },
+    { labelKey: 'admin_dashboard.tickets_this_month', value: adminStats.ticketsThisMonth.toString(), icon: TrendingUp, change: '+22%' },
+    { labelKey: 'admin_dashboard.pending_approvals', value: adminStats.pendingApprovals.toString(), icon: AlertTriangle, change: '' },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Platform overview and key metrics</p>
+        <h1 className="text-2xl font-bold text-foreground">{t('admin_dashboard.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('admin_dashboard.subtitle')}</p>
       </div>
 
       {/* KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {kpis.map((kpi) => (
-          <Card key={kpi.label} className="border-border/50">
+          <Card key={kpi.labelKey} className="border-border/50">
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-2">
                 <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
@@ -39,7 +42,7 @@ export default function AdminDashboard() {
                 )}
               </div>
               <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
-              <p className="text-xs text-muted-foreground">{kpi.label}</p>
+              <p className="text-xs text-muted-foreground">{t(kpi.labelKey)}</p>
             </CardContent>
           </Card>
         ))}
@@ -49,7 +52,7 @@ export default function AdminDashboard() {
         {/* Revenue Chart */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Revenue vs Expenses</CardTitle>
+            <CardTitle className="text-base">{t('admin_dashboard.revenue_vs_expenses')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
@@ -67,7 +70,7 @@ export default function AdminDashboard() {
         {/* Tickets by Status */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Tickets by Status</CardTitle>
+            <CardTitle className="text-base">{t('admin_dashboard.tickets_by_status')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-6">
@@ -100,7 +103,7 @@ export default function AdminDashboard() {
       {/* Tickets by Module */}
       <Card className="border-border/50">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Tickets by SAP Module</CardTitle>
+          <CardTitle className="text-base">{t('admin_dashboard.tickets_by_module')}</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={220}>

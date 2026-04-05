@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   DollarSign, Briefcase, Clock, Star, TrendingUp, TrendingDown,
   Calendar, Video, MessageSquare, Monitor, ArrowUpRight, ChevronRight,
@@ -33,16 +34,17 @@ const sessionTypeIcons: Record<string, typeof Video> = {
 };
 
 export default function ConsultantDashboard() {
+  const { t } = useTranslation();
   const profile = mockConsultantProfile;
   const earnings = mockEarnings;
   const activeCases = mockCases.filter((c) => c.status !== 'resolved' && c.status !== 'closed');
   const upcomingSessions = mockSessions.filter((s) => s.status === 'scheduled');
 
   const kpis = [
-    { label: 'Monthly Earnings', value: `$${earnings.thisMonth.toLocaleString()}`, icon: DollarSign, trend: '+12%', up: true },
-    { label: 'Active Cases', value: activeCases.length.toString(), icon: Briefcase, trend: '+2', up: true },
-    { label: 'Avg Response', value: `${profile.response_time_minutes} min`, icon: Clock, trend: '-3 min', up: true },
-    { label: 'Rating', value: profile.rating.toString(), icon: Star, trend: `${profile.total_reviews} reviews`, up: true },
+    { labelKey: 'consultant_dashboard.this_month', value: `$${earnings.thisMonth.toLocaleString()}`, icon: DollarSign, trend: '+12%', up: true },
+    { labelKey: 'consultant_dashboard.active_cases', value: activeCases.length.toString(), icon: Briefcase, trend: '+2', up: true },
+    { labelKey: 'consultant_dashboard.response_time', value: `${profile.response_time_minutes} ${t('consultant_dashboard.minutes')}`, icon: Clock, trend: '-3 min', up: true },
+    { labelKey: 'consultant_dashboard.avg_rating', value: profile.rating.toString(), icon: Star, trend: `${profile.total_reviews} reviews`, up: true },
   ];
 
   return (
@@ -50,8 +52,8 @@ export default function ConsultantDashboard() {
       {/* Welcome */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Welcome back, {profile.display_name.split(' ')[0]}</h1>
-          <p className="text-sm text-muted-foreground mt-1">Here's your activity overview for today.</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('consultant_dashboard.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('consultant_dashboard.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1.5 text-sm text-green-600 font-medium">
@@ -79,7 +81,7 @@ export default function ConsultantDashboard() {
                 </span>
               </div>
               <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
-              <div className="text-xs text-muted-foreground mt-1">{kpi.label}</div>
+              <div className="text-xs text-muted-foreground mt-1">{t(kpi.labelKey)}</div>
             </CardContent>
           </Card>
         ))}
@@ -89,7 +91,7 @@ export default function ConsultantDashboard() {
         {/* Earnings Chart */}
         <Card className="lg:col-span-2 rounded-2xl border-border/50">
           <CardHeader className="flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-semibold">Earnings Overview</CardTitle>
+            <CardTitle className="text-base font-semibold">{t('consultant_dashboard.earnings_overview')}</CardTitle>
             <Link to="/consultant/earnings">
               <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
             </Link>
@@ -127,7 +129,7 @@ export default function ConsultantDashboard() {
         {/* Upcoming Sessions */}
         <Card className="rounded-2xl border-border/50">
           <CardHeader className="flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-semibold">Upcoming Sessions</CardTitle>
+            <CardTitle className="text-base font-semibold">{t('consultant_dashboard.upcoming_sessions')}</CardTitle>
             <Link to="/consultant/calendar">
               <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
             </Link>
@@ -169,7 +171,7 @@ export default function ConsultantDashboard() {
       {/* Active Cases */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader className="flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base font-semibold">Active Cases</CardTitle>
+          <CardTitle className="text-base font-semibold">{t('consultant_dashboard.recent_cases')}</CardTitle>
           <Link to="/consultant/cases">
             <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
           </Link>

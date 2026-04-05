@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { NavLink } from '@/components/NavLink';
 import { useLocation, Link } from 'react-router-dom';
 import {
@@ -24,25 +25,12 @@ const menuItems = [
   { key: 'settings', icon: Settings, path: '/client/settings' },
 ];
 
-const labels: Record<string, string> = {
-  dashboard: 'Dashboard',
-  new_request: 'New Request',
-  tickets: 'My Tickets',
-  consultants: 'Consultants',
-  chat: 'Messages',
-  sessions: 'Sessions',
-  payments: 'Payments',
-  invoices: 'Invoices',
-  knowledge: 'Knowledge Base',
-  notifications: 'Notifications',
-  settings: 'Settings',
-};
-
 export default function ClientSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { toggleLanguage, currentLang } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <Sidebar collapsible="icon" className="border-e border-border/50">
@@ -52,12 +40,12 @@ export default function ClientSidebar() {
             <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shrink-0">
               <span className="text-sm font-bold text-primary-foreground">Q</span>
             </div>
-            {!collapsed && <span className="font-bold text-sm text-sidebar-foreground">Client Portal</span>}
+            {!collapsed && <span className="font-bold text-sm text-sidebar-foreground">{t('sidebar.client_portal')}</span>}
           </Link>
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/50">Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/50">{t('sidebar.menu')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
@@ -72,7 +60,7 @@ export default function ClientSidebar() {
                         activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                       >
                         <item.icon className="w-4 h-4 me-2 shrink-0" />
-                        {!collapsed && <span>{labels[item.key]}</span>}
+                        {!collapsed && <span>{t(`sidebar.${item.key}`)}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

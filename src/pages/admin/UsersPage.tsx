@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ const statusColors: Record<string, string> = {
 export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const { t } = useTranslation();
 
   const filtered = adminUsers.filter((u) => {
     const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
@@ -32,11 +34,11 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">User Management</h1>
-          <p className="text-sm text-muted-foreground">{adminUsers.length} total users</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('users_page.title')}</h1>
+          <p className="text-sm text-muted-foreground">{adminUsers.length} {t('users_page.subtitle')}</p>
         </div>
         <Button className="gradient-primary border-0">
-          <UserPlus className="w-4 h-4 me-1" /> Invite User
+          <UserPlus className="w-4 h-4 me-1" /> {t('users_page.invite_user')}
         </Button>
       </div>
 
