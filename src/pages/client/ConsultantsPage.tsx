@@ -12,7 +12,7 @@ import {
   Wifi, WifiOff, X, ChevronDown, ChevronUp, Clock, Globe, DollarSign,
   Users, Circle,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
 import ConsultantMap from '@/components/client/ConsultantMap';
