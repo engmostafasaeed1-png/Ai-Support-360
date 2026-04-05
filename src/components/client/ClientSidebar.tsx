@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from '@/components/NavLink';
 import SidebarUserCard from '@/components/sidebar/SidebarUserCard';
@@ -12,6 +13,8 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
+import { useGuestMode } from '@/contexts/GuestModeContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const menuItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/client' },
@@ -36,6 +39,21 @@ export default function ClientSidebar() {
   const { toggleLanguage, currentLang } = useLanguage();
   const { t } = useTranslation();
   const logout = useLogout();
+  const { isGuest } = useGuestMode();
+  const [onboardingDone, setOnboardingDone] = useState(false);
+
+  useEffect(() => {
+    if (isGuest) return;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) return;
+      supabase.from('profiles').select('onboarding_completed').eq('user_id', session.user.id).maybeSingle()
+        .then(({ data }) => { if (data?.onboarding_completed) setOnboardingDone(true); });
+    });
+  }, [isGuest]);
+
+  const visibleItems = menuItems.filter(item =>
+    item.key !== 'onboarding' || (!onboardingDone)
+  );
 
   return (
     <Sidebar collapsible="icon" className="border-e border-border/50">
@@ -53,7 +71,7 @@ export default function ClientSidebar() {
           <SidebarGroupLabel className="text-sidebar-foreground/50">{t('sidebar.menu')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {visibleItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <SidebarMenuItem key={item.key}>
