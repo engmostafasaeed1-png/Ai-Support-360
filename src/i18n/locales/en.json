@@ -195,7 +195,8 @@
     "completed": "Done",
     "environments": "Environments",
     "remote_access": "Remote Access",
-    "environment_logs": "Session Logs"
+    "environment_logs": "Session Logs",
+    "company_profile": "Company Profile"
   },
   "client_dashboard": {
     "title": "Welcome back",
