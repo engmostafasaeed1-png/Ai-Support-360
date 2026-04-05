@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import {
   Search, Star, BadgeCheck, Zap, Heart, Filter, Map, LayoutGrid,
   Wifi, WifiOff, X, ChevronDown, ChevronUp, Clock, Globe, DollarSign,
-  Users, Circle,
+  Users, Circle, Award,
 } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,7 @@ const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
   verified: { icon: BadgeCheck, color: 'text-accent' },
   top_rated: { icon: Star, color: 'text-yellow-500' },
   fast_responder: { icon: Zap, color: 'text-green-500' },
+  credly: { icon: Award, color: 'text-orange-500' },
 };
 
 const languages = [
@@ -421,6 +422,18 @@ export default function ConsultantsPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 mt-2">
+                      {c.credly_username && (
+                        <a
+                          href={`https://www.credly.com/users/${c.credly_username}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Award className="w-2.5 h-2.5" />
+                          {t('consultants.credly_verified', 'Credly Verified')}
+                        </a>
+                      )}
                       {c.badges.map((badge) => {
                         const config = badgeConfig[badge];
                         if (!config) return null;

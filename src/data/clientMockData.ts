@@ -32,12 +32,12 @@ export const mockClientPayments = [
 ];
 
 export const mockRecommendedConsultants = [
-  { id: 'c1', name: 'Ahmed Al-Rashid', specialty: 'SAP S/4HANA Finance', rating: 4.9, reviews: 127, rate: 150, avatar: 'AR', available: true, matchScore: 98, badges: ['verified', 'top_rated'], lat: 24.7136, lng: 46.6753, city: 'Riyadh', industries: ['oil', 'banking'] },
-  { id: 'c2', name: 'Sarah Johnson', specialty: 'SAP BTP & Integration', rating: 4.8, reviews: 98, rate: 175, avatar: 'SJ', available: true, matchScore: 92, badges: ['verified', 'fast_responder'], lat: 25.2048, lng: 55.2708, city: 'Dubai', industries: ['telecom', 'retail'] },
-  { id: 'c3', name: 'Dr. Fatima Hassan', specialty: 'SAP SuccessFactors', rating: 5.0, reviews: 87, rate: 200, avatar: 'FH', available: true, matchScore: 89, badges: ['verified', 'top_rated'], lat: 21.4858, lng: 39.1925, city: 'Jeddah', industries: ['healthcare', 'government'] },
-  { id: 'c4', name: 'Omar Al-Zahrani', specialty: 'SAP MM/SD Functional', rating: 4.7, reviews: 64, rate: 120, avatar: 'OZ', available: false, matchScore: 85, badges: ['verified'], lat: 26.4207, lng: 50.0888, city: 'Dammam', industries: ['manufacturing', 'logistics'] },
-  { id: 'c5', name: 'Layla Al-Harbi', specialty: 'SAP Basis & Security', rating: 4.6, reviews: 45, rate: 140, avatar: 'LH', available: true, matchScore: 80, badges: ['verified'], lat: 24.4539, lng: 39.6142, city: 'Medina', industries: ['government', 'oil'] },
-  { id: 'c6', name: 'Tariq Mansour', specialty: 'ABAP Development', rating: 4.8, reviews: 72, rate: 160, avatar: 'TM', available: true, matchScore: 76, badges: ['verified', 'fast_responder'], lat: 25.3548, lng: 51.1839, city: 'Doha', industries: ['banking', 'telecom'] },
+  { id: 'c1', name: 'Ahmed Al-Rashid', specialty: 'SAP S/4HANA Finance', rating: 4.9, reviews: 127, rate: 150, avatar: 'AR', available: true, matchScore: 98, badges: ['verified', 'top_rated'], lat: 24.7136, lng: 46.6753, city: 'Riyadh', industries: ['oil', 'banking'], credly_username: 'ahmed-alrashid' },
+  { id: 'c2', name: 'Sarah Johnson', specialty: 'SAP BTP & Integration', rating: 4.8, reviews: 98, rate: 175, avatar: 'SJ', available: true, matchScore: 92, badges: ['verified', 'fast_responder'], lat: 25.2048, lng: 55.2708, city: 'Dubai', industries: ['telecom', 'retail'], credly_username: 'sarah-johnson-sap' },
+  { id: 'c3', name: 'Dr. Fatima Hassan', specialty: 'SAP SuccessFactors', rating: 5.0, reviews: 87, rate: 200, avatar: 'FH', available: true, matchScore: 89, badges: ['verified', 'top_rated'], lat: 21.4858, lng: 39.1925, city: 'Jeddah', industries: ['healthcare', 'government'], credly_username: null },
+  { id: 'c4', name: 'Omar Al-Zahrani', specialty: 'SAP MM/SD Functional', rating: 4.7, reviews: 64, rate: 120, avatar: 'OZ', available: false, matchScore: 85, badges: ['verified'], lat: 26.4207, lng: 50.0888, city: 'Dammam', industries: ['manufacturing', 'logistics'], credly_username: 'omar-zahrani' },
+  { id: 'c5', name: 'Layla Al-Harbi', specialty: 'SAP Basis & Security', rating: 4.6, reviews: 45, rate: 140, avatar: 'LH', available: true, matchScore: 80, badges: ['verified'], lat: 24.4539, lng: 39.6142, city: 'Medina', industries: ['government', 'oil'], credly_username: null },
+  { id: 'c6', name: 'Tariq Mansour', specialty: 'ABAP Development', rating: 4.8, reviews: 72, rate: 160, avatar: 'TM', available: true, matchScore: 76, badges: ['verified', 'fast_responder'], lat: 25.3548, lng: 51.1839, city: 'Doha', industries: ['banking', 'telecom'], credly_username: 'tariq-mansour' },
 ];
 
 export const mockActivityFeed = [

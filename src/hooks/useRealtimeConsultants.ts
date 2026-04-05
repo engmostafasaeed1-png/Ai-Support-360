@@ -17,6 +17,7 @@ export interface ConsultantLive {
   lng: number;
   city: string;
   industries: string[];
+  credly_username?: string | null;
 }
 
 /**
