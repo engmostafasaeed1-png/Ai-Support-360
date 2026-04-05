@@ -204,7 +204,7 @@ export default function ClientDashboard() {
       {/* Recommended Consultants */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader className="flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base font-semibold">Recommended Consultants</CardTitle>
+          <CardTitle className="text-base font-semibold">{t('client_dashboard.recommended_consultants')}</CardTitle>
           <Link to="/client/consultants">
             <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
           </Link>
