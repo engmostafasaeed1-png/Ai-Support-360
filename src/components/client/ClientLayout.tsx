@@ -1,11 +1,20 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import ClientSidebar from '@/components/client/ClientSidebar';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import { Outlet } from 'react-router-dom';
-import { Search, AlertTriangle } from 'lucide-react';
+import { Search, AlertTriangle, LayoutDashboard, TicketPlus, Users, MessageSquare, Settings } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
+
+const bottomNavItems = [
+  { key: 'dashboard', icon: LayoutDashboard, path: '/client', labelKey: 'sidebar.dashboard' },
+  { key: 'new_request', icon: TicketPlus, path: '/client/new-request', labelKey: 'sidebar.new_request' },
+  { key: 'consultants', icon: Users, path: '/client/consultants', labelKey: 'sidebar.consultants' },
+  { key: 'chat', icon: MessageSquare, path: '/client/chat', labelKey: 'sidebar.chat' },
+  { key: 'settings', icon: Settings, path: '/client/settings', labelKey: 'sidebar.settings' },
+];
 
 export default function ClientLayout() {
   return (
@@ -15,7 +24,7 @@ export default function ClientLayout() {
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 flex items-center justify-between border-b border-border/50 px-4 bg-background/80 backdrop-blur-xl sticky top-0 z-30">
             <div className="flex items-center gap-3">
-              <SidebarTrigger className="text-muted-foreground" />
+              <SidebarTrigger className="text-muted-foreground hidden md:flex" />
               <div className="hidden md:flex items-center relative">
                 <Search className="w-4 h-4 absolute start-3 text-muted-foreground" />
                 <Input
@@ -28,7 +37,7 @@ export default function ClientLayout() {
               <Link to="/client/new-request">
                 <Button size="sm" variant="destructive" className="text-xs gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  Emergency Support
+                  <span className="hidden sm:inline">Emergency Support</span>
                 </Button>
               </Link>
               <NotificationBell basePath="/client" />
@@ -37,10 +46,11 @@ export default function ClientLayout() {
               </div>
             </div>
           </header>
-          <main className="flex-1 p-4 md:p-6 overflow-auto">
+          <main className="flex-1 p-4 md:p-6 overflow-auto pb-20 md:pb-6">
             <Outlet />
           </main>
         </div>
+        <MobileBottomNav items={bottomNavItems} />
       </div>
     </SidebarProvider>
   );
