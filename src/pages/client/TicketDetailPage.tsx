@@ -254,7 +254,7 @@ function SessionTimeline({ sessions, isLoading }: { sessions: any[]; isLoading: 
                 </div>
                 {session.ai_summary && (
                   <div className="mt-2 p-2 rounded-lg bg-muted/30 text-xs text-muted-foreground">
-                    <p className="font-medium text-foreground text-[11px] mb-0.5">AI Summary</p>
+                    <p className="font-medium text-foreground text-[11px] mb-0.5">{t('session_detail.ai_summary', 'AI Summary')}</p>
                     {session.ai_summary}
                   </div>
                 )}
