@@ -1,8 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { mockCases } from '@/data/consultantMockData';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useConsultantCases } from '@/hooks/useConsultantCases';
 import { Search, Filter, ArrowUpRight, Clock } from 'lucide-react';
 import { useState } from 'react';
 
@@ -26,8 +27,9 @@ const statusColors: Record<string, string> = {
 export default function CasesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const { data: cases, isLoading } = useConsultantCases();
 
-  const filtered = mockCases.filter((c) => {
+  const filtered = (cases || []).filter((c) => {
     const matchSearch = c.title.toLowerCase().includes(search.toLowerCase()) || c.client.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'all' || c.status === statusFilter;
     return matchSearch && matchStatus;
@@ -42,16 +44,10 @@ export default function CasesPage() {
         <p className="text-sm text-muted-foreground mt-1">Track and manage your assigned support tickets.</p>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div className="relative flex-1 w-full sm:max-w-sm">
           <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search cases..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="ps-9 rounded-xl h-10"
-          />
+          <Input placeholder="Search cases..." value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9 rounded-xl h-10" />
         </div>
         <div className="flex gap-1.5 flex-wrap">
           {statuses.map((s) => (
@@ -68,9 +64,10 @@ export default function CasesPage() {
         </div>
       </div>
 
-      {/* Cases List */}
       <div className="space-y-3">
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          [1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-2xl" />)
+        ) : filtered.length === 0 ? (
           <Card className="rounded-2xl border-border/50">
             <CardContent className="py-12 text-center">
               <Filter className="w-10 h-10 text-muted-foreground mx-auto mb-3" />

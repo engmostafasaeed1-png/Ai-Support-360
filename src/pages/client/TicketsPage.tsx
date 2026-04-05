@@ -1,9 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { mockClientTickets } from '@/data/clientMockData';
-import { Search, ArrowUpRight, Clock, TicketPlus } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useClientTickets } from '@/hooks/useClientTickets';
+import { Search, ArrowUpRight, TicketPlus, Ticket } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -27,8 +28,9 @@ const statusColors: Record<string, string> = {
 export default function TicketsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const { data: tickets, isLoading } = useClientTickets();
 
-  const filtered = mockClientTickets.filter((t) => {
+  const filtered = (tickets || []).filter((t) => {
     const matchSearch = t.title.toLowerCase().includes(search.toLowerCase()) || t.sap_module.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'all' || t.status === statusFilter;
     return matchSearch && matchStatus;
@@ -71,28 +73,39 @@ export default function TicketsPage() {
       </div>
 
       <div className="space-y-3">
-        {filtered.map((ticket) => (
-          <Card key={ticket.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground truncate">{ticket.title}</h3>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
-                    <span>{ticket.sap_module}</span>
-                    {ticket.consultant && <><span className="text-xs">•</span><span>{ticket.consultant}</span></>}
-                    <span className="text-xs">•</span>
-                    <span>{new Date(ticket.created_at).toLocaleDateString()}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>{ticket.urgency}</Badge>
-                  <Badge variant="secondary" className={`text-[10px] ${statusColors[ticket.status]}`}>{ticket.status.replace(/_/g, ' ')}</Badge>
-                  <Button variant="ghost" size="icon"><ArrowUpRight className="w-4 h-4" /></Button>
-                </div>
-              </div>
+        {isLoading ? (
+          [1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)
+        ) : filtered.length === 0 ? (
+          <Card className="rounded-2xl border-border/50">
+            <CardContent className="py-12 text-center">
+              <Ticket className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">No tickets found.</p>
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          filtered.map((ticket) => (
+            <Card key={ticket.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground truncate">{ticket.title}</h3>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
+                      <span>{ticket.sap_module}</span>
+                      {ticket.consultant && <><span className="text-xs">•</span><span>{ticket.consultant}</span></>}
+                      <span className="text-xs">•</span>
+                      <span>{new Date(ticket.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>{ticket.urgency}</Badge>
+                    <Badge variant="secondary" className={`text-[10px] ${statusColors[ticket.status]}`}>{ticket.status.replace(/_/g, ' ')}</Badge>
+                    <Button variant="ghost" size="icon"><ArrowUpRight className="w-4 h-4" /></Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );

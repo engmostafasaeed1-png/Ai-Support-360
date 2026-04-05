@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MoreHorizontal, UserPlus, Filter } from 'lucide-react';
-import { adminUsers } from '@/data/adminMockData';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Search, MoreHorizontal, UserPlus } from 'lucide-react';
+import { useAdminUsers } from '@/hooks/useAdminData';
 
 const roleColors: Record<string, string> = {
   client: 'bg-accent/10 text-accent border-accent/20',
@@ -23,9 +24,12 @@ export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const { t } = useTranslation();
+  const { data: users, isLoading } = useAdminUsers();
 
-  const filtered = adminUsers.filter((u) => {
-    const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
+  const allUsers = users || [];
+
+  const filtered = allUsers.filter((u) => {
+    const matchSearch = u.name.toLowerCase().includes(search.toLowerCase());
     const matchRole = roleFilter === 'all' || u.role === roleFilter;
     return matchSearch && matchRole;
   });
@@ -35,7 +39,7 @@ export default function UsersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{t('users_page.title')}</h1>
-          <p className="text-sm text-muted-foreground">{adminUsers.length} {t('users_page.subtitle')}</p>
+          <p className="text-sm text-muted-foreground">{allUsers.length} {t('users_page.subtitle')}</p>
         </div>
         <Button className="gradient-primary border-0">
           <UserPlus className="w-4 h-4 me-1" /> {t('users_page.invite_user')}
@@ -47,22 +51,11 @@ export default function UsersPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name or email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="ps-9"
-              />
+              <Input placeholder="Search by name..." value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9" />
             </div>
             <div className="flex gap-2">
               {['all', 'client', 'consultant', 'admin'].map((r) => (
-                <Button
-                  key={r}
-                  variant={roleFilter === r ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setRoleFilter(r)}
-                  className={roleFilter === r ? 'gradient-primary border-0' : ''}
-                >
+                <Button key={r} variant={roleFilter === r ? 'default' : 'outline'} size="sm" onClick={() => setRoleFilter(r)} className={roleFilter === r ? 'gradient-primary border-0' : ''}>
                   {r === 'all' ? 'All' : r.charAt(0).toUpperCase() + r.slice(1)}
                 </Button>
               ))}
@@ -70,54 +63,49 @@ export default function UsersPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border/50 bg-muted/30">
-                  <th className="text-start py-3 px-4 font-medium text-muted-foreground">User</th>
-                  <th className="text-start py-3 px-4 font-medium text-muted-foreground">Role</th>
-                  <th className="text-start py-3 px-4 font-medium text-muted-foreground">Status</th>
-                  <th className="text-start py-3 px-4 font-medium text-muted-foreground">Joined</th>
-                  <th className="text-start py-3 px-4 font-medium text-muted-foreground">Tickets</th>
-                  <th className="text-end py-3 px-4 font-medium text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
-                {filtered.map((user) => (
-                  <tr key={user.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0">
-                          {user.name.split(' ').map(n => n[0]).join('')}
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">{user.name}</p>
-                          <p className="text-xs text-muted-foreground">{user.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge variant="outline" className={`text-[10px] ${roleColors[user.role]}`}>
-                        {user.role}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge variant="outline" className={`text-[10px] ${statusColors[user.status]}`}>
-                        {user.status}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground">{user.joined}</td>
-                    <td className="py-3 px-4 text-muted-foreground">{user.tickets}</td>
-                    <td className="py-3 px-4 text-end">
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </td>
+          {isLoading ? (
+            <div className="p-4 space-y-3">
+              {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-14" />)}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/50 bg-muted/30">
+                    <th className="text-start py-3 px-4 font-medium text-muted-foreground">User</th>
+                    <th className="text-start py-3 px-4 font-medium text-muted-foreground">Role</th>
+                    <th className="text-start py-3 px-4 font-medium text-muted-foreground">Status</th>
+                    <th className="text-start py-3 px-4 font-medium text-muted-foreground">Joined</th>
+                    <th className="text-end py-3 px-4 font-medium text-muted-foreground">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {filtered.map((user) => (
+                    <tr key={user.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0">
+                            {user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                          </div>
+                          <p className="font-medium text-foreground">{user.name}</p>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant="outline" className={`text-[10px] ${roleColors[user.role]}`}>{user.role}</Badge>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant="outline" className={`text-[10px] ${statusColors[user.status]}`}>{user.status}</Badge>
+                      </td>
+                      <td className="py-3 px-4 text-muted-foreground">{user.joined}</td>
+                      <td className="py-3 px-4 text-end">
+                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
