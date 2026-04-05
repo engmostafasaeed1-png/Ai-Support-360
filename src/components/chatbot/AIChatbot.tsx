@@ -9,6 +9,7 @@ import {
 import { useTriageChat } from '@/hooks/useTriageChat';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 function parseTicketSummary(content: string) {
   const titleMatch = content.match(/\*\*Title\*\*:\s*(.+)/i);
