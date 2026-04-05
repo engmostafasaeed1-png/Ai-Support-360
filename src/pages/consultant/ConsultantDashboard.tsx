@@ -16,6 +16,7 @@ import {
   mockConsultantProfile, mockEarnings, mockCases, mockReviews,
 } from '@/data/consultantMockData';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import OnboardingProgressCard from '@/components/onboarding/OnboardingProgressCard';
 
 const sessionTypeIcons: Record<string, typeof Video> = {
   video: Video,
@@ -160,6 +161,7 @@ export default function ConsultantDashboard() {
   return (
     <PullToRefresh>
     <div className="space-y-6">
+      <OnboardingProgressCard role="consultant" />
       {/* Welcome */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

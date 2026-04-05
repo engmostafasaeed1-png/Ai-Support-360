@@ -9,6 +9,7 @@ import {
   Calendar, DollarSign, FileText, Video, MessageSquare, Monitor,
 } from 'lucide-react';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import OnboardingProgressCard from '@/components/onboarding/OnboardingProgressCard';
 import {
   mockClientProfile, mockClientTickets, mockClientSessions,
   mockClientPayments, mockRecommendedConsultants, mockActivityFeed,
@@ -62,6 +63,7 @@ export default function ClientDashboard() {
   return (
     <PullToRefresh>
     <div className="space-y-6">
+      <OnboardingProgressCard role="client" />
       {/* Welcome */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
