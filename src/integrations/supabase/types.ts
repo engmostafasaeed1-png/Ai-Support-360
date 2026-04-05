@@ -268,6 +268,7 @@ export type Database = {
           id: string
           industries: string[] | null
           languages: string[] | null
+          location: unknown
           profile_video_url: string | null
           rating: number | null
           response_time_minutes: number | null
@@ -292,6 +293,7 @@ export type Database = {
           id?: string
           industries?: string[] | null
           languages?: string[] | null
+          location?: unknown
           profile_video_url?: string | null
           rating?: number | null
           response_time_minutes?: number | null
@@ -316,6 +318,7 @@ export type Database = {
           id?: string
           industries?: string[] | null
           languages?: string[] | null
+          location?: unknown
           profile_video_url?: string | null
           rating?: number | null
           response_time_minutes?: number | null

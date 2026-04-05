@@ -2,10 +2,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { mockRecommendedConsultants } from '@/data/clientMockData';
-import { Search, Star, BadgeCheck, Zap, Heart, Filter, Map, LayoutGrid } from 'lucide-react';
+import { Search, Star, BadgeCheck, Zap, Heart, Filter, Map, LayoutGrid, Wifi, WifiOff } from 'lucide-react';
 import { useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
 
 const ConsultantMap = lazy(() => import('@/components/client/ConsultantMap'));
 
@@ -19,15 +19,24 @@ export default function ConsultantsPage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [view, setView] = useState<'grid' | 'map'>('grid');
-  const filtered = mockRecommendedConsultants.filter((c) =>
+  const { consultants, realtimeConnected } = useRealtimeConsultants();
+
+  const filtered = consultants.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) || c.specialty.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{t('consultants_page.title')}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{t('consultants_page.subtitle')}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{t('consultants_page.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('consultants_page.subtitle')}</p>
+        </div>
+        {/* Realtime indicator */}
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium ${realtimeConnected ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+          {realtimeConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+          {realtimeConnected ? 'Live' : 'Connecting...'}
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
@@ -68,8 +77,12 @@ export default function ConsultantsPage() {
           <Card key={c.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
             <CardContent className="p-5">
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0">
-                  {c.avatar}
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0">
+                    {c.avatar}
+                  </div>
+                  {/* Live status dot on avatar */}
+                  <span className={`absolute -top-1 -end-1 w-4 h-4 rounded-full border-2 border-card ${c.available ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
@@ -114,12 +127,12 @@ export default function ConsultantsPage() {
                     <div className="flex gap-2">
                       {c.available ? (
                         <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                           {t('consultants.available')}
                         </span>
                       ) : (
                         <span className="text-xs text-muted-foreground font-medium">
-                          {t('consultants.offline') || 'Offline'}
+                          {t('consultants.offline')}
                         </span>
                       )}
                     </div>
