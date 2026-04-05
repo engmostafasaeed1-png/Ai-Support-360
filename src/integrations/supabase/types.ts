@@ -888,6 +888,53 @@ export type Database = {
           },
         ]
       }
+      remote_environments: {
+        Row: {
+          client_id: string
+          consultant_id: string | null
+          created_at: string
+          guacamole_url: string
+          id: string
+          name: string
+          notes: string | null
+          os_type: string | null
+          status: Database["public"]["Enums"]["environment_status"]
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          consultant_id?: string | null
+          created_at?: string
+          guacamole_url: string
+          id?: string
+          name: string
+          notes?: string | null
+          os_type?: string | null
+          status?: Database["public"]["Enums"]["environment_status"]
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          consultant_id?: string | null
+          created_at?: string
+          guacamole_url?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          os_type?: string | null
+          status?: Database["public"]["Enums"]["environment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "remote_environments_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           ai_action_items: string[] | null
@@ -1069,6 +1116,7 @@ export type Database = {
       app_role: "client" | "consultant" | "admin"
       article_status: "draft" | "published" | "archived"
       availability_status: "available" | "busy" | "offline"
+      environment_status: "active" | "inactive" | "maintenance"
       integration_platform: "zendesk" | "freshdesk" | "jira" | "servicenow"
       integration_status: "active" | "inactive" | "error"
       interview_status: "pending" | "in_progress" | "completed" | "reviewed"
@@ -1230,6 +1278,7 @@ export const Constants = {
       app_role: ["client", "consultant", "admin"],
       article_status: ["draft", "published", "archived"],
       availability_status: ["available", "busy", "offline"],
+      environment_status: ["active", "inactive", "maintenance"],
       integration_platform: ["zendesk", "freshdesk", "jira", "servicenow"],
       integration_status: ["active", "inactive", "error"],
       interview_status: ["pending", "in_progress", "completed", "reviewed"],
