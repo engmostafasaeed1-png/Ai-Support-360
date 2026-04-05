@@ -132,10 +132,17 @@ export default function EarningsPage() {
           <h1 className="text-2xl font-bold text-foreground">{t('earnings.title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t('earnings.subtitle')}</p>
         </div>
-        <Button className="gradient-primary border-0" size="sm">
+        <Button className="gradient-primary border-0" size="sm" onClick={() => setPayoutOpen(true)}>
           <ArrowDownToLine className="w-4 h-4 me-1" /> {t('earnings.request_payout')}
         </Button>
       </div>
+
+      <PayoutModal
+        open={payoutOpen}
+        onOpenChange={setPayoutOpen}
+        available={e.available}
+        consultantId={data?.payments?.[0]?.consultant_id ?? null}
+      />
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
