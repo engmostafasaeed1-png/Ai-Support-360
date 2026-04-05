@@ -618,6 +618,7 @@
     "status_scheduled": "Scheduled",
     "status_in_progress": "In Progress",
     "status_completed": "Completed",
-    "status_cancelled": "Cancelled"
+    "status_cancelled": "Cancelled",
+    "unknown_consultant": "Consultant"
   }
 }
