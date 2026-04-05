@@ -1,9 +1,9 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Star, BadgeCheck, Zap, Heart, Filter, Map, LayoutGrid, Wifi, WifiOff } from 'lucide-react';
+import { Search, Star, BadgeCheck, Zap, Heart, Filter, Map, LayoutGrid, Wifi, WifiOff, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
@@ -18,13 +18,17 @@ const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
 export default function ConsultantsPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const industryFilter = searchParams.get('industry');
   const [search, setSearch] = useState('');
   const [view, setView] = useState<'grid' | 'map'>('grid');
   const { consultants, realtimeConnected } = useRealtimeConsultants();
 
-  const filtered = consultants.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) || c.specialty.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = consultants.filter((c) => {
+    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.specialty.toLowerCase().includes(search.toLowerCase());
+    const matchesIndustry = !industryFilter || ('industries' in c && (c as any).industries?.includes(industryFilter));
+    return matchesSearch && matchesIndustry;
+  });
 
   return (
     <div className="space-y-6">
@@ -55,6 +59,18 @@ export default function ConsultantsPage() {
           </button>
         </div>
       </div>
+
+      {/* Active industry filter */}
+      {industryFilter && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs bg-accent/10 text-accent">
+            {t(`industries.${industryFilter}`)}
+            <button onClick={() => setSearchParams({})} className="hover:text-destructive transition-colors">
+              <X className="w-3 h-3" />
+            </button>
+          </Badge>
+        </div>
+      )}
 
       {/* Tab filters */}
       <div className="flex gap-2">

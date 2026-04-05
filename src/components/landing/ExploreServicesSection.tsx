@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -45,7 +46,7 @@ const industries = [
 
 export default function ExploreServicesSection() {
   const { t } = useTranslation();
-  const [hoveredSolution, setHoveredSolution] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   return (
     <section id="categories" className="py-24 bg-muted/20">
@@ -89,8 +90,6 @@ export default function ExploreServicesSection() {
                 <div
                   key={key}
                   className="group relative p-5 rounded-2xl bg-card border border-border/40 hover:border-accent/40 hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden"
-                  onMouseEnter={() => setHoveredSolution(key)}
-                  onMouseLeave={() => setHoveredSolution(null)}
                 >
                   {/* Glow effect on hover */}
                   <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -117,6 +116,7 @@ export default function ExploreServicesSection() {
               {industries.map(({ key, icon: Icon, desc, count }) => (
                 <div
                   key={key}
+                  onClick={() => navigate(`/client/consultants?industry=${key}`)}
                   className="group relative p-6 rounded-2xl bg-card border border-border/40 hover:border-accent/40 hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden"
                 >
                   {/* Background gradient on hover */}
