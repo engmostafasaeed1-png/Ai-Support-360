@@ -34,7 +34,7 @@ const languages = [
   { value: 'de', label: 'German' },
 ];
 
-type SortOption = 'best_match' | 'rating' | 'price_low' | 'price_high' | 'fastest';
+type SortOption = 'best_match' | 'rating' | 'price_low' | 'price_high' | 'fastest' | 'credly_first';
 
 export default function ConsultantsPage() {
   const navigate = useNavigate();
@@ -105,6 +105,13 @@ export default function ConsultantsPage() {
         break;
       case 'fastest':
         result.sort((a, b) => (a.available === b.available ? 0 : a.available ? -1 : 1));
+        break;
+      case 'credly_first':
+        result.sort((a, b) => {
+          const aCredly = a.credly_username ? 1 : 0;
+          const bCredly = b.credly_username ? 1 : 0;
+          return bCredly - aCredly || b.rating - a.rating;
+        });
         break;
       default:
         result.sort((a, b) => b.matchScore - a.matchScore);
@@ -206,6 +213,7 @@ export default function ConsultantsPage() {
             <SelectItem value="price_low">Price: Low → High</SelectItem>
             <SelectItem value="price_high">Price: High → Low</SelectItem>
             <SelectItem value="fastest">Available First</SelectItem>
+            <SelectItem value="credly_first">{t('consultants_page.credly_first', 'Credly Verified First')}</SelectItem>
           </SelectContent>
         </Select>
 
