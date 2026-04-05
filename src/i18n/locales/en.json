@@ -314,7 +314,9 @@
     "reviews": "reviews",
     "match": "match",
     "map_view": "Map View",
-    "grid_view": "Grid View"
+    "grid_view": "Grid View",
+    "live": "Live",
+    "connecting": "Connecting..."
   },
   "payments_page": {
     "title": "Payments",
