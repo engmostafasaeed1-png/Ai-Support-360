@@ -196,6 +196,7 @@
     "environments": "Environments",
     "remote_access": "Remote Access",
     "environment_logs": "Session Logs",
+    "nda_management": "NDA Management",
     "company_profile": "Company Profile"
   },
   "client_dashboard": {

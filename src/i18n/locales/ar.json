@@ -196,6 +196,7 @@
     "environments": "البيئات",
     "remote_access": "الوصول عن بُعد",
     "environment_logs": "سجل الجلسات",
+    "nda_management": "إدارة اتفاقيات عدم الإفصاح",
     "company_profile": "الملف التعريفي للشركة"
   },
   "client_dashboard": {
