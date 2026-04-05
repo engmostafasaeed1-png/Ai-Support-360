@@ -37,6 +37,26 @@ export default function SessionDetailPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const handleCancel = async () => {
+    setIsCancelling(true);
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .update({ status: 'cancelled' })
+        .eq('id', sessionId!);
+      if (error) throw error;
+      toast.success(t('session_detail.cancelled_success'));
+      queryClient.invalidateQueries({ queryKey: ['session-detail', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['client-sessions'] });
+    } catch (err: any) {
+      toast.error(t('session_detail.cancel_error'), { description: err.message });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   const { data: session, isLoading } = useQuery({
     queryKey: ['session-detail', sessionId],
