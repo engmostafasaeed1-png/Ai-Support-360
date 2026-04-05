@@ -1,4 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslation } from 'react-i18next';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { kanbanTickets } from '@/data/adminMockData';
 
@@ -10,19 +11,21 @@ const urgencyColors: Record<string, string> = {
 };
 
 const columns = [
-  { key: 'new' as const, label: 'New', color: 'bg-accent' },
-  { key: 'under_review' as const, label: 'Under Review', color: 'bg-yellow-500' },
-  { key: 'matched' as const, label: 'Matched', color: 'bg-purple-500' },
-  { key: 'in_progress' as const, label: 'In Progress', color: 'bg-green-500' },
-  { key: 'resolved' as const, label: 'Resolved', color: 'bg-muted-foreground' },
+  { key: 'new' as const, labelKey: 'ticket_board.new', color: 'bg-accent' },
+  { key: 'under_review' as const, labelKey: 'ticket_board.under_review', color: 'bg-yellow-500' },
+  { key: 'matched' as const, labelKey: 'ticket_board.matched', color: 'bg-purple-500' },
+  { key: 'in_progress' as const, labelKey: 'ticket_board.in_progress', color: 'bg-green-500' },
+  { key: 'resolved' as const, labelKey: 'ticket_board.resolved', color: 'bg-muted-foreground' },
 ];
 
 export default function TicketKanbanPage() {
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Ticket Board</h1>
-        <p className="text-sm text-muted-foreground">Drag-and-drop ticket management</p>
+        <h1 className="text-2xl font-bold text-foreground">{t('ticket_board.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('ticket_board.subtitle')}</p>
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-4">
@@ -32,7 +35,7 @@ export default function TicketKanbanPage() {
             <div key={col.key} className="min-w-[280px] flex-shrink-0">
               <div className="flex items-center gap-2 mb-3 px-1">
                 <span className={`w-2.5 h-2.5 rounded-full ${col.color}`} />
-                <h3 className="font-semibold text-sm text-foreground">{col.label}</h3>
+                <h3 className="font-semibold text-sm text-foreground">{t(col.labelKey)}</h3>
                 <Badge variant="secondary" className="text-[10px] ms-auto">{tickets.length}</Badge>
               </div>
               <div className="space-y-3">
