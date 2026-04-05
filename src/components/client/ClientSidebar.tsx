@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, TicketPlus, Briefcase, Users, Calendar,
-  CreditCard, FileText, BookOpen, Bell, Settings, Globe,
+  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 
@@ -15,6 +15,7 @@ const menuItems = [
   { key: 'new_request', icon: TicketPlus, path: '/client/new-request' },
   { key: 'tickets', icon: Briefcase, path: '/client/tickets' },
   { key: 'consultants', icon: Users, path: '/client/consultants' },
+  { key: 'chat', icon: MessageSquare, path: '/client/chat' },
   { key: 'sessions', icon: Calendar, path: '/client/sessions' },
   { key: 'payments', icon: CreditCard, path: '/client/payments' },
   { key: 'invoices', icon: FileText, path: '/client/invoices' },
@@ -28,6 +29,7 @@ const labels: Record<string, string> = {
   new_request: 'New Request',
   tickets: 'My Tickets',
   consultants: 'Consultants',
+  chat: 'Messages',
   sessions: 'Sessions',
   payments: 'Payments',
   invoices: 'Invoices',

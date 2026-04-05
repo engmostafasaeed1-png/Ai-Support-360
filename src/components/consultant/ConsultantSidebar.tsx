@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Briefcase, Calendar, CreditCard, Star,
-  User, ShieldCheck, BookOpen, Bell, Settings, Globe,
+  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare,
 } from 'lucide-react';
 
 const menuItems = [
@@ -16,6 +16,7 @@ const menuItems = [
   { key: 'cases', icon: Briefcase, path: '/consultant/cases' },
   { key: 'calendar', icon: Calendar, path: '/consultant/calendar' },
   { key: 'earnings', icon: CreditCard, path: '/consultant/earnings' },
+  { key: 'chat', icon: MessageSquare, path: '/consultant/chat' },
   { key: 'reviews', icon: Star, path: '/consultant/reviews' },
   { key: 'profile', icon: User, path: '/consultant/profile' },
   { key: 'verification', icon: ShieldCheck, path: '/consultant/verification' },
@@ -29,6 +30,7 @@ const labels: Record<string, string> = {
   cases: 'Cases',
   calendar: 'Calendar',
   earnings: 'Earnings',
+  chat: 'Messages',
   reviews: 'Reviews',
   profile: 'Profile',
   verification: 'Verification',
