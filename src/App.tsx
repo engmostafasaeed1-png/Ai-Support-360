@@ -20,6 +20,7 @@ import ClientLayout from "./components/client/ClientLayout.tsx";
 import ClientDashboard from "./pages/client/ClientDashboard.tsx";
 import NewRequestPage from "./pages/client/NewRequestPage.tsx";
 import TicketsPage from "./pages/client/TicketsPage.tsx";
+import TicketDetailPage from "./pages/client/TicketDetailPage.tsx";
 import ConsultantsPage from "./pages/client/ConsultantsPage.tsx";
 import ConsultantProfilePage from "./pages/client/ConsultantProfilePage.tsx";
 import PaymentsPage from "./pages/client/PaymentsPage.tsx";
@@ -84,6 +85,7 @@ const App = () => (
               <Route index element={<ClientDashboard />} />
               <Route path="new-request" element={<NewRequestPage />} />
               <Route path="tickets" element={<TicketsPage />} />
+              <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
               <Route path="consultants" element={<ConsultantsPage />} />
               <Route path="consultants/:id" element={<ConsultantProfilePage />} />
               <Route path="payments" element={<PaymentsPage />} />
