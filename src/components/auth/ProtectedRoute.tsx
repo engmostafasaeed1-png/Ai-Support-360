@@ -16,12 +16,8 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
   const [roleOk, setRoleOk] = useState<boolean | undefined>(undefined);
   const location = useLocation();
 
-  // Guest mode bypass
-  if (isGuest && (!requiredRole || guestRole === requiredRole)) {
-    return <>{children}</>;
-  }
-
   useEffect(() => {
+    if (isGuest) return;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
     });
@@ -29,9 +25,10 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       setSession(s);
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isGuest]);
 
   useEffect(() => {
+    if (isGuest) return;
     if (!session || !requiredRole) {
       setRoleOk(requiredRole ? undefined : true);
       return;
@@ -45,7 +42,12 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       .then(({ data }) => {
         setRoleOk(!!data);
       });
-  }, [session, requiredRole]);
+  }, [session, requiredRole, isGuest]);
+
+  // Guest mode bypass
+  if (isGuest && (!requiredRole || guestRole === requiredRole)) {
+    return <>{children}</>;
+  }
 
   if (session === undefined || (session && requiredRole && roleOk === undefined)) {
     return (
