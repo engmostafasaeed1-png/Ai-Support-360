@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FileSignature, PenTool, Type } from 'lucide-react';
 import { useNDATemplate, useNDAAgreement } from '@/hooks/useNDA';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NDASigningModalProps {
   open: boolean;
@@ -26,6 +27,56 @@ export default function NDASigningModal({
   const { t } = useTranslation();
   const { template, loading: templateLoading } = useNDATemplate();
   const { signNDA } = useNDAAgreement(consultantId, clientId);
+
+  const [consultantName, setConsultantName] = useState('');
+  const [clientCompany, setClientCompany] = useState('');
+  const [clientDisplayName, setClientDisplayName] = useState(clientName || '');
+
+  // Fetch consultant & client details when modal opens
+  useEffect(() => {
+    if (!open) return;
+
+    // Fetch consultant display name
+    supabase
+      .from('consultants')
+      .select('user_id')
+      .eq('id', consultantId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.user_id) {
+          supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('user_id', data.user_id)
+            .maybeSingle()
+            .then(({ data: p }) => setConsultantName(p?.display_name || ''));
+        }
+      });
+
+    // Fetch client profile details
+    supabase
+      .from('profiles')
+      .select('display_name')
+      .eq('user_id', clientId)
+      .maybeSingle()
+      .then(({ data }) => setClientDisplayName(data?.display_name || clientName || ''));
+
+    supabase
+      .from('client_profiles')
+      .select('company_name')
+      .eq('user_id', clientId)
+      .maybeSingle()
+      .then(({ data }) => setClientCompany(data?.company_name || ''));
+  }, [open, consultantId, clientId, clientName]);
+
+  // Replace placeholders in template
+  const filledTemplate = useMemo(() => {
+    return template
+      .replace(/\{\{consultant_name\}\}/g, consultantName || '_______________')
+      .replace(/\{\{client_name\}\}/g, clientDisplayName || '_______________')
+      .replace(/\{\{client_company\}\}/g, clientCompany || '_______________')
+      .replace(/\{\{date\}\}/g, new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }));
+  }, [template, consultantName, clientDisplayName, clientCompany]);
 
   const [sigType, setSigType] = useState<'draw' | 'type'>('type');
   const [typedName, setTypedName] = useState('');
@@ -118,7 +169,7 @@ export default function NDASigningModal({
         ? canvasRef.current!.toDataURL('image/png')
         : typedName.trim();
 
-    const success = await signNDA(sigData, sigType, template);
+    const success = await signNDA(sigData, sigType, filledTemplate);
     setSubmitting(false);
     if (success) {
       onOpenChange(false);
@@ -147,7 +198,7 @@ export default function NDASigningModal({
             <p className="text-muted-foreground">{t('nda.loading', 'Loading...')}</p>
           ) : (
             <pre className="whitespace-pre-wrap text-sm font-sans text-foreground leading-relaxed">
-              {template}
+              {filledTemplate}
             </pre>
           )}
         </ScrollArea>
