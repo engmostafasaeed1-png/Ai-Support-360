@@ -9,6 +9,7 @@ import {
 import { useTriageChat } from '@/hooks/useTriageChat';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 function parseTicketSummary(content: string) {
   const titleMatch = content.match(/\*\*Title\*\*:\s*(.+)/i);
@@ -36,7 +37,7 @@ export default function AIChatbot() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-
+  const { t } = useTranslation();
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -91,7 +92,7 @@ export default function AIChatbot() {
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowHistory(false)}>
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <h3 className="text-sm font-semibold text-foreground flex-1">Chat History</h3>
+                <h3 className="text-sm font-semibold text-foreground flex-1">{t('chatbot.history_title')}</h3>
               </>
             ) : (
               <>
@@ -99,8 +100,8 @@ export default function AIChatbot() {
                   <Bot className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-foreground">Qurtuba AI</h3>
-                  <p className="text-[10px] text-muted-foreground">SAP Ticket Triage Assistant</p>
+                  <h3 className="text-sm font-semibold text-foreground">{t('chatbot.title')}</h3>
+                  <p className="text-[10px] text-muted-foreground">{t('chatbot.subtitle')}</p>
                 </div>
               </>
             )}
@@ -132,7 +133,7 @@ export default function AIChatbot() {
               {conversations.length === 0 ? (
                 <div className="text-center pt-12">
                   <History className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">No previous chats</p>
+                  <p className="text-xs text-muted-foreground">{t('chatbot.no_history')}</p>
                 </div>
               ) : (
                 conversations.map((conv) => (
@@ -174,16 +175,16 @@ export default function AIChatbot() {
                       <Sparkles className="w-8 h-8 text-primary" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold text-foreground">How can I help?</h4>
+                      <h4 className="text-sm font-semibold text-foreground">{t('chatbot.how_can_i_help')}</h4>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Describe your SAP issue and I'll help prepare a support ticket with the right module and urgency.
+                        {t('chatbot.description')}
                       </p>
                     </div>
                     <div className="flex flex-wrap justify-center gap-2">
                       {[
-                        'My SAP FI posting is failing',
-                        'MM purchase order stuck',
-                        'Basis system performance issue',
+                        t('chatbot.prompt_fi'),
+                        t('chatbot.prompt_mm'),
+                        t('chatbot.prompt_basis'),
                       ].map((q) => (
                         <button
                           key={q}
@@ -243,7 +244,7 @@ export default function AIChatbot() {
                           onClick={() => handleCreateTicket(msg.content)}
                         >
                           <TicketPlus className="w-3 h-3" />
-                          Create Ticket
+                          {t('chatbot.create_ticket')}
                         </Button>
                       </div>
                     )}
@@ -276,7 +277,7 @@ export default function AIChatbot() {
                     ref={inputRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Describe your SAP issue..."
+                    placeholder={t('chatbot.placeholder')}
                     className="flex-1 h-10 rounded-xl text-sm bg-muted/30 border-border/30"
                     disabled={isLoading}
                   />
@@ -294,7 +295,7 @@ export default function AIChatbot() {
                   </Button>
                 </form>
                 <p className="text-[9px] text-muted-foreground/60 text-center mt-1.5">
-                  Powered by Qurtuba AI · Responses may be inaccurate
+                  {t('chatbot.powered_by')}
                 </p>
               </div>
             </>

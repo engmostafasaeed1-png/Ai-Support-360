@@ -852,5 +852,19 @@
     "resend": "Resend verification email",
     "resent": "Verification email sent! Check your inbox.",
     "resend_error": "Failed to resend. Please try again."
+  },
+  "chatbot": {
+    "title": "Qurtuba AI",
+    "subtitle": "SAP Ticket Triage Assistant",
+    "history_title": "Chat History",
+    "no_history": "No previous chats",
+    "how_can_i_help": "How can I help?",
+    "description": "Describe your SAP issue and I'll help prepare a support ticket with the right module and urgency.",
+    "placeholder": "Describe your SAP issue...",
+    "powered_by": "Powered by Qurtuba AI · Responses may be inaccurate",
+    "create_ticket": "Create Ticket",
+    "prompt_fi": "My SAP FI posting is failing",
+    "prompt_mm": "MM purchase order stuck",
+    "prompt_basis": "Basis system performance issue"
   }
 }
