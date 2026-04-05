@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -137,7 +138,7 @@ export default function ConsultantsPage() {
 
                   <div className="flex gap-2 mt-3">
                     <Button size="sm" className="gradient-primary border-0 flex-1 text-xs">{t('consultants_page.book_session')}</Button>
-                    <Button size="sm" variant="outline" className="flex-1 text-xs">{t('consultants_page.view_profile')}</Button>
+                    <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => navigate(`/client/consultants/${c.id}`)}>{t('consultants_page.view_profile')}</Button>
                   </div>
                 </div>
               </div>
