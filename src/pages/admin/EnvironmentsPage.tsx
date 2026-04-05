@@ -16,11 +16,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Monitor, Plus, Pencil, Trash2, Server } from 'lucide-react';
+import { Monitor, Plus, Pencil, Trash2, Server, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   useRemoteEnvironments, useCreateEnvironment, useUpdateEnvironment, useDeleteEnvironment,
   type RemoteEnvironment,
 } from '@/hooks/useRemoteEnvironments';
+import ConnectionsManager from '@/components/remote/ConnectionsManager';
 
 const statusColors: Record<string, 'default' | 'secondary' | 'destructive'> = {
   active: 'default',
@@ -165,6 +166,7 @@ export default function EnvironmentsPage() {
   const deleteEnv = useDeleteEnvironment();
   const [editEnv, setEditEnv] = useState<RemoteEnvironment | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [expandedEnv, setExpandedEnv] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -227,6 +229,13 @@ export default function EnvironmentsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setExpandedEnv(expandedEnv === env.id ? null : env.id)}
+                    >
+                      {expandedEnv === env.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </Button>
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button variant="outline" size="icon" onClick={() => setEditEnv(env)}>
@@ -263,6 +272,11 @@ export default function EnvironmentsPage() {
                     </AlertDialog>
                   </div>
                 </div>
+                {expandedEnv === env.id && (
+                  <div className="mt-4 pt-4 border-t border-border/30">
+                    <ConnectionsManager environmentId={env.id} />
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
