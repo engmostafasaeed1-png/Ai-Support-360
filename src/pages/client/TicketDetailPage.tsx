@@ -202,6 +202,7 @@ function InfoCard({ icon: Icon, label, value }: { icon: typeof Tag; label: strin
 }
 
 function SessionTimeline({ sessions, isLoading }: { sessions: any[]; isLoading: boolean }) {
+  const { t } = useTranslation();
   if (isLoading) return <Skeleton className="h-48 rounded-2xl" />;
 
   if (sessions.length === 0) {
