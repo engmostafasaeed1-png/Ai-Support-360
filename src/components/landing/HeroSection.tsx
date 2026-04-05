@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Users, CheckCircle, Clock } from 'lucide-react';
+import { ArrowRight, Sparkles, Users, CheckCircle, Clock, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import GuestExploreModal from '@/components/guest/GuestExploreModal';
 
 export default function HeroSection() {
   const { t } = useTranslation();
+  const [exploreOpen, setExploreOpen] = useState(false);
 
   const stats = [
     { value: '500+', label: t('hero.stat_consultants'), icon: Users },
@@ -52,11 +55,13 @@ export default function HeroSection() {
               size="lg"
               variant="ghost"
               className="text-base"
-              onClick={() => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => setExploreOpen(true)}
             >
-              {t('hero.cta_explore')}
+              <Eye className="w-4 h-4 me-2" />
+              Explore as Guest
             </Button>
           </div>
+          <GuestExploreModal open={exploreOpen} onOpenChange={setExploreOpen} />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-20 max-w-4xl mx-auto">

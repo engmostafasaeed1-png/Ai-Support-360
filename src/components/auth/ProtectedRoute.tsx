@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { Session } from '@supabase/supabase-js';
 import { Loader2 } from 'lucide-react';
+import { useGuestMode } from '@/contexts/GuestModeContext';
 
 interface Props {
   children: React.ReactNode;
@@ -10,11 +11,13 @@ interface Props {
 }
 
 export default function ProtectedRoute({ children, requiredRole }: Props) {
+  const { isGuest, guestRole } = useGuestMode();
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [roleOk, setRoleOk] = useState<boolean | undefined>(undefined);
   const location = useLocation();
 
   useEffect(() => {
+    if (isGuest) return;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
     });
@@ -22,9 +25,10 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       setSession(s);
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isGuest]);
 
   useEffect(() => {
+    if (isGuest) return;
     if (!session || !requiredRole) {
       setRoleOk(requiredRole ? undefined : true);
       return;
@@ -38,7 +42,12 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       .then(({ data }) => {
         setRoleOk(!!data);
       });
-  }, [session, requiredRole]);
+  }, [session, requiredRole, isGuest]);
+
+  // Guest mode bypass
+  if (isGuest && (!requiredRole || guestRole === requiredRole)) {
+    return <>{children}</>;
+  }
 
   if (session === undefined || (session && requiredRole && roleOk === undefined)) {
     return (
