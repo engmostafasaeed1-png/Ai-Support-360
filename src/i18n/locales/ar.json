@@ -604,5 +604,20 @@
     "confirmed_desc": "تم تأكيد جلستك مع {{name}}.",
     "login_required": "يرجى تسجيل الدخول لحجز جلسة.",
     "error": "فشل الحجز"
+  },
+  "sessions_page": {
+    "title": "جلساتي",
+    "subtitle": "عرض وإدارة الجلسات المحجوزة",
+    "empty_title": "لا توجد جلسات بعد",
+    "empty_desc": "احجز جلسة مع مستشار للبدء",
+    "browse_consultants": "تصفح المستشارين",
+    "login_required": "يرجى تسجيل الدخول لعرض جلساتك.",
+    "go_login": "تسجيل الدخول",
+    "not_scheduled": "غير مجدولة",
+    "join": "انضمام",
+    "status_scheduled": "مجدولة",
+    "status_in_progress": "قيد التنفيذ",
+    "status_completed": "مكتملة",
+    "status_cancelled": "ملغية"
   }
 }
