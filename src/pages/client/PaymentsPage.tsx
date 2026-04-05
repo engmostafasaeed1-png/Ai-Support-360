@@ -63,8 +63,8 @@ export default function PaymentsPage() {
                       <FileText className="w-5 h-5 text-accent" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{payment.invoice_number || 'Invoice'}</p>
-                      <p className="text-xs text-muted-foreground truncate">{payment.consultant_name || 'Consultant'} · {new Date(payment.created_at).toLocaleDateString()}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{payment.invoice || `INV-${payment.id.slice(0, 8)}`}</p>
+                      <p className="text-xs text-muted-foreground truncate">{payment.consultant || 'Consultant'} · {payment.date}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 justify-between sm:justify-end">
