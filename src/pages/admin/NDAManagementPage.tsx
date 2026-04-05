@@ -119,6 +119,21 @@ export default function NDAManagementPage() {
     }
   };
 
+  const handleRevoke = async () => {
+    if (!revokeNda) return;
+    setRevoking(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from('nda_agreements')
+      .update({ revoked_at: new Date().toISOString(), revoked_by: user?.id } as any)
+      .eq('id', revokeNda.id);
+    setRevoking(false);
+    setRevokeNda(null);
+    if (!error) {
+      setNdas(prev => prev.map(n => n.id === revokeNda.id ? { ...n, revoked_at: new Date().toISOString() } : n));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
