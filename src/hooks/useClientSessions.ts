@@ -13,21 +13,14 @@ export function useClientSessions() {
       if (!user) return [];
       const { data, error } = await supabase
         .from('sessions')
-        .select(`
-          id, session_type, status, scheduled_at, duration_minutes,
-          tickets:ticket_id (title),
-          consultants:consultant_id (
-            id,
-            profiles:user_id (display_name)
-          )
-        `)
+        .select('id, session_type, status, scheduled_at, duration_minutes, ticket_id, consultant_id')
         .eq('client_id', user.id)
         .order('scheduled_at', { ascending: true });
       if (error) throw error;
       return (data || []).map((s: any) => ({
         id: s.id,
-        ticket_title: s.tickets?.title || '',
-        consultant: s.consultants?.profiles?.display_name || 'Unassigned',
+        ticket_title: '',
+        consultant: 'Unassigned',
         session_type: s.session_type || 'chat',
         status: s.status || 'scheduled',
         scheduled_at: s.scheduled_at,

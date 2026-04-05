@@ -26,13 +26,7 @@ export function useClientTickets() {
       if (!user) return [];
       const { data, error } = await supabase
         .from('tickets')
-        .select(`
-          id, title, sap_module, urgency, status, created_at,
-          consultants:consultant_id (
-            id,
-            profiles:user_id (display_name)
-          )
-        `)
+        .select('id, title, sap_module, urgency, status, created_at, consultant_id')
         .eq('client_id', user.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -43,7 +37,7 @@ export function useClientTickets() {
         urgency: t.urgency || 'medium',
         status: t.status || 'new',
         created_at: t.created_at,
-        consultant: t.consultants?.profiles?.display_name || undefined,
+        consultant: undefined,
       }));
     },
     enabled: !isGuest,
