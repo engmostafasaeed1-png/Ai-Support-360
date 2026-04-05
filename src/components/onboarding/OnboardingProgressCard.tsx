@@ -6,6 +6,7 @@ import { useGuestMode } from '@/contexts/GuestModeContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ClipboardList, ChevronRight, Circle, CheckCircle2 } from 'lucide-react';
 
 interface ChecklistItem {
@@ -13,6 +14,8 @@ interface ChecklistItem {
   fallback: string;
   done: boolean;
   step: number;
+  tooltipKey: string;
+  tooltipFallback: string;
 }
 
 interface Props {
@@ -32,17 +35,17 @@ export default function OnboardingProgressCard({ role }: Props) {
         setChecklist(
           role === 'client'
             ? [
-                { labelKey: 'onboarding.check_company', fallback: 'Company name', done: false, step: 0 },
-                { labelKey: 'onboarding.check_size', fallback: 'Company size', done: false, step: 0 },
-                { labelKey: 'onboarding.check_industry', fallback: 'Industry', done: false, step: 0 },
-                { labelKey: 'onboarding.check_phone', fallback: 'Phone number', done: false, step: 1 },
-                { labelKey: 'onboarding.check_modules', fallback: 'SAP modules', done: false, step: 2 },
+                { labelKey: 'onboarding.check_company', fallback: 'Company name', done: false, step: 0, tooltipKey: 'onboarding.tip_company', tooltipFallback: 'Enter your organization\'s official name' },
+                { labelKey: 'onboarding.check_size', fallback: 'Company size', done: false, step: 0, tooltipKey: 'onboarding.tip_size', tooltipFallback: 'Select the number of employees in your company' },
+                { labelKey: 'onboarding.check_industry', fallback: 'Industry', done: false, step: 0, tooltipKey: 'onboarding.tip_industry', tooltipFallback: 'Choose the industry your business operates in' },
+                { labelKey: 'onboarding.check_phone', fallback: 'Phone number', done: false, step: 1, tooltipKey: 'onboarding.tip_phone', tooltipFallback: 'Provide a contact number for session coordination' },
+                { labelKey: 'onboarding.check_modules', fallback: 'SAP modules', done: false, step: 2, tooltipKey: 'onboarding.tip_modules', tooltipFallback: 'Select which SAP modules you need support with' },
               ]
             : [
-                { labelKey: 'onboarding.check_name', fallback: 'Display name', done: false, step: 0 },
-                { labelKey: 'onboarding.check_bio', fallback: 'Professional bio', done: false, step: 0 },
-                { labelKey: 'onboarding.check_rate', fallback: 'Hourly rate', done: false, step: 0 },
-                { labelKey: 'onboarding.check_skills', fallback: 'SAP skills', done: false, step: 1 },
+                { labelKey: 'onboarding.check_name', fallback: 'Display name', done: false, step: 0, tooltipKey: 'onboarding.tip_name', tooltipFallback: 'Your full professional name shown to clients' },
+                { labelKey: 'onboarding.check_bio', fallback: 'Professional bio', done: false, step: 0, tooltipKey: 'onboarding.tip_bio', tooltipFallback: 'A brief summary of your SAP experience and expertise' },
+                { labelKey: 'onboarding.check_rate', fallback: 'Hourly rate', done: false, step: 0, tooltipKey: 'onboarding.tip_rate', tooltipFallback: 'Set your consulting fee per hour' },
+                { labelKey: 'onboarding.check_skills', fallback: 'SAP skills', done: false, step: 1, tooltipKey: 'onboarding.tip_skills', tooltipFallback: 'List the SAP modules and areas you specialize in' },
               ]
         );
         return;
@@ -61,11 +64,11 @@ export default function OnboardingProgressCard({ role }: Props) {
         if (data?.onboarding_completed) { setCompleted(true); return; }
 
         setChecklist([
-          { labelKey: 'onboarding.check_company', fallback: 'Company name', done: !!data?.company_name, step: 0 },
-          { labelKey: 'onboarding.check_size', fallback: 'Company size', done: !!data?.company_size, step: 0 },
-          { labelKey: 'onboarding.check_industry', fallback: 'Industry', done: !!data?.industry, step: 0 },
-          { labelKey: 'onboarding.check_phone', fallback: 'Phone number', done: !!data?.phone, step: 1 },
-          { labelKey: 'onboarding.check_modules', fallback: 'SAP modules', done: (data?.sap_modules?.length ?? 0) > 0, step: 2 },
+          { labelKey: 'onboarding.check_company', fallback: 'Company name', done: !!data?.company_name, step: 0, tooltipKey: 'onboarding.tip_company', tooltipFallback: 'Enter your organization\'s official name' },
+          { labelKey: 'onboarding.check_size', fallback: 'Company size', done: !!data?.company_size, step: 0, tooltipKey: 'onboarding.tip_size', tooltipFallback: 'Select the number of employees in your company' },
+          { labelKey: 'onboarding.check_industry', fallback: 'Industry', done: !!data?.industry, step: 0, tooltipKey: 'onboarding.tip_industry', tooltipFallback: 'Choose the industry your business operates in' },
+          { labelKey: 'onboarding.check_phone', fallback: 'Phone number', done: !!data?.phone, step: 1, tooltipKey: 'onboarding.tip_phone', tooltipFallback: 'Provide a contact number for session coordination' },
+          { labelKey: 'onboarding.check_modules', fallback: 'SAP modules', done: (data?.sap_modules?.length ?? 0) > 0, step: 2, tooltipKey: 'onboarding.tip_modules', tooltipFallback: 'Select which SAP modules you need support with' },
         ]);
         setCompleted(false);
       } else {
@@ -89,10 +92,10 @@ export default function OnboardingProgressCard({ role }: Props) {
           .eq('consultant_id', consultant?.id ?? '');
 
         setChecklist([
-          { labelKey: 'onboarding.check_name', fallback: 'Display name', done: !!profile?.display_name, step: 0 },
-          { labelKey: 'onboarding.check_bio', fallback: 'Professional bio', done: !!consultant?.bio, step: 0 },
-          { labelKey: 'onboarding.check_rate', fallback: 'Hourly rate', done: !!consultant?.hourly_rate && Number(consultant.hourly_rate) > 0, step: 0 },
-          { labelKey: 'onboarding.check_skills', fallback: 'SAP skills', done: (count ?? 0) > 0, step: 1 },
+          { labelKey: 'onboarding.check_name', fallback: 'Display name', done: !!profile?.display_name, step: 0, tooltipKey: 'onboarding.tip_name', tooltipFallback: 'Your full professional name shown to clients' },
+          { labelKey: 'onboarding.check_bio', fallback: 'Professional bio', done: !!consultant?.bio, step: 0, tooltipKey: 'onboarding.tip_bio', tooltipFallback: 'A brief summary of your SAP experience and expertise' },
+          { labelKey: 'onboarding.check_rate', fallback: 'Hourly rate', done: !!consultant?.hourly_rate && Number(consultant.hourly_rate) > 0, step: 0, tooltipKey: 'onboarding.tip_rate', tooltipFallback: 'Set your consulting fee per hour' },
+          { labelKey: 'onboarding.check_skills', fallback: 'SAP skills', done: (count ?? 0) > 0, step: 1, tooltipKey: 'onboarding.tip_skills', tooltipFallback: 'List the SAP modules and areas you specialize in' },
         ]);
         setCompleted(false);
       }
@@ -139,24 +142,32 @@ export default function OnboardingProgressCard({ role }: Props) {
             </div>
 
             {/* Checklist */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 mt-3">
-              {checklist.map((item) => (
-                <Link
-                  key={item.labelKey}
-                  to={`${onboardingPath}?step=${item.step}`}
-                  className={`flex items-center gap-2 rounded-md px-1.5 py-0.5 -mx-1.5 transition-colors ${item.done ? 'hover:bg-muted/50' : 'hover:bg-accent/10'}`}
-                >
-                  {item.done ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
-                  ) : (
-                    <Circle className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
-                  )}
-                  <span className={`text-xs ${item.done ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
-                    {t(item.labelKey, item.fallback)}
-                  </span>
-                </Link>
-              ))}
-            </div>
+            <TooltipProvider delayDuration={300}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 mt-3">
+                {checklist.map((item) => (
+                  <Tooltip key={item.labelKey}>
+                    <TooltipTrigger asChild>
+                      <Link
+                        to={`${onboardingPath}?step=${item.step}`}
+                        className={`flex items-center gap-2 rounded-md px-1.5 py-0.5 -mx-1.5 transition-colors ${item.done ? 'hover:bg-muted/50' : 'hover:bg-accent/10'}`}
+                      >
+                        {item.done ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                        ) : (
+                          <Circle className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
+                        )}
+                        <span className={`text-xs ${item.done ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                          {t(item.labelKey, item.fallback)}
+                        </span>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs max-w-[200px]">
+                      {t(item.tooltipKey, item.tooltipFallback)}
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </TooltipProvider>
           </div>
         </div>
       </CardContent>
