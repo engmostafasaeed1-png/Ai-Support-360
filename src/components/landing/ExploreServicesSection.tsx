@@ -46,7 +46,7 @@ const industries = [
 
 export default function ExploreServicesSection() {
   const { t } = useTranslation();
-  const [hoveredSolution, setHoveredSolution] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   return (
     <section id="categories" className="py-24 bg-muted/20">
@@ -118,6 +118,7 @@ export default function ExploreServicesSection() {
               {industries.map(({ key, icon: Icon, desc, count }) => (
                 <div
                   key={key}
+                  onClick={() => navigate(`/client/consultants?industry=${key}`)}
                   className="group relative p-6 rounded-2xl bg-card border border-border/40 hover:border-accent/40 hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden"
                 >
                   {/* Background gradient on hover */}
