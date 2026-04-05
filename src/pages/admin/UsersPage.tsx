@@ -38,7 +38,7 @@ export default function UsersPage() {
           <p className="text-sm text-muted-foreground">{adminUsers.length} {t('users_page.subtitle')}</p>
         </div>
         <Button className="gradient-primary border-0">
-          <UserPlus className="w-4 h-4 me-1" /> Invite User
+          <UserPlus className="w-4 h-4 me-1" /> {t('users_page.invite_user')}
         </Button>
       </div>
 
