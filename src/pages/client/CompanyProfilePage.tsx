@@ -202,17 +202,17 @@ export default function CompanyProfilePage() {
               />
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground">Company Logo</p>
-              <p className="text-xs text-muted-foreground">Click to upload. Max 5MB, JPG/PNG.</p>
+              <p className="text-sm font-medium text-foreground">{t('company_profile_page.company_logo', 'Company Logo')}</p>
+              <p className="text-xs text-muted-foreground">{t('company_profile_page.logo_hint', 'Click to upload. Max 5MB, JPG/PNG.')}</p>
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Company Name</Label>
+              <Label>{t('company_profile_page.company_name', 'Company Name')}</Label>
               <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Acme Corp" />
             </div>
             <div className="space-y-2">
-              <Label>Industry</Label>
+              <Label>{t('company_profile_page.industry', 'Industry')}</Label>
               <Select value={industry} onValueChange={setIndustry}>
                 <SelectTrigger><SelectValue placeholder="Select industry..." /></SelectTrigger>
                 <SelectContent>
@@ -223,7 +223,7 @@ export default function CompanyProfilePage() {
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Company Size</Label>
+              <Label>{t('company_profile_page.company_size', 'Company Size')}</Label>
               <Select value={companySize} onValueChange={setCompanySize}>
                 <SelectTrigger><SelectValue placeholder="Select size..." /></SelectTrigger>
                 <SelectContent>
@@ -232,16 +232,16 @@ export default function CompanyProfilePage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> Headquarters</Label>
+              <Label className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {t('company_profile_page.headquarters', 'Headquarters')}</Label>
               <Input value={headquarters} onChange={(e) => setHeadquarters(e.target.value)} placeholder="Riyadh, Saudi Arabia" />
             </div>
           </div>
           <div className="space-y-2">
-            <Label className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> Website</Label>
+            <Label className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> {t('company_profile_page.website', 'Website')}</Label>
             <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://acme.com" type="url" />
           </div>
           <div className="space-y-2">
-            <Label>Company Description</Label>
+            <Label>{t('company_profile_page.company_description', 'Company Description')}</Label>
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief overview of your company..." rows={3} />
           </div>
         </CardContent>
@@ -251,23 +251,23 @@ export default function CompanyProfilePage() {
       <Card className="rounded-2xl border-border/50">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Database className="w-4 h-4 text-primary" /> SAP Landscape
+            <Database className="w-4 h-4 text-primary" /> {t('company_profile_page.sap_landscape_title', 'SAP Landscape')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>SAP Landscape Description</Label>
+              <Label>{t('company_profile_page.sap_landscape_desc', 'SAP Landscape Description')}</Label>
               <Input value={sapLandscape} onChange={(e) => setSapLandscape(e.target.value)} placeholder="S/4HANA 2023, ECC 6.0..." />
             </div>
             <div className="space-y-2">
-              <Label>Hosting Type</Label>
+              <Label>{t('company_profile_page.hosting_type', 'Hosting Type')}</Label>
               <Select value={sapHostingType} onValueChange={setSapHostingType}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="on-prem">On-Premise</SelectItem>
-                  <SelectItem value="cloud">Cloud (BTP/Rise)</SelectItem>
-                  <SelectItem value="hybrid">Hybrid</SelectItem>
+                  <SelectItem value="on-prem">{t('company_profile_page.hosting_on_prem', 'On-Premise')}</SelectItem>
+                  <SelectItem value="cloud">{t('company_profile_page.hosting_cloud', 'Cloud (BTP/Rise)')}</SelectItem>
+                  <SelectItem value="hybrid">{t('company_profile_page.hosting_hybrid', 'Hybrid')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
