@@ -25,6 +25,7 @@ export function useAdminStats() {
     return () => { channel.unsubscribe(); };
   }, [isGuest, queryClient]);
 
+  return useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
       const [
