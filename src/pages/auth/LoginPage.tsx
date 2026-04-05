@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,8 @@ import { Loader2 } from 'lucide-react';
 export default function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as any)?.from || null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,11 @@ export default function LoginPage() {
       toast.error(error.message);
       return;
     }
-    // Redirect based on role
+    // Redirect to original page or role-based default
+    if (from) {
+      navigate(from);
+      return;
+    }
     const { data: roles } = await supabase.from('user_roles').select('role').limit(1);
     const role = roles?.[0]?.role;
     if (role === 'consultant') navigate('/consultant');

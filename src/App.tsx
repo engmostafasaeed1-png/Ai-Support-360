@@ -38,6 +38,7 @@ import LoginPage from "./pages/auth/LoginPage.tsx";
 import SignupPage from "./pages/auth/SignupPage.tsx";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.tsx";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage.tsx";
+import ProtectedRoute from "./components/auth/ProtectedRoute.tsx";
 
 const queryClient = new QueryClient();
 
@@ -54,7 +55,7 @@ const App = () => (
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/consultant" element={<ConsultantLayout />}>
+          <Route path="/consultant" element={<ProtectedRoute><ConsultantLayout /></ProtectedRoute>}>
             <Route index element={<ConsultantDashboard />} />
             <Route path="cases" element={<CasesPage />} />
             <Route path="calendar" element={<CalendarPage />} />
@@ -66,7 +67,7 @@ const App = () => (
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="onboarding" element={<OnboardingPage />} />
           </Route>
-          <Route path="/client" element={<ClientLayout />}>
+          <Route path="/client" element={<ProtectedRoute><ClientLayout /></ProtectedRoute>}>
             <Route index element={<ClientDashboard />} />
             <Route path="new-request" element={<NewRequestPage />} />
             <Route path="tickets" element={<TicketsPage />} />
@@ -80,7 +81,7 @@ const App = () => (
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="onboarding" element={<ClientOnboardingPage />} />
           </Route>
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="tickets" element={<TicketKanbanPage />} />
