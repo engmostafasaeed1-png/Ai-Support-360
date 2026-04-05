@@ -100,10 +100,7 @@ export function useAdminTickets() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
-        .select(`
-          id, title, sap_module, urgency, status, created_at,
-          profiles:client_id (display_name)
-        `)
+        .select('id, title, sap_module, urgency, status, created_at, client_id')
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
@@ -118,7 +115,7 @@ export function useAdminTickets() {
           result[status].push({
             id: t.id.slice(0, 8),
             title: t.title,
-            client: t.profiles?.display_name || 'Unknown',
+            client: 'Client',
             module: t.sap_module,
             urgency: t.urgency || 'medium',
             created: new Date(t.created_at).toLocaleDateString(),
