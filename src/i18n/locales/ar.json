@@ -195,7 +195,8 @@
     "completed": "مكتمل",
     "environments": "البيئات",
     "remote_access": "الوصول عن بُعد",
-    "environment_logs": "سجل الجلسات"
+    "environment_logs": "سجل الجلسات",
+    "company_profile": "الملف التعريفي للشركة"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",
