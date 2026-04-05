@@ -61,7 +61,7 @@ export default function ConsultantSidebar() {
                         activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                       >
                         <item.icon className="w-4 h-4 me-2 shrink-0" />
-                        {!collapsed && <span>{labels[item.key]}</span>}
+                        {!collapsed && <span>{t(`sidebar.${item.key}`)}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
