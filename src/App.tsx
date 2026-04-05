@@ -47,6 +47,8 @@ const App = () => (
             <Route path="earnings" element={<EarningsPage />} />
             <Route path="verification" element={<VerificationPage />} />
             <Route path="profile" element={<ProfilePage />} />
+            <Route path="chat" element={<ConsultantChatPage />} />
+            <Route path="chat/:sessionId" element={<ChatSessionPage role="consultant" />} />
           </Route>
           <Route path="/client" element={<ClientLayout />}>
             <Route index element={<ClientDashboard />} />
