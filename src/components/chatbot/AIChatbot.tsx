@@ -228,7 +228,7 @@ export default function AIChatbot() {
                       ].map((q) => (
                         <button
                           key={q}
-                          onClick={() => sendMessage(q)}
+                          onClick={() => sendMessage(q, selectedModel)}
                           className="text-[11px] px-3 py-1.5 rounded-full border border-border/50 bg-muted/30 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all"
                         >
                           {q}
