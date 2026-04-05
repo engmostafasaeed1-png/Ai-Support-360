@@ -48,11 +48,14 @@ export default function HeroSection() {
                 {t('hero.cta_consultant')}
               </Button>
             </Link>
-            <a href="#categories">
-              <Button size="lg" variant="ghost" className="text-base">
-                {t('hero.cta_explore')}
-              </Button>
-            </a>
+            <Button
+              size="lg"
+              variant="ghost"
+              className="text-base"
+              onClick={() => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              {t('hero.cta_explore')}
+            </Button>
           </div>
         </div>
 
