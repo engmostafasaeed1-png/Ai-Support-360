@@ -335,6 +335,41 @@ export type Database = {
         }
         Relationships: []
       }
+      environment_sessions: {
+        Row: {
+          connected_at: string
+          disconnected_at: string | null
+          duration_minutes: number | null
+          environment_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          connected_at?: string
+          disconnected_at?: string | null
+          duration_minutes?: number | null
+          environment_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          connected_at?: string
+          disconnected_at?: string | null
+          duration_minutes?: number | null
+          environment_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "environment_sessions_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "remote_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_sync_log: {
         Row: {
           action: string

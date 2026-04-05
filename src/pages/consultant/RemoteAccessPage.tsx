@@ -5,12 +5,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Monitor, Server } from 'lucide-react';
 import { useRemoteEnvironments, type RemoteEnvironment } from '@/hooks/useRemoteEnvironments';
 import GuacamoleViewer from '@/components/remote/GuacamoleViewer';
+import { useEnvironmentTracking } from '@/hooks/useEnvironmentTracking';
 import { useState } from 'react';
 
 export default function RemoteAccessPage() {
   const { t } = useTranslation();
   const { data: environments, isLoading } = useRemoteEnvironments();
   const [selectedEnv, setSelectedEnv] = useState<RemoteEnvironment | null>(null);
+  const { trackConnect, trackDisconnect } = useEnvironmentTracking();
 
   if (isLoading) {
     return (
@@ -44,6 +46,8 @@ export default function RemoteAccessPage() {
             url={selectedEnv.guacamole_url}
             name={selectedEnv.name}
             osType={selectedEnv.os_type}
+            onConnect={() => trackConnect(selectedEnv.id)}
+            onDisconnect={trackDisconnect}
           />
         </div>
       ) : activeEnvs.length === 0 ? (
