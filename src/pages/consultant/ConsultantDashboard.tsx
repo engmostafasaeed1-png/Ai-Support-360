@@ -171,7 +171,7 @@ export default function ConsultantDashboard() {
       {/* Active Cases */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader className="flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base font-semibold">Active Cases</CardTitle>
+          <CardTitle className="text-base font-semibold">{t('consultant_dashboard.recent_cases')}</CardTitle>
           <Link to="/consultant/cases">
             <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
           </Link>
