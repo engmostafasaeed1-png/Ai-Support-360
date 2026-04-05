@@ -837,5 +837,12 @@
     "expired": "Expired",
     "refresh": "Load badges",
     "error_fetch": "Failed to fetch badges from Credly"
+  },
+  "email_verify": {
+    "title": "Verify your email address",
+    "description": "We sent a verification link to {{email}}. Please check your inbox and spam folder.",
+    "resend": "Resend verification email",
+    "resent": "Verification email sent! Check your inbox.",
+    "resend_error": "Failed to resend. Please try again."
   }
 }
