@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,12 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Building2, Globe, MapPin, Save, Loader2, Plus, Trash2,
-  Server, Database, Users2, Mail, Phone, Briefcase,
+  Server, Database, Users2, Mail, Phone, Briefcase, Camera,
 } from 'lucide-react';
 import { useClientProfileData, useUpdateClientProfile, type ClientProfile } from '@/hooks/useClientProfile';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const industries = [
@@ -48,6 +50,9 @@ export default function CompanyProfilePage() {
   const [sapSystemIds, setSapSystemIds] = useState<string[]>([]);
   const [newSystemId, setNewSystemId] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -62,9 +67,44 @@ export default function CompanyProfilePage() {
       setSapHostingType((profile as any).sap_hosting_type || 'on-prem');
       setSapSystemIds((profile as any).sap_system_ids || []);
       setContacts(((profile as any).key_contacts || []) as Contact[]);
+      setLogoUrl((profile as any).company_logo_url || null);
       setLoaded(true);
     }
   }, [profile, loaded]);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB');
+      return;
+    }
+    setUploadingLogo(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      const ext = file.name.split('.').pop();
+      const path = `company-logos/${user.id}/logo.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+      const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      setLogoUrl(newUrl);
+      updateProfile.mutate({ company_logo_url: newUrl } as any);
+      toast.success('Logo uploaded');
+    } catch (err: any) {
+      toast.error('Upload failed', { description: err.message });
+    } finally {
+      setUploadingLogo(false);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
 
   const handleSave = () => {
     if (isGuest) {
@@ -133,6 +173,39 @@ export default function CompanyProfilePage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Logo upload */}
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              <Avatar className="w-20 h-20 rounded-xl border-2 border-border/50">
+                <AvatarImage src={logoUrl || undefined} alt="Company logo" className="object-cover" />
+                <AvatarFallback className="rounded-xl bg-primary/10 text-primary text-lg font-bold">
+                  {companyName ? companyName.charAt(0).toUpperCase() : <Building2 className="w-8 h-8" />}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                onClick={() => logoInputRef.current?.click()}
+                disabled={uploadingLogo}
+                className="absolute inset-0 rounded-xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+              >
+                {uploadingLogo ? (
+                  <Loader2 className="w-5 h-5 text-white animate-spin" />
+                ) : (
+                  <Camera className="w-5 h-5 text-white" />
+                )}
+              </button>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleLogoUpload}
+              />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Company Logo</p>
+              <p className="text-xs text-muted-foreground">Click to upload. Max 5MB, JPG/PNG.</p>
+            </div>
+          </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Company Name</Label>
