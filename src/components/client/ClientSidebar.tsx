@@ -8,13 +8,14 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, TicketPlus, Briefcase, Users, Calendar,
-  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, Plug,
+  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, Plug, ClipboardList,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
 
 const menuItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/client' },
+  { key: 'onboarding', icon: ClipboardList, path: '/client/onboarding' },
   { key: 'new_request', icon: TicketPlus, path: '/client/new-request' },
   { key: 'tickets', icon: Briefcase, path: '/client/tickets' },
   { key: 'consultants', icon: Users, path: '/client/consultants' },
