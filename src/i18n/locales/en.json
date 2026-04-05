@@ -188,7 +188,8 @@
     "analytics": "Analytics",
     "logout": "Sign Out",
     "more": "More",
-    "integrations": "Integrations"
+    "integrations": "Integrations",
+    "onboarding": "Onboarding"
   },
   "client_dashboard": {
     "title": "Welcome back",
