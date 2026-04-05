@@ -208,6 +208,13 @@ export function useTriageChat() {
     loadConversations();
   }, [conversationId, clearChat, loadConversations]);
 
+  const renameConversation = useCallback(async (id: string, newTitle: string) => {
+    const trimmed = newTitle.trim();
+    if (!trimmed) return;
+    await supabase.from('chatbot_conversations').update({ title: trimmed }).eq('id', id);
+    loadConversations();
+  }, [loadConversations]);
+
   const newChat = useCallback(() => {
     abortRef.current?.abort();
     setMessages([]);
@@ -218,6 +225,6 @@ export function useTriageChat() {
   return {
     messages, isLoading, sendMessage, clearChat,
     conversations, conversationId, loadConversation,
-    deleteConversation, newChat, userId,
+    deleteConversation, renameConversation, newChat, userId,
   };
 }

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   X, Send, Loader2, Trash2, Bot, User, Sparkles, TicketPlus,
-  History, Plus, ChevronLeft,
+  History, Plus, ChevronLeft, Pencil, Check,
 } from 'lucide-react';
 import { useTriageChat } from '@/hooks/useTriageChat';
 import { useNavigate } from 'react-router-dom';
@@ -32,8 +32,10 @@ export default function AIChatbot() {
   const {
     messages, isLoading, sendMessage, clearChat,
     conversations, conversationId, loadConversation,
-    deleteConversation, newChat, userId,
+    deleteConversation, renameConversation, newChat, userId,
   } = useTriageChat();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -144,15 +146,51 @@ export default function AIChatbot() {
                       conversationId === conv.id ? 'border-primary/30 bg-primary/5' : 'border-border/40'
                     )}
                   >
-                    <button
-                      className="flex-1 min-w-0 text-start"
-                      onClick={() => handleLoadConversation(conv.id)}
-                    >
-                      <p className="text-sm font-medium text-foreground truncate">{conv.title}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {new Date(conv.updated_at).toLocaleDateString()}
-                      </p>
-                    </button>
+                    {editingId === conv.id ? (
+                      <form
+                        className="flex-1 min-w-0 flex items-center gap-1"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          renameConversation(conv.id, editTitle);
+                          setEditingId(null);
+                        }}
+                      >
+                        <Input
+                          autoFocus
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="h-7 text-sm px-2"
+                          onBlur={() => {
+                            renameConversation(conv.id, editTitle);
+                            setEditingId(null);
+                          }}
+                          onKeyDown={(e) => { if (e.key === 'Escape') setEditingId(null); }}
+                        />
+                        <Button type="submit" variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                          <Check className="w-3 h-3 text-primary" />
+                        </Button>
+                      </form>
+                    ) : (
+                      <button
+                        className="flex-1 min-w-0 text-start"
+                        onClick={() => handleLoadConversation(conv.id)}
+                      >
+                        <p className="text-sm font-medium text-foreground truncate">{conv.title}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {new Date(conv.updated_at).toLocaleDateString()}
+                        </p>
+                      </button>
+                    )}
+                    {editingId !== conv.id && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0"
+                        onClick={(e) => { e.stopPropagation(); setEditingId(conv.id); setEditTitle(conv.title); }}
+                      >
+                        <Pencil className="w-3 h-3 text-muted-foreground" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
