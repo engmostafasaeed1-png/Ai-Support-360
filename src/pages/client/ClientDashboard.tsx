@@ -8,6 +8,7 @@ import {
   ChevronRight, Star, BadgeCheck, Zap, TicketPlus, Users,
   Calendar, DollarSign, FileText, Video, MessageSquare, Monitor,
 } from 'lucide-react';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import {
   mockClientProfile, mockClientTickets, mockClientSessions,
   mockClientPayments, mockRecommendedConsultants, mockActivityFeed,
@@ -59,6 +60,7 @@ export default function ClientDashboard() {
   ];
 
   return (
+    <PullToRefresh>
     <div className="space-y-6">
       {/* Welcome */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -258,5 +260,6 @@ export default function ClientDashboard() {
         </CardContent>
       </Card>
     </div>
+    </PullToRefresh>
   );
 }

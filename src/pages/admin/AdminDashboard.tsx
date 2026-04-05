@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, Ticket, DollarSign, Clock, Star, TrendingUp, UserCheck, AlertTriangle } from 'lucide-react';
@@ -20,6 +21,7 @@ export default function AdminDashboard() {
   ];
 
   return (
+    <PullToRefresh>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">{t('admin_dashboard.title')}</h1>
@@ -117,5 +119,6 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
     </div>
+    </PullToRefresh>
   );
 }
