@@ -18,6 +18,7 @@ import NewRequestPage from "./pages/client/NewRequestPage.tsx";
 import TicketsPage from "./pages/client/TicketsPage.tsx";
 import ConsultantsPage from "./pages/client/ConsultantsPage.tsx";
 import PaymentsPage from "./pages/client/PaymentsPage.tsx";
+import PricingPage from "./pages/PricingPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/pricing" element={<PricingPage />} />
           <Route path="/consultant" element={<ConsultantLayout />}>
             <Route index element={<ConsultantDashboard />} />
             <Route path="cases" element={<CasesPage />} />
