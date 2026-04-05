@@ -78,12 +78,34 @@ const sessionTypes = [
 export default function NewRequestPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     sap_module: '', issue_type: '', title: '', description: '',
     urgency: 'medium', preferred_session: 'video', preferred_language: 'en',
   });
   const [submitted, setSubmitted] = useState(false);
+
+  // Auto-fill from chatbot query params
+  useEffect(() => {
+    const module = searchParams.get('module');
+    const title = searchParams.get('title');
+    const description = searchParams.get('description');
+    const urgency = searchParams.get('urgency');
+    if (module || title || description || urgency) {
+      setForm(prev => ({
+        ...prev,
+        ...(module && { sap_module: module }),
+        ...(title && { title }),
+        ...(description && { description }),
+        ...(urgency && { urgency }),
+      }));
+      // Jump to step 1 (details) if module is filled, or step 0 if not
+      setStep(module ? 1 : 0);
+      // Clear params
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
   const [aiCategorization, setAiCategorization] = useState<AiCategorization | null>(null);
   const [aiSummary, setAiSummary] = useState<AiSummary | null>(null);
   const [aiMatch, setAiMatch] = useState<AiMatch | null>(null);
