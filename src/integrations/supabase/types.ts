@@ -1174,7 +1174,47 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      certifications_public: {
+        Row: {
+          consultant_id: string | null
+          created_at: string | null
+          expiry_date: string | null
+          id: string | null
+          issue_date: string | null
+          issuer: string | null
+          name: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          consultant_id?: string | null
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string | null
+          issue_date?: string | null
+          issuer?: string | null
+          name?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          consultant_id?: string | null
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string | null
+          issue_date?: string | null
+          issuer?: string | null
+          name?: string | null
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certifications_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {
