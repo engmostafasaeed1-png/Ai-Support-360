@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +44,7 @@ const sessionStatusIcons: Record<string, typeof Circle> = {
 };
 
 export default function TicketDetailPage() {
+  const { t } = useTranslation();
   const { ticketId } = useParams<{ ticketId: string }>();
   const { data: ticket, isLoading } = useTicketDetail(ticketId);
   const { data: sessions, isLoading: sessionsLoading } = useTicketSessions(ticketId);
