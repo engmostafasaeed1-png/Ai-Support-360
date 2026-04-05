@@ -1,10 +1,23 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { mockClientTickets } from '@/data/clientMockData';
 
 export function useClientTickets() {
   const { isGuest } = useGuestMode();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (isGuest) return;
+    const channel = supabase
+      .channel('client-tickets-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['client-tickets'] });
+      })
+      .subscribe();
+    return () => { channel.unsubscribe(); };
+  }, [isGuest, queryClient]);
 
   return useQuery({
     queryKey: ['client-tickets'],
