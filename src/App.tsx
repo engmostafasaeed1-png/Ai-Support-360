@@ -21,6 +21,7 @@ import ConsultantsPage from "./pages/client/ConsultantsPage.tsx";
 import PaymentsPage from "./pages/client/PaymentsPage.tsx";
 import ClientChatPage from "./pages/client/ClientChatPage.tsx";
 import ChatSessionPage from "./pages/chat/ChatSessionPage.tsx";
+import NotificationsPage from "./pages/notifications/NotificationsPage.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
 import AdminLayout from "./components/admin/AdminLayout.tsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.tsx";
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="profile" element={<ProfilePage />} />
             <Route path="chat" element={<ConsultantChatPage />} />
             <Route path="chat/:sessionId" element={<ChatSessionPage role="consultant" />} />
+            <Route path="notifications" element={<NotificationsPage />} />
           </Route>
           <Route path="/client" element={<ClientLayout />}>
             <Route index element={<ClientDashboard />} />
@@ -58,6 +60,7 @@ const App = () => (
             <Route path="payments" element={<PaymentsPage />} />
             <Route path="chat" element={<ClientChatPage />} />
             <Route path="chat/:sessionId" element={<ChatSessionPage role="client" />} />
+            <Route path="notifications" element={<NotificationsPage />} />
           </Route>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
@@ -65,6 +68,7 @@ const App = () => (
             <Route path="tickets" element={<TicketKanbanPage />} />
             <Route path="approvals" element={<ConsultantApprovalsPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
