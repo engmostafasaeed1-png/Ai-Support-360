@@ -34,6 +34,6 @@ export function useClientTickets() {
       }));
     },
     enabled: !isGuest,
-    placeholderData: isGuest ? mockClientTickets : undefined,
+    placeholderData: isGuest ? (mockClientTickets as any) : undefined,
   });
 }
