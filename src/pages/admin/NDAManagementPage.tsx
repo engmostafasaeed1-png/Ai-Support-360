@@ -17,7 +17,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { FileSignature, Search, Download, Eye, Calendar, ShieldOff, ShieldCheck } from 'lucide-react';
+import { FileSignature, Search, Download, Eye, Calendar, ShieldOff, ShieldCheck, FileDown } from 'lucide-react';
 
 interface NDARecord {
   id: string;
