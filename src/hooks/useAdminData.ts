@@ -95,6 +95,7 @@ export function useAdminTickets() {
     return () => { channel.unsubscribe(); };
   }, [isGuest, queryClient]);
 
+  return useQuery({
     queryKey: ['admin-tickets-kanban'],
     queryFn: async () => {
       const { data, error } = await supabase
