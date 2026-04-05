@@ -728,6 +728,20 @@
     "role_client": "Client",
     "role_client_desc": "Get SAP support",
     "role_consultant": "Consultant",
-    "role_consultant_desc": "Offer expertise"
+    "role_consultant_desc": "Offer expertise",
+    "forgot_link": "Forgot password?",
+    "forgot_title": "Reset Password",
+    "forgot_desc": "Enter your email and we'll send a reset link",
+    "forgot_btn": "Send Reset Link",
+    "forgot_sent": "We've sent a password reset link to your email. Check your inbox and follow the instructions.",
+    "back_to_login": "Back to login",
+    "reset_title": "Set New Password",
+    "reset_desc": "Enter your new password below",
+    "new_password": "New Password",
+    "confirm_password": "Confirm Password",
+    "reset_btn": "Update Password",
+    "password_mismatch": "Passwords do not match",
+    "password_updated": "Password updated successfully!",
+    "verifying_link": "Verifying your reset link…"
   }
 }

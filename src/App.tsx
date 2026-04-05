@@ -36,6 +36,8 @@ import ConsultantApprovalsPage from "./pages/admin/ConsultantApprovalsPage.tsx";
 import AnalyticsPage from "./pages/admin/AnalyticsPage.tsx";
 import LoginPage from "./pages/auth/LoginPage.tsx";
 import SignupPage from "./pages/auth/SignupPage.tsx";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.tsx";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +52,8 @@ const App = () => (
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/consultant" element={<ConsultantLayout />}>
             <Route index element={<ConsultantDashboard />} />
             <Route path="cases" element={<CasesPage />} />
