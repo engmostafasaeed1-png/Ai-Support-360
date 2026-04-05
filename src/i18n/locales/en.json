@@ -189,7 +189,9 @@
     "logout": "Sign Out",
     "more": "More",
     "integrations": "Integrations",
-    "onboarding": "Onboarding"
+    "onboarding": "Onboarding",
+    "onboarding_complete": "Onboarding",
+    "completed": "Done"
   },
   "client_dashboard": {
     "title": "Welcome back",
