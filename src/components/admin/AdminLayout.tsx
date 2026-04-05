@@ -1,7 +1,8 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
-import { Bell, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
+import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 
 export default function AdminLayout() {
@@ -22,10 +23,7 @@ export default function AdminLayout() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button className="relative p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                <Bell className="w-4 h-4 text-muted-foreground" />
-                <span className="absolute top-1 end-1 w-2 h-2 rounded-full bg-destructive" />
-              </button>
+              <NotificationBell basePath="/admin" />
               <Badge variant="outline" className="text-xs">Admin</Badge>
             </div>
           </header>
