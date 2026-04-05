@@ -1,15 +1,53 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Monitor, Server } from 'lucide-react';
+import { Monitor, Server, Terminal, Laptop } from 'lucide-react';
 import { useRemoteEnvironments, type RemoteEnvironment } from '@/hooks/useRemoteEnvironments';
+import { useEnvironmentConnections } from '@/hooks/useEnvironmentConnections';
 import GuacamoleViewer from '@/components/remote/GuacamoleViewer';
 import { useEnvironmentTracking } from '@/hooks/useEnvironmentTracking';
 import { useState } from 'react';
 
+const protocolIcons = { rdp: Monitor, ssh: Terminal, vnc: Laptop };
+
+function ConnectionPicker({ envId, envName, envUrl, onConnect }: {
+  envId: string;
+  envName: string;
+  envUrl: string;
+  onConnect: (url: string, name: string) => void;
+}) {
+  const { data: connections, isLoading } = useEnvironmentConnections(envId);
+  if (isLoading) return <Skeleton className="h-10 rounded-xl" />;
+  const conns = connections && connections.length > 0 ? connections : null;
+  if (!conns) {
+    return (
+      <Button className="w-full gradient-primary border-0 mt-3" onClick={() => onConnect(envUrl, envName)}>
+        <Monitor className="w-4 h-4 me-2" /> Connect
+      </Button>
+    );
+  }
+  return (
+    <div className="space-y-2 mt-3 pt-3 border-t border-border/30">
+      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Connections</p>
+      {conns.map((conn) => {
+        const Icon = protocolIcons[conn.protocol] || Monitor;
+        return (
+          <Button key={conn.id} variant="outline" size="sm" className="w-full justify-start gap-2 h-8 text-xs"
+            onClick={(e) => { e.stopPropagation(); onConnect(conn.guacamole_url, `${envName} — ${conn.name}`); }}>
+            <Icon className="w-3.5 h-3.5" /> {conn.name}
+            <Badge variant="outline" className="text-[9px] ms-auto">{conn.protocol.toUpperCase()}</Badge>
+            {conn.is_default && <Badge variant="secondary" className="text-[9px]">Default</Badge>}
+          </Button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ClientRemoteAccessPage() {
   const { data: environments, isLoading } = useRemoteEnvironments();
-  const [selectedEnv, setSelectedEnv] = useState<RemoteEnvironment | null>(null);
+  const [activeConn, setActiveConn] = useState<{ envId: string; url: string; name: string } | null>(null);
   const { trackConnect, trackDisconnect } = useEnvironmentTracking();
 
   if (isLoading) {
@@ -32,12 +70,12 @@ export default function ClientRemoteAccessPage() {
         <p className="text-sm text-muted-foreground mt-1">View your remote desktop environments</p>
       </div>
 
-      {selectedEnv ? (
+      {activeConn ? (
         <div className="space-y-4">
-          <button onClick={() => setSelectedEnv(null)} className="text-sm text-primary hover:underline">
+          <button onClick={() => setActiveConn(null)} className="text-sm text-primary hover:underline">
             ← Back to environments
           </button>
-          <GuacamoleViewer url={selectedEnv.guacamole_url} name={selectedEnv.name} osType={selectedEnv.os_type} onConnect={() => trackConnect(selectedEnv.id)} onDisconnect={trackDisconnect} />
+          <GuacamoleViewer url={activeConn.url} name={activeConn.name} onConnect={() => trackConnect(activeConn.envId)} onDisconnect={trackDisconnect} />
         </div>
       ) : activeEnvs.length === 0 ? (
         <Card className="rounded-2xl border-border/50">
@@ -49,19 +87,21 @@ export default function ClientRemoteAccessPage() {
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
           {activeEnvs.map((env) => (
-            <Card key={env.id} className="rounded-2xl border-border/50 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => setSelectedEnv(env)}>
+            <Card key={env.id} className="rounded-2xl border-border/50">
               <CardContent className="p-5">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <Monitor className="w-5 h-5 text-primary" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-semibold text-foreground">{env.name}</h3>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant="default" className="text-[10px]">Active</Badge>
                       <span className="text-xs text-muted-foreground">{env.os_type}</span>
                     </div>
                     {env.notes && <p className="text-xs text-muted-foreground mt-2">{env.notes}</p>}
+                    <ConnectionPicker envId={env.id} envName={env.name} envUrl={env.guacamole_url}
+                      onConnect={(url, name) => setActiveConn({ envId: env.id, url, name })} />
                   </div>
                 </div>
               </CardContent>
