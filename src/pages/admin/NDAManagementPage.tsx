@@ -85,6 +85,7 @@ export default function NDAManagementPage() {
       signature_data: n.signature_data,
       signed_at: n.signed_at,
       nda_content: n.nda_content,
+      revoked_at: n.revoked_at,
     }));
 
     setNdas(records);
