@@ -103,7 +103,7 @@ export default function AdminDashboard() {
       {/* Tickets by Module */}
       <Card className="border-border/50">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Tickets by SAP Module</CardTitle>
+          <CardTitle className="text-base">{t('admin_dashboard.tickets_by_module')}</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={220}>
