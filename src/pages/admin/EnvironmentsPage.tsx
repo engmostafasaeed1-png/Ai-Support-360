@@ -229,6 +229,13 @@ export default function EnvironmentsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setExpandedEnv(expandedEnv === env.id ? null : env.id)}
+                    >
+                      {expandedEnv === env.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </Button>
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button variant="outline" size="icon" onClick={() => setEditEnv(env)}>
@@ -265,6 +272,11 @@ export default function EnvironmentsPage() {
                     </AlertDialog>
                   </div>
                 </div>
+                {expandedEnv === env.id && (
+                  <div className="mt-4 pt-4 border-t border-border/30">
+                    <ConnectionsManager environmentId={env.id} />
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
