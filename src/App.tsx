@@ -39,11 +39,14 @@ import TicketKanbanPage from "./pages/admin/TicketKanbanPage.tsx";
 import ConsultantApprovalsPage from "./pages/admin/ConsultantApprovalsPage.tsx";
 import AnalyticsPage from "./pages/admin/AnalyticsPage.tsx";
 import AdminIntegrationsPage from "./pages/admin/AdminIntegrationsPage.tsx";
+import EnvironmentsPage from "./pages/admin/EnvironmentsPage.tsx";
 import LoginPage from "./pages/auth/LoginPage.tsx";
 import SignupPage from "./pages/auth/SignupPage.tsx";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.tsx";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage.tsx";
 import ProtectedRoute from "./components/auth/ProtectedRoute.tsx";
+import RemoteAccessPage from "./pages/consultant/RemoteAccessPage.tsx";
+import ClientRemoteAccessPage from "./pages/client/RemoteAccessPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +76,7 @@ const App = () => (
               <Route path="chat/:sessionId" element={<ChatSessionPage role="consultant" />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="onboarding" element={<OnboardingPage />} />
+              <Route path="remote-access" element={<RemoteAccessPage />} />
             </Route>
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
@@ -89,6 +93,7 @@ const App = () => (
               <Route path="settings" element={<SettingsPage />} />
               <Route path="integrations" element={<IntegrationsPage />} />
               <Route path="onboarding" element={<ClientOnboardingPage />} />
+              <Route path="remote-access" element={<ClientRemoteAccessPage />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminDashboard />} />
@@ -97,6 +102,7 @@ const App = () => (
               <Route path="approvals" element={<ConsultantApprovalsPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="integrations" element={<AdminIntegrationsPage />} />
+              <Route path="environments" element={<EnvironmentsPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

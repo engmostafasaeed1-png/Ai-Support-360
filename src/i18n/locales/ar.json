@@ -192,7 +192,9 @@
     "integrations": "التكاملات",
     "onboarding": "الإعداد الأولي",
     "onboarding_complete": "الإعداد الأولي",
-    "completed": "مكتمل"
+    "completed": "مكتمل",
+    "environments": "البيئات",
+    "remote_access": "الوصول عن بُعد"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",
