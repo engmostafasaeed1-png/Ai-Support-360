@@ -185,7 +185,8 @@
     "users": "User Management",
     "ticket_board": "Ticket Board",
     "approvals": "Approvals",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "logout": "Sign Out"
   },
   "client_dashboard": {
     "title": "Welcome back",

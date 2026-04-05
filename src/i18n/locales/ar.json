@@ -185,7 +185,8 @@
     "users": "إدارة المستخدمين",
     "ticket_board": "لوحة التذاكر",
     "approvals": "الموافقات",
-    "analytics": "التحليلات"
+    "analytics": "التحليلات",
+    "logout": "تسجيل الخروج"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",
