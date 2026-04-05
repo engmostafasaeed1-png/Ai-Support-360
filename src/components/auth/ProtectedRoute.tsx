@@ -14,6 +14,8 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
   const { isGuest, guestRole } = useGuestMode();
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [roleOk, setRoleOk] = useState<boolean | undefined>(undefined);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -44,12 +46,39 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       });
   }, [session, requiredRole, isGuest]);
 
+  // Check onboarding status once role is confirmed
+  useEffect(() => {
+    if (isGuest || !session || !roleOk || !requiredRole || requiredRole === 'admin') {
+      setOnboardingChecked(true);
+      return;
+    }
+    const checkOnboarding = async () => {
+      if (requiredRole === 'client') {
+        const { data } = await supabase
+          .from('client_profiles')
+          .select('onboarding_completed')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        setNeedsOnboarding(!data || !data.onboarding_completed);
+      } else {
+        const { data } = await supabase
+          .from('profiles')
+          .select('onboarding_completed')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        setNeedsOnboarding(!data || !data.onboarding_completed);
+      }
+      setOnboardingChecked(true);
+    };
+    checkOnboarding();
+  }, [session, roleOk, requiredRole, isGuest]);
+
   // Guest mode bypass
   if (isGuest && (!requiredRole || guestRole === requiredRole)) {
     return <>{children}</>;
   }
 
-  if (session === undefined || (session && requiredRole && roleOk === undefined)) {
+  if (session === undefined || (session && requiredRole && roleOk === undefined) || (roleOk && !onboardingChecked)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -63,6 +92,12 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
 
   if (requiredRole && !roleOk) {
     return <Navigate to="/" replace />;
+  }
+
+  // Redirect to onboarding if not completed (skip if already on onboarding page)
+  if (needsOnboarding && !location.pathname.endsWith('/onboarding')) {
+    const onboardingPath = requiredRole === 'client' ? '/client/onboarding' : '/consultant/onboarding';
+    return <Navigate to={onboardingPath} replace />;
   }
 
   return <>{children}</>;
