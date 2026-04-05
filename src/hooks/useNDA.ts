@@ -84,5 +84,5 @@ export function useNDAAgreement(consultantId?: string, clientId?: string) {
     return true;
   }, [consultantId, clientId, toast]);
 
-  return { signed, loading, signNDA };
+  return { signed, wasRevoked, loading, signNDA };
 }
