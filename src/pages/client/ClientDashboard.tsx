@@ -95,7 +95,7 @@ export default function ClientDashboard() {
                 </span>
               </div>
               <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
-              <div className="text-xs text-muted-foreground mt-1">{kpi.label}</div>
+              <div className="text-xs text-muted-foreground mt-1">{t(kpi.labelKey)}</div>
             </CardContent>
           </Card>
         ))}
