@@ -70,6 +70,7 @@ export default function ConsultantsPage() {
 
   const onlineCount = consultants.filter(c => c.available).length;
   const offlineCount = consultants.filter(c => !c.available).length;
+  const credlyCount = consultants.filter(c => !!c.credly_username).length;
 
   const filtered = useMemo(() => {
     let result = consultants.filter((c) => {
@@ -304,6 +305,7 @@ export default function ConsultantsPage() {
                   <Label htmlFor="credly-only" className="text-xs cursor-pointer flex items-center gap-1">
                     <Award className="w-3.5 h-3.5 text-orange-500" />
                     {t('consultants_page.credly_only', 'Credly Verified Only')}
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">{credlyCount}</span>
                   </Label>
                 </div>
               </div>
