@@ -14,6 +14,7 @@ import {
   Clock, AlertTriangle, Info, Loader2, Zap, Target, List,
   Star, BadgeCheck, Circle, Users, Crown, ChevronRight,
 } from 'lucide-react';
+import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
 
 interface AiCategorization {
   suggested_module: string;
@@ -85,6 +86,7 @@ export default function NewRequestPage() {
     urgency: 'medium', preferred_session: 'video', preferred_language: 'en',
   });
   const [submitted, setSubmitted] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<AIModelId>(DEFAULT_MODEL);
 
   // Auto-fill from chatbot query params
   useEffect(() => {
