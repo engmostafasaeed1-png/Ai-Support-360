@@ -108,7 +108,7 @@ export default function ConsultantMap({ consultants }: ConsultantMapProps) {
                     return (
                       <span key={badge} className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
                         <BIcon className={`w-2.5 h-2.5 ${cfg.color}`} />
-                        {badge.replace('_', ' ')}
+                        {t(`consultants.${badge}`)}
                       </span>
                     );
                   })}
