@@ -94,7 +94,10 @@
     "available": "Available Now",
     "top_rated": "Top Rated",
     "fast_responder": "Fast Responder",
-    "verified": "Verified"
+    "verified": "Verified",
+    "offline": "Offline",
+    "book_session": "Book Session",
+    "view_profile": "View Profile"
   },
   "testimonials": {
     "title": "What Our Clients Say",

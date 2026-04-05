@@ -94,7 +94,10 @@
     "available": "متاح الآن",
     "top_rated": "الأعلى تقييماً",
     "fast_responder": "سريع الاستجابة",
-    "verified": "موثق"
+    "verified": "موثق",
+    "offline": "غير متصل",
+    "book_session": "حجز جلسة",
+    "view_profile": "عرض الملف الشخصي"
   },
   "testimonials": {
     "title": "ماذا يقول عملاؤنا",
