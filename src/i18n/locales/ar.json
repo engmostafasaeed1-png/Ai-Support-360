@@ -599,7 +599,10 @@
     "next": "التالي",
     "back": "رجوع",
     "confirm": "تأكيد الحجز",
+    "submitting": "جاري الحجز...",
     "confirmed_title": "تم حجز الجلسة!",
-    "confirmed_desc": "تم تأكيد جلستك مع {{name}}."
+    "confirmed_desc": "تم تأكيد جلستك مع {{name}}.",
+    "login_required": "يرجى تسجيل الدخول لحجز جلسة.",
+    "error": "فشل الحجز"
   }
 }
