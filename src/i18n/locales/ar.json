@@ -636,7 +636,37 @@
     "suspended": "موقوف",
     "pending": "معلق",
     "saving": "جاري الحفظ...",
-    "reset": "إعادة تعيين"
+    "reset": "إعادة تعيين",
+    "update": "تحديث",
+    "create": "إنشاء"
+  },
+  "settings_page": {
+    "subtitle": "إدارة ملفك الشخصي وتفضيلاتك",
+    "profile_picture": "صورة الملف الشخصي",
+    "upload_avatar": "انقر لتحميل صورة جديدة",
+    "upload_hint": "JPG أو PNG أو GIF. الحد الأقصى 5 ميغابايت.",
+    "personal_info": "المعلومات الشخصية",
+    "email": "البريد الإلكتروني",
+    "email_hint": "لا يمكن تغيير البريد الإلكتروني",
+    "display_name": "الاسم المعروض",
+    "phone": "رقم الهاتف"
+  },
+  "company_profile_page": {
+    "company_logo": "شعار الشركة",
+    "logo_hint": "انقر للتحميل. الحد الأقصى 5 ميغابايت، JPG/PNG.",
+    "company_name": "اسم الشركة",
+    "industry": "القطاع",
+    "company_size": "حجم الشركة",
+    "headquarters": "المقر الرئيسي",
+    "website": "الموقع الإلكتروني",
+    "company_description": "وصف الشركة",
+    "sap_landscape_title": "بنية SAP",
+    "sap_landscape_desc": "وصف بنية SAP",
+    "hosting_type": "نوع الاستضافة",
+    "hosting_on_prem": "محلي",
+    "hosting_cloud": "سحابي (BTP/Rise)",
+    "hosting_hybrid": "هجين",
+    "system_ids": "معرّفات الأنظمة"
   },
   "booking": {
     "title": "حجز جلسة",

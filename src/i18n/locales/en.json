@@ -636,7 +636,37 @@
     "suspended": "suspended",
     "pending": "pending",
     "saving": "Saving...",
-    "reset": "Reset"
+    "reset": "Reset",
+    "update": "Update",
+    "create": "Create"
+  },
+  "settings_page": {
+    "subtitle": "Manage your profile and preferences",
+    "profile_picture": "Profile Picture",
+    "upload_avatar": "Click to upload a new avatar",
+    "upload_hint": "JPG, PNG or GIF. Max 5MB.",
+    "personal_info": "Personal Information",
+    "email": "Email",
+    "email_hint": "Email cannot be changed",
+    "display_name": "Display Name",
+    "phone": "Phone Number"
+  },
+  "company_profile_page": {
+    "company_logo": "Company Logo",
+    "logo_hint": "Click to upload. Max 5MB, JPG/PNG.",
+    "company_name": "Company Name",
+    "industry": "Industry",
+    "company_size": "Company Size",
+    "headquarters": "Headquarters",
+    "website": "Website",
+    "company_description": "Company Description",
+    "sap_landscape_title": "SAP Landscape",
+    "sap_landscape_desc": "SAP Landscape Description",
+    "hosting_type": "Hosting Type",
+    "hosting_on_prem": "On-Premise",
+    "hosting_cloud": "Cloud (BTP/Rise)",
+    "hosting_hybrid": "Hybrid",
+    "system_ids": "System IDs"
   },
   "booking": {
     "title": "Book a Session",
