@@ -34,6 +34,8 @@ import UsersPage from "./pages/admin/UsersPage.tsx";
 import TicketKanbanPage from "./pages/admin/TicketKanbanPage.tsx";
 import ConsultantApprovalsPage from "./pages/admin/ConsultantApprovalsPage.tsx";
 import AnalyticsPage from "./pages/admin/AnalyticsPage.tsx";
+import LoginPage from "./pages/auth/LoginPage.tsx";
+import SignupPage from "./pages/auth/SignupPage.tsx";
 
 const queryClient = new QueryClient();
 
