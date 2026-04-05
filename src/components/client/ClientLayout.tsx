@@ -5,7 +5,7 @@ import { Outlet } from 'react-router-dom';
 import {
   Search, AlertTriangle, LayoutDashboard, TicketPlus, Users,
   MessageSquare, Settings, Briefcase, Calendar, CreditCard,
-  FileText, BookOpen, Bell,
+  FileText, BookOpen, Bell, Plug,
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ const moreNavItems = [
   { key: 'sessions', icon: Calendar, path: '/client/sessions', labelKey: 'sidebar.sessions' },
   { key: 'payments', icon: CreditCard, path: '/client/payments', labelKey: 'sidebar.payments' },
   { key: 'invoices', icon: FileText, path: '/client/invoices', labelKey: 'sidebar.invoices' },
+  { key: 'integrations', icon: Plug, path: '/client/integrations', labelKey: 'sidebar.integrations' },
   { key: 'knowledge', icon: BookOpen, path: '/client/knowledge', labelKey: 'sidebar.knowledge' },
   { key: 'notifications', icon: Bell, path: '/client/notifications', labelKey: 'sidebar.notifications' },
   { key: 'settings', icon: Settings, path: '/client/settings', labelKey: 'sidebar.settings' },
