@@ -16,6 +16,7 @@ const menuItems = [
   { key: 'cases', icon: Briefcase, path: '/consultant/cases' },
   { key: 'calendar', icon: Calendar, path: '/consultant/calendar' },
   { key: 'earnings', icon: CreditCard, path: '/consultant/earnings' },
+  { key: 'chat', icon: MessageSquare, path: '/consultant/chat' },
   { key: 'reviews', icon: Star, path: '/consultant/reviews' },
   { key: 'profile', icon: User, path: '/consultant/profile' },
   { key: 'verification', icon: ShieldCheck, path: '/consultant/verification' },
