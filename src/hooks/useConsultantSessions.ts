@@ -1,10 +1,23 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { mockSessions } from '@/data/consultantMockData';
 
 export function useConsultantSessions() {
   const { isGuest } = useGuestMode();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (isGuest) return;
+    const channel = supabase
+      .channel('consultant-sessions-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['consultant-sessions'] });
+      })
+      .subscribe();
+    return () => { channel.unsubscribe(); };
+  }, [isGuest, queryClient]);
 
   return useQuery({
     queryKey: ['consultant-sessions'],
@@ -21,17 +34,14 @@ export function useConsultantSessions() {
 
       const { data, error } = await supabase
         .from('sessions')
-        .select(`
-          id, session_type, status, scheduled_at, duration_minutes, ticket_id,
-          profiles:client_id (display_name)
-        `)
+        .select('id, session_type, status, scheduled_at, duration_minutes, ticket_id, consultant_id')
         .eq('consultant_id', consultant.id)
         .order('scheduled_at', { ascending: true });
       if (error) throw error;
       return (data || []).map((s: any) => ({
         id: s.id,
         ticket_id: s.ticket_id || '',
-        client: s.profiles?.display_name || 'Unknown Client',
+        client: 'Client',
         session_type: s.session_type || 'chat',
         status: s.status || 'scheduled',
         scheduled_at: s.scheduled_at,

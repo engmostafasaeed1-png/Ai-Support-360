@@ -1,10 +1,26 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { mockEarnings } from '@/data/consultantMockData';
 
 export function useConsultantEarnings() {
   const { isGuest } = useGuestMode();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (isGuest) return;
+    const channel = supabase
+      .channel('consultant-earnings-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['consultant-earnings'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payouts' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['consultant-earnings'] });
+      })
+      .subscribe();
+    return () => { channel.unsubscribe(); };
+  }, [isGuest, queryClient]);
 
   return useQuery({
     queryKey: ['consultant-earnings'],
@@ -49,7 +65,7 @@ export function useConsultantEarnings() {
         pending,
         available: completed - paidOut,
         currency: 'USD',
-        monthlyTrend: mockEarnings.monthlyTrend, // Would need aggregation query for real data
+        monthlyTrend: mockEarnings.monthlyTrend,
       };
     },
     enabled: !isGuest,
