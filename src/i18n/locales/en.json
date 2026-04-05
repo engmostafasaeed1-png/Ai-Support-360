@@ -604,5 +604,20 @@
     "confirmed_desc": "Your session with {{name}} has been confirmed.",
     "login_required": "Please log in to book a session.",
     "error": "Booking failed"
+  },
+  "sessions_page": {
+    "title": "My Sessions",
+    "subtitle": "View and manage your booked sessions",
+    "empty_title": "No sessions yet",
+    "empty_desc": "Book a session with a consultant to get started",
+    "browse_consultants": "Browse Consultants",
+    "login_required": "Please log in to view your sessions.",
+    "go_login": "Log In",
+    "not_scheduled": "Not scheduled",
+    "join": "Join",
+    "status_scheduled": "Scheduled",
+    "status_in_progress": "In Progress",
+    "status_completed": "Completed",
+    "status_cancelled": "Cancelled"
   }
 }
