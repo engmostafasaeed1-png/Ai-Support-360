@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,10 +9,16 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   ChevronLeft, Video, MessageSquare, Monitor, Clock, User,
-  Calendar, FileText, ListChecks, Play,
+  Calendar, FileText, ListChecks, Play, XCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 const typeIcons = {
   video: Video,
@@ -30,6 +37,26 @@ export default function SessionDetailPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const handleCancel = async () => {
+    setIsCancelling(true);
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .update({ status: 'cancelled' })
+        .eq('id', sessionId!);
+      if (error) throw error;
+      toast.success(t('session_detail.cancelled_success'));
+      queryClient.invalidateQueries({ queryKey: ['session-detail', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['client-sessions'] });
+    } catch (err: any) {
+      toast.error(t('session_detail.cancel_error'), { description: err.message });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   const { data: session, isLoading } = useQuery({
     queryKey: ['session-detail', sessionId],
@@ -126,9 +153,33 @@ export default function SessionDetailPage() {
             </div>
 
             {status === 'scheduled' && (
-              <Button className="gradient-primary border-0 gap-1.5" size="lg">
-                <Play className="w-4 h-4" /> {t('session_detail.join_session')}
-              </Button>
+              <div className="flex items-center gap-2">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="lg" className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10">
+                      <XCircle className="w-4 h-4" /> {t('session_detail.cancel_session')}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="rounded-2xl">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{t('session_detail.cancel_confirm_title')}</AlertDialogTitle>
+                      <AlertDialogDescription>{t('session_detail.cancel_confirm_desc')}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{t('session_detail.cancel_no')}</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={handleCancel}
+                      >
+                        {t('session_detail.cancel_yes')}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                <Button className="gradient-primary border-0 gap-1.5" size="lg">
+                  <Play className="w-4 h-4" /> {t('session_detail.join_session')}
+                </Button>
+              </div>
             )}
           </div>
         </CardContent>
