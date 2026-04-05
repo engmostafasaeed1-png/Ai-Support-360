@@ -1,9 +1,8 @@
 import Navbar from '@/components/landing/Navbar';
 import HeroSection from '@/components/landing/HeroSection';
-import CategoriesSection from '@/components/landing/CategoriesSection';
+import ExploreServicesSection from '@/components/landing/ExploreServicesSection';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
 import WhyQurtubaSection from '@/components/landing/WhyQurtubaSection';
-import IndustriesSection from '@/components/landing/IndustriesSection';
 import ConsultantsSection from '@/components/landing/ConsultantsSection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import PricingSection from '@/components/landing/PricingSection';
@@ -16,10 +15,9 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <HeroSection />
-      <CategoriesSection />
+      <ExploreServicesSection />
       <HowItWorksSection />
       <WhyQurtubaSection />
-      <IndustriesSection />
       <ConsultantsSection />
       <TestimonialsSection />
       <PricingSection />
