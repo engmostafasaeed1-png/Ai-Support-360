@@ -147,6 +147,7 @@ export default function ConsultantOnboarding() {
       }
 
       toast.success(t('onboarding.success'));
+      navigate('/consultant');
     } catch (err) {
       console.error(err);
       toast.error(t('onboarding.error_generic'));
