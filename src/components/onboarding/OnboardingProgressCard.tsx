@@ -141,7 +141,11 @@ export default function OnboardingProgressCard({ role }: Props) {
             {/* Checklist */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 mt-3">
               {checklist.map((item) => (
-                <div key={item.labelKey} className="flex items-center gap-2">
+                <Link
+                  key={item.labelKey}
+                  to={`${onboardingPath}?step=${item.step}`}
+                  className={`flex items-center gap-2 rounded-md px-1.5 py-0.5 -mx-1.5 transition-colors ${item.done ? 'hover:bg-muted/50' : 'hover:bg-accent/10'}`}
+                >
                   {item.done ? (
                     <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
                   ) : (
@@ -150,7 +154,7 @@ export default function OnboardingProgressCard({ role }: Props) {
                   <span className={`text-xs ${item.done ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                     {t(item.labelKey, item.fallback)}
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
