@@ -35,17 +35,14 @@ export function useConsultantCases() {
 
       const { data, error } = await supabase
         .from('tickets')
-        .select(`
-          id, title, sap_module, urgency, status, created_at, sla_deadline, resolved_at,
-          profiles:client_id (display_name)
-        `)
+        .select('id, title, sap_module, urgency, status, created_at, sla_deadline, resolved_at, client_id')
         .eq('consultant_id', consultant.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return (data || []).map((t: any) => ({
         id: t.id,
         title: t.title,
-        client: t.profiles?.display_name || 'Unknown Client',
+        client: 'Client',
         sap_module: t.sap_module,
         urgency: t.urgency || 'medium',
         status: t.status || 'new',
