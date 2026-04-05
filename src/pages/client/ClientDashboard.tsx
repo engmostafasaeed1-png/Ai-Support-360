@@ -74,7 +74,7 @@ export default function ClientDashboard() {
           </Link>
           <Link to="/client/consultants">
             <Button variant="outline" size="sm">
-              <Users className="w-4 h-4 me-1" /> Browse Consultants
+              <Users className="w-4 h-4 me-1" /> {t('consultants_page.title')}
             </Button>
           </Link>
         </div>
