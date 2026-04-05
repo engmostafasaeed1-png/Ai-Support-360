@@ -142,3 +142,18 @@
     opacity: 0;
   }
 }
+
+/* Chatbot streaming cursor */
+.chatbot-streaming > *:last-child::after {
+  content: '▍';
+  display: inline;
+  animation: cursor-blink 0.8s steps(2) infinite;
+  color: hsl(var(--accent));
+  font-weight: 400;
+  margin-inline-start: 1px;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
