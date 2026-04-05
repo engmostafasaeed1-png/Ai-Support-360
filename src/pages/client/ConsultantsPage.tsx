@@ -168,21 +168,21 @@ export default function ConsultantsPage() {
       </div>
 
       {/* Search + Filter toggle + View */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[140px]">
           <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder={t('consultants_page.search_placeholder')} value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9 rounded-xl h-10" />
+          <Input placeholder={t('consultants_page.search_placeholder')} value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9 rounded-xl h-10 text-sm" />
         </div>
         <Button
           variant={showFilters ? 'default' : 'outline'}
           size="sm"
-          className="gap-1.5"
+          className="gap-1 h-10"
           onClick={() => setShowFilters(!showFilters)}
         >
           <Filter className="w-3.5 h-3.5" />
-          {t('consultants_page.filters')}
+          <span className="hidden sm:inline">{t('consultants_page.filters')}</span>
           {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] rounded-full bg-primary text-primary-foreground">
+            <Badge variant="secondary" className="ml-0.5 h-5 w-5 p-0 flex items-center justify-center text-[10px] rounded-full bg-primary text-primary-foreground">
               {activeFilterCount}
             </Badge>
           )}
@@ -191,7 +191,7 @@ export default function ConsultantsPage() {
 
         {/* Sort */}
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-          <SelectTrigger className="w-44 rounded-xl h-10 text-xs">
+          <SelectTrigger className="w-32 sm:w-44 rounded-xl h-10 text-xs">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
