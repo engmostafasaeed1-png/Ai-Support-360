@@ -202,6 +202,7 @@ export default function EarningsPage() {
                   <p className="text-sm text-muted-foreground">{t('earnings.no_payments')}</p>
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
