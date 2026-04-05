@@ -1,7 +1,6 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Star, BadgeCheck, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface Consultant {
@@ -22,14 +21,14 @@ interface Consultant {
 
 interface ConsultantMapProps {
   consultants: Consultant[];
+  selectedId?: string | null;
+  onSelectConsultant?: (id: string) => void;
 }
 
-export default function ConsultantMap({ consultants }: ConsultantMapProps) {
+export default function ConsultantMap({ consultants, selectedId, onSelectConsultant }: ConsultantMapProps) {
   const { t } = useTranslation();
-  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    // Use raw Leaflet API to avoid react-leaflet compatibility issues
     const container = document.getElementById('consultant-map');
     if (!container || (container as any)._leaflet_id) return;
 
@@ -39,22 +38,22 @@ export default function ConsultantMap({ consultants }: ConsultantMapProps) {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
 
-    // Fit bounds
     if (consultants.length > 0) {
       const bounds = L.latLngBounds(consultants.map(c => [c.lat, c.lng]));
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 8 });
     }
 
-    // Add markers
     consultants.forEach(c => {
+      const isSelected = c.id === selectedId;
       const statusColor = c.available ? '#22c55e' : '#9ca3af';
       const bgColor = c.available ? '#1B2559' : '#64748b';
+      const ring = isSelected ? 'border:3px solid #3B82F6;box-shadow:0 0 0 4px rgba(59,130,246,0.3),' : 'border:2px solid white;box-shadow:';
 
       const icon = L.divIcon({
         className: 'consultant-marker',
         html: `
-          <div style="position:relative;width:48px;height:56px;">
-            <div style="width:44px;height:44px;border-radius:14px;background:${bgColor};display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.25);border:2px solid white;">
+          <div style="position:relative;width:48px;height:56px;cursor:pointer;">
+            <div style="width:44px;height:44px;border-radius:14px;background:${bgColor};display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;${ring}0 4px 12px rgba(0,0,0,0.25);transition:transform 0.15s;${isSelected ? 'transform:scale(1.15);' : ''}">
               ${c.avatar}
             </div>
             <div style="position:absolute;top:-2px;right:-2px;width:14px;height:14px;border-radius:50%;background:${statusColor};border:2px solid white;"></div>
@@ -97,15 +96,16 @@ export default function ConsultantMap({ consultants }: ConsultantMapProps) {
         </div>
       `);
 
-      L.marker([c.lat, c.lng], { icon }).addTo(map).bindPopup(popup);
+      const marker = L.marker([c.lat, c.lng], { icon }).addTo(map).bindPopup(popup);
+      marker.on('click', () => {
+        onSelectConsultant?.(c.id);
+      });
     });
-
-    setMapReady(true);
 
     return () => {
       map.remove();
     };
-  }, [consultants, t]);
+  }, [consultants, selectedId, t, onSelectConsultant]);
 
   return (
     <div className="rounded-2xl overflow-hidden border border-border/50 shadow-sm" style={{ height: '420px' }}>
