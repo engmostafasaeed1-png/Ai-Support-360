@@ -332,6 +332,103 @@ export type Database = {
         }
         Relationships: []
       }
+      interview_answers: {
+        Row: {
+          ai_feedback: string | null
+          answer_transcript: string | null
+          category: string
+          created_at: string
+          id: string
+          interview_id: string
+          question: string
+          question_order: number
+          score: number | null
+        }
+        Insert: {
+          ai_feedback?: string | null
+          answer_transcript?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          interview_id: string
+          question: string
+          question_order?: number
+          score?: number | null
+        }
+        Update: {
+          ai_feedback?: string | null
+          answer_transcript?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          interview_id?: string
+          question?: string
+          question_order?: number
+          score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_answers_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_sessions: {
+        Row: {
+          ai_summary: string | null
+          completed_at: string | null
+          consultant_id: string
+          created_at: string
+          id: string
+          overall_score: number | null
+          skill_results: Json | null
+          soft_skills_score: number | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["interview_status"]
+          technical_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          completed_at?: string | null
+          consultant_id: string
+          created_at?: string
+          id?: string
+          overall_score?: number | null
+          skill_results?: Json | null
+          soft_skills_score?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["interview_status"]
+          technical_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ai_summary?: string | null
+          completed_at?: string | null
+          consultant_id?: string
+          created_at?: string
+          id?: string
+          overall_score?: number | null
+          skill_results?: Json | null
+          soft_skills_score?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["interview_status"]
+          technical_score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_sessions_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_articles: {
         Row: {
           author_id: string
@@ -864,6 +961,7 @@ export type Database = {
       app_role: "client" | "consultant" | "admin"
       article_status: "draft" | "published" | "archived"
       availability_status: "available" | "busy" | "offline"
+      interview_status: "pending" | "in_progress" | "completed" | "reviewed"
       message_type: "text" | "file" | "voice_note" | "system"
       payment_status: "pending" | "completed" | "refunded" | "disputed"
       payout_status: "pending" | "processing" | "completed" | "failed"
@@ -1020,6 +1118,7 @@ export const Constants = {
       app_role: ["client", "consultant", "admin"],
       article_status: ["draft", "published", "archived"],
       availability_status: ["available", "busy", "offline"],
+      interview_status: ["pending", "in_progress", "completed", "reviewed"],
       message_type: ["text", "file", "voice_note", "system"],
       payment_status: ["pending", "completed", "refunded", "disputed"],
       payout_status: ["pending", "processing", "completed", "failed"],
