@@ -165,9 +165,17 @@ export default function NDAManagementPage() {
         <Card className="rounded-2xl">
           <CardContent className="p-4 text-center">
             <p className="text-2xl font-bold text-foreground">
-              {ndas.filter(n => n.signature_type === 'type').length}
+              {ndas.filter(n => !n.revoked_at).length}
             </p>
-            <p className="text-xs text-muted-foreground">{t('admin.nda_typed', 'Typed Signatures')}</p>
+            <p className="text-xs text-muted-foreground">{t('admin.nda_active', 'Active NDAs')}</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-destructive">
+              {ndas.filter(n => !!n.revoked_at).length}
+            </p>
+            <p className="text-xs text-muted-foreground">{t('admin.nda_revoked_count', 'Revoked NDAs')}</p>
           </CardContent>
         </Card>
       </div>
@@ -190,7 +198,7 @@ export default function NDAManagementPage() {
             <TableRow>
               <TableHead>{t('admin.nda_consultant', 'Consultant')}</TableHead>
               <TableHead>{t('admin.nda_client', 'Client')}</TableHead>
-              <TableHead>{t('admin.nda_sig_type', 'Signature Type')}</TableHead>
+              <TableHead>{t('admin.nda_status', 'Status')}</TableHead>
               <TableHead>{t('admin.nda_date', 'Date Signed')}</TableHead>
               <TableHead className="text-end">{t('admin.nda_actions', 'Actions')}</TableHead>
             </TableRow>
