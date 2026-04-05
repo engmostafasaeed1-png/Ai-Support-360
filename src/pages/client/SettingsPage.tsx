@@ -92,40 +92,40 @@ export default function SettingsPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">{t('sidebar.settings')}</h1>
-        <p className="text-muted-foreground text-sm mt-1">Manage your profile and preferences</p>
+        <p className="text-muted-foreground text-sm mt-1">{t('settings_page.subtitle', 'Manage your profile and preferences')}</p>
       </div>
 
       <Card className="rounded-2xl shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Profile Picture</CardTitle>
+          <CardTitle className="text-lg">{t('settings_page.profile_picture', 'Profile Picture')}</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center gap-6">
           <AvatarUpload />
           <div className="text-sm text-muted-foreground">
-            <p>Click to upload a new avatar</p>
-            <p className="text-xs mt-1">JPG, PNG or GIF. Max 5MB.</p>
+            <p>{t('settings_page.upload_avatar', 'Click to upload a new avatar')}</p>
+            <p className="text-xs mt-1">{t('settings_page.upload_hint', 'JPG, PNG or GIF. Max 5MB.')}</p>
           </div>
         </CardContent>
       </Card>
 
       <Card className="rounded-2xl shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Personal Information</CardTitle>
+          <CardTitle className="text-lg">{t('settings_page.personal_info', 'Personal Information')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('settings_page.email', 'Email')}</Label>
             <Input
               id="email"
               value={profile?.email || ''}
               disabled
               className="bg-muted/50"
             />
-            <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+            <p className="text-xs text-muted-foreground">{t('settings_page.email_hint', 'Email cannot be changed')}</p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="displayName">Display Name</Label>
+            <Label htmlFor="displayName">{t('settings_page.display_name', 'Display Name')}</Label>
             <Input
               id="displayName"
               value={displayName}
@@ -135,7 +135,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
+            <Label htmlFor="phone">{t('settings_page.phone', 'Phone Number')}</Label>
             <Input
               id="phone"
               value={phone}

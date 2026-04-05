@@ -242,12 +242,12 @@ function SessionTimeline({ sessions, isLoading }: { sessions: any[]; isLoading: 
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground space-y-0.5">
-                  <p>Consultant: {session.consultant_name}</p>
+                  <p>{t('session_detail.unknown_consultant', 'Consultant')}: {session.consultant_name}</p>
                   {session.scheduled_at && (
-                    <p>Scheduled: {format(new Date(session.scheduled_at), 'MMM d, yyyy h:mm a')}</p>
+                    <p>{t('session_detail.scheduled_at', 'Scheduled')}: {format(new Date(session.scheduled_at), 'MMM d, yyyy h:mm a')}</p>
                   )}
                   {session.started_at && (
-                    <p>Started: {format(new Date(session.started_at), 'MMM d, yyyy h:mm a')}</p>
+                    <p>{t('session_detail.started_at', 'Started')}: {format(new Date(session.started_at), 'MMM d, yyyy h:mm a')}</p>
                   )}
                 </div>
                 {session.ai_summary && (

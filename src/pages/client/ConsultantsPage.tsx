@@ -208,11 +208,11 @@ export default function ConsultantsPage() {
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="best_match">Best Match</SelectItem>
-            <SelectItem value="rating">Highest Rating</SelectItem>
-            <SelectItem value="price_low">Price: Low → High</SelectItem>
-            <SelectItem value="price_high">Price: High → Low</SelectItem>
-            <SelectItem value="fastest">Available First</SelectItem>
+            <SelectItem value="best_match">{t('consultants_page.sort_best_match', 'Best Match')}</SelectItem>
+            <SelectItem value="rating">{t('consultants_page.sort_rating', 'Highest Rating')}</SelectItem>
+            <SelectItem value="price_low">{t('consultants_page.sort_price_low', 'Price: Low → High')}</SelectItem>
+            <SelectItem value="price_high">{t('consultants_page.sort_price_high', 'Price: High → Low')}</SelectItem>
+            <SelectItem value="fastest">{t('consultants_page.sort_fastest', 'Available First')}</SelectItem>
             <SelectItem value="credly_first">{t('consultants_page.credly_first', 'Credly Verified First')}</SelectItem>
           </SelectContent>
         </Select>
@@ -242,7 +242,7 @@ export default function ConsultantsPage() {
                     <SelectValue placeholder="All Modules" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Modules</SelectItem>
+                    <SelectItem value="all">{t('consultants_page.all_modules', 'All Modules')}</SelectItem>
                     {sapModules.map(m => (
                       <SelectItem key={m} value={m}>{m}</SelectItem>
                     ))}
