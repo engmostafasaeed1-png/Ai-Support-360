@@ -19,6 +19,12 @@ import TicketsPage from "./pages/client/TicketsPage.tsx";
 import ConsultantsPage from "./pages/client/ConsultantsPage.tsx";
 import PaymentsPage from "./pages/client/PaymentsPage.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
+import AdminLayout from "./components/admin/AdminLayout.tsx";
+import AdminDashboard from "./pages/admin/AdminDashboard.tsx";
+import UsersPage from "./pages/admin/UsersPage.tsx";
+import TicketKanbanPage from "./pages/admin/TicketKanbanPage.tsx";
+import ConsultantApprovalsPage from "./pages/admin/ConsultantApprovalsPage.tsx";
+import AnalyticsPage from "./pages/admin/AnalyticsPage.tsx";
 
 const queryClient = new QueryClient();
 
