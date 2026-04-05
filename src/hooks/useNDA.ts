@@ -50,12 +50,15 @@ export function useNDAAgreement(consultantId?: string, clientId?: string) {
     if (!consultantId || !clientId) { setLoading(false); return; }
     supabase
       .from('nda_agreements')
-      .select('id')
+      .select('id, revoked_at')
       .eq('consultant_id', consultantId)
       .eq('client_id', clientId)
+      .order('signed_at', { ascending: false })
+      .limit(1)
       .maybeSingle()
       .then(({ data }) => {
-        setSigned(!!data);
+        // Only consider signed if an NDA exists and is not revoked
+        setSigned(!!data && !(data as any).revoked_at);
         setLoading(false);
       });
   }, [consultantId, clientId]);
