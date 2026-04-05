@@ -158,9 +158,44 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
   );
 }
 
+function useEnvironmentNames(environments: RemoteEnvironment[] | undefined) {
+  const clientIds = useMemo(() => [...new Set((environments || []).map(e => e.client_id))], [environments]);
+  const consultantIds = useMemo(() => [...new Set((environments || []).filter(e => e.consultant_id).map(e => e.consultant_id!))], [environments]);
+
+  const { data: clientProfiles } = useQuery({
+    queryKey: ['env-client-names', clientIds],
+    queryFn: async () => {
+      if (clientIds.length === 0) return [];
+      const { data } = await supabase.from('profiles').select('user_id, display_name').in('user_id', clientIds);
+      return data || [];
+    },
+    enabled: clientIds.length > 0,
+  });
+
+  const { data: consultantProfiles } = useQuery({
+    queryKey: ['env-consultant-names', consultantIds],
+    queryFn: async () => {
+      if (consultantIds.length === 0) return [];
+      const { data: cons } = await supabase.from('consultants').select('id, user_id').in('id', consultantIds);
+      if (!cons?.length) return [];
+      const userIds = cons.map(c => c.user_id);
+      const { data: profiles } = await supabase.from('profiles').select('user_id, display_name').in('user_id', userIds);
+      const profileMap = Object.fromEntries((profiles || []).map(p => [p.user_id, p.display_name]));
+      return cons.map(c => ({ consultant_id: c.id, name: profileMap[c.user_id] || c.user_id }));
+    },
+    enabled: consultantIds.length > 0,
+  });
+
+  const clientMap = useMemo(() => Object.fromEntries((clientProfiles || []).map(p => [p.user_id, p.display_name || 'Unnamed'])), [clientProfiles]);
+  const consultantMap = useMemo(() => Object.fromEntries((consultantProfiles || []).map(p => [p.consultant_id, p.name])), [consultantProfiles]);
+
+  return { clientMap, consultantMap };
+}
+
 export default function EnvironmentsPage() {
   const { t } = useTranslation();
   const { data: environments, isLoading } = useRemoteEnvironments();
+  const { clientMap, consultantMap } = useEnvironmentNames(environments);
   const createEnv = useCreateEnvironment();
   const updateEnv = useUpdateEnvironment();
   const deleteEnv = useDeleteEnvironment();
