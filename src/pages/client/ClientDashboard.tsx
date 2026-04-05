@@ -8,6 +8,7 @@ import {
   ChevronRight, Star, BadgeCheck, Zap, TicketPlus, Users,
   Calendar, DollarSign, FileText, Video, MessageSquare, Monitor,
 } from 'lucide-react';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import {
   mockClientProfile, mockClientTickets, mockClientSessions,
   mockClientPayments, mockRecommendedConsultants, mockActivityFeed,
