@@ -866,5 +866,18 @@
     "prompt_fi": "ترحيل SAP FI الخاص بي يفشل",
     "prompt_mm": "أمر شراء MM عالق",
     "prompt_basis": "مشكلة أداء نظام Basis"
+  },
+  "admin": {
+    "settings_title": "إعدادات المنصة",
+    "settings_subtitle": "إدارة الإعدادات العامة للمنصة",
+    "settings_general": "عام",
+    "settings_maintenance": "وضع الصيانة",
+    "settings_registration": "التسجيل المفتوح",
+    "settings_notifications": "الإشعارات",
+    "settings_email_notif": "إشعارات البريد الإلكتروني",
+    "settings_admin_alerts": "تنبيهات المسؤولين",
+    "settings_security": "الأمان",
+    "settings_2fa": "إلزام المصادقة الثنائية للمسؤولين",
+    "settings_audit": "سجل التدقيق"
   }
 }
