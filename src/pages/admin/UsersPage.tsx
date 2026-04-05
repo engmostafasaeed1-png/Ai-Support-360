@@ -22,6 +22,7 @@ const statusColors: Record<string, string> = {
 export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const { t } = useTranslation();
 
   const filtered = adminUsers.filter((u) => {
     const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
