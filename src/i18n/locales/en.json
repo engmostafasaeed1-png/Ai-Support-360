@@ -879,5 +879,8 @@
     "settings_security": "Security",
     "settings_2fa": "Require 2FA for Admins",
     "settings_audit": "Audit Logging"
+  },
+  "maintenance": {
+    "banner": "The platform is currently undergoing scheduled maintenance. Some features may be temporarily unavailable."
   }
 }
