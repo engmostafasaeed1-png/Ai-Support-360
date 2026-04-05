@@ -1,10 +1,13 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { mockRecommendedConsultants } from '@/data/clientMockData';
-import { Search, Star, BadgeCheck, Zap, Heart, Filter } from 'lucide-react';
-import { useState } from 'react';
+import { Search, Star, BadgeCheck, Zap, Heart, Filter, Map, LayoutGrid } from 'lucide-react';
+import { useState, lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
+
+const ConsultantMap = lazy(() => import('@/components/client/ConsultantMap'));
 
 const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
   verified: { icon: BadgeCheck, color: 'text-accent' },
@@ -13,7 +16,9 @@ const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
 };
 
 export default function ConsultantsPage() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
+  const [view, setView] = useState<'grid' | 'map'>('grid');
   const filtered = mockRecommendedConsultants.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) || c.specialty.toLowerCase().includes(search.toLowerCase())
   );
@@ -21,28 +26,44 @@ export default function ConsultantsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Consultant Marketplace</h1>
-        <p className="text-sm text-muted-foreground mt-1">Find and book the best SAP experts for your needs.</p>
+        <h1 className="text-2xl font-bold text-foreground">{t('consultants_page.title')}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{t('consultants_page.subtitle')}</p>
       </div>
 
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search by name, skill, or module..." value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9 rounded-xl h-10" />
+          <Input placeholder={t('consultants_page.search_placeholder')} value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9 rounded-xl h-10" />
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5"><Filter className="w-3.5 h-3.5" /> Filters</Button>
+        <Button variant="outline" size="sm" className="gap-1.5"><Filter className="w-3.5 h-3.5" /> {t('consultants_page.filters')}</Button>
+        <div className="flex rounded-lg border border-border overflow-hidden">
+          <button onClick={() => setView('grid')} className={`p-2 transition-colors ${view === 'grid' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}>
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+          <button onClick={() => setView('map')} className={`p-2 transition-colors ${view === 'map' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}>
+            <Map className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      {/* Match tabs */}
+      {/* Tab filters */}
       <div className="flex gap-2">
-        {['Best Match', 'Fastest Available', 'Budget Fit'].map((tab, i) => (
+        {['best_match', 'fastest_available', 'budget_fit'].map((tab, i) => (
           <Button key={tab} size="sm" variant={i === 0 ? 'default' : 'outline'} className={`text-xs rounded-full ${i === 0 ? 'gradient-primary border-0' : ''}`}>
-            {tab}
+            {t(`consultants_page.${tab}`)}
           </Button>
         ))}
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      {/* Map View */}
+      {view === 'map' && (
+        <Suspense fallback={<div className="h-[420px] rounded-2xl bg-muted animate-pulse" />}>
+          <ConsultantMap consultants={filtered} />
+        </Suspense>
+      )}
+
+      {/* Grid View */}
+      <div className={`grid md:grid-cols-2 gap-4 ${view === 'map' ? 'mt-4' : ''}`}>
         {filtered.map((c) => (
           <Card key={c.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
             <CardContent className="p-5">
@@ -58,11 +79,12 @@ export default function ConsultantsPage() {
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">{c.specialty}</p>
+                  {'city' in c && <p className="text-xs text-muted-foreground">{c.city}</p>}
 
                   <div className="flex items-center gap-2 mt-2">
                     <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
                     <span className="text-sm font-semibold text-foreground">{c.rating}</span>
-                    <span className="text-xs text-muted-foreground">({c.reviews} reviews)</span>
+                    <span className="text-xs text-muted-foreground">({c.reviews} {t('consultants_page.reviews')})</span>
                   </div>
 
                   <div className="flex flex-wrap gap-1.5 mt-2">
@@ -86,22 +108,26 @@ export default function ConsultantsPage() {
                         <span className="text-xs text-muted-foreground">/hr</span>
                       </div>
                       <Badge variant="secondary" className="text-[10px] bg-accent/10 text-accent">
-                        {c.matchScore}% match
+                        {c.matchScore}% {t('consultants_page.match')}
                       </Badge>
                     </div>
                     <div className="flex gap-2">
-                      {c.available && (
+                      {c.available ? (
                         <span className="text-xs text-green-600 font-medium flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                          Available
+                          {t('consultants.available')}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground font-medium">
+                          {t('consultants.offline') || 'Offline'}
                         </span>
                       )}
                     </div>
                   </div>
 
                   <div className="flex gap-2 mt-3">
-                    <Button size="sm" className="gradient-primary border-0 flex-1 text-xs">Book Session</Button>
-                    <Button size="sm" variant="outline" className="flex-1 text-xs">View Profile</Button>
+                    <Button size="sm" className="gradient-primary border-0 flex-1 text-xs">{t('consultants_page.book_session')}</Button>
+                    <Button size="sm" variant="outline" className="flex-1 text-xs">{t('consultants_page.view_profile')}</Button>
                   </div>
                 </div>
               </div>
