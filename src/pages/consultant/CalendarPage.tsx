@@ -33,12 +33,12 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Session Calendar</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your upcoming and past sessions.</p>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">Session Calendar</h1>
+          <p className="text-xs md:text-sm text-muted-foreground mt-1">Manage your upcoming and past sessions.</p>
         </div>
-        <Button className="gradient-primary border-0" size="sm">Set Availability</Button>
+        <Button className="gradient-primary border-0 w-full sm:w-auto" size="sm">Set Availability</Button>
       </div>
 
       {/* Week View */}
