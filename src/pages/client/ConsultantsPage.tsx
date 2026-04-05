@@ -65,9 +65,7 @@ export default function ConsultantsPage() {
 
       {/* Map View */}
       {view === 'map' && (
-        <Suspense fallback={<div className="h-[420px] rounded-2xl bg-muted animate-pulse" />}>
-          <ConsultantMap consultants={filtered} />
-        </Suspense>
+        <ConsultantMap consultants={filtered} />
       )}
 
       {/* Grid View */}
