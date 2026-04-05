@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Check, ChevronLeft, ChevronRight, User, Cpu, Award, Clock } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -48,7 +49,9 @@ export default function ConsultantOnboarding() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isGuest } = useGuestMode();
-  const [currentStep, setCurrentStep] = useState(0);
+  const [searchParams] = useSearchParams();
+  const initialStep = Math.min(Math.max(Number(searchParams.get('step')) || 0, 0), 3);
+  const [currentStep, setCurrentStep] = useState(initialStep);
   const [data, setData] = useState<OnboardingData>(initialData);
   const [submitting, setSubmitting] = useState(false);
 

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
@@ -12,6 +12,7 @@ interface ChecklistItem {
   labelKey: string;
   fallback: string;
   done: boolean;
+  step: number;
 }
 
 interface Props {
@@ -31,17 +32,17 @@ export default function OnboardingProgressCard({ role }: Props) {
         setChecklist(
           role === 'client'
             ? [
-                { labelKey: 'onboarding.check_company', fallback: 'Company name', done: false },
-                { labelKey: 'onboarding.check_size', fallback: 'Company size', done: false },
-                { labelKey: 'onboarding.check_industry', fallback: 'Industry', done: false },
-                { labelKey: 'onboarding.check_phone', fallback: 'Phone number', done: false },
-                { labelKey: 'onboarding.check_modules', fallback: 'SAP modules', done: false },
+                { labelKey: 'onboarding.check_company', fallback: 'Company name', done: false, step: 0 },
+                { labelKey: 'onboarding.check_size', fallback: 'Company size', done: false, step: 0 },
+                { labelKey: 'onboarding.check_industry', fallback: 'Industry', done: false, step: 0 },
+                { labelKey: 'onboarding.check_phone', fallback: 'Phone number', done: false, step: 1 },
+                { labelKey: 'onboarding.check_modules', fallback: 'SAP modules', done: false, step: 2 },
               ]
             : [
-                { labelKey: 'onboarding.check_name', fallback: 'Display name', done: false },
-                { labelKey: 'onboarding.check_bio', fallback: 'Professional bio', done: false },
-                { labelKey: 'onboarding.check_rate', fallback: 'Hourly rate', done: false },
-                { labelKey: 'onboarding.check_skills', fallback: 'SAP skills', done: false },
+                { labelKey: 'onboarding.check_name', fallback: 'Display name', done: false, step: 0 },
+                { labelKey: 'onboarding.check_bio', fallback: 'Professional bio', done: false, step: 0 },
+                { labelKey: 'onboarding.check_rate', fallback: 'Hourly rate', done: false, step: 0 },
+                { labelKey: 'onboarding.check_skills', fallback: 'SAP skills', done: false, step: 1 },
               ]
         );
         return;
@@ -60,11 +61,11 @@ export default function OnboardingProgressCard({ role }: Props) {
         if (data?.onboarding_completed) { setCompleted(true); return; }
 
         setChecklist([
-          { labelKey: 'onboarding.check_company', fallback: 'Company name', done: !!data?.company_name },
-          { labelKey: 'onboarding.check_size', fallback: 'Company size', done: !!data?.company_size },
-          { labelKey: 'onboarding.check_industry', fallback: 'Industry', done: !!data?.industry },
-          { labelKey: 'onboarding.check_phone', fallback: 'Phone number', done: !!data?.phone },
-          { labelKey: 'onboarding.check_modules', fallback: 'SAP modules', done: (data?.sap_modules?.length ?? 0) > 0 },
+          { labelKey: 'onboarding.check_company', fallback: 'Company name', done: !!data?.company_name, step: 0 },
+          { labelKey: 'onboarding.check_size', fallback: 'Company size', done: !!data?.company_size, step: 0 },
+          { labelKey: 'onboarding.check_industry', fallback: 'Industry', done: !!data?.industry, step: 0 },
+          { labelKey: 'onboarding.check_phone', fallback: 'Phone number', done: !!data?.phone, step: 1 },
+          { labelKey: 'onboarding.check_modules', fallback: 'SAP modules', done: (data?.sap_modules?.length ?? 0) > 0, step: 2 },
         ]);
         setCompleted(false);
       } else {
@@ -88,10 +89,10 @@ export default function OnboardingProgressCard({ role }: Props) {
           .eq('consultant_id', consultant?.id ?? '');
 
         setChecklist([
-          { labelKey: 'onboarding.check_name', fallback: 'Display name', done: !!profile?.display_name },
-          { labelKey: 'onboarding.check_bio', fallback: 'Professional bio', done: !!consultant?.bio },
-          { labelKey: 'onboarding.check_rate', fallback: 'Hourly rate', done: !!consultant?.hourly_rate && Number(consultant.hourly_rate) > 0 },
-          { labelKey: 'onboarding.check_skills', fallback: 'SAP skills', done: (count ?? 0) > 0 },
+          { labelKey: 'onboarding.check_name', fallback: 'Display name', done: !!profile?.display_name, step: 0 },
+          { labelKey: 'onboarding.check_bio', fallback: 'Professional bio', done: !!consultant?.bio, step: 0 },
+          { labelKey: 'onboarding.check_rate', fallback: 'Hourly rate', done: !!consultant?.hourly_rate && Number(consultant.hourly_rate) > 0, step: 0 },
+          { labelKey: 'onboarding.check_skills', fallback: 'SAP skills', done: (count ?? 0) > 0, step: 1 },
         ]);
         setCompleted(false);
       }
@@ -140,7 +141,11 @@ export default function OnboardingProgressCard({ role }: Props) {
             {/* Checklist */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 mt-3">
               {checklist.map((item) => (
-                <div key={item.labelKey} className="flex items-center gap-2">
+                <Link
+                  key={item.labelKey}
+                  to={`${onboardingPath}?step=${item.step}`}
+                  className={`flex items-center gap-2 rounded-md px-1.5 py-0.5 -mx-1.5 transition-colors ${item.done ? 'hover:bg-muted/50' : 'hover:bg-accent/10'}`}
+                >
                   {item.done ? (
                     <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
                   ) : (
@@ -149,7 +154,7 @@ export default function OnboardingProgressCard({ role }: Props) {
                   <span className={`text-xs ${item.done ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                     {t(item.labelKey, item.fallback)}
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
