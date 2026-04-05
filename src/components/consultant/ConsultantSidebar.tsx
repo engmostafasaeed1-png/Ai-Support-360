@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Briefcase, Calendar, CreditCard, Star,
-  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
+  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, ClipboardList,
 } from 'lucide-react';
 
 const menuItems = [
