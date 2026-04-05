@@ -1,16 +1,26 @@
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import {
-  DollarSign, Briefcase, Clock, Star, TrendingUp, TrendingDown,
-  Calendar, Video, MessageSquare, Monitor, ArrowUpRight, ChevronRight,
+  DollarSign, Briefcase, Clock, Star, TrendingUp,
+  Calendar, Video, MessageSquare, Monitor, ChevronRight, ArrowUpRight,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
 import {
-  mockConsultantProfile, mockEarnings, mockCases, mockSessions, mockReviews,
+  mockConsultantProfile, mockEarnings, mockCases, mockReviews,
 } from '@/data/consultantMockData';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+
+const sessionTypeIcons: Record<string, typeof Video> = {
+  video: Video,
+  chat: MessageSquare,
+  screen_share: Monitor,
+};
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -27,24 +37,123 @@ const statusColors: Record<string, string> = {
   closed: 'bg-muted text-muted-foreground',
 };
 
-const sessionTypeIcons: Record<string, typeof Video> = {
-  video: Video,
-  chat: MessageSquare,
-  screen_share: Monitor,
-};
-
 export default function ConsultantDashboard() {
   const { t } = useTranslation();
-  const profile = mockConsultantProfile;
+
+  // Fetch consultant profile + live data
+  const { data: liveData, isLoading } = useQuery({
+    queryKey: ['consultant-dashboard'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      // Get consultant record
+      const { data: consultant } = await supabase
+        .from('consultants')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!consultant) return null;
+
+      // Upcoming sessions
+      const { data: sessions } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('consultant_id', consultant.id)
+        .eq('status', 'scheduled')
+        .order('scheduled_at', { ascending: true })
+        .limit(5);
+
+      // Get client names for sessions
+      const clientIds = [...new Set((sessions || []).map(s => s.client_id))];
+      let clientMap: Record<string, string> = {};
+      if (clientIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name')
+          .in('user_id', clientIds);
+        if (profiles) {
+          clientMap = Object.fromEntries(profiles.map(p => [p.user_id, p.display_name || 'Client']));
+        }
+      }
+
+      // Assigned tickets
+      const { data: tickets } = await supabase
+        .from('tickets')
+        .select('*')
+        .eq('consultant_id', consultant.id)
+        .not('status', 'in', '("resolved","closed")')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      // Earnings summary from payments
+      const { data: payments } = await supabase
+        .from('payments')
+        .select('amount, status, created_at')
+        .eq('consultant_id', consultant.id);
+
+      const totalEarned = (payments || [])
+        .filter(p => p.status === 'completed')
+        .reduce((sum, p) => sum + Number(p.amount), 0);
+      const pending = (payments || [])
+        .filter(p => p.status === 'pending')
+        .reduce((sum, p) => sum + Number(p.amount), 0);
+
+      // Ratings
+      const { data: ratings } = await supabase
+        .from('ratings')
+        .select('score, comment, created_at, client_id')
+        .eq('consultant_id', consultant.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      return {
+        consultant,
+        sessions: (sessions || []).map(s => ({ ...s, client_name: clientMap[s.client_id] || 'Client' })),
+        tickets: tickets || [],
+        totalEarned,
+        pending,
+        ratings: ratings || [],
+      };
+    },
+  });
+
+  // Fallback to mock data if not authenticated
+  const profile = liveData?.consultant || mockConsultantProfile;
   const earnings = mockEarnings;
-  const activeCases = mockCases.filter((c) => c.status !== 'resolved' && c.status !== 'closed');
-  const upcomingSessions = mockSessions.filter((s) => s.status === 'scheduled');
+  const activeCases = liveData ? liveData.tickets : mockCases.filter(c => c.status !== 'resolved' && c.status !== 'closed');
+  const upcomingSessions = liveData?.sessions || [];
 
   const kpis = [
-    { labelKey: 'consultant_dashboard.this_month', value: `$${earnings.thisMonth.toLocaleString()}`, icon: DollarSign, trend: '+12%', up: true },
-    { labelKey: 'consultant_dashboard.active_cases', value: activeCases.length.toString(), icon: Briefcase, trend: '+2', up: true },
-    { labelKey: 'consultant_dashboard.response_time', value: `${profile.response_time_minutes} ${t('consultant_dashboard.minutes')}`, icon: Clock, trend: '-3 min', up: true },
-    { labelKey: 'consultant_dashboard.avg_rating', value: profile.rating.toString(), icon: Star, trend: `${profile.total_reviews} reviews`, up: true },
+    {
+      labelKey: 'consultant_dashboard.this_month',
+      value: `$${(liveData?.totalEarned ?? earnings.thisMonth).toLocaleString()}`,
+      icon: DollarSign,
+      trend: liveData ? `$${liveData.pending.toLocaleString()} pending` : '+12%',
+      up: true,
+    },
+    {
+      labelKey: 'consultant_dashboard.active_cases',
+      value: activeCases.length.toString(),
+      icon: Briefcase,
+      trend: `${upcomingSessions.length} ${t('consultant_dashboard.upcoming')}`,
+      up: true,
+    },
+    {
+      labelKey: 'consultant_dashboard.response_time',
+      value: `${(profile as any).response_time_minutes ?? (profile as any).response_time_minutes ?? 0} ${t('consultant_dashboard.minutes')}`,
+      icon: Clock,
+      trend: t('consultant_dashboard.avg'),
+      up: true,
+    },
+    {
+      labelKey: 'consultant_dashboard.avg_rating',
+      value: String((profile as any).rating ?? 0),
+      icon: Star,
+      trend: `${(profile as any).total_reviews ?? 0} ${t('consultant_dashboard.reviews_label')}`,
+      up: true,
+    },
   ];
 
   return (
@@ -58,11 +167,13 @@ export default function ConsultantDashboard() {
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1.5 text-sm text-green-600 font-medium">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            Available
+            {t('consultant_dashboard.available')}
           </span>
-          <Button size="sm" className="gradient-primary border-0">
-            <Calendar className="w-4 h-4 me-1" /> Manage Availability
-          </Button>
+          <Link to="/consultant/calendar">
+            <Button size="sm" className="gradient-primary border-0">
+              <Calendar className="w-4 h-4 me-1" /> {t('consultant_dashboard.manage_availability')}
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -75,8 +186,8 @@ export default function ConsultantDashboard() {
                 <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
                   <kpi.icon className="w-5 h-5 text-accent" />
                 </div>
-                <span className={`text-xs font-medium flex items-center gap-0.5 ${kpi.up ? 'text-green-600' : 'text-red-500'}`}>
-                  {kpi.up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                <span className="text-xs font-medium flex items-center gap-0.5 text-green-600">
+                  <TrendingUp className="w-3 h-3" />
                   {kpi.trend}
                 </span>
               </div>
@@ -93,22 +204,22 @@ export default function ConsultantDashboard() {
           <CardHeader className="flex-row items-center justify-between pb-2">
             <CardTitle className="text-base font-semibold">{t('consultant_dashboard.earnings_overview')}</CardTitle>
             <Link to="/consultant/earnings">
-              <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
+              <Button variant="ghost" size="sm" className="text-xs">{t('consultant_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1" /></Button>
             </Link>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="p-3 rounded-xl bg-muted/50">
-                <div className="text-xs text-muted-foreground">Total Earned</div>
-                <div className="text-lg font-bold text-foreground">${earnings.total.toLocaleString()}</div>
+                <div className="text-xs text-muted-foreground">{t('consultant_dashboard.total_earned')}</div>
+                <div className="text-lg font-bold text-foreground">${(liveData?.totalEarned ?? earnings.total).toLocaleString()}</div>
               </div>
               <div className="p-3 rounded-xl bg-muted/50">
-                <div className="text-xs text-muted-foreground">Pending</div>
-                <div className="text-lg font-bold text-foreground">${earnings.pending.toLocaleString()}</div>
+                <div className="text-xs text-muted-foreground">{t('consultant_dashboard.pending_amount')}</div>
+                <div className="text-lg font-bold text-foreground">${(liveData?.pending ?? earnings.pending).toLocaleString()}</div>
               </div>
               <div className="p-3 rounded-xl bg-muted/50">
-                <div className="text-xs text-muted-foreground">Available</div>
-                <div className="text-lg font-bold text-foreground">${earnings.available.toLocaleString()}</div>
+                <div className="text-xs text-muted-foreground">{t('consultant_dashboard.sessions_count')}</div>
+                <div className="text-lg font-bold text-foreground">{upcomingSessions.length}</div>
               </div>
             </div>
             <ResponsiveContainer width="100%" height={200}>
@@ -117,7 +228,7 @@ export default function ConsultantDashboard() {
                 <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
                 <Tooltip
-                  formatter={(value: number) => [`$${value.toLocaleString()}`, 'Earnings']}
+                  formatter={(value: number) => [`$${value.toLocaleString()}`, t('consultant_dashboard.earnings_label')]}
                   contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px' }}
                 />
                 <Bar dataKey="amount" fill="hsl(217, 91%, 60%)" radius={[6, 6, 0, 0]} />
@@ -131,16 +242,20 @@ export default function ConsultantDashboard() {
           <CardHeader className="flex-row items-center justify-between pb-2">
             <CardTitle className="text-base font-semibold">{t('consultant_dashboard.upcoming_sessions')}</CardTitle>
             <Link to="/consultant/calendar">
-              <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
+              <Button variant="ghost" size="sm" className="text-xs">{t('consultant_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1" /></Button>
             </Link>
           </CardHeader>
           <CardContent className="space-y-3">
-            {upcomingSessions.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">No upcoming sessions</p>
+            {isLoading ? (
+              [1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)
+            ) : upcomingSessions.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">{t('consultant_dashboard.no_sessions')}</p>
+              </div>
             ) : (
-              upcomingSessions.map((session) => {
+              upcomingSessions.map((session: any) => {
                 const TypeIcon = sessionTypeIcons[session.session_type] || Video;
-                const time = new Date(session.scheduled_at);
                 return (
                   <div key={session.id} className="p-3 rounded-xl bg-muted/30 border border-border/30 hover:border-accent/30 transition-all">
                     <div className="flex items-start justify-between mb-2">
@@ -149,16 +264,16 @@ export default function ConsultantDashboard() {
                           <TypeIcon className="w-4 h-4 text-accent" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-foreground">{session.client}</p>
-                          <p className="text-xs text-muted-foreground">{session.session_type.replace('_', ' ')}</p>
+                          <p className="text-sm font-medium text-foreground">{session.client_name}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{session.session_type?.replace('_', ' ')}</p>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
-                        {time.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        {session.scheduled_at ? format(new Date(session.scheduled_at), 'MMM d · h:mm a') : '—'}
                       </span>
-                      <span className="text-xs text-muted-foreground">{session.duration_minutes} min</span>
+                      <span className="text-xs text-muted-foreground">{session.duration_minutes || 60} min</span>
                     </div>
                   </div>
                 );
@@ -168,68 +283,95 @@ export default function ConsultantDashboard() {
         </Card>
       </div>
 
-      {/* Active Cases */}
+      {/* Active Cases / Assigned Tickets */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader className="flex-row items-center justify-between pb-2">
           <CardTitle className="text-base font-semibold">{t('consultant_dashboard.recent_cases')}</CardTitle>
           <Link to="/consultant/cases">
-            <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
+            <Button variant="ghost" size="sm" className="text-xs">{t('consultant_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1" /></Button>
           </Link>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {activeCases.map((ticket) => (
-              <div key={ticket.id} className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 transition-all">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2].map(i => <Skeleton key={i} className="h-16 rounded-xl" />)}
+            </div>
+          ) : activeCases.length === 0 ? (
+            <div className="text-center py-8">
+              <Briefcase className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">{t('consultant_dashboard.no_cases')}</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {activeCases.map((ticket: any) => (
+                <div key={ticket.id} className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 transition-all">
+                  <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-medium text-foreground truncate">{ticket.title}</h4>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                      <span>{ticket.sap_module}</span>
+                      {ticket.created_at && (
+                        <>
+                          <span>·</span>
+                          <span>{format(new Date(ticket.created_at), 'MMM d')}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>{ticket.client}</span>
-                    <span>·</span>
-                    <span>{ticket.sap_module}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {ticket.urgency && (
+                      <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency] || ''}`}>
+                        {ticket.urgency}
+                      </Badge>
+                    )}
+                    <Badge variant="secondary" className={`text-[10px] ${statusColors[ticket.status] || ''}`}>
+                      {(ticket.status || '').replace('_', ' ')}
+                    </Badge>
                   </div>
+                  <Button variant="ghost" size="icon" className="shrink-0">
+                    <ArrowUpRight className="w-4 h-4" />
+                  </Button>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>
-                    {ticket.urgency}
-                  </Badge>
-                  <Badge variant="secondary" className={`text-[10px] ${statusColors[ticket.status]}`}>
-                    {ticket.status.replace('_', ' ')}
-                  </Badge>
-                </div>
-                <Button variant="ghost" size="icon" className="shrink-0">
-                  <ArrowUpRight className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Recent Reviews */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader className="flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base font-semibold">Recent Reviews</CardTitle>
-          <Link to="/consultant/reviews">
-            <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
-          </Link>
+          <CardTitle className="text-base font-semibold">{t('consultant_dashboard.recent_reviews')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-3 gap-4">
-            {mockReviews.map((review) => (
-              <div key={review.id} className="p-4 rounded-xl bg-muted/20 border border-border/30">
-                <div className="flex items-center gap-1 mb-2">
-                  {Array.from({ length: review.score }).map((_, j) => (
-                    <Star key={j} className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                  ))}
+          {(liveData?.ratings && liveData.ratings.length > 0) ? (
+            <div className="grid md:grid-cols-3 gap-4">
+              {liveData.ratings.map((review: any, i: number) => (
+                <div key={i} className="p-4 rounded-xl bg-muted/20 border border-border/30">
+                  <div className="flex items-center gap-1 mb-2">
+                    {Array.from({ length: review.score }).map((_, j) => (
+                      <Star key={j} className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">"{review.comment || t('consultant_dashboard.no_comment')}"</p>
+                  <p className="text-xs text-muted-foreground">{format(new Date(review.created_at), 'MMM d, yyyy')}</p>
                 </div>
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">"{review.comment}"</p>
-                <p className="text-xs font-medium text-foreground">{review.client}</p>
-                <p className="text-xs text-muted-foreground">{new Date(review.created_at).toLocaleDateString()}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-4">
+              {mockReviews.map((review) => (
+                <div key={review.id} className="p-4 rounded-xl bg-muted/20 border border-border/30">
+                  <div className="flex items-center gap-1 mb-2">
+                    {Array.from({ length: review.score }).map((_, j) => (
+                      <Star key={j} className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">"{review.comment}"</p>
+                  <p className="text-xs font-medium text-foreground">{review.client}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

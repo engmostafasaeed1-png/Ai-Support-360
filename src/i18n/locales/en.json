@@ -214,7 +214,21 @@
     "earnings_overview": "Earnings Overview",
     "join_session": "Join",
     "view_case": "View",
-    "minutes": "min"
+    "minutes": "min",
+    "view_all": "View All",
+    "available": "Available",
+    "manage_availability": "Manage Availability",
+    "total_earned": "Total Earned",
+    "pending_amount": "Pending",
+    "sessions_count": "Upcoming",
+    "earnings_label": "Earnings",
+    "no_sessions": "No upcoming sessions",
+    "no_cases": "No active cases",
+    "recent_reviews": "Recent Reviews",
+    "no_comment": "No comment",
+    "upcoming": "upcoming",
+    "avg": "average",
+    "reviews_label": "reviews"
   },
   "admin_dashboard": {
     "title": "Admin Dashboard",
