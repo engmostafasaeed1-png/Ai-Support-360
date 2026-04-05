@@ -109,7 +109,7 @@ export default function ClientOnboarding() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 px-1">
+    <div className="max-w-2xl mx-auto space-y-6 px-1 pb-36 md:pb-6">
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold">{t('client_onboarding.title')}</h1>
         <p className="text-muted-foreground text-sm">{t('client_onboarding.subtitle')}</p>
