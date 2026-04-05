@@ -78,7 +78,7 @@ export default function OnboardingProgressCard({ role }: Props) {
 
         const { data: consultant } = await supabase
           .from('consultants')
-          .select('bio, hourly_rate')
+          .select('id, bio, hourly_rate')
           .eq('user_id', user.id)
           .maybeSingle();
 
