@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,10 +8,18 @@ interface GuacamoleViewerProps {
   url: string;
   name: string;
   osType?: string | null;
+  onConnect?: () => void;
+  onDisconnect?: () => void;
 }
 
-export default function GuacamoleViewer({ url, name, osType }: GuacamoleViewerProps) {
+export default function GuacamoleViewer({ url, name, osType, onConnect, onDisconnect }: GuacamoleViewerProps) {
   const [fullscreen, setFullscreen] = useState(false);
+
+  // Track connect on mount, disconnect on unmount
+  useEffect(() => {
+    onConnect?.();
+    return () => { onDisconnect?.(); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (fullscreen) {
     return (
@@ -21,6 +29,7 @@ export default function GuacamoleViewer({ url, name, osType }: GuacamoleViewerPr
             <Monitor className="w-4 h-4 text-primary" />
             <span className="font-medium text-sm text-foreground">{name}</span>
             {osType && <Badge variant="secondary" className="text-[10px]">{osType}</Badge>}
+            <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" /></span>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')}>
@@ -49,6 +58,8 @@ export default function GuacamoleViewer({ url, name, osType }: GuacamoleViewerPr
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Monitor className="w-4 h-4 text-primary" /> {name}
             {osType && <Badge variant="secondary" className="text-[10px]">{osType}</Badge>}
+            <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" /></span>
+            <span className="text-[10px] text-green-600 font-medium">Connected</span>
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')}>
