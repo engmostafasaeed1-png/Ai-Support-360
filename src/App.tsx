@@ -12,6 +12,12 @@ import CalendarPage from "./pages/consultant/CalendarPage.tsx";
 import EarningsPage from "./pages/consultant/EarningsPage.tsx";
 import VerificationPage from "./pages/consultant/VerificationPage.tsx";
 import ProfilePage from "./pages/consultant/ProfilePage.tsx";
+import ClientLayout from "./components/client/ClientLayout.tsx";
+import ClientDashboard from "./pages/client/ClientDashboard.tsx";
+import NewRequestPage from "./pages/client/NewRequestPage.tsx";
+import TicketsPage from "./pages/client/TicketsPage.tsx";
+import ConsultantsPage from "./pages/client/ConsultantsPage.tsx";
+import PaymentsPage from "./pages/client/PaymentsPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +36,13 @@ const App = () => (
             <Route path="earnings" element={<EarningsPage />} />
             <Route path="verification" element={<VerificationPage />} />
             <Route path="profile" element={<ProfilePage />} />
+          </Route>
+          <Route path="/client" element={<ClientLayout />}>
+            <Route index element={<ClientDashboard />} />
+            <Route path="new-request" element={<NewRequestPage />} />
+            <Route path="tickets" element={<TicketsPage />} />
+            <Route path="consultants" element={<ConsultantsPage />} />
+            <Route path="payments" element={<PaymentsPage />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
