@@ -107,7 +107,7 @@ export default function ClientDashboard() {
           <CardHeader className="flex-row items-center justify-between pb-2">
             <CardTitle className="text-base font-semibold">{t('tickets_page.title')}</CardTitle>
             <Link to="/client/tickets">
-              <Button variant="ghost" size="sm" className="text-xs">View All <ChevronRight className="w-3 h-3 ms-1" /></Button>
+              <Button variant="ghost" size="sm" className="text-xs">{t('client_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1" /></Button>
             </Link>
           </CardHeader>
           <CardContent className="space-y-3">
