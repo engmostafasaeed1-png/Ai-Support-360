@@ -208,6 +208,15 @@ export default function NDASigningModal({
           )}
         </DialogHeader>
 
+        {wasRevoked && (
+          <Alert variant="destructive" className="border-destructive/50">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              {t('nda.revoked_warning', 'Your previous NDA for this client was revoked by an administrator. Please review and sign the updated agreement below to continue providing support.')}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* NDA Content */}
         <ScrollArea className="flex-1 max-h-[280px] border rounded-lg p-4 bg-muted/30">
           {templateLoading ? (
