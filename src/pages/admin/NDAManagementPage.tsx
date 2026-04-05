@@ -257,7 +257,6 @@ export default function NDAManagementPage() {
                           <ShieldOff className="w-4 h-4" />
                         </Button>
                       )}
-                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
