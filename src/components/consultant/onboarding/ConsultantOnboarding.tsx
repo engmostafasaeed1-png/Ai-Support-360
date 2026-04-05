@@ -12,6 +12,7 @@ import AvailabilityStep from './steps/AvailabilityStep';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import { fireConfetti } from '@/lib/confetti';
 
 export interface OnboardingData {
   // Profile
@@ -64,8 +65,9 @@ export default function ConsultantOnboarding() {
 
   const handleSubmit = async () => {
     if (isGuest) {
+      fireConfetti();
       toast.success(t('guest.onboarding_demo'));
-      navigate('/consultant');
+      setTimeout(() => navigate('/consultant'), 1200);
       return;
     }
     setSubmitting(true);
@@ -146,8 +148,9 @@ export default function ConsultantOnboarding() {
         );
       }
 
+      fireConfetti();
       toast.success(t('onboarding.success'));
-      navigate('/consultant');
+      setTimeout(() => navigate('/consultant'), 1200);
     } catch (err) {
       console.error(err);
       toast.error(t('onboarding.error_generic'));
