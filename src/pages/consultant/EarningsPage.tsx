@@ -37,6 +37,7 @@ const payoutStatusVariant: Record<string, 'default' | 'secondary' | 'destructive
 
 export default function EarningsPage() {
   const { t } = useTranslation();
+  const [payoutOpen, setPayoutOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['consultant-earnings'],
