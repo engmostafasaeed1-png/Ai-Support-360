@@ -16,6 +16,7 @@ import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
 import ConsultantMap from '@/components/client/ConsultantMap';
+import BookingModal from '@/components/client/BookingModal';
 import { sapModules } from '@/data/clientMockData';
 
 const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
@@ -410,7 +411,7 @@ export default function ConsultantsPage() {
                     </div>
 
                     <div className="flex gap-2 mt-3">
-                      <Button size="sm" className="gradient-primary border-0 flex-1 text-xs">{t('consultants_page.book_session')}</Button>
+                      <Button size="sm" className="gradient-primary border-0 flex-1 text-xs" onClick={() => setBookingConsultant({ id: c.id, name: c.name, rate: c.rate })}>{t('consultants_page.book_session')}</Button>
                       <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => navigate(`/client/consultants/${c.id}`)}>{t('consultants_page.view_profile')}</Button>
                     </div>
                   </div>
