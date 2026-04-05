@@ -32,14 +32,38 @@ export default function SessionsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Fetch sessions with consultant info via FK join
       const { data, error } = await supabase
         .from('sessions')
-        .select('*')
+        .select('*, consultants!sessions_consultant_id_fkey(id, user_id, hourly_rate)')
         .eq('client_id', user.id)
         .order('scheduled_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+
+      // Fetch display names from profiles for all consultant user_ids
+      const consultantUserIds = [...new Set(
+        (data || []).map((s: any) => s.consultants?.user_id).filter(Boolean)
+      )];
+
+      let profileMap: Record<string, string> = {};
+      if (consultantUserIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', consultantUserIds);
+
+        if (profiles) {
+          profileMap = Object.fromEntries(
+            profiles.map(p => [p.user_id, p.display_name || 'Consultant'])
+          );
+        }
+      }
+
+      return (data || []).map((s: any) => ({
+        ...s,
+        consultant_name: profileMap[s.consultants?.user_id] || t('sessions_page.unknown_consultant'),
+      }));
     },
   });
 
@@ -105,7 +129,11 @@ export default function SessionsPage() {
                             {session.session_type?.replace('_', ' ')}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 mt-1.5 text-sm">
+                        <p className="text-sm font-medium text-foreground mt-1 flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5 text-muted-foreground" />
+                          {(session as any).consultant_name}
+                        </p>
+                        <div className="flex items-center gap-3 mt-1 text-sm">
                           <div className="flex items-center gap-1 text-muted-foreground">
                             <Clock className="w-3.5 h-3.5" />
                             {session.scheduled_at
