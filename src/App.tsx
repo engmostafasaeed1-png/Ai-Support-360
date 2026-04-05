@@ -19,6 +19,8 @@ import NewRequestPage from "./pages/client/NewRequestPage.tsx";
 import TicketsPage from "./pages/client/TicketsPage.tsx";
 import ConsultantsPage from "./pages/client/ConsultantsPage.tsx";
 import PaymentsPage from "./pages/client/PaymentsPage.tsx";
+import ClientChatPage from "./pages/client/ClientChatPage.tsx";
+import ChatSessionPage from "./pages/chat/ChatSessionPage.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
 import AdminLayout from "./components/admin/AdminLayout.tsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.tsx";
