@@ -44,6 +44,7 @@ import AnalyticsPage from "./pages/admin/AnalyticsPage.tsx";
 import AdminIntegrationsPage from "./pages/admin/AdminIntegrationsPage.tsx";
 import EnvironmentsPage from "./pages/admin/EnvironmentsPage.tsx";
 import EnvironmentLogsPage from "./pages/admin/EnvironmentLogsPage.tsx";
+import AdminSettingsPage from "./pages/admin/AdminSettingsPage.tsx";
 import LoginPage from "./pages/auth/LoginPage.tsx";
 import SignupPage from "./pages/auth/SignupPage.tsx";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.tsx";
@@ -111,6 +112,7 @@ const App = () => (
               <Route path="integrations" element={<AdminIntegrationsPage />} />
               <Route path="environments" element={<EnvironmentsPage />} />
               <Route path="environment-logs" element={<EnvironmentLogsPage />} />
+              <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
