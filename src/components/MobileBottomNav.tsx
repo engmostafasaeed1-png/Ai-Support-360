@@ -6,7 +6,7 @@ import { MoreHorizontal, Globe } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useLanguage } from '@/hooks/useLanguage';
 import { Separator } from '@/components/ui/separator';
-import type { LucideIcon, MouseEvent as ReactMouseEvent } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   key: string;
