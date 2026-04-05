@@ -169,7 +169,7 @@ export default function NDASigningModal({
         ? canvasRef.current!.toDataURL('image/png')
         : typedName.trim();
 
-    const success = await signNDA(sigData, sigType, template);
+    const success = await signNDA(sigData, sigType, filledTemplate);
     setSubmitting(false);
     if (success) {
       onOpenChange(false);
