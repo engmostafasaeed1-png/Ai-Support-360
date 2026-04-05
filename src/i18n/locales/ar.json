@@ -505,7 +505,9 @@
     "check_name": "الاسم المعروض",
     "check_bio": "النبذة المهنية",
     "check_rate": "السعر بالساعة",
-    "check_skills": "مهارات SAP"
+    "check_skills": "مهارات SAP",
+    "welcome_title": "🎉 أهلاً وسهلاً!",
+    "welcome_body": "تم إعداد حسابك بنجاح. أنت جاهز للبدء!"
   },
   "client_onboarding": {
     "title": "إعداد حسابك",
