@@ -6,13 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Calendar } from '@/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import { mockRecommendedConsultants } from '@/data/clientMockData';
 import { mockConsultantDetailData } from '@/data/consultantDetailMockData';
 import {
   Star, MapPin, Clock, Globe, Shield, Award, Video,
   MessageSquare, Monitor, ChevronLeft, CalendarDays, BadgeCheck, ExternalLink
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import BookingModal from '@/components/client/BookingModal';
 
 export default function ConsultantProfilePage() {
@@ -21,6 +22,8 @@ export default function ConsultantProfilePage() {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [credlyBadges, setCredlyBadges] = useState<any[]>([]);
+  const [credlyLoading, setCredlyLoading] = useState(false);
 
   const consultant = mockRecommendedConsultants.find(c => c.id === id);
   const detail = mockConsultantDetailData;
@@ -32,6 +35,30 @@ export default function ConsultantProfilePage() {
       </div>
     );
   }
+
+  // Fetch Credly badges if consultant has a credly_username
+  useEffect(() => {
+    if (!consultant?.credly_username) return;
+    const fetchCredly = async () => {
+      setCredlyLoading(true);
+      try {
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const res = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/credly-badges?username=${encodeURIComponent(consultant.credly_username!)}`,
+          { headers: { 'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setCredlyBadges(data.badges || []);
+        }
+      } catch (e) {
+        console.error('Failed to fetch Credly badges:', e);
+      } finally {
+        setCredlyLoading(false);
+      }
+    };
+    fetchCredly();
+  }, [consultant?.credly_username]);
 
   const statusColor = consultant.available ? 'bg-green-500' : 'bg-muted-foreground';
 
