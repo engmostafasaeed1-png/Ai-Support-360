@@ -620,5 +620,23 @@
     "status_completed": "Completed",
     "status_cancelled": "Cancelled",
     "unknown_consultant": "Consultant"
+  },
+  "session_detail": {
+    "back": "Back to Sessions",
+    "not_found": "Session not found",
+    "join_session": "Join Session",
+    "schedule": "Schedule",
+    "scheduled_at": "Scheduled",
+    "started_at": "Started",
+    "ended_at": "Ended",
+    "duration": "Duration",
+    "minutes": "min",
+    "notes_title": "Notes",
+    "no_notes": "No notes for this session",
+    "ai_summary": "AI Summary",
+    "action_items": "Action Items",
+    "chat_history": "Chat History",
+    "no_messages": "No messages yet",
+    "unknown_consultant": "Consultant"
   }
 }
