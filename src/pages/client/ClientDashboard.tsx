@@ -69,7 +69,7 @@ export default function ClientDashboard() {
         <div className="flex gap-2">
           <Link to="/client/new-request">
             <Button className="gradient-primary border-0" size="sm">
-              <TicketPlus className="w-4 h-4 me-1" /> New Support Request
+              <TicketPlus className="w-4 h-4 me-1" /> {t('client_dashboard.new_request')}
             </Button>
           </Link>
           <Link to="/client/consultants">
