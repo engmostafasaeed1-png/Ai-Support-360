@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Briefcase, Calendar, CreditCard, Star,
-  User, ShieldCheck, BookOpen, Bell, Settings, Globe,
+  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare,
 } from 'lucide-react';
 
 const menuItems = [
