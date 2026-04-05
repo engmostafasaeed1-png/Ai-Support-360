@@ -9,19 +9,35 @@ import { toast } from 'sonner';
 import { Loader2, Save } from 'lucide-react';
 import AvatarUpload from '@/components/profile/AvatarUpload';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useGuestMode } from '@/contexts/GuestModeContext';
+
+const guestProfile = {
+  displayName: 'Guest User',
+  email: 'guest@qurtuba.demo',
+  avatarUrl: null,
+  initials: 'GU',
+};
 
 export default function SettingsPage() {
   const { t } = useTranslation();
-  const { profile, loading: profileLoading } = useUserProfile();
+  const { isGuest } = useGuestMode();
+  const { profile: realProfile, loading: profileLoading } = useUserProfile();
+  const profile = isGuest ? guestProfile : realProfile;
+
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    if (isGuest && !loaded) {
+      setDisplayName(guestProfile.displayName);
+      setPhone('+966 50 000 0000');
+      setLoaded(true);
+      return;
+    }
     if (profile && !loaded) {
       setDisplayName(profile.displayName || '');
-      // Fetch phone from profiles table
       const fetchPhone = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
@@ -35,9 +51,13 @@ export default function SettingsPage() {
       };
       fetchPhone();
     }
-  }, [profile, loaded]);
+  }, [profile, loaded, isGuest]);
 
   const handleSave = async () => {
+    if (isGuest) {
+      toast.success(t('guest.demo_action', 'Changes saved (demo mode)'));
+      return;
+    }
     setSaving(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -60,7 +80,7 @@ export default function SettingsPage() {
     }
   };
 
-  if (profileLoading) {
+  if (!isGuest && profileLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
