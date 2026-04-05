@@ -165,6 +165,57 @@ export type Database = {
           },
         ]
       }
+      client_profiles: {
+        Row: {
+          communication_preference: string | null
+          company_name: string | null
+          company_size: string | null
+          created_at: string
+          id: string
+          industry: string | null
+          onboarding_completed: boolean | null
+          phone: string | null
+          preferred_language: string | null
+          sap_landscape: string | null
+          sap_modules: string[] | null
+          timezone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          communication_preference?: string | null
+          company_name?: string | null
+          company_size?: string | null
+          created_at?: string
+          id?: string
+          industry?: string | null
+          onboarding_completed?: boolean | null
+          phone?: string | null
+          preferred_language?: string | null
+          sap_landscape?: string | null
+          sap_modules?: string[] | null
+          timezone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          communication_preference?: string | null
+          company_name?: string | null
+          company_size?: string | null
+          created_at?: string
+          id?: string
+          industry?: string | null
+          onboarding_completed?: boolean | null
+          phone?: string | null
+          preferred_language?: string | null
+          sap_landscape?: string | null
+          sap_modules?: string[] | null
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       consultant_skills: {
         Row: {
           certified: boolean | null
