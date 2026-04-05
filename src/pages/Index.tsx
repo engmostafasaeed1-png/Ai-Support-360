@@ -9,20 +9,37 @@ import PricingSection from '@/components/landing/PricingSection';
 import FAQSection from '@/components/landing/FAQSection';
 import ContactSection from '@/components/landing/ContactSection';
 import Footer from '@/components/landing/Footer';
+import ScrollFadeIn from '@/components/landing/ScrollFadeIn';
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <HeroSection />
-      <ExploreServicesSection />
-      <HowItWorksSection />
-      <WhyQurtubaSection />
-      <ConsultantsSection />
-      <TestimonialsSection />
-      <PricingSection />
-      <FAQSection />
-      <ContactSection />
+      <ScrollFadeIn>
+        <ExploreServicesSection />
+      </ScrollFadeIn>
+      <ScrollFadeIn delay={50}>
+        <HowItWorksSection />
+      </ScrollFadeIn>
+      <ScrollFadeIn delay={50}>
+        <WhyQurtubaSection />
+      </ScrollFadeIn>
+      <ScrollFadeIn>
+        <ConsultantsSection />
+      </ScrollFadeIn>
+      <ScrollFadeIn delay={50}>
+        <TestimonialsSection />
+      </ScrollFadeIn>
+      <ScrollFadeIn>
+        <PricingSection />
+      </ScrollFadeIn>
+      <ScrollFadeIn delay={50}>
+        <FAQSection />
+      </ScrollFadeIn>
+      <ScrollFadeIn>
+        <ContactSection />
+      </ScrollFadeIn>
       <Footer />
     </div>
   );
