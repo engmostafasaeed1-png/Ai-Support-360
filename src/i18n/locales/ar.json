@@ -705,5 +705,29 @@
     "success_title": "تم طلب السحب!",
     "success_desc": "طلب السحب بمبلغ ${{amount}} قيد المعالجة.",
     "error": "فشل طلب السحب"
+  },
+  "auth": {
+    "login_title": "مرحباً بعودتك",
+    "login_desc": "سجّل الدخول إلى حسابك في قرطبة",
+    "signup_title": "إنشاء حساب",
+    "signup_desc": "انضم إلى قرطبة كعميل أو مستشار",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "name": "الاسم الكامل",
+    "name_placeholder": "أحمد الراشد",
+    "password_hint": "٦ أحرف على الأقل",
+    "password_min": "كلمة المرور يجب أن تكون ٦ أحرف على الأقل",
+    "login_btn": "تسجيل الدخول",
+    "signup_btn": "إنشاء حساب",
+    "no_account": "ليس لديك حساب؟",
+    "signup_link": "سجّل الآن",
+    "have_account": "لديك حساب بالفعل؟",
+    "login_link": "سجّل الدخول",
+    "check_email": "تحقق من بريدك الإلكتروني لتأكيد حسابك",
+    "role": "أنا…",
+    "role_client": "عميل",
+    "role_client_desc": "أحتاج دعم SAP",
+    "role_consultant": "مستشار",
+    "role_consultant_desc": "أقدّم خبراتي"
   }
 }

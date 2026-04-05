@@ -705,5 +705,29 @@
     "success_title": "Payout Requested!",
     "success_desc": "Your payout of ${{amount}} is being processed.",
     "error": "Payout request failed"
+  },
+  "auth": {
+    "login_title": "Welcome Back",
+    "login_desc": "Sign in to your Qurtuba account",
+    "signup_title": "Create Account",
+    "signup_desc": "Join Qurtuba as a client or consultant",
+    "email": "Email",
+    "password": "Password",
+    "name": "Full Name",
+    "name_placeholder": "Ahmad Al-Rashid",
+    "password_hint": "Minimum 6 characters",
+    "password_min": "Password must be at least 6 characters",
+    "login_btn": "Sign In",
+    "signup_btn": "Create Account",
+    "no_account": "Don't have an account?",
+    "signup_link": "Sign up",
+    "have_account": "Already have an account?",
+    "login_link": "Sign in",
+    "check_email": "Check your email to confirm your account",
+    "role": "I am a…",
+    "role_client": "Client",
+    "role_client_desc": "Get SAP support",
+    "role_consultant": "Consultant",
+    "role_consultant_desc": "Offer expertise"
   }
 }
