@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,7 @@ import { User, Globe, Clock, DollarSign, Save } from 'lucide-react';
 import AvatarUpload from '@/components/profile/AvatarUpload';
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const p = mockConsultantProfile;
 
   return (
@@ -122,8 +124,8 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span>Level {skill.proficiency}/5</span>
-                  <span>{skill.years} years exp</span>
+                  <span>{t('consultant_profile.level', 'Level')} {skill.proficiency}/5</span>
+                  <span>{skill.years} {t('consultant_profile.years_exp', 'years exp')}</span>
                 </div>
                 <div className="flex gap-1 mt-2">
                   {Array.from({ length: 5 }).map((_, i) => (
