@@ -15,6 +15,7 @@ import {
   Eye, FileText, Settings, UserCheck, UserX, Crown, Shield,
 } from 'lucide-react';
 import { useAdminUsers } from '@/hooks/useAdminData';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { toast } from 'sonner';
 
 const permissions = [
