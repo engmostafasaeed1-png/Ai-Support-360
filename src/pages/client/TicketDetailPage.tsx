@@ -12,6 +12,7 @@ import {
 import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
 import TicketDocuments from '@/components/client/TicketDocuments';
+import TicketAcceptors from '@/components/client/TicketAcceptors';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
