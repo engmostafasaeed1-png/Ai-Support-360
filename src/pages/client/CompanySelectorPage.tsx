@@ -40,26 +40,24 @@ export default function CompanySelectorPage() {
       if (!user) throw new Error('Not authenticated');
 
       const slug = newCompanyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now().toString(36);
-      const { data: tenantData, error } = await supabase
+      const tenantId = crypto.randomUUID();
+      const { error } = await supabase
         .from('tenants')
-        .insert({ name: newCompanyName.trim(), slug })
-        .select('id')
-        .single();
+        .insert({ id: tenantId, name: newCompanyName.trim(), slug });
 
       if (error) throw error;
-      if (tenantData) {
-        await supabase.from('tenant_members').insert({
-          tenant_id: tenantData.id,
-          user_id: user.id,
-          org_role: 'owner' as any,
-        });
-        await refetch();
-        toast.success(`${newCompanyName} created successfully!`);
-        setNewCompanyName('');
-        setDialogOpen(false);
-        switchTenant(tenantData.id);
-        navigate('/client');
-      }
+
+      await supabase.from('tenant_members').insert({
+        tenant_id: tenantId,
+        user_id: user.id,
+        org_role: 'owner' as any,
+      });
+      await refetch();
+      toast.success(`${newCompanyName} created successfully!`);
+      setNewCompanyName('');
+      setDialogOpen(false);
+      switchTenant(tenantId);
+      navigate('/client');
     } catch (err: any) {
       toast.error(err.message || 'Failed to create company');
     } finally {
