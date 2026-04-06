@@ -24,7 +24,8 @@ const tierConfig: Record<string, { icon: typeof Sparkles; color: string; bg: str
 export default function CompanySelectorPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { tenants, switchTenant, refetch } = useTenant();
+  const { tenants, memberships, switchTenant, refetch } = useTenant();
+  const { profile } = useUserProfile();
   const [newCompanyName, setNewCompanyName] = useState('');
   const [creating, setCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
