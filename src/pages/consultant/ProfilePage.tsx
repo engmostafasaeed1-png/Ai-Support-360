@@ -151,7 +151,7 @@ export default function ProfilePage() {
       open={reinterviewOpen}
       onOpenChange={setReinterviewOpen}
       consultantId={p.id}
-      consultantName={p.name}
+      consultantName={p.display_name}
     />
     </>
   );
