@@ -217,7 +217,7 @@ export default function VerificationPage() {
           </div>
 
           <div className="space-y-3">
-            {mockSkills.map((skill) => (
+            {skills.map((skill) => (
               <div key={skill.module} className="flex items-center gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
@@ -255,7 +255,7 @@ export default function VerificationPage() {
           </Button>
         </CardHeader>
         <CardContent className="space-y-3">
-          {mockCertifications.map((cert, i) => (
+          {certifications.map((cert, i) => (
             <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-border/30">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
