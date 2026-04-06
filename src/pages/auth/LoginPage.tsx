@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2, Eye } from 'lucide-react';
+import PasswordInput from '@/components/auth/PasswordInput';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -62,7 +63,7 @@ export default function LoginPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">{t('auth.password')}</Label>
-              <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+              <PasswordInput id="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-3">

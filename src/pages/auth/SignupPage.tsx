@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2, Users, Briefcase, Eye } from 'lucide-react';
+import PasswordInput from '@/components/auth/PasswordInput';
 import { cn } from '@/lib/utils';
 import GuestExploreModal from '@/components/guest/GuestExploreModal';
 
@@ -111,7 +112,7 @@ export default function SignupPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">{t('auth.password')}</Label>
-              <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+              <PasswordInput id="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
               <p className="text-[10px] text-muted-foreground">{t('auth.password_hint')}</p>
             </div>
           </CardContent>
