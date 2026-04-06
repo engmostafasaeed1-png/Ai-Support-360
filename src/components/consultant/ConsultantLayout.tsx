@@ -4,7 +4,6 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 import PageTransition from '@/components/PageTransition';
 import MatchRequestPopup from '@/components/consultant/MatchRequestPopup';
 import { Outlet } from 'react-router-dom';
-import { Outlet } from 'react-router-dom';
 import {
   Search, LayoutDashboard, Briefcase, Calendar, MessageSquare,
   CreditCard, Star, User, ShieldCheck, BookOpen, Bell, Settings,
