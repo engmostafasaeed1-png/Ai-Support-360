@@ -11,6 +11,7 @@ import { useGuestMode } from '@/contexts/GuestModeContext';
 import { pendingConsultants } from '@/data/adminMockData';
 import { toast } from 'sonner';
 import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
+import InterviewHistory from '@/components/consultant/InterviewHistory';
 
 export default function ConsultantApprovalsPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -165,7 +166,9 @@ export default function ConsultantApprovalsPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 justify-end flex-wrap">
+                      <InterviewHistory consultantId={c.id} />
+
+                      <div className="flex items-center gap-3 justify-end flex-wrap mt-4">
                         <span className="text-xs text-muted-foreground me-auto">{t('approvals_page.applied')}: {c.appliedAt}</span>
                         <Button variant="outline" size="sm" onClick={() => setReinterviewTarget({ id: c.id, name: c.name })}>
                           <RotateCcw className="w-3.5 h-3.5 me-1" /> {t('interview.reinterview', 'Re-Interview')}
