@@ -4,8 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bot, MapPin, Video, History, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bot, MapPin, Video, History, ChevronDown, ChevronUp, Eye } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import InterviewAnswersDialog from './InterviewAnswersDialog';
 
 const typeIcons: Record<string, typeof Bot> = { ai: Bot, physical: MapPin, online: Video };
 const typeLabels: Record<string, string> = { ai: 'AI', physical: 'Physical', online: 'Online' };
