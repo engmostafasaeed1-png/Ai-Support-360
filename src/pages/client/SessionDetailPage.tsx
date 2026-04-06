@@ -15,11 +15,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   ChevronLeft, Video, MessageSquare, Monitor, Clock, User,
-  Calendar, FileText, ListChecks, Play, XCircle,
+  Calendar, FileText, ListChecks, Play, XCircle, Star, ClipboardCheck,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import ShareMenu from '@/components/ShareMenu';
+import AnalyzeSessionButton from '@/components/session/AnalyzeSessionButton';
+import SessionFeedbackDialog from '@/components/session/SessionFeedbackDialog';
+import SessionSurveyDialog from '@/components/session/SessionSurveyDialog';
 
 const typeIcons = {
   video: Video,
