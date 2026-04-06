@@ -108,6 +108,9 @@ const App = () => (
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="onboarding" element={<OnboardingPage />} />
               <Route path="remote-access" element={<RemoteAccessPage />} />
+              <Route path="reviews" element={<ReviewsPage />} />
+              <Route path="settings" element={<ConsultantSettingsPage />} />
+              <Route path="knowledge" element={<ConsultantKnowledgePage />} />
             </Route>
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
