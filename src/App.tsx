@@ -127,6 +127,8 @@ const App = () => (
               <Route path="integrations" element={<IntegrationsPage />} />
               <Route path="onboarding" element={<ClientOnboardingPage />} />
               <Route path="remote-access" element={<ClientRemoteAccessPage />} />
+              <Route path="invoices" element={<InvoicesPage />} />
+              <Route path="knowledge" element={<KnowledgePage />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminDashboard />} />
