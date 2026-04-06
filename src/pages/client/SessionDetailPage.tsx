@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import ShareMenu from '@/components/ShareMenu';
 
 const typeIcons = {
   video: Video,
@@ -152,6 +153,19 @@ export default function SessionDetailPage() {
               </div>
             </div>
 
+            <div className="flex items-center gap-2 flex-wrap">
+              <ShareMenu
+                title={`Session with ${(session as any).consultant_name}`}
+                text={`${session.session_type?.replace('_', ' ')} session`}
+                details={[
+                  { label: 'Status', value: t(`sessions_page.status_${status}`) },
+                  { label: 'Type', value: session.session_type?.replace('_', ' ') || '—' },
+                  { label: 'Duration', value: `${session.duration_minutes || 0} min` },
+                  { label: 'Scheduled', value: session.scheduled_at ? format(new Date(session.scheduled_at), 'PPp') : '—' },
+                ]}
+                variant="outline"
+                size="sm"
+              />
             {status === 'scheduled' && (
               <div className="flex items-center gap-2">
                 <AlertDialog>
@@ -181,6 +195,7 @@ export default function SessionDetailPage() {
                 </Button>
               </div>
             )}
+            </div>
           </div>
         </CardContent>
       </Card>

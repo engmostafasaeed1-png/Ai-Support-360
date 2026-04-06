@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import ShareMenu from '@/components/ShareMenu';
 
 const dailyTickets = [
   { day: 'Mon', tickets: 42, resolved: 38 },
@@ -44,9 +45,23 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{t('analytics_page.title')}</h1>
-        <p className="text-sm text-muted-foreground">{t('analytics_page.subtitle')}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{t('analytics_page.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('analytics_page.subtitle')}</p>
+        </div>
+        <ShareMenu
+          title="Platform Analytics"
+          text="Analytics Report Summary"
+          details={[
+            { label: 'Avg Response Time', value: '28 min' },
+            { label: 'Weekly Tickets', value: dailyTickets.reduce((s, d) => s + d.tickets, 0).toString() },
+            { label: 'Resolution Rate', value: `${Math.round(dailyTickets.reduce((s, d) => s + d.resolved, 0) / dailyTickets.reduce((s, d) => s + d.tickets, 0) * 100)}%` },
+            { label: 'Top Consultant', value: consultantPerformance[0]?.name || '—' },
+          ]}
+          variant="outline"
+          size="sm"
+        />
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">

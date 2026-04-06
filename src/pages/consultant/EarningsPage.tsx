@@ -20,6 +20,7 @@ import {
 import { format } from 'date-fns';
 import { mockEarnings } from '@/data/consultantMockData';
 import PayoutModal from '@/components/consultant/PayoutModal';
+import ShareMenu from '@/components/ShareMenu';
 
 const paymentStatusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   completed: 'default',
@@ -132,9 +133,23 @@ export default function EarningsPage() {
           <h1 className="text-2xl font-bold text-foreground">{t('earnings.title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t('earnings.subtitle')}</p>
         </div>
-        <Button className="gradient-primary border-0" size="sm" onClick={() => setPayoutOpen(true)}>
-          <ArrowDownToLine className="w-4 h-4 me-1" /> {t('earnings.request_payout')}
-        </Button>
+        <div className="flex items-center gap-2">
+          <ShareMenu
+            title={t('earnings.title')}
+            text="Earnings Report"
+            details={[
+              { label: 'Total Earned', value: `$${e.totalEarned.toLocaleString()}` },
+              { label: 'Pending', value: `$${e.pending.toLocaleString()}` },
+              { label: 'Available', value: `$${e.available.toLocaleString()}` },
+              { label: 'Transactions', value: e.payments.length.toString() },
+            ]}
+            variant="outline"
+            size="sm"
+          />
+          <Button className="gradient-primary border-0" size="sm" onClick={() => setPayoutOpen(true)}>
+            <ArrowDownToLine className="w-4 h-4 me-1" /> {t('earnings.request_payout')}
+          </Button>
+        </div>
       </div>
 
       <PayoutModal
