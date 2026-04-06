@@ -2,6 +2,8 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import ConsultantSidebar from '@/components/consultant/ConsultantSidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import PageTransition from '@/components/PageTransition';
+import MatchRequestPopup from '@/components/consultant/MatchRequestPopup';
+import { Outlet } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 import {
   Search, LayoutDashboard, Briefcase, Calendar, MessageSquare,
@@ -69,6 +71,7 @@ export default function ConsultantLayout() {
           </main>
         </div>
         <MobileBottomNav items={bottomNavItems} moreItems={moreNavItems} />
+        <MatchRequestPopup />
       </div>
     </SidebarProvider>
   );

@@ -1,8 +1,12 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAdminTickets } from '@/hooks/useAdminData';
+import { Send } from 'lucide-react';
+import SendMatchDialog from '@/components/admin/SendMatchDialog';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-green-500/10 text-green-600 border-green-500/20',
