@@ -44,6 +44,7 @@ import SessionDetailPage from "./pages/client/SessionDetailPage.tsx";
 import SettingsPage from "./pages/client/SettingsPage.tsx";
 import IntegrationsPage from "./pages/client/IntegrationsPage.tsx";
 import CompanyProfilePage from "./pages/client/CompanyProfilePage.tsx";
+import CompanySelectorPage from "./pages/client/CompanySelectorPage.tsx";
 import ChatSessionPage from "./pages/chat/ChatSessionPage.tsx";
 import NotificationsPage from "./pages/notifications/NotificationsPage.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
