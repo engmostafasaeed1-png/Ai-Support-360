@@ -1,8 +1,12 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAdminTickets } from '@/hooks/useAdminData';
+import { Send } from 'lucide-react';
+import SendMatchDialog from '@/components/admin/SendMatchDialog';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-green-500/10 text-green-600 border-green-500/20',
@@ -22,6 +26,7 @@ const columns = [
 export default function TicketKanbanPage() {
   const { t } = useTranslation();
   const { data: kanbanTickets, isLoading } = useAdminTickets();
+  const [matchDialog, setMatchDialog] = useState<{ open: boolean; ticketId: string; ticketTitle: string; sapModule: string }>({ open: false, ticketId: '', ticketTitle: '', sapModule: '' });
 
   const ticketData = kanbanTickets || { new: [], under_review: [], matched: [], in_progress: [], waiting_for_client: [], resolved: [], closed: [] };
 
@@ -66,6 +71,14 @@ export default function TicketKanbanPage() {
                           <span className="text-[10px] text-muted-foreground">{ticket.created}</span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">{ticket.client}</p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full mt-2 text-xs h-7 gap-1"
+                          onClick={() => setMatchDialog({ open: true, ticketId: ticket.id, ticketTitle: ticket.title, sapModule: ticket.module })}
+                        >
+                          <Send className="w-3 h-3" /> Send Match
+                        </Button>
                       </CardContent>
                     </Card>
                   ))}
@@ -75,6 +88,14 @@ export default function TicketKanbanPage() {
           })}
         </div>
       )}
+
+      <SendMatchDialog
+        open={matchDialog.open}
+        onOpenChange={(open) => setMatchDialog(prev => ({ ...prev, open }))}
+        ticketId={matchDialog.ticketId}
+        ticketTitle={matchDialog.ticketTitle}
+        sapModule={matchDialog.sapModule}
+      />
     </div>
   );
 }

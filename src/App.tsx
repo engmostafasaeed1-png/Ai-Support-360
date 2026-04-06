@@ -16,6 +16,8 @@ import NotFound from "./pages/NotFound.tsx";
 import ConsultantLayout from "./components/consultant/ConsultantLayout.tsx";
 import ConsultantDashboard from "./pages/consultant/ConsultantDashboard.tsx";
 import CasesPage from "./pages/consultant/CasesPage.tsx";
+import RequestsPage from "./pages/consultant/RequestsPage.tsx";
+import MatchRequestPopup from "./components/consultant/MatchRequestPopup.tsx";
 import CalendarPage from "./pages/consultant/CalendarPage.tsx";
 import EarningsPage from "./pages/consultant/EarningsPage.tsx";
 import VerificationPage from "./pages/consultant/VerificationPage.tsx";
@@ -99,6 +101,7 @@ const App = () => (
             <Route path="/consultant" element={<ProtectedRoute requiredRole="consultant"><ConsultantLayout /></ProtectedRoute>}>
               <Route index element={<ConsultantDashboard />} />
               <Route path="cases" element={<CasesPage />} />
+              <Route path="requests" element={<RequestsPage />} />
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="earnings" element={<EarningsPage />} />
               <Route path="verification" element={<VerificationPage />} />

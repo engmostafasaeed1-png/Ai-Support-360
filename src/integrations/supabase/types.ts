@@ -1434,6 +1434,57 @@ export type Database = {
           },
         ]
       }
+      ticket_match_requests: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          id: string
+          message: string | null
+          responded_at: string | null
+          sent_by: string
+          status: Database["public"]["Enums"]["match_request_status"]
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          responded_at?: string | null
+          sent_by: string
+          status?: Database["public"]["Enums"]["match_request_status"]
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          responded_at?: string | null
+          sent_by?: string
+          status?: Database["public"]["Enums"]["match_request_status"]
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_match_requests_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_match_requests_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tickets: {
         Row: {
           ai_suggested_category: string | null
@@ -1589,6 +1640,7 @@ export type Database = {
       integration_status: "active" | "inactive" | "error"
       interview_mode: "ai" | "physical" | "online"
       interview_status: "pending" | "in_progress" | "completed" | "reviewed"
+      match_request_status: "pending" | "accepted" | "rejected" | "withdrawn"
       message_type: "text" | "file" | "voice_note" | "system"
       payment_status: "pending" | "completed" | "refunded" | "disputed"
       payout_status: "pending" | "processing" | "completed" | "failed"
@@ -1753,6 +1805,7 @@ export const Constants = {
       integration_status: ["active", "inactive", "error"],
       interview_mode: ["ai", "physical", "online"],
       interview_status: ["pending", "in_progress", "completed", "reviewed"],
+      match_request_status: ["pending", "accepted", "rejected", "withdrawn"],
       message_type: ["text", "file", "voice_note", "system"],
       payment_status: ["pending", "completed", "refunded", "disputed"],
       payout_status: ["pending", "processing", "completed", "failed"],
