@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import SuperAdminSidebar from './SuperAdminSidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import PageTransition from '@/components/PageTransition';
+import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { LayoutDashboard, ShieldCheck, BarChart3, Settings2, Users } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +34,7 @@ export default function SuperAdminLayout() {
 
         <SuperAdminSidebar />
         <div className="flex-1 flex flex-col relative z-[1]">
-          <header className="h-14 border-b border-border/40 flex items-center justify-between px-4 bg-card/80 backdrop-blur-xl sticky top-0 z-10 shadow-sm">
+          <FixedHeader>
             <div className="flex items-center gap-3">
               <SidebarTrigger className="hidden md:flex" />
               <Badge className="bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0 text-[10px] gap-1 shadow-sm">
@@ -44,11 +45,11 @@ export default function SuperAdminLayout() {
             <div className="flex items-center gap-3">
               <NotificationBell basePath="/super-admin" />
             </div>
-          </header>
-          <div className="border-b border-border/30 bg-card/60 backdrop-blur-sm sticky top-14 z-20 hidden md:block">
+          </FixedHeader>
+          <FixedSubHeader>
             <HeaderNav role="super-admin" />
-          </div>
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
+          </FixedSubHeader>
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6 mt-14 md:mt-24">
             <PageTransition>
               <Outlet />
             </PageTransition>
