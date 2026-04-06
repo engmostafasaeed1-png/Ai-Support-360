@@ -4,8 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bot, MapPin, Video, History, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bot, MapPin, Video, History, ChevronDown, ChevronUp, Eye } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import InterviewAnswersDialog from './InterviewAnswersDialog';
 
 const typeIcons: Record<string, typeof Bot> = { ai: Bot, physical: MapPin, online: Video };
 const typeLabels: Record<string, string> = { ai: 'AI', physical: 'Physical', online: 'Online' };
@@ -24,6 +26,7 @@ interface Props {
 export default function InterviewHistory({ consultantId }: Props) {
   const { t } = useTranslation();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [answersId, setAnswersId] = useState<string | null>(null);
 
   const { data: interviews, isLoading } = useQuery({
     queryKey: ['interview-history', consultantId],
@@ -141,6 +144,10 @@ export default function InterviewHistory({ consultantId }: Props) {
                           {iv.completed_at && ` — ${t('interview_history.completed', 'Completed')}: ${new Date(iv.completed_at).toLocaleString()}`}
                         </p>
                       )}
+                      <Button variant="outline" size="sm" className="mt-2" onClick={() => setAnswersId(iv.id)}>
+                        <Eye className="w-3.5 h-3.5 me-1" />
+                        {t('interview_history.view_answers', 'View Answers')}
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -149,6 +156,11 @@ export default function InterviewHistory({ consultantId }: Props) {
           </div>
         )}
       </CardContent>
+      <InterviewAnswersDialog
+        interviewId={answersId}
+        open={!!answersId}
+        onOpenChange={(open) => !open && setAnswersId(null)}
+      />
     </Card>
   );
 }
