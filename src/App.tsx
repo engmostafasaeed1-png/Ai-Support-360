@@ -105,6 +105,7 @@ const App = () => (
             <Route path="/consultant" element={<ProtectedRoute requiredRole="consultant"><ConsultantLayout /></ProtectedRoute>}>
               <Route index element={<ConsultantDashboard />} />
               <Route path="cases" element={<CasesPage />} />
+              <Route path="cases/:caseId" element={<CaseDetailPage />} />
               <Route path="requests" element={<RequestsPage />} />
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="earnings" element={<EarningsPage />} />

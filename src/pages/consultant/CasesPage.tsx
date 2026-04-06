@@ -127,7 +127,8 @@ export default function CasesPage() {
             const ndaSigned = clientId ? signedClients.has(clientId) : false;
 
             return (
-              <Card key={ticket.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
+              <Link key={ticket.id} to={`/consultant/cases/${ticket.id}`} className="block">
+              <Card className="rounded-2xl border-border/50 hover:shadow-premium transition-all cursor-pointer">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
