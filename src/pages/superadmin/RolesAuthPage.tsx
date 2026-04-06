@@ -57,7 +57,7 @@ export default function RolesAuthPage() {
   const { data: users } = useAdminUsers();
   const [search, setSearch] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('admin');
-  const [rolePerms, setRolePerms] = useState(rolePermissions);
+  const { rolePerms, loading, togglePermission, savePermissions } = useRolePermissions();
 
   const allUsers = users || [];
   const filtered = allUsers.filter((u) =>
@@ -66,13 +66,7 @@ export default function RolesAuthPage() {
   );
 
   const handlePermToggle = (perm: string) => {
-    setRolePerms(prev => {
-      const current = prev[selectedRole] || [];
-      const next = current.includes(perm)
-        ? current.filter(p => p !== perm)
-        : [...current, perm];
-      return { ...prev, [selectedRole]: next };
-    });
+    togglePermission(selectedRole, perm);
   };
 
   const handleRoleChange = (userId: string, newRole: string) => {
