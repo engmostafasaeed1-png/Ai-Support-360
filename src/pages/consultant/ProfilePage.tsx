@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,12 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { mockConsultantProfile, mockSkills } from '@/data/consultantMockData';
-import { User, Globe, Clock, DollarSign, Save } from 'lucide-react';
+import { User, Globe, Clock, DollarSign, Save, RotateCcw } from 'lucide-react';
 import AvatarUpload from '@/components/profile/AvatarUpload';
+import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
 
 export default function ProfilePage() {
   const { t } = useTranslation();
   const p = mockConsultantProfile;
+  const [reinterviewOpen, setReinterviewOpen] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -19,9 +22,14 @@ export default function ProfilePage() {
           <h1 className="text-2xl font-bold text-foreground">Profile Management</h1>
           <p className="text-sm text-muted-foreground mt-1">Keep your profile up to date to attract more clients.</p>
         </div>
-        <Button className="gradient-primary border-0" size="sm">
-          <Save className="w-4 h-4 me-1" /> Save Changes
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setReinterviewOpen(true)}>
+            <RotateCcw className="w-4 h-4 me-1" /> {t('interview.request_reinterview', 'Request Re-Interview')}
+          </Button>
+          <Button className="gradient-primary border-0" size="sm">
+            <Save className="w-4 h-4 me-1" /> Save Changes
+          </Button>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
