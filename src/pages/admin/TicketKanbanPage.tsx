@@ -71,6 +71,14 @@ export default function TicketKanbanPage() {
                           <span className="text-[10px] text-muted-foreground">{ticket.created}</span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">{ticket.client}</p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full mt-2 text-xs h-7 gap-1"
+                          onClick={() => setMatchDialog({ open: true, ticketId: ticket.id, ticketTitle: ticket.title, sapModule: ticket.module })}
+                        >
+                          <Send className="w-3 h-3" /> Send Match
+                        </Button>
                       </CardContent>
                     </Card>
                   ))}
@@ -80,6 +88,14 @@ export default function TicketKanbanPage() {
           })}
         </div>
       )}
+
+      <SendMatchDialog
+        open={matchDialog.open}
+        onOpenChange={(open) => setMatchDialog(prev => ({ ...prev, open }))}
+        ticketId={matchDialog.ticketId}
+        ticketTitle={matchDialog.ticketTitle}
+        sapModule={matchDialog.sapModule}
+      />
     </div>
   );
 }
