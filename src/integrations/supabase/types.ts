@@ -644,7 +644,9 @@ export type Database = {
           consultant_id: string
           created_at: string
           id: string
+          interview_type: Database["public"]["Enums"]["interview_mode"] | null
           overall_score: number | null
+          requested_by: string | null
           skill_results: Json | null
           soft_skills_score: number | null
           started_at: string | null
@@ -658,7 +660,9 @@ export type Database = {
           consultant_id: string
           created_at?: string
           id?: string
+          interview_type?: Database["public"]["Enums"]["interview_mode"] | null
           overall_score?: number | null
+          requested_by?: string | null
           skill_results?: Json | null
           soft_skills_score?: number | null
           started_at?: string | null
@@ -672,7 +676,9 @@ export type Database = {
           consultant_id?: string
           created_at?: string
           id?: string
+          interview_type?: Database["public"]["Enums"]["interview_mode"] | null
           overall_score?: number | null
+          requested_by?: string | null
           skill_results?: Json | null
           soft_skills_score?: number | null
           started_at?: string | null
@@ -1434,6 +1440,7 @@ export type Database = {
       guac_protocol: "rdp" | "ssh" | "vnc"
       integration_platform: "zendesk" | "freshdesk" | "jira" | "servicenow"
       integration_status: "active" | "inactive" | "error"
+      interview_mode: "ai" | "physical" | "online"
       interview_status: "pending" | "in_progress" | "completed" | "reviewed"
       message_type: "text" | "file" | "voice_note" | "system"
       payment_status: "pending" | "completed" | "refunded" | "disputed"
@@ -1597,6 +1604,7 @@ export const Constants = {
       guac_protocol: ["rdp", "ssh", "vnc"],
       integration_platform: ["zendesk", "freshdesk", "jira", "servicenow"],
       integration_status: ["active", "inactive", "error"],
+      interview_mode: ["ai", "physical", "online"],
       interview_status: ["pending", "in_progress", "completed", "reviewed"],
       message_type: ["text", "file", "voice_note", "system"],
       payment_status: ["pending", "completed", "refunded", "disputed"],
