@@ -8,6 +8,8 @@ import { Bot, MapPin, Video, History, ChevronDown, ChevronUp, Eye } from 'lucide
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import InterviewAnswersDialog from './InterviewAnswersDialog';
+import { useGuestMode } from '@/contexts/GuestModeContext';
+import { mockInterviewSessions } from '@/data/interviewMockData';
 
 const typeIcons: Record<string, typeof Bot> = { ai: Bot, physical: MapPin, online: Video };
 const typeLabels: Record<string, string> = { ai: 'AI', physical: 'Physical', online: 'Online' };
@@ -25,6 +27,7 @@ interface Props {
 
 export default function InterviewHistory({ consultantId }: Props) {
   const { t } = useTranslation();
+  const { isGuest } = useGuestMode();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [answersId, setAnswersId] = useState<string | null>(null);
 
@@ -32,6 +35,7 @@ export default function InterviewHistory({ consultantId }: Props) {
     queryKey: ['interview-history', consultantId],
     queryFn: async () => {
       if (!consultantId) return [];
+      if (isGuest) return mockInterviewSessions[consultantId] || [];
       const { data, error } = await supabase
         .from('interview_sessions')
         .select('*')
