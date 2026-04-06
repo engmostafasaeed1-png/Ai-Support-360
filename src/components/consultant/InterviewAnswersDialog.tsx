@@ -4,7 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, MessageSquare, Star } from 'lucide-react';
+import { CheckCircle, Download, MessageSquare, Star } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { generateInterviewPdf } from '@/lib/interviewPdf';
 
 interface Props {
   interviewId: string | null;
