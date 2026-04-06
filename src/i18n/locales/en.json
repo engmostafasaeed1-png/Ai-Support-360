@@ -455,6 +455,26 @@
     "reinterview_body": "You have been requested for a {{type}} re-interview.",
     "reinterview_sent": "Re-interview request sent"
   },
+  "ai_interview": {
+    "title": "AI Interview",
+    "generating": "Generating Interview Questions...",
+    "generating_desc": "AI is creating personalized questions based on your skills",
+    "evaluating": "Evaluating Your Answers...",
+    "evaluating_desc": "AI is reviewing and scoring your responses",
+    "results_title": "Interview Results",
+    "technical": "Technical",
+    "soft_skills": "Soft Skills",
+    "question": "Question",
+    "answer_placeholder": "Type your answer here...",
+    "prev": "Previous",
+    "next": "Next",
+    "submit": "Submit Answers",
+    "done": "Done",
+    "completed": "Interview completed!",
+    "start_interview": "Start AI Interview",
+    "pending_interview": "You have a pending AI interview",
+    "pending_desc": "An AI-powered interview has been scheduled for you. Click below to begin."
+  },
   "analytics_page": {
     "title": "Platform Analytics",
     "subtitle": "Deep insights into platform performance",
