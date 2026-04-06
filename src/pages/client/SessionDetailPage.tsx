@@ -337,6 +337,9 @@ export default function SessionDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <SessionFeedbackDialog sessionId={sessionId || null} open={showFeedback} onOpenChange={setShowFeedback} />
+      <SessionSurveyDialog sessionId={sessionId || null} open={showSurvey} onOpenChange={setShowSurvey} />
     </div>
   );
 }
