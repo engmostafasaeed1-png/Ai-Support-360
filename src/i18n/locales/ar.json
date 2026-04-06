@@ -44,7 +44,12 @@
     "migration": "ترحيل البيانات",
     "ams": "دعم AMS",
     "advisory": "فحص صحي",
-    "pm": "SAP PM/EAM"
+    "pm": "SAP PM/EAM",
+    "hcm": "SAP HCM/الرواتب",
+    "bw": "SAP BW/HANA",
+    "ibp": "SAP IBP",
+    "concur": "SAP Concur",
+    "others": "أخرى"
   },
   "howItWorks": {
     "title": "كيف يعمل",
