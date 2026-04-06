@@ -165,6 +165,7 @@ const App = () => (
             </Route>
             <Route path="/super-admin" element={<ProtectedRoute requiredRole="admin"><SuperAdminLayout /></ProtectedRoute>}>
               <Route index element={<SuperAdminOverview />} />
+              <Route path="executive" element={<ExecutiveDashboardPage />} />
               <Route path="roles" element={<RolesAuthPage />} />
               <Route path="users" element={<UserManagementPage />} />
               <Route path="reports" element={<ReportsPage />} />
