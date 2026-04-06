@@ -1,41 +1,24 @@
+## AI Interview Flow
 
-# End-to-End Platform Integration Plan
+### 1. Edge Function: `ai-interview-questions`
+- Takes consultant's SAP modules/skills and generates 5-8 tailored interview questions using Lovable AI
+- Returns questions with categories (technical, soft_skills, scenario)
 
-## Phase 1: Auth & Profile Flow
-- Wire signup to create `profiles` + `user_roles` + role-specific profiles (`client_profiles` or `consultants`)
-- Wire login to fetch real profile data and route to correct dashboard based on role
-- Replace mock profile data in dashboards with real Supabase queries
-- Update sidebar user cards to show real avatar/name
+### 2. Edge Function: `ai-interview-evaluate`  
+- Takes questions + answers, evaluates them using AI
+- Returns scores and feedback per answer, plus overall summary
 
-## Phase 2: Client Dashboard & Tickets
-- Replace `mockClientTickets` with real `tickets` table queries
-- Wire "New Request" form to INSERT into `tickets` table
-- Replace `mockClientSessions` with real `sessions` table queries  
-- Replace `mockClientPayments` with real `payments` table queries
-- Replace `mockRecommendedConsultants` with real `consultants` table queries
-- Replace `mockActivityFeed` with real `notifications` table
+### 3. New Component: `AIInterviewFlow.tsx`
+- Full-screen interview experience for consultants
+- Shows questions one at a time with a text area for answers
+- Progress bar, timer, submit flow
+- On completion, calls evaluate edge function and saves results
 
-## Phase 3: Consultant Dashboard & Profile
-- Replace mock consultant data with real `consultants` + `consultant_skills` + `certifications` queries
-- Wire consultant profile editing to UPDATE real records
-- Wire availability slots to real `availability_slots` table
-- Wire earnings/payouts to real `payments` + `payouts` tables
+### 4. Update Consultant Verification Page
+- When consultant has a pending AI interview, show a "Start AI Interview" button
+- Links to the AI interview flow
 
-## Phase 4: Sessions & Chat
-- Wire session booking (BookingModal) to INSERT into `sessions` table
-- Connect chat to real `messages` table with realtime subscriptions
-- Wire session detail page to real data
-
-## Phase 5: Admin Dashboard
-- Replace admin mock data with real aggregate queries
-- Wire consultant approvals to real `consultants.verification_status` updates
-- Wire ticket kanban to real `tickets` data
-
-## Phase 6: Payments
-- Wire payment records to real `payments` table
-- Connect invoice generation to real data
-
-## Approach
-- Create shared hooks for each data domain (useTickets, useSessions, usePayments, etc.)
-- Each hook handles loading, error, and empty states
-- Preserve existing UI — only swap data source
+### 5. Integration
+- When ReinterviewDialog creates an AI-type interview, the consultant gets notified
+- Consultant navigates to verification page → starts AI interview
+- Questions auto-generated → consultant answers → AI evaluates → scores saved
