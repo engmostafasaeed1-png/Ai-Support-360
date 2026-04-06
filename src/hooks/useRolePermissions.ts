@@ -18,6 +18,14 @@ const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
 
 const SETTING_KEY = 'role_permissions';
 
+function parsePerms(saved: Record<string, string[]>): Record<string, string[]> {
+  return {
+    admin: saved.admin ?? DEFAULT_ROLE_PERMISSIONS.admin,
+    consultant: saved.consultant ?? DEFAULT_ROLE_PERMISSIONS.consultant,
+    client: saved.client ?? DEFAULT_ROLE_PERMISSIONS.client,
+  };
+}
+
 export function useRolePermissions() {
   const [rolePerms, setRolePerms] = useState<Record<string, string[]>>(DEFAULT_ROLE_PERMISSIONS);
   const [loading, setLoading] = useState(true);
@@ -31,16 +39,35 @@ export function useRolePermissions() {
         .maybeSingle();
 
       if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
-        const saved = data.value as Record<string, string[]>;
-        setRolePerms({
-          admin: saved.admin ?? DEFAULT_ROLE_PERMISSIONS.admin,
-          consultant: saved.consultant ?? DEFAULT_ROLE_PERMISSIONS.consultant,
-          client: saved.client ?? DEFAULT_ROLE_PERMISSIONS.client,
-        });
+        setRolePerms(parsePerms(data.value as Record<string, string[]>));
       }
       setLoading(false);
     };
     load();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('role-permissions-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'platform_settings',
+          filter: `key=eq.${SETTING_KEY}`,
+        },
+        (payload) => {
+          const newRow = payload.new as { value?: Record<string, string[]> } | undefined;
+          if (newRow?.value && typeof newRow.value === 'object') {
+            setRolePerms(parsePerms(newRow.value));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const togglePermission = useCallback((role: string, perm: string) => {
