@@ -144,8 +144,10 @@ export default function RolesAuthPage() {
                 ))}
               </div>
               <div className="mt-6 flex justify-end">
-                <Button className="gradient-primary border-0" onClick={() => toast.success(t('super_admin.permissions_saved', 'Permissions saved'))}>
+                <Button className="gradient-primary border-0" onClick={savePermissions}>
                   {t('common.save', 'Save Changes')}
+                </Button>
+              </div>
                 </Button>
               </div>
             </CardContent>
