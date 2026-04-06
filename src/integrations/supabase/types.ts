@@ -1149,6 +1149,7 @@ export type Database = {
           onboarding_completed: boolean | null
           phone: string | null
           preferred_language: string | null
+          referral_code: string | null
           updated_at: string
           user_id: string
         }
@@ -1160,6 +1161,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           phone?: string | null
           preferred_language?: string | null
+          referral_code?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1171,6 +1173,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           phone?: string | null
           preferred_language?: string | null
+          referral_code?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1267,6 +1270,89 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referral_rewards: {
+        Row: {
+          amount: number
+          applied_at: string | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          id: string
+          referral_id: string
+          reward_type: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          applied_at?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          referral_id: string
+          reward_type?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          applied_at?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          referral_id?: string
+          reward_type?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_rewards_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code: string
+          referred_email: string | null
+          referred_user_id: string | null
+          referrer_id: string
+          source: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_email?: string | null
+          referred_user_id?: string | null
+          referrer_id: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_email?: string | null
+          referred_user_id?: string | null
+          referrer_id?: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       remote_environments: {
         Row: {
