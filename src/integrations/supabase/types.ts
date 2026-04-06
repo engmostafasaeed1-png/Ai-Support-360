@@ -882,6 +882,62 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_solutions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          helpful_count: number | null
+          id: string
+          problem_description: string | null
+          sap_module: string | null
+          solution: string | null
+          source_ticket_id: string | null
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          views_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          helpful_count?: number | null
+          id?: string
+          problem_description?: string | null
+          sap_module?: string | null
+          solution?: string | null
+          source_ticket_id?: string | null
+          status?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          views_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          helpful_count?: number | null
+          id?: string
+          problem_description?: string | null
+          sap_module?: string | null
+          solution?: string | null
+          source_ticket_id?: string | null
+          status?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_solutions_source_ticket_id_fkey"
+            columns: ["source_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string | null
@@ -1401,6 +1457,109 @@ export type Database = {
           },
         ]
       }
+      session_feedback: {
+        Row: {
+          action_items: string[] | null
+          ai_feedback: string | null
+          communication_score: number | null
+          created_at: string
+          id: string
+          improvements: string[] | null
+          mom_content: string | null
+          overall_score: number | null
+          professionalism_score: number | null
+          recipient_id: string
+          recipient_role: string
+          session_id: string
+          strengths: string[] | null
+          technical_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          action_items?: string[] | null
+          ai_feedback?: string | null
+          communication_score?: number | null
+          created_at?: string
+          id?: string
+          improvements?: string[] | null
+          mom_content?: string | null
+          overall_score?: number | null
+          professionalism_score?: number | null
+          recipient_id: string
+          recipient_role?: string
+          session_id: string
+          strengths?: string[] | null
+          technical_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          action_items?: string[] | null
+          ai_feedback?: string | null
+          communication_score?: number | null
+          created_at?: string
+          id?: string
+          improvements?: string[] | null
+          mom_content?: string | null
+          overall_score?: number | null
+          professionalism_score?: number | null
+          recipient_id?: string
+          recipient_role?: string
+          session_id?: string
+          strengths?: string[] | null
+          technical_score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_feedback_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_surveys: {
+        Row: {
+          created_at: string
+          generated_for: string
+          generated_for_role: string
+          id: string
+          questions: Json
+          session_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          generated_for: string
+          generated_for_role?: string
+          id?: string
+          questions?: Json
+          session_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          generated_for?: string
+          generated_for_role?: string
+          id?: string
+          questions?: Json
+          session_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_surveys_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           ai_action_items: string[] | null
@@ -1469,6 +1628,41 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_responses: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          respondent_id: string
+          submitted_at: string | null
+          survey_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          respondent_id: string
+          submitted_at?: string | null
+          survey_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          respondent_id?: string
+          submitted_at?: string | null
+          survey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "session_surveys"
             referencedColumns: ["id"]
           },
         ]
