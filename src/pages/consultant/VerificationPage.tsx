@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import {
-  mockConsultantProfile, mockSkills, mockCertifications,
-} from '@/data/consultantMockData';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   ShieldCheck, Upload, CheckCircle, Clock, XCircle, AlertTriangle,
   FileText, Award, Brain, Play,
@@ -16,6 +15,7 @@ import InterviewHistory from '@/components/consultant/InterviewHistory';
 import AIInterviewFlow from '@/components/consultant/AIInterviewFlow';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import { useConsultantProfile } from '@/hooks/useConsultantProfile';
 
 const verificationSteps = [
   { key: 'identity', label: 'Identity Verification', desc: 'Upload government-issued ID', status: 'completed' },
@@ -50,8 +50,9 @@ const verificationBadge: Record<string, { label: string; color: string }> = {
 export default function VerificationPage() {
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
-  const profile = mockConsultantProfile;
-  const vBadge = verificationBadge[profile.verification_status];
+  const { data: consultantProfile } = useConsultantProfile();
+  const profile = consultantProfile || { verification_status: 'pending', ai_skills_score: 0 };
+  const vBadge = verificationBadge[profile.verification_status] || verificationBadge.pending;
   const completedSteps = verificationSteps.filter((s) => s.status === 'completed').length;
   const progress = Math.round((completedSteps / verificationSteps.length) * 100);
   const [credlyUsername, setCredlyUsername] = useState<string | undefined>(undefined);
