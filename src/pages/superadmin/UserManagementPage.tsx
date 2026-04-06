@@ -10,10 +10,11 @@ import {
 } from '@/components/ui/select';
 import {
   Search, Users, Eye, UserX, UserCheck, Mail, Shield,
-  MoreHorizontal, Download, Crown, Filter,
+  MoreHorizontal, Download, Crown, Filter, RotateCcw,
 } from 'lucide-react';
 import { useAdminUsers } from '@/hooks/useAdminData';
 import { toast } from 'sonner';
+import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
 
 const roleColors: Record<string, string> = {
   client: 'bg-accent/10 text-accent border-accent/20',
@@ -27,6 +28,7 @@ export default function UserManagementPage() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [reinterviewTarget, setReinterviewTarget] = useState<{ id: string; name: string } | null>(null);
 
   const allUsers = users || [];
   const filtered = allUsers.filter(u => {
@@ -145,6 +147,11 @@ export default function UserManagementPage() {
                   <Button variant="outline" className="w-full justify-start" size="sm">
                     <Shield className="w-3.5 h-3.5 me-2" /> Change Role
                   </Button>
+                  {selected.role === 'consultant' && (
+                    <Button variant="outline" className="w-full justify-start" size="sm" onClick={() => setReinterviewTarget({ id: selected.id, name: selected.name })}>
+                      <RotateCcw className="w-3.5 h-3.5 me-2" /> {t('interview.reinterview', 'Re-Interview')}
+                    </Button>
+                  )}
                   <Button variant="outline" className="w-full justify-start text-destructive" size="sm" onClick={() => toast.success('User suspended')}>
                     <UserX className="w-3.5 h-3.5 me-2" /> Suspend User
                   </Button>
@@ -160,6 +167,14 @@ export default function UserManagementPage() {
           )}
         </div>
       </div>
+      {reinterviewTarget && (
+        <ReinterviewDialog
+          open={!!reinterviewTarget}
+          onOpenChange={(open) => !open && setReinterviewTarget(null)}
+          consultantId={reinterviewTarget.id}
+          consultantName={reinterviewTarget.name}
+        />
+      )}
     </div>
   );
 }

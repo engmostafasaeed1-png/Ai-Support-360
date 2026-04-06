@@ -6,13 +6,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Check, X, ChevronDown, ChevronUp, Award, Globe, DollarSign, Brain, Users } from 'lucide-react';
+import { Check, X, ChevronDown, ChevronUp, Award, Globe, DollarSign, Brain, Users, RotateCcw } from 'lucide-react';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { pendingConsultants } from '@/data/adminMockData';
 import { toast } from 'sonner';
+import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
 
 export default function ConsultantApprovalsPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [reinterviewTarget, setReinterviewTarget] = useState<{ id: string; name: string } | null>(null);
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
   const queryClient = useQueryClient();
@@ -163,8 +165,11 @@ export default function ConsultantApprovalsPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 justify-end">
+                      <div className="flex items-center gap-3 justify-end flex-wrap">
                         <span className="text-xs text-muted-foreground me-auto">{t('approvals_page.applied')}: {c.appliedAt}</span>
+                        <Button variant="outline" size="sm" onClick={() => setReinterviewTarget({ id: c.id, name: c.name })}>
+                          <RotateCcw className="w-3.5 h-3.5 me-1" /> {t('interview.reinterview', 'Re-Interview')}
+                        </Button>
                         <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => updateStatus.mutate({ id: c.id, status: 'rejected' })} disabled={updateStatus.isPending}>
                           <X className="w-3.5 h-3.5 me-1" /> {t('approvals_page.reject')}
                         </Button>
@@ -179,6 +184,14 @@ export default function ConsultantApprovalsPage() {
             );
           })}
         </div>
+      )}
+      {reinterviewTarget && (
+        <ReinterviewDialog
+          open={!!reinterviewTarget}
+          onOpenChange={(open) => !open && setReinterviewTarget(null)}
+          consultantId={reinterviewTarget.id}
+          consultantName={reinterviewTarget.name}
+        />
       )}
     </div>
   );

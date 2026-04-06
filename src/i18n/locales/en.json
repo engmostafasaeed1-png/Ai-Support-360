@@ -436,6 +436,25 @@
     "applied": "Applied",
     "ai_skills_assessment": "AI Skills Assessment"
   },
+  "interview": {
+    "reinterview": "Re-Interview",
+    "request_reinterview": "Request Re-Interview",
+    "reinterview_for": "Schedule a re-interview for {{name}}",
+    "reinterview_desc": "Choose the interview type and send the request",
+    "select_type": "Interview Type",
+    "type_ai": "AI Interview",
+    "type_ai_desc": "Automated AI-powered assessment",
+    "type_physical": "Physical",
+    "type_physical_desc": "In-person face-to-face interview",
+    "type_online": "Online",
+    "type_online_desc": "Video call interview session",
+    "notes": "Notes (optional)",
+    "notes_placeholder": "Reason for re-interview...",
+    "send_request": "Send Request",
+    "reinterview_requested": "Re-Interview Requested",
+    "reinterview_body": "You have been requested for a {{type}} re-interview.",
+    "reinterview_sent": "Re-interview request sent"
+  },
   "analytics_page": {
     "title": "Platform Analytics",
     "subtitle": "Deep insights into platform performance",

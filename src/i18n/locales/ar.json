@@ -436,6 +436,25 @@
     "applied": "تاريخ التقديم",
     "ai_skills_assessment": "تقييم المهارات بالذكاء الاصطناعي"
   },
+  "interview": {
+    "reinterview": "إعادة المقابلة",
+    "request_reinterview": "طلب إعادة مقابلة",
+    "reinterview_for": "جدولة إعادة مقابلة لـ {{name}}",
+    "reinterview_desc": "اختر نوع المقابلة وأرسل الطلب",
+    "select_type": "نوع المقابلة",
+    "type_ai": "مقابلة ذكاء اصطناعي",
+    "type_ai_desc": "تقييم آلي بالذكاء الاصطناعي",
+    "type_physical": "حضورية",
+    "type_physical_desc": "مقابلة شخصية وجهاً لوجه",
+    "type_online": "عن بُعد",
+    "type_online_desc": "مقابلة عبر مكالمة فيديو",
+    "notes": "ملاحظات (اختياري)",
+    "notes_placeholder": "سبب إعادة المقابلة...",
+    "send_request": "إرسال الطلب",
+    "reinterview_requested": "تم طلب إعادة المقابلة",
+    "reinterview_body": "تم طلب إعادة مقابلة {{type}} لك.",
+    "reinterview_sent": "تم إرسال طلب إعادة المقابلة"
+  },
   "analytics_page": {
     "title": "تحليلات المنصة",
     "subtitle": "رؤى معمقة حول أداء المنصة",
