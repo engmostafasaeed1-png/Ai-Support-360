@@ -56,7 +56,10 @@ export function useRolePermissions() {
   const savePermissions = useCallback(async () => {
     const { error } = await supabase
       .from('platform_settings')
-      .upsert({ key: SETTING_KEY, value: rolePerms as unknown as Record<string, unknown> }, { onConflict: 'key' });
+      .upsert(
+        { key: SETTING_KEY, value: rolePerms as unknown as Record<string, unknown> } as any,
+        { onConflict: 'key' }
+      );
 
     if (error) {
       toast.error('Failed to save permissions');
