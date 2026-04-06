@@ -26,6 +26,13 @@ const DEFAULT_FLAGS: FeatureFlag[] = [
 
 const SETTING_KEY = 'feature_flags';
 
+function applyFlagValues(saved: Record<string, boolean>): FeatureFlag[] {
+  return DEFAULT_FLAGS.map(f => ({
+    ...f,
+    enabled: saved[f.key] !== undefined ? saved[f.key] : f.enabled,
+  }));
+}
+
 export function useFeatureFlags() {
   const [flags, setFlags] = useState<FeatureFlag[]>(DEFAULT_FLAGS);
   const [loading, setLoading] = useState(true);
@@ -39,21 +46,40 @@ export function useFeatureFlags() {
         .maybeSingle();
 
       if (data?.value) {
-        const saved = data.value as Record<string, boolean>;
-        setFlags(DEFAULT_FLAGS.map(f => ({
-          ...f,
-          enabled: saved[f.key] !== undefined ? saved[f.key] : f.enabled,
-        })));
+        setFlags(applyFlagValues(data.value as Record<string, boolean>));
       }
       setLoading(false);
     };
     load();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('feature-flags-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'platform_settings',
+          filter: `key=eq.${SETTING_KEY}`,
+        },
+        (payload) => {
+          const newRow = payload.new as { value?: Record<string, boolean> } | undefined;
+          if (newRow?.value) {
+            setFlags(applyFlagValues(newRow.value));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const toggleFlag = useCallback(async (key: string) => {
     setFlags(prev => {
       const next = prev.map(f => f.key === key ? { ...f, enabled: !f.enabled } : f);
-      // Persist asynchronously
       const payload: Record<string, boolean> = {};
       next.forEach(f => { payload[f.key] = f.enabled; });
 
