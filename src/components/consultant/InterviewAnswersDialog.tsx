@@ -4,15 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, MessageSquare, Star } from 'lucide-react';
+import { CheckCircle, Download, MessageSquare, Star } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { generateInterviewPdf } from '@/lib/interviewPdf';
 
 interface Props {
   interviewId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  session?: any;
+  consultantName?: string;
 }
 
-export default function InterviewAnswersDialog({ interviewId, open, onOpenChange }: Props) {
+export default function InterviewAnswersDialog({ interviewId, open, onOpenChange, session, consultantName }: Props) {
   const { t } = useTranslation();
 
   const { data: answers, isLoading } = useQuery({
@@ -34,10 +38,23 @@ export default function InterviewAnswersDialog({ interviewId, open, onOpenChange
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-primary" />
-            {t('interview_history.answers_title', 'Interview Answers')}
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-primary" />
+              {t('interview_history.answers_title', 'Interview Answers')}
+            </DialogTitle>
+            {answers && answers.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => generateInterviewPdf(answers, session, consultantName)}
+              >
+                <Download className="w-3.5 h-3.5" />
+                {t('interview_history.export_pdf', 'Export PDF')}
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         {isLoading ? (

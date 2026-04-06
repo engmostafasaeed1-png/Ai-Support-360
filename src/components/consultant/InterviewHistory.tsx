@@ -160,6 +160,7 @@ export default function InterviewHistory({ consultantId }: Props) {
         interviewId={answersId}
         open={!!answersId}
         onOpenChange={(open) => !open && setAnswersId(null)}
+        session={list.find((iv: any) => iv.id === answersId)}
       />
     </Card>
   );
