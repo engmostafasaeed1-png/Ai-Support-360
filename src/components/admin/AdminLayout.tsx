@@ -2,9 +2,11 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
+import PageTransition from '@/components/PageTransition';
 import { Search, LayoutDashboard, Users, Kanban, UserCheck, BarChart3, Settings, Plug } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
+import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
 
 const bottomNavItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/admin', labelKey: 'sidebar.dashboard' },
@@ -22,27 +24,39 @@ const moreNavItems = [
 export default function AdminLayout() {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full bg-background relative">
+        {/* Subtle video background for dashboards */}
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          <video
+            autoPlay muted loop playsInline
+            className="w-full h-full object-cover opacity-[0.03]"
+          >
+            <source src={dashboardBgAsset.url} type="video/mp4" />
+          </video>
+        </div>
+
         <AdminSidebar />
-        <div className="flex-1 flex flex-col">
-          <header className="h-14 border-b border-border/50 flex items-center justify-between px-4 bg-card/50 backdrop-blur sticky top-0 z-10">
+        <div className="flex-1 flex flex-col relative z-[1]">
+          <header className="h-14 border-b border-border/40 flex items-center justify-between px-4 bg-card/80 backdrop-blur-xl sticky top-0 z-10 shadow-sm">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="hidden md:flex" />
               <div className="relative hidden sm:block">
                 <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   placeholder="Search users, tickets..."
-                  className="ps-9 pe-4 py-1.5 text-sm rounded-lg bg-muted/50 border border-border/50 focus:outline-none focus:ring-1 focus:ring-accent w-64"
+                  className="ps-9 pe-4 py-2 text-sm rounded-xl bg-muted/40 border border-border/40 focus:outline-none focus:ring-2 focus:ring-accent/50 w-64 transition-all focus:w-80"
                 />
               </div>
             </div>
             <div className="flex items-center gap-3">
               <NotificationBell basePath="/admin" />
-              <Badge variant="outline" className="text-xs">Admin</Badge>
+              <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary">Admin</Badge>
             </div>
           </header>
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
-            <Outlet />
+            <PageTransition>
+              <Outlet />
+            </PageTransition>
           </main>
         </div>
         <MobileBottomNav items={bottomNavItems} moreItems={moreNavItems} />

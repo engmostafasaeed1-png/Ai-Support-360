@@ -2,10 +2,12 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Outlet } from 'react-router-dom';
 import SuperAdminSidebar from './SuperAdminSidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
+import PageTransition from '@/components/PageTransition';
 import { LayoutDashboard, ShieldCheck, BarChart3, Settings2, Users } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 import { Crown } from 'lucide-react';
+import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
 
 const bottomNavItems = [
   { key: 'overview', icon: LayoutDashboard, path: '/super-admin', labelKey: 'super_admin.overview' },
@@ -21,13 +23,19 @@ const moreNavItems = [
 export default function SuperAdminLayout() {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full bg-background relative">
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          <video autoPlay muted loop playsInline className="w-full h-full object-cover opacity-[0.03]">
+            <source src={dashboardBgAsset.url} type="video/mp4" />
+          </video>
+        </div>
+
         <SuperAdminSidebar />
-        <div className="flex-1 flex flex-col">
-          <header className="h-14 border-b border-border/50 flex items-center justify-between px-4 bg-card/50 backdrop-blur sticky top-0 z-10">
+        <div className="flex-1 flex flex-col relative z-[1]">
+          <header className="h-14 border-b border-border/40 flex items-center justify-between px-4 bg-card/80 backdrop-blur-xl sticky top-0 z-10 shadow-sm">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="hidden md:flex" />
-              <Badge className="bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0 text-[10px] gap-1">
+              <Badge className="bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0 text-[10px] gap-1 shadow-sm">
                 <Crown className="w-3 h-3" />
                 Super Admin
               </Badge>
@@ -37,7 +45,9 @@ export default function SuperAdminLayout() {
             </div>
           </header>
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
-            <Outlet />
+            <PageTransition>
+              <Outlet />
+            </PageTransition>
           </main>
         </div>
         <MobileBottomNav items={bottomNavItems} moreItems={moreNavItems} />

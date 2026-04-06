@@ -12,6 +12,8 @@ import PasswordInput from '@/components/auth/PasswordInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 import { cn } from '@/lib/utils';
 import GuestExploreModal from '@/components/guest/GuestExploreModal';
+import VideoBackground from '@/components/VideoBackground';
+import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
 
 type Role = 'client' | 'consultant';
 
@@ -50,7 +52,6 @@ export default function SignupPage() {
       navigate('/login');
       return;
     }
-    // If auto-confirm is on (dev), insert role and redirect
     if (data.user) {
       await supabase.from('user_roles').insert({ user_id: data.user.id, role });
       if (role === 'consultant') {
@@ -64,16 +65,17 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center px-4 relative py-8">
+      <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
+      <Card className="w-full max-w-md relative z-10 shadow-2xl border-border/30 backdrop-blur-sm bg-card/95 animate-fade-in">
         <CardHeader className="text-center">
-          <Link to="/" className="inline-flex items-center gap-2 justify-center mb-4">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
+          <Link to="/" className="inline-flex items-center gap-2 justify-center mb-4 group">
+            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-premium group-hover:scale-110 transition-transform">
               <span className="text-sm font-bold text-primary-foreground">Q</span>
             </div>
-            <span className="font-bold text-lg text-foreground">Qurtuba</span>
+            <span className="font-bold text-xl text-foreground">Qurtuba</span>
           </Link>
-          <CardTitle>{t('auth.signup_title')}</CardTitle>
+          <CardTitle className="text-2xl">{t('auth.signup_title')}</CardTitle>
           <CardDescription>{t('auth.signup_desc')}</CardDescription>
         </CardHeader>
         <form onSubmit={handleSignup}>
@@ -90,9 +92,9 @@ export default function SignupPage() {
                     type="button"
                     onClick={() => setRole(opt.value)}
                     className={cn(
-                      'flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all text-center',
+                      'flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all text-center hover:scale-[1.02]',
                       role === opt.value
-                        ? 'border-primary bg-primary/5'
+                        ? 'border-primary bg-primary/5 shadow-premium'
                         : 'border-border hover:border-muted-foreground/30'
                     )}
                   >
@@ -105,11 +107,11 @@ export default function SignupPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="name">{t('auth.name')}</Label>
-              <Input id="name" required value={name} onChange={e => setName(e.target.value)} placeholder={t('auth.name_placeholder')} />
+              <Input id="name" required value={name} onChange={e => setName(e.target.value)} placeholder={t('auth.name_placeholder')} className="h-11 rounded-xl" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="email">{t('auth.email')}</Label>
-              <Input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" />
+              <Input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" className="h-11 rounded-xl" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">{t('auth.password')}</Label>
@@ -119,7 +121,7 @@ export default function SignupPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
-            <Button type="submit" className="w-full gradient-primary border-0" disabled={loading}>
+            <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" disabled={loading}>
               {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {t('auth.signup_btn')}
             </Button>

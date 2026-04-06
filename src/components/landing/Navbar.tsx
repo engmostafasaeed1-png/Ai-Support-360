@@ -2,13 +2,20 @@ import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/hooks/useLanguage';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Globe } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 export default function Navbar() {
   const { t } = useTranslation();
   const { toggleLanguage, currentLang } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const navItems = [
     { label: t('nav.home'), href: '/' },
@@ -19,62 +26,80 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      scrolled
+        ? 'bg-background/90 backdrop-blur-xl border-b border-border/50 shadow-sm'
+        : 'bg-transparent'
+    }`}>
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
+        <Link to="/" className="flex items-center gap-2 group">
+          <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-premium group-hover:scale-110 transition-transform">
             <span className="text-sm font-bold text-primary-foreground">Q</span>
           </div>
-          <span className="font-bold text-lg text-foreground">Qurtuba</span>
+          <span className={`font-bold text-lg transition-colors ${scrolled ? 'text-foreground' : 'text-primary-foreground'}`}>
+            Qurtuba
+          </span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-1">
           {navItems.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className={`text-sm font-medium px-3 py-2 rounded-lg transition-all hover:bg-primary-foreground/10 ${
+                scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-primary-foreground/80 hover:text-primary-foreground'
+              }`}
             >
               {item.label}
             </a>
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-2">
           <button
             onClick={toggleLanguage}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className={`flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg transition-all hover:bg-primary-foreground/10 ${
+              scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-primary-foreground/80 hover:text-primary-foreground'
+            }`}
           >
             <Globe className="w-4 h-4" />
             {t('nav.language')}
           </button>
           <Link to="/login">
-            <Button variant="ghost" size="sm">{t('nav.login')}</Button>
+            <Button variant="ghost" size="sm" className={scrolled ? '' : 'text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'}>
+              {t('nav.login')}
+            </Button>
           </Link>
           <Link to="/signup">
-            <Button size="sm" className="gradient-primary border-0">{t('nav.signup')}</Button>
+            <Button size="sm" className={scrolled ? 'gradient-primary border-0 shadow-premium' : 'bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-xl'}>
+              {t('nav.signup')}
+            </Button>
           </Link>
         </div>
 
         <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {mobileOpen ? (
+            <X className={`w-5 h-5 ${scrolled ? 'text-foreground' : 'text-primary-foreground'}`} />
+          ) : (
+            <Menu className={`w-5 h-5 ${scrolled ? 'text-foreground' : 'text-primary-foreground'}`} />
+          )}
         </button>
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-border/50 bg-background p-4 space-y-3">
+        <div className="md:hidden border-t border-border/30 bg-background/95 backdrop-blur-xl p-4 space-y-3 animate-fade-in shadow-lg">
           {navItems.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="block text-sm font-medium text-muted-foreground hover:text-foreground"
+              className="block text-sm font-medium text-muted-foreground hover:text-foreground px-3 py-2 rounded-lg hover:bg-muted/50 transition-all"
               onClick={() => setMobileOpen(false)}
             >
               {item.label}
             </a>
           ))}
           <div className="flex items-center gap-2 pt-3 border-t border-border/50">
-            <button onClick={toggleLanguage} className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <button onClick={toggleLanguage} className="flex items-center gap-1.5 text-sm text-muted-foreground px-3 py-2 rounded-lg hover:bg-muted/50">
               <Globe className="w-4 h-4" />
               {t('nav.language')}
             </button>
@@ -84,7 +109,7 @@ export default function Navbar() {
               <Button variant="outline" size="sm" className="w-full">{t('nav.login')}</Button>
             </Link>
             <Link to="/signup" className="flex-1">
-              <Button size="sm" className="w-full gradient-primary border-0">{t('nav.signup')}</Button>
+              <Button size="sm" className="w-full gradient-primary border-0 shadow-premium">{t('nav.signup')}</Button>
             </Link>
           </div>
         </div>

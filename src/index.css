@@ -120,6 +120,10 @@
     @apply bg-card/70 backdrop-blur-xl border border-border/50 shadow-lg;
   }
 
+  .glass-card-hover {
+    @apply glass-card hover:shadow-xl hover:border-border/80 transition-all duration-300 hover:-translate-y-0.5;
+  }
+
   .gradient-primary {
     background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
   }
@@ -133,6 +137,40 @@
 
   .shadow-premium {
     box-shadow: 0 4px 24px -4px hsl(var(--primary) / 0.12), 0 2px 8px -2px hsl(var(--primary) / 0.08);
+  }
+
+  .shadow-glow {
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.15), 0 4px 16px -4px hsl(var(--primary) / 0.1);
+  }
+
+  /* Smooth scroll */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.2);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
+  }
+
+  /* Focus ring improvements */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--accent));
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 }
 
@@ -156,4 +194,16 @@
 @keyframes cursor-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
+}
+
+/* Shimmer effect for loading states */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent 25%, hsl(var(--accent) / 0.05) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
 }

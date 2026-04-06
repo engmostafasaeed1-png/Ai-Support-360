@@ -3,12 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import PasswordInput from '@/components/auth/PasswordInput';
+import VideoBackground from '@/components/VideoBackground';
+import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
 
 export default function ResetPasswordPage() {
   const { t } = useTranslation();
@@ -19,45 +20,31 @@ export default function ResetPasswordPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Listen for the PASSWORD_RECOVERY event
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setReady(true);
-      }
+      if (event === 'PASSWORD_RECOVERY') setReady(true);
     });
-    // Also check hash for type=recovery
     const hash = window.location.hash;
-    if (hash.includes('type=recovery')) {
-      setReady(true);
-    }
+    if (hash.includes('type=recovery')) setReady(true);
     return () => subscription.unsubscribe();
   }, []);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) {
-      toast.error(t('auth.password_min'));
-      return;
-    }
-    if (password !== confirm) {
-      toast.error(t('auth.password_mismatch'));
-      return;
-    }
+    if (password.length < 6) { toast.error(t('auth.password_min')); return; }
+    if (password !== confirm) { toast.error(t('auth.password_mismatch')); return; }
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    if (error) { toast.error(error.message); return; }
     toast.success(t('auth.password_updated'));
     navigate('/login');
   };
 
   if (!ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen flex items-center justify-center px-4 relative">
+        <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
+        <Card className="w-full max-w-md relative z-10 shadow-2xl border-border/30 backdrop-blur-sm bg-card/95">
           <CardContent className="py-12 text-center">
             <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">{t('auth.verifying_link')}</p>
@@ -68,16 +55,17 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center px-4 relative">
+      <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
+      <Card className="w-full max-w-md relative z-10 shadow-2xl border-border/30 backdrop-blur-sm bg-card/95 animate-fade-in">
         <CardHeader className="text-center">
-          <Link to="/" className="inline-flex items-center gap-2 justify-center mb-4">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
+          <Link to="/" className="inline-flex items-center gap-2 justify-center mb-4 group">
+            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-premium group-hover:scale-110 transition-transform">
               <span className="text-sm font-bold text-primary-foreground">Q</span>
             </div>
-            <span className="font-bold text-lg text-foreground">Qurtuba</span>
+            <span className="font-bold text-xl text-foreground">Qurtuba</span>
           </Link>
-          <CardTitle>{t('auth.reset_title')}</CardTitle>
+          <CardTitle className="text-2xl">{t('auth.reset_title')}</CardTitle>
           <CardDescription>{t('auth.reset_desc')}</CardDescription>
         </CardHeader>
         <form onSubmit={handleReset}>
@@ -92,7 +80,7 @@ export default function ResetPasswordPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full gradient-primary border-0" disabled={loading}>
+            <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" disabled={loading}>
               {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {t('auth.reset_btn')}
             </Button>
