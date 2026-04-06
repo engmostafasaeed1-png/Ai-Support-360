@@ -74,6 +74,7 @@ import ConfigPage from "./pages/superadmin/ConfigPage.tsx";
 import WorkflowsPage from "./pages/superadmin/WorkflowsPage.tsx";
 import AuditLogsPage from "./pages/superadmin/AuditLogsPage.tsx";
 import SystemHealthPage from "./pages/superadmin/SystemHealthPage.tsx";
+import ReferralsPage from "./pages/ReferralsPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -114,6 +115,7 @@ const App = () => (
               <Route path="reviews" element={<ReviewsPage />} />
               <Route path="settings" element={<ConsultantSettingsPage />} />
               <Route path="knowledge" element={<ConsultantKnowledgePage />} />
+              <Route path="referrals" element={<ReferralsPage />} />
             </Route>
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
@@ -135,6 +137,7 @@ const App = () => (
               <Route path="remote-access" element={<ClientRemoteAccessPage />} />
               <Route path="invoices" element={<InvoicesPage />} />
               <Route path="knowledge" element={<KnowledgePage />} />
+              <Route path="referrals" element={<ReferralsPage />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminDashboard />} />
