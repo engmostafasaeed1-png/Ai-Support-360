@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import PageTransition from '@/components/PageTransition';
+import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Search, LayoutDashboard, Users, Kanban, UserCheck, BarChart3, Settings, Plug } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +35,7 @@ export default function AdminLayout() {
 
         <AdminSidebar />
         <div className="flex-1 flex flex-col relative z-[1]">
-          <header className="h-14 border-b border-border/40 flex items-center justify-between px-4 bg-card/80 backdrop-blur-xl fixed top-0 right-0 left-0 md:left-[var(--sidebar-width,16rem)] z-40 shadow-sm transition-[left] duration-200">
+          <FixedHeader>
             <div className="flex items-center gap-3">
               <SidebarTrigger className="hidden md:flex" />
               <div className="relative hidden sm:block">
@@ -49,11 +50,11 @@ export default function AdminLayout() {
               <NotificationBell basePath="/admin" />
               <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary">Admin</Badge>
             </div>
-          </header>
-          <div className="border-b border-border/30 bg-card/60 backdrop-blur-sm fixed top-14 right-0 left-0 md:left-[var(--sidebar-width,16rem)] z-30 hidden md:block transition-[left] duration-200">
+          </FixedHeader>
+          <FixedSubHeader>
             <HeaderNav role="admin" />
-          </div>
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6 mt-14 md:mt-[calc(3.5rem+2.5rem)]">
+          </FixedSubHeader>
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6 mt-14 md:mt-24">
             <PageTransition>
               <Outlet />
             </PageTransition>
