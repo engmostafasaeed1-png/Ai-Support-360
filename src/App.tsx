@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound.tsx";
 import ConsultantLayout from "./components/consultant/ConsultantLayout.tsx";
 import ConsultantDashboard from "./pages/consultant/ConsultantDashboard.tsx";
 import CasesPage from "./pages/consultant/CasesPage.tsx";
+import CaseDetailPage from "./pages/consultant/CaseDetailPage.tsx";
 import RequestsPage from "./pages/consultant/RequestsPage.tsx";
 import ProposalsPage from "./pages/consultant/ProposalsPage.tsx";
 import WorkDiaryPage from "./pages/consultant/WorkDiaryPage.tsx";
@@ -105,6 +106,7 @@ const App = () => (
             <Route path="/consultant" element={<ProtectedRoute requiredRole="consultant"><ConsultantLayout /></ProtectedRoute>}>
               <Route index element={<ConsultantDashboard />} />
               <Route path="cases" element={<CasesPage />} />
+              <Route path="cases/:caseId" element={<CaseDetailPage />} />
               <Route path="requests" element={<RequestsPage />} />
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="earnings" element={<EarningsPage />} />

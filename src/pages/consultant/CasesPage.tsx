@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useConsultantCases } from '@/hooks/useConsultantCases';
 import { Search, Filter, ArrowUpRight, Clock, FileSignature, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
@@ -127,7 +128,8 @@ export default function CasesPage() {
             const ndaSigned = clientId ? signedClients.has(clientId) : false;
 
             return (
-              <Card key={ticket.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
+              <Link key={ticket.id} to={`/consultant/cases/${ticket.id}`} className="block">
+              <Card className="rounded-2xl border-border/50 hover:shadow-premium transition-all cursor-pointer">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -185,6 +187,7 @@ export default function CasesPage() {
                   </div>
                 </CardContent>
               </Card>
+              </Link>
             );
           })
         )}
