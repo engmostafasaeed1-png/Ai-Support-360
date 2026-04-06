@@ -44,14 +44,29 @@ export function useAdminStats() {
 
       const revenue = (payments || []).reduce((s, p) => s + Number(p.amount), 0);
 
+      // Tickets this month
+      const now = new Date();
+      const { count: ticketsThisMonth } = await supabase
+        .from('tickets')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', new Date(now.getFullYear(), now.getMonth(), 1).toISOString());
+
+      // Avg satisfaction from ratings
+      const { data: ratings } = await supabase
+        .from('ratings')
+        .select('score');
+      const avgSatisfaction = ratings && ratings.length > 0
+        ? Math.round((ratings.reduce((s, r) => s + r.score, 0) / ratings.length) * 10) / 10
+        : 0;
+
       return {
         totalUsers: totalUsers || 0,
         activeConsultants: activeConsultants || 0,
         openTickets: openTickets || 0,
         revenue,
-        avgResolutionTime: adminStats.avgResolutionTime,
-        satisfaction: adminStats.satisfaction,
-        ticketsThisMonth: adminStats.ticketsThisMonth,
+        avgResolutionTime: '—',
+        satisfaction: avgSatisfaction,
+        ticketsThisMonth: ticketsThisMonth || 0,
         pendingApprovals: pendingApprovals || 0,
       };
     },
