@@ -202,7 +202,9 @@
     "remote_access": "الوصول عن بُعد",
     "environment_logs": "سجل الجلسات",
     "nda_management": "إدارة اتفاقيات عدم الإفصاح",
-    "company_profile": "الملف التعريفي للشركة"
+    "company_profile": "الملف التعريفي للشركة",
+    "referrals": "الإحالات",
+    "requests": "الطلبات"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",
