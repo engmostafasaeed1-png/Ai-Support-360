@@ -108,19 +108,18 @@ export default function ClientSidebar() {
           </Link>
         </div>
 
-        {/* Subscription Badge */}
-        {!collapsed && (
-          <div className="mx-3 mt-3">
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl ${tierColors[tier]} text-xs font-medium`}>
-              <TierIcon className="w-3.5 h-3.5 shrink-0" />
-              <span className="capitalize">{tier} Plan</span>
-              {tier === 'basic' && (
-                <Link to="/client/settings" className="ms-auto flex items-center gap-0.5 text-[10px] font-semibold text-primary hover:underline">
-                  Upgrade <ChevronRight className="w-3 h-3" />
-                </Link>
-              )}
+        {/* Company Switcher */}
+        {!collapsed && tenant && (
+          <Link to="/client/companies" className="mx-3 mt-2 flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-sidebar-accent/30 hover:bg-sidebar-accent/50 transition-colors group border border-sidebar-border/20">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Building2 className="w-4 h-4 text-primary" />
             </div>
-          </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-xs font-semibold text-sidebar-foreground block truncate">{tenant.name}</span>
+              <span className="text-[10px] text-sidebar-foreground/40 capitalize">{tier} Plan</span>
+            </div>
+            <ChevronRight className="w-3.5 h-3.5 text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60 transition-colors" />
+          </Link>
         )}
 
         {/* Navigation Groups */}
