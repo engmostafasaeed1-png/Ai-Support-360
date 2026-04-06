@@ -475,6 +475,13 @@
     "pending_interview": "You have a pending AI interview",
     "pending_desc": "An AI-powered interview has been scheduled for you. Click below to begin."
   },
+  "interview_history": {
+    "title": "Interview History",
+    "empty": "No interviews yet.",
+    "summary": "AI Summary",
+    "started": "Started",
+    "completed": "Completed"
+  },
   "analytics_page": {
     "title": "Platform Analytics",
     "subtitle": "Deep insights into platform performance",
