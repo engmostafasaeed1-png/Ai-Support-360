@@ -58,6 +58,11 @@ import ResetPasswordPage from "./pages/auth/ResetPasswordPage.tsx";
 import ProtectedRoute from "./components/auth/ProtectedRoute.tsx";
 import RemoteAccessPage from "./pages/consultant/RemoteAccessPage.tsx";
 import ClientRemoteAccessPage from "./pages/client/RemoteAccessPage.tsx";
+import InvoicesPage from "./pages/client/InvoicesPage.tsx";
+import KnowledgePage from "./pages/client/KnowledgePage.tsx";
+import ReviewsPage from "./pages/consultant/ReviewsPage.tsx";
+import ConsultantSettingsPage from "./pages/consultant/SettingsPage.tsx";
+import ConsultantKnowledgePage from "./pages/consultant/KnowledgePage.tsx";
 import SuperAdminLayout from "./components/superadmin/SuperAdminLayout.tsx";
 import SuperAdminOverview from "./pages/superadmin/SuperAdminOverview.tsx";
 import RolesAuthPage from "./pages/superadmin/RolesAuthPage.tsx";
@@ -103,6 +108,9 @@ const App = () => (
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="onboarding" element={<OnboardingPage />} />
               <Route path="remote-access" element={<RemoteAccessPage />} />
+              <Route path="reviews" element={<ReviewsPage />} />
+              <Route path="settings" element={<ConsultantSettingsPage />} />
+              <Route path="knowledge" element={<ConsultantKnowledgePage />} />
             </Route>
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
@@ -122,6 +130,8 @@ const App = () => (
               <Route path="integrations" element={<IntegrationsPage />} />
               <Route path="onboarding" element={<ClientOnboardingPage />} />
               <Route path="remote-access" element={<ClientRemoteAccessPage />} />
+              <Route path="invoices" element={<InvoicesPage />} />
+              <Route path="knowledge" element={<KnowledgePage />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminDashboard />} />
