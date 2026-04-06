@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GuestModeProvider } from "./contexts/GuestModeContext.tsx";
+import { TenantProvider } from "./contexts/TenantContext.tsx";
 import GuestBanner from "./components/guest/GuestBanner.tsx";
 import AIChatbot from "./components/chatbot/AIChatbot.tsx";
 import MaintenanceBanner from "./components/MaintenanceBanner.tsx";
@@ -89,6 +90,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <GuestModeProvider>
+        <TenantProvider>
           <ScrollToTop />
           <ScreenProtection />
           <GlobalSearch />
@@ -174,6 +176,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+        </TenantProvider>
         </GuestModeProvider>
       </BrowserRouter>
     </TooltipProvider>
