@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Building2, Plus, ArrowRight, Crown, Sparkles, ChevronRight, Briefcase } from 'lucide-react';
 import { useTenant } from '@/contexts/TenantContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import VideoBackground from '@/components/VideoBackground';
