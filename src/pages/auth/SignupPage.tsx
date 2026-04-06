@@ -22,6 +22,7 @@ export default function SignupPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialRole = searchParams.get('role') === 'consultant' ? 'consultant' : 'client';
+  const referralCode = searchParams.get('ref') || '';
 
   const [role, setRole] = useState<Role>(initialRole);
   const [name, setName] = useState('');
@@ -40,7 +41,7 @@ export default function SignupPage() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { display_name: name, role } },
+      options: { data: { display_name: name, role, ...(referralCode ? { referral_code: referralCode } : {}) } },
     });
     setLoading(false);
     if (error) {
