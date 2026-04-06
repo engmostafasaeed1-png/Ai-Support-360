@@ -7,6 +7,10 @@ import { GuestModeProvider } from "./contexts/GuestModeContext.tsx";
 import GuestBanner from "./components/guest/GuestBanner.tsx";
 import AIChatbot from "./components/chatbot/AIChatbot.tsx";
 import MaintenanceBanner from "./components/MaintenanceBanner.tsx";
+import ScrollToTop from "./components/ScrollToTop.tsx";
+import ScreenProtection from "./components/ScreenProtection.tsx";
+import WhatsAppButton from "./components/WhatsAppButton.tsx";
+import GlobalSearch from "./components/GlobalSearch.tsx";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ConsultantLayout from "./components/consultant/ConsultantLayout.tsx";
@@ -73,9 +77,13 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <GuestModeProvider>
+          <ScrollToTop />
+          <ScreenProtection />
+          <GlobalSearch />
           <MaintenanceBanner />
           <GuestBanner />
           <AIChatbot />
+          <WhatsAppButton />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/pricing" element={<PricingPage />} />
