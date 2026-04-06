@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
+import { X, Globe, Linkedin, Github } from 'lucide-react';
 import type { OnboardingData } from '../ConsultantOnboarding';
 
 const timezones = [
@@ -65,6 +65,35 @@ export default function ProfileStep({ data, onChange }: Props) {
         <p className="text-[10px] text-muted-foreground text-end">{data.bio.length}/1000</p>
       </div>
 
+      {/* Location & Personal */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="space-y-1.5">
+          <Label>Nationality</Label>
+          <Input
+            value={data.nationality}
+            onChange={e => onChange({ nationality: e.target.value })}
+            placeholder="Saudi"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>City</Label>
+          <Input
+            value={data.city}
+            onChange={e => onChange({ city: e.target.value })}
+            placeholder="Riyadh"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Country</Label>
+          <Input
+            value={data.country}
+            onChange={e => onChange({ country: e.target.value })}
+            placeholder="Saudi Arabia"
+          />
+        </div>
+      </div>
+
+      {/* Rate & Currency */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="hourlyRate">{t('onboarding.hourly_rate')}</Label>
@@ -103,6 +132,38 @@ export default function ProfileStep({ data, onChange }: Props) {
         </div>
       </div>
 
+      {/* Social Links */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">Social & Web Links</Label>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Linkedin className="w-4 h-4 text-muted-foreground shrink-0" />
+            <Input
+              value={data.linkedinUrl}
+              onChange={e => onChange({ linkedinUrl: e.target.value })}
+              placeholder="https://linkedin.com/in/your-profile"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Github className="w-4 h-4 text-muted-foreground shrink-0" />
+            <Input
+              value={data.githubUrl}
+              onChange={e => onChange({ githubUrl: e.target.value })}
+              placeholder="https://github.com/username"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
+            <Input
+              value={data.personalWebsite}
+              onChange={e => onChange({ personalWebsite: e.target.value })}
+              placeholder="https://your-website.com"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Languages */}
       <div className="space-y-1.5">
         <Label>{t('onboarding.languages')}</Label>
         <div className="flex flex-wrap gap-2">
