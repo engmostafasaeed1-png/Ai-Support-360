@@ -9,12 +9,14 @@ import {
 import {
   LayoutDashboard, ShieldCheck, BarChart3, Settings2, Workflow,
   Globe, LogOut, Crown, FileText, Activity, Users, Lock, Database,
+  PieChart,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
 
 const menuItems = [
   { key: 'overview', icon: LayoutDashboard, path: '/super-admin', labelKey: 'super_admin.overview' },
+  { key: 'executive', icon: PieChart, path: '/super-admin/executive', labelKey: 'super_admin.executive_dashboard' },
   { key: 'roles', icon: ShieldCheck, path: '/super-admin/roles', labelKey: 'super_admin.roles' },
   { key: 'users', icon: Users, path: '/super-admin/users', labelKey: 'super_admin.user_management' },
   { key: 'reports', icon: BarChart3, path: '/super-admin/reports', labelKey: 'super_admin.reports' },

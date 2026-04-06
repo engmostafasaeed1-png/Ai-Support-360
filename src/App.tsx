@@ -79,6 +79,7 @@ import ConfigPage from "./pages/superadmin/ConfigPage.tsx";
 import WorkflowsPage from "./pages/superadmin/WorkflowsPage.tsx";
 import AuditLogsPage from "./pages/superadmin/AuditLogsPage.tsx";
 import SystemHealthPage from "./pages/superadmin/SystemHealthPage.tsx";
+import ExecutiveDashboardPage from "./pages/superadmin/ExecutiveDashboardPage.tsx";
 import ReferralsPage from "./pages/ReferralsPage.tsx";
 
 const queryClient = new QueryClient();
@@ -164,6 +165,7 @@ const App = () => (
             </Route>
             <Route path="/super-admin" element={<ProtectedRoute requiredRole="admin"><SuperAdminLayout /></ProtectedRoute>}>
               <Route index element={<SuperAdminOverview />} />
+              <Route path="executive" element={<ExecutiveDashboardPage />} />
               <Route path="roles" element={<RolesAuthPage />} />
               <Route path="users" element={<UserManagementPage />} />
               <Route path="reports" element={<ReportsPage />} />
