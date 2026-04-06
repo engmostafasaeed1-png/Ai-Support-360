@@ -59,6 +59,20 @@ export default function SignupPage() {
         await supabase.from('consultants').insert({ user_id: data.user.id });
         navigate('/consultant/onboarding');
       } else {
+        // Create tenant for client signup
+        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now().toString(36);
+        const { data: tenantData } = await supabase
+          .from('tenants')
+          .insert({ name: name + "'s Organization", slug })
+          .select('id')
+          .single();
+        if (tenantData) {
+          await supabase.from('tenant_members').insert({
+            tenant_id: tenantData.id,
+            user_id: data.user.id,
+            org_role: 'owner' as any,
+          });
+        }
         await supabase.from('client_profiles').insert({ user_id: data.user.id });
         navigate('/client/onboarding');
       }
