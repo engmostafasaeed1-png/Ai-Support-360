@@ -12,9 +12,11 @@ interface Props {
   interviewId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  session?: any;
+  consultantName?: string;
 }
 
-export default function InterviewAnswersDialog({ interviewId, open, onOpenChange }: Props) {
+export default function InterviewAnswersDialog({ interviewId, open, onOpenChange, session, consultantName }: Props) {
   const { t } = useTranslation();
 
   const { data: answers, isLoading } = useQuery({
