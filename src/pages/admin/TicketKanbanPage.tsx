@@ -26,6 +26,7 @@ const columns = [
 export default function TicketKanbanPage() {
   const { t } = useTranslation();
   const { data: kanbanTickets, isLoading } = useAdminTickets();
+  const [matchDialog, setMatchDialog] = useState<{ open: boolean; ticketId: string; ticketTitle: string; sapModule: string }>({ open: false, ticketId: '', ticketTitle: '', sapModule: '' });
 
   const ticketData = kanbanTickets || { new: [], under_review: [], matched: [], in_progress: [], waiting_for_client: [], resolved: [], closed: [] };
 
