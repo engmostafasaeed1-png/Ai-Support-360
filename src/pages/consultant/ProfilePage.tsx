@@ -153,5 +153,6 @@ export default function ProfilePage() {
       consultantId={p.id}
       consultantName={p.name}
     />
-  </>;
+    </>
+  );
 }
