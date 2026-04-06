@@ -26,7 +26,7 @@ export function useConsultantWorkDiary(dateRange?: { from: string; to: string })
       return data || [];
     },
     enabled: !isGuest,
-    placeholderData: isGuest ? mockDiaryEntries : undefined,
+    placeholderData: isGuest ? mockDiaryEntries as any : undefined,
   });
 }
 

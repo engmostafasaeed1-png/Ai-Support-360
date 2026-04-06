@@ -16,7 +16,7 @@ export function useProjectMilestones(projectId: string) {
       return data || [];
     },
     enabled: !!projectId && !isGuest,
-    placeholderData: isGuest ? mockMilestones : undefined,
+    placeholderData: isGuest ? mockMilestones as any : undefined,
   });
 }
 
