@@ -1,0 +1,112 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    const { linkedin_url } = await req.json();
+    if (!linkedin_url || typeof linkedin_url !== "string") {
+      return new Response(JSON.stringify({ error: "linkedin_url is required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate LinkedIn URL format
+    const urlPattern = /^https?:\/\/(www\.)?linkedin\.com\/in\/.+/i;
+    if (!urlPattern.test(linkedin_url)) {
+      return new Response(JSON.stringify({ error: "Invalid LinkedIn profile URL. Expected format: https://linkedin.com/in/username" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+    // Use AI to generate a realistic profile structure from the LinkedIn URL
+    // Note: Real scraping would require a third-party API (Proxycurl, etc.)
+    const systemPrompt = `You are a professional profile data generator for SAP consultants. Given a LinkedIn URL, generate realistic placeholder profile data that matches what a typical SAP consultant might have. This is for demo/testing purposes. Return ONLY valid JSON.`;
+
+    const userPrompt = `Generate a realistic SAP consultant profile for the LinkedIn URL: ${linkedin_url}
+
+Return a JSON object with:
+{
+  "display_name": "Full name (extract from URL slug if possible)",
+  "bio": "A professional 2-3 sentence summary",
+  "linkedin_url": "${linkedin_url}",
+  "nationality": "string",
+  "city": "string",
+  "country": "string",
+  "languages": ["en"],
+  "skills": [
+    { "sap_module": "SAP module name", "proficiency_level": 1-5, "years_experience": number, "certified": boolean }
+  ],
+  "certifications": [
+    { "name": "cert name", "issuer": "SAP", "issue_date": "YYYY-MM-DD or null", "expiry_date": "YYYY-MM-DD or null" }
+  ],
+  "work_history": [
+    { "company_name": "", "job_title": "", "start_date": "YYYY-MM-DD or null", "end_date": "YYYY-MM-DD or null", "description": "", "is_current": false }
+  ],
+  "education": [
+    { "institution": "", "degree": "", "field_of_study": "", "start_year": null, "end_year": null }
+  ],
+  "projects": [
+    { "project_name": "", "client_industry": "", "sap_modules": [], "description": "", "duration_months": null, "role": "" }
+  ]
+}`;
+
+    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
+
+    if (!aiResp.ok) {
+      if (aiResp.status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limited, please try again later" }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (aiResp.status === 402) {
+        return new Response(JSON.stringify({ error: "Credits exhausted. Please add funds." }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      throw new Error("AI gateway error");
+    }
+
+    const aiData = await aiResp.json();
+    const rawContent = aiData.choices?.[0]?.message?.content || "{}";
+
+    let parsed;
+    try {
+      const cleaned = rawContent.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+      parsed = JSON.parse(cleaned);
+    } catch {
+      console.error("Failed to parse AI response:", rawContent);
+      throw new Error("Failed to parse LinkedIn data");
+    }
+
+    return new Response(JSON.stringify({ profile: parsed }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    console.error("Error:", e);
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
