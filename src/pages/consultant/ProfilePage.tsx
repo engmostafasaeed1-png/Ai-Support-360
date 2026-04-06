@@ -15,7 +15,7 @@ export default function ProfilePage() {
   const p = mockConsultantProfile;
   const [reinterviewOpen, setReinterviewOpen] = useState(false);
 
-  return (
+  return (<>
     <>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
