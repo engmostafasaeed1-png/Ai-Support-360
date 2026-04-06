@@ -38,10 +38,10 @@ export function useMyReferrals() {
     },
     enabled: !isGuest,
     placeholderData: isGuest ? [
-      { id: 'r1', referral_code: 'DEMO1234', referred_email: 'john@company.com', status: 'rewarded', source: 'email', created_at: '2026-04-01T10:00:00Z' },
-      { id: 'r2', referral_code: 'DEMO1234', referred_email: 'sara@corp.com', status: 'registered', source: 'whatsapp', created_at: '2026-04-03T14:00:00Z' },
-      { id: 'r3', referral_code: 'DEMO1234', referred_email: null, status: 'pending', source: 'link', created_at: '2026-04-05T09:00:00Z' },
-    ] : undefined,
+      { id: 'r1', referral_code: 'DEMO1234', referred_email: 'john@company.com', status: 'rewarded', source: 'email', created_at: '2026-04-01T10:00:00Z', referred_user_id: 'u1', referrer_id: 'me', updated_at: '2026-04-01T10:00:00Z' },
+      { id: 'r2', referral_code: 'DEMO1234', referred_email: 'sara@corp.com', status: 'registered', source: 'whatsapp', created_at: '2026-04-03T14:00:00Z', referred_user_id: 'u2', referrer_id: 'me', updated_at: '2026-04-03T14:00:00Z' },
+      { id: 'r3', referral_code: 'DEMO1234', referred_email: null, status: 'pending', source: 'link', created_at: '2026-04-05T09:00:00Z', referred_user_id: '', referrer_id: 'me', updated_at: '2026-04-05T09:00:00Z' },
+    ] as any : undefined,
   });
 }
 
@@ -62,9 +62,9 @@ export function useMyRewards() {
     },
     enabled: !isGuest,
     placeholderData: isGuest ? [
-      { id: 'rw1', reward_type: 'credit', amount: 25, currency: 'USD', status: 'applied', description: 'Referral bonus — you invited a new user', created_at: '2026-04-01T10:00:00Z' },
-      { id: 'rw2', reward_type: 'credit', amount: 25, currency: 'USD', status: 'pending', description: 'Referral bonus — you invited a new user', created_at: '2026-04-03T14:00:00Z' },
-    ] : undefined,
+      { id: 'rw1', reward_type: 'credit', amount: 25, currency: 'USD', status: 'applied', description: 'Referral bonus — you invited a new user', created_at: '2026-04-01T10:00:00Z', applied_at: '2026-04-01T10:00:00Z', referral_id: 'r1', user_id: 'me' },
+      { id: 'rw2', reward_type: 'credit', amount: 25, currency: 'USD', status: 'pending', description: 'Referral bonus — you invited a new user', created_at: '2026-04-03T14:00:00Z', applied_at: '', referral_id: 'r2', user_id: 'me' },
+    ] as any : undefined,
   });
 }
 
