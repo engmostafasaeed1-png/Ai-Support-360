@@ -16,6 +16,7 @@ export default function ProfilePage() {
   const [reinterviewOpen, setReinterviewOpen] = useState(false);
 
   return (
+    <>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -146,5 +147,11 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
     </div>
-  );
+    <ReinterviewDialog
+      open={reinterviewOpen}
+      onOpenChange={setReinterviewOpen}
+      consultantId={p.id}
+      consultantName={p.name}
+    />
+  </>;
 }
