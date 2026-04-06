@@ -7,6 +7,7 @@ import { Search, LayoutDashboard, Users, Kanban, UserCheck, BarChart3, Settings,
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
+import HeaderNav from '@/components/HeaderNav';
 
 const bottomNavItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/admin', labelKey: 'sidebar.dashboard' },
@@ -53,6 +54,9 @@ export default function AdminLayout() {
               <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary">Admin</Badge>
             </div>
           </header>
+          <div className="border-b border-border/30 bg-card/60 backdrop-blur-sm sticky top-14 z-20 hidden md:block">
+            <HeaderNav role="admin" />
+          </div>
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
             <PageTransition>
               <Outlet />

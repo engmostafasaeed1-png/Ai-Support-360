@@ -8,6 +8,7 @@ import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 import { Crown } from 'lucide-react';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
+import HeaderNav from '@/components/HeaderNav';
 
 const bottomNavItems = [
   { key: 'overview', icon: LayoutDashboard, path: '/super-admin', labelKey: 'super_admin.overview' },
@@ -44,6 +45,9 @@ export default function SuperAdminLayout() {
               <NotificationBell basePath="/super-admin" />
             </div>
           </header>
+          <div className="border-b border-border/30 bg-card/60 backdrop-blur-sm sticky top-14 z-20 hidden md:block">
+            <HeaderNav role="super-admin" />
+          </div>
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
             <PageTransition>
               <Outlet />

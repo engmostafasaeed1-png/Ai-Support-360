@@ -10,6 +10,7 @@ import {
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Input } from '@/components/ui/input';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
+import HeaderNav from '@/components/HeaderNav';
 
 const bottomNavItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/consultant', labelKey: 'sidebar.dashboard' },
@@ -58,6 +59,9 @@ export default function ConsultantLayout() {
               </div>
             </div>
           </header>
+          <div className="border-b border-border/30 bg-card/60 backdrop-blur-sm sticky top-14 z-20 hidden md:block">
+            <HeaderNav role="consultant" />
+          </div>
           <main className="flex-1 p-4 md:p-6 overflow-auto pb-20 md:pb-6">
             <PageTransition>
               <Outlet />
