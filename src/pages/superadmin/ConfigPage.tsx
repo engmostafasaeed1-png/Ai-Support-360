@@ -39,11 +39,11 @@ const workflowSteps = [
 
 export default function ConfigPage() {
   const { t } = useTranslation();
-  const [flags, setFlags] = useState(featureFlags);
+  const { flags, loading, toggleFlag } = useFeatureFlags();
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
   const handleToggle = (key: string) => {
-    setFlags(prev => prev.map(f => f.key === key ? { ...f, enabled: !f.enabled } : f));
+    toggleFlag(key);
     toast.success(t('super_admin.feature_toggled', 'Feature flag updated'));
   };
 
