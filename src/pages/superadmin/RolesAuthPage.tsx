@@ -148,8 +148,6 @@ export default function RolesAuthPage() {
                   {t('common.save', 'Save Changes')}
                 </Button>
               </div>
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
