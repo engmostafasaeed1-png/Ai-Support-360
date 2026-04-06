@@ -77,6 +77,38 @@ export default function InterviewComparisonDialog({ interviews, open, onOpenChan
           ))}
         </div>
 
+        {/* Radar Chart */}
+        <div className="rounded-xl border border-border/30 p-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase mb-3">
+            {t('interview_comparison.radar', 'Score Radar')}
+          </p>
+          <ResponsiveContainer width="100%" height={280}>
+            <RadarChart
+              data={[
+                { metric: t('ai_interview.technical', 'Technical'), ...Object.fromEntries(scored.map((iv: any, i: number) => [`s${i}`, iv.technical_score ?? 0])) },
+                { metric: t('ai_interview.soft_skills', 'Soft Skills'), ...Object.fromEntries(scored.map((iv: any, i: number) => [`s${i}`, iv.soft_skills_score ?? 0])) },
+                { metric: t('interview_comparison.overall', 'Overall'), ...Object.fromEntries(scored.map((iv: any, i: number) => [`s${i}`, iv.overall_score ?? 0])) },
+              ]}
+              cx="50%" cy="50%" outerRadius="70%"
+            >
+              <PolarGrid stroke="hsl(var(--border))" />
+              <PolarAngleAxis dataKey="metric" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+              <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 9 }} />
+              {scored.map((iv: any, i: number) => (
+                <Radar
+                  key={iv.id}
+                  name={`#${i + 1} ${typeLabels[iv.interview_type] || ''}`}
+                  dataKey={`s${i}`}
+                  stroke={RADAR_COLORS[i % RADAR_COLORS.length]}
+                  fill={RADAR_COLORS[i % RADAR_COLORS.length]}
+                  fillOpacity={i === scored.length - 1 ? 0.25 : 0.08}
+                />
+              ))}
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
+
         {/* Timeline Comparison */}
         <div className="space-y-3 mt-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase">
