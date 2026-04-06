@@ -44,7 +44,12 @@
     "migration": "Data Migration",
     "ams": "AMS Support",
     "advisory": "Health Check",
-    "pm": "SAP PM/EAM"
+    "pm": "SAP PM/EAM",
+    "hcm": "SAP HCM/Payroll",
+    "bw": "SAP BW/HANA",
+    "ibp": "SAP IBP",
+    "concur": "SAP Concur",
+    "others": "Others"
   },
   "howItWorks": {
     "title": "How It Works",
