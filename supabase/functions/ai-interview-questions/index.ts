@@ -1,0 +1,126 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    const { interview_id } = await req.json();
+    if (!interview_id) throw new Error("interview_id is required");
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get interview + consultant info
+    const { data: interview, error: intErr } = await supabase
+      .from("interview_sessions")
+      .select("consultant_id, interview_type")
+      .eq("id", interview_id)
+      .single();
+    if (intErr || !interview) throw new Error("Interview not found");
+
+    // Get consultant skills
+    const { data: skills } = await supabase
+      .from("consultant_skills")
+      .select("sap_module, proficiency_level, years_experience")
+      .eq("consultant_id", interview.consultant_id);
+
+    const { data: certs } = await supabase
+      .from("certifications")
+      .select("name, issuer")
+      .eq("consultant_id", interview.consultant_id);
+
+    const moduleList = (skills || []).map(s => `${s.sap_module} (level ${s.proficiency_level}, ${s.years_experience}yr)`).join(", ");
+    const certList = (certs || []).map(c => `${c.name} (${c.issuer})`).join(", ");
+
+    const prompt = `You are an SAP technical interviewer. Generate exactly 6 interview questions for an SAP consultant.
+
+Consultant's skills: ${moduleList || "General SAP"}
+Certifications: ${certList || "None listed"}
+
+Generate a mix of:
+- 3 technical questions about their SAP modules
+- 1 scenario-based question  
+- 1 soft skills question
+- 1 problem-solving question
+
+Return a JSON array of objects with fields: "question", "category" (one of: technical, scenario, soft_skills, problem_solving), "difficulty" (1-5).
+Return ONLY the JSON array, no other text.`;
+
+    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: "You are an expert SAP interviewer. Always respond with valid JSON only." },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
+
+    if (!aiResp.ok) {
+      const errText = await aiResp.text();
+      console.error("AI error:", aiResp.status, errText);
+      if (aiResp.status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limited, please try again later" }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      throw new Error("AI gateway error");
+    }
+
+    const aiData = await aiResp.json();
+    const rawContent = aiData.choices?.[0]?.message?.content || "[]";
+    
+    // Parse JSON from response (handle markdown code blocks)
+    let questions;
+    try {
+      const cleaned = rawContent.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+      questions = JSON.parse(cleaned);
+    } catch {
+      console.error("Failed to parse AI response:", rawContent);
+      throw new Error("Failed to parse AI response");
+    }
+
+    // Save questions to interview_answers
+    const answersToInsert = questions.map((q: any, i: number) => ({
+      interview_id,
+      question: q.question,
+      category: q.category || "technical",
+      question_order: i + 1,
+    }));
+
+    const { error: insertErr } = await supabase
+      .from("interview_answers")
+      .insert(answersToInsert);
+    if (insertErr) throw insertErr;
+
+    // Update interview status
+    await supabase
+      .from("interview_sessions")
+      .update({ status: "in_progress", started_at: new Date().toISOString() })
+      .eq("id", interview_id);
+
+    return new Response(JSON.stringify({ questions }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    console.error("Error:", e);
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
