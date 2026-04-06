@@ -59,7 +59,7 @@ export function useFeatureFlags() {
 
       supabase
         .from('platform_settings')
-        .upsert({ key: SETTING_KEY, value: payload }, { onConflict: 'key' })
+        .upsert({ key: SETTING_KEY, value: payload } as any, { onConflict: 'key' })
         .then(({ error }) => {
           if (error) toast.error('Failed to save feature flag');
         });
