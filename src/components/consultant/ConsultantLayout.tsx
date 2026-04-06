@@ -42,7 +42,7 @@ export default function ConsultantLayout() {
 
         <ConsultantSidebar />
         <div className="flex-1 flex flex-col min-w-0 relative z-[1]">
-          <header className="h-14 flex items-center justify-between border-b border-border/40 px-4 bg-card/80 backdrop-blur-xl sticky top-0 z-30 shadow-sm">
+          <header className="h-14 flex items-center justify-between border-b border-border/40 px-4 bg-card/80 backdrop-blur-xl fixed top-0 right-0 left-0 md:left-[var(--sidebar-width,16rem)] z-40 shadow-sm transition-[left] duration-200">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-muted-foreground hidden md:flex" />
               <div className="hidden md:flex items-center relative">
@@ -60,10 +60,10 @@ export default function ConsultantLayout() {
               </div>
             </div>
           </header>
-          <div className="border-b border-border/30 bg-card/60 backdrop-blur-sm sticky top-14 z-20 hidden md:block">
+          <div className="border-b border-border/30 bg-card/60 backdrop-blur-sm fixed top-14 right-0 left-0 md:left-[var(--sidebar-width,16rem)] z-30 hidden md:block transition-[left] duration-200">
             <HeaderNav role="consultant" />
           </div>
-          <main className="flex-1 p-4 md:p-6 overflow-auto pb-20 md:pb-6">
+          <main className="flex-1 p-4 md:p-6 overflow-auto pb-20 md:pb-6 mt-14 md:mt-[calc(3.5rem+2.5rem)]">
             <PageTransition>
               <Outlet />
             </PageTransition>
