@@ -10,7 +10,7 @@ import {
 import {
   LayoutDashboard, TicketPlus, Briefcase, Users, Calendar,
   CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
-  Plug, Server, Building2, Gift, Milestone, Sparkles, Crown, ChevronRight,
+  Plug, Server, Building2, Gift, Milestone, Sparkles, Crown, ChevronRight, Plus,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
