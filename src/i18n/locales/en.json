@@ -202,7 +202,9 @@
     "remote_access": "Remote Access",
     "environment_logs": "Session Logs",
     "nda_management": "NDA Management",
-    "company_profile": "Company Profile"
+    "company_profile": "Company Profile",
+    "referrals": "Referrals",
+    "requests": "Requests"
   },
   "client_dashboard": {
     "title": "Welcome back",
