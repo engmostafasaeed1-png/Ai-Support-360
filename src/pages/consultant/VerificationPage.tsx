@@ -12,6 +12,7 @@ import {
   FileText, Award, Brain, Play,
 } from 'lucide-react';
 import CredlyBadgesSection from '@/components/consultant/CredlyBadgesSection';
+import InterviewHistory from '@/components/consultant/InterviewHistory';
 import AIInterviewFlow from '@/components/consultant/AIInterviewFlow';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
@@ -57,6 +58,7 @@ export default function VerificationPage() {
   const [userId, setUserId] = useState<string | undefined>(undefined);
   const [pendingInterview, setPendingInterview] = useState<{ id: string } | null>(null);
   const [showInterviewFlow, setShowInterviewFlow] = useState(false);
+  const [consultantId, setConsultantId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (isGuest) return;
@@ -70,6 +72,7 @@ export default function VerificationPage() {
         .maybeSingle()
         .then(({ data }) => {
           if (!data) return;
+          setConsultantId(data.id);
           if ((data as any).credly_username) setCredlyUsername((data as any).credly_username);
           
           // Check for pending AI interviews
@@ -211,6 +214,9 @@ export default function VerificationPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Interview History */}
+      <InterviewHistory consultantId={consultantId} />
 
       {/* Credly Badges */}
       <CredlyBadgesSection initialUsername={credlyUsername} consultantUserId={userId} />
