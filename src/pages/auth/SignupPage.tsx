@@ -74,7 +74,7 @@ export default function SignupPage() {
           });
         }
         await supabase.from('client_profiles').insert({ user_id: data.user.id });
-        navigate('/client');
+        navigate('/client/onboarding');
       }
     }
   };

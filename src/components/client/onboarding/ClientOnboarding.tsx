@@ -66,7 +66,7 @@ export default function ClientOnboarding() {
     if (isGuest) {
       fireConfetti();
       toast.success(t('guest.onboarding_demo'));
-      setTimeout(() => navigate('/client?welcome=true'), 1200);
+      setTimeout(() => navigate('/client'), 1200);
       return;
     }
     setSubmitting(true);
@@ -99,7 +99,7 @@ export default function ClientOnboarding() {
       if (error) throw error;
       fireConfetti();
       toast.success(t('client_onboarding.success'));
-      setTimeout(() => navigate('/client?welcome=true'), 1200);
+      setTimeout(() => navigate('/client'), 1200);
     } catch (err) {
       console.error(err);
       toast.error(t('onboarding.error_generic'));
