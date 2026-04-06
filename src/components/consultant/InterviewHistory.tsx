@@ -144,6 +144,10 @@ export default function InterviewHistory({ consultantId }: Props) {
                           {iv.completed_at && ` — ${t('interview_history.completed', 'Completed')}: ${new Date(iv.completed_at).toLocaleString()}`}
                         </p>
                       )}
+                      <Button variant="outline" size="sm" className="mt-2" onClick={() => setAnswersId(iv.id)}>
+                        <Eye className="w-3.5 h-3.5 me-1" />
+                        {t('interview_history.view_answers', 'View Answers')}
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -152,6 +156,11 @@ export default function InterviewHistory({ consultantId }: Props) {
           </div>
         )}
       </CardContent>
+      <InterviewAnswersDialog
+        interviewId={answersId}
+        open={!!answersId}
+        onOpenChange={(open) => !open && setAnswersId(null)}
+      />
     </Card>
   );
 }
