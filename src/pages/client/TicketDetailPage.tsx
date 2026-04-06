@@ -128,6 +128,9 @@ export default function TicketDetailPage() {
         </Card>
       )}
 
+      {/* Consultant acceptors */}
+      <TicketAcceptors ticketId={ticket.id} currentConsultantId={ticket.consultant_id} />
+
       {/* Extra details */}
       <Card className="rounded-2xl border-border/50">
         <CardContent className="p-4">
