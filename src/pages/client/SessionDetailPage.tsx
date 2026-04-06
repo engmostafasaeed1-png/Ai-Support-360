@@ -43,6 +43,8 @@ export default function SessionDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isCancelling, setIsCancelling] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [showSurvey, setShowSurvey] = useState(false);
 
   const handleCancel = async () => {
     setIsCancelling(true);
