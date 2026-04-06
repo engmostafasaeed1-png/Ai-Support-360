@@ -77,9 +77,13 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <GuestModeProvider>
+          <ScrollToTop />
+          <ScreenProtection />
+          <GlobalSearch />
           <MaintenanceBanner />
           <GuestBanner />
           <AIChatbot />
+          <WhatsAppButton />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/pricing" element={<PricingPage />} />
