@@ -1022,5 +1022,44 @@
   "ai": {
     "engine": "محرك الذكاء الاصطناعي",
     "select_model": "اختر نموذج الذكاء الاصطناعي"
+  },
+  "super_admin": {
+    "title": "المشرف العام",
+    "control_center": "مركز التحكم",
+    "overview": "نظرة عامة",
+    "roles": "الأدوار والصلاحيات",
+    "user_management": "إدارة المستخدمين",
+    "reports": "التقارير",
+    "config": "الإعدادات",
+    "workflows": "سير العمل",
+    "audit_logs": "سجل التدقيق",
+    "system_health": "صحة النظام",
+    "quick_links": "روابط سريعة",
+    "standard_admin": "لوحة الإدارة",
+    "overview_title": "نظرة عامة للمشرف العام",
+    "overview_subtitle": "نظرة شاملة على النظام مع جميع المقاييس والضوابط",
+    "roles_title": "الأدوار والتفويضات",
+    "roles_subtitle": "إدارة أدوار المستخدمين والصلاحيات والتحكم بالوصول",
+    "reports_title": "التقارير والتحليلات",
+    "reports_subtitle": "تحليلات شاملة وتقارير ذكاء الأعمال",
+    "config_title": "إعدادات بدون كود",
+    "config_subtitle": "تكوين الميزات وسير العمل والقوالب دون تغييرات في الكود",
+    "workflows_title": "منشئ سير العمل",
+    "workflows_subtitle": "تصميم وإدارة سير العمل الآلي بصريًا",
+    "audit_title": "سجل التدقيق",
+    "audit_subtitle": "مسار تدقيق كامل لجميع إجراءات النظام",
+    "system_title": "صحة النظام",
+    "system_subtitle": "مراقبة البنية التحتية والموارد وصحة الخدمات",
+    "users_title": "إدارة المستخدمين",
+    "permissions": "مصفوفة الصلاحيات",
+    "user_roles": "أدوار المستخدمين",
+    "access_control": "التحكم بالوصول",
+    "permission_matrix": "مصفوفة الصلاحيات",
+    "feature_flags": "مفاتيح الميزات",
+    "templates": "قوالب البريد الإلكتروني",
+    "branding": "الهوية البصرية"
+  },
+  "sidebar": {
+    "super_admin": "المشرف العام"
   }
 }

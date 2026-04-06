@@ -54,6 +54,15 @@ import ResetPasswordPage from "./pages/auth/ResetPasswordPage.tsx";
 import ProtectedRoute from "./components/auth/ProtectedRoute.tsx";
 import RemoteAccessPage from "./pages/consultant/RemoteAccessPage.tsx";
 import ClientRemoteAccessPage from "./pages/client/RemoteAccessPage.tsx";
+import SuperAdminLayout from "./components/superadmin/SuperAdminLayout.tsx";
+import SuperAdminOverview from "./pages/superadmin/SuperAdminOverview.tsx";
+import RolesAuthPage from "./pages/superadmin/RolesAuthPage.tsx";
+import UserManagementPage from "./pages/superadmin/UserManagementPage.tsx";
+import ReportsPage from "./pages/superadmin/ReportsPage.tsx";
+import ConfigPage from "./pages/superadmin/ConfigPage.tsx";
+import WorkflowsPage from "./pages/superadmin/WorkflowsPage.tsx";
+import AuditLogsPage from "./pages/superadmin/AuditLogsPage.tsx";
+import SystemHealthPage from "./pages/superadmin/SystemHealthPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -117,6 +126,17 @@ const App = () => (
               <Route path="environment-logs" element={<EnvironmentLogsPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="nda-management" element={<NDAManagementPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+            </Route>
+            <Route path="/super-admin" element={<ProtectedRoute requiredRole="admin"><SuperAdminLayout /></ProtectedRoute>}>
+              <Route index element={<SuperAdminOverview />} />
+              <Route path="roles" element={<RolesAuthPage />} />
+              <Route path="users" element={<UserManagementPage />} />
+              <Route path="reports" element={<ReportsPage />} />
+              <Route path="config" element={<ConfigPage />} />
+              <Route path="workflows" element={<WorkflowsPage />} />
+              <Route path="audit" element={<AuditLogsPage />} />
+              <Route path="system" element={<SystemHealthPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -24,6 +24,7 @@ const menuItems = [
   { key: 'environment_logs', icon: ClipboardList, path: '/admin/environment-logs' },
   { key: 'nda_management', icon: FileSignature, path: '/admin/nda-management' },
   { key: 'settings', icon: Settings, path: '/admin/settings' },
+  { key: 'super_admin', icon: Shield, path: '/super-admin' },
 ];
 
 export default function AdminSidebar() {
