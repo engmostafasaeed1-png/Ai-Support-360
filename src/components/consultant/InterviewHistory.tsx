@@ -4,10 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bot, MapPin, Video, History, ChevronDown, ChevronUp, Eye } from 'lucide-react';
+import { Bot, MapPin, Video, History, ChevronDown, ChevronUp, Eye, BarChart3 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import InterviewAnswersDialog from './InterviewAnswersDialog';
+import InterviewComparisonDialog from './InterviewComparisonDialog';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { mockInterviewSessions } from '@/data/interviewMockData';
 
@@ -30,6 +31,7 @@ export default function InterviewHistory({ consultantId }: Props) {
   const { isGuest } = useGuestMode();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [answersId, setAnswersId] = useState<string | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
 
   const { data: interviews, isLoading } = useQuery({
     queryKey: ['interview-history', consultantId],
@@ -71,8 +73,14 @@ export default function InterviewHistory({ consultantId }: Props) {
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <History className="w-4 h-4 text-accent" />
           {t('interview_history.title', 'Interview History')}
+          {list.filter((iv: any) => iv.overall_score != null).length >= 2 && (
+            <Button variant="outline" size="sm" className="ms-auto gap-1.5 text-xs h-7" onClick={() => setShowComparison(true)}>
+              <BarChart3 className="w-3.5 h-3.5" />
+              {t('interview_comparison.compare', 'Compare')}
+            </Button>
+          )}
           {list.length > 0 && (
-            <Badge variant="secondary" className="text-[10px] ms-auto">{list.length}</Badge>
+            <Badge variant="secondary" className="text-[10px]">{list.length}</Badge>
           )}
         </CardTitle>
       </CardHeader>
@@ -165,6 +173,11 @@ export default function InterviewHistory({ consultantId }: Props) {
         open={!!answersId}
         onOpenChange={(open) => !open && setAnswersId(null)}
         session={list.find((iv: any) => iv.id === answersId)}
+      />
+      <InterviewComparisonDialog
+        interviews={list}
+        open={showComparison}
+        onOpenChange={setShowComparison}
       />
     </Card>
   );
