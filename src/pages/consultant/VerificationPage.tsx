@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,9 +9,10 @@ import {
 } from '@/data/consultantMockData';
 import {
   ShieldCheck, Upload, CheckCircle, Clock, XCircle, AlertTriangle,
-  FileText, Award, Brain,
+  FileText, Award, Brain, Play,
 } from 'lucide-react';
 import CredlyBadgesSection from '@/components/consultant/CredlyBadgesSection';
+import AIInterviewFlow from '@/components/consultant/AIInterviewFlow';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 
@@ -45,6 +47,7 @@ const verificationBadge: Record<string, { label: string; color: string }> = {
 };
 
 export default function VerificationPage() {
+  const { t } = useTranslation();
   const { isGuest } = useGuestMode();
   const profile = mockConsultantProfile;
   const vBadge = verificationBadge[profile.verification_status];
@@ -52,6 +55,8 @@ export default function VerificationPage() {
   const progress = Math.round((completedSteps / verificationSteps.length) * 100);
   const [credlyUsername, setCredlyUsername] = useState<string | undefined>(undefined);
   const [userId, setUserId] = useState<string | undefined>(undefined);
+  const [pendingInterview, setPendingInterview] = useState<{ id: string } | null>(null);
+  const [showInterviewFlow, setShowInterviewFlow] = useState(false);
 
   useEffect(() => {
     if (isGuest) return;
@@ -60,14 +65,46 @@ export default function VerificationPage() {
       setUserId(user.id);
       supabase
         .from('consultants')
-        .select('credly_username')
+        .select('id, credly_username')
         .eq('user_id', user.id)
         .maybeSingle()
         .then(({ data }) => {
-          if (data && (data as any).credly_username) setCredlyUsername((data as any).credly_username);
+          if (!data) return;
+          if ((data as any).credly_username) setCredlyUsername((data as any).credly_username);
+          
+          // Check for pending AI interviews
+          supabase
+            .from('interview_sessions')
+            .select('id')
+            .eq('consultant_id', data.id)
+            .eq('interview_type', 'ai' as any)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .then(({ data: interviews }) => {
+              if (interviews && interviews.length > 0) {
+                setPendingInterview({ id: interviews[0].id });
+              }
+            });
         });
     });
   }, [isGuest]);
+
+  // Show AI interview flow full-screen
+  if (showInterviewFlow && pendingInterview) {
+    return (
+      <div className="space-y-6">
+        <AIInterviewFlow
+          interviewId={pendingInterview.id}
+          onComplete={() => {
+            setShowInterviewFlow(false);
+            setPendingInterview(null);
+          }}
+          onCancel={() => setShowInterviewFlow(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -75,6 +112,25 @@ export default function VerificationPage() {
         <h1 className="text-2xl font-bold text-foreground">Verification Status</h1>
         <p className="text-sm text-muted-foreground mt-1">Manage your verification and credentials.</p>
       </div>
+
+      {/* Pending AI Interview Banner */}
+      {pendingInterview && (
+        <Card className="rounded-2xl border-primary/30 bg-primary/5">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Brain className="w-6 h-6 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-foreground">{t('ai_interview.pending_interview', 'You have a pending AI interview')}</h3>
+              <p className="text-sm text-muted-foreground">{t('ai_interview.pending_desc', 'An AI-powered interview has been scheduled for you. Click below to begin.')}</p>
+            </div>
+            <Button className="gradient-primary border-0 shrink-0" onClick={() => setShowInterviewFlow(true)}>
+              <Play className="w-4 h-4 me-2" />
+              {t('ai_interview.start_interview', 'Start AI Interview')}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Verification Status Card */}
       <Card className="rounded-2xl border-border/50">
