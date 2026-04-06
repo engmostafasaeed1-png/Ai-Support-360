@@ -296,6 +296,91 @@ export type Database = {
         }
         Relationships: []
       }
+      consultant_education: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          degree: string | null
+          end_year: number | null
+          field_of_study: string | null
+          id: string
+          institution: string
+          start_year: number | null
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          degree?: string | null
+          end_year?: number | null
+          field_of_study?: string | null
+          id?: string
+          institution: string
+          start_year?: number | null
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          degree?: string | null
+          end_year?: number | null
+          field_of_study?: string | null
+          id?: string
+          institution?: string
+          start_year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_education_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consultant_projects: {
+        Row: {
+          client_industry: string | null
+          consultant_id: string
+          created_at: string
+          description: string | null
+          duration_months: number | null
+          id: string
+          project_name: string
+          role: string | null
+          sap_modules: string[] | null
+        }
+        Insert: {
+          client_industry?: string | null
+          consultant_id: string
+          created_at?: string
+          description?: string | null
+          duration_months?: number | null
+          id?: string
+          project_name: string
+          role?: string | null
+          sap_modules?: string[] | null
+        }
+        Update: {
+          client_industry?: string | null
+          consultant_id?: string
+          created_at?: string
+          description?: string | null
+          duration_months?: number | null
+          id?: string
+          project_name?: string
+          role?: string | null
+          sap_modules?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_projects_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultant_skills: {
         Row: {
           certified: boolean | null
@@ -334,6 +419,50 @@ export type Database = {
           },
         ]
       }
+      consultant_work_history: {
+        Row: {
+          company_name: string
+          consultant_id: string
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          is_current: boolean | null
+          job_title: string
+          start_date: string | null
+        }
+        Insert: {
+          company_name: string
+          consultant_id: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          job_title: string
+          start_date?: string | null
+        }
+        Update: {
+          company_name?: string
+          consultant_id?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          job_title?: string
+          start_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_work_history_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultants: {
         Row: {
           ai_skills_score: number | null
@@ -341,15 +470,21 @@ export type Database = {
             | Database["public"]["Enums"]["availability_status"]
             | null
           bio: string | null
+          city: string | null
+          country: string | null
           created_at: string
           credly_username: string | null
           currency: string | null
           cv_url: string | null
+          github_url: string | null
           hourly_rate: number | null
           id: string
           industries: string[] | null
           languages: string[] | null
+          linkedin_url: string | null
           location: unknown
+          nationality: string | null
+          personal_website: string | null
           profile_video_url: string | null
           rating: number | null
           response_time_minutes: number | null
@@ -367,15 +502,21 @@ export type Database = {
             | Database["public"]["Enums"]["availability_status"]
             | null
           bio?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           credly_username?: string | null
           currency?: string | null
           cv_url?: string | null
+          github_url?: string | null
           hourly_rate?: number | null
           id?: string
           industries?: string[] | null
           languages?: string[] | null
+          linkedin_url?: string | null
           location?: unknown
+          nationality?: string | null
+          personal_website?: string | null
           profile_video_url?: string | null
           rating?: number | null
           response_time_minutes?: number | null
@@ -393,15 +534,21 @@ export type Database = {
             | Database["public"]["Enums"]["availability_status"]
             | null
           bio?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           credly_username?: string | null
           currency?: string | null
           cv_url?: string | null
+          github_url?: string | null
           hourly_rate?: number | null
           id?: string
           industries?: string[] | null
           languages?: string[] | null
+          linkedin_url?: string | null
           location?: unknown
+          nationality?: string | null
+          personal_website?: string | null
           profile_video_url?: string | null
           rating?: number | null
           response_time_minutes?: number | null
