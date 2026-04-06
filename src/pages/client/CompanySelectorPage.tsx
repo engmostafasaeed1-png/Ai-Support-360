@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Building2, Plus, ArrowRight, Crown, Sparkles, ChevronRight, Briefcase } from 'lucide-react';
 import { useTenant } from '@/contexts/TenantContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import VideoBackground from '@/components/VideoBackground';
@@ -22,7 +24,8 @@ const tierConfig: Record<string, { icon: typeof Sparkles; color: string; bg: str
 export default function CompanySelectorPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { tenants, switchTenant, refetch } = useTenant();
+  const { tenants, memberships, switchTenant, refetch } = useTenant();
+  const { profile } = useUserProfile();
   const [newCompanyName, setNewCompanyName] = useState('');
   const [creating, setCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -69,18 +72,24 @@ export default function CompanySelectorPage() {
     <div className="min-h-screen flex items-center justify-center px-4 relative py-8">
       <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
       <div className="w-full max-w-2xl relative z-10 animate-fade-in">
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-premium">
-            <Building2 className="w-7 h-7 text-primary-foreground" />
+        {/* User Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <Avatar className="w-14 h-14 border-2 border-primary/20 shadow-md">
+            <AvatarImage src={profile?.avatarUrl || undefined} />
+            <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">{profile?.initials || 'U'}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{profile?.displayName || 'My Companies'}</h1>
+            <p className="text-muted-foreground text-sm">{tenants.length} {tenants.length === 1 ? 'company' : 'companies'} · Choose one to enter</p>
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Select a Company</h1>
-          <p className="text-muted-foreground">Choose a company to manage or create a new one</p>
         </div>
 
         <div className="grid gap-3 mb-6">
           {tenants.map((tenant) => {
             const tier = tierConfig[tenant.subscription_tier] || tierConfig.basic;
             const TierIcon = tier.icon;
+            const mem = memberships.find(m => m.tenant_id === tenant.id);
+            const roleLabel = mem?.org_role || 'member';
             return (
               <Card
                 key={tenant.id}
@@ -102,6 +111,7 @@ export default function CompanySelectorPage() {
                         <TierIcon className="w-3 h-3" />
                         {tenant.subscription_tier}
                       </span>
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-accent/10 text-accent capitalize">{roleLabel}</span>
                     </div>
                   </div>
                   <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
