@@ -15,11 +15,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   ChevronLeft, Video, MessageSquare, Monitor, Clock, User,
-  Calendar, FileText, ListChecks, Play, XCircle,
+  Calendar, FileText, ListChecks, Play, XCircle, Star, ClipboardCheck,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import ShareMenu from '@/components/ShareMenu';
+import AnalyzeSessionButton from '@/components/session/AnalyzeSessionButton';
+import SessionFeedbackDialog from '@/components/session/SessionFeedbackDialog';
+import SessionSurveyDialog from '@/components/session/SessionSurveyDialog';
 
 const typeIcons = {
   video: Video,
@@ -40,6 +43,8 @@ export default function SessionDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isCancelling, setIsCancelling] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [showSurvey, setShowSurvey] = useState(false);
 
   const handleCancel = async () => {
     setIsCancelling(true);
@@ -166,6 +171,13 @@ export default function SessionDetailPage() {
                 variant="outline"
                 size="sm"
               />
+              <AnalyzeSessionButton sessionId={sessionId!} />
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowFeedback(true)}>
+                <Star className="w-3.5 h-3.5" /> Feedback
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowSurvey(true)}>
+                <ClipboardCheck className="w-3.5 h-3.5" /> Survey
+              </Button>
             {status === 'scheduled' && (
               <div className="flex items-center gap-2">
                 <AlertDialog>
@@ -325,6 +337,9 @@ export default function SessionDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <SessionFeedbackDialog sessionId={sessionId || null} open={showFeedback} onOpenChange={setShowFeedback} />
+      <SessionSurveyDialog sessionId={sessionId || null} open={showSurvey} onOpenChange={setShowSurvey} />
     </div>
   );
 }
