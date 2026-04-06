@@ -30,7 +30,7 @@ export function FixedSubHeader({ children, className }: FixedHeaderProps) {
   return (
     <div
       className={cn(
-        'border-b border-border/30 bg-card/60 backdrop-blur-sm fixed top-14 right-0 left-0 z-30 hidden md:block transition-[left] duration-200 ease-linear',
+        'border-b border-border/30 bg-card/60 backdrop-blur-sm fixed top-14 right-0 left-0 z-30 block transition-[left] duration-200 ease-linear',
         collapsed ? 'md:left-[3rem]' : 'md:left-[16rem]',
         className
       )}
