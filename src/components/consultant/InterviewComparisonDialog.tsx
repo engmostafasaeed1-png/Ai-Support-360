@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { BarChart3, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, ResponsiveContainer } from 'recharts';
 
 interface Props {
   interviews: any[];
@@ -10,6 +11,7 @@ interface Props {
 }
 
 const typeLabels: Record<string, string> = { ai: 'AI', physical: 'Physical', online: 'Online' };
+const RADAR_COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', '#10b981', '#f59e0b', '#ef4444'];
 
 function ScoreBar({ score, max = 100, color }: { score: number; max?: number; color: string }) {
   const pct = Math.round((score / max) * 100);
