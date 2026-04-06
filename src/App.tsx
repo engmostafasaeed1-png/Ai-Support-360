@@ -79,6 +79,7 @@ import ConfigPage from "./pages/superadmin/ConfigPage.tsx";
 import WorkflowsPage from "./pages/superadmin/WorkflowsPage.tsx";
 import AuditLogsPage from "./pages/superadmin/AuditLogsPage.tsx";
 import SystemHealthPage from "./pages/superadmin/SystemHealthPage.tsx";
+import ExecutiveDashboardPage from "./pages/superadmin/ExecutiveDashboardPage.tsx";
 import ReferralsPage from "./pages/ReferralsPage.tsx";
 
 const queryClient = new QueryClient();
