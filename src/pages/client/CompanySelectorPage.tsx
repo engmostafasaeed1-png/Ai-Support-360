@@ -88,6 +88,8 @@ export default function CompanySelectorPage() {
           {tenants.map((tenant) => {
             const tier = tierConfig[tenant.subscription_tier] || tierConfig.basic;
             const TierIcon = tier.icon;
+            const mem = memberships.find(m => m.tenant_id === tenant.id);
+            const roleLabel = mem?.org_role || 'member';
             return (
               <Card
                 key={tenant.id}
@@ -109,6 +111,7 @@ export default function CompanySelectorPage() {
                         <TierIcon className="w-3 h-3" />
                         {tenant.subscription_tier}
                       </span>
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-accent/10 text-accent capitalize">{roleLabel}</span>
                     </div>
                   </div>
                   <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
