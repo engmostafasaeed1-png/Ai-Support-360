@@ -7,6 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle, Download, MessageSquare, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { generateInterviewPdf } from '@/lib/interviewPdf';
+import { useGuestMode } from '@/contexts/GuestModeContext';
+import { mockInterviewAnswers } from '@/data/interviewMockData';
 
 interface Props {
   interviewId: string | null;
@@ -18,11 +20,13 @@ interface Props {
 
 export default function InterviewAnswersDialog({ interviewId, open, onOpenChange, session, consultantName }: Props) {
   const { t } = useTranslation();
+  const { isGuest } = useGuestMode();
 
   const { data: answers, isLoading } = useQuery({
     queryKey: ['interview-answers', interviewId],
     queryFn: async () => {
       if (!interviewId) return [];
+      if (isGuest) return mockInterviewAnswers[interviewId] || [];
       const { data, error } = await supabase
         .from('interview_answers')
         .select('*')
