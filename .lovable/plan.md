@@ -1,40 +1,32 @@
-## Upwork-Inspired Features Implementation
 
-### Phase 1: Database Schema
-Create 3 new tables:
-- **proposals** — Consultants bid on tickets with cover letter, rate, timeline
-- **milestones** — Break projects into funded milestones with escrow status
-- **work_diary_entries** — Time tracker entries with activity level and screenshots
+## Multi-Company Support for Clients
 
-### Phase 2: Talent Search & Filters (Client Portal)
-- Enhanced `/client/consultants` page with advanced filters:
-  - SAP module, hourly rate range, availability, rating, country, response time
-  - Sort by: relevance, rating, rate, response time
-  - Grid/list view toggle
+### Current State
+- Each client belongs to one tenant (company) via `tenant_members`
+- Tickets are tied to `client_id` (user) not tenant
 
-### Phase 3: Proposal/Bidding System
-- Consultants can submit proposals on open tickets (cover letter, proposed rate, estimated hours)
-- Clients see proposals on ticket detail, compare and accept
-- New consultant page: "My Proposals" to track submitted bids
+### Changes Needed
 
-### Phase 4: Time Tracker
-- Work diary page showing logged hours per session
-- Activity level indicator (keyboard/mouse activity %)
-- Manual time entry support
-- Weekly summary view
+#### 1. Database Changes
+- Add `tenant_id` column to `tickets` table (if not already there) to scope tickets per company
+- Update `tenant_members` to allow multiple memberships per user (already supports this — unique on `user_id + tenant_id`)
+- Ensure RLS policies allow users to access data for all their tenants
 
-### Phase 5: Milestone Payments & Escrow
-- Create milestones on projects with amounts
-- Escrow states: funded → in_progress → submitted → approved → released
-- Client can fund, review, and release milestones
-- Consultant sees milestone progress on earnings page
+#### 2. Company Management Page
+- New page `/client/companies` — list all companies the user belongs to
+- Ability to create a new company (tenant) from this page
+- Each company card shows name, logo, ticket count
 
-### Files to create/modify:
-- DB migration (3 tables + RLS)
-- `src/pages/client/ConsultantsPage.tsx` — Enhanced talent search
-- `src/components/client/ProposalsList.tsx` — View proposals on tickets
-- `src/pages/consultant/ProposalsPage.tsx` — Consultant's proposals
-- `src/components/consultant/SubmitProposalModal.tsx` — Bid on ticket
-- `src/pages/consultant/WorkDiaryPage.tsx` — Time tracker
-- `src/components/project/MilestoneManager.tsx` — Milestone CRUD
-- Routes in App.tsx
+#### 3. Company Selector Flow
+- After login, if user has multiple companies → show company selector
+- If user has only one company → go directly to client console
+- Active company stored in context (TenantContext) with ability to switch
+
+#### 4. Ticket Scoping
+- All ticket queries filtered by active `tenant_id`
+- New tickets automatically tagged with current `tenant_id`
+
+#### 5. UI Updates
+- Add company switcher in sidebar header
+- Company creation modal/form
+- Update ClientDashboard to show company-specific data
