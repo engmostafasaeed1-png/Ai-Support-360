@@ -3,7 +3,6 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { Session } from '@supabase/supabase-js';
 import { Loader2 } from 'lucide-react';
-import { useGuestMode } from '@/contexts/GuestModeContext';
 
 interface Props {
   children: React.ReactNode;
@@ -11,15 +10,14 @@ interface Props {
 }
 
 export default function ProtectedRoute({ children, requiredRole }: Props) {
-  const { isGuest, guestRole } = useGuestMode();
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [roleOk, setRoleOk] = useState<boolean | undefined>(undefined);
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const location = useLocation();
 
+  // Listen for auth state changes — session comes from Supabase (server-validated JWT)
   useEffect(() => {
-    if (isGuest) return;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
     });
@@ -27,10 +25,10 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       setSession(s);
     });
     return () => subscription.unsubscribe();
-  }, [isGuest]);
+  }, []);
 
+  // Validate role from the database — never trust frontend state
   useEffect(() => {
-    if (isGuest) return;
     if (!session || !requiredRole) {
       setRoleOk(requiredRole ? undefined : true);
       return;
@@ -44,11 +42,11 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       .then(({ data }) => {
         setRoleOk(!!data);
       });
-  }, [session, requiredRole, isGuest]);
+  }, [session, requiredRole]);
 
   // Check onboarding status once role is confirmed
   useEffect(() => {
-    if (isGuest || !session || !roleOk || !requiredRole || requiredRole === 'admin') {
+    if (!session || !roleOk || !requiredRole || requiredRole === 'admin') {
       setOnboardingChecked(true);
       return;
     }
@@ -71,13 +69,9 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       setOnboardingChecked(true);
     };
     checkOnboarding();
-  }, [session, roleOk, requiredRole, isGuest]);
+  }, [session, roleOk, requiredRole]);
 
-  // Guest mode bypass
-  if (isGuest && (!requiredRole || guestRole === requiredRole)) {
-    return <>{children}</>;
-  }
-
+  // Loading state
   if (session === undefined || (session && requiredRole && roleOk === undefined) || (roleOk && !onboardingChecked)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -86,10 +80,12 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
     );
   }
 
+  // No session — redirect to login
   if (!session) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
+  // Role mismatch — redirect to home
   if (requiredRole && !roleOk) {
     return <Navigate to="/" replace />;
   }
