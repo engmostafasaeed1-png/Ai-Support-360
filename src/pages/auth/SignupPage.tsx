@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from 'sonner';
 import { Loader2, Users, Briefcase, Eye } from 'lucide-react';
 import PasswordInput from '@/components/auth/PasswordInput';
+import PasswordStrength from '@/components/auth/PasswordStrength';
 import { cn } from '@/lib/utils';
 import GuestExploreModal from '@/components/guest/GuestExploreModal';
 
@@ -113,6 +114,7 @@ export default function SignupPage() {
             <div className="space-y-1.5">
               <Label htmlFor="password">{t('auth.password')}</Label>
               <PasswordInput id="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+              <PasswordStrength password={password} />
               <p className="text-[10px] text-muted-foreground">{t('auth.password_hint')}</p>
             </div>
           </CardContent>
