@@ -17,6 +17,9 @@ import ConsultantLayout from "./components/consultant/ConsultantLayout.tsx";
 import ConsultantDashboard from "./pages/consultant/ConsultantDashboard.tsx";
 import CasesPage from "./pages/consultant/CasesPage.tsx";
 import RequestsPage from "./pages/consultant/RequestsPage.tsx";
+import ProposalsPage from "./pages/consultant/ProposalsPage.tsx";
+import WorkDiaryPage from "./pages/consultant/WorkDiaryPage.tsx";
+import MilestonesPage from "./pages/client/MilestonesPage.tsx";
 import MatchRequestPopup from "./components/consultant/MatchRequestPopup.tsx";
 import CalendarPage from "./pages/consultant/CalendarPage.tsx";
 import EarningsPage from "./pages/consultant/EarningsPage.tsx";
@@ -115,6 +118,8 @@ const App = () => (
               <Route path="reviews" element={<ReviewsPage />} />
               <Route path="settings" element={<ConsultantSettingsPage />} />
               <Route path="knowledge" element={<ConsultantKnowledgePage />} />
+              <Route path="proposals" element={<ProposalsPage />} />
+              <Route path="work-diary" element={<WorkDiaryPage />} />
               <Route path="referrals" element={<ReferralsPage />} />
             </Route>
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
@@ -137,6 +142,7 @@ const App = () => (
               <Route path="remote-access" element={<ClientRemoteAccessPage />} />
               <Route path="invoices" element={<InvoicesPage />} />
               <Route path="knowledge" element={<KnowledgePage />} />
+              <Route path="milestones" element={<MilestonesPage />} />
               <Route path="referrals" element={<ReferralsPage />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>

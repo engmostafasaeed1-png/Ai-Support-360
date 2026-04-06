@@ -204,7 +204,10 @@
     "nda_management": "NDA Management",
     "company_profile": "Company Profile",
     "referrals": "Referrals",
-    "requests": "Requests"
+    "requests": "Requests",
+    "proposals": "My Proposals",
+    "work_diary": "Work Diary",
+    "milestones": "Milestones"
   },
   "client_dashboard": {
     "title": "Welcome back",

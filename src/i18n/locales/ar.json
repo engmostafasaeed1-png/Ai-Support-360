@@ -204,7 +204,10 @@
     "nda_management": "إدارة اتفاقيات عدم الإفصاح",
     "company_profile": "الملف التعريفي للشركة",
     "referrals": "الإحالات",
-    "requests": "الطلبات"
+    "requests": "الطلبات",
+    "proposals": "عروضي",
+    "work_diary": "سجل العمل",
+    "milestones": "المراحل"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",
