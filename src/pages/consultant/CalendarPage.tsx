@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { mockSessions } from '@/data/consultantMockData';
 import { Video, MessageSquare, Monitor, CheckCircle, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const typeIcons: Record<string, typeof Video> = { video: Video, chat: MessageSquare, screen_share: Monitor };
 const statusStyle: Record<string, string> = {
@@ -25,11 +27,65 @@ function getWeekDates() {
   });
 }
 
+interface SessionData {
+  id: string;
+  session_type: string;
+  status: string;
+  scheduled_at: string;
+  duration_minutes: number;
+  client_name: string;
+}
+
 export default function CalendarPage() {
   const weekDates = getWeekDates();
   const today = new Date();
-  const upcoming = mockSessions.filter((s) => s.status === 'scheduled');
-  const completed = mockSessions.filter((s) => s.status === 'completed');
+
+  const { data: sessions = [], isLoading } = useQuery({
+    queryKey: ['consultant-calendar-sessions'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data: consultant } = await supabase
+        .from('consultants')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!consultant) return [];
+
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id, session_type, status, scheduled_at, duration_minutes, client_id')
+        .eq('consultant_id', consultant.id)
+        .order('scheduled_at', { ascending: true });
+      if (error) throw error;
+
+      // Get client names
+      const clientIds = [...new Set((data || []).map(s => s.client_id))];
+      let clientMap: Record<string, string> = {};
+      if (clientIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name')
+          .in('user_id', clientIds);
+        if (profiles) {
+          clientMap = Object.fromEntries(profiles.map(p => [p.user_id, p.display_name || 'Client']));
+        }
+      }
+
+      return (data || []).map((s): SessionData => ({
+        id: s.id,
+        session_type: s.session_type || 'chat',
+        status: s.status || 'scheduled',
+        scheduled_at: s.scheduled_at || new Date().toISOString(),
+        duration_minutes: s.duration_minutes || 30,
+        client_name: clientMap[s.client_id] || 'Client',
+      }));
+    },
+  });
+
+  const upcoming = sessions.filter((s) => s.status === 'scheduled');
+  const completed = sessions.filter((s) => s.status === 'completed');
 
   return (
     <div className="space-y-6">
@@ -47,7 +103,7 @@ export default function CalendarPage() {
           <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {weekDates.map((date, i) => {
               const isToday = date.toDateString() === today.toDateString();
-              const daySessions = mockSessions.filter((s) => {
+              const daySessions = sessions.filter((s) => {
                 const sd = new Date(s.scheduled_at);
                 return sd.toDateString() === date.toDateString();
               });
@@ -72,86 +128,97 @@ export default function CalendarPage() {
         </CardContent>
       </Card>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Upcoming */}
-        <Card className="rounded-2xl border-border/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Clock className="w-4 h-4 text-accent" />
-              Upcoming Sessions ({upcoming.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {upcoming.map((s) => {
-              const Icon = typeIcons[s.session_type] || Video;
-              const time = new Date(s.scheduled_at);
-              return (
-                <div key={s.id} className="p-4 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 transition-all">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-accent" />
+      {isLoading ? (
+        <div className="grid lg:grid-cols-2 gap-6">
+          <Skeleton className="h-64 rounded-2xl" />
+          <Skeleton className="h-64 rounded-2xl" />
+        </div>
+      ) : (
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Upcoming */}
+          <Card className="rounded-2xl border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Clock className="w-4 h-4 text-accent" />
+                Upcoming Sessions ({upcoming.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {upcoming.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No upcoming sessions scheduled.</p>
+              ) : (
+                upcoming.map((s) => {
+                  const Icon = typeIcons[s.session_type] || Video;
+                  const time = new Date(s.scheduled_at);
+                  return (
+                    <div key={s.id} className="p-4 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 transition-all">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                            <Icon className="w-5 h-5 text-accent" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm text-foreground">{s.client_name}</p>
+                            <p className="text-xs text-muted-foreground capitalize">{s.session_type.replace('_', ' ')}</p>
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className={`text-[10px] ${statusStyle[s.status]}`}>
+                          {s.status}
+                        </Badge>
                       </div>
-                      <div>
-                        <p className="font-medium text-sm text-foreground">{s.client}</p>
-                        <p className="text-xs text-muted-foreground capitalize">{s.session_type.replace('_', ' ')}</p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                        <span>{time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span>{s.duration_minutes} min</span>
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <Button size="sm" className="gradient-primary border-0 flex-1 text-xs h-8">Join Session</Button>
+                        <Button size="sm" variant="outline" className="flex-1 text-xs h-8">Reschedule</Button>
                       </div>
                     </div>
-                    <Badge variant="secondary" className={`text-[10px] ${statusStyle[s.status]}`}>
-                      {s.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                    <span>{time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
-                    <span>{s.duration_minutes} min</span>
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <Button size="sm" className="gradient-primary border-0 flex-1 text-xs h-8">Join Session</Button>
-                    <Button size="sm" variant="outline" className="flex-1 text-xs h-8">Reschedule</Button>
-                  </div>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Completed */}
-        <Card className="rounded-2xl border-border/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-500" />
-              Completed Sessions ({completed.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {completed.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No completed sessions yet.</p>
-            ) : (
-              completed.map((s) => {
-                const Icon = typeIcons[s.session_type] || Video;
-                const time = new Date(s.scheduled_at);
-                return (
-                  <div key={s.id} className="p-4 rounded-xl bg-muted/20 border border-border/30">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-green-600" />
+          {/* Completed */}
+          <Card className="rounded-2xl border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                Completed Sessions ({completed.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {completed.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No completed sessions yet.</p>
+              ) : (
+                completed.map((s) => {
+                  const Icon = typeIcons[s.session_type] || Video;
+                  const time = new Date(s.scheduled_at);
+                  return (
+                    <div key={s.id} className="p-4 rounded-xl bg-muted/20 border border-border/30">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                          <Icon className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-foreground">{s.client_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {time.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {s.duration_minutes} min
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">completed</Badge>
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-sm text-foreground">{s.client}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {time.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {s.duration_minutes} min
-                        </p>
-                      </div>
-                      <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">completed</Badge>
                     </div>
-                  </div>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

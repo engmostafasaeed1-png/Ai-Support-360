@@ -1,24 +1,61 @@
-## AI Interview Flow
 
-### 1. Edge Function: `ai-interview-questions`
-- Takes consultant's SAP modules/skills and generates 5-8 tailored interview questions using Lovable AI
-- Returns questions with categories (technical, soft_skills, scenario)
+# Build Complete Platform — Phased Plan
 
-### 2. Edge Function: `ai-interview-evaluate`  
-- Takes questions + answers, evaluates them using AI
-- Returns scores and feedback per answer, plus overall summary
+The platform has ~40+ pages across 4 roles. Many already have UI but use mock data. Here's the plan to make everything functional:
 
-### 3. New Component: `AIInterviewFlow.tsx`
-- Full-screen interview experience for consultants
-- Shows questions one at a time with a text area for answers
-- Progress bar, timer, submit flow
-- On completion, calls evaluate edge function and saves results
+## Phase 1: Auth & Onboarding (Foundation)
+- ✅ Auth already works (login, signup, roles, password reset)
+- Fix client onboarding wizard to save to `client_profiles` table
+- Fix consultant onboarding wizard to save to `consultants` table
+- Ensure role-based routing works end-to-end
 
-### 4. Update Consultant Verification Page
-- When consultant has a pending AI interview, show a "Start AI Interview" button
-- Links to the AI interview flow
+## Phase 2: Client Dashboard — Real Data
+- Connect Client Dashboard KPIs to real ticket/session/payment counts
+- Connect Tickets page (already uses `useClientTickets` hook ✅)
+- Connect Sessions page to real `sessions` table
+- Connect Payments page to real `payments` table
+- Connect New Request form to create real tickets
+- Connect Consultants browse page to real `consultants` table
+- Connect Chat to real `messages` + `sessions` tables
+- Connect Settings page to update `profiles` + `client_profiles`
+- Connect Company Profile to `client_profiles`
 
-### 5. Integration
-- When ReinterviewDialog creates an AI-type interview, the consultant gets notified
-- Consultant navigates to verification page → starts AI interview
-- Questions auto-generated → consultant answers → AI evaluates → scores saved
+## Phase 3: Consultant Dashboard — Real Data
+- Connect Consultant Dashboard to real cases/earnings data
+- Connect Cases page to real assigned `tickets`
+- Connect Calendar to real `availability_slots` + `sessions`
+- Connect Earnings page to real `payments` + `payouts`
+- Connect Profile page to real `consultants` + `profiles`
+- Connect Verification page to real `interview_sessions`
+- Connect Chat to real messages
+
+## Phase 4: Admin Dashboard — Real Data
+- Connect Admin Dashboard KPIs to real aggregate queries
+- Connect Users page to real `profiles` + `user_roles`
+- Connect Ticket Kanban to all tickets with drag-drop status updates
+- Connect Consultant Approvals to real verification workflow
+- Connect Analytics to real data aggregations
+- Connect Environments page to real `remote_environments`
+- Connect NDA Management to real `nda_agreements`
+- Connect Admin Settings to `platform_settings`
+
+## Phase 5: Super Admin
+- Connect Overview with system-wide stats
+- Connect Roles & Auth management
+- Connect User Management
+- Connect Audit Logs to real `audit_logs` table
+- Connect System Health monitoring
+- Connect Workflows and Config pages
+
+## Phase 6: Missing Pages & Polish
+- Knowledge Base (articles CRUD)
+- Invoices page
+- Reviews page
+- Remote Access (Guacamole integration)
+- Integrations (Zendesk/Jira sync)
+
+---
+
+**Recommended approach**: Tackle one phase per conversation to keep changes manageable and testable. Each phase = 5-10 file changes.
+
+**Which phase should we start with?**
