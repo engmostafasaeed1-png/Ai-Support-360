@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import { MessageCircle } from "lucide-react";
 
-const WHATSAPP_NUMBER = "966568797024";
+const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "966568797024";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hello, I'd like to get SAP consulting support.")}`;
 
 const WhatsAppButton = forwardRef<HTMLAnchorElement>((_, ref) => {
