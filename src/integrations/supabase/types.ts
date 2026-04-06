@@ -982,6 +982,68 @@ export type Database = {
           },
         ]
       }
+      milestones: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          due_date: string | null
+          escrow_status: Database["public"]["Enums"]["escrow_status"]
+          funded_at: string | null
+          id: string
+          position: number
+          project_id: string
+          released_at: string | null
+          submitted_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          approved_at?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          due_date?: string | null
+          escrow_status?: Database["public"]["Enums"]["escrow_status"]
+          funded_at?: string | null
+          id?: string
+          position?: number
+          project_id: string
+          released_at?: string | null
+          submitted_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          due_date?: string | null
+          escrow_status?: Database["public"]["Enums"]["escrow_status"]
+          funded_at?: string | null
+          id?: string
+          position?: number
+          project_id?: string
+          released_at?: string | null
+          submitted_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nda_agreements: {
         Row: {
           client_id: string
@@ -1278,6 +1340,63 @@ export type Database = {
             columns: ["consultant_id"]
             isOneToOne: false
             referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposals: {
+        Row: {
+          client_notes: string | null
+          consultant_id: string
+          cover_letter: string | null
+          created_at: string
+          estimated_hours: number | null
+          id: string
+          proposed_rate: number
+          status: Database["public"]["Enums"]["proposal_status"]
+          ticket_id: string
+          timeline_days: number | null
+          updated_at: string
+        }
+        Insert: {
+          client_notes?: string | null
+          consultant_id: string
+          cover_letter?: string | null
+          created_at?: string
+          estimated_hours?: number | null
+          id?: string
+          proposed_rate?: number
+          status?: Database["public"]["Enums"]["proposal_status"]
+          ticket_id: string
+          timeline_days?: number | null
+          updated_at?: string
+        }
+        Update: {
+          client_notes?: string | null
+          consultant_id?: string
+          cover_letter?: string | null
+          created_at?: string
+          estimated_hours?: number | null
+          id?: string
+          proposed_rate?: number
+          status?: Database["public"]["Enums"]["proposal_status"]
+          ticket_id?: string
+          timeline_days?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
         ]
@@ -1857,6 +1976,63 @@ export type Database = {
         }
         Relationships: []
       }
+      work_diary_entries: {
+        Row: {
+          activity_level: number | null
+          consultant_id: string
+          created_at: string
+          end_time: string | null
+          id: string
+          is_manual: boolean | null
+          memo: string | null
+          screenshot_url: string | null
+          session_id: string | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          activity_level?: number | null
+          consultant_id: string
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          is_manual?: boolean | null
+          memo?: string | null
+          screenshot_url?: string | null
+          session_id?: string | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          activity_level?: number | null
+          consultant_id?: string
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          is_manual?: boolean | null
+          memo?: string | null
+          screenshot_url?: string | null
+          session_id?: string | null
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_diary_entries_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_diary_entries_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       certifications_public: {
@@ -1915,6 +2091,14 @@ export type Database = {
       article_status: "draft" | "published" | "archived"
       availability_status: "available" | "busy" | "offline"
       environment_status: "active" | "inactive" | "maintenance"
+      escrow_status:
+        | "unfunded"
+        | "funded"
+        | "in_progress"
+        | "submitted"
+        | "approved"
+        | "released"
+        | "disputed"
       guac_protocol: "rdp" | "ssh" | "vnc"
       integration_platform: "zendesk" | "freshdesk" | "jira" | "servicenow"
       integration_status: "active" | "inactive" | "error"
@@ -1930,6 +2114,7 @@ export type Database = {
         | "on_hold"
         | "completed"
         | "cancelled"
+      proposal_status: "pending" | "accepted" | "rejected" | "withdrawn"
       session_status: "scheduled" | "in_progress" | "completed" | "cancelled"
       session_type: "chat" | "video" | "screen_share"
       sync_direction: "inbound" | "outbound"
@@ -2080,6 +2265,15 @@ export const Constants = {
       article_status: ["draft", "published", "archived"],
       availability_status: ["available", "busy", "offline"],
       environment_status: ["active", "inactive", "maintenance"],
+      escrow_status: [
+        "unfunded",
+        "funded",
+        "in_progress",
+        "submitted",
+        "approved",
+        "released",
+        "disputed",
+      ],
       guac_protocol: ["rdp", "ssh", "vnc"],
       integration_platform: ["zendesk", "freshdesk", "jira", "servicenow"],
       integration_status: ["active", "inactive", "error"],
@@ -2096,6 +2290,7 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      proposal_status: ["pending", "accepted", "rejected", "withdrawn"],
       session_status: ["scheduled", "in_progress", "completed", "cancelled"],
       session_type: ["chat", "video", "screen_share"],
       sync_direction: ["inbound", "outbound"],
