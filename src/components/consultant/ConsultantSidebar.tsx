@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Briefcase, Calendar, CreditCard, Star,
-  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, ClipboardList, CheckCircle2, Server, Handshake,
+  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, ClipboardList, CheckCircle2, Server, Handshake, Gift,
 } from 'lucide-react';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,6 +29,7 @@ const menuItems = [
   { key: 'verification', icon: ShieldCheck, path: '/consultant/verification' },
   { key: 'remote_access', icon: Server, path: '/consultant/remote-access' },
   { key: 'knowledge', icon: BookOpen, path: '/consultant/knowledge' },
+  { key: 'referrals', icon: Gift, path: '/consultant/referrals' },
   { key: 'notifications', icon: Bell, path: '/consultant/notifications' },
   { key: 'settings', icon: Settings, path: '/consultant/settings' },
 ];

@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, TicketPlus, Briefcase, Users, Calendar,
-  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, Plug, ClipboardList, CheckCircle2, Server, Building2,
+  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, Plug, ClipboardList, CheckCircle2, Server, Building2, Gift,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
@@ -29,6 +29,7 @@ const menuItems = [
   { key: 'integrations', icon: Plug, path: '/client/integrations' },
   { key: 'remote_access', icon: Server, path: '/client/remote-access' },
   { key: 'knowledge', icon: BookOpen, path: '/client/knowledge' },
+  { key: 'referrals', icon: Gift, path: '/client/referrals' },
   { key: 'notifications', icon: Bell, path: '/client/notifications' },
   { key: 'company_profile', icon: Building2, path: '/client/company' },
   { key: 'settings', icon: Settings, path: '/client/settings' },
