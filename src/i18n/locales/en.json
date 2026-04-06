@@ -1022,5 +1022,44 @@
   "ai": {
     "engine": "AI Engine",
     "select_model": "Select AI Model"
+  },
+  "super_admin": {
+    "title": "Super Admin",
+    "control_center": "Control Center",
+    "overview": "Overview",
+    "roles": "Roles & Auth",
+    "user_management": "User Management",
+    "reports": "Reports",
+    "config": "Configuration",
+    "workflows": "Workflows",
+    "audit_logs": "Audit Logs",
+    "system_health": "System Health",
+    "quick_links": "Quick Links",
+    "standard_admin": "Standard Admin",
+    "overview_title": "Super Admin Overview",
+    "overview_subtitle": "Complete system overview with all metrics and controls",
+    "roles_title": "Roles & Authorization",
+    "roles_subtitle": "Manage user roles, permissions, and access control",
+    "reports_title": "Reports & Analytics",
+    "reports_subtitle": "Comprehensive business intelligence and data reports",
+    "config_title": "Low-Code Configuration",
+    "config_subtitle": "Configure features, workflows, and templates without code changes",
+    "workflows_title": "Workflow Builder",
+    "workflows_subtitle": "Design and manage automated workflows visually",
+    "audit_title": "Audit Logs",
+    "audit_subtitle": "Complete audit trail of all system actions",
+    "system_title": "System Health",
+    "system_subtitle": "Monitor infrastructure, resources, and service health",
+    "users_title": "User Management",
+    "permissions": "Permissions Matrix",
+    "user_roles": "User Roles",
+    "access_control": "Access Control",
+    "permission_matrix": "Permission Matrix",
+    "feature_flags": "Feature Flags",
+    "templates": "Email Templates",
+    "branding": "Branding"
+  },
+  "sidebar": {
+    "super_admin": "Super Admin"
   }
 }
