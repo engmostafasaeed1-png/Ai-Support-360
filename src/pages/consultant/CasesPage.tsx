@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useConsultantCases } from '@/hooks/useConsultantCases';
 import { Search, Filter, ArrowUpRight, Clock, FileSignature, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
@@ -186,6 +187,7 @@ export default function CasesPage() {
                   </div>
                 </CardContent>
               </Card>
+              </Link>
             );
           })
         )}
