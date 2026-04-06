@@ -26,6 +26,7 @@ interface Props {
 export default function InterviewHistory({ consultantId }: Props) {
   const { t } = useTranslation();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [answersId, setAnswersId] = useState<string | null>(null);
 
   const { data: interviews, isLoading } = useQuery({
     queryKey: ['interview-history', consultantId],
