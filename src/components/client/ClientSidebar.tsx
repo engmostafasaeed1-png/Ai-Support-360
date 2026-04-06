@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, TicketPlus, Briefcase, Users, Calendar,
-  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, Plug, ClipboardList, CheckCircle2, Server, Building2, Gift,
+  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, Plug, ClipboardList, CheckCircle2, Server, Building2, Gift, Milestone,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
@@ -26,6 +26,7 @@ const menuItems = [
   { key: 'sessions', icon: Calendar, path: '/client/sessions' },
   { key: 'payments', icon: CreditCard, path: '/client/payments' },
   { key: 'invoices', icon: FileText, path: '/client/invoices' },
+  { key: 'milestones', icon: Milestone, path: '/client/milestones' },
   { key: 'integrations', icon: Plug, path: '/client/integrations' },
   { key: 'remote_access', icon: Server, path: '/client/remote-access' },
   { key: 'knowledge', icon: BookOpen, path: '/client/knowledge' },
