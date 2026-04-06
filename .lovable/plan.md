@@ -1,61 +1,40 @@
+## Upwork-Inspired Features Implementation
 
-# Build Complete Platform — Phased Plan
+### Phase 1: Database Schema
+Create 3 new tables:
+- **proposals** — Consultants bid on tickets with cover letter, rate, timeline
+- **milestones** — Break projects into funded milestones with escrow status
+- **work_diary_entries** — Time tracker entries with activity level and screenshots
 
-The platform has ~40+ pages across 4 roles. Many already have UI but use mock data. Here's the plan to make everything functional:
+### Phase 2: Talent Search & Filters (Client Portal)
+- Enhanced `/client/consultants` page with advanced filters:
+  - SAP module, hourly rate range, availability, rating, country, response time
+  - Sort by: relevance, rating, rate, response time
+  - Grid/list view toggle
 
-## Phase 1: Auth & Onboarding (Foundation)
-- ✅ Auth already works (login, signup, roles, password reset)
-- Fix client onboarding wizard to save to `client_profiles` table
-- Fix consultant onboarding wizard to save to `consultants` table
-- Ensure role-based routing works end-to-end
+### Phase 3: Proposal/Bidding System
+- Consultants can submit proposals on open tickets (cover letter, proposed rate, estimated hours)
+- Clients see proposals on ticket detail, compare and accept
+- New consultant page: "My Proposals" to track submitted bids
 
-## Phase 2: Client Dashboard — Real Data
-- Connect Client Dashboard KPIs to real ticket/session/payment counts
-- Connect Tickets page (already uses `useClientTickets` hook ✅)
-- Connect Sessions page to real `sessions` table
-- Connect Payments page to real `payments` table
-- Connect New Request form to create real tickets
-- Connect Consultants browse page to real `consultants` table
-- Connect Chat to real `messages` + `sessions` tables
-- Connect Settings page to update `profiles` + `client_profiles`
-- Connect Company Profile to `client_profiles`
+### Phase 4: Time Tracker
+- Work diary page showing logged hours per session
+- Activity level indicator (keyboard/mouse activity %)
+- Manual time entry support
+- Weekly summary view
 
-## Phase 3: Consultant Dashboard — Real Data
-- Connect Consultant Dashboard to real cases/earnings data
-- Connect Cases page to real assigned `tickets`
-- Connect Calendar to real `availability_slots` + `sessions`
-- Connect Earnings page to real `payments` + `payouts`
-- Connect Profile page to real `consultants` + `profiles`
-- Connect Verification page to real `interview_sessions`
-- Connect Chat to real messages
+### Phase 5: Milestone Payments & Escrow
+- Create milestones on projects with amounts
+- Escrow states: funded → in_progress → submitted → approved → released
+- Client can fund, review, and release milestones
+- Consultant sees milestone progress on earnings page
 
-## Phase 4: Admin Dashboard — Real Data
-- Connect Admin Dashboard KPIs to real aggregate queries
-- Connect Users page to real `profiles` + `user_roles`
-- Connect Ticket Kanban to all tickets with drag-drop status updates
-- Connect Consultant Approvals to real verification workflow
-- Connect Analytics to real data aggregations
-- Connect Environments page to real `remote_environments`
-- Connect NDA Management to real `nda_agreements`
-- Connect Admin Settings to `platform_settings`
-
-## Phase 5: Super Admin
-- Connect Overview with system-wide stats
-- Connect Roles & Auth management
-- Connect User Management
-- Connect Audit Logs to real `audit_logs` table
-- Connect System Health monitoring
-- Connect Workflows and Config pages
-
-## Phase 6: Missing Pages & Polish
-- Knowledge Base (articles CRUD)
-- Invoices page
-- Reviews page
-- Remote Access (Guacamole integration)
-- Integrations (Zendesk/Jira sync)
-
----
-
-**Recommended approach**: Tackle one phase per conversation to keep changes manageable and testable. Each phase = 5-10 file changes.
-
-**Which phase should we start with?**
+### Files to create/modify:
+- DB migration (3 tables + RLS)
+- `src/pages/client/ConsultantsPage.tsx` — Enhanced talent search
+- `src/components/client/ProposalsList.tsx` — View proposals on tickets
+- `src/pages/consultant/ProposalsPage.tsx` — Consultant's proposals
+- `src/components/consultant/SubmitProposalModal.tsx` — Bid on ticket
+- `src/pages/consultant/WorkDiaryPage.tsx` — Time tracker
+- `src/components/project/MilestoneManager.tsx` — Milestone CRUD
+- Routes in App.tsx
