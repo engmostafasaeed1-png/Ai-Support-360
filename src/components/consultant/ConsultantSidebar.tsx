@@ -75,13 +75,15 @@ export default function ConsultantSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {visibleItems.map((item) => {
-                const isActive = location.pathname === item.path;
+                const isActive = item.path === '/consultant'
+                  ? location.pathname === '/consultant'
+                  : location.pathname.startsWith(item.path);
                 return (
                   <SidebarMenuItem key={item.key}>
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.path}
-                        end
+                        end={item.path === '/consultant'}
                         className={`hover:bg-sidebar-accent/50 ${isActive ? 'bg-sidebar-accent text-sidebar-primary font-medium' : ''}`}
                         activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                       >
