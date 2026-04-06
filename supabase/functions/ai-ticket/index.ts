@@ -179,7 +179,7 @@ serve(async (req) => {
         .select(`
           id, user_id, bio, hourly_rate, currency, timezone, languages, industries,
           availability_status, rating, total_reviews, response_time_minutes,
-          verification_status, ai_skills_score
+          verification_status, ai_skills_score, country, city, nationality
         `)
         .in("verification_status", ["verified", "under_review"])
         .limit(50);
@@ -192,26 +192,81 @@ serve(async (req) => {
       }
 
       const consultantIds = consultants.map(c => c.id);
-      const { data: skills } = await supabase
-        .from("consultant_skills")
-        .select("consultant_id, sap_module, proficiency_level, years_experience, certified")
-        .in("consultant_id", consultantIds);
-
-      const { data: certs } = await supabase
-        .from("certifications")
-        .select("consultant_id, name, verified")
-        .in("consultant_id", consultantIds);
-
       const userIds = consultants.map(c => c.user_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, avatar_url")
-        .in("user_id", userIds);
+
+      // Fetch all enrichment data in parallel
+      const [
+        { data: skills },
+        { data: certs },
+        { data: profiles },
+        { data: interviews },
+        { data: projects },
+        { data: workHistory },
+        { data: ndaAgreements },
+        { data: sessionStats },
+        { data: ratingDetails },
+      ] = await Promise.all([
+        supabase.from("consultant_skills")
+          .select("consultant_id, sap_module, proficiency_level, years_experience, certified")
+          .in("consultant_id", consultantIds),
+        supabase.from("certifications")
+          .select("consultant_id, name, issuer, verified, expiry_date")
+          .in("consultant_id", consultantIds),
+        supabase.from("profiles")
+          .select("user_id, display_name, avatar_url")
+          .in("user_id", userIds),
+        supabase.from("interview_sessions")
+          .select("consultant_id, status, overall_score, technical_score, soft_skills_score, interview_type, completed_at")
+          .in("consultant_id", consultantIds)
+          .eq("status", "completed")
+          .order("completed_at", { ascending: false }),
+        supabase.from("consultant_projects")
+          .select("consultant_id, project_name, sap_modules, client_industry, duration_months, role")
+          .in("consultant_id", consultantIds),
+        supabase.from("consultant_work_history")
+          .select("consultant_id, job_title, company_name, is_current, start_date, end_date")
+          .in("consultant_id", consultantIds),
+        supabase.from("nda_agreements")
+          .select("consultant_id, signed_at, revoked_at")
+          .in("consultant_id", consultantIds)
+          .is("revoked_at", null),
+        supabase.from("sessions")
+          .select("consultant_id, status, duration_minutes")
+          .in("consultant_id", consultantIds),
+        supabase.from("ratings")
+          .select("consultant_id, score, comment")
+          .in("consultant_id", consultantIds)
+          .order("created_at", { ascending: false })
+          .limit(200),
+      ]);
 
       const enrichedConsultants = consultants.map(c => {
-        const consultantSkills = (skills || []).filter(s => s.consultant_id === c.id);
-        const consultantCerts = (certs || []).filter(cert => cert.consultant_id === c.id);
+        const cSkills = (skills || []).filter(s => s.consultant_id === c.id);
+        const cCerts = (certs || []).filter(cert => cert.consultant_id === c.id);
         const profile = (profiles || []).find(p => p.user_id === c.user_id);
+        const cInterviews = (interviews || []).filter(i => i.consultant_id === c.id);
+        const cProjects = (projects || []).filter(p => p.consultant_id === c.id);
+        const cWork = (workHistory || []).filter(w => w.consultant_id === c.id);
+        const hasActiveNDA = (ndaAgreements || []).some(n => n.consultant_id === c.id);
+        const cSessions = (sessionStats || []).filter(s => s.consultant_id === c.id);
+        const cRatings = (ratingDetails || []).filter(r => r.consultant_id === c.id);
+
+        // Compute session completion rate
+        const totalSessions = cSessions.length;
+        const completedSessions = cSessions.filter(s => s.status === "completed").length;
+        const sessionCompletionRate = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : null;
+        const avgSessionDuration = totalSessions > 0
+          ? Math.round(cSessions.reduce((sum, s) => sum + (s.duration_minutes || 0), 0) / totalSessions)
+          : null;
+
+        // Latest interview scores
+        const latestInterview = cInterviews[0] || null;
+
+        // Total years of SAP experience across all skills
+        const totalSapYears = cSkills.reduce((sum, s) => sum + (s.years_experience || 0), 0);
+
+        // Relevant project modules
+        const projectModules = [...new Set(cProjects.flatMap(p => p.sap_modules || []))];
 
         return {
           id: c.id,
@@ -221,6 +276,9 @@ serve(async (req) => {
           hourly_rate: c.hourly_rate,
           currency: c.currency,
           timezone: c.timezone,
+          country: c.country,
+          city: c.city,
+          nationality: c.nationality,
           languages: c.languages,
           industries: c.industries,
           availability: c.availability_status,
@@ -228,33 +286,101 @@ serve(async (req) => {
           total_reviews: c.total_reviews,
           response_time_minutes: c.response_time_minutes,
           verification_status: c.verification_status,
-          skills: consultantSkills.map(s => ({
+          ai_skills_score: c.ai_skills_score,
+          total_sap_years: totalSapYears,
+          has_active_nda: hasActiveNDA,
+          session_completion_rate: sessionCompletionRate,
+          total_completed_sessions: completedSessions,
+          avg_session_duration: avgSessionDuration,
+          skills: cSkills.map(s => ({
             module: s.sap_module,
             proficiency: s.proficiency_level,
             years: s.years_experience,
             certified: s.certified,
           })),
-          certifications: consultantCerts.map(cert => ({
+          certifications: cCerts.map(cert => ({
             name: cert.name,
+            issuer: cert.issuer,
             verified: cert.verified,
+            expired: cert.expiry_date ? new Date(cert.expiry_date) < new Date() : false,
+          })),
+          interview: latestInterview ? {
+            overall_score: latestInterview.overall_score,
+            technical_score: latestInterview.technical_score,
+            soft_skills_score: latestInterview.soft_skills_score,
+            type: latestInterview.interview_type,
+          } : null,
+          project_history: cProjects.slice(0, 5).map(p => ({
+            name: p.project_name,
+            modules: p.sap_modules,
+            industry: p.client_industry,
+            duration_months: p.duration_months,
+            role: p.role,
+          })),
+          work_experience: cWork.slice(0, 3).map(w => ({
+            title: w.job_title,
+            company: w.company_name,
+            is_current: w.is_current,
+          })),
+          recent_ratings: cRatings.slice(0, 3).map(r => ({
+            score: r.score,
+            comment: r.comment,
           })),
         };
       });
 
       const rankResponse = await aiRequest(
         LOVABLE_API_KEY,
-        `You are an advanced SAP consultant matching engine. You must rank the provided consultants against the client's ticket requirements.
+        `You are an advanced SAP consultant matching engine for an enterprise support platform. Rank consultants against ticket requirements using these weighted criteria:
 
-Scoring criteria (weights):
-- SAP module & skill match (35%): Does the consultant have skills in the required SAP module? Higher proficiency and more years = higher score.
-- Industry experience (15%): Does the consultant's industry experience align with the ticket context?
-- Language match (10%): Does the consultant speak the client's preferred language?
-- Availability (15%): Is the consultant currently available? Available > busy > offline.
-- Rating & reviews (10%): Higher rating and more reviews = more reliable.
-- Response time (10%): Lower response time = better for urgent tickets.
-- Certifications (5%): Relevant verified certifications boost the score.
+SCORING CRITERIA (total = 100%):
 
-Return the top 5 consultants ranked by overall match score (0-100). Provide a specific reason why each is a good match.`,
+1. SAP Module & Skill Match (25%):
+   - Direct skill in the required module (proficiency 1-5, years of experience)
+   - Certified in the module = strong bonus
+   - Cross-module knowledge relevant to the issue
+
+2. Project & Domain Experience (20%):
+   - Past projects involving the same SAP module
+   - Relevant industry experience matching the ticket context
+   - Duration and depth of past project work
+
+3. AI Interview & Verified Skills Score (15%):
+   - Overall AI interview score (technical + soft skills)
+   - ai_skills_score from platform assessment
+   - Higher scores indicate verified, battle-tested expertise
+
+4. Availability & Response Time (15%):
+   - Available > busy > offline
+   - Response time weighted by ticket urgency (critical tickets heavily penalize slow responders)
+   - Timezone proximity to client's preferred working hours
+
+5. Track Record & Reliability (10%):
+   - Session completion rate (higher = more reliable)
+   - Total completed sessions (experience on the platform)
+   - Average session duration (engagement quality)
+
+6. Client Satisfaction (8%):
+   - Rating score (out of 5)
+   - Number of reviews (statistical confidence)
+   - Recent review sentiment
+
+7. Language & Cultural Fit (5%):
+   - Speaks client's preferred language
+   - Nationality/region alignment for cultural understanding
+
+8. Compliance & Trust (2%):
+   - Active NDA on file = trust bonus
+   - Verification status (verified > under_review)
+   - Valid (non-expired) certifications
+
+URGENCY MODIFIERS:
+- Critical: Heavily favor available consultants with fast response times and high completion rates
+- High: Balance availability with skill match
+- Medium: Prioritize best skill match over availability
+- Low: Focus on best overall value (skill + rate)
+
+Return the top 5 consultants. For each, provide a detailed match reason referencing specific data points from their profile.`,
         `Client Ticket:
 Module: ${sap_module}
 Title: ${title}
@@ -262,15 +388,15 @@ Description: ${description}
 Urgency: ${urgency}
 Preferred Language: ${preferred_language || 'en'}
 
-Available Consultants:
+Available Consultants (${enrichedConsultants.length}):
 ${JSON.stringify(enrichedConsultants, null, 2)}
 
-Rank the top consultants for this ticket.`,
+Rank the top consultants for this ticket. Be specific about why each matches.`,
         [{
           type: "function",
           function: {
             name: "rank_consultants",
-            description: "Return ranked consultant recommendations",
+            description: "Return ranked consultant recommendations with detailed scoring",
             parameters: {
               type: "object",
               properties: {
@@ -281,17 +407,21 @@ Rank the top consultants for this ticket.`,
                     properties: {
                       consultant_id: { type: "string", description: "The consultant's id" },
                       match_score: { type: "number", description: "Overall match score 0-100" },
-                      match_reason: { type: "string", description: "2-3 sentence explanation of why this consultant is a good match" },
-                      strengths: { type: "array", items: { type: "string" }, description: "Top 3 strengths for this ticket" },
-                      skill_match_score: { type: "number", description: "Skill match sub-score 0-100" },
-                      availability_score: { type: "number", description: "Availability sub-score 0-100" },
+                      match_reason: { type: "string", description: "3-4 sentence explanation referencing specific data points (skills, projects, scores)" },
+                      strengths: { type: "array", items: { type: "string" }, description: "Top 3-5 specific strengths for this ticket" },
+                      concerns: { type: "array", items: { type: "string" }, description: "Any potential concerns or gaps (0-2 items)" },
+                      skill_match_score: { type: "number", description: "Skill & module match sub-score 0-100" },
+                      experience_score: { type: "number", description: "Project & domain experience sub-score 0-100" },
+                      availability_score: { type: "number", description: "Availability & response time sub-score 0-100" },
+                      reliability_score: { type: "number", description: "Track record & reliability sub-score 0-100" },
+                      interview_score: { type: "number", description: "AI interview performance sub-score 0-100" },
                     },
-                    required: ["consultant_id", "match_score", "match_reason", "strengths"],
+                    required: ["consultant_id", "match_score", "match_reason", "strengths", "skill_match_score", "availability_score"],
                     additionalProperties: false,
                   },
                   description: "Top 5 ranked consultants"
                 },
-                overall_rationale: { type: "string", description: "Brief explanation of the ranking methodology used" }
+                overall_rationale: { type: "string", description: "Summary of ranking methodology and key differentiators between top candidates" }
               },
               required: ["recommendations", "overall_rationale"],
               additionalProperties: false
@@ -326,7 +456,12 @@ Rank the top consultants for this ticket.`,
             response_time_minutes: consultant?.response_time_minutes,
             languages: consultant?.languages,
             verification_status: consultant?.verification_status,
-            top_skills: consultant?.skills?.slice(0, 3).map((s: any) => s.module) || [],
+            ai_skills_score: consultant?.ai_skills_score,
+            session_completion_rate: consultant?.session_completion_rate,
+            total_completed_sessions: consultant?.total_completed_sessions,
+            has_active_nda: consultant?.has_active_nda,
+            top_skills: consultant?.skills?.slice(0, 5).map((s: any) => s.module) || [],
+            interview: consultant?.interview,
           };
         });
       }
