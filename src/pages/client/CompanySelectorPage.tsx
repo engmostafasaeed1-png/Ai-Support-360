@@ -72,12 +72,16 @@ export default function CompanySelectorPage() {
     <div className="min-h-screen flex items-center justify-center px-4 relative py-8">
       <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
       <div className="w-full max-w-2xl relative z-10 animate-fade-in">
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-premium">
-            <Building2 className="w-7 h-7 text-primary-foreground" />
+        {/* User Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <Avatar className="w-14 h-14 border-2 border-primary/20 shadow-md">
+            <AvatarImage src={profile?.avatarUrl || undefined} />
+            <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">{profile?.initials || 'U'}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{profile?.displayName || 'My Companies'}</h1>
+            <p className="text-muted-foreground text-sm">{tenants.length} {tenants.length === 1 ? 'company' : 'companies'} · Choose one to enter</p>
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Select a Company</h1>
-          <p className="text-muted-foreground">Choose a company to manage or create a new one</p>
         </div>
 
         <div className="grid gap-3 mb-6">
