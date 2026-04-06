@@ -171,6 +171,13 @@ export default function SessionDetailPage() {
                 variant="outline"
                 size="sm"
               />
+              <AnalyzeSessionButton sessionId={sessionId!} />
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowFeedback(true)}>
+                <Star className="w-3.5 h-3.5" /> Feedback
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowSurvey(true)}>
+                <ClipboardCheck className="w-3.5 h-3.5" /> Survey
+              </Button>
             {status === 'scheduled' && (
               <div className="flex items-center gap-2">
                 <AlertDialog>
