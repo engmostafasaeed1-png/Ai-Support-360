@@ -13,6 +13,7 @@ import {
   Star, MapPin, Clock, Globe, Shield, Award, Video,
   MessageSquare, Monitor, ChevronLeft, CalendarDays, BadgeCheck, ExternalLink
 } from 'lucide-react';
+import ShareMenu from '@/components/ShareMenu';
 import { useState, useEffect } from 'react';
 import BookingModal from '@/components/client/BookingModal';
 
@@ -126,6 +127,18 @@ export default function ConsultantProfilePage() {
 
                 {/* Stats + CTA */}
                 <div className="flex flex-col items-end gap-3">
+                  <ShareMenu
+                    title={consultant.name}
+                    text={`${consultant.specialty} — ${consultant.rating}★ — $${consultant.rate}/hr`}
+                    details={[
+                      { label: 'Specialty', value: consultant.specialty },
+                      { label: 'Rating', value: `${consultant.rating} (${consultant.reviews} reviews)` },
+                      { label: 'Rate', value: `$${consultant.rate}/hr` },
+                      { label: 'Location', value: consultant.city },
+                    ]}
+                    variant="outline"
+                    size="sm"
+                  />
                   <div className="flex items-center gap-4">
                     <div className="text-center">
                       <div className="flex items-center gap-1">

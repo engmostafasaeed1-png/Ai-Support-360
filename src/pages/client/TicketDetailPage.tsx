@@ -9,6 +9,7 @@ import {
   ArrowLeft, Clock, User, Calendar, Tag, MessageSquare,
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle,
 } from 'lucide-react';
+import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
 import TicketDocuments from '@/components/client/TicketDocuments';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -81,7 +82,20 @@ export default function TicketDetailPage() {
           </Button>
         </Link>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-foreground">{ticket.title}</h1>
+          <div className="flex items-start justify-between gap-2">
+            <h1 className="text-xl font-bold text-foreground">{ticket.title}</h1>
+            <ShareMenu
+              title={ticket.title}
+              text={`Ticket: ${ticket.title} — ${ticket.sap_module} — ${ticket.status}`}
+              details={[
+                { label: 'SAP Module', value: ticket.sap_module },
+                { label: 'Status', value: ticket.status.replace(/_/g, ' ') },
+                { label: 'Urgency', value: ticket.urgency },
+              ]}
+              variant="outline"
+              size="sm"
+            />
+          </div>
           <div className="flex flex-wrap items-center gap-2 mt-1.5">
             <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>
               {ticket.urgency}

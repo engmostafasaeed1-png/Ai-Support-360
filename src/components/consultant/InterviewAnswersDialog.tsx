@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle, Download, MessageSquare, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { generateInterviewPdf } from '@/lib/interviewPdf';
+import ShareMenu from '@/components/ShareMenu';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { mockInterviewAnswers } from '@/data/interviewMockData';
 
@@ -48,15 +49,30 @@ export default function InterviewAnswersDialog({ interviewId, open, onOpenChange
               {t('interview_history.answers_title', 'Interview Answers')}
             </DialogTitle>
             {answers && answers.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => generateInterviewPdf(answers, session, consultantName)}
-              >
-                <Download className="w-3.5 h-3.5" />
-                {t('interview_history.export_pdf', 'Export PDF')}
-              </Button>
+              <div className="flex items-center gap-2">
+                <ShareMenu
+                  title={`Interview Results${consultantName ? ` — ${consultantName}` : ''}`}
+                  text={session ? `Overall: ${session.overall_score}/100 | Technical: ${session.technical_score}/100 | Soft Skills: ${session.soft_skills_score}/100` : undefined}
+                  details={session ? [
+                    { label: 'Overall Score', value: `${session.overall_score}/100` },
+                    { label: 'Technical', value: `${session.technical_score}/100` },
+                    { label: 'Soft Skills', value: `${session.soft_skills_score}/100` },
+                    { label: 'Type', value: session.interview_type || 'AI' },
+                  ] : undefined}
+                  variant="outline"
+                  size="sm"
+                  onDownload={() => generateInterviewPdf(answers, session, consultantName)}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => generateInterviewPdf(answers, session, consultantName)}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {t('interview_history.export_pdf', 'Export PDF')}
+                </Button>
+              </div>
             )}
           </div>
         </DialogHeader>
