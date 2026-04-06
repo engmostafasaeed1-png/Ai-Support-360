@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import PasswordInput from '@/components/auth/PasswordInput';
 
 export default function ResetPasswordPage() {
   const { t } = useTranslation();
@@ -83,11 +84,11 @@ export default function ResetPasswordPage() {
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="password">{t('auth.new_password')}</Label>
-              <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+              <PasswordInput id="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="confirm">{t('auth.confirm_password')}</Label>
-              <Input id="confirm" type="password" required value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="••••••••" />
+              <PasswordInput id="confirm" required value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="••••••••" />
             </div>
           </CardContent>
           <CardFooter>
