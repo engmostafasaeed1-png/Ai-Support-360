@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,19 +19,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const featureFlags = [
-  { key: 'ai_ticket_triage', label: 'AI Ticket Triage', description: 'Automatic AI categorization for new tickets', enabled: true, category: 'AI' },
-  { key: 'ai_chatbot', label: 'AI Chatbot', description: 'Floating AI assistant for all users', enabled: true, category: 'AI' },
-  { key: 'ai_consultant_match', label: 'AI Consultant Matching', description: 'AI-powered consultant ranking for tickets', enabled: true, category: 'AI' },
-  { key: 'remote_access', label: 'Remote Access (Guacamole)', description: 'Remote desktop access for SAP environments', enabled: true, category: 'Features' },
-  { key: 'video_sessions', label: 'Video Sessions', description: 'Video call sessions between clients and consultants', enabled: false, category: 'Features' },
-  { key: 'credly_badges', label: 'Credly Badge Integration', description: 'Display Credly badges on consultant profiles', enabled: true, category: 'Integrations' },
-  { key: 'email_notifications', label: 'Email Notifications', description: 'Send email notifications for important events', enabled: true, category: 'Notifications' },
-  { key: 'push_notifications', label: 'Push Notifications', description: 'Browser push notifications', enabled: false, category: 'Notifications' },
-  { key: 'maintenance_mode', label: 'Maintenance Mode', description: 'Show maintenance banner to all users', enabled: false, category: 'System' },
-  { key: 'open_registration', label: 'Open Registration', description: 'Allow new user signups', enabled: true, category: 'System' },
-  { key: 'guest_mode', label: 'Guest Mode', description: 'Allow exploring the platform without login', enabled: true, category: 'System' },
-];
 
 const emailTemplates = [
   { id: 'welcome', name: 'Welcome Email', subject: 'Welcome to Qurtuba Talks!', lastEdited: '2 days ago' },
@@ -51,11 +39,11 @@ const workflowSteps = [
 
 export default function ConfigPage() {
   const { t } = useTranslation();
-  const [flags, setFlags] = useState(featureFlags);
+  const { flags, loading, toggleFlag } = useFeatureFlags();
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
   const handleToggle = (key: string) => {
-    setFlags(prev => prev.map(f => f.key === key ? { ...f, enabled: !f.enabled } : f));
+    toggleFlag(key);
     toast.success(t('super_admin.feature_toggled', 'Feature flag updated'));
   };
 

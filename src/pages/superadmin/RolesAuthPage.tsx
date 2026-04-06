@@ -15,6 +15,7 @@ import {
   Eye, FileText, Settings, UserCheck, UserX, Crown, Shield,
 } from 'lucide-react';
 import { useAdminUsers } from '@/hooks/useAdminData';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { toast } from 'sonner';
 
 const permissions = [
@@ -39,7 +40,7 @@ const permissions = [
   { key: 'manage_environments', label: 'Manage Environments', category: 'Environments' },
 ];
 
-const rolePermissions: Record<string, string[]> = {
+const defaultRolePermissions: Record<string, string[]> = {
   admin: permissions.map(p => p.key),
   consultant: ['view_dashboard', 'create_tickets', 'view_reports'],
   client: ['view_dashboard', 'create_tickets', 'view_payments'],
@@ -56,7 +57,7 @@ export default function RolesAuthPage() {
   const { data: users } = useAdminUsers();
   const [search, setSearch] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('admin');
-  const [rolePerms, setRolePerms] = useState(rolePermissions);
+  const { rolePerms, loading, togglePermission, savePermissions } = useRolePermissions();
 
   const allUsers = users || [];
   const filtered = allUsers.filter((u) =>
@@ -65,13 +66,7 @@ export default function RolesAuthPage() {
   );
 
   const handlePermToggle = (perm: string) => {
-    setRolePerms(prev => {
-      const current = prev[selectedRole] || [];
-      const next = current.includes(perm)
-        ? current.filter(p => p !== perm)
-        : [...current, perm];
-      return { ...prev, [selectedRole]: next };
-    });
+    togglePermission(selectedRole, perm);
   };
 
   const handleRoleChange = (userId: string, newRole: string) => {
@@ -149,7 +144,7 @@ export default function RolesAuthPage() {
                 ))}
               </div>
               <div className="mt-6 flex justify-end">
-                <Button className="gradient-primary border-0" onClick={() => toast.success(t('super_admin.permissions_saved', 'Permissions saved'))}>
+                <Button className="gradient-primary border-0" onClick={savePermissions}>
                   {t('common.save', 'Save Changes')}
                 </Button>
               </div>
