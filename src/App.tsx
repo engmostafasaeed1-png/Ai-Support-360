@@ -128,6 +128,7 @@ const App = () => (
               <Route path="work-diary" element={<WorkDiaryPage />} />
               <Route path="referrals" element={<ReferralsPage />} />
             </Route>
+            <Route path="/client/companies" element={<ProtectedRoute requiredRole="client"><CompanySelectorPage /></ProtectedRoute>} />
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
               <Route path="new-request" element={<NewRequestPage />} />
