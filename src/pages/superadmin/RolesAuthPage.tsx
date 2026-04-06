@@ -40,7 +40,7 @@ const permissions = [
   { key: 'manage_environments', label: 'Manage Environments', category: 'Environments' },
 ];
 
-const rolePermissions: Record<string, string[]> = {
+const defaultRolePermissions: Record<string, string[]> = {
   admin: permissions.map(p => p.key),
   consultant: ['view_dashboard', 'create_tickets', 'view_reports'],
   client: ['view_dashboard', 'create_tickets', 'view_payments'],
