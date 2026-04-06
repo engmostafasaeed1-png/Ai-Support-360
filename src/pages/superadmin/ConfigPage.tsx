@@ -19,19 +19,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const featureFlags = [
-  { key: 'ai_ticket_triage', label: 'AI Ticket Triage', description: 'Automatic AI categorization for new tickets', enabled: true, category: 'AI' },
-  { key: 'ai_chatbot', label: 'AI Chatbot', description: 'Floating AI assistant for all users', enabled: true, category: 'AI' },
-  { key: 'ai_consultant_match', label: 'AI Consultant Matching', description: 'AI-powered consultant ranking for tickets', enabled: true, category: 'AI' },
-  { key: 'remote_access', label: 'Remote Access (Guacamole)', description: 'Remote desktop access for SAP environments', enabled: true, category: 'Features' },
-  { key: 'video_sessions', label: 'Video Sessions', description: 'Video call sessions between clients and consultants', enabled: false, category: 'Features' },
-  { key: 'credly_badges', label: 'Credly Badge Integration', description: 'Display Credly badges on consultant profiles', enabled: true, category: 'Integrations' },
-  { key: 'email_notifications', label: 'Email Notifications', description: 'Send email notifications for important events', enabled: true, category: 'Notifications' },
-  { key: 'push_notifications', label: 'Push Notifications', description: 'Browser push notifications', enabled: false, category: 'Notifications' },
-  { key: 'maintenance_mode', label: 'Maintenance Mode', description: 'Show maintenance banner to all users', enabled: false, category: 'System' },
-  { key: 'open_registration', label: 'Open Registration', description: 'Allow new user signups', enabled: true, category: 'System' },
-  { key: 'guest_mode', label: 'Guest Mode', description: 'Allow exploring the platform without login', enabled: true, category: 'System' },
-];
 
 const emailTemplates = [
   { id: 'welcome', name: 'Welcome Email', subject: 'Welcome to Qurtuba Talks!', lastEdited: '2 days ago' },
