@@ -61,6 +61,27 @@ export default function VerificationPage() {
   const [showInterviewFlow, setShowInterviewFlow] = useState(false);
   const [consultantId, setConsultantId] = useState<string | undefined>(undefined);
 
+  // Fetch skills and certifications from DB
+  const { data: skills = [] } = useQuery({
+    queryKey: ['consultant-skills', consultantId],
+    queryFn: async () => {
+      if (!consultantId) return [];
+      const { data } = await supabase.from('consultant_skills').select('sap_module, proficiency_level, years_experience, certified').eq('consultant_id', consultantId);
+      return (data || []).map(s => ({ module: s.sap_module, proficiency: s.proficiency_level || 1, years: s.years_experience || 0, certified: s.certified || false }));
+    },
+    enabled: !!consultantId,
+  });
+
+  const { data: certifications = [] } = useQuery({
+    queryKey: ['consultant-certs', consultantId],
+    queryFn: async () => {
+      if (!consultantId) return [];
+      const { data } = await supabase.from('certifications').select('name, issuer, issue_date, verified').eq('consultant_id', consultantId);
+      return data || [];
+    },
+    enabled: !!consultantId,
+  });
+
   useEffect(() => {
     if (isGuest) return;
     supabase.auth.getUser().then(({ data: { user } }) => {
