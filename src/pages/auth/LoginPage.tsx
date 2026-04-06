@@ -40,7 +40,7 @@ export default function LoginPage() {
     const role = roles?.[0]?.role;
     if (role === 'consultant') navigate('/consultant');
     else if (role === 'admin') navigate('/admin');
-    else navigate('/client');
+    else navigate('/client/companies');
   };
 
   return (

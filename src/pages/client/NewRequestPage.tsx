@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useTenant } from '@/contexts/TenantContext';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,6 +79,7 @@ const sessionTypes = [
 
 export default function NewRequestPage() {
   const { t } = useTranslation();
+  const { tenant } = useTenant();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [step, setStep] = useState(0);
@@ -212,6 +214,7 @@ export default function NewRequestPage() {
 
       const { error } = await supabase.from('tickets').insert({
         client_id: user.id,
+        tenant_id: tenant?.id || null,
         sap_module: form.sap_module,
         title: form.title,
         description: form.description,

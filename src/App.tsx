@@ -44,6 +44,7 @@ import SessionDetailPage from "./pages/client/SessionDetailPage.tsx";
 import SettingsPage from "./pages/client/SettingsPage.tsx";
 import IntegrationsPage from "./pages/client/IntegrationsPage.tsx";
 import CompanyProfilePage from "./pages/client/CompanyProfilePage.tsx";
+import CompanySelectorPage from "./pages/client/CompanySelectorPage.tsx";
 import ChatSessionPage from "./pages/chat/ChatSessionPage.tsx";
 import NotificationsPage from "./pages/notifications/NotificationsPage.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
@@ -127,6 +128,7 @@ const App = () => (
               <Route path="work-diary" element={<WorkDiaryPage />} />
               <Route path="referrals" element={<ReferralsPage />} />
             </Route>
+            <Route path="/client/companies" element={<ProtectedRoute requiredRole="client"><CompanySelectorPage /></ProtectedRoute>} />
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
               <Route path="new-request" element={<NewRequestPage />} />
