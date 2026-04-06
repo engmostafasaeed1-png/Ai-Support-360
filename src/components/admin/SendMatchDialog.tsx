@@ -199,8 +199,8 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-semibold text-foreground">{c.name}</p>
-                        {c.has_active_nda && <Shield className="w-3.5 h-3.5 text-emerald-500" title="Active NDA" />}
-                        {c.verification_status === 'verified' && <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" title="Verified" />}
+                        {c.has_active_nda && <Shield className="w-3.5 h-3.5 text-emerald-500" />}
+                        {c.verification_status === 'verified' && <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />}
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                         <span className="flex items-center gap-1"><Star className="w-3 h-3 text-amber-500" /> {c.rating} ({c.total_reviews})</span>
