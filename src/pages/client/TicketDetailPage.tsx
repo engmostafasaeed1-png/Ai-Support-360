@@ -7,13 +7,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Clock, User, Calendar, Tag, MessageSquare,
-  FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle,
+  FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
 import TicketDocuments from '@/components/client/TicketDocuments';
 import TicketAcceptors from '@/components/client/TicketAcceptors';
 import TicketBids from '@/components/client/TicketBids';
+import TicketTimeline from '@/components/client/TicketTimeline';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
@@ -176,14 +177,17 @@ export default function TicketDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Tabs: Bids, Documents, Sessions, Chat */}
-      <Tabs defaultValue="bids" className="w-full">
-        <TabsList className="w-full grid grid-cols-4 rounded-xl h-10">
+      {/* Tabs: Timeline, Bids, Documents, Sessions, Chat */}
+      <Tabs defaultValue="timeline" className="w-full">
+        <TabsList className="w-full grid grid-cols-5 rounded-xl h-10">
+          <TabsTrigger value="timeline" className="text-xs gap-1.5">
+            <History className="w-3.5 h-3.5" /> Timeline
+          </TabsTrigger>
           <TabsTrigger value="bids" className="text-xs gap-1.5">
             <Tag className="w-3.5 h-3.5" /> Bids
           </TabsTrigger>
           <TabsTrigger value="documents" className="text-xs gap-1.5">
-            <FileText className="w-3.5 h-3.5" /> Documents
+            <FileText className="w-3.5 h-3.5" /> Docs
           </TabsTrigger>
           <TabsTrigger value="sessions" className="text-xs gap-1.5">
             <Video className="w-3.5 h-3.5" /> Sessions
@@ -192,6 +196,10 @@ export default function TicketDetailPage() {
             <MessageSquare className="w-3.5 h-3.5" /> Chat
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="timeline" className="mt-4">
+          <TicketTimeline ticketId={ticket.id} ticket={ticket} />
+        </TabsContent>
 
         <TabsContent value="bids" className="mt-4">
           <TicketBids ticketId={ticket.id} />
