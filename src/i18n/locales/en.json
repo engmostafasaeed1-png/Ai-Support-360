@@ -209,7 +209,8 @@
     "work_diary": "Work Diary",
     "milestones": "Milestones",
     "tasks": "Task Board",
-    "plan": "Plan"
+    "plan": "Plan",
+    "landing_editor": "Landing Editor"
   },
   "client_dashboard": {
     "title": "Welcome back",

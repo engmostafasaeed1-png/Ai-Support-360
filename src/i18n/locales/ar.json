@@ -209,7 +209,8 @@
     "work_diary": "سجل العمل",
     "milestones": "المراحل",
     "tasks": "لوحة المهام",
-    "plan": "الخطة"
+    "plan": "الخطة",
+    "landing_editor": "محرر الصفحة الرئيسية"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",
