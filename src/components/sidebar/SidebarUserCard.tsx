@@ -4,9 +4,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface Props {
   collapsed: boolean;
+  onClick?: () => void;
 }
 
-export default function SidebarUserCard({ collapsed }: Props) {
+export default function SidebarUserCard({ collapsed, onClick }: Props) {
   const { profile, loading } = useUserProfile();
 
   if (loading) {
@@ -21,7 +22,10 @@ export default function SidebarUserCard({ collapsed }: Props) {
   if (!profile) return null;
 
   return (
-    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-sidebar-accent/30">
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-sidebar-accent/30 hover:bg-sidebar-accent/50 transition-colors cursor-pointer text-start"
+    >
       <Avatar className="w-9 h-9 shrink-0">
         {profile.avatarUrl && <AvatarImage src={profile.avatarUrl} alt={profile.displayName} />}
         <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
@@ -34,6 +38,6 @@ export default function SidebarUserCard({ collapsed }: Props) {
           <p className="text-[10px] text-sidebar-foreground/50 truncate">{profile.email}</p>
         </div>
       )}
-    </div>
+    </button>
   );
 }
