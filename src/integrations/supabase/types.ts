@@ -1917,6 +1917,79 @@ export type Database = {
           },
         ]
       }
+      tasks: {
+        Row: {
+          assignee_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: Database["public"]["Enums"]["task_priority"]
+          session_id: string | null
+          status: Database["public"]["Enums"]["task_status"]
+          tags: string[] | null
+          tenant_id: string | null
+          ticket_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["task_priority"]
+          session_id?: string | null
+          status?: Database["public"]["Enums"]["task_status"]
+          tags?: string[] | null
+          tenant_id?: string | null
+          ticket_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["task_priority"]
+          session_id?: string | null
+          status?: Database["public"]["Enums"]["task_status"]
+          tags?: string[] | null
+          tenant_id?: string | null
+          ticket_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_members: {
         Row: {
           created_at: string
@@ -2376,6 +2449,8 @@ export type Database = {
       subscription_tier: "basic" | "professional" | "enterprise"
       sync_direction: "inbound" | "outbound"
       sync_status: "success" | "failed" | "pending" | "skipped"
+      task_priority: "low" | "medium" | "high" | "urgent"
+      task_status: "todo" | "in_progress" | "in_review" | "done"
       ticket_status:
         | "new"
         | "under_review"
@@ -2561,6 +2636,8 @@ export const Constants = {
       subscription_tier: ["basic", "professional", "enterprise"],
       sync_direction: ["inbound", "outbound"],
       sync_status: ["success", "failed", "pending", "skipped"],
+      task_priority: ["low", "medium", "high", "urgent"],
+      task_status: ["todo", "in_progress", "in_review", "done"],
       ticket_status: [
         "new",
         "under_review",
