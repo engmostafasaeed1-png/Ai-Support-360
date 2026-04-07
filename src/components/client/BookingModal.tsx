@@ -261,6 +261,16 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
                 <span className="font-medium">60 min</span>
               </div>
             </div>
+            {meetingUrl && sessionType === 'video' && (
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => window.open(meetingUrl, '_blank')}
+              >
+                <Video className="w-4 h-4" />
+                Open Video Call
+              </Button>
+            )}
             <Button className="gradient-primary border-0 w-full" onClick={() => { onOpenChange(false); reset(); }}>
               Done
             </Button>
@@ -363,6 +373,32 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
                     </Label>
                   ))}
                 </RadioGroup>
+
+                {sessionType === 'video' && (
+                  <>
+                    <p className="text-sm font-medium text-foreground mt-4">Video Platform</p>
+                    <RadioGroup value={videoPlatform} onValueChange={setVideoPlatform} className="space-y-2">
+                      {VIDEO_PLATFORMS.map(({ value, label, description }) => (
+                        <Label
+                          key={value}
+                          htmlFor={`platform-${value}`}
+                          className={cn(
+                            'flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors',
+                            videoPlatform === value
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border/50 hover:border-primary/30'
+                          )}
+                        >
+                          <RadioGroupItem value={value} id={`platform-${value}`} />
+                          <div>
+                            <span className="text-sm font-medium text-foreground">{label}</span>
+                            <p className="text-xs text-muted-foreground">{description}</p>
+                          </div>
+                        </Label>
+                      ))}
+                    </RadioGroup>
+                  </>
+                )}
 
                 <div className="flex justify-between">
                   <Button variant="ghost" onClick={() => setStep(1)}>{t('booking.back')}</Button>
