@@ -27,11 +27,7 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-      scrolled
-        ? 'bg-background/90 backdrop-blur-xl border-b border-border/50 shadow-sm'
-        : 'bg-transparent'
-    }`}>
+    <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 bg-white/95 backdrop-blur-xl border-b border-border/50 shadow-sm">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         <Link to="/" className="flex items-center gap-2 group">
           <img src={logo} alt="AI SAP Support Hub" className="w-10 h-10 rounded-xl object-contain group-hover:scale-110 transition-transform shadow-premium" />
