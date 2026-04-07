@@ -208,7 +208,8 @@
     "proposals": "عروضي",
     "work_diary": "سجل العمل",
     "milestones": "المراحل",
-    "tasks": "لوحة المهام"
+    "tasks": "لوحة المهام",
+    "plan": "الخطة"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",
