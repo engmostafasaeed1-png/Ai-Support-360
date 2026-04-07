@@ -11,6 +11,7 @@ import {
   LayoutDashboard, TicketPlus, Briefcase, Users, Calendar,
   CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
   Plug, Server, Building2, Gift, Milestone, Sparkles, Crown, ChevronRight, Plus,
+  Activity, Shield, UsersRound, BarChart3,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
@@ -53,6 +54,15 @@ const navGroups = [
       { key: 'remote_access', icon: Server, path: '/client/remote-access' },
       { key: 'knowledge', icon: BookOpen, path: '/client/knowledge' },
       { key: 'referrals', icon: Gift, path: '/client/referrals' },
+    ],
+  },
+  {
+    labelKey: 'sidebar.management',
+    items: [
+      { key: 'team_members', icon: UsersRound, path: '/client/team' },
+      { key: 'reports', icon: BarChart3, path: '/client/reports' },
+      { key: 'sla', icon: Shield, path: '/client/sla' },
+      { key: 'activity_log', icon: Activity, path: '/client/activity-log' },
     ],
   },
   {

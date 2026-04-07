@@ -68,6 +68,10 @@ import RemoteAccessPage from "./pages/consultant/RemoteAccessPage.tsx";
 import ClientRemoteAccessPage from "./pages/client/RemoteAccessPage.tsx";
 import InvoicesPage from "./pages/client/InvoicesPage.tsx";
 import KnowledgePage from "./pages/client/KnowledgePage.tsx";
+import ActivityLogPage from "./pages/client/ActivityLogPage.tsx";
+import SLAPage from "./pages/client/SLAPage.tsx";
+import TeamMembersPage from "./pages/client/TeamMembersPage.tsx";
+import ClientReportsPage from "./pages/client/ReportsPage.tsx";
 import ReviewsPage from "./pages/consultant/ReviewsPage.tsx";
 import ConsultantSettingsPage from "./pages/consultant/SettingsPage.tsx";
 import ConsultantKnowledgePage from "./pages/consultant/KnowledgePage.tsx";
@@ -150,6 +154,10 @@ const App = () => (
               <Route path="invoices" element={<InvoicesPage />} />
               <Route path="knowledge" element={<KnowledgePage />} />
               <Route path="milestones" element={<MilestonesPage />} />
+              <Route path="activity-log" element={<ActivityLogPage />} />
+              <Route path="sla" element={<SLAPage />} />
+              <Route path="team" element={<TeamMembersPage />} />
+              <Route path="reports" element={<ClientReportsPage />} />
               <Route path="referrals" element={<ReferralsPage />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
