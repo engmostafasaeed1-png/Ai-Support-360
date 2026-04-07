@@ -38,6 +38,28 @@ const SESSION_TYPES = [
   { value: 'screen_share', icon: Monitor, labelKey: 'consultant_profile.screen_share' },
 ] as const;
 
+const VIDEO_PLATFORMS = [
+  { value: 'jitsi', label: 'Jitsi Meet (Free)', description: 'Instant video call, no account needed' },
+  { value: 'zoom', label: 'Zoom', description: 'Zoom meeting link' },
+  { value: 'google_meet', label: 'Google Meet', description: 'Google Meet video call' },
+] as const;
+
+function generateMeetingUrl(platform: string, sessionId: string): string {
+  const roomName = `qurtuba-session-${sessionId.slice(0, 8)}`;
+  switch (platform) {
+    case 'jitsi':
+      return `https://meet.jit.si/${roomName}`;
+    case 'zoom':
+      // Placeholder — real Zoom links require API integration
+      return `https://zoom.us/j/${roomName}`;
+    case 'google_meet':
+      // Placeholder — real Meet links require Calendar API
+      return `https://meet.google.com/${roomName}`;
+    default:
+      return `https://meet.jit.si/${roomName}`;
+  }
+}
+
 const FALLBACK_SLOTS = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'];
 
 const DAY_MAP: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6 };
