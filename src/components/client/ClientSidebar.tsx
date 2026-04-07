@@ -17,7 +17,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { useTenant } from '@/contexts/TenantContext';
-import { useTranslation as useT } from 'react-i18next';
+
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import qurtubaLogo from '@/assets/qurtuba-logo.png';
