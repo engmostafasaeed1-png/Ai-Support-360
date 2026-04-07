@@ -49,7 +49,7 @@ export default function ClientLayout() {
         <div className="flex-1 flex flex-col min-w-0 relative z-[1]">
           <FixedHeader>
             <div className="flex items-center gap-3">
-              <SidebarTrigger className="text-muted-foreground hidden md:flex" />
+              <SidebarTrigger className="text-muted-foreground" />
               <Link to="/" className="flex items-center gap-2 md:hidden">
                 <img src={logo} alt="AI SAP Support Hub" className="w-8 h-8 rounded-lg object-contain" />
                 <span className="font-bold text-sm text-foreground">AI SAP Support Hub</span>
