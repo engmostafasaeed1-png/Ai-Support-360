@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import logo from '@/assets/logo.jpg';
+import logo from '@/assets/logo.png';
 
 export default function Footer() {
   const { t } = useTranslation();
