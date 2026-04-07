@@ -35,7 +35,7 @@ export default function SessionsPage() {
       // Fetch sessions with consultant info via FK join
       const { data, error } = await supabase
         .from('sessions')
-        .select('*, consultants!sessions_consultant_id_fkey(id, user_id, hourly_rate)')
+        .select('*, consultants(id, user_id, hourly_rate)')
         .eq('client_id', user.id)
         .order('scheduled_at', { ascending: false });
 
