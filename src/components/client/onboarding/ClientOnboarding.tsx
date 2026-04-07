@@ -79,14 +79,28 @@ export default function ClientOnboarding() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error(t('onboarding.error_auth')); return; }
 
-      await supabase.from('profiles').update({
+      // Update or create profile
+      const profilePayload = {
+        user_id: user.id,
         display_name: data.companyName || tenant?.name,
         phone: data.phone,
         preferred_language: data.preferredLanguage,
         onboarding_completed: true,
-      }).eq('user_id', user.id);
+      };
+      
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      const { error } = await supabase.from('client_profiles' as any).upsert({
+      if (existingProfile) {
+        await supabase.from('profiles').update(profilePayload).eq('user_id', user.id);
+      } else {
+        await supabase.from('profiles').insert(profilePayload);
+      }
+
+      const { error } = await supabase.from('client_profiles').upsert({
         user_id: user.id,
         company_name: data.companyName || tenant?.name,
         company_size: data.companySize,
