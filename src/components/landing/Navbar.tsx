@@ -27,15 +27,11 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-      scrolled
-        ? 'bg-background/90 backdrop-blur-xl border-b border-border/50 shadow-sm'
-        : 'bg-transparent'
-    }`}>
+    <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 bg-white/95 backdrop-blur-xl border-b border-border/50 shadow-sm">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         <Link to="/" className="flex items-center gap-2 group">
           <img src={logo} alt="AI SAP Support Hub" className="w-10 h-10 rounded-xl object-contain group-hover:scale-110 transition-transform shadow-premium" />
-          <span className={`font-bold text-lg transition-colors ${scrolled ? 'text-foreground' : 'text-primary-foreground'}`}>
+          <span className="font-bold text-lg text-foreground">
             AI SAP Support Hub
           </span>
         </Link>
@@ -45,9 +41,7 @@ export default function Navbar() {
             <a
               key={item.href}
               href={item.href}
-              className={`text-sm font-medium px-3 py-2 rounded-lg transition-all hover:bg-primary-foreground/10 ${
-                scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-primary-foreground/80 hover:text-primary-foreground'
-              }`}
+              className="text-sm font-medium px-3 py-2 rounded-lg transition-all text-muted-foreground hover:text-foreground hover:bg-muted/50"
             >
               {item.label}
             </a>
@@ -57,20 +51,18 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-2">
           <button
             onClick={toggleLanguage}
-            className={`flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg transition-all hover:bg-primary-foreground/10 ${
-              scrolled ? 'text-muted-foreground hover:text-foreground' : 'text-primary-foreground/80 hover:text-primary-foreground'
-            }`}
+            className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg transition-all text-muted-foreground hover:text-foreground hover:bg-muted/50"
           >
             <Globe className="w-4 h-4" />
             {t('nav.language')}
           </button>
           <Link to="/login">
-            <Button variant="ghost" size="sm" className={scrolled ? '' : 'text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'}>
+            <Button variant="ghost" size="sm">
               {t('nav.login')}
             </Button>
           </Link>
           <Link to="/signup">
-            <Button size="sm" className={scrolled ? 'gradient-primary border-0 shadow-premium' : 'bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-xl'}>
+            <Button size="sm" className="gradient-primary border-0 shadow-premium">
               {t('nav.signup')}
             </Button>
           </Link>
@@ -78,9 +70,9 @@ export default function Navbar() {
 
         <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
           {mobileOpen ? (
-            <X className={`w-5 h-5 ${scrolled ? 'text-foreground' : 'text-primary-foreground'}`} />
+            <X className="w-5 h-5 text-foreground" />
           ) : (
-            <Menu className={`w-5 h-5 ${scrolled ? 'text-foreground' : 'text-primary-foreground'}`} />
+            <Menu className="w-5 h-5 text-foreground" />
           )}
         </button>
       </div>
