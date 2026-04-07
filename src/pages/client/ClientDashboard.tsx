@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Briefcase, Clock, CreditCard, CheckCircle, TrendingUp, TrendingDown,
   ChevronRight, Star, BadgeCheck, Zap, TicketPlus, Users,
@@ -79,10 +79,10 @@ export default function ClientDashboard() {
   );
 
   const kpis = [
-    { labelKey: 'client_dashboard.open_tickets', value: openTickets.length.toString(), icon: Briefcase, trend: '', up: true },
-    { labelKey: 'client_dashboard.active_sessions', value: activeSessions.length.toString(), icon: Calendar, trend: '', up: true },
-    { labelKey: 'client_dashboard.pending_payments', value: `$${pendingPayments.reduce((a: number, p: any) => a + p.amount, 0)}`, icon: CreditCard, trend: '', up: false },
-    { labelKey: 'client_dashboard.resolved', value: tickets.filter((t: any) => t.status === 'resolved').length.toString(), icon: CheckCircle, trend: '', up: true },
+    { labelKey: 'client_dashboard.open_tickets', value: openTickets.length.toString(), icon: Briefcase, trend: '', up: true, link: '/client/tickets' },
+    { labelKey: 'client_dashboard.active_sessions', value: activeSessions.length.toString(), icon: Calendar, trend: '', up: true, link: '/client/sessions' },
+    { labelKey: 'client_dashboard.pending_payments', value: `$${pendingPayments.reduce((a: number, p: any) => a + p.amount, 0)}`, icon: CreditCard, trend: '', up: false, link: '/client/payments' },
+    { labelKey: 'client_dashboard.resolved', value: tickets.filter((t: any) => t.status === 'resolved').length.toString(), icon: CheckCircle, trend: '', up: true, link: '/client/tickets' },
   ];
 
   const isLoading = ticketsLoading || sessionsLoading || paymentsLoading;
@@ -117,21 +117,23 @@ export default function ClientDashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((kpi, i) => (
-          <Card key={i} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                  <kpi.icon className="w-5 h-5 text-accent" />
+          <Link key={i} to={kpi.link}>
+            <Card className="rounded-2xl border-border/50 hover:shadow-premium transition-all cursor-pointer">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                    <kpi.icon className="w-5 h-5 text-accent" />
+                  </div>
                 </div>
-              </div>
-              {isLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
-              )}
-              <div className="text-xs text-muted-foreground mt-1">{t(kpi.labelKey)}</div>
-            </CardContent>
-          </Card>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-16" />
+                ) : (
+                  <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
+                )}
+                <div className="text-xs text-muted-foreground mt-1">{t(kpi.labelKey)}</div>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
@@ -151,28 +153,31 @@ export default function ClientDashboard() {
               <p className="text-sm text-muted-foreground py-4 text-center">{t('common.no_data', 'No tickets yet')}</p>
             ) : (
               tickets.slice(0, 4).map((ticket: any) => (
-                <div key={ticket.id} className="flex items-center gap-4 p-3 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 transition-all">
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-foreground truncate">{ticket.title}</h4>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                      <span>{ticket.sap_module}</span>
-                      {ticket.consultant && (
-                        <>
-                          <span>·</span>
-                          <span>{ticket.consultant}</span>
-                        </>
-                      )}
+                <Link key={ticket.id} to={`/client/tickets/${ticket.id}`} className="block">
+                  <div className="flex items-center gap-4 p-3 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 transition-all cursor-pointer">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-foreground truncate">{ticket.title}</h4>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        <span>{ticket.sap_module}</span>
+                        {ticket.consultant && (
+                          <>
+                            <span>·</span>
+                            <span>{ticket.consultant}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>
+                        {ticket.urgency}
+                      </Badge>
+                      <Badge variant="secondary" className={`text-[10px] ${statusColors[ticket.status]}`}>
+                        {ticket.status.replace(/_/g, ' ')}
+                      </Badge>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>
-                      {ticket.urgency}
-                    </Badge>
-                    <Badge variant="secondary" className={`text-[10px] ${statusColors[ticket.status]}`}>
-                      {ticket.status.replace(/_/g, ' ')}
-                    </Badge>
-                  </div>
-                </div>
+                </Link>
               ))
             )}
           </CardContent>
@@ -228,24 +233,26 @@ export default function ClientDashboard() {
                 const TypeIcon = typeIcons[session.session_type] || Video;
                 const time = new Date(session.scheduled_at);
                 return (
-                  <div key={session.id} className="p-4 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 transition-all">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                        <TypeIcon className="w-5 h-5 text-accent" />
+                  <Link key={session.id} to={`/client/sessions/${session.id}`} className="block">
+                    <div className="p-4 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 hover:shadow-premium transition-all cursor-pointer">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                          <TypeIcon className="w-5 h-5 text-accent" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{session.consultant}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{session.session_type.replace('_', ' ')} · {session.duration_minutes} min</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{session.consultant}</p>
-                        <p className="text-xs text-muted-foreground capitalize">{session.session_type.replace('_', ' ')} · {session.duration_minutes} min</p>
+                      <p className="text-xs text-muted-foreground mb-3 truncate">{session.ticket_title}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-foreground">
+                          {time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <Button size="sm" className="gradient-primary border-0 text-xs h-7">{t('consultant_dashboard.join_session')}</Button>
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mb-3 truncate">{session.ticket_title}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-foreground">
-                        {time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      <Button size="sm" className="gradient-primary border-0 text-xs h-7">{t('consultant_dashboard.join_session')}</Button>
-                    </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -264,7 +271,8 @@ export default function ClientDashboard() {
         <CardContent>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {recommendedConsultants.map((c: any) => (
-              <div key={c.id} className="p-4 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 hover:shadow-premium transition-all flex flex-col">
+              <Link key={c.id} to={`/client/consultants/${c.id}`} className="block">
+              <div className="p-4 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 hover:shadow-premium transition-all flex flex-col cursor-pointer">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-11 h-11 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
                     {c.avatar}
@@ -318,7 +326,8 @@ export default function ClientDashboard() {
                 </div>
               </div>
             ))}
-          </div>
+              </div>
+              </Link>
         </CardContent>
       </Card>
     </div>
