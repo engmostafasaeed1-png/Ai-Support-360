@@ -64,7 +64,7 @@
     "step4_desc": "Issue resolved, time tracked, invoice generated. Rate your consultant and build trust."
   },
   "whyQurtuba": {
-    "title": "Why Choose Qurtuba",
+    "title": "Why Choose Us",
     "subtitle": "Enterprise-grade SAP support built for the GCC market",
     "feature1_title": "AI-Powered Matching",
     "feature1_desc": "Smart algorithms match you with the perfect SAP consultant based on your exact needs.",
@@ -151,7 +151,7 @@
     "success": "Thank you! We'll be in touch shortly."
   },
   "footer": {
-    "description": "Smart SAP Support Portal by Qurtuba Talks — AI-powered enterprise SAP support for the GCC region.",
+    "description": "AI SAP Support Hub — Next-generation enterprise SAP support powered by AI for the GCC region.",
     "platform": "Platform",
     "company": "Company",
     "support": "Support",

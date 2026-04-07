@@ -2,9 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { Star } from 'lucide-react';
 
 const testimonials = [
-  { name: 'Khalid Al-Otaibi', role: 'CIO, Saudi Petrochemical Corp', text: 'Qurtuba matched us with an S/4HANA expert in under 10 minutes. Our migration issue was resolved in a single session. Outstanding platform.', rating: 5 },
+  { name: 'Khalid Al-Otaibi', role: 'CIO, Saudi Petrochemical Corp', text: 'The platform matched us with an S/4HANA expert in under 10 minutes. Our migration issue was resolved in a single session. Outstanding service.', rating: 5 },
   { name: 'Noura Al-Saud', role: 'IT Director, Riyadh National Bank', text: 'The bilingual support is a game-changer for our team. Arabic consultants who understand Saudi banking regulations and SAP FI/CO deeply.', rating: 5 },
-  { name: 'James Mitchell', role: 'VP Technology, GCC Retail Group', text: 'We moved our entire SAP support to Qurtuba. The AI matching, SLA tracking, and consultant quality are enterprise-grade. Highly recommended.', rating: 5 },
+  { name: 'James Mitchell', role: 'VP Technology, GCC Retail Group', text: 'We moved our entire SAP support here. The AI matching, SLA tracking, and consultant quality are enterprise-grade. Highly recommended.', rating: 5 },
 ];
 
 export default function TestimonialsSection() {
