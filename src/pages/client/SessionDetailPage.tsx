@@ -23,6 +23,7 @@ import ShareMenu from '@/components/ShareMenu';
 import AnalyzeSessionButton from '@/components/session/AnalyzeSessionButton';
 import SessionFeedbackDialog from '@/components/session/SessionFeedbackDialog';
 import SessionSurveyDialog from '@/components/session/SessionSurveyDialog';
+import MeetingMinutesCard from '@/components/session/MeetingMinutesCard';
 
 const typeIcons = {
   video: Video,
@@ -283,36 +284,12 @@ export default function SessionDetailPage() {
         </Card>
       </div>
 
-      {/* AI Summary */}
-      {(session.ai_summary || (session.ai_action_items && session.ai_action_items.length > 0)) && (
-        <Card className="rounded-2xl border-border/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ListChecks className="w-4 h-4 text-accent" /> {t('session_detail.ai_summary')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {session.ai_summary && (
-              <p className="text-sm text-muted-foreground leading-relaxed">{session.ai_summary}</p>
-            )}
-            {session.ai_action_items && session.ai_action_items.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-foreground mb-2">{t('session_detail.action_items')}</p>
-                <ul className="space-y-1.5">
-                  {session.ai_action_items.map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <span className="w-5 h-5 rounded-md bg-accent/10 flex items-center justify-center text-[10px] font-bold text-accent shrink-0 mt-0.5">
-                        {i + 1}
-                      </span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {/* Meeting Minutes (AI-generated MoM) */}
+      <MeetingMinutesCard
+        sessionId={sessionId!}
+        aiSummary={session.ai_summary}
+        aiActionItems={session.ai_action_items}
+      />
 
       {/* Chat history */}
       <Card className="rounded-2xl border-border/50">
