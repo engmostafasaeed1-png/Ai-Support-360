@@ -20,6 +20,7 @@ import CasesPage from "./pages/consultant/CasesPage.tsx";
 import CaseDetailPage from "./pages/consultant/CaseDetailPage.tsx";
 import RequestsPage from "./pages/consultant/RequestsPage.tsx";
 import ProposalsPage from "./pages/consultant/ProposalsPage.tsx";
+import OpenTicketsPage from "./pages/consultant/OpenTicketsPage.tsx";
 import WorkDiaryPage from "./pages/consultant/WorkDiaryPage.tsx";
 import MilestonesPage from "./pages/client/MilestonesPage.tsx";
 import MatchRequestPopup from "./components/consultant/MatchRequestPopup.tsx";
@@ -135,6 +136,7 @@ const App = () => (
               <Route path="settings" element={<ConsultantSettingsPage />} />
               <Route path="knowledge" element={<ConsultantKnowledgePage />} />
               <Route path="proposals" element={<ProposalsPage />} />
+              <Route path="open-tickets" element={<OpenTicketsPage />} />
               <Route path="work-diary" element={<WorkDiaryPage />} />
               <Route path="referrals" element={<ReferralsPage />} />
             </Route>
