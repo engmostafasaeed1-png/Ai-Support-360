@@ -11,7 +11,7 @@ import {
   LayoutDashboard, TicketPlus, Briefcase, Users, Calendar,
   CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
   Plug, Server, Building2, Gift, Milestone, Sparkles, Crown, ChevronRight, Plus,
-  Activity, Shield, UsersRound, BarChart3,
+  Activity, Shield, UsersRound, BarChart3, ClipboardList,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
@@ -37,6 +37,7 @@ const navGroups = [
       { key: 'consultants', icon: Users, path: '/client/consultants' },
       { key: 'sessions', icon: Calendar, path: '/client/sessions' },
       { key: 'milestones', icon: Milestone, path: '/client/milestones' },
+      { key: 'tasks', icon: ClipboardList, path: '/client/tasks' },
       { key: 'chat', icon: MessageSquare, path: '/client/chat' },
     ],
   },
