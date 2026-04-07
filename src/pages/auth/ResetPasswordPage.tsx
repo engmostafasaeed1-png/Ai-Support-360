@@ -60,10 +60,8 @@ export default function ResetPasswordPage() {
       <Card className="w-full max-w-md relative z-10 shadow-2xl border-border/30 backdrop-blur-sm bg-card/95 animate-fade-in">
         <CardHeader className="text-center">
           <Link to="/" className="inline-flex items-center gap-2 justify-center mb-4 group">
-            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-premium group-hover:scale-110 transition-transform">
-              <span className="text-sm font-bold text-primary-foreground">Q</span>
-            </div>
-            <span className="font-bold text-xl text-foreground">Qurtuba</span>
+            <img src="/assets/logo.png" alt="AI SAP Support Hub" className="w-9 h-9 rounded-xl object-contain shadow-sm group-hover:scale-110 transition-transform" />
+            <span className="font-bold text-xl text-foreground">AI SAP Support Hub</span>
           </Link>
           <CardTitle className="text-2xl">{t('auth.reset_title')}</CardTitle>
           <CardDescription>{t('auth.reset_desc')}</CardDescription>

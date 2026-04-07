@@ -13,21 +13,27 @@ export default function WhyQurtubaSection() {
   }));
 
   return (
-    <section className="py-20 bg-muted/30">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground">{t('whyQurtuba.title')}</h2>
-          <p className="text-muted-foreground mt-3 max-w-xl mx-auto">{t('whyQurtuba.subtitle')}</p>
+    <section className="py-28 bg-muted/30 relative overflow-hidden">
+      {/* Decorative background */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.03),transparent_50%)]" />
+
+      <div className="container mx-auto px-4 relative">
+        <div className="text-center mb-16">
+          <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent text-xs font-bold tracking-widest uppercase mb-4">
+            Advantages
+          </span>
+          <h2 className="text-3xl md:text-5xl font-black text-foreground tracking-tight">{t('whyQurtuba.title')}</h2>
+          <p className="text-muted-foreground mt-4 max-w-xl mx-auto text-base md:text-lg">{t('whyQurtuba.subtitle')}</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
           {features.map((f, i) => (
-            <div key={i} className="p-6 rounded-2xl bg-card border border-border/50 hover:shadow-premium transition-all duration-300">
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-4">
-                <f.Icon className="w-6 h-6 text-accent" />
+            <div key={i} className="p-7 rounded-3xl bg-card border border-border/40 hover:border-primary/20 hover:shadow-xl transition-all duration-500 group">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                <f.Icon className="w-7 h-7 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{f.title}</h3>
-              <p className="text-sm text-muted-foreground">{f.desc}</p>
+              <h3 className="text-lg font-bold text-foreground mb-2">{f.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
             </div>
           ))}
         </div>
