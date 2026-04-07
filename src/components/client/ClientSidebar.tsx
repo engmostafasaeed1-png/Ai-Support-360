@@ -105,6 +105,7 @@ export default function ClientSidebar() {
   const [profileOpen, setProfileOpen] = useState(false);
 
   return (
+    <>
     <Sidebar collapsible="icon" className="border-e border-border/30">
       <SidebarContent className="bg-sidebar text-sidebar-foreground flex flex-col">
         {/* Logo */}
