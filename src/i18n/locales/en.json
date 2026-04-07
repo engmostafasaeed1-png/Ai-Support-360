@@ -208,7 +208,8 @@
     "proposals": "My Proposals",
     "work_diary": "Work Diary",
     "milestones": "Milestones",
-    "tasks": "Task Board"
+    "tasks": "Task Board",
+    "plan": "Plan"
   },
   "client_dashboard": {
     "title": "Welcome back",
