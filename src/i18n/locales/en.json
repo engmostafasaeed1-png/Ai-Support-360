@@ -210,7 +210,19 @@
     "milestones": "Milestones",
     "tasks": "Task Board",
     "plan": "Plan",
-    "landing_editor": "Landing Editor"
+    "landing_editor": "Landing Editor",
+    "projects": "Projects",
+    "contracts": "Contracts",
+    "support": "Help & Support",
+    "overview": "Overview",
+    "work": "Work",
+    "finance": "Finance",
+    "tools": "Tools",
+    "account": "Account",
+    "activity_log": "Activity Log",
+    "team_members": "Team Members",
+    "reports": "Reports",
+    "sla": "SLA"
   },
   "client_dashboard": {
     "title": "Welcome back",
