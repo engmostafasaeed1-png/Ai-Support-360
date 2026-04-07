@@ -207,7 +207,8 @@
     "requests": "الطلبات",
     "proposals": "عروضي",
     "work_diary": "سجل العمل",
-    "milestones": "المراحل"
+    "milestones": "المراحل",
+    "tasks": "لوحة المهام"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",
