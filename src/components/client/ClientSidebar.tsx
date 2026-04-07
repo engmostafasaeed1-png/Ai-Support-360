@@ -115,8 +115,8 @@ export default function ClientSidebar() {
         {/* Logo */}
         <div className="p-3 flex items-center gap-2.5 border-b border-sidebar-border/30">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
-              <img src={logo} alt="AI SAP Support Hub" width={36} height={36} className="w-full h-full object-contain" />
+            <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
+              <img src={logo} alt="AI SAP Support Hub" width={48} height={48} className="w-full h-full object-contain" />
             </div>
             {!collapsed && (
               <div className="min-w-0">
