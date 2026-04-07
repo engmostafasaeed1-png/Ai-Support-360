@@ -87,6 +87,9 @@ import SystemHealthPage from "./pages/superadmin/SystemHealthPage.tsx";
 import ExecutiveDashboardPage from "./pages/superadmin/ExecutiveDashboardPage.tsx";
 import ReferralsPage from "./pages/ReferralsPage.tsx";
 import TaskBoardPage from "./pages/client/TaskBoardPage.tsx";
+import ProjectsPage from "./pages/client/ProjectsPage.tsx";
+import ContractsPage from "./pages/client/ContractsPage.tsx";
+import SupportPage from "./pages/client/SupportPage.tsx";
 import LandingEditorPage from "./pages/admin/LandingEditorPage.tsx";
 
 const queryClient = new QueryClient();
@@ -162,6 +165,9 @@ const App = () => (
               <Route path="reports" element={<ClientReportsPage />} />
               <Route path="referrals" element={<ReferralsPage />} />
               <Route path="tasks" element={<TaskBoardPage />} />
+              <Route path="projects" element={<ProjectsPage />} />
+              <Route path="contracts" element={<ContractsPage />} />
+              <Route path="support" element={<SupportPage />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminDashboard />} />

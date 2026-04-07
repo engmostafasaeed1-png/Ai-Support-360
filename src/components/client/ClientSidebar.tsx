@@ -11,7 +11,7 @@ import {
   LayoutDashboard, TicketPlus, Briefcase, Users, Calendar,
   CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
   Plug, Server, Building2, Gift, Milestone, Sparkles, Crown, ChevronRight, Plus,
-  Activity, Shield, UsersRound, BarChart3, ClipboardList,
+  Activity, Shield, UsersRound, BarChart3, ClipboardList, FolderKanban, FileSignature, LifeBuoy,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
@@ -38,8 +38,10 @@ const navGroups = [
       { key: 'tickets', icon: Briefcase, path: '/client/tickets' },
       { key: 'consultants', icon: Users, path: '/client/consultants' },
       { key: 'sessions', icon: Calendar, path: '/client/sessions' },
+      { key: 'projects', icon: FolderKanban, path: '/client/projects' },
       { key: 'milestones', icon: Milestone, path: '/client/milestones' },
       { key: 'tasks', icon: ClipboardList, path: '/client/tasks' },
+      { key: 'contracts', icon: FileSignature, path: '/client/contracts' },
       { key: 'chat', icon: MessageSquare, path: '/client/chat' },
     ],
   },
@@ -74,6 +76,7 @@ const navGroups = [
       { key: 'company_profile', icon: Building2, path: '/client/company' },
       { key: 'notifications', icon: Bell, path: '/client/notifications' },
       { key: 'settings', icon: Settings, path: '/client/settings' },
+      { key: 'support', icon: LifeBuoy, path: '/client/support' },
     ],
   },
 ];
