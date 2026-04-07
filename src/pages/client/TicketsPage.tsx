@@ -86,7 +86,7 @@ export default function TicketsPage() {
           </Card>
         ) : (
           filtered.map((ticket) => (
-            <Card key={ticket.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all overflow-hidden">
+            <Card key={ticket.id} className="rounded-2xl border-border/50 hover:shadow-premium hover:border-accent/30 transition-all overflow-hidden cursor-pointer">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">

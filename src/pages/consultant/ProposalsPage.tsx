@@ -95,7 +95,7 @@ export default function ProposalsPage() {
             const config = statusConfig[proposal.status] || statusConfig.pending;
             const StatusIcon = config.icon;
             return (
-              <Card key={proposal.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
+              <Card key={proposal.id} className="rounded-2xl border-border/50 hover:shadow-premium hover:border-accent/30 transition-all cursor-pointer">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">

@@ -57,7 +57,7 @@ export default function PaymentsPage() {
           ) : (
             <div className="space-y-3">
               {allPayments.map((payment: any) => (
-                <div key={payment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-muted/20 border border-border/30">
+                <div key={payment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 hover:shadow-premium transition-all cursor-pointer">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
                       <FileText className="w-5 h-5 text-accent" />

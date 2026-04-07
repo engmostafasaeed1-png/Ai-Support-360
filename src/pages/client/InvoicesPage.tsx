@@ -24,7 +24,7 @@ export default function InvoicesPage() {
       </div>
       <div className="space-y-3">
         {mockInvoices.map((inv) => (
-          <Card key={inv.id} className="border-border/40">
+          <Card key={inv.id} className="border-border/40 hover:border-accent/30 hover:shadow-premium transition-all cursor-pointer">
             <CardContent className="flex items-center justify-between p-4">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
