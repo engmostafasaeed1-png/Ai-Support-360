@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Check, ChevronLeft, ChevronRight, Settings2, Cpu, ClipboardCheck } from 'lucide-react';
@@ -51,10 +51,38 @@ export default function ClientOnboarding() {
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [data, setData] = useState<ClientOnboardingData>({
     ...initialData,
-    // Pre-fill from tenant if available
     companyName: tenant?.name || '',
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // Pre-fill from existing client_profiles data
+  useEffect(() => {
+    const prefill = async () => {
+      if (isGuest) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: cp } = await supabase
+        .from('client_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (cp) {
+        setData(prev => ({
+          ...prev,
+          companyName: cp.company_name || prev.companyName,
+          companySize: cp.company_size || prev.companySize,
+          industry: cp.industry || prev.industry,
+          sapLandscape: cp.sap_landscape || prev.sapLandscape,
+          phone: cp.phone || prev.phone,
+          preferredLanguage: cp.preferred_language || prev.preferredLanguage,
+          communicationPreference: cp.communication_preference || prev.communicationPreference,
+          timezone: cp.timezone || prev.timezone,
+          sapModules: cp.sap_modules?.length ? cp.sap_modules : prev.sapModules,
+        }));
+      }
+    };
+    prefill();
+  }, [isGuest]);
 
   // Steps: Preferences → SAP Modules → Review (company info already captured during setup)
   const steps = [
@@ -79,14 +107,28 @@ export default function ClientOnboarding() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error(t('onboarding.error_auth')); return; }
 
-      await supabase.from('profiles').update({
+      // Update or create profile
+      const profilePayload = {
+        user_id: user.id,
         display_name: data.companyName || tenant?.name,
         phone: data.phone,
         preferred_language: data.preferredLanguage,
         onboarding_completed: true,
-      }).eq('user_id', user.id);
+      };
+      
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      const { error } = await supabase.from('client_profiles' as any).upsert({
+      if (existingProfile) {
+        await supabase.from('profiles').update(profilePayload).eq('user_id', user.id);
+      } else {
+        await supabase.from('profiles').insert(profilePayload);
+      }
+
+      const { error } = await supabase.from('client_profiles').upsert({
         user_id: user.id,
         company_name: data.companyName || tenant?.name,
         company_size: data.companySize,
