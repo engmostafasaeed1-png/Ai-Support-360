@@ -82,7 +82,7 @@ export default function TicketTimeline({ ticketId, ticket }: Props) {
     const TypeIcon = sessionTypeIcons[s.session_type] || Video;
     events.push({
       id: `session-${s.id}`,
-      timestamp: s.scheduled_at || s.started_at || s.created_at,
+      timestamp: s.scheduled_at || s.started_at || ticket.created_at,
       type: 'session',
       title: `${(s.session_type || 'video').replace(/_/g, ' ')} Session`,
       subtitle: `with ${s.consultant_name || 'Consultant'}`,
