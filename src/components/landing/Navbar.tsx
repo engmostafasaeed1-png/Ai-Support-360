@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, Globe } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import logo from '@/assets/logo.jpg';
+import logo from '@/assets/logo.png';
 
 export default function Navbar() {
   const { t } = useTranslation();
