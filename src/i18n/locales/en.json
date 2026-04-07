@@ -208,7 +208,8 @@
     "proposals": "My Proposals",
     "work_diary": "Work Diary",
     "milestones": "Milestones",
-    "tasks": "Task Board"
+    "tasks": "Task Board",
+    "plan": "Plan"
   },
   "client_dashboard": {
     "title": "Welcome back",
@@ -581,9 +582,29 @@
     "welcome_title": "🎉 Welcome aboard!",
     "welcome_body": "Your profile setup is complete. You're all set to get started!"
   },
+  "company_selector": {
+    "welcome_title": "Set Up Your Company",
+    "welcome_subtitle": "Create your first company to start using the platform",
+    "company_name": "Company Name",
+    "company_name_placeholder": "e.g. Saudi Petrochemical Corp",
+    "industry": "Industry",
+    "select_industry": "Select industry",
+    "company_size": "Company Size",
+    "select_size": "Select size",
+    "get_started": "Get Started",
+    "created_success": "{{name}} created successfully!",
+    "create_error": "Failed to create company",
+    "my_companies": "My Companies",
+    "company_single": "company",
+    "company_plural": "companies",
+    "choose_prompt": "Choose one to enter",
+    "add_company": "Add Another Company",
+    "create_company": "Create New Company"
+  },
   "client_onboarding": {
-    "title": "Set Up Your Account",
-    "subtitle": "Tell us about your company to get personalized SAP support",
+    "title": "Complete Your Setup",
+    "subtitle": "Configure your preferences for the best SAP support experience",
+    "setup_for": "Setting up",
     "step_company": "Company",
     "step_preferences": "Preferences",
     "step_sap_modules": "SAP Modules",

@@ -5,9 +5,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Building2, Plus, ArrowRight, Crown, Sparkles, ChevronRight, Briefcase } from 'lucide-react';
+import { Building2, Plus, ArrowRight, Crown, Sparkles, Briefcase, Users, Globe } from 'lucide-react';
 import { useTenant } from '@/contexts/TenantContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,14 +22,26 @@ const tierConfig: Record<string, { icon: typeof Sparkles; color: string; bg: str
   enterprise: { icon: Crown, color: 'text-amber-600', bg: 'bg-amber-500/10' },
 };
 
+const industries = [
+  'oil_gas', 'petrochemical', 'banking', 'telecom', 'healthcare',
+  'retail', 'manufacturing', 'government', 'education', 'construction',
+  'logistics', 'utilities', 'technology', 'other',
+];
+
+const companySizes = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
+
 export default function CompanySelectorPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { tenants, memberships, switchTenant, refetch } = useTenant();
+  const { tenants, memberships, switchTenant, refetch, loading: tenantsLoading } = useTenant();
   const { profile } = useUserProfile();
   const [newCompanyName, setNewCompanyName] = useState('');
+  const [newCompanyIndustry, setNewCompanyIndustry] = useState('');
+  const [newCompanySize, setNewCompanySize] = useState('');
   const [creating, setCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const isFirstCompany = tenants.length === 0;
 
   const handleSelect = (tenantId: string) => {
     switchTenant(tenantId);
@@ -55,18 +68,101 @@ export default function CompanySelectorPage() {
         user_id: user.id,
         org_role: 'owner' as any,
       });
+
+      // Update client profile with company details
+      await supabase.from('client_profiles' as any).upsert({
+        user_id: user.id,
+        company_name: newCompanyName.trim(),
+        industry: newCompanyIndustry || null,
+        company_size: newCompanySize || null,
+      }, { onConflict: 'user_id' });
+
       await refetch();
-      toast.success(`${newCompanyName} created successfully!`);
+      toast.success(t('company_selector.created_success', { name: newCompanyName }));
       setNewCompanyName('');
+      setNewCompanyIndustry('');
+      setNewCompanySize('');
       setDialogOpen(false);
       switchTenant(tenantId);
       navigate('/client');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create company');
+      toast.error(err.message || t('company_selector.create_error'));
     } finally {
       setCreating(false);
     }
   };
+
+  // First-time setup — show a welcoming full-page form instead of a dialog
+  if (isFirstCompany && !tenantsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 relative py-8">
+        <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
+        <div className="w-full max-w-lg relative z-10 animate-fade-in">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Building2 className="w-8 h-8 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">{t('company_selector.welcome_title')}</h1>
+            <p className="text-muted-foreground text-sm mt-2">{t('company_selector.welcome_subtitle')}</p>
+          </div>
+
+          <Card className="border-border/40 bg-card/95 backdrop-blur-sm">
+            <CardContent className="p-6 space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="companyName">{t('company_selector.company_name')} *</Label>
+                <Input
+                  id="companyName"
+                  value={newCompanyName}
+                  onChange={e => setNewCompanyName(e.target.value)}
+                  placeholder={t('company_selector.company_name_placeholder')}
+                  className="h-11 rounded-xl"
+                  autoFocus
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t('company_selector.industry')}</Label>
+                  <Select value={newCompanyIndustry} onValueChange={setNewCompanyIndustry}>
+                    <SelectTrigger className="h-11 rounded-xl">
+                      <SelectValue placeholder={t('company_selector.select_industry')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {industries.map(ind => (
+                        <SelectItem key={ind} value={ind}>{t(`client_onboarding.industry_${ind}`)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('company_selector.company_size')}</Label>
+                  <Select value={newCompanySize} onValueChange={setNewCompanySize}>
+                    <SelectTrigger className="h-11 rounded-xl">
+                      <SelectValue placeholder={t('company_selector.select_size')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companySizes.map(s => (
+                        <SelectItem key={s} value={s}>{s} {t('client_onboarding.employees')}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleCreate}
+                disabled={creating || !newCompanyName.trim()}
+                className="w-full gradient-primary border-0 h-12 text-base font-semibold rounded-xl"
+              >
+                {creating ? t('common.loading') : t('company_selector.get_started')}
+                {!creating && <ArrowRight className="w-4 h-4 ml-2" />}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative py-8">
@@ -79,8 +175,10 @@ export default function CompanySelectorPage() {
             <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">{profile?.initials || 'U'}</AvatarFallback>
           </Avatar>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{profile?.displayName || 'My Companies'}</h1>
-            <p className="text-muted-foreground text-sm">{tenants.length} {tenants.length === 1 ? 'company' : 'companies'} · Choose one to enter</p>
+            <h1 className="text-2xl font-bold text-foreground">{t('company_selector.my_companies')}</h1>
+            <p className="text-muted-foreground text-sm">
+              {tenants.length} {tenants.length === 1 ? t('company_selector.company_single') : t('company_selector.company_plural')} · {t('company_selector.choose_prompt')}
+            </p>
           </div>
         </div>
 
@@ -119,47 +217,62 @@ export default function CompanySelectorPage() {
               </Card>
             );
           })}
-
-          {tenants.length === 0 && (
-            <Card className="border-dashed border-2 border-border/50 bg-card/50 backdrop-blur-sm">
-              <CardContent className="p-8 text-center">
-                <Briefcase className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-                <p className="text-muted-foreground text-sm">No companies yet. Create your first company to get started.</p>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-2 gap-2 text-muted-foreground hover:text-foreground hover:border-primary/50">
               <Plus className="w-5 h-5" />
-              Create New Company
+              {t('company_selector.add_company')}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-primary" />
-                Create New Company
+                {t('company_selector.create_company')}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div className="space-y-2">
-                <Label>Company Name</Label>
+                <Label>{t('company_selector.company_name')} *</Label>
                 <Input
                   value={newCompanyName}
                   onChange={e => setNewCompanyName(e.target.value)}
-                  placeholder="e.g. Acme Corporation"
+                  placeholder={t('company_selector.company_name_placeholder')}
                   className="h-11 rounded-xl"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>{t('company_selector.industry')}</Label>
+                  <Select value={newCompanyIndustry} onValueChange={setNewCompanyIndustry}>
+                    <SelectTrigger><SelectValue placeholder={t('company_selector.select_industry')} /></SelectTrigger>
+                    <SelectContent>
+                      {industries.map(ind => (
+                        <SelectItem key={ind} value={ind}>{t(`client_onboarding.industry_${ind}`)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('company_selector.company_size')}</Label>
+                  <Select value={newCompanySize} onValueChange={setNewCompanySize}>
+                    <SelectTrigger><SelectValue placeholder={t('company_selector.select_size')} /></SelectTrigger>
+                    <SelectContent>
+                      {companySizes.map(s => (
+                        <SelectItem key={s} value={s}>{s} {t('client_onboarding.employees')}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <Button
                 onClick={handleCreate}
                 disabled={creating || !newCompanyName.trim()}
                 className="w-full gradient-primary border-0 h-11"
               >
-                {creating ? 'Creating...' : 'Create Company'}
+                {creating ? t('common.loading') : t('company_selector.create_company')}
               </Button>
             </div>
           </DialogContent>

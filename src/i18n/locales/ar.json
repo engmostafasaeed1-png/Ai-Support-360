@@ -208,7 +208,8 @@
     "proposals": "عروضي",
     "work_diary": "سجل العمل",
     "milestones": "المراحل",
-    "tasks": "لوحة المهام"
+    "tasks": "لوحة المهام",
+    "plan": "الخطة"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",
@@ -581,9 +582,29 @@
     "welcome_title": "🎉 أهلاً وسهلاً!",
     "welcome_body": "تم إعداد حسابك بنجاح. أنت جاهز للبدء!"
   },
+  "company_selector": {
+    "welcome_title": "إعداد شركتك",
+    "welcome_subtitle": "أنشئ شركتك الأولى للبدء باستخدام المنصة",
+    "company_name": "اسم الشركة",
+    "company_name_placeholder": "مثال: شركة البتروكيماويات السعودية",
+    "industry": "القطاع",
+    "select_industry": "اختر القطاع",
+    "company_size": "حجم الشركة",
+    "select_size": "اختر الحجم",
+    "get_started": "ابدأ الآن",
+    "created_success": "تم إنشاء {{name}} بنجاح!",
+    "create_error": "فشل إنشاء الشركة",
+    "my_companies": "شركاتي",
+    "company_single": "شركة",
+    "company_plural": "شركات",
+    "choose_prompt": "اختر واحدة للدخول",
+    "add_company": "إضافة شركة أخرى",
+    "create_company": "إنشاء شركة جديدة"
+  },
   "client_onboarding": {
-    "title": "إعداد حسابك",
-    "subtitle": "أخبرنا عن شركتك للحصول على دعم SAP مخصص",
+    "title": "أكمل الإعداد",
+    "subtitle": "اضبط تفضيلاتك للحصول على أفضل تجربة دعم SAP",
+    "setup_for": "إعداد",
     "step_company": "الشركة",
     "step_preferences": "التفضيلات",
     "step_sap_modules": "وحدات SAP",
