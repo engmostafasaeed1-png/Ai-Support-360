@@ -87,6 +87,7 @@ import SystemHealthPage from "./pages/superadmin/SystemHealthPage.tsx";
 import ExecutiveDashboardPage from "./pages/superadmin/ExecutiveDashboardPage.tsx";
 import ReferralsPage from "./pages/ReferralsPage.tsx";
 import TaskBoardPage from "./pages/client/TaskBoardPage.tsx";
+import LandingEditorPage from "./pages/admin/LandingEditorPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -173,6 +174,7 @@ const App = () => (
               <Route path="environment-logs" element={<EnvironmentLogsPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="nda-management" element={<NDAManagementPage />} />
+              <Route path="landing-editor" element={<LandingEditorPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
             </Route>
             <Route path="/super-admin" element={<ProtectedRoute requiredRole="admin"><SuperAdminLayout /></ProtectedRoute>}>
