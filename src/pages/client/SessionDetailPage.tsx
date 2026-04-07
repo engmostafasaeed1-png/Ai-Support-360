@@ -147,8 +147,11 @@ export default function SessionDetailPage() {
                   <Badge variant={statusVariant[status] || 'outline'} className="text-xs">
                     {t(`sessions_page.status_${status}`)}
                   </Badge>
-                  <span className="text-sm text-muted-foreground capitalize">
+                <span className="text-sm text-muted-foreground capitalize">
                     {session.session_type?.replace('_', ' ')}
+                    {(session as any).video_platform && session.session_type === 'video' && (
+                      <span className="ml-1 text-xs text-accent">({(session as any).video_platform})</span>
+                    )}
                   </span>
                 </div>
                 <p className="text-lg font-semibold text-foreground mt-1 flex items-center gap-2">
