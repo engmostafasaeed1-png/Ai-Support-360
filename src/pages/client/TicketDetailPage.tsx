@@ -13,6 +13,7 @@ import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
 import TicketDocuments from '@/components/client/TicketDocuments';
 import TicketAcceptors from '@/components/client/TicketAcceptors';
+import TicketBids from '@/components/client/TicketBids';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
@@ -175,9 +176,12 @@ export default function TicketDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Tabs: Documents, Sessions, Chat */}
-      <Tabs defaultValue="documents" className="w-full">
-        <TabsList className="w-full grid grid-cols-3 rounded-xl h-10">
+      {/* Tabs: Bids, Documents, Sessions, Chat */}
+      <Tabs defaultValue="bids" className="w-full">
+        <TabsList className="w-full grid grid-cols-4 rounded-xl h-10">
+          <TabsTrigger value="bids" className="text-xs gap-1.5">
+            <Tag className="w-3.5 h-3.5" /> Bids
+          </TabsTrigger>
           <TabsTrigger value="documents" className="text-xs gap-1.5">
             <FileText className="w-3.5 h-3.5" /> Documents
           </TabsTrigger>
@@ -185,9 +189,13 @@ export default function TicketDetailPage() {
             <Video className="w-3.5 h-3.5" /> Sessions
           </TabsTrigger>
           <TabsTrigger value="chat" className="text-xs gap-1.5">
-            <MessageSquare className="w-3.5 h-3.5" /> Chat History
+            <MessageSquare className="w-3.5 h-3.5" /> Chat
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="bids" className="mt-4">
+          <TicketBids ticketId={ticket.id} />
+        </TabsContent>
 
         <TabsContent value="documents" className="mt-4">
           <TicketDocuments ticketId={ticket.id} />
