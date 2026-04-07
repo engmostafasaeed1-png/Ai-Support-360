@@ -173,40 +173,40 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
       scheduledAt.setHours(hours, minutes, 0, 0);
       const dateLabel = format(selectedDate!, 'MMM d, yyyy');
 
-      // Only persist to DB if consultantId is a real UUID
-      if (isValidUUID(consultantId)) {
-        const sessionId = crypto.randomUUID();
-        const generatedMeetingUrl = sessionType === 'video' ? generateMeetingUrl(videoPlatform, sessionId) : null;
+      const sessionId = crypto.randomUUID();
+      const realConsultantId = isValidUUID(consultantId) ? consultantId : null;
+      const generatedMeetingUrl = sessionType === 'video' ? generateMeetingUrl(videoPlatform, sessionId) : null;
 
-        const { error } = await supabase.from('sessions').insert({
-          id: sessionId,
-          client_id: user.id,
-          consultant_id: consultantId,
-          session_type: sessionType as 'chat' | 'video' | 'screen_share',
-          scheduled_at: scheduledAt.toISOString(),
-          status: 'scheduled',
-          duration_minutes: 60,
-          meeting_url: generatedMeetingUrl,
-          video_platform: sessionType === 'video' ? videoPlatform : null,
-        } as any);
+      const { error } = await supabase.from('sessions').insert({
+        id: sessionId,
+        client_id: user.id,
+        consultant_id: realConsultantId,
+        session_type: sessionType as 'chat' | 'video' | 'screen_share',
+        scheduled_at: scheduledAt.toISOString(),
+        status: 'scheduled',
+        duration_minutes: 60,
+        meeting_url: generatedMeetingUrl,
+        video_platform: sessionType === 'video' ? videoPlatform : null,
+      } as any);
 
-        if (error) throw error;
-        if (generatedMeetingUrl) setMeetingUrl(generatedMeetingUrl);
+      if (error) throw error;
+      if (generatedMeetingUrl) setMeetingUrl(generatedMeetingUrl);
 
-        // Notify client
-        await supabase.from('notifications').insert({
-          user_id: user.id,
-          title: 'Session Booked',
-          body: `Your ${sessionType.replace('_', ' ')} session with ${consultantName} is scheduled for ${dateLabel} at ${selectedTime}.`,
-          type: 'booking',
-          link: '/client/sessions',
-        });
+      // Notify client
+      await supabase.from('notifications').insert({
+        user_id: user.id,
+        title: 'Session Booked',
+        body: `Your ${sessionType.replace('_', ' ')} session with ${consultantName} is scheduled for ${dateLabel} at ${selectedTime}.`,
+        type: 'booking',
+        link: '/client/sessions',
+      });
 
-        // Notify consultant
+      // Notify consultant if real
+      if (realConsultantId) {
         const { data: consultant } = await supabase
           .from('consultants')
           .select('user_id')
-          .eq('id', consultantId)
+          .eq('id', realConsultantId)
           .single();
 
         if (consultant) {

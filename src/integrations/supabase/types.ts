@@ -1787,7 +1787,7 @@ export type Database = {
           ai_action_items: string[] | null
           ai_summary: string | null
           client_id: string
-          consultant_id: string
+          consultant_id: string | null
           created_at: string
           duration_minutes: number | null
           ended_at: string | null
@@ -1808,7 +1808,7 @@ export type Database = {
           ai_action_items?: string[] | null
           ai_summary?: string | null
           client_id: string
-          consultant_id: string
+          consultant_id?: string | null
           created_at?: string
           duration_minutes?: number | null
           ended_at?: string | null
@@ -1829,7 +1829,7 @@ export type Database = {
           ai_action_items?: string[] | null
           ai_summary?: string | null
           client_id?: string
-          consultant_id?: string
+          consultant_id?: string | null
           created_at?: string
           duration_minutes?: number | null
           ended_at?: string | null
