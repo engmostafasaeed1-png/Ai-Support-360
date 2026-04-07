@@ -19,7 +19,7 @@ export default function ReviewsPage() {
       </div>
       <div className="space-y-3">
         {reviews.map((r) => (
-          <Card key={r.id} className="border-border/40">
+          <Card key={r.id} className="border-border/40 hover:border-accent/30 hover:shadow-premium transition-all cursor-pointer">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold text-sm">{r.client}</span>

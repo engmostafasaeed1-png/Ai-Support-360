@@ -104,7 +104,8 @@ export default function ProjectsPage() {
         {projects.map((project) => {
           const sc = statusConfig[project.status];
           return (
-            <Card key={project.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
+            <Link to={`/client/milestones`}>
+            <Card key={project.id} className="rounded-2xl border-border/50 hover:shadow-premium hover:border-accent/30 transition-all cursor-pointer">
               <CardContent className="p-5">
                 <div className="flex flex-col md:flex-row md:items-start gap-4">
                   <div className="flex-1 min-w-0 space-y-3">
@@ -139,6 +140,7 @@ export default function ProjectsPage() {
                 </div>
               </CardContent>
             </Card>
+            </Link>
           );
         })}
       </div>
