@@ -13,8 +13,11 @@ import { toast } from 'sonner';
 import {
   ArrowLeft, ArrowRight, Check, Sparkles, Brain,
   Clock, AlertTriangle, Info, Loader2, Zap, Target, List,
-  Star, BadgeCheck, Circle, Users, Crown, ChevronRight,
+  Star, BadgeCheck, Circle, Users, Crown, ChevronRight, Search, UserPlus,
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useRealtimeConsultants, type ConsultantLive } from '@/hooks/useRealtimeConsultants';
 import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
 
 interface AiCategorization {
