@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Briefcase, Calendar, CreditCard, Star,
-  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, ClipboardList, CheckCircle2, Server, Handshake, Gift, FileText, Clock,
+  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, ClipboardList, CheckCircle2, Server, Handshake, Gift, FileText, Clock, Gavel,
 } from 'lucide-react';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +24,7 @@ const menuItems = [
   { key: 'cases', icon: Briefcase, path: '/consultant/cases' },
   { key: 'requests', icon: Handshake, path: '/consultant/requests' },
   { key: 'proposals', icon: FileText, path: '/consultant/proposals' },
+  { key: 'open_tickets', icon: Gavel, path: '/consultant/open-tickets' },
   { key: 'work_diary', icon: Clock, path: '/consultant/work-diary' },
   { key: 'calendar', icon: Calendar, path: '/consultant/calendar' },
   { key: 'earnings', icon: CreditCard, path: '/consultant/earnings' },
