@@ -88,7 +88,7 @@ export default function HeaderNav({ role }: HeaderNavProps) {
             key={item.path}
             to={item.path}
             end={item.path === `/${role}` || item.path === '/super-admin'}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all shrink-0"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all shrink-0"
             activeClassName="bg-primary/10 text-primary shadow-sm"
           >
             <item.icon className="w-3.5 h-3.5" />
