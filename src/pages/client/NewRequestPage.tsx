@@ -92,6 +92,10 @@ export default function NewRequestPage() {
   });
   const [submitted, setSubmitted] = useState(false);
   const [selectedModel, setSelectedModel] = useState<AIModelId>(DEFAULT_MODEL);
+  const [manualPickOpen, setManualPickOpen] = useState(false);
+  const [manualSearch, setManualSearch] = useState('');
+  const [selectedConsultant, setSelectedConsultant] = useState<ConsultantLive | null>(null);
+  const { consultants: allConsultants, isLoading: consultantsLoading } = useRealtimeConsultants();
 
   // Auto-fill from chatbot query params
   useEffect(() => {
