@@ -148,6 +148,7 @@ const App = () => (
               <Route path="consultants/:id" element={<ConsultantProfilePage />} />
               <Route path="payments" element={<PaymentsPage />} />
               <Route path="sessions" element={<SessionsPage />} />
+              <Route path="video-sessions" element={<VideoSessionsPage />} />
               <Route path="sessions/:sessionId" element={<SessionDetailPage />} />
               <Route path="chat" element={<ClientChatPage />} />
               <Route path="chat/:sessionId" element={<ChatSessionPage role="client" />} />
