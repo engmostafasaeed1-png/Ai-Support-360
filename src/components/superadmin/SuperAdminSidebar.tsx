@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
+import logo from '@/assets/logo.png';
 
 const menuItems = [
   { key: 'overview', icon: LayoutDashboard, path: '/super-admin', labelKey: 'super_admin.overview' },
@@ -37,12 +38,17 @@ export default function SuperAdminSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-e border-border/50">
       <SidebarContent className="bg-sidebar text-sidebar-foreground">
-        <div className="p-4 flex items-center gap-2">
-          <Link to="/super-admin" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shrink-0">
-              <Crown className="w-4 h-4 text-white" />
+        <div className="p-3 flex items-center gap-2.5 border-b border-sidebar-border/30">
+          <Link to="/super-admin" className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
+              <img src={logo} alt="AI SAP Support Hub" width={36} height={36} className="w-full h-full object-contain" />
             </div>
-            {!collapsed && <span className="font-bold text-sm text-sidebar-foreground">{t('super_admin.title', 'Super Admin')}</span>}
+            {!collapsed && (
+              <div className="min-w-0">
+                <span className="font-bold text-sm text-sidebar-foreground block leading-tight">AI SAP Support Hub</span>
+                <span className="text-[10px] text-sidebar-foreground/40 leading-tight">{t('super_admin.title', 'Super Admin')}</span>
+              </div>
+            )}
           </Link>
         </div>
 

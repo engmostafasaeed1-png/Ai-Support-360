@@ -20,7 +20,7 @@ import { useTenant } from '@/contexts/TenantContext';
 
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import qurtubaLogo from '@/assets/qurtuba-logo.png';
+import logo from '@/assets/logo.png';
 import sidebarBanner from '@/assets/sidebar-banner.png';
 import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 
@@ -112,11 +112,11 @@ export default function ClientSidebar() {
         <div className="p-3 flex items-center gap-2.5 border-b border-sidebar-border/30">
           <Link to="/" className="flex items-center gap-2.5 group">
             <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
-              <img src={qurtubaLogo} alt="Qurtuba" width={36} height={36} className="w-full h-full object-contain" />
+              <img src={logo} alt="AI SAP Support Hub" width={36} height={36} className="w-full h-full object-contain" />
             </div>
             {!collapsed && (
               <div className="min-w-0">
-                <span className="font-bold text-sm text-sidebar-foreground block leading-tight">Qurtuba</span>
+                <span className="font-bold text-sm text-sidebar-foreground block leading-tight">AI SAP Support Hub</span>
                 <span className="text-[10px] text-sidebar-foreground/40 leading-tight">{t('sidebar.client_portal')}</span>
               </div>
             )}

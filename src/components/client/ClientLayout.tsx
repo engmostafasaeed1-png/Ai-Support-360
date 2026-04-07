@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
 import HeaderNav from '@/components/HeaderNav';
+import logo from '@/assets/logo.png';
 
 const bottomNavItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/client', labelKey: 'sidebar.dashboard' },
@@ -49,6 +50,10 @@ export default function ClientLayout() {
           <FixedHeader>
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-muted-foreground hidden md:flex" />
+              <Link to="/" className="flex items-center gap-2 md:hidden">
+                <img src={logo} alt="AI SAP Support Hub" className="w-8 h-8 rounded-lg object-contain" />
+                <span className="font-bold text-sm text-foreground">AI SAP Support Hub</span>
+              </Link>
               <div className="hidden md:flex items-center relative">
                 <Search className="w-4 h-4 absolute start-3 text-muted-foreground" />
                 <Input

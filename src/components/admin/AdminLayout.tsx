@@ -9,6 +9,8 @@ import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
 import HeaderNav from '@/components/HeaderNav';
+import logo from '@/assets/logo.png';
+import { Link } from 'react-router-dom';
 
 const bottomNavItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/admin', labelKey: 'sidebar.dashboard' },
@@ -38,6 +40,10 @@ export default function AdminLayout() {
           <FixedHeader>
             <div className="flex items-center gap-3">
               <SidebarTrigger className="hidden md:flex" />
+              <Link to="/" className="flex items-center gap-2 md:hidden">
+                <img src={logo} alt="AI SAP Support Hub" className="w-8 h-8 rounded-lg object-contain" />
+                <span className="font-bold text-sm text-foreground">AI SAP Support Hub</span>
+              </Link>
               <div className="relative hidden sm:block">
                 <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
