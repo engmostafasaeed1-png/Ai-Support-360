@@ -39,7 +39,7 @@ export default function AdminLayout() {
         <div className="flex-1 flex flex-col relative z-[1]">
           <FixedHeader>
             <div className="flex items-center gap-3">
-              <SidebarTrigger className="hidden md:flex" />
+              <SidebarTrigger />
               <Link to="/" className="flex items-center gap-2 md:hidden">
                 <img src={logo} alt="AI SAP Support Hub" className="w-8 h-8 rounded-lg object-contain" />
                 <span className="font-bold text-sm text-foreground">AI SAP Support Hub</span>
