@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronLeft, ChevronRight, Building2, Settings2, Cpu, ClipboardCheck } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Settings2, Cpu, ClipboardCheck } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import CompanyStep from './steps/CompanyStep';
 import PreferencesStep from './steps/PreferencesStep';
 import SapModulesStep from './steps/SapModulesStep';
 import ReviewStep from './steps/ReviewStep';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { fireConfetti } from '@/lib/confetti';
 
 export interface ClientOnboardingData {
@@ -39,20 +39,25 @@ const initialData: ClientOnboardingData = {
   sapModules: [],
 };
 
-const stepIcons = [Building2, Settings2, Cpu, ClipboardCheck];
+const stepIcons = [Settings2, Cpu, ClipboardCheck];
 
 export default function ClientOnboarding() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isGuest } = useGuestMode();
+  const { tenant } = useTenant();
   const [searchParams] = useSearchParams();
-  const initialStep = Math.min(Math.max(Number(searchParams.get('step')) || 0, 0), 3);
+  const initialStep = Math.min(Math.max(Number(searchParams.get('step')) || 0, 0), 2);
   const [currentStep, setCurrentStep] = useState(initialStep);
-  const [data, setData] = useState<ClientOnboardingData>(initialData);
+  const [data, setData] = useState<ClientOnboardingData>({
+    ...initialData,
+    // Pre-fill from tenant if available
+    companyName: tenant?.name || '',
+  });
   const [submitting, setSubmitting] = useState(false);
 
+  // Steps: Preferences → SAP Modules → Review (company info already captured during setup)
   const steps = [
-    { key: 'company', label: t('client_onboarding.step_company') },
     { key: 'preferences', label: t('client_onboarding.step_preferences') },
     { key: 'sap_modules', label: t('client_onboarding.step_sap_modules') },
     { key: 'review', label: t('client_onboarding.step_review') },
@@ -75,16 +80,15 @@ export default function ClientOnboarding() {
       if (!user) { toast.error(t('onboarding.error_auth')); return; }
 
       await supabase.from('profiles').update({
-        display_name: data.companyName,
+        display_name: data.companyName || tenant?.name,
         phone: data.phone,
         preferred_language: data.preferredLanguage,
         onboarding_completed: true,
       }).eq('user_id', user.id);
 
-      // Use rpc or direct insert for client_profiles
       const { error } = await supabase.from('client_profiles' as any).upsert({
         user_id: user.id,
-        company_name: data.companyName,
+        company_name: data.companyName || tenant?.name,
         company_size: data.companySize,
         industry: data.industry,
         sap_landscape: data.sapLandscape,
@@ -109,8 +113,7 @@ export default function ClientOnboarding() {
   };
 
   const canNext = () => {
-    if (currentStep === 0) return data.companyName.trim().length > 0;
-    if (currentStep === 2) return data.sapModules.length > 0;
+    if (currentStep === 1) return data.sapModules.length > 0;
     return true;
   };
 
@@ -118,7 +121,9 @@ export default function ClientOnboarding() {
     <div className="max-w-2xl mx-auto space-y-6 px-1 pb-36 md:pb-6">
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold">{t('client_onboarding.title')}</h1>
-        <p className="text-muted-foreground text-sm">{t('client_onboarding.subtitle')}</p>
+        <p className="text-muted-foreground text-sm">
+          {tenant?.name ? `${t('client_onboarding.setup_for')} ${tenant.name}` : t('client_onboarding.subtitle')}
+        </p>
       </div>
 
       {/* Step indicator */}
@@ -150,10 +155,9 @@ export default function ClientOnboarding() {
       </div>
 
       <Card className="p-4 md:p-6">
-        {currentStep === 0 && <CompanyStep data={data} onChange={updateData} />}
-        {currentStep === 1 && <PreferencesStep data={data} onChange={updateData} />}
-        {currentStep === 2 && <SapModulesStep data={data} onChange={updateData} />}
-        {currentStep === 3 && <ReviewStep data={data} />}
+        {currentStep === 0 && <PreferencesStep data={data} onChange={updateData} />}
+        {currentStep === 1 && <SapModulesStep data={data} onChange={updateData} />}
+        {currentStep === 2 && <ReviewStep data={data} />}
       </Card>
 
       <div className="flex items-center justify-between">
