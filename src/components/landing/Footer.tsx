@@ -27,13 +27,14 @@ export default function Footer() {
   };
 
   return (
-    <footer className="border-t border-border/50 bg-card">
-      <div className="container mx-auto px-4 py-14">
+    <footer className="border-t border-border/30 bg-card relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,hsl(var(--primary)/0.02),transparent_50%)]" />
+      <div className="container mx-auto px-4 py-16 relative">
         <div className="grid md:grid-cols-5 gap-10">
           <div className="md:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <img src={logo} alt="AI SAP Support Hub" className="w-10 h-10 rounded-lg object-contain" />
-              <span className="font-bold text-lg text-foreground">AI SAP Support Hub</span>
+            <div className="flex items-center gap-3 mb-5">
+              <img src={logo} alt="AI SAP Support Hub" className="w-11 h-11 rounded-xl object-contain shadow-sm" />
+              <span className="font-black text-lg text-foreground tracking-tight">AI SAP Support Hub</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
               {t('footer.description')}
@@ -42,10 +43,10 @@ export default function Footer() {
 
           {Object.entries(links).map(([key, items]) => (
             <div key={key}>
-              <h4 className="font-semibold text-foreground mb-4 text-sm">
+              <h4 className="font-bold text-foreground mb-5 text-xs uppercase tracking-widest">
                 {t(`footer.${key}`)}
               </h4>
-              <ul className="space-y-2.5">
+              <ul className="space-y-3">
                 {items.map((item, i) => (
                   <li key={i}>
                     <a href={item.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -58,7 +59,7 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-12 pt-6 border-t border-border/50 text-center">
+        <div className="mt-14 pt-6 border-t border-border/30 text-center">
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} AI SAP Support Hub. {t('footer.rights')}
           </p>

@@ -19,39 +19,43 @@ export default function ConsultantsSection() {
   const { t } = useTranslation();
 
   return (
-    <section id="consultants" className="py-20 bg-muted/30">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground">{t('consultants.title')}</h2>
-          <p className="text-muted-foreground mt-3 max-w-xl mx-auto">{t('consultants.subtitle')}</p>
+    <section id="consultants" className="py-28 bg-muted/30 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,hsl(var(--accent)/0.05),transparent_60%)]" />
+      <div className="container mx-auto px-4 relative">
+        <div className="text-center mb-16">
+          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/5 text-primary text-xs font-bold tracking-widest uppercase mb-4">
+            Experts
+          </span>
+          <h2 className="text-3xl md:text-5xl font-black text-foreground tracking-tight">{t('consultants.title')}</h2>
+          <p className="text-muted-foreground mt-4 max-w-xl mx-auto text-base md:text-lg">{t('consultants.subtitle')}</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
           {mockConsultants.map((c, i) => (
-            <div key={i} className="rounded-2xl bg-card border border-border/50 p-6 hover:shadow-premium transition-all duration-300 flex flex-col">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
+            <div key={i} className="rounded-3xl bg-card border border-border/40 p-6 hover:shadow-xl hover:border-primary/15 transition-all duration-500 flex flex-col group">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-base shadow-lg group-hover:scale-105 transition-transform">
                   {c.avatar}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-foreground text-sm truncate">{c.name}</h4>
+                  <h4 className="font-bold text-foreground text-sm truncate">{c.name}</h4>
                   <p className="text-xs text-muted-foreground truncate">{c.role}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 mb-3">
+              <div className="flex items-center gap-1.5 mb-4">
                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                <span className="text-sm font-semibold text-foreground">{c.rating}</span>
+                <span className="text-sm font-bold text-foreground">{c.rating}</span>
                 <span className="text-xs text-muted-foreground">({c.reviews})</span>
               </div>
 
-              <div className="flex flex-wrap gap-1.5 mb-4">
+              <div className="flex flex-wrap gap-1.5 mb-5">
                 {c.badges.map((badge) => {
                   const config = badgeConfig[badge];
                   if (!config) return null;
                   const BadgeIcon = config.icon;
                   return (
-                    <span key={badge} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-muted">
+                    <span key={badge} className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-muted/70 font-medium">
                       <BadgeIcon className={`w-3 h-3 ${config.color}`} />
                       {t(`consultants.${badge}`)}
                     </span>
@@ -59,14 +63,14 @@ export default function ConsultantsSection() {
                 })}
               </div>
 
-              <div className="mt-auto flex items-center justify-between">
+              <div className="mt-auto flex items-center justify-between pt-4 border-t border-border/30">
                 <div>
-                  <span className="text-lg font-bold text-foreground">${c.rate}</span>
+                  <span className="text-xl font-black text-foreground">${c.rate}</span>
                   <span className="text-xs text-muted-foreground">{t('consultants.per_hour')}</span>
                 </div>
                 {c.available && (
-                  <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  <span className="text-xs text-green-600 font-semibold flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     {t('consultants.available')}
                   </span>
                 )}
@@ -75,8 +79,8 @@ export default function ConsultantsSection() {
           ))}
         </div>
 
-        <div className="text-center mt-10">
-          <Button variant="outline" size="lg">{t('consultants.view_all')}</Button>
+        <div className="text-center mt-12">
+          <Button variant="outline" size="lg" className="rounded-2xl px-8 h-12 font-semibold">{t('consultants.view_all')}</Button>
         </div>
       </div>
     </section>
