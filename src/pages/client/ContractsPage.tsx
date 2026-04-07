@@ -1,86 +1,149 @@
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileSignature, Download, Eye, Calendar, DollarSign, User } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { FileSignature, Download, Eye, Calendar, User, ShieldCheck, ShieldOff } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
 
-const contracts = [
-  {
-    id: '1',
-    title: 'SAP S/4HANA Migration Agreement',
-    consultant: 'Ahmed Al-Rashid',
-    type: 'Fixed Price',
-    value: '$45,000',
-    startDate: '2025-01-15',
-    endDate: '2025-06-30',
-    status: 'active',
-    signedDate: '2025-01-10',
-  },
-  {
-    id: '2',
-    title: 'BW/4HANA Consulting Services',
-    consultant: 'Sara Mohammed',
-    type: 'Time & Material',
-    value: '$120/hr',
-    startDate: '2025-03-01',
-    endDate: '2025-08-15',
-    status: 'pending_signature',
-    signedDate: null,
-  },
-  {
-    id: '3',
-    title: 'SuccessFactors Implementation',
-    consultant: 'Omar Khaled',
-    type: 'Fixed Price',
-    value: '$28,500',
-    startDate: '2024-09-01',
-    endDate: '2025-01-10',
-    status: 'completed',
-    signedDate: '2024-08-25',
-  },
-  {
-    id: '4',
-    title: 'NDA — SAP Fiori Redesign',
-    consultant: 'Multiple',
-    type: 'NDA',
-    value: '—',
-    startDate: '2025-02-01',
-    endDate: '2026-02-01',
-    status: 'active',
-    signedDate: '2025-01-28',
-  },
-];
-
-const statusConfig: Record<string, { label: string; color: string }> = {
-  active: { label: 'Active', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-200' },
-  pending_signature: { label: 'Pending Signature', color: 'bg-amber-500/10 text-amber-600 border-amber-200' },
-  completed: { label: 'Completed', color: 'bg-muted text-muted-foreground border-border' },
-  expired: { label: 'Expired', color: 'bg-destructive/10 text-destructive border-destructive/20' },
-};
-
-const stats = [
-  { label: 'Active Contracts', value: '2', color: 'text-emerald-500' },
-  { label: 'Pending Signature', value: '1', color: 'text-amber-500' },
-  { label: 'Total Value', value: '$73,500', color: 'text-primary' },
-  { label: 'Expired', value: '0', color: 'text-muted-foreground' },
-];
+interface NDAContract {
+  id: string;
+  consultant_name: string;
+  signature_type: string;
+  signature_data: string;
+  signed_at: string;
+  nda_content: string;
+  revoked_at: string | null;
+}
 
 export default function ContractsPage() {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const [contracts, setContracts] = useState<NDAContract[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [viewContract, setViewContract] = useState<NDAContract | null>(null);
+
+  useEffect(() => {
+    fetchContracts();
+  }, []);
+
+  const fetchContracts = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+
+    // Get NDAs where the user is the client
+    const { data, error } = await supabase
+      .from('nda_agreements')
+      .select('id, consultant_id, signature_type, signature_data, signed_at, nda_content, revoked_at')
+      .eq('client_id', user.id)
+      .order('signed_at', { ascending: false });
+
+    if (error || !data) { setLoading(false); return; }
+
+    // Get consultant names
+    const consultantIds = [...new Set(data.map(n => n.consultant_id))];
+    const { data: consultants } = await supabase
+      .from('consultants')
+      .select('id, user_id')
+      .in('id', consultantIds);
+
+    const userIds = (consultants || []).map(c => c.user_id);
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, display_name')
+      .in('user_id', userIds);
+
+    const profileMap = new Map((profiles || []).map(p => [p.user_id, p.display_name || 'Unknown']));
+    const consultantUserMap = new Map((consultants || []).map(c => [c.id, c.user_id]));
+
+    setContracts(data.map(n => ({
+      id: n.id,
+      consultant_name: profileMap.get(consultantUserMap.get(n.consultant_id) || '') || 'Unknown',
+      signature_type: n.signature_type,
+      signature_data: n.signature_data,
+      signed_at: n.signed_at,
+      nda_content: n.nda_content,
+      revoked_at: n.revoked_at,
+    })));
+    setLoading(false);
+  };
+
+  const downloadPDF = (contract: NDAContract) => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let y = 20;
+
+      doc.setFontSize(18);
+      doc.text('Non-Disclosure Agreement', pageWidth / 2, y, { align: 'center' });
+      y += 15;
+
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Date Signed: ${new Date(contract.signed_at).toLocaleDateString()}`, 20, y);
+      y += 7;
+      doc.text(`Consultant: ${contract.consultant_name}`, 20, y);
+      y += 7;
+      doc.text(`Status: ${contract.revoked_at ? 'Revoked' : 'Active'}`, 20, y);
+      y += 12;
+
+      doc.setTextColor(0);
+      doc.setFontSize(11);
+      const lines = doc.splitTextToSize(contract.nda_content, pageWidth - 40);
+      doc.text(lines, 20, y);
+      y += lines.length * 6 + 15;
+
+      // Add signature
+      doc.setFontSize(10);
+      doc.text('Signature:', 20, y);
+      y += 8;
+
+      if (contract.signature_type === 'draw' && contract.signature_data.startsWith('data:')) {
+        try {
+          doc.addImage(contract.signature_data, 'PNG', 20, y, 60, 25);
+        } catch {
+          doc.setFont('times', 'italic');
+          doc.text('[Drawn signature on file]', 20, y);
+        }
+      } else {
+        doc.setFont('times', 'italic');
+        doc.setFontSize(16);
+        doc.text(contract.signature_data, 20, y);
+      }
+
+      doc.save(`NDA-${contract.consultant_name.replace(/\s+/g, '-')}-${contract.id.slice(0, 8)}.pdf`);
+      toast({ title: 'Downloaded', description: 'NDA PDF downloaded successfully' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to generate PDF', variant: 'destructive' });
+    }
+  };
+
+  const activeCount = contracts.filter(c => !c.revoked_at).length;
+  const revokedCount = contracts.filter(c => !!c.revoked_at).length;
+
+  const stats = [
+    { label: 'Total Agreements', value: String(contracts.length), color: 'text-primary' },
+    { label: 'Active', value: String(activeCount), color: 'text-emerald-500' },
+    { label: 'Revoked', value: String(revokedCount), color: 'text-destructive' },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <FileSignature className="w-6 h-6 text-primary" />
-            {t('sidebar.contracts', 'Contracts & Agreements')}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">View and manage your contracts with consultants</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <FileSignature className="w-6 h-6 text-primary" />
+          {t('sidebar.contracts', 'Contracts & Agreements')}
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">View and download your signed NDAs with consultants</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         {stats.map((s) => (
           <Card key={s.label} className="rounded-2xl border-border/50">
             <CardContent className="pt-5 pb-4 text-center">
@@ -92,9 +155,29 @@ export default function ContractsPage() {
       </div>
 
       <div className="space-y-4">
-        {contracts.map((contract) => {
-          const sc = statusConfig[contract.status];
-          return (
+        {loading ? (
+          [1, 2, 3].map(i => (
+            <Card key={i} className="rounded-2xl">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="w-12 h-12 rounded-xl" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : contracts.length === 0 ? (
+          <Card className="rounded-2xl">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <FileSignature className="w-10 h-10 mx-auto mb-3 opacity-40" />
+              <p>No signed agreements found yet.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          contracts.map((contract) => (
             <Card key={contract.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
               <CardContent className="p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -104,36 +187,101 @@ export default function ContractsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="font-semibold text-foreground">{contract.title}</h3>
+                        <h3 className="font-semibold text-foreground">Non-Disclosure Agreement</h3>
                         <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" /> {contract.consultant}</span>
-                          <span className="flex items-center gap-1"><DollarSign className="w-3.5 h-3.5" /> {contract.value}</span>
-                          <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {contract.startDate} → {contract.endDate}</span>
+                          <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" /> {contract.consultant_name}</span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {new Date(contract.signed_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                          </span>
                         </div>
                       </div>
-                      <Badge variant="outline" className={`shrink-0 text-[10px] ${sc.color}`}>{sc.label}</Badge>
+                      {contract.revoked_at ? (
+                        <Badge variant="destructive" className="shrink-0 text-[10px] gap-1">
+                          <ShieldOff className="w-3 h-3" /> Revoked
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="shrink-0 text-[10px] gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                          <ShieldCheck className="w-3 h-3" /> Active
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mt-3">
-                      <Badge variant="secondary" className="text-[10px]">{contract.type}</Badge>
-                      {contract.signedDate && (
-                        <span className="text-[10px] text-muted-foreground">Signed {contract.signedDate}</span>
-                      )}
+                      <Badge variant="secondary" className="text-[10px]">NDA</Badge>
+                      <span className="text-[10px] text-muted-foreground capitalize">
+                        {contract.signature_type === 'draw' ? 'Drawn signature' : 'Typed signature'}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Button variant="outline" size="sm" className="gap-1 text-xs">
+                    <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setViewContract(contract)}>
                       <Eye className="w-3.5 h-3.5" /> View
                     </Button>
-                    <Button variant="outline" size="sm" className="gap-1 text-xs">
+                    <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => downloadPDF(contract)}>
                       <Download className="w-3.5 h-3.5" /> PDF
                     </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          );
-        })}
+          ))
+        )}
       </div>
+
+      {/* View NDA Dialog */}
+      <Dialog open={!!viewContract} onOpenChange={() => setViewContract(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSignature className="w-5 h-5 text-primary" />
+              Signed NDA Details
+            </DialogTitle>
+          </DialogHeader>
+          {viewContract && (
+            <div className="space-y-4 flex-1 overflow-hidden">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Consultant:</span>
+                  <span className="ms-1 font-medium">{viewContract.consultant_name}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Date Signed:</span>
+                  <span className="ms-1">{new Date(viewContract.signed_at).toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Status:</span>
+                  <span className="ms-1">{viewContract.revoked_at ? 'Revoked' : 'Active'}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Signature Type:</span>
+                  <span className="ms-1 capitalize">{viewContract.signature_type}</span>
+                </div>
+              </div>
+
+              <ScrollArea className="max-h-[200px] border rounded-lg p-4 bg-muted/30">
+                <pre className="whitespace-pre-wrap text-sm font-sans text-foreground leading-relaxed">
+                  {viewContract.nda_content}
+                </pre>
+              </ScrollArea>
+
+              <div className="border rounded-lg p-4">
+                <p className="text-xs text-muted-foreground mb-2">Signature</p>
+                {viewContract.signature_type === 'draw' ? (
+                  <img src={viewContract.signature_data} alt="Signature" className="max-h-24 border rounded" />
+                ) : (
+                  <p className="text-xl font-serif italic text-foreground">{viewContract.signature_data}</p>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <Button variant="outline" className="gap-2" onClick={() => downloadPDF(viewContract)}>
+                  <Download className="w-4 h-4" /> Download PDF
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
