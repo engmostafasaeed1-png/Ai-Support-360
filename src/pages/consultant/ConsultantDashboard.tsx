@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
   DollarSign, Briefcase, Clock, Star, TrendingUp,
-  Calendar, Video, MessageSquare, Monitor, ChevronRight, ArrowUpRight,
+  Calendar, Video, MessageSquare, Monitor, ChevronRight,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,8 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import OnboardingProgressCard from '@/components/onboarding/OnboardingProgressCard';
 import WelcomeBanner from '@/components/onboarding/WelcomeBanner';
 import EmailVerificationBanner from '@/components/onboarding/EmailVerificationBanner';
+import { AnimatedCounter } from '@/components/ui/animated-counter';
+import { Sparkline } from '@/components/ui/sparkline';
 
 const sessionTypeIcons: Record<string, typeof Video> = {
   video: Video,
@@ -28,30 +30,28 @@ const sessionTypeIcons: Record<string, typeof Video> = {
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
-  medium: 'bg-yellow-100 text-yellow-700',
-  high: 'bg-orange-100 text-orange-700',
-  critical: 'bg-red-100 text-red-700',
+  medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+  high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  critical: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
 };
 
 const statusColors: Record<string, string> = {
   new: 'bg-accent/10 text-accent',
-  matched: 'bg-purple-100 text-purple-700',
-  in_progress: 'bg-blue-100 text-blue-700',
-  resolved: 'bg-green-100 text-green-700',
+  matched: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  in_progress: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  resolved: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
   closed: 'bg-muted text-muted-foreground',
 };
 
 export default function ConsultantDashboard() {
   const { t } = useTranslation();
 
-  // Fetch consultant profile + live data
   const { data: liveData, isLoading } = useQuery({
     queryKey: ['consultant-dashboard'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      // Get consultant record
       const { data: consultant } = await supabase
         .from('consultants')
         .select('*')
@@ -60,7 +60,6 @@ export default function ConsultantDashboard() {
 
       if (!consultant) return null;
 
-      // Upcoming sessions
       const { data: sessions } = await supabase
         .from('sessions')
         .select('*')
@@ -69,7 +68,6 @@ export default function ConsultantDashboard() {
         .order('scheduled_at', { ascending: true })
         .limit(5);
 
-      // Get client names for sessions
       const clientIds = [...new Set((sessions || []).map(s => s.client_id))];
       let clientMap: Record<string, string> = {};
       if (clientIds.length > 0) {
@@ -82,7 +80,6 @@ export default function ConsultantDashboard() {
         }
       }
 
-      // Assigned tickets
       const { data: tickets } = await supabase
         .from('tickets')
         .select('*')
@@ -91,7 +88,6 @@ export default function ConsultantDashboard() {
         .order('created_at', { ascending: false })
         .limit(5);
 
-      // Earnings summary from payments
       const { data: payments } = await supabase
         .from('payments')
         .select('amount, status, created_at')
@@ -104,7 +100,6 @@ export default function ConsultantDashboard() {
         .filter(p => p.status === 'pending')
         .reduce((sum, p) => sum + Number(p.amount), 0);
 
-      // Ratings
       const { data: ratings } = await supabase
         .from('ratings')
         .select('score, comment, created_at, client_id')
@@ -123,7 +118,6 @@ export default function ConsultantDashboard() {
     },
   });
 
-  // Fallback to mock data if not authenticated
   const profile = liveData?.consultant || mockConsultantProfile;
   const earnings = mockEarnings;
   const activeCases = liveData ? liveData.tickets : mockCases.filter(c => c.status !== 'resolved' && c.status !== 'closed');
@@ -132,35 +126,43 @@ export default function ConsultantDashboard() {
   const kpis = [
     {
       labelKey: 'consultant_dashboard.this_month',
-      value: `$${(liveData?.totalEarned ?? earnings.thisMonth).toLocaleString()}`,
+      value: liveData?.totalEarned ?? earnings.thisMonth,
+      prefix: '$',
       icon: DollarSign,
       trend: liveData ? `$${liveData.pending.toLocaleString()} pending` : '+12%',
-      up: true,
+      sparkData: [800, 1200, 950, 1400, 1100, 1600, liveData?.totalEarned ?? earnings.thisMonth],
       link: '/consultant/earnings',
+      color: 'hsl(var(--accent))',
     },
     {
       labelKey: 'consultant_dashboard.active_cases',
-      value: activeCases.length.toString(),
+      value: activeCases.length,
+      prefix: '',
       icon: Briefcase,
       trend: `${upcomingSessions.length} ${t('consultant_dashboard.upcoming')}`,
-      up: true,
+      sparkData: [2, 3, 4, 3, 5, 4, activeCases.length],
       link: '/consultant/cases',
+      color: 'hsl(262, 83%, 58%)',
     },
     {
       labelKey: 'consultant_dashboard.response_time',
-      value: `${(profile as any).response_time_minutes ?? (profile as any).response_time_minutes ?? 0} ${t('consultant_dashboard.minutes')}`,
+      value: (profile as any).response_time_minutes ?? 0,
+      prefix: '',
       icon: Clock,
       trend: t('consultant_dashboard.avg'),
-      up: true,
+      sparkData: [30, 25, 28, 22, 20, 18, (profile as any).response_time_minutes ?? 0],
       link: '/consultant/profile',
+      color: 'hsl(38, 92%, 50%)',
     },
     {
       labelKey: 'consultant_dashboard.avg_rating',
-      value: String((profile as any).rating ?? 0),
+      value: (profile as any).rating ?? 0,
+      prefix: '',
       icon: Star,
       trend: `${(profile as any).total_reviews ?? 0} ${t('consultant_dashboard.reviews_label')}`,
-      up: true,
+      sparkData: [4.2, 4.5, 4.3, 4.6, 4.8, 4.7, (profile as any).rating ?? 0],
       link: '/consultant/reviews',
+      color: 'hsl(142, 71%, 45%)',
     },
   ];
 
@@ -170,6 +172,7 @@ export default function ConsultantDashboard() {
       <WelcomeBanner />
       <EmailVerificationBanner />
       <OnboardingProgressCard role="consultant" />
+
       {/* Welcome */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -177,12 +180,12 @@ export default function ConsultantDashboard() {
           <p className="text-sm text-muted-foreground mt-1">{t('consultant_dashboard.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5 text-sm text-green-600 font-medium">
+          <span className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400 font-medium">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             {t('consultant_dashboard.available')}
           </span>
           <Link to="/consultant/calendar">
-            <Button size="sm" className="gradient-primary border-0">
+            <Button size="sm" className="gradient-primary border-0 shadow-premium hover:shadow-glow transition-all">
               <Calendar className="w-4 h-4 me-1" /> {t('consultant_dashboard.manage_availability')}
             </Button>
           </Link>
@@ -190,22 +193,30 @@ export default function ConsultantDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-fade">
         {kpis.map((kpi, i) => (
           <Link key={i} to={kpi.link}>
-            <Card className="rounded-2xl border-border/50 hover:shadow-premium transition-all cursor-pointer">
-              <CardContent className="p-5">
+            <Card className="rounded-2xl border-border/50 card-interactive gradient-border">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
                     <kpi.icon className="w-5 h-5 text-accent" />
                   </div>
-                  <span className="text-xs font-medium flex items-center gap-0.5 text-green-600">
-                    <TrendingUp className="w-3 h-3" />
-                    {kpi.trend}
-                  </span>
+                  <Sparkline data={kpi.sparkData} color={kpi.color} width={64} height={20} />
                 </div>
-                <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-16" />
+                ) : (
+                  <div className="text-2xl font-bold text-foreground">
+                    <AnimatedCounter value={kpi.value} prefix={kpi.prefix} decimals={kpi.labelKey.includes('rating') ? 1 : 0} />
+                    {kpi.labelKey.includes('response_time') && <span className="text-sm font-normal text-muted-foreground ml-1">{t('consultant_dashboard.minutes')}</span>}
+                  </div>
+                )}
                 <div className="text-xs text-muted-foreground mt-1">{t(kpi.labelKey)}</div>
+                <div className="text-[10px] text-green-600 dark:text-green-400 font-medium mt-0.5 flex items-center gap-0.5">
+                  <TrendingUp className="w-2.5 h-2.5" />
+                  {kpi.trend}
+                </div>
               </CardContent>
             </Card>
           </Link>
@@ -218,22 +229,28 @@ export default function ConsultantDashboard() {
           <CardHeader className="flex-row items-center justify-between pb-2">
             <CardTitle className="text-base font-semibold">{t('consultant_dashboard.earnings_overview')}</CardTitle>
             <Link to="/consultant/earnings">
-              <Button variant="ghost" size="sm" className="text-xs">{t('consultant_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1" /></Button>
+              <Button variant="ghost" size="sm" className="text-xs group">{t('consultant_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1 group-hover:translate-x-0.5 transition-transform" /></Button>
             </Link>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 stagger-fade">
               <div className="p-3 rounded-xl bg-muted/50">
                 <div className="text-xs text-muted-foreground">{t('consultant_dashboard.total_earned')}</div>
-                <div className="text-lg font-bold text-foreground">${(liveData?.totalEarned ?? earnings.total).toLocaleString()}</div>
+                <div className="text-lg font-bold text-foreground">
+                  <AnimatedCounter value={liveData?.totalEarned ?? earnings.total} prefix="$" />
+                </div>
               </div>
               <div className="p-3 rounded-xl bg-muted/50">
                 <div className="text-xs text-muted-foreground">{t('consultant_dashboard.pending_amount')}</div>
-                <div className="text-lg font-bold text-foreground">${(liveData?.pending ?? earnings.pending).toLocaleString()}</div>
+                <div className="text-lg font-bold text-foreground">
+                  <AnimatedCounter value={liveData?.pending ?? earnings.pending} prefix="$" />
+                </div>
               </div>
               <div className="p-3 rounded-xl bg-muted/50">
                 <div className="text-xs text-muted-foreground">{t('consultant_dashboard.sessions_count')}</div>
-                <div className="text-lg font-bold text-foreground">{upcomingSessions.length}</div>
+                <div className="text-lg font-bold text-foreground">
+                  <AnimatedCounter value={upcomingSessions.length} />
+                </div>
               </div>
             </div>
             <ResponsiveContainer width="100%" height={200}>
@@ -243,7 +260,7 @@ export default function ConsultantDashboard() {
                 <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
                 <Tooltip
                   formatter={(value: number) => [`$${value.toLocaleString()}`, t('consultant_dashboard.earnings_label')]}
-                  contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px' }}
+                  contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px', background: 'hsl(var(--card))' }}
                 />
                 <Bar dataKey="amount" fill="hsl(217, 91%, 60%)" radius={[6, 6, 0, 0]} />
               </BarChart>
@@ -256,7 +273,7 @@ export default function ConsultantDashboard() {
           <CardHeader className="flex-row items-center justify-between pb-2">
             <CardTitle className="text-base font-semibold">{t('consultant_dashboard.upcoming_sessions')}</CardTitle>
             <Link to="/consultant/calendar">
-              <Button variant="ghost" size="sm" className="text-xs">{t('consultant_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1" /></Button>
+              <Button variant="ghost" size="sm" className="text-xs group">{t('consultant_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1 group-hover:translate-x-0.5 transition-transform" /></Button>
             </Link>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -268,43 +285,45 @@ export default function ConsultantDashboard() {
                 <p className="text-sm text-muted-foreground">{t('consultant_dashboard.no_sessions')}</p>
               </div>
             ) : (
-              upcomingSessions.map((session: any) => {
-                const TypeIcon = sessionTypeIcons[session.session_type] || Video;
-                return (
-                  <Link key={session.id} to={`/consultant/cases`} className="block">
-                  <div className="p-3 rounded-xl bg-muted/30 border border-border/30 hover:border-accent/30 transition-all cursor-pointer">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                          <TypeIcon className="w-4 h-4 text-accent" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{session.client_name}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{session.session_type?.replace('_', ' ')}</p>
+              <div className="stagger-fade space-y-3">
+                {upcomingSessions.map((session: any) => {
+                  const TypeIcon = sessionTypeIcons[session.session_type] || Video;
+                  return (
+                    <Link key={session.id} to={`/consultant/cases`} className="block">
+                    <div className="p-3 rounded-xl bg-muted/30 border border-border/30 card-interactive">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                            <TypeIcon className="w-4 h-4 text-accent" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{session.client_name}</p>
+                            <p className="text-xs text-muted-foreground capitalize">{session.session_type?.replace('_', ' ')}</p>
+                          </div>
                         </div>
                       </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          {session.scheduled_at ? format(new Date(session.scheduled_at), 'MMM d · h:mm a') : '—'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{session.duration_minutes || 60} min</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
-                        {session.scheduled_at ? format(new Date(session.scheduled_at), 'MMM d · h:mm a') : '—'}
-                      </span>
-                      <span className="text-xs text-muted-foreground">{session.duration_minutes || 60} min</span>
-                    </div>
-                  </div>
-                  </Link>
-                );
-              })
+                    </Link>
+                  );
+                })}
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Active Cases / Assigned Tickets */}
+      {/* Active Cases */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader className="flex-row items-center justify-between pb-2">
           <CardTitle className="text-base font-semibold">{t('consultant_dashboard.recent_cases')}</CardTitle>
           <Link to="/consultant/cases">
-            <Button variant="ghost" size="sm" className="text-xs">{t('consultant_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1" /></Button>
+            <Button variant="ghost" size="sm" className="text-xs group">{t('consultant_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1 group-hover:translate-x-0.5 transition-transform" /></Button>
           </Link>
         </CardHeader>
         <CardContent>
@@ -318,10 +337,10 @@ export default function ConsultantDashboard() {
               <p className="text-sm text-muted-foreground">{t('consultant_dashboard.no_cases')}</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 stagger-fade">
               {activeCases.map((ticket: any) => (
                 <Link key={ticket.id} to={`/consultant/cases/${ticket.id}`} className="block">
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 transition-all cursor-pointer">
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-border/30 card-interactive">
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-medium text-foreground truncate">{ticket.title}</h4>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
@@ -360,9 +379,9 @@ export default function ConsultantDashboard() {
         </CardHeader>
         <CardContent>
           {(liveData?.ratings && liveData.ratings.length > 0) ? (
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-3 gap-4 stagger-fade">
               {liveData.ratings.map((review: any, i: number) => (
-                <div key={i} className="p-4 rounded-xl bg-muted/20 border border-border/30">
+                <div key={i} className="p-4 rounded-xl bg-muted/20 border border-border/30 card-interactive">
                   <div className="flex items-center gap-1 mb-2">
                     {Array.from({ length: review.score }).map((_, j) => (
                       <Star key={j} className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
@@ -374,9 +393,9 @@ export default function ConsultantDashboard() {
               ))}
             </div>
           ) : (
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-3 gap-4 stagger-fade">
               {mockReviews.map((review) => (
-                <div key={review.id} className="p-4 rounded-xl bg-muted/20 border border-border/30">
+                <div key={review.id} className="p-4 rounded-xl bg-muted/20 border border-border/30 card-interactive">
                   <div className="flex items-center gap-1 mb-2">
                     {Array.from({ length: review.score }).map((_, j) => (
                       <Star key={j} className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />

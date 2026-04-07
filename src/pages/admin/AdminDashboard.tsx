@@ -1,13 +1,14 @@
 import { useTranslation } from 'react-i18next';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Ticket, DollarSign, Clock, Star, TrendingUp, UserCheck, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAdminStats } from '@/hooks/useAdminData';
 import { revenueData, ticketsByStatus, ticketsByModule } from '@/data/adminMockData';
 import { Link } from 'react-router-dom';
+import { AnimatedCounter } from '@/components/ui/animated-counter';
+import { Sparkline } from '@/components/ui/sparkline';
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
@@ -16,14 +17,14 @@ export default function AdminDashboard() {
   const s = stats || { totalUsers: 0, activeConsultants: 0, openTickets: 0, revenue: 0, avgResolutionTime: '—', satisfaction: 0, ticketsThisMonth: 0, pendingApprovals: 0 };
 
   const kpis = [
-    { labelKey: 'admin_dashboard.total_users', value: s.totalUsers.toLocaleString(), icon: Users, change: '', link: '/admin/users' },
-    { labelKey: 'admin_dashboard.active_consultants', value: s.activeConsultants.toString(), icon: UserCheck, change: '', link: '/admin/approvals' },
-    { labelKey: 'admin_dashboard.open_tickets', value: s.openTickets.toString(), icon: Ticket, change: '', link: '/admin/tickets' },
-    { labelKey: 'admin_dashboard.monthly_revenue', value: `$${(s.revenue / 1000).toFixed(0)}K`, icon: DollarSign, change: '', link: '/admin/analytics' },
-    { labelKey: 'admin_dashboard.avg_resolution', value: s.avgResolutionTime, icon: Clock, change: '', link: '/admin/analytics' },
-    { labelKey: 'admin_dashboard.satisfaction', value: `${s.satisfaction}/5`, icon: Star, change: '', link: '/admin/analytics' },
-    { labelKey: 'admin_dashboard.tickets_this_month', value: s.ticketsThisMonth.toString(), icon: TrendingUp, change: '', link: '/admin/tickets' },
-    { labelKey: 'admin_dashboard.pending_approvals', value: s.pendingApprovals.toString(), icon: AlertTriangle, change: '', link: '/admin/approvals' },
+    { labelKey: 'admin_dashboard.total_users', value: s.totalUsers, prefix: '', icon: Users, link: '/admin/users', sparkData: [50, 80, 100, 130, 160, 190, s.totalUsers], color: 'hsl(var(--accent))' },
+    { labelKey: 'admin_dashboard.active_consultants', value: s.activeConsultants, prefix: '', icon: UserCheck, link: '/admin/approvals', sparkData: [5, 8, 10, 12, 15, 18, s.activeConsultants], color: 'hsl(142, 71%, 45%)' },
+    { labelKey: 'admin_dashboard.open_tickets', value: s.openTickets, prefix: '', icon: Ticket, link: '/admin/tickets', sparkData: [10, 15, 12, 18, 20, 16, s.openTickets], color: 'hsl(38, 92%, 50%)' },
+    { labelKey: 'admin_dashboard.monthly_revenue', value: Math.round(s.revenue / 1000), prefix: '$', suffix: 'K', icon: DollarSign, link: '/admin/analytics', sparkData: [20, 30, 25, 35, 40, 38, Math.round(s.revenue / 1000)], color: 'hsl(262, 83%, 58%)' },
+    { labelKey: 'admin_dashboard.avg_resolution', value: 0, displayValue: s.avgResolutionTime, icon: Clock, link: '/admin/analytics', sparkData: [5, 4.5, 4, 3.5, 3, 2.5, 2], color: 'hsl(var(--accent))' },
+    { labelKey: 'admin_dashboard.satisfaction', value: s.satisfaction, prefix: '', suffix: '/5', icon: Star, link: '/admin/analytics', sparkData: [3.8, 4.0, 4.2, 4.1, 4.3, 4.5, s.satisfaction], color: 'hsl(38, 92%, 50%)' },
+    { labelKey: 'admin_dashboard.tickets_this_month', value: s.ticketsThisMonth, prefix: '', icon: TrendingUp, link: '/admin/tickets', sparkData: [20, 25, 30, 28, 35, 32, s.ticketsThisMonth], color: 'hsl(142, 71%, 45%)' },
+    { labelKey: 'admin_dashboard.pending_approvals', value: s.pendingApprovals, prefix: '', icon: AlertTriangle, link: '/admin/approvals', sparkData: [3, 5, 4, 6, 3, 4, s.pendingApprovals], color: 'hsl(0, 84%, 60%)' },
   ];
 
   return (
@@ -34,18 +35,22 @@ export default function AdminDashboard() {
         <p className="text-sm text-muted-foreground">{t('admin_dashboard.subtitle')}</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-fade">
         {kpis.map((kpi) => (
           <Link key={kpi.labelKey} to={kpi.link}>
-            <Card className="border-border/50 hover:shadow-premium transition-all cursor-pointer">
+            <Card className="border-border/50 card-interactive gradient-border rounded-2xl">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
                     <kpi.icon className="w-4 h-4 text-accent" />
                   </div>
+                  <Sparkline data={kpi.sparkData} color={kpi.color} width={56} height={18} />
                 </div>
                 {isLoading ? <Skeleton className="h-8 w-16" /> : (
-                  <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {(kpi as any).displayValue || <AnimatedCounter value={kpi.value} prefix={kpi.prefix || ''} />}
+                    {(kpi as any).suffix && <span className="text-sm font-normal text-muted-foreground">{(kpi as any).suffix}</span>}
+                  </p>
                 )}
                 <p className="text-xs text-muted-foreground">{t(kpi.labelKey)}</p>
               </CardContent>
@@ -55,7 +60,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        <Card className="border-border/50">
+        <Card className="border-border/50 rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">{t('admin_dashboard.revenue_vs_expenses')}</CardTitle>
           </CardHeader>
@@ -64,7 +69,10 @@ export default function AdminDashboard() {
               <BarChart data={revenueData}>
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v / 1000}K`} />
-                <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
+                <Tooltip
+                  formatter={(v: number) => `$${v.toLocaleString()}`}
+                  contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px', background: 'hsl(var(--card))' }}
+                />
                 <Bar dataKey="revenue" fill="hsl(217, 91%, 60%)" radius={[4, 4, 0, 0]} name="Revenue" />
                 <Bar dataKey="expenses" fill="hsl(214, 32%, 91%)" radius={[4, 4, 0, 0]} name="Expenses" />
               </BarChart>
@@ -72,7 +80,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/50">
+        <Card className="border-border/50 rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">{t('admin_dashboard.tickets_by_status')}</CardTitle>
           </CardHeader>
@@ -85,7 +93,7 @@ export default function AdminDashboard() {
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px', background: 'hsl(var(--card))' }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="space-y-2 flex-1">
@@ -104,7 +112,7 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      <Card className="border-border/50">
+      <Card className="border-border/50 rounded-2xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('admin_dashboard.tickets_by_module')}</CardTitle>
         </CardHeader>
@@ -113,7 +121,7 @@ export default function AdminDashboard() {
             <BarChart data={ticketsByModule} layout="vertical">
               <XAxis type="number" tick={{ fontSize: 12 }} />
               <YAxis dataKey="module" type="category" tick={{ fontSize: 12 }} width={70} />
-              <Tooltip />
+              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px', background: 'hsl(var(--card))' }} />
               <Bar dataKey="count" fill="hsl(226, 53%, 22%)" radius={[0, 4, 4, 0]} name="Tickets" />
             </BarChart>
           </ResponsiveContainer>
