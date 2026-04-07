@@ -147,6 +147,8 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
     setSelectedDate(undefined);
     setSelectedTime('');
     setSessionType('video');
+    setVideoPlatform('jitsi');
+    setMeetingUrl('');
     setConfirmed(false);
   };
 
@@ -169,16 +171,23 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
 
       // Only persist to DB if consultantId is a real UUID
       if (isValidUUID(consultantId)) {
+        const sessionId = crypto.randomUUID();
+        const generatedMeetingUrl = sessionType === 'video' ? generateMeetingUrl(videoPlatform, sessionId) : null;
+
         const { error } = await supabase.from('sessions').insert({
+          id: sessionId,
           client_id: user.id,
           consultant_id: consultantId,
           session_type: sessionType as 'chat' | 'video' | 'screen_share',
           scheduled_at: scheduledAt.toISOString(),
           status: 'scheduled',
           duration_minutes: 60,
-        });
+          meeting_url: generatedMeetingUrl,
+          video_platform: sessionType === 'video' ? videoPlatform : null,
+        } as any);
 
         if (error) throw error;
+        if (generatedMeetingUrl) setMeetingUrl(generatedMeetingUrl);
 
         // Notify client
         await supabase.from('notifications').insert({
