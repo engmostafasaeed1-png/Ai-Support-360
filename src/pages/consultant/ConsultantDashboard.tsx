@@ -136,6 +136,7 @@ export default function ConsultantDashboard() {
       icon: DollarSign,
       trend: liveData ? `$${liveData.pending.toLocaleString()} pending` : '+12%',
       up: true,
+      link: '/consultant/earnings',
     },
     {
       labelKey: 'consultant_dashboard.active_cases',
@@ -143,6 +144,7 @@ export default function ConsultantDashboard() {
       icon: Briefcase,
       trend: `${upcomingSessions.length} ${t('consultant_dashboard.upcoming')}`,
       up: true,
+      link: '/consultant/cases',
     },
     {
       labelKey: 'consultant_dashboard.response_time',
@@ -150,6 +152,7 @@ export default function ConsultantDashboard() {
       icon: Clock,
       trend: t('consultant_dashboard.avg'),
       up: true,
+      link: '/consultant/profile',
     },
     {
       labelKey: 'consultant_dashboard.avg_rating',
@@ -157,6 +160,7 @@ export default function ConsultantDashboard() {
       icon: Star,
       trend: `${(profile as any).total_reviews ?? 0} ${t('consultant_dashboard.reviews_label')}`,
       up: true,
+      link: '/consultant/reviews',
     },
   ];
 
@@ -188,21 +192,23 @@ export default function ConsultantDashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((kpi, i) => (
-          <Card key={i} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                  <kpi.icon className="w-5 h-5 text-accent" />
+          <Link key={i} to={kpi.link}>
+            <Card className="rounded-2xl border-border/50 hover:shadow-premium transition-all cursor-pointer">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                    <kpi.icon className="w-5 h-5 text-accent" />
+                  </div>
+                  <span className="text-xs font-medium flex items-center gap-0.5 text-green-600">
+                    <TrendingUp className="w-3 h-3" />
+                    {kpi.trend}
+                  </span>
                 </div>
-                <span className="text-xs font-medium flex items-center gap-0.5 text-green-600">
-                  <TrendingUp className="w-3 h-3" />
-                  {kpi.trend}
-                </span>
-              </div>
-              <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
-              <div className="text-xs text-muted-foreground mt-1">{t(kpi.labelKey)}</div>
-            </CardContent>
-          </Card>
+                <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
+                <div className="text-xs text-muted-foreground mt-1">{t(kpi.labelKey)}</div>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
@@ -265,7 +271,8 @@ export default function ConsultantDashboard() {
               upcomingSessions.map((session: any) => {
                 const TypeIcon = sessionTypeIcons[session.session_type] || Video;
                 return (
-                  <div key={session.id} className="p-3 rounded-xl bg-muted/30 border border-border/30 hover:border-accent/30 transition-all">
+                  <Link key={session.id} to={`/consultant/cases`} className="block">
+                  <div className="p-3 rounded-xl bg-muted/30 border border-border/30 hover:border-accent/30 transition-all cursor-pointer">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
@@ -284,6 +291,7 @@ export default function ConsultantDashboard() {
                       <span className="text-xs text-muted-foreground">{session.duration_minutes || 60} min</span>
                     </div>
                   </div>
+                  </Link>
                 );
               })
             )}
@@ -312,7 +320,8 @@ export default function ConsultantDashboard() {
           ) : (
             <div className="space-y-3">
               {activeCases.map((ticket: any) => (
-                <div key={ticket.id} className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 transition-all">
+                <Link key={ticket.id} to={`/consultant/cases/${ticket.id}`} className="block">
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 transition-all cursor-pointer">
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-medium text-foreground truncate">{ticket.title}</h4>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
@@ -335,10 +344,9 @@ export default function ConsultantDashboard() {
                       {(ticket.status || '').replace('_', ' ')}
                     </Badge>
                   </div>
-                  <Button variant="ghost" size="icon" className="shrink-0">
-                    <ArrowUpRight className="w-4 h-4" />
-                  </Button>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                 </div>
+                </Link>
               ))}
             </div>
           )}

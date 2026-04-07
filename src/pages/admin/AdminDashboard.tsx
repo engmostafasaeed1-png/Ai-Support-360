@@ -7,6 +7,7 @@ import { Users, Ticket, DollarSign, Clock, Star, TrendingUp, UserCheck, AlertTri
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAdminStats } from '@/hooks/useAdminData';
 import { revenueData, ticketsByStatus, ticketsByModule } from '@/data/adminMockData';
+import { Link } from 'react-router-dom';
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
@@ -15,14 +16,14 @@ export default function AdminDashboard() {
   const s = stats || { totalUsers: 0, activeConsultants: 0, openTickets: 0, revenue: 0, avgResolutionTime: '—', satisfaction: 0, ticketsThisMonth: 0, pendingApprovals: 0 };
 
   const kpis = [
-    { labelKey: 'admin_dashboard.total_users', value: s.totalUsers.toLocaleString(), icon: Users, change: '' },
-    { labelKey: 'admin_dashboard.active_consultants', value: s.activeConsultants.toString(), icon: UserCheck, change: '' },
-    { labelKey: 'admin_dashboard.open_tickets', value: s.openTickets.toString(), icon: Ticket, change: '' },
-    { labelKey: 'admin_dashboard.monthly_revenue', value: `$${(s.revenue / 1000).toFixed(0)}K`, icon: DollarSign, change: '' },
-    { labelKey: 'admin_dashboard.avg_resolution', value: s.avgResolutionTime, icon: Clock, change: '' },
-    { labelKey: 'admin_dashboard.satisfaction', value: `${s.satisfaction}/5`, icon: Star, change: '' },
-    { labelKey: 'admin_dashboard.tickets_this_month', value: s.ticketsThisMonth.toString(), icon: TrendingUp, change: '' },
-    { labelKey: 'admin_dashboard.pending_approvals', value: s.pendingApprovals.toString(), icon: AlertTriangle, change: '' },
+    { labelKey: 'admin_dashboard.total_users', value: s.totalUsers.toLocaleString(), icon: Users, change: '', link: '/admin/users' },
+    { labelKey: 'admin_dashboard.active_consultants', value: s.activeConsultants.toString(), icon: UserCheck, change: '', link: '/admin/approvals' },
+    { labelKey: 'admin_dashboard.open_tickets', value: s.openTickets.toString(), icon: Ticket, change: '', link: '/admin/tickets' },
+    { labelKey: 'admin_dashboard.monthly_revenue', value: `$${(s.revenue / 1000).toFixed(0)}K`, icon: DollarSign, change: '', link: '/admin/analytics' },
+    { labelKey: 'admin_dashboard.avg_resolution', value: s.avgResolutionTime, icon: Clock, change: '', link: '/admin/analytics' },
+    { labelKey: 'admin_dashboard.satisfaction', value: `${s.satisfaction}/5`, icon: Star, change: '', link: '/admin/analytics' },
+    { labelKey: 'admin_dashboard.tickets_this_month', value: s.ticketsThisMonth.toString(), icon: TrendingUp, change: '', link: '/admin/tickets' },
+    { labelKey: 'admin_dashboard.pending_approvals', value: s.pendingApprovals.toString(), icon: AlertTriangle, change: '', link: '/admin/approvals' },
   ];
 
   return (
@@ -35,19 +36,21 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {kpis.map((kpi) => (
-          <Card key={kpi.labelKey} className="border-border/50">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
-                  <kpi.icon className="w-4 h-4 text-accent" />
+          <Link key={kpi.labelKey} to={kpi.link}>
+            <Card className="border-border/50 hover:shadow-premium transition-all cursor-pointer">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
+                    <kpi.icon className="w-4 h-4 text-accent" />
+                  </div>
                 </div>
-              </div>
-              {isLoading ? <Skeleton className="h-8 w-16" /> : (
-                <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
-              )}
-              <p className="text-xs text-muted-foreground">{t(kpi.labelKey)}</p>
-            </CardContent>
-          </Card>
+                {isLoading ? <Skeleton className="h-8 w-16" /> : (
+                  <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
+                )}
+                <p className="text-xs text-muted-foreground">{t(kpi.labelKey)}</p>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
