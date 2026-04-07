@@ -8,7 +8,6 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { useAdminStats } from '@/hooks/useAdminData';
 import { revenueData, ticketsByStatus, ticketsByModule } from '@/data/adminMockData';
 import { Link } from 'react-router-dom';
-import { revenueData, ticketsByStatus, ticketsByModule } from '@/data/adminMockData';
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
