@@ -275,22 +275,41 @@ export default function NewRequestPage() {
         </div>
 
         {/* AI Recommended Consultants */}
-        {aiRecommendations && aiRecommendations.recommendations.length > 0 && (
-          <Card className="rounded-2xl border-accent/20 bg-accent/5">
-            <CardHeader className="pb-2">
+        <Card className="rounded-2xl border-accent/20 bg-accent/5">
+          <CardHeader className="pb-2 flex-row items-center justify-between">
+            <div>
               <CardTitle className="text-base flex items-center gap-2">
                 <Crown className="w-4 h-4 text-accent" />
                 AI-Recommended Experts for Your Ticket
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">{aiRecommendations.overall_rationale}</p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
+              {aiRecommendations && <p className="text-xs text-muted-foreground mt-1">{aiRecommendations.overall_rationale}</p>}
+            </div>
+            <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setManualPickOpen(true)}>
+              <UserPlus className="w-3.5 h-3.5" /> Choose Manually
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {selectedConsultant && (
+              <div className="p-3 rounded-xl bg-accent/10 border border-accent/30 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
+                  {selectedConsultant.avatar}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{selectedConsultant.name}</p>
+                  <p className="text-xs text-muted-foreground">{selectedConsultant.specialty} · ${selectedConsultant.rate}/hr</p>
+                </div>
+                <Badge className="bg-accent text-accent-foreground text-[10px]">Your Pick</Badge>
+              </div>
+            )}
+            {aiRecommendations && aiRecommendations.recommendations.length > 0 ? (
+              aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
                 <RecommendationCard key={rec.consultant_id} rec={rec} rank={i + 1} navigate={navigate} />
-              ))}
-            </CardContent>
-          </Card>
-        )}
+              ))
+            ) : !selectedConsultant ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No AI recommendations. Use "Choose Manually" to pick an expert.</p>
+            ) : null}
+          </CardContent>
+        </Card>
 
         <div className="flex gap-3 justify-center">
           <Button onClick={() => {
