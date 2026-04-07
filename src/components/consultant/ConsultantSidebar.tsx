@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { supabase } from '@/integrations/supabase/client';
+import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 
 const menuItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/consultant' },
@@ -46,6 +47,7 @@ export default function ConsultantSidebar() {
   const logout = useLogout();
   const { isGuest } = useGuestMode();
   const [onboardingDone, setOnboardingDone] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     if (isGuest) return;
@@ -59,6 +61,7 @@ export default function ConsultantSidebar() {
   const visibleItems = menuItems;
 
   return (
+    <>
     <Sidebar collapsible="icon" className="border-e border-border/50">
       <SidebarContent className="bg-sidebar text-sidebar-foreground">
         <div className="p-4 flex items-center gap-2">
@@ -110,7 +113,7 @@ export default function ConsultantSidebar() {
         </SidebarGroup>
 
         <div className="mt-auto p-4 border-t border-sidebar-border space-y-3">
-          <SidebarUserCard collapsed={collapsed} />
+          <SidebarUserCard collapsed={collapsed} onClick={() => setProfileOpen(true)} />
           {!collapsed && (
             <div className="space-y-2">
               <button
@@ -132,5 +135,7 @@ export default function ConsultantSidebar() {
         </div>
       </SidebarContent>
     </Sidebar>
+    <ProfileEditDialog open={profileOpen} onOpenChange={setProfileOpen} role="consultant" />
+    </>
   );
 }
