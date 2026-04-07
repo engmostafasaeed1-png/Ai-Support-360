@@ -125,6 +125,22 @@ export default function NewRequestPage() {
 
   const updateForm = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
 
+  const handleAiError = (data: any): boolean => {
+    if (data?.error === 'Credits exhausted') {
+      toast.error('AI credits exhausted. Please contact your administrator to add funds.');
+      return true;
+    }
+    if (data?.error === 'Rate limited') {
+      toast.error('AI is busy, please try again in a moment.');
+      return true;
+    }
+    if (data?.error) {
+      toast.error(data.error);
+      return true;
+    }
+    return false;
+  };
+
   const runAiCategorize = useCallback(async () => {
     if (form.description.length < 15) return;
     setAiLoading('categorize');
@@ -133,9 +149,11 @@ export default function NewRequestPage() {
         body: { action: 'categorize', title: form.title, description: form.description, sap_module: form.sap_module, model: selectedModel },
       });
       if (error) throw error;
+      if (handleAiError(data)) return;
       if (data?.result) setAiCategorization(data.result);
     } catch (err) {
       console.error('AI categorization failed:', err);
+      toast.error('AI categorization failed. You can continue without it.');
     } finally {
       setAiLoading(null);
     }
@@ -148,6 +166,7 @@ export default function NewRequestPage() {
         body: { action: 'summarize', title: form.title, description: form.description, sap_module: form.sap_module, urgency: form.urgency, model: selectedModel },
       });
       if (error) throw error;
+      if (handleAiError(data)) return;
       if (data?.result) setAiSummary(data.result);
     } catch (err) {
       console.error('AI summary failed:', err);
@@ -163,6 +182,7 @@ export default function NewRequestPage() {
         body: { action: 'match', title: form.title, description: form.description, sap_module: form.sap_module, urgency: form.urgency, model: selectedModel },
       });
       if (error) throw error;
+      if (handleAiError(data)) return;
       if (data?.result) setAiMatch(data.result);
     } catch (err) {
       console.error('AI matching failed:', err);
@@ -186,6 +206,7 @@ export default function NewRequestPage() {
         },
       });
       if (error) throw error;
+      if (handleAiError(data)) return;
       if (data?.result) setAiRecommendations(data.result);
     } catch (err) {
       console.error('AI consultant matching failed:', err);
