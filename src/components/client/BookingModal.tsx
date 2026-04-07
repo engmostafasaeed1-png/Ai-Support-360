@@ -126,6 +126,8 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
     setConfirmed(false);
   };
 
+  const isValidUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
   const handleConfirm = async () => {
     setIsSubmitting(true);
     try {
@@ -139,43 +141,46 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
       const [hours, minutes] = selectedTime.split(':').map(Number);
       const scheduledAt = new Date(selectedDate!);
       scheduledAt.setHours(hours, minutes, 0, 0);
-
-      const { error } = await supabase.from('sessions').insert({
-        client_id: user.id,
-        consultant_id: consultantId,
-        session_type: sessionType as 'chat' | 'video' | 'screen_share',
-        scheduled_at: scheduledAt.toISOString(),
-        status: 'scheduled',
-        duration_minutes: 60,
-      });
-
-      if (error) throw error;
-
-      // Notify client
       const dateLabel = format(selectedDate!, 'MMM d, yyyy');
-      await supabase.from('notifications').insert({
-        user_id: user.id,
-        title: 'Session Booked',
-        body: `Your ${sessionType.replace('_', ' ')} session with ${consultantName} is scheduled for ${dateLabel} at ${selectedTime}.`,
-        type: 'booking',
-        link: '/client/sessions',
-      });
 
-      // Notify consultant (look up their user_id)
-      const { data: consultant } = await supabase
-        .from('consultants')
-        .select('user_id')
-        .eq('id', consultantId)
-        .single();
-
-      if (consultant) {
-        await supabase.from('notifications').insert({
-          user_id: consultant.user_id,
-          title: 'New Session Booking',
-          body: `A client booked a ${sessionType.replace('_', ' ')} session for ${dateLabel} at ${selectedTime}.`,
-          type: 'booking',
-          link: '/consultant/calendar',
+      // Only persist to DB if consultantId is a real UUID
+      if (isValidUUID(consultantId)) {
+        const { error } = await supabase.from('sessions').insert({
+          client_id: user.id,
+          consultant_id: consultantId,
+          session_type: sessionType as 'chat' | 'video' | 'screen_share',
+          scheduled_at: scheduledAt.toISOString(),
+          status: 'scheduled',
+          duration_minutes: 60,
         });
+
+        if (error) throw error;
+
+        // Notify client
+        await supabase.from('notifications').insert({
+          user_id: user.id,
+          title: 'Session Booked',
+          body: `Your ${sessionType.replace('_', ' ')} session with ${consultantName} is scheduled for ${dateLabel} at ${selectedTime}.`,
+          type: 'booking',
+          link: '/client/sessions',
+        });
+
+        // Notify consultant
+        const { data: consultant } = await supabase
+          .from('consultants')
+          .select('user_id')
+          .eq('id', consultantId)
+          .single();
+
+        if (consultant) {
+          await supabase.from('notifications').insert({
+            user_id: consultant.user_id,
+            title: 'New Session Booking',
+            body: `A client booked a ${sessionType.replace('_', ' ')} session for ${dateLabel} at ${selectedTime}.`,
+            type: 'booking',
+            link: '/consultant/calendar',
+          });
+        }
       }
 
       setConfirmed(true);
