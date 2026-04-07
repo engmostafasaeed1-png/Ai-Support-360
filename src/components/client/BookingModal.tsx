@@ -74,6 +74,8 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [videoPlatform, setVideoPlatform] = useState('jitsi');
+  const [meetingUrl, setMeetingUrl] = useState('');
 
   // Fetch availability slots from database
   useEffect(() => {
