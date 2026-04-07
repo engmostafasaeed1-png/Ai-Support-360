@@ -216,7 +216,7 @@ export default function LandingEditorPage() {
                   </CardTitle>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 text-sm">
-                      {isActive ? <Eye className="w-4 h-4 text-green-600" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
+                      {isActive ? <Eye className="w-4 h-4 text-primary" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
                       <span className="text-xs text-muted-foreground">{isActive ? 'Visible' : 'Hidden'}</span>
                       <Switch checked={isActive} onCheckedChange={() => toggleActive(sec.key)} />
                     </div>
