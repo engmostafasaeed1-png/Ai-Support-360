@@ -16,6 +16,7 @@ import {
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { supabase } from '@/integrations/supabase/client';
 import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
+import logo from '@/assets/logo.png';
 
 const menuItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/consultant' },
@@ -64,12 +65,17 @@ export default function ConsultantSidebar() {
     <>
     <Sidebar collapsible="icon" className="border-e border-border/50">
       <SidebarContent className="bg-sidebar text-sidebar-foreground">
-        <div className="p-4 flex items-center gap-2">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shrink-0">
-              <span className="text-sm font-bold text-primary-foreground">Q</span>
+        <div className="p-3 flex items-center gap-2.5 border-b border-sidebar-border/30">
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
+              <img src={logo} alt="AI SAP Support Hub" width={36} height={36} className="w-full h-full object-contain" />
             </div>
-            {!collapsed && <span className="font-bold text-sm text-sidebar-foreground">{t('sidebar.consultant_portal')}</span>}
+            {!collapsed && (
+              <div className="min-w-0">
+                <span className="font-bold text-sm text-sidebar-foreground block leading-tight">AI SAP Support Hub</span>
+                <span className="text-[10px] text-sidebar-foreground/40 leading-tight">{t('sidebar.consultant_portal')}</span>
+              </div>
+            )}
           </Link>
         </div>
 
