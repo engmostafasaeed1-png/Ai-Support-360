@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, Globe } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import logo from '@/assets/logo.jpg';
 
 export default function Navbar() {
   const { t } = useTranslation();
@@ -33,11 +34,9 @@ export default function Navbar() {
     }`}>
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-premium group-hover:scale-110 transition-transform">
-            <span className="text-sm font-bold text-primary-foreground">Q</span>
-          </div>
+          <img src={logo} alt="AI SAP Support Hub" className="w-10 h-10 rounded-xl object-contain group-hover:scale-110 transition-transform shadow-premium" />
           <span className={`font-bold text-lg transition-colors ${scrolled ? 'text-foreground' : 'text-primary-foreground'}`}>
-            Qurtuba
+            AI SAP Support Hub
           </span>
         </Link>
 

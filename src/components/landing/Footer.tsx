@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import logo from '@/assets/logo.jpg';
 
 export default function Footer() {
   const { t } = useTranslation();
@@ -31,10 +32,8 @@ export default function Footer() {
         <div className="grid md:grid-cols-5 gap-10">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-                <span className="text-sm font-bold text-primary-foreground">Q</span>
-              </div>
-              <span className="font-bold text-lg text-foreground">Qurtuba</span>
+              <img src={logo} alt="AI SAP Support Hub" className="w-10 h-10 rounded-lg object-contain" />
+              <span className="font-bold text-lg text-foreground">AI SAP Support Hub</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
               {t('footer.description')}
@@ -61,7 +60,7 @@ export default function Footer() {
 
         <div className="mt-12 pt-6 border-t border-border/50 text-center">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Qurtuba Talks. {t('footer.rights')}
+            © {new Date().getFullYear()} AI SAP Support Hub. {t('footer.rights')}
           </p>
         </div>
       </div>
