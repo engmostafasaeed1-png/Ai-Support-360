@@ -143,6 +143,52 @@
     box-shadow: 0 0 20px hsl(var(--accent) / 0.15), 0 4px 16px -4px hsl(var(--primary) / 0.1);
   }
 
+  /* Modern card lift on hover */
+  .card-interactive {
+    @apply transition-all duration-300 ease-out;
+  }
+  .card-interactive:hover {
+    @apply shadow-premium -translate-y-0.5;
+    border-color: hsl(var(--accent) / 0.3);
+  }
+  .card-interactive:active {
+    @apply scale-[0.98] translate-y-0;
+    transition-duration: 100ms;
+  }
+
+  /* Staggered fade-in for lists */
+  .stagger-fade > * {
+    opacity: 0;
+    animation: fade-in 0.4s ease-out forwards;
+  }
+  .stagger-fade > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-fade > *:nth-child(2) { animation-delay: 60ms; }
+  .stagger-fade > *:nth-child(3) { animation-delay: 120ms; }
+  .stagger-fade > *:nth-child(4) { animation-delay: 180ms; }
+  .stagger-fade > *:nth-child(5) { animation-delay: 240ms; }
+  .stagger-fade > *:nth-child(6) { animation-delay: 300ms; }
+  .stagger-fade > *:nth-child(7) { animation-delay: 360ms; }
+  .stagger-fade > *:nth-child(8) { animation-delay: 420ms; }
+
+  /* Gradient border effect */
+  .gradient-border {
+    position: relative;
+    overflow: hidden;
+  }
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, hsl(var(--accent) / 0.3), transparent 50%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
   /* Smooth scroll */
   html {
     scroll-behavior: smooth;
