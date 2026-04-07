@@ -327,6 +327,7 @@ export default function ClientDashboard() {
               </div>
               </Link>
             ))}
+          </div>
         </CardContent>
       </Card>
     </div>
