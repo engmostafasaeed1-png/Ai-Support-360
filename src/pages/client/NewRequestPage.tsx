@@ -13,8 +13,11 @@ import { toast } from 'sonner';
 import {
   ArrowLeft, ArrowRight, Check, Sparkles, Brain,
   Clock, AlertTriangle, Info, Loader2, Zap, Target, List,
-  Star, BadgeCheck, Circle, Users, Crown, ChevronRight,
+  Star, BadgeCheck, Circle, Users, Crown, ChevronRight, Search, UserPlus,
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useRealtimeConsultants, type ConsultantLive } from '@/hooks/useRealtimeConsultants';
 import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
 
 interface AiCategorization {
@@ -89,6 +92,10 @@ export default function NewRequestPage() {
   });
   const [submitted, setSubmitted] = useState(false);
   const [selectedModel, setSelectedModel] = useState<AIModelId>(DEFAULT_MODEL);
+  const [manualPickOpen, setManualPickOpen] = useState(false);
+  const [manualSearch, setManualSearch] = useState('');
+  const [selectedConsultant, setSelectedConsultant] = useState<ConsultantLive | null>(null);
+  const { consultants: allConsultants, isLoading: consultantsLoading } = useRealtimeConsultants();
 
   // Auto-fill from chatbot query params
   useEffect(() => {
@@ -268,22 +275,41 @@ export default function NewRequestPage() {
         </div>
 
         {/* AI Recommended Consultants */}
-        {aiRecommendations && aiRecommendations.recommendations.length > 0 && (
-          <Card className="rounded-2xl border-accent/20 bg-accent/5">
-            <CardHeader className="pb-2">
+        <Card className="rounded-2xl border-accent/20 bg-accent/5">
+          <CardHeader className="pb-2 flex-row items-center justify-between">
+            <div>
               <CardTitle className="text-base flex items-center gap-2">
                 <Crown className="w-4 h-4 text-accent" />
                 AI-Recommended Experts for Your Ticket
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">{aiRecommendations.overall_rationale}</p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
+              {aiRecommendations && <p className="text-xs text-muted-foreground mt-1">{aiRecommendations.overall_rationale}</p>}
+            </div>
+            <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setManualPickOpen(true)}>
+              <UserPlus className="w-3.5 h-3.5" /> Choose Manually
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {selectedConsultant && (
+              <div className="p-3 rounded-xl bg-accent/10 border border-accent/30 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
+                  {selectedConsultant.avatar}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{selectedConsultant.name}</p>
+                  <p className="text-xs text-muted-foreground">{selectedConsultant.specialty} · ${selectedConsultant.rate}/hr</p>
+                </div>
+                <Badge className="bg-accent text-accent-foreground text-[10px]">Your Pick</Badge>
+              </div>
+            )}
+            {aiRecommendations && aiRecommendations.recommendations.length > 0 ? (
+              aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
                 <RecommendationCard key={rec.consultant_id} rec={rec} rank={i + 1} navigate={navigate} />
-              ))}
-            </CardContent>
-          </Card>
-        )}
+              ))
+            ) : !selectedConsultant ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No AI recommendations. Use "Choose Manually" to pick an expert.</p>
+            ) : null}
+          </CardContent>
+        </Card>
 
         <div className="flex gap-3 justify-center">
           <Button onClick={() => {
@@ -575,15 +601,33 @@ export default function NewRequestPage() {
           )}
 
           {/* AI Recommended Consultants */}
-          {(aiLoading === 'match_consultants' || aiRecommendations) && (
+          {(aiLoading === 'match_consultants' || aiRecommendations || true) && (
             <Card className="rounded-2xl border-accent/20 bg-gradient-to-br from-accent/5 to-primary/5">
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 flex-row items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Crown className="w-4 h-4 text-accent" />
                   AI-Recommended Experts
                 </CardTitle>
+                <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setManualPickOpen(true)}>
+                  <UserPlus className="w-3.5 h-3.5" /> Browse & Choose Manually
+                </Button>
               </CardHeader>
               <CardContent>
+                {/* Selected consultant banner */}
+                {selectedConsultant && (
+                  <div className="mb-4 p-3 rounded-xl bg-accent/10 border border-accent/30 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
+                      {selectedConsultant.avatar}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{selectedConsultant.name}</p>
+                      <p className="text-xs text-muted-foreground">{selectedConsultant.specialty} · ${selectedConsultant.rate}/hr</p>
+                    </div>
+                    <Badge className="bg-accent text-accent-foreground text-[10px]">Selected</Badge>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSelectedConsultant(null)}>Remove</Button>
+                  </div>
+                )}
+
                 {aiLoading === 'match_consultants' ? (
                   <div className="flex items-center gap-3 py-6 justify-center">
                     <Loader2 className="w-5 h-5 animate-spin text-accent" />
@@ -596,15 +640,98 @@ export default function NewRequestPage() {
                       <RecommendationCard key={rec.consultant_id} rec={rec} rank={i + 1} navigate={navigate} />
                     ))}
                   </div>
-                ) : (
+                ) : !selectedConsultant ? (
                   <div className="py-6 text-center">
                     <Users className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">No matching consultants found. Our team will manually assign an expert.</p>
+                    <p className="text-sm text-muted-foreground">No AI recommendations yet. Use "Browse & Choose Manually" to pick an expert.</p>
                   </div>
-                )}
+                ) : null}
               </CardContent>
             </Card>
           )}
+
+          {/* Manual Consultant Picker Dialog */}
+          <Dialog open={manualPickOpen} onOpenChange={setManualPickOpen}>
+            <DialogContent className="max-w-2xl max-h-[80vh]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-accent" />
+                  Browse & Select Expert
+                </DialogTitle>
+              </DialogHeader>
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, specialty, or skill..."
+                  value={manualSearch}
+                  onChange={(e) => setManualSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <ScrollArea className="h-[50vh]">
+                <div className="space-y-2 pr-4">
+                  {consultantsLoading ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="h-20 rounded-xl bg-muted/30 animate-pulse" />
+                    ))
+                  ) : (
+                    allConsultants
+                      .filter(c => {
+                        if (!manualSearch) return true;
+                        const q = manualSearch.toLowerCase();
+                        return c.name.toLowerCase().includes(q) || c.specialty.toLowerCase().includes(q) || c.city.toLowerCase().includes(q);
+                      })
+                      .map(c => (
+                        <div
+                          key={c.id}
+                          className={`p-3 rounded-xl border cursor-pointer transition-all hover:shadow-sm ${
+                            selectedConsultant?.id === c.id
+                              ? 'border-accent bg-accent/5 ring-1 ring-accent/30'
+                              : 'border-border/50 hover:border-accent/30'
+                          }`}
+                          onClick={() => {
+                            setSelectedConsultant(c);
+                            setManualPickOpen(false);
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
+                              {c.avatar}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-sm font-semibold text-foreground">{c.name}</h4>
+                                {c.verification_status === 'verified' && <BadgeCheck className="w-3.5 h-3.5 text-accent" />}
+                                {c.available && (
+                                  <span className="text-[10px] text-green-600 font-medium flex items-center gap-0.5">
+                                    <Circle className="w-1.5 h-1.5 fill-green-500 text-green-500" /> Online
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">{c.specialty} · {c.city}</p>
+                            </div>
+                            <div className="text-end shrink-0">
+                              <div className="flex items-center gap-1">
+                                <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                                <span className="text-xs font-semibold">{c.rating}</span>
+                              </div>
+                              <p className="text-xs font-semibold text-foreground">${c.rate}<span className="text-muted-foreground font-normal">/hr</span></p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                  )}
+                  {!consultantsLoading && allConsultants.filter(c => {
+                    if (!manualSearch) return true;
+                    const q = manualSearch.toLowerCase();
+                    return c.name.toLowerCase().includes(q) || c.specialty.toLowerCase().includes(q) || c.city.toLowerCase().includes(q);
+                  }).length === 0 && (
+                    <div className="py-8 text-center text-sm text-muted-foreground">No consultants found</div>
+                  )}
+                </div>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
         </div>
       )}
 
