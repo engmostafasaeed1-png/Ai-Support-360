@@ -42,6 +42,7 @@ const VIDEO_PLATFORMS = [
   { value: 'jitsi', label: 'Jitsi Meet (Free)', description: 'Instant video call, no account needed' },
   { value: 'zoom', label: 'Zoom', description: 'Zoom meeting link' },
   { value: 'google_meet', label: 'Google Meet', description: 'Google Meet video call' },
+  { value: 'ms_teams', label: 'Microsoft Teams', description: 'Microsoft Teams meeting' },
 ] as const;
 
 function generateMeetingUrl(platform: string, sessionId: string): string {
