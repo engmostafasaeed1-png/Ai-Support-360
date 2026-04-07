@@ -147,8 +147,11 @@ export default function SessionDetailPage() {
                   <Badge variant={statusVariant[status] || 'outline'} className="text-xs">
                     {t(`sessions_page.status_${status}`)}
                   </Badge>
-                  <span className="text-sm text-muted-foreground capitalize">
+                <span className="text-sm text-muted-foreground capitalize">
                     {session.session_type?.replace('_', ' ')}
+                    {(session as any).video_platform && session.session_type === 'video' && (
+                      <span className="ml-1 text-xs text-accent">({(session as any).video_platform})</span>
+                    )}
                   </span>
                 </div>
                 <p className="text-lg font-semibold text-foreground mt-1 flex items-center gap-2">
@@ -202,7 +205,19 @@ export default function SessionDetailPage() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-                <Button className="gradient-primary border-0 gap-1.5" size="lg">
+                <Button
+                  className="gradient-primary border-0 gap-1.5"
+                  size="lg"
+                  onClick={() => {
+                    const url = (session as any).meeting_url;
+                    if (url) {
+                      window.open(url, '_blank');
+                    } else {
+                      // Fallback: generate Jitsi link from session ID
+                      window.open(`https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`, '_blank');
+                    }
+                  }}
+                >
                   <Play className="w-4 h-4" /> {t('session_detail.join_session')}
                 </Button>
               </div>

@@ -38,6 +38,28 @@ const SESSION_TYPES = [
   { value: 'screen_share', icon: Monitor, labelKey: 'consultant_profile.screen_share' },
 ] as const;
 
+const VIDEO_PLATFORMS = [
+  { value: 'jitsi', label: 'Jitsi Meet (Free)', description: 'Instant video call, no account needed' },
+  { value: 'zoom', label: 'Zoom', description: 'Zoom meeting link' },
+  { value: 'google_meet', label: 'Google Meet', description: 'Google Meet video call' },
+] as const;
+
+function generateMeetingUrl(platform: string, sessionId: string): string {
+  const roomName = `qurtuba-session-${sessionId.slice(0, 8)}`;
+  switch (platform) {
+    case 'jitsi':
+      return `https://meet.jit.si/${roomName}`;
+    case 'zoom':
+      // Placeholder — real Zoom links require API integration
+      return `https://zoom.us/j/${roomName}`;
+    case 'google_meet':
+      // Placeholder — real Meet links require Calendar API
+      return `https://meet.google.com/${roomName}`;
+    default:
+      return `https://meet.jit.si/${roomName}`;
+  }
+}
+
 const FALLBACK_SLOTS = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'];
 
 const DAY_MAP: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6 };
@@ -52,6 +74,8 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [videoPlatform, setVideoPlatform] = useState('jitsi');
+  const [meetingUrl, setMeetingUrl] = useState('');
 
   // Fetch availability slots from database
   useEffect(() => {
@@ -123,6 +147,8 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
     setSelectedDate(undefined);
     setSelectedTime('');
     setSessionType('video');
+    setVideoPlatform('jitsi');
+    setMeetingUrl('');
     setConfirmed(false);
   };
 
@@ -145,16 +171,23 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
 
       // Only persist to DB if consultantId is a real UUID
       if (isValidUUID(consultantId)) {
+        const sessionId = crypto.randomUUID();
+        const generatedMeetingUrl = sessionType === 'video' ? generateMeetingUrl(videoPlatform, sessionId) : null;
+
         const { error } = await supabase.from('sessions').insert({
+          id: sessionId,
           client_id: user.id,
           consultant_id: consultantId,
           session_type: sessionType as 'chat' | 'video' | 'screen_share',
           scheduled_at: scheduledAt.toISOString(),
           status: 'scheduled',
           duration_minutes: 60,
-        });
+          meeting_url: generatedMeetingUrl,
+          video_platform: sessionType === 'video' ? videoPlatform : null,
+        } as any);
 
         if (error) throw error;
+        if (generatedMeetingUrl) setMeetingUrl(generatedMeetingUrl);
 
         // Notify client
         await supabase.from('notifications').insert({
@@ -228,6 +261,16 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
                 <span className="font-medium">60 min</span>
               </div>
             </div>
+            {meetingUrl && sessionType === 'video' && (
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => window.open(meetingUrl, '_blank')}
+              >
+                <Video className="w-4 h-4" />
+                Open Video Call
+              </Button>
+            )}
             <Button className="gradient-primary border-0 w-full" onClick={() => { onOpenChange(false); reset(); }}>
               Done
             </Button>
@@ -330,6 +373,32 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
                     </Label>
                   ))}
                 </RadioGroup>
+
+                {sessionType === 'video' && (
+                  <>
+                    <p className="text-sm font-medium text-foreground mt-4">Video Platform</p>
+                    <RadioGroup value={videoPlatform} onValueChange={setVideoPlatform} className="space-y-2">
+                      {VIDEO_PLATFORMS.map(({ value, label, description }) => (
+                        <Label
+                          key={value}
+                          htmlFor={`platform-${value}`}
+                          className={cn(
+                            'flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors',
+                            videoPlatform === value
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border/50 hover:border-primary/30'
+                          )}
+                        >
+                          <RadioGroupItem value={value} id={`platform-${value}`} />
+                          <div>
+                            <span className="text-sm font-medium text-foreground">{label}</span>
+                            <p className="text-xs text-muted-foreground">{description}</p>
+                          </div>
+                        </Label>
+                      ))}
+                    </RadioGroup>
+                  </>
+                )}
 
                 <div className="flex justify-between">
                   <Button variant="ghost" onClick={() => setStep(1)}>{t('booking.back')}</Button>

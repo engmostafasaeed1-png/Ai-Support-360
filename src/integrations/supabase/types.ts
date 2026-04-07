@@ -1762,6 +1762,7 @@ export type Database = {
           duration_minutes: number | null
           ended_at: string | null
           id: string
+          meeting_url: string | null
           notes: string | null
           recording_url: string | null
           scheduled_at: string | null
@@ -1771,6 +1772,7 @@ export type Database = {
           tenant_id: string | null
           ticket_id: string | null
           updated_at: string
+          video_platform: string | null
         }
         Insert: {
           ai_action_items?: string[] | null
@@ -1781,6 +1783,7 @@ export type Database = {
           duration_minutes?: number | null
           ended_at?: string | null
           id?: string
+          meeting_url?: string | null
           notes?: string | null
           recording_url?: string | null
           scheduled_at?: string | null
@@ -1790,6 +1793,7 @@ export type Database = {
           tenant_id?: string | null
           ticket_id?: string | null
           updated_at?: string
+          video_platform?: string | null
         }
         Update: {
           ai_action_items?: string[] | null
@@ -1800,6 +1804,7 @@ export type Database = {
           duration_minutes?: number | null
           ended_at?: string | null
           id?: string
+          meeting_url?: string | null
           notes?: string | null
           recording_url?: string | null
           scheduled_at?: string | null
@@ -1809,6 +1814,7 @@ export type Database = {
           tenant_id?: string | null
           ticket_id?: string | null
           updated_at?: string
+          video_platform?: string | null
         }
         Relationships: [
           {
