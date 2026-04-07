@@ -56,6 +56,9 @@ function generateMeetingUrl(platform: string, sessionId: string): string {
     case 'google_meet':
       // Placeholder — real Meet links require Calendar API
       return `https://meet.google.com/${roomName}`;
+    case 'ms_teams':
+      // Placeholder — real Teams links require Graph API
+      return `https://teams.microsoft.com/l/meetup-join/${roomName}`;
     default:
       return `https://meet.jit.si/${roomName}`;
   }
