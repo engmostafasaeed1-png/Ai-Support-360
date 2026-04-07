@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import qurtubaLogo from '@/assets/qurtuba-logo.png';
 import sidebarBanner from '@/assets/sidebar-banner.png';
+import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 
 const navGroups = [
   {
@@ -101,6 +102,7 @@ export default function ClientSidebar() {
 
   const tier = tenant?.subscription_tier || 'basic';
   const TierIcon = tierIcons[tier] || Sparkles;
+  const [profileOpen, setProfileOpen] = useState(false);
 
   return (
     <Sidebar collapsible="icon" className="border-e border-border/30">
@@ -205,7 +207,7 @@ export default function ClientSidebar() {
 
         {/* Footer */}
         <div className="p-3 border-t border-sidebar-border/30 space-y-2.5">
-          <SidebarUserCard collapsed={collapsed} />
+          <SidebarUserCard collapsed={collapsed} onClick={() => setProfileOpen(true)} />
           {!collapsed && (
             <div className="flex items-center gap-3 px-1">
               <button
@@ -228,5 +230,7 @@ export default function ClientSidebar() {
         </div>
       </SidebarContent>
     </Sidebar>
+    <ProfileEditDialog open={profileOpen} onOpenChange={setProfileOpen} role="client" />
+    </>
   );
 }
