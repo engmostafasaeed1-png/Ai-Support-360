@@ -7,41 +7,60 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Loader2, Search, Star, Brain, Send, CheckCircle2 } from 'lucide-react';
+import { Loader2, Search, Star, Brain, Send, CheckCircle2, Sparkles, Wifi, WifiOff, Clock, Filter } from 'lucide-react';
 
 interface Props {
   ticketId: string;
+  ticketTitle?: string;
+  ticketDescription?: string;
+  ticketUrgency?: string;
   sapModule: string;
+  preferredLanguage?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export default function SendMatchRequestDialog({ ticketId, sapModule, open, onOpenChange }: Props) {
+type AvailabilityFilter = 'all' | 'available' | 'busy' | 'offline';
+
+interface AIRecommendation {
+  consultant_id: string;
+  match_score: number;
+  match_reason: string;
+  strengths: string[];
+}
+
+export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDescription, ticketUrgency, sapModule, preferredLanguage, open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState<string | null>(null);
+  const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>('all');
+  const [aiRecommendations, setAiRecommendations] = useState<AIRecommendation[] | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
-  // Fetch verified consultants with relevant skills
+  // Fetch all consultants
   const { data: consultants, isLoading } = useQuery({
-    queryKey: ['available-consultants', sapModule, search],
+    queryKey: ['available-consultants', sapModule, search, availabilityFilter],
     enabled: open,
     queryFn: async () => {
-      // Get consultants with matching skills
       let query = supabase
         .from('consultants')
-        .select(`id, user_id, hourly_rate, currency, rating, total_reviews, ai_skills_score, availability_status, languages,
-          consultant_skills (sap_module, proficiency_level)`)
+        .select(`id, user_id, hourly_rate, currency, rating, total_reviews, ai_skills_score, availability_status, languages, response_time_minutes,
+          consultant_skills (sap_module, proficiency_level, years_experience)`)
         .in('verification_status', ['verified', 'pending'] as any[])
-        .limit(20);
+        .limit(50);
+
+      if (availabilityFilter !== 'all') {
+        query = query.eq('availability_status', availabilityFilter);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
 
-      // Get profiles for display names
       const userIds = (data || []).map(c => c.user_id);
       const { data: profiles } = await supabase
         .from('profiles')
@@ -49,7 +68,6 @@ export default function SendMatchRequestDialog({ ticketId, sapModule, open, onOp
         .in('user_id', userIds);
       const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
 
-      // Get existing match requests for this ticket
       const { data: existingRequests } = await supabase
         .from('ticket_match_requests')
         .select('consultant_id')
@@ -61,6 +79,7 @@ export default function SendMatchRequestDialog({ ticketId, sapModule, open, onOp
           const profile = profileMap.get(c.user_id);
           const modules = (c.consultant_skills || []).map((s: any) => s.sap_module);
           const hasModule = modules.some((m: string) => m.toLowerCase().includes(sapModule.toLowerCase()));
+          const totalYears = (c.consultant_skills || []).reduce((sum: number, s: any) => sum + (s.years_experience || 0), 0);
           return {
             id: c.id,
             name: profile?.display_name || 'Unknown',
@@ -71,7 +90,9 @@ export default function SendMatchRequestDialog({ ticketId, sapModule, open, onOp
             total_reviews: c.total_reviews || 0,
             ai_score: c.ai_skills_score || 0,
             availability: c.availability_status || 'offline',
+            response_time: c.response_time_minutes || 0,
             modules,
+            totalYears,
             hasModule,
             alreadySent: sentIds.has(c.id),
           };
@@ -84,12 +105,42 @@ export default function SendMatchRequestDialog({ ticketId, sapModule, open, onOp
           return true;
         })
         .sort((a: any, b: any) => {
-          // Prioritize: relevant module > rating > ai_score
           if (a.hasModule !== b.hasModule) return a.hasModule ? -1 : 1;
           return (b.rating || 0) - (a.rating || 0);
         });
     },
   });
+
+  const handleAiRecommend = async () => {
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-ticket', {
+        body: {
+          action: 'match_consultants',
+          title: ticketTitle || 'Untitled',
+          description: ticketDescription || '',
+          sap_module: sapModule,
+          urgency: ticketUrgency || 'medium',
+          preferred_language: preferredLanguage || 'en',
+        },
+      });
+      if (error) throw error;
+      const recs = data?.result?.recommendations || [];
+      setAiRecommendations(recs);
+      if (recs.length === 0) {
+        toast.info('No AI recommendations available');
+      } else {
+        toast.success(`AI recommended ${recs.length} consultants`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to get AI recommendations');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const getAiRec = (consultantId: string) => aiRecommendations?.find(r => r.consultant_id === consultantId);
 
   const handleSend = async (consultantId: string, name: string) => {
     setSending(consultantId);
@@ -119,29 +170,89 @@ export default function SendMatchRequestDialog({ ticketId, sapModule, open, onOp
     }
   };
 
+  const availabilityBadge = (status: string) => {
+    switch (status) {
+      case 'available':
+        return <Badge variant="secondary" className="text-[9px] gap-1 bg-green-500/15 text-green-600 border-green-500/20"><Wifi className="w-2.5 h-2.5" />Online</Badge>;
+      case 'busy':
+        return <Badge variant="secondary" className="text-[9px] gap-1 bg-amber-500/15 text-amber-600 border-amber-500/20"><Clock className="w-2.5 h-2.5" />Busy</Badge>;
+      default:
+        return <Badge variant="secondary" className="text-[9px] gap-1 bg-muted text-muted-foreground"><WifiOff className="w-2.5 h-2.5" />Offline</Badge>;
+    }
+  };
+
+  // Sort: if AI recommendations exist, put recommended ones first
+  const sortedConsultants = consultants ? [...consultants].sort((a, b) => {
+    if (aiRecommendations) {
+      const aRec = getAiRec(a.id);
+      const bRec = getAiRec(b.id);
+      if (aRec && !bRec) return -1;
+      if (!aRec && bRec) return 1;
+      if (aRec && bRec) return (bRec.match_score || 0) - (aRec.match_score || 0);
+    }
+    return 0;
+  }) : [];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Send Match Request</DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Search and invite consultants to work on your ticket
+            Filter, search, or let AI recommend the best consultants for your ticket
           </p>
         </DialogHeader>
 
         <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or SAP module..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="ps-9"
-            />
+          {/* Filters row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[180px]">
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or SAP module..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="ps-9 h-9"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+              <Select value={availabilityFilter} onValueChange={v => setAvailabilityFilter(v as AvailabilityFilter)}>
+                <SelectTrigger className="w-[130px] h-9 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="available">🟢 Online</SelectItem>
+                  <SelectItem value="busy">🟡 Busy</SelectItem>
+                  <SelectItem value="offline">⚫ Offline</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 h-9 text-xs border-accent/30 text-accent hover:bg-accent/10"
+              onClick={handleAiRecommend}
+              disabled={aiLoading}
+            >
+              {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+              AI Recommend
+            </Button>
           </div>
 
-          {/* Message for all requests */}
+          {/* AI Recommendation banner */}
+          {aiRecommendations && aiRecommendations.length > 0 && (
+            <div className="bg-accent/5 border border-accent/20 rounded-lg px-3 py-2 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-accent shrink-0" />
+              <p className="text-xs text-accent">
+                AI ranked <strong>{aiRecommendations.length}</strong> best matches for this ticket. Recommended consultants are highlighted.
+              </p>
+              <Button variant="ghost" size="sm" className="ms-auto text-xs h-6 px-2" onClick={() => setAiRecommendations(null)}>Clear</Button>
+            </div>
+          )}
+
+          {/* Optional message */}
           <div className="space-y-1.5">
             <Label className="text-xs">Message to consultant (optional)</Label>
             <Textarea
@@ -157,66 +268,86 @@ export default function SendMatchRequestDialog({ ticketId, sapModule, open, onOp
           <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
             {isLoading ? (
               [1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)
-            ) : !consultants?.length ? (
+            ) : !sortedConsultants?.length ? (
               <div className="text-center py-8 text-sm text-muted-foreground">
-                No consultants found
+                No consultants found{availabilityFilter !== 'all' ? ` with "${availabilityFilter}" status` : ''}
               </div>
             ) : (
-              consultants.map((c: any) => (
-                <Card key={c.id} className={`rounded-xl border-border/50 ${c.hasModule ? 'ring-1 ring-accent/30' : ''}`}>
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0">
-                        {c.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-foreground text-sm">{c.name}</p>
-                          {c.hasModule && (
-                            <Badge variant="secondary" className="text-[9px] bg-accent/10 text-accent">Relevant</Badge>
-                          )}
+              sortedConsultants.map((c: any) => {
+                const rec = getAiRec(c.id);
+                return (
+                  <Card key={c.id} className={`rounded-xl border-border/50 transition-all ${rec ? 'ring-1 ring-accent/40 bg-accent/[0.02]' : ''} ${c.hasModule ? 'border-accent/20' : ''}`}>
+                    <CardContent className="p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0 relative">
+                          {c.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                           {c.availability === 'available' && (
-                            <span className="w-2 h-2 rounded-full bg-green-500" />
+                            <span className="absolute -bottom-0.5 -end-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
+                          )}
+                          {c.availability === 'busy' && (
+                            <span className="absolute -bottom-0.5 -end-0.5 w-3 h-3 rounded-full bg-amber-500 border-2 border-background" />
                           )}
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                          <span className="flex items-center gap-1"><Star className="w-3 h-3 text-amber-500" /> {c.rating}</span>
-                          <span className="flex items-center gap-1"><Brain className="w-3 h-3 text-accent" /> {c.ai_score}</span>
-                          <span>${c.hourly_rate}/hr</span>
-                        </div>
-                        {c.modules.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {c.modules.slice(0, 4).map((m: string) => (
-                              <Badge key={m} variant="secondary" className="text-[9px]">{m}</Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div className="shrink-0">
-                        {c.alreadySent ? (
-                          <Badge variant="secondary" className="gap-1 text-xs bg-green-100 text-green-700">
-                            <CheckCircle2 className="w-3 h-3" /> Sent
-                          </Badge>
-                        ) : (
-                          <Button
-                            size="sm"
-                            className="gradient-primary border-0 text-xs h-8 gap-1"
-                            onClick={() => handleSend(c.id, c.name)}
-                            disabled={sending === c.id}
-                          >
-                            {sending === c.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <Send className="w-3.5 h-3.5" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-semibold text-foreground text-sm">{c.name}</p>
+                            {availabilityBadge(c.availability)}
+                            {c.hasModule && (
+                              <Badge variant="secondary" className="text-[9px] bg-accent/10 text-accent">Relevant</Badge>
                             )}
-                            Send Request
-                          </Button>
-                        )}
+                            {rec && (
+                              <Badge variant="secondary" className="text-[9px] gap-1 bg-accent/15 text-accent border-accent/25">
+                                <Sparkles className="w-2.5 h-2.5" /> {rec.match_score}% match
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                            <span className="flex items-center gap-1"><Star className="w-3 h-3 text-amber-500" /> {c.rating}</span>
+                            <span className="flex items-center gap-1"><Brain className="w-3 h-3 text-accent" /> {c.ai_score}</span>
+                            <span>${c.hourly_rate}/hr</span>
+                            {c.totalYears > 0 && <span>{c.totalYears}y exp</span>}
+                            {c.response_time > 0 && <span className="flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{c.response_time}m</span>}
+                          </div>
+                          {c.modules.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {c.modules.slice(0, 4).map((m: string) => (
+                                <Badge key={m} variant="secondary" className="text-[9px]">{m}</Badge>
+                              ))}
+                              {c.modules.length > 4 && <Badge variant="secondary" className="text-[9px]">+{c.modules.length - 4}</Badge>}
+                            </div>
+                          )}
+                          {rec && (
+                            <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2 italic">
+                              {rec.match_reason}
+                            </p>
+                          )}
+                        </div>
+                        <div className="shrink-0 pt-1">
+                          {c.alreadySent ? (
+                            <Badge variant="secondary" className="gap-1 text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                              <CheckCircle2 className="w-3 h-3" /> Sent
+                            </Badge>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="gradient-primary border-0 text-xs h-8 gap-1"
+                              onClick={() => handleSend(c.id, c.name)}
+                              disabled={sending === c.id}
+                            >
+                              {sending === c.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Send className="w-3.5 h-3.5" />
+                              )}
+                              Send
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </div>
         </div>
