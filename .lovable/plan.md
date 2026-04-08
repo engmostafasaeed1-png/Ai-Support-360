@@ -1,32 +1,42 @@
 
-## Multi-Company Support for Clients
+## Admin Console Redesign
 
-### Current State
-- Each client belongs to one tenant (company) via `tenant_members`
-- Tickets are tied to `client_id` (user) not tenant
+Rebuild the admin area from separate pages into a **single-page Admin Console** with sidebar navigation and section switching, matching the AI Industrial Hub pattern.
 
-### Changes Needed
+### Sidebar Sections (grouped):
 
-#### 1. Database Changes
-- Add `tenant_id` column to `tickets` table (if not already there) to scope tickets per company
-- Update `tenant_members` to allow multiple memberships per user (already supports this — unique on `user_id + tenant_id`)
-- Ensure RLS policies allow users to access data for all their tenants
+**Platform**
+- Overview & Analytics (KPI cards, charts, role distribution)
+- User Management (profiles table with role changes)
+- Roles & Permissions (toggle matrix)
+- Subscriptions & Plans
 
-#### 2. Company Management Page
-- New page `/client/companies` — list all companies the user belongs to
-- Ability to create a new company (tenant) from this page
-- Each company card shows name, logo, ticket count
+**Operations**
+- Ticket Management (Kanban + list view)
+- Consultant Approvals
+- NDA Management
+- Match Requests
 
-#### 3. Company Selector Flow
-- After login, if user has multiple companies → show company selector
-- If user has only one company → go directly to client console
-- Active company stored in context (TenantContext) with ability to switch
+**Security**
+- Security Settings
+- Authentication Config
+- Data Access Policies (RLS overview)
+- Audit Logs
 
-#### 4. Ticket Scoping
-- All ticket queries filtered by active `tenant_id`
-- New tickets automatically tagged with current `tenant_id`
+**System**
+- Notifications
+- Localization (i18n)
+- Appearance & Theme
+- File Storage
+- Email Templates
+- Integrations
+- Landing Page Editor
+- Environments (Remote Access)
+- Maintenance Mode
 
-#### 5. UI Updates
-- Add company switcher in sidebar header
-- Company creation modal/form
-- Update ClientDashboard to show company-specific data
+### Implementation:
+1. Create new `AdminConsolePage.tsx` with sidebar + content switching
+2. Create `AdminConsoleSidebar.tsx` with grouped sections
+3. Create individual section components for each area
+4. Wire up real data from existing hooks
+5. Update routing to use the new console page
