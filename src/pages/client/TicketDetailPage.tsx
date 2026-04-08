@@ -127,6 +127,11 @@ export default function TicketDetailPage() {
             <Badge variant="secondary" className={`text-[10px] ${statusColors[ticket.status]}`}>
               {ticket.status.replace(/_/g, ' ')}
             </Badge>
+            {(ticket as any).open_for_bids && (
+              <Badge variant="secondary" className="text-[10px] bg-accent/10 text-accent gap-1">
+                <Gavel className="w-2.5 h-2.5" /> Open for Bids
+              </Badge>
+            )}
           </div>
         </div>
       </div>
