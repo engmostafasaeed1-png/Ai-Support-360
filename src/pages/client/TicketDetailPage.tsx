@@ -5,11 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   ArrowLeft, Clock, User, Calendar, Tag, MessageSquare,
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
-  Pencil, Send, UserPlus, Gavel,
+  Pencil, UserPlus, Gavel, ChevronDown, Play,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
@@ -87,9 +87,12 @@ export default function TicketDetailPage() {
     );
   }
 
+  const completedSessions = (sessions || []).filter(s => s.status === 'completed');
+  const recordedSessions = completedSessions.filter(s => s.session_type === 'video' || s.session_type === 'screen_share');
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-5">
+      {/* ─── Header ─── */}
       <div className="flex items-start gap-3">
         <Link to={backPath}>
           <Button variant="ghost" size="icon" className="h-9 w-9 mt-0.5">
@@ -111,14 +114,13 @@ export default function TicketDetailPage() {
               size="sm"
             />
           </div>
-          {/* Action buttons - only for client/admin */}
           {!isConsultant && (
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setEditOpen(true)}>
-                <Pencil className="w-3.5 h-3.5" /> Edit Ticket
+                <Pencil className="w-3.5 h-3.5" /> Edit
               </Button>
               <Button size="sm" className="h-8 text-xs gap-1.5 gradient-primary border-0" onClick={() => setMatchOpen(true)}>
-                <UserPlus className="w-3.5 h-3.5" /> Send Request to Consultant
+                <UserPlus className="w-3.5 h-3.5" /> Send Request
               </Button>
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setBidOpen(true)}>
                 <Gavel className="w-3.5 h-3.5" />
@@ -142,7 +144,7 @@ export default function TicketDetailPage() {
         </div>
       </div>
 
-      {/* Info cards */}
+      {/* ─── Info Cards ─── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <InfoCard icon={Tag} label="SAP Module" value={ticket.sap_module} />
         <InfoCard icon={User} label="Consultant" value={ticket.consultant_name || 'Unassigned'} />
@@ -150,107 +152,98 @@ export default function TicketDetailPage() {
         <InfoCard icon={Clock} label="Last Updated" value={formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })} />
       </div>
 
-      {/* Description */}
-      {ticket.description && (
+      {/* ─── Description & Extra Details ─── */}
+      {(ticket.description || ticket.preferred_language || ticket.sla_deadline || ticket.ai_suggested_category) && (
         <Card className="rounded-2xl border-border/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold">Description</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{ticket.description}</p>
+          <CardContent className="p-4 space-y-3">
+            {ticket.description && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Description</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{ticket.description}</p>
+              </div>
+            )}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+              {ticket.preferred_language && (
+                <DetailItem label="Language" value={ticket.preferred_language === 'ar' ? 'Arabic' : 'English'} />
+              )}
+              {ticket.preferred_session_type && (
+                <DetailItem label="Session Type" value={ticket.preferred_session_type.replace(/_/g, ' ')} />
+              )}
+              {ticket.sla_deadline && (
+                <DetailItem label="SLA Deadline" value={format(new Date(ticket.sla_deadline), 'MMM d, yyyy HH:mm')} />
+              )}
+              {ticket.resolved_at && (
+                <DetailItem label="Resolved" value={format(new Date(ticket.resolved_at), 'MMM d, yyyy')} />
+              )}
+              {ticket.ai_suggested_category && (
+                <DetailItem label="AI Category" value={ticket.ai_suggested_category} />
+              )}
+              {ticket.ai_suggested_priority && (
+                <DetailItem label="AI Priority" value={ticket.ai_suggested_priority} />
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Consultant acceptors */}
+      {/* ─── Available Consultants (Acceptors) ─── */}
       <TicketAcceptors ticketId={ticket.id} currentConsultantId={ticket.consultant_id} />
 
-      {/* Extra details */}
-      <Card className="rounded-2xl border-border/50">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-            {ticket.preferred_language && (
-              <div>
-                <p className="text-muted-foreground text-xs">Language</p>
-                <p className="font-medium text-foreground">{ticket.preferred_language === 'ar' ? 'Arabic' : 'English'}</p>
-              </div>
-            )}
-            {ticket.preferred_session_type && (
-              <div>
-                <p className="text-muted-foreground text-xs">Session Type</p>
-                <p className="font-medium text-foreground capitalize">{ticket.preferred_session_type.replace(/_/g, ' ')}</p>
-              </div>
-            )}
-            {ticket.sla_deadline && (
-              <div>
-                <p className="text-muted-foreground text-xs">SLA Deadline</p>
-                <p className="font-medium text-foreground">{format(new Date(ticket.sla_deadline), 'MMM d, yyyy HH:mm')}</p>
-              </div>
-            )}
-            {ticket.resolved_at && (
-              <div>
-                <p className="text-muted-foreground text-xs">Resolved</p>
-                <p className="font-medium text-foreground">{format(new Date(ticket.resolved_at), 'MMM d, yyyy')}</p>
-              </div>
-            )}
-            {ticket.ai_suggested_category && (
-              <div>
-                <p className="text-muted-foreground text-xs">AI Category</p>
-                <p className="font-medium text-foreground">{ticket.ai_suggested_category}</p>
-              </div>
-            )}
-            {ticket.ai_suggested_priority && (
-              <div>
-                <p className="text-muted-foreground text-xs">AI Priority</p>
-                <p className="font-medium text-foreground">{ticket.ai_suggested_priority}</p>
-              </div>
-            )}
+      {/* ─── Bids Section ─── */}
+      <SectionWrapper icon={Gavel} title="Bids & Proposals" defaultOpen>
+        <TicketBids ticketId={ticket.id} />
+      </SectionWrapper>
+
+      {/* ─── Sessions Section ─── */}
+      <SectionWrapper icon={Video} title="Sessions" count={sessions?.length} defaultOpen>
+        <SessionsList sessions={sessions || []} isLoading={sessionsLoading} />
+      </SectionWrapper>
+
+      {/* ─── Recorded Sessions ─── */}
+      {recordedSessions.length > 0 && (
+        <SectionWrapper icon={Play} title="Recorded Sessions" count={recordedSessions.length} defaultOpen={false}>
+          <div className="space-y-2">
+            {recordedSessions.map(s => (
+              <Card key={s.id} className="rounded-xl border-border/30">
+                <CardContent className="p-3 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Play className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground capitalize">
+                      {s.session_type?.replace(/_/g, ' ')} — {s.consultant_name}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {s.scheduled_at && format(new Date(s.scheduled_at), 'MMM d, yyyy h:mm a')}
+                      {s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">
+                    <CheckCircle2 className="w-3 h-3 me-1" /> Completed
+                  </Badge>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </SectionWrapper>
+      )}
 
-      {/* Tabs: Timeline, Bids, Documents, Sessions, Chat */}
-      <Tabs defaultValue="timeline" className="w-full">
-        <TabsList className="w-full grid grid-cols-5 rounded-xl h-10">
-          <TabsTrigger value="timeline" className="text-xs gap-1.5">
-            <History className="w-3.5 h-3.5" /> Timeline
-          </TabsTrigger>
-          <TabsTrigger value="bids" className="text-xs gap-1.5">
-            <Tag className="w-3.5 h-3.5" /> Bids
-          </TabsTrigger>
-          <TabsTrigger value="documents" className="text-xs gap-1.5">
-            <FileText className="w-3.5 h-3.5" /> Docs
-          </TabsTrigger>
-          <TabsTrigger value="sessions" className="text-xs gap-1.5">
-            <Video className="w-3.5 h-3.5" /> Sessions
-          </TabsTrigger>
-          <TabsTrigger value="chat" className="text-xs gap-1.5">
-            <MessageSquare className="w-3.5 h-3.5" /> Chat
-          </TabsTrigger>
-        </TabsList>
+      {/* ─── Chat / Messages ─── */}
+      <SectionWrapper icon={MessageSquare} title="Chat History" count={messages?.length} defaultOpen>
+        <ChatInline messages={messages || []} isLoading={messagesLoading} />
+      </SectionWrapper>
 
-        <TabsContent value="timeline" className="mt-4">
-          <TicketTimeline ticketId={ticket.id} ticket={ticket} />
-        </TabsContent>
+      {/* ─── Documents ─── */}
+      <SectionWrapper icon={FileText} title="Documents" defaultOpen>
+        <TicketDocuments ticketId={ticket.id} />
+      </SectionWrapper>
 
-        <TabsContent value="bids" className="mt-4">
-          <TicketBids ticketId={ticket.id} />
-        </TabsContent>
+      {/* ─── Activity Timeline ─── */}
+      <SectionWrapper icon={History} title="Full Activity Timeline" defaultOpen={false}>
+        <TicketTimeline ticketId={ticket.id} ticket={ticket} />
+      </SectionWrapper>
 
-        <TabsContent value="documents" className="mt-4">
-          <TicketDocuments ticketId={ticket.id} />
-        </TabsContent>
-
-        <TabsContent value="sessions" className="mt-4">
-          <SessionTimeline sessions={sessions || []} isLoading={sessionsLoading} />
-        </TabsContent>
-
-        <TabsContent value="chat" className="mt-4">
-          <ChatHistory messages={messages || []} isLoading={messagesLoading} />
-        </TabsContent>
-      </Tabs>
-
-      {/* Dialogs */}
+      {/* ─── Dialogs ─── */}
       <TicketEditDialog ticket={ticket} open={editOpen} onOpenChange={setEditOpen} />
       <SendMatchRequestDialog
         ticketId={ticket.id}
@@ -273,6 +266,8 @@ export default function TicketDetailPage() {
   );
 }
 
+/* ─── Reusable sub-components ─── */
+
 function InfoCard({ icon: Icon, label, value }: { icon: typeof Tag; label: string; value: string }) {
   return (
     <Card className="rounded-xl border-border/50">
@@ -287,85 +282,119 @@ function InfoCard({ icon: Icon, label, value }: { icon: typeof Tag; label: strin
   );
 }
 
-function SessionTimeline({ sessions, isLoading }: { sessions: any[]; isLoading: boolean }) {
+function DetailItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-muted-foreground text-xs">{label}</p>
+      <p className="font-medium text-foreground capitalize">{value}</p>
+    </div>
+  );
+}
+
+function SectionWrapper({
+  icon: Icon,
+  title,
+  count,
+  defaultOpen = true,
+  children,
+}: {
+  icon: typeof Video;
+  title: string;
+  count?: number;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger asChild>
+        <button className="w-full flex items-center gap-2 py-2 px-1 group text-left">
+          <Icon className="w-4 h-4 text-primary shrink-0" />
+          <span className="text-sm font-semibold text-foreground">{title}</span>
+          {count !== undefined && count > 0 && (
+            <Badge variant="secondary" className="text-[10px]">{count}</Badge>
+          )}
+          <ChevronDown className={`w-4 h-4 text-muted-foreground ms-auto transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-1 pb-2">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function SessionsList({ sessions, isLoading }: { sessions: any[]; isLoading: boolean }) {
   const { t } = useTranslation();
-  if (isLoading) return <Skeleton className="h-48 rounded-2xl" />;
+  if (isLoading) return <Skeleton className="h-32 rounded-2xl" />;
 
   if (sessions.length === 0) {
     return (
       <Card className="rounded-2xl border-border/50">
-        <CardContent className="py-12 text-center">
-          <Video className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">No sessions linked to this ticket yet.</p>
+        <CardContent className="py-8 text-center">
+          <Video className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">No sessions yet</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="relative space-y-0">
-      {/* Timeline line */}
-      <div className="absolute start-[18px] top-4 bottom-4 w-px bg-border/50" />
-      {sessions.map((session, i) => {
+    <div className="space-y-2">
+      {sessions.map(session => {
         const TypeIcon = sessionTypeIcons[session.session_type] || MessageSquare;
         const StatusIcon = sessionStatusIcons[session.status] || Circle;
         return (
-          <div key={session.id} className="relative flex gap-4 pb-4">
-            <div className="relative z-10 w-9 h-9 rounded-full bg-card border border-border/50 flex items-center justify-center shrink-0">
-              <TypeIcon className="w-4 h-4 text-primary" />
-            </div>
-            <Card className="flex-1 rounded-xl border-border/50">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <div className="flex items-center gap-2">
+          <Card key={session.id} className="rounded-xl border-border/30 hover:shadow-sm transition-shadow">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <TypeIcon className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
                     <span className="text-sm font-semibold text-foreground capitalize">
-                      {session.session_type?.replace(/_/g, ' ')} Session
+                      {session.session_type?.replace(/_/g, ' ')}
                     </span>
-                    <Badge variant="secondary" className="text-[10px]">
-                      <StatusIcon className="w-3 h-3 me-1" />
-                      {session.status}
+                    <Badge variant="secondary" className="text-[10px] gap-0.5">
+                      <StatusIcon className="w-3 h-3" /> {session.status}
                     </Badge>
+                    {session.duration_minutes > 0 && (
+                      <span className="text-[11px] text-muted-foreground ms-auto">{session.duration_minutes} min</span>
+                    )}
                   </div>
-                  {session.duration_minutes > 0 && (
-                    <span className="text-[11px] text-muted-foreground">{session.duration_minutes} min</span>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {session.consultant_name}
+                    {session.scheduled_at && ` · ${format(new Date(session.scheduled_at), 'MMM d, h:mm a')}`}
+                  </p>
                 </div>
-                <div className="text-xs text-muted-foreground space-y-0.5">
-                  <p>{t('session_detail.unknown_consultant', 'Consultant')}: {session.consultant_name}</p>
-                  {session.scheduled_at && (
-                    <p>{t('session_detail.scheduled_at', 'Scheduled')}: {format(new Date(session.scheduled_at), 'MMM d, yyyy h:mm a')}</p>
-                  )}
-                  {session.started_at && (
-                    <p>{t('session_detail.started_at', 'Started')}: {format(new Date(session.started_at), 'MMM d, yyyy h:mm a')}</p>
-                  )}
+              </div>
+              {session.ai_summary && (
+                <div className="mt-2 p-2 rounded-lg bg-muted/30 text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground text-[11px]">AI Summary: </span>
+                  {session.ai_summary}
                 </div>
-                {session.ai_summary && (
-                  <div className="mt-2 p-2 rounded-lg bg-muted/30 text-xs text-muted-foreground">
-                    <p className="font-medium text-foreground text-[11px] mb-0.5">{t('session_detail.ai_summary', 'AI Summary')}</p>
-                    {session.ai_summary}
-                  </div>
-                )}
-                {session.notes && (
-                  <p className="mt-1.5 text-xs text-muted-foreground italic">"{session.notes}"</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+              )}
+              {session.notes && (
+                <p className="mt-1.5 text-xs text-muted-foreground italic">"{session.notes}"</p>
+              )}
+            </CardContent>
+          </Card>
         );
       })}
     </div>
   );
 }
 
-function ChatHistory({ messages, isLoading }: { messages: any[]; isLoading: boolean }) {
-  if (isLoading) return <Skeleton className="h-48 rounded-2xl" />;
+function ChatInline({ messages, isLoading }: { messages: any[]; isLoading: boolean }) {
+  if (isLoading) return <Skeleton className="h-32 rounded-2xl" />;
 
   if (messages.length === 0) {
     return (
       <Card className="rounded-2xl border-border/50">
-        <CardContent className="py-12 text-center">
-          <MessageSquare className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">No chat messages for this ticket yet.</p>
+        <CardContent className="py-8 text-center">
+          <MessageSquare className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">No messages yet</p>
         </CardContent>
       </Card>
     );
@@ -374,7 +403,7 @@ function ChatHistory({ messages, isLoading }: { messages: any[]; isLoading: bool
   return (
     <Card className="rounded-2xl border-border/50">
       <CardContent className="p-4 max-h-[400px] overflow-y-auto space-y-3">
-        {messages.map((msg) => (
+        {messages.map(msg => (
           <div key={msg.id} className="flex gap-3">
             <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-[10px] font-bold text-primary">
               {msg.sender_name?.charAt(0) || '?'}
@@ -387,12 +416,8 @@ function ChatHistory({ messages, isLoading }: { messages: any[]; isLoading: bool
                 </span>
               </div>
               {msg.message_type === 'file' ? (
-                <a
-                  href={msg.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-primary underline flex items-center gap-1 mt-0.5"
-                >
+                <a href={msg.file_url} target="_blank" rel="noopener noreferrer"
+                  className="text-xs text-primary underline flex items-center gap-1 mt-0.5">
                   <FileText className="w-3 h-3" /> {msg.file_name || 'File'}
                 </a>
               ) : (
