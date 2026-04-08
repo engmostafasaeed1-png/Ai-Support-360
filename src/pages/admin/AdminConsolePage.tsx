@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Shield, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -14,11 +15,13 @@ import { NotificationsSection, LocalizationSection, AppearanceSection, StorageSe
 
 export default function AdminConsolePage() {
   const isMobile = useIsMobile();
-  const [activeSection, setActiveSection] = useState('overview');
+  const { section } = useParams<{ section?: string }>();
+  const navigate = useNavigate();
+  const activeSection = section || 'overview';
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleSectionSelect = (id: string) => {
-    setActiveSection(id);
+    navigate(id === 'overview' ? '/admin/console' : `/admin/console/${id}`);
     setMobileOpen(false);
   };
 
@@ -47,7 +50,7 @@ export default function AdminConsolePage() {
       case 'landing': return <LandingEditorSection />;
       case 'settings': return <PlatformSettingsSection />;
       case 'maintenance': return <MaintenanceSection />;
-      default: return <div className="text-muted-foreground">Select a section from the sidebar.</div>;
+      default: return <OverviewSection />;
     }
   };
 
