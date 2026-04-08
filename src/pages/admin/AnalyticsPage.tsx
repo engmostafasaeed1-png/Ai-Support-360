@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -14,6 +15,14 @@ import {
 import ShareMenu from '@/components/ShareMenu';
 import { format, subDays, startOfDay, subMonths } from 'date-fns';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import {
+  revenueData as mockRevenueData,
+  ticketsByStatus as mockTicketsByStatus,
+  ticketsByModule as mockTicketsByModule,
+} from '@/data/adminMockData';
+import { TrendingUp, TrendingDown, Activity, DollarSign, Clock, CheckCircle2, Download, FileText } from 'lucide-react';
+import { DateRangePicker } from '@/components/reports/DateRangePicker';
+import { exportToCSV, exportToPDF } from '@/components/reports/exportUtils';
 import {
   revenueData as mockRevenueData,
   ticketsByStatus as mockTicketsByStatus,
@@ -38,6 +47,8 @@ export default function AnalyticsPage() {
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
+  const [dateFrom, setDateFrom] = useState(() => subDays(new Date(), 30));
+  const [dateTo, setDateTo] = useState(() => new Date());
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-analytics', timeRange],
