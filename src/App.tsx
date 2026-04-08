@@ -94,6 +94,7 @@ import ProjectsPage from "./pages/client/ProjectsPage.tsx";
 import ContractsPage from "./pages/client/ContractsPage.tsx";
 import SupportPage from "./pages/client/SupportPage.tsx";
 import LandingEditorPage from "./pages/admin/LandingEditorPage.tsx";
+import AdminConsolePage from "./pages/admin/AdminConsolePage.tsx";
 
 const queryClient = new QueryClient();
 
