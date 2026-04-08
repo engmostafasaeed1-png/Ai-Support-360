@@ -114,7 +114,6 @@ export default function TicketDetailPage() {
               <UserPlus className="w-3.5 h-3.5" /> Send Request to Consultant
             </Button>
           </div>
-          </div>
           <div className="flex flex-wrap items-center gap-2 mt-1.5">
             <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>
               {ticket.urgency}
