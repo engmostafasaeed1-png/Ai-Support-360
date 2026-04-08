@@ -94,6 +94,7 @@ import ProjectsPage from "./pages/client/ProjectsPage.tsx";
 import ContractsPage from "./pages/client/ContractsPage.tsx";
 import SupportPage from "./pages/client/SupportPage.tsx";
 import LandingEditorPage from "./pages/admin/LandingEditorPage.tsx";
+import AdminConsolePage from "./pages/admin/AdminConsolePage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -177,7 +178,8 @@ const App = () => (
               <Route path="support" element={<SupportPage />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
-              <Route index element={<AdminDashboard />} />
+              <Route index element={<AdminConsolePage />} />
+              <Route path="console" element={<AdminConsolePage />} />
               <Route path="users" element={<UsersPage />} />
               <Route path="tickets" element={<TicketKanbanPage />} />
               <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
