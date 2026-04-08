@@ -1,57 +1,24 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Shield, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AdminConsoleSidebar from '@/components/admin/console/AdminConsoleSidebar';
-import OverviewSection from '@/components/admin/console/sections/OverviewSection';
-import UserManagementSection from '@/components/admin/console/sections/UserManagementSection';
-import RolesPermissionsSection from '@/components/admin/console/sections/RolesPermissionsSection';
-import SubscriptionsSection from '@/components/admin/console/sections/SubscriptionsSection';
-import { SecuritySettingsSection, AuthenticationSection, DataAccessSection, AuditLogSection } from '@/components/admin/console/sections/SecuritySections';
-import { TicketManagementSection, ConsultantApprovalsSection, NDAManagementSection, MatchRequestsSection, ProjectsMilestonesSection } from '@/components/admin/console/sections/OperationsSections';
-import { NotificationsSection, LocalizationSection, AppearanceSection, StorageSection, EmailSection, IntegrationsSection, EnvironmentsSection, LandingEditorSection, PlatformSettingsSection, MaintenanceSection } from '@/components/admin/console/sections/SystemSections';
 
 export default function AdminConsolePage() {
   const isMobile = useIsMobile();
-  const { section } = useParams<{ section?: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
-  const activeSection = section || 'overview';
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Extract active section from path: /admin/console/users → users
+  const pathParts = location.pathname.split('/');
+  const activeSection = pathParts[3] || 'overview';
 
   const handleSectionSelect = (id: string) => {
     navigate(id === 'overview' ? '/admin/console' : `/admin/console/${id}`);
     setMobileOpen(false);
-  };
-
-  const renderContent = () => {
-    switch (activeSection) {
-      case 'overview': return <OverviewSection />;
-      case 'users': return <UserManagementSection />;
-      case 'roles': return <RolesPermissionsSection />;
-      case 'subscriptions': return <SubscriptionsSection />;
-      case 'tickets': return <TicketManagementSection />;
-      case 'approvals': return <ConsultantApprovalsSection />;
-      case 'nda': return <NDAManagementSection />;
-      case 'match-requests': return <MatchRequestsSection />;
-      case 'projects': return <ProjectsMilestonesSection />;
-      case 'security': return <SecuritySettingsSection />;
-      case 'auth': return <AuthenticationSection />;
-      case 'rls': return <DataAccessSection />;
-      case 'audit': return <AuditLogSection />;
-      case 'notifications': return <NotificationsSection />;
-      case 'localization': return <LocalizationSection />;
-      case 'appearance': return <AppearanceSection />;
-      case 'storage': return <StorageSection />;
-      case 'email': return <EmailSection />;
-      case 'integrations': return <IntegrationsSection />;
-      case 'environments': return <EnvironmentsSection />;
-      case 'landing': return <LandingEditorSection />;
-      case 'settings': return <PlatformSettingsSection />;
-      case 'maintenance': return <MaintenanceSection />;
-      default: return <OverviewSection />;
-    }
   };
 
   return (
@@ -86,7 +53,9 @@ export default function AdminConsolePage() {
             <AdminConsoleSidebar activeSection={activeSection} onSelect={handleSectionSelect} />
           </aside>
         )}
-        <main className="flex-1 min-w-0">{renderContent()}</main>
+        <main className="flex-1 min-w-0">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
