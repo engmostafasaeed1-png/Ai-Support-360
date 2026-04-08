@@ -2222,6 +2222,8 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          open_for_bids: boolean
+          opened_for_bids_at: string | null
           preferred_language: string | null
           preferred_session_type:
             | Database["public"]["Enums"]["session_type"]
@@ -2243,6 +2245,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          open_for_bids?: boolean
+          opened_for_bids_at?: string | null
           preferred_language?: string | null
           preferred_session_type?:
             | Database["public"]["Enums"]["session_type"]
@@ -2264,6 +2268,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          open_for_bids?: boolean
+          opened_for_bids_at?: string | null
           preferred_language?: string | null
           preferred_session_type?:
             | Database["public"]["Enums"]["session_type"]
