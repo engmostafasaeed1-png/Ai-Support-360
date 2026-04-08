@@ -57,7 +57,8 @@ export default function TicketDetailPage() {
   const { ticketId } = useParams<{ ticketId: string }>();
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
-  const backPath = isAdmin ? '/admin/tickets' : '/client/tickets';
+  const isConsultant = location.pathname.startsWith('/consultant');
+  const backPath = isAdmin ? '/admin/tickets' : isConsultant ? '/consultant/open-tickets' : '/client/tickets';
   const { data: ticket, isLoading } = useTicketDetail(ticketId);
   const { data: sessions, isLoading: sessionsLoading } = useTicketSessions(ticketId);
   const { data: messages, isLoading: messagesLoading } = useTicketMessages(ticketId);
@@ -110,19 +111,21 @@ export default function TicketDetailPage() {
               size="sm"
             />
           </div>
-          {/* Action buttons */}
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setEditOpen(true)}>
-              <Pencil className="w-3.5 h-3.5" /> Edit Ticket
-            </Button>
-            <Button size="sm" className="h-8 text-xs gap-1.5 gradient-primary border-0" onClick={() => setMatchOpen(true)}>
-              <UserPlus className="w-3.5 h-3.5" /> Send Request to Consultant
-            </Button>
-            <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setBidOpen(true)}>
-              <Gavel className="w-3.5 h-3.5" />
-              {ticket.open_for_bids ? 'Manage Bids' : 'Request Bids'}
-            </Button>
-          </div>
+          {/* Action buttons - only for client/admin */}
+          {!isConsultant && (
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setEditOpen(true)}>
+                <Pencil className="w-3.5 h-3.5" /> Edit Ticket
+              </Button>
+              <Button size="sm" className="h-8 text-xs gap-1.5 gradient-primary border-0" onClick={() => setMatchOpen(true)}>
+                <UserPlus className="w-3.5 h-3.5" /> Send Request to Consultant
+              </Button>
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setBidOpen(true)}>
+                <Gavel className="w-3.5 h-3.5" />
+                {ticket.open_for_bids ? 'Manage Bids' : 'Request Bids'}
+              </Button>
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-2 mt-1.5">
             <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>
               {ticket.urgency}

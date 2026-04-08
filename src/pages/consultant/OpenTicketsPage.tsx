@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Gavel, Inbox, Tag, Clock, Building2, Globe } from 'lucide-react';
+import { Search, Gavel, Inbox, Tag, Clock, Building2, Globe, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import SubmitProposalModal from '@/components/consultant/SubmitProposalModal';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -121,7 +122,12 @@ export default function OpenTicketsPage() {
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground">{ticket.title}</h3>
+                    <Link to={`/consultant/tickets/${ticket.id}`} className="hover:underline">
+                      <h3 className="font-semibold text-foreground flex items-center gap-1.5">
+                        {ticket.title}
+                        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                      </h3>
+                    </Link>
                     {ticket.description && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{ticket.description}</p>
                     )}
