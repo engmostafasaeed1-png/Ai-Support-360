@@ -59,13 +59,27 @@ export function useConsultantEarnings() {
         })
         .reduce((s, p) => s + Number(p.amount), 0);
 
+      // Build real monthly trend from last 6 months
+      const monthlyTrend: { month: string; amount: number }[] = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthLabel = d.toLocaleString('en', { month: 'short' });
+        const monthAmount = all
+          .filter(p => {
+            const pd = new Date(p.created_at);
+            return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
+          })
+          .reduce((s, p) => s + Number(p.amount), 0);
+        monthlyTrend.push({ month: monthLabel, amount: monthAmount });
+      }
+
       return {
         total,
         thisMonth,
         pending,
         available: completed - paidOut,
         currency: 'USD',
-        monthlyTrend: mockEarnings.monthlyTrend,
+        monthlyTrend,
       };
     },
     enabled: !isGuest,

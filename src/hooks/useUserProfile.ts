@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UserProfile {
@@ -9,13 +10,20 @@ interface UserProfile {
 }
 
 export function useUserProfile() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    const fetch = async () => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+    });
+    return () => subscription.unsubscribe();
+  }, [queryClient]);
+
+  const { data: profile = null, isLoading: loading } = useQuery({
+    queryKey: ['user-profile'],
+    queryFn: async (): Promise<UserProfile | null> => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) { setLoading(false); return; }
+      if (!session?.user) return null;
 
       const user = session.user;
       const { data } = await supabase
@@ -32,23 +40,15 @@ export function useUserProfile() {
         .toUpperCase()
         .slice(0, 2);
 
-      setProfile({
+      return {
         displayName,
         avatarUrl: data?.avatar_url || null,
         email: user.email || '',
         initials,
-      });
-      setLoading(false);
-    };
-
-    fetch();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      fetch();
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   return { profile, loading };
 }
