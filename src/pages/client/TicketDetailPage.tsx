@@ -57,6 +57,8 @@ export default function TicketDetailPage() {
   const { data: ticket, isLoading } = useTicketDetail(ticketId);
   const { data: sessions, isLoading: sessionsLoading } = useTicketSessions(ticketId);
   const { data: messages, isLoading: messagesLoading } = useTicketMessages(ticketId);
+  const [editOpen, setEditOpen] = useState(false);
+  const [matchOpen, setMatchOpen] = useState(false);
 
   if (isLoading) {
     return (
