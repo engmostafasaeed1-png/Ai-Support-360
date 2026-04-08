@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAdminTickets } from '@/hooks/useAdminData';
-import { Send } from 'lucide-react';
+import { Send, ExternalLink } from 'lucide-react';
 import SendMatchDialog from '@/components/admin/SendMatchDialog';
 
 const urgencyColors: Record<string, string> = {
