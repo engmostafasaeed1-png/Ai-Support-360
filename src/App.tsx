@@ -179,6 +179,7 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<UsersPage />} />
               <Route path="tickets" element={<TicketKanbanPage />} />
+              <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
               <Route path="approvals" element={<ConsultantApprovalsPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="integrations" element={<AdminIntegrationsPage />} />

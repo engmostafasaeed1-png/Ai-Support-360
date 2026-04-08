@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,6 +55,9 @@ const sessionStatusIcons: Record<string, typeof Circle> = {
 export default function TicketDetailPage() {
   const { t } = useTranslation();
   const { ticketId } = useParams<{ ticketId: string }>();
+  const location = useLocation();
+  const isAdmin = location.pathname.startsWith('/admin');
+  const backPath = isAdmin ? '/admin/tickets' : '/client/tickets';
   const { data: ticket, isLoading } = useTicketDetail(ticketId);
   const { data: sessions, isLoading: sessionsLoading } = useTicketSessions(ticketId);
   const { data: messages, isLoading: messagesLoading } = useTicketMessages(ticketId);
@@ -76,7 +79,7 @@ export default function TicketDetailPage() {
       <div className="text-center py-20">
         <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
         <p className="text-muted-foreground">Ticket not found</p>
-        <Link to="/client/tickets">
+        <Link to={backPath}>
           <Button variant="outline" className="mt-4">Back to Tickets</Button>
         </Link>
       </div>
@@ -87,7 +90,7 @@ export default function TicketDetailPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start gap-3">
-        <Link to="/client/tickets">
+        <Link to={backPath}>
           <Button variant="ghost" size="icon" className="h-9 w-9 mt-0.5">
             <ArrowLeft className="w-4 h-4" />
           </Button>

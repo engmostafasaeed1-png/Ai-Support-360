@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAdminTickets } from '@/hooks/useAdminData';
-import { Send } from 'lucide-react';
+import { Send, ExternalLink } from 'lucide-react';
 import SendMatchDialog from '@/components/admin/SendMatchDialog';
 
 const urgencyColors: Record<string, string> = {
@@ -59,26 +60,35 @@ export default function TicketKanbanPage() {
                 </div>
                 <div className="space-y-3">
                   {tickets.map((ticket: any) => (
-                    <Card key={ticket.id} className="border-border/50 hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing">
+                    <Card key={ticket.id} className="border-border/50 hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-2">
-                          <span className="text-xs font-mono text-muted-foreground">{ticket.id}</span>
+                          <span className="text-xs font-mono text-muted-foreground">{ticket.id.slice(0, 8)}</span>
                           <Badge variant="outline" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>{ticket.urgency}</Badge>
                         </div>
-                        <h4 className="text-sm font-medium text-foreground mb-2 leading-tight">{ticket.title}</h4>
+                        <Link to={`/admin/tickets/${ticket.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors leading-tight block mb-2">
+                          {ticket.title}
+                        </Link>
                         <div className="flex items-center justify-between">
                           <Badge variant="secondary" className="text-[10px]">{ticket.module}</Badge>
                           <span className="text-[10px] text-muted-foreground">{ticket.created}</span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">{ticket.client}</p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full mt-2 text-xs h-7 gap-1"
-                          onClick={() => setMatchDialog({ open: true, ticketId: ticket.id, ticketTitle: ticket.title, sapModule: ticket.module })}
-                        >
-                          <Send className="w-3 h-3" /> Send Match
-                        </Button>
+                        <div className="flex gap-1.5 mt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 text-xs h-7 gap-1"
+                            onClick={() => setMatchDialog({ open: true, ticketId: ticket.id, ticketTitle: ticket.title, sapModule: ticket.module })}
+                          >
+                            <Send className="w-3 h-3" /> Match
+                          </Button>
+                          <Link to={`/admin/tickets/${ticket.id}`}>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                              <ExternalLink className="w-3 h-3" />
+                            </Button>
+                          </Link>
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
