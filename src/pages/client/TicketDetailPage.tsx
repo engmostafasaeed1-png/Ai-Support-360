@@ -256,6 +256,13 @@ export default function TicketDetailPage() {
         open={matchOpen}
         onOpenChange={setMatchOpen}
       />
+      <RequestBidDialog
+        ticketId={ticket.id}
+        ticketTitle={ticket.title}
+        isOpenForBids={(ticket as any).open_for_bids || false}
+        open={bidOpen}
+        onOpenChange={setBidOpen}
+      />
     </div>
   );
 }
