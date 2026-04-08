@@ -79,7 +79,7 @@ export default function TicketDetailPage() {
       <div className="text-center py-20">
         <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
         <p className="text-muted-foreground">Ticket not found</p>
-        <Link to="/client/tickets">
+        <Link to={backPath}>
           <Button variant="outline" className="mt-4">Back to Tickets</Button>
         </Link>
       </div>
@@ -90,7 +90,7 @@ export default function TicketDetailPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start gap-3">
-        <Link to="/client/tickets">
+        <Link to={backPath}>
           <Button variant="ghost" size="icon" className="h-9 w-9 mt-0.5">
             <ArrowLeft className="w-4 h-4" />
           </Button>
