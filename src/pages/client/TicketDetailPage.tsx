@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Clock, User, Calendar, Tag, MessageSquare,
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
+  Pencil, Send, UserPlus,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
@@ -15,6 +17,8 @@ import TicketDocuments from '@/components/client/TicketDocuments';
 import TicketAcceptors from '@/components/client/TicketAcceptors';
 import TicketBids from '@/components/client/TicketBids';
 import TicketTimeline from '@/components/client/TicketTimeline';
+import TicketEditDialog from '@/components/client/TicketEditDialog';
+import SendMatchRequestDialog from '@/components/client/SendMatchRequestDialog';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
@@ -53,6 +57,8 @@ export default function TicketDetailPage() {
   const { data: ticket, isLoading } = useTicketDetail(ticketId);
   const { data: sessions, isLoading: sessionsLoading } = useTicketSessions(ticketId);
   const { data: messages, isLoading: messagesLoading } = useTicketMessages(ticketId);
+  const [editOpen, setEditOpen] = useState(false);
+  const [matchOpen, setMatchOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -98,6 +104,15 @@ export default function TicketDetailPage() {
               variant="outline"
               size="sm"
             />
+          </div>
+          {/* Action buttons */}
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setEditOpen(true)}>
+              <Pencil className="w-3.5 h-3.5" /> Edit Ticket
+            </Button>
+            <Button size="sm" className="h-8 text-xs gap-1.5 gradient-primary border-0" onClick={() => setMatchOpen(true)}>
+              <UserPlus className="w-3.5 h-3.5" /> Send Request to Consultant
+            </Button>
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-1.5">
             <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>
@@ -217,6 +232,10 @@ export default function TicketDetailPage() {
           <ChatHistory messages={messages || []} isLoading={messagesLoading} />
         </TabsContent>
       </Tabs>
+
+      {/* Dialogs */}
+      <TicketEditDialog ticket={ticket} open={editOpen} onOpenChange={setEditOpen} />
+      <SendMatchRequestDialog ticketId={ticket.id} sapModule={ticket.sap_module} open={matchOpen} onOpenChange={setMatchOpen} />
     </div>
   );
 }
