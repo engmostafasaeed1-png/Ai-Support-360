@@ -200,6 +200,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
 
   // Sort: if AI recommendations exist, put recommended ones first
   const sortedConsultants = consultants ? [...consultants].sort((a, b) => {
+    // AI recommendations take priority
     if (aiRecommendations) {
       const aRec = getAiRec(a.id);
       const bRec = getAiRec(b.id);
@@ -207,7 +208,15 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
       if (!aRec && bRec) return 1;
       if (aRec && bRec) return (bRec.match_score || 0) - (aRec.match_score || 0);
     }
-    return 0;
+    // Then apply selected sort
+    switch (sortBy) {
+      case 'rating': return (b.rating || 0) - (a.rating || 0);
+      case 'rate_low': return (a.hourly_rate || 0) - (b.hourly_rate || 0);
+      case 'rate_high': return (b.hourly_rate || 0) - (a.hourly_rate || 0);
+      case 'ai_score': return (b.ai_score || 0) - (a.ai_score || 0);
+      case 'experience': return (b.totalYears || 0) - (a.totalYears || 0);
+      default: return 0;
+    }
   }) : [];
 
   return (
