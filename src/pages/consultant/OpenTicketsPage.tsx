@@ -23,7 +23,8 @@ function useOpenTickets() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
-        .select('id, title, description, sap_module, urgency, status, created_at, preferred_session_type, preferred_language')
+        .select('id, title, description, sap_module, urgency, status, created_at, preferred_session_type, preferred_language, open_for_bids, opened_for_bids_at')
+        .eq('open_for_bids', true)
         .in('status', ['new', 'under_review'])
         .is('consultant_id', null)
         .order('created_at', { ascending: false });
