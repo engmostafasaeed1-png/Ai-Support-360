@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Loader2, Search, Star, Brain, Send, CheckCircle2, Sparkles, Wifi, WifiOff, Clock, Filter } from 'lucide-react';
+import { Loader2, Search, Star, Brain, Send, CheckCircle2, Sparkles, Wifi, WifiOff, Clock, Filter, SlidersHorizontal, ArrowUpDown, X } from 'lucide-react';
 
 interface Props {
   ticketId: string;
