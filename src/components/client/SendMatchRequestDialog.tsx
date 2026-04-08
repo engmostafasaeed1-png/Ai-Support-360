@@ -114,11 +114,12 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
           };
         })
         .filter((c: any) => {
-          if (search) {
-            return c.name.toLowerCase().includes(search.toLowerCase()) ||
-              c.modules.some((m: string) => m.toLowerCase().includes(search.toLowerCase()));
-          }
-          return true;
+          const matchesSearch = !search || c.name.toLowerCase().includes(search.toLowerCase()) ||
+            c.modules.some((m: string) => m.toLowerCase().includes(search.toLowerCase()));
+          const matchesModule = moduleFilter === 'all' || c.modules.some((m: string) => m.toLowerCase().includes(moduleFilter.toLowerCase()));
+          const matchesRating = minRating === 'all' || c.rating >= Number(minRating);
+          const matchesRate = maxRate === 'all' || c.hourly_rate <= Number(maxRate);
+          return matchesSearch && matchesModule && matchesRating && matchesRate;
         })
         .sort((a: any, b: any) => {
           if (a.hasModule !== b.hasModule) return a.hasModule ? -1 : 1;
