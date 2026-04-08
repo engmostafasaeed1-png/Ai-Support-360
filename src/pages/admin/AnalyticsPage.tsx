@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -19,7 +20,11 @@ import {
   ticketsByStatus as mockTicketsByStatus,
   ticketsByModule as mockTicketsByModule,
 } from '@/data/adminMockData';
-import { TrendingUp, TrendingDown, Activity, DollarSign, Clock, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, DollarSign, Clock, CheckCircle2, Download, FileText } from 'lucide-react';
+import { DateRangePicker } from '@/components/reports/DateRangePicker';
+import { exportToCSV, exportToPDF } from '@/components/reports/exportUtils';
+
+
 
 const COLORS = [
   'hsl(217, 91%, 60%)', 'hsl(45, 93%, 47%)', 'hsl(262, 83%, 58%)',
@@ -38,6 +43,8 @@ export default function AnalyticsPage() {
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
+  const [dateFrom, setDateFrom] = useState(() => subDays(new Date(), 30));
+  const [dateTo, setDateTo] = useState(() => new Date());
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-analytics', timeRange],
@@ -286,14 +293,44 @@ export default function AnalyticsPage() {
           <h1 className="text-2xl font-bold text-foreground">{t('analytics_page.title')}</h1>
           <p className="text-sm text-muted-foreground">{t('analytics_page.subtitle')}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as any)}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Tabs value={timeRange} onValueChange={(v) => {
+            const r = v as '7d' | '30d' | '90d';
+            setTimeRange(r);
+            setDateFrom(subDays(new Date(), r === '7d' ? 7 : r === '30d' ? 30 : 90));
+            setDateTo(new Date());
+          }}>
             <TabsList className="h-8">
-              <TabsTrigger value="7d" className="text-xs px-3 h-7">7 Days</TabsTrigger>
-              <TabsTrigger value="30d" className="text-xs px-3 h-7">30 Days</TabsTrigger>
-              <TabsTrigger value="90d" className="text-xs px-3 h-7">90 Days</TabsTrigger>
+              <TabsTrigger value="7d" className="text-xs px-3 h-7">7D</TabsTrigger>
+              <TabsTrigger value="30d" className="text-xs px-3 h-7">30D</TabsTrigger>
+              <TabsTrigger value="90d" className="text-xs px-3 h-7">90D</TabsTrigger>
             </TabsList>
           </Tabs>
+          <DateRangePicker from={dateFrom} to={dateTo} onChange={(f, t) => { setDateFrom(f); setDateTo(t); }} />
+          <Button variant="outline" size="sm" className="text-xs h-8 gap-1" onClick={() => {
+            const rows = [
+              { Metric: 'Total Tickets', Value: d.totalTickets },
+              { Metric: 'Resolved', Value: d.totalResolved },
+              { Metric: 'Revenue', Value: `$${d.totalRevenue}` },
+              { Metric: 'Avg Resolution', Value: `${d.avgResHours}h` },
+              { Metric: 'Sessions', Value: d.totalSessions },
+            ];
+            exportToCSV(rows, 'admin_analytics');
+          }}>
+            <Download className="w-3.5 h-3.5" /> CSV
+          </Button>
+          <Button variant="outline" size="sm" className="text-xs h-8 gap-1" onClick={() => {
+            exportToPDF('Admin Analytics Report', [{
+              heading: 'Summary', data: [
+                { Metric: 'Total Tickets', Value: String(d.totalTickets) },
+                { Metric: 'Resolved', Value: String(d.totalResolved) },
+                { Metric: 'Revenue', Value: `$${d.totalRevenue.toLocaleString()}` },
+                { Metric: 'Avg Resolution', Value: `${d.avgResHours}h` },
+              ],
+            }]);
+          }}>
+            <FileText className="w-3.5 h-3.5" /> PDF
+          </Button>
           <ShareMenu
             title="Analytics Report"
             text="Platform analytics overview"

@@ -77,6 +77,7 @@ import ClientReportsPage from "./pages/client/ReportsPage.tsx";
 import ReviewsPage from "./pages/consultant/ReviewsPage.tsx";
 import ConsultantSettingsPage from "./pages/consultant/SettingsPage.tsx";
 import ConsultantKnowledgePage from "./pages/consultant/KnowledgePage.tsx";
+import ConsultantReportsPage from "./pages/consultant/ReportsPage.tsx";
 import SuperAdminLayout from "./components/superadmin/SuperAdminLayout.tsx";
 import SuperAdminOverview from "./pages/superadmin/SuperAdminOverview.tsx";
 import RolesAuthPage from "./pages/superadmin/RolesAuthPage.tsx";
@@ -138,6 +139,7 @@ const App = () => (
               <Route path="proposals" element={<ProposalsPage />} />
               <Route path="open-tickets" element={<OpenTicketsPage />} />
               <Route path="work-diary" element={<WorkDiaryPage />} />
+              <Route path="reports" element={<ConsultantReportsPage />} />
               <Route path="referrals" element={<ReferralsPage />} />
             </Route>
             <Route path="/client/companies" element={<ProtectedRoute requiredRole="client"><CompanySelectorPage /></ProtectedRoute>} />
