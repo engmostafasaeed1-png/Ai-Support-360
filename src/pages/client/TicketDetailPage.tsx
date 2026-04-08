@@ -232,6 +232,10 @@ export default function TicketDetailPage() {
           <ChatHistory messages={messages || []} isLoading={messagesLoading} />
         </TabsContent>
       </Tabs>
+
+      {/* Dialogs */}
+      <TicketEditDialog ticket={ticket} open={editOpen} onOpenChange={setEditOpen} />
+      <SendMatchRequestDialog ticketId={ticket.id} sapModule={ticket.sap_module} open={matchOpen} onOpenChange={setMatchOpen} />
     </div>
   );
 }
