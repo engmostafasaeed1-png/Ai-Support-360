@@ -188,8 +188,31 @@ const App = () => (
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminConsolePage />} />
-              <Route path="console" element={<AdminConsolePage />} />
-              <Route path="console/:section" element={<AdminConsolePage />} />
+              <Route path="console" element={<AdminConsolePage />}>
+                <Route index element={<OverviewSection />} />
+                <Route path="users" element={<UserManagementSection />} />
+                <Route path="roles" element={<RolesPermissionsSection />} />
+                <Route path="subscriptions" element={<SubscriptionsSection />} />
+                <Route path="tickets" element={<TicketManagementSection />} />
+                <Route path="approvals" element={<ConsultantApprovalsSection />} />
+                <Route path="nda" element={<NDAManagementSection />} />
+                <Route path="match-requests" element={<MatchRequestsSection />} />
+                <Route path="projects" element={<ProjectsMilestonesSection />} />
+                <Route path="security" element={<SecuritySettingsSection />} />
+                <Route path="auth" element={<AuthenticationSection />} />
+                <Route path="rls" element={<DataAccessSection />} />
+                <Route path="audit" element={<AuditLogSection />} />
+                <Route path="notifications" element={<NotificationsSection />} />
+                <Route path="localization" element={<LocalizationSection />} />
+                <Route path="appearance" element={<AppearanceSection />} />
+                <Route path="storage" element={<StorageSection />} />
+                <Route path="email" element={<EmailSection />} />
+                <Route path="integrations" element={<AdminIntSection />} />
+                <Route path="environments" element={<EnvironmentsSection />} />
+                <Route path="landing" element={<LandingEditorSection />} />
+                <Route path="settings" element={<PlatformSettingsSection />} />
+                <Route path="maintenance" element={<MaintenanceSection />} />
+              </Route>
               <Route path="users" element={<UsersPage />} />
               <Route path="tickets" element={<TicketKanbanPage />} />
               <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
