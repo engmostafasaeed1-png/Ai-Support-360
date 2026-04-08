@@ -12,6 +12,16 @@ import ScrollToTop from "./components/ScrollToTop.tsx";
 import ScreenProtection from "./components/ScreenProtection.tsx";
 import WhatsAppButton from "./components/WhatsAppButton.tsx";
 import GlobalSearch from "./components/GlobalSearch.tsx";
+
+// Admin console section imports
+import OverviewSection from "./components/admin/console/sections/OverviewSection.tsx";
+import UserManagementSection from "./components/admin/console/sections/UserManagementSection.tsx";
+import RolesPermissionsSection from "./components/admin/console/sections/RolesPermissionsSection.tsx";
+import SubscriptionsSection from "./components/admin/console/sections/SubscriptionsSection.tsx";
+import { SecuritySettingsSection, AuthenticationSection, DataAccessSection, AuditLogSection } from "./components/admin/console/sections/SecuritySections.tsx";
+import { TicketManagementSection, ConsultantApprovalsSection, NDAManagementSection, MatchRequestsSection, ProjectsMilestonesSection } from "./components/admin/console/sections/OperationsSections.tsx";
+import { NotificationsSection, LocalizationSection, AppearanceSection, StorageSection, EmailSection, IntegrationsSection as AdminIntSection, EnvironmentsSection, LandingEditorSection, PlatformSettingsSection, MaintenanceSection } from "./components/admin/console/sections/SystemSections.tsx";
+import GlobalSearch from "./components/GlobalSearch.tsx";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ConsultantLayout from "./components/consultant/ConsultantLayout.tsx";
