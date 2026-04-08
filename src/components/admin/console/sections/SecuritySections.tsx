@@ -110,7 +110,7 @@ export function DataAccessSection() {
 }
 
 export function AuditLogSection() {
-  const { data: logs, isLoading } = useAuditLogs();
+  const { data: logs, isLoading } = useAuditLogs('', 'all');
 
   return (
     <div className="space-y-6">
