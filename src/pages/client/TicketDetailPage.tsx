@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Clock, User, Calendar, Tag, MessageSquare,
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
-  Pencil, Send, UserPlus,
+  Pencil, Send, UserPlus, Gavel,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
@@ -19,6 +19,7 @@ import TicketBids from '@/components/client/TicketBids';
 import TicketTimeline from '@/components/client/TicketTimeline';
 import TicketEditDialog from '@/components/client/TicketEditDialog';
 import SendMatchRequestDialog from '@/components/client/SendMatchRequestDialog';
+import RequestBidDialog from '@/components/client/RequestBidDialog';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
@@ -59,6 +60,7 @@ export default function TicketDetailPage() {
   const { data: messages, isLoading: messagesLoading } = useTicketMessages(ticketId);
   const [editOpen, setEditOpen] = useState(false);
   const [matchOpen, setMatchOpen] = useState(false);
+  const [bidOpen, setBidOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -112,6 +114,10 @@ export default function TicketDetailPage() {
             </Button>
             <Button size="sm" className="h-8 text-xs gap-1.5 gradient-primary border-0" onClick={() => setMatchOpen(true)}>
               <UserPlus className="w-3.5 h-3.5" /> Send Request to Consultant
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setBidOpen(true)}>
+              <Gavel className="w-3.5 h-3.5" />
+              {(ticket as any).open_for_bids ? 'Manage Bids' : 'Request Bids'}
             </Button>
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-1.5">
