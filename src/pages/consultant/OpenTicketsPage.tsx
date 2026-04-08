@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Gavel, Inbox, Tag, Clock, Building2 } from 'lucide-react';
+import { Search, Gavel, Inbox, Tag, Clock, Building2, Globe } from 'lucide-react';
 import { useState } from 'react';
 import SubmitProposalModal from '@/components/consultant/SubmitProposalModal';
 import { formatDistanceToNow } from 'date-fns';
@@ -23,7 +23,8 @@ function useOpenTickets() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
-        .select('id, title, description, sap_module, urgency, status, created_at, preferred_session_type, preferred_language')
+        .select('id, title, description, sap_module, urgency, status, created_at, preferred_session_type, preferred_language, open_for_bids, opened_for_bids_at')
+        .eq('open_for_bids', true)
         .in('status', ['new', 'under_review'])
         .is('consultant_id', null)
         .order('created_at', { ascending: false });
@@ -137,9 +138,14 @@ export default function OpenTicketsPage() {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0">
-                    <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>
-                      {ticket.urgency}
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="secondary" className="text-[9px] bg-accent/10 text-accent gap-1">
+                        <Globe className="w-2.5 h-2.5" /> Accepting Bids
+                      </Badge>
+                      <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>
+                        {ticket.urgency}
+                      </Badge>
+                    </div>
                     <SubmitProposalModal ticketId={ticket.id} ticketTitle={ticket.title} />
                   </div>
                 </div>
