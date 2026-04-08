@@ -127,10 +127,10 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
             </div>
             <div className="space-y-2">
               <Label>Session Type</Label>
-              <Select value={form.preferred_session_type} onValueChange={v => setForm(f => ({ ...f, preferred_session_type: v }))}>
+              <Select value={form.preferred_session_type || 'any'} onValueChange={v => setForm(f => ({ ...f, preferred_session_type: v === 'any' ? '' : v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any</SelectItem>
+                  <SelectItem value="any">Any</SelectItem>
                   {sessionTypes.map(s => (
                     <SelectItem key={s} value={s} className="capitalize">{s.replace(/_/g, ' ')}</SelectItem>
                   ))}
