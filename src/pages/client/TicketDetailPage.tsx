@@ -235,7 +235,16 @@ export default function TicketDetailPage() {
 
       {/* Dialogs */}
       <TicketEditDialog ticket={ticket} open={editOpen} onOpenChange={setEditOpen} />
-      <SendMatchRequestDialog ticketId={ticket.id} sapModule={ticket.sap_module} open={matchOpen} onOpenChange={setMatchOpen} />
+      <SendMatchRequestDialog
+        ticketId={ticket.id}
+        ticketTitle={ticket.title}
+        ticketDescription={ticket.description || ''}
+        ticketUrgency={ticket.urgency}
+        sapModule={ticket.sap_module}
+        preferredLanguage={ticket.preferred_language || 'en'}
+        open={matchOpen}
+        onOpenChange={setMatchOpen}
+      />
     </div>
   );
 }
