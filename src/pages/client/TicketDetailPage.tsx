@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Clock, User, Calendar, Tag, MessageSquare,
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
+  Pencil, Send, UserPlus,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
@@ -15,6 +17,8 @@ import TicketDocuments from '@/components/client/TicketDocuments';
 import TicketAcceptors from '@/components/client/TicketAcceptors';
 import TicketBids from '@/components/client/TicketBids';
 import TicketTimeline from '@/components/client/TicketTimeline';
+import TicketEditDialog from '@/components/client/TicketEditDialog';
+import SendMatchRequestDialog from '@/components/client/SendMatchRequestDialog';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
