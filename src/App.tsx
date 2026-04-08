@@ -180,6 +180,7 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminConsolePage />} />
               <Route path="console" element={<AdminConsolePage />} />
+              <Route path="console/:section" element={<AdminConsolePage />} />
               <Route path="users" element={<UsersPage />} />
               <Route path="tickets" element={<TicketKanbanPage />} />
               <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
