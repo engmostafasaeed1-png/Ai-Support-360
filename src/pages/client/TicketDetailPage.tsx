@@ -117,7 +117,7 @@ export default function TicketDetailPage() {
             </Button>
             <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setBidOpen(true)}>
               <Gavel className="w-3.5 h-3.5" />
-              {(ticket as any).open_for_bids ? 'Manage Bids' : 'Request Bids'}
+              {ticket.open_for_bids ? 'Manage Bids' : 'Request Bids'}
             </Button>
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-1.5">
@@ -127,7 +127,7 @@ export default function TicketDetailPage() {
             <Badge variant="secondary" className={`text-[10px] ${statusColors[ticket.status]}`}>
               {ticket.status.replace(/_/g, ' ')}
             </Badge>
-            {(ticket as any).open_for_bids && (
+            {ticket.open_for_bids && (
               <Badge variant="secondary" className="text-[10px] bg-accent/10 text-accent gap-1">
                 <Gavel className="w-2.5 h-2.5" /> Open for Bids
               </Badge>
@@ -259,7 +259,7 @@ export default function TicketDetailPage() {
       <RequestBidDialog
         ticketId={ticket.id}
         ticketTitle={ticket.title}
-        isOpenForBids={(ticket as any).open_for_bids || false}
+        isOpenForBids={ticket.open_for_bids || false}
         open={bidOpen}
         onOpenChange={setBidOpen}
       />
