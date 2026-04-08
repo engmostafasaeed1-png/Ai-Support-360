@@ -16,6 +16,7 @@ import logo from '@/assets/logo.png';
 
 const menuItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/admin' },
+  { key: 'console', icon: Shield, path: '/admin/console' },
   { key: 'users', icon: Users, path: '/admin/users' },
   { key: 'ticket_board', icon: Kanban, path: '/admin/tickets' },
   { key: 'approvals', icon: UserCheck, path: '/admin/approvals' },
