@@ -23,12 +23,8 @@ import {
 import { TrendingUp, TrendingDown, Activity, DollarSign, Clock, CheckCircle2, Download, FileText } from 'lucide-react';
 import { DateRangePicker } from '@/components/reports/DateRangePicker';
 import { exportToCSV, exportToPDF } from '@/components/reports/exportUtils';
-import {
-  revenueData as mockRevenueData,
-  ticketsByStatus as mockTicketsByStatus,
-  ticketsByModule as mockTicketsByModule,
-} from '@/data/adminMockData';
-import { TrendingUp, TrendingDown, Activity, DollarSign, Clock, CheckCircle2 } from 'lucide-react';
+
+
 
 const COLORS = [
   'hsl(217, 91%, 60%)', 'hsl(45, 93%, 47%)', 'hsl(262, 83%, 58%)',
