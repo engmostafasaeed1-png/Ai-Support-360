@@ -33,14 +33,30 @@ interface AIRecommendation {
   strengths: string[];
 }
 
+type SortBy = 'relevance' | 'rating' | 'rate_low' | 'rate_high' | 'ai_score' | 'experience';
+
+const SAP_MODULES = [
+  'SAP FI', 'SAP CO', 'SAP MM', 'SAP SD', 'SAP PP', 'SAP PM', 'SAP QM',
+  'SAP WM', 'SAP HR/HCM', 'SAP PS', 'SAP ABAP', 'SAP BASIS', 'SAP BW',
+  'SAP HANA', 'SAP S/4HANA', 'SAP SuccessFactors', 'SAP Ariba', 'SAP CRM',
+  'SAP EWM', 'SAP TM', 'SAP GRC', 'SAP MDG', 'SAP Fiori',
+];
+
 export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDescription, ticketUrgency, sapModule, preferredLanguage, open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState<string | null>(null);
   const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>('all');
+  const [moduleFilter, setModuleFilter] = useState<string>('all');
+  const [minRating, setMinRating] = useState<string>('all');
+  const [maxRate, setMaxRate] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortBy>('relevance');
+  const [showFilters, setShowFilters] = useState(false);
   const [aiRecommendations, setAiRecommendations] = useState<AIRecommendation[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+
+  const activeFilterCount = [availabilityFilter !== 'all', moduleFilter !== 'all', minRating !== 'all', maxRate !== 'all'].filter(Boolean).length;
 
   // Fetch all consultants
   const { data: consultants, isLoading } = useQuery({
