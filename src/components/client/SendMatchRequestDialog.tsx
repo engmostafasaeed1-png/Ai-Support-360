@@ -60,7 +60,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
 
   // Fetch all consultants
   const { data: consultants, isLoading } = useQuery({
-    queryKey: ['available-consultants', sapModule, search, availabilityFilter],
+    queryKey: ['available-consultants', sapModule, search, availabilityFilter, moduleFilter],
     enabled: open,
     queryFn: async () => {
       let query = supabase
