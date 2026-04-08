@@ -293,14 +293,44 @@ export default function AnalyticsPage() {
           <h1 className="text-2xl font-bold text-foreground">{t('analytics_page.title')}</h1>
           <p className="text-sm text-muted-foreground">{t('analytics_page.subtitle')}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as any)}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Tabs value={timeRange} onValueChange={(v) => {
+            const r = v as '7d' | '30d' | '90d';
+            setTimeRange(r);
+            setDateFrom(subDays(new Date(), r === '7d' ? 7 : r === '30d' ? 30 : 90));
+            setDateTo(new Date());
+          }}>
             <TabsList className="h-8">
-              <TabsTrigger value="7d" className="text-xs px-3 h-7">7 Days</TabsTrigger>
-              <TabsTrigger value="30d" className="text-xs px-3 h-7">30 Days</TabsTrigger>
-              <TabsTrigger value="90d" className="text-xs px-3 h-7">90 Days</TabsTrigger>
+              <TabsTrigger value="7d" className="text-xs px-3 h-7">7D</TabsTrigger>
+              <TabsTrigger value="30d" className="text-xs px-3 h-7">30D</TabsTrigger>
+              <TabsTrigger value="90d" className="text-xs px-3 h-7">90D</TabsTrigger>
             </TabsList>
           </Tabs>
+          <DateRangePicker from={dateFrom} to={dateTo} onChange={(f, t) => { setDateFrom(f); setDateTo(t); }} />
+          <Button variant="outline" size="sm" className="text-xs h-8 gap-1" onClick={() => {
+            const rows = [
+              { Metric: 'Total Tickets', Value: d.totalTickets },
+              { Metric: 'Resolved', Value: d.totalResolved },
+              { Metric: 'Revenue', Value: `$${d.totalRevenue}` },
+              { Metric: 'Avg Resolution', Value: `${d.avgResHours}h` },
+              { Metric: 'Sessions', Value: d.totalSessions },
+            ];
+            exportToCSV(rows, 'admin_analytics');
+          }}>
+            <Download className="w-3.5 h-3.5" /> CSV
+          </Button>
+          <Button variant="outline" size="sm" className="text-xs h-8 gap-1" onClick={() => {
+            exportToPDF('Admin Analytics Report', [{
+              heading: 'Summary', data: [
+                { Metric: 'Total Tickets', Value: String(d.totalTickets) },
+                { Metric: 'Resolved', Value: String(d.totalResolved) },
+                { Metric: 'Revenue', Value: `$${d.totalRevenue.toLocaleString()}` },
+                { Metric: 'Avg Resolution', Value: `${d.avgResHours}h` },
+              ],
+            }]);
+          }}>
+            <FileText className="w-3.5 h-3.5" /> PDF
+          </Button>
           <ShareMenu
             title="Analytics Report"
             text="Platform analytics overview"
