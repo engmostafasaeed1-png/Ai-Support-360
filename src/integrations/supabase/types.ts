@@ -1724,6 +1724,7 @@ export type Database = {
           platform_type: string
           status: Database["public"]["Enums"]["environment_status"]
           tenant_id: string | null
+          ticket_id: string | null
           updated_at: string
           vm_name: string | null
           vmware_host: string | null
@@ -1740,6 +1741,7 @@ export type Database = {
           platform_type?: string
           status?: Database["public"]["Enums"]["environment_status"]
           tenant_id?: string | null
+          ticket_id?: string | null
           updated_at?: string
           vm_name?: string | null
           vmware_host?: string | null
@@ -1756,6 +1758,7 @@ export type Database = {
           platform_type?: string
           status?: Database["public"]["Enums"]["environment_status"]
           tenant_id?: string | null
+          ticket_id?: string | null
           updated_at?: string
           vm_name?: string | null
           vmware_host?: string | null
@@ -1773,6 +1776,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remote_environments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
         ]
