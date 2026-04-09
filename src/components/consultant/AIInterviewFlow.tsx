@@ -173,7 +173,7 @@ function ScoreBar({ label, score, icon }: { label: string; score: number; icon: 
 
 export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: Props) {
   const { t } = useTranslation();
-  const [phase, setPhase] = useState<'chat' | 'evaluating' | 'results'>('chat');
+  const [phase, setPhase] = useState<'disclaimer' | 'chat' | 'evaluating' | 'results'>('disclaimer');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -274,33 +274,30 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     messagesRef.current = messages;
   }, [messages]);
 
-  useEffect(() => {
+  const startInterviewAfterDisclaimer = useCallback(async () => {
+    setPhase('chat');
     // Check if there's a saved conversation to resume
-    const loadSavedConversation = async () => {
-      const { data } = await supabase
-        .from('interview_sessions')
-        .select('skill_results, status')
-        .eq('id', interviewId)
-        .single();
-      const saved = data?.skill_results as unknown as ChatMessage[] | null;
-      if (saved && Array.isArray(saved) && saved.length > 0 && data?.status === 'in_progress') {
-        setMessages(saved);
-        messagesRef.current = saved;
-        // Resume: send existing conversation to AI so it continues from where it left off
-        const lastMsg = saved[saved.length - 1];
-        if (lastMsg?.role === 'user') {
-          // Last message was from user — AI needs to respond
-          sendToAI(saved);
-        } else {
-          // Last message was from AI — add a system hint to continue, then let user speak
-          // Just restore and wait for user input (don't restart)
-        }
-      } else {
-        sendToAI([]);
+    const { data } = await supabase
+      .from('interview_sessions')
+      .select('skill_results, status')
+      .eq('id', interviewId)
+      .single();
+    const saved = data?.skill_results as unknown as ChatMessage[] | null;
+    if (saved && Array.isArray(saved) && saved.length > 0 && data?.status === 'in_progress') {
+      setMessages(saved);
+      messagesRef.current = saved;
+      const lastMsg = saved[saved.length - 1];
+      if (lastMsg?.role === 'user') {
+        sendToAI(saved);
       }
-    };
-    loadSavedConversation();
-  }, []);
+    } else {
+      sendToAI([]);
+    }
+  }, [interviewId]);
+
+  const handleRejectDisclaimer = () => {
+    onCancel();
+  };
 
   useEffect(() => {
     return () => {
@@ -785,6 +782,88 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   }
 
   // Chat phase
+  // Disclaimer screen
+  if (phase === 'disclaimer') {
+    const interviewerName = voiceGender === 'female' ? 'Mariam' : 'Ezz';
+    return (
+      <div className="rounded-2xl overflow-hidden bg-[#0f1628] border border-white/10 p-6 md:p-10 max-w-xl mx-auto">
+        <div className="flex flex-col items-center text-center space-y-5">
+          {/* Avatar */}
+          <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-3 border-primary/40 shadow-lg">
+            <img src={avatarImg} alt={interviewerName} className="w-full h-full object-cover" />
+          </div>
+
+          {/* Introduction */}
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-1">
+              Hi, I'm {interviewerName} 👋
+            </h2>
+            <p className="text-sm text-gray-400">
+              I'll be your AI interviewer today. Let me walk you through a few things before we begin.
+            </p>
+          </div>
+
+          {/* Gender switch */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setVoiceGender('female')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${voiceGender === 'female' ? 'bg-primary/20 text-primary border-primary/40' : 'bg-white/5 text-white/50 border-white/10'}`}
+            >
+              ♀ Mariam
+            </button>
+            <button
+              onClick={() => setVoiceGender('male')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${voiceGender === 'male' ? 'bg-primary/20 text-primary border-primary/40' : 'bg-white/5 text-white/50 border-white/10'}`}
+            >
+              ♂ Ezz
+            </button>
+          </div>
+
+          {/* Disclaimer */}
+          <div className="w-full bg-white/5 rounded-xl p-4 text-left space-y-3 border border-white/10">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400" /> Data Sharing Disclaimer
+            </h3>
+            <p className="text-xs text-gray-300 leading-relaxed">
+              By proceeding, you agree that the information shared during this interview — including your responses, technical assessments, and evaluation scores — will be shared with <strong className="text-white">relevant clients</strong> to assess your suitability for projects.
+            </p>
+            <ul className="text-xs text-gray-400 space-y-1.5">
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-3.5 h-3.5 text-green-400 mt-0.5 shrink-0" />
+                Your data will <strong className="text-gray-300">only</strong> be used for client matching purposes.
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-3.5 h-3.5 text-green-400 mt-0.5 shrink-0" />
+                Your data will <strong className="text-gray-300">not</strong> be used for marketing or sold to third parties.
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-3.5 h-3.5 text-green-400 mt-0.5 shrink-0" />
+                You can request data deletion at any time through your profile settings.
+              </li>
+            </ul>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-3 w-full">
+            <Button
+              variant="outline"
+              className="flex-1 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+              onClick={handleRejectDisclaimer}
+            >
+              Decline & Exit
+            </Button>
+            <Button
+              className="flex-1 gradient-primary border-0 text-white font-semibold"
+              onClick={startInterviewAfterDisclaimer}
+            >
+              Accept & Start Interview
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const userMessageCount = messages.filter(m => m.role === 'user').length;
 
   return (
