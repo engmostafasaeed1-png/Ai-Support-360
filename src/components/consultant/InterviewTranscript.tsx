@@ -233,14 +233,24 @@ export default function InterviewTranscript({ consultantId, viewMode = 'consulta
                                 </span>
                                 <p className="text-xs font-medium text-foreground line-clamp-2">{a.question}</p>
                               </div>
-                              {a.score != null && (
-                                <Badge variant="secondary" className={`text-[10px] shrink-0 ${
-                                  a.score >= 70 ? 'bg-green-100 text-green-700' : a.score >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                                }`}>
-                                  {a.score >= 70 ? <CheckCircle className="w-2.5 h-2.5 me-0.5" /> : <XCircle className="w-2.5 h-2.5 me-0.5" />}
-                                  {a.score}/100
-                                </Badge>
-                              )}
+                              {a.score != null && (() => {
+                                const status = a.score >= 70 ? 'Good' : a.score >= 40 ? 'Mild' : 'Far Away';
+                                const styles = a.score >= 70
+                                  ? 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400'
+                                  : a.score >= 40
+                                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400'
+                                  : 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400';
+                                const Icon = a.score >= 70 ? CheckCircle : a.score >= 40 ? TrendingUp : XCircle;
+                                return (
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <Badge variant="secondary" className={`text-[10px] ${styles}`}>
+                                      <Icon className="w-2.5 h-2.5 me-0.5" />
+                                      {status}
+                                    </Badge>
+                                    <span className="text-[10px] text-muted-foreground">{a.score}/100</span>
+                                  </div>
+                                );
+                              })()}
                             </div>
                             {a.answer_transcript && (
                               <div className="bg-background rounded-lg p-2 mb-2 border border-border/20">
