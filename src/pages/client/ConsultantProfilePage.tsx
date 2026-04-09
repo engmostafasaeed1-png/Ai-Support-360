@@ -11,12 +11,16 @@ import { mockRecommendedConsultants } from '@/data/clientMockData';
 import { mockConsultantDetailData } from '@/data/consultantDetailMockData';
 import {
   Star, MapPin, Clock, Globe, Shield, Award, Video,
-  MessageSquare, Monitor, ChevronLeft, CalendarDays, BadgeCheck, ExternalLink, Brain,
+  MessageSquare, Monitor, ChevronLeft, CalendarDays, BadgeCheck, ExternalLink, Brain, EyeOff, User,
 } from 'lucide-react';
 import InterviewTranscript from '@/components/consultant/InterviewTranscript';
 import ShareMenu from '@/components/ShareMenu';
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
 import BookingModal from '@/components/client/BookingModal';
+import WriteReviewDialog from '@/components/client/WriteReviewDialog';
 
 export default function ConsultantProfilePage() {
   const { id } = useParams<{ id: string }>();
