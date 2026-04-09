@@ -230,6 +230,7 @@ const App = () => (
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="integrations" element={<AdminIntegrationsPage />} />
               <Route path="environments" element={<EnvironmentsPage />} />
+              <Route path="vmware-settings" element={<AdminVMwareSettingsPage />} />
               <Route path="environment-logs" element={<EnvironmentLogsPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="nda-management" element={<NDAManagementPage />} />
