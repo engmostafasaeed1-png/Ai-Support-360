@@ -103,6 +103,9 @@ export default function ClientRemoteAccessPage() {
                     </div>
                     {env.vm_name && <p className="text-xs text-muted-foreground/70 mt-1 font-mono">{env.vm_name}</p>}
                     {env.notes && <p className="text-xs text-muted-foreground mt-2">{env.notes}</p>}
+                    <div className="mt-3 pt-3 border-t border-border/30">
+                      <CredentialsManager environmentId={env.id} canEdit={true} />
+                    </div>
                     <ConnectionPicker envId={env.id} envName={env.name} envUrl={env.guacamole_url}
                       onConnect={(url, name) => setActiveConn({ envId: env.id, url, name })} />
                   </div>
