@@ -1537,6 +1537,7 @@ export type Database = {
           consultant_id: string
           created_at: string
           id: string
+          is_anonymous: boolean
           score: number
           session_id: string
         }
@@ -1546,6 +1547,7 @@ export type Database = {
           consultant_id: string
           created_at?: string
           id?: string
+          is_anonymous?: boolean
           score: number
           session_id: string
         }
@@ -1555,6 +1557,7 @@ export type Database = {
           consultant_id?: string
           created_at?: string
           id?: string
+          is_anonymous?: boolean
           score?: number
           session_id?: string
         }

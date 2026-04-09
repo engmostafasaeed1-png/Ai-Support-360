@@ -11,12 +11,16 @@ import { mockRecommendedConsultants } from '@/data/clientMockData';
 import { mockConsultantDetailData } from '@/data/consultantDetailMockData';
 import {
   Star, MapPin, Clock, Globe, Shield, Award, Video,
-  MessageSquare, Monitor, ChevronLeft, CalendarDays, BadgeCheck, ExternalLink, Brain,
+  MessageSquare, Monitor, ChevronLeft, CalendarDays, BadgeCheck, ExternalLink, Brain, EyeOff, User,
 } from 'lucide-react';
 import InterviewTranscript from '@/components/consultant/InterviewTranscript';
 import ShareMenu from '@/components/ShareMenu';
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
 import BookingModal from '@/components/client/BookingModal';
+import WriteReviewDialog from '@/components/client/WriteReviewDialog';
 
 export default function ConsultantProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -24,8 +28,43 @@ export default function ConsultantProfilePage() {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [credlyBadges, setCredlyBadges] = useState<any[]>([]);
   const [credlyLoading, setCredlyLoading] = useState(false);
+
+  // Fetch live reviews for this consultant
+  const { data: liveReviews, isLoading: reviewsLoading } = useQuery({
+    queryKey: ['consultant-profile-reviews', id],
+    queryFn: async () => {
+      if (!id) return [];
+      // Find consultant by mock id - in real app would query by consultant.id
+      const { data: ratings } = await supabase
+        .from('ratings')
+        .select('id, score, comment, created_at, client_id, is_anonymous')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (!ratings || ratings.length === 0) return [];
+
+      const nonAnonIds = ratings.filter((r: any) => !r.is_anonymous).map((r: any) => r.client_id);
+      let clientMap: Record<string, string> = {};
+      if (nonAnonIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name')
+          .in('user_id', nonAnonIds);
+        if (profiles) {
+          clientMap = Object.fromEntries(profiles.map(p => [p.user_id, p.display_name || 'Client']));
+        }
+      }
+
+      return ratings.map((r: any) => ({
+        ...r,
+        client_name: r.is_anonymous ? null : (clientMap[r.client_id] || 'Client'),
+        avatar: r.is_anonymous ? '?' : (clientMap[r.client_id]?.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || 'CL'),
+      }));
+    },
+  });
 
   const consultant = mockRecommendedConsultants.find(c => c.id === id);
   const detail = mockConsultantDetailData;
@@ -398,10 +437,13 @@ export default function ConsultantProfilePage() {
         {/* Reviews Tab */}
         <TabsContent value="reviews">
           <Card className="rounded-2xl border-border/50">
-            <CardHeader className="pb-2">
+            <CardHeader className="flex-row items-center justify-between pb-2">
               <CardTitle className="text-base font-semibold">
                 {t('consultant_profile.client_reviews')} ({consultant.reviews})
               </CardTitle>
+              <Button size="sm" variant="outline" onClick={() => setReviewOpen(true)}>
+                <Star className="w-3.5 h-3.5 me-1" /> {t('reviews.write_review', 'Write a Review')}
+              </Button>
             </CardHeader>
             <CardContent>
               {/* Rating summary */}
@@ -417,7 +459,9 @@ export default function ConsultantProfilePage() {
                 </div>
                 <div className="flex-1 space-y-1.5">
                   {[5, 4, 3, 2, 1].map(star => {
-                    const pct = star === 5 ? 78 : star === 4 ? 15 : star === 3 ? 5 : star === 2 ? 1 : 1;
+                    const reviews_ = liveReviews && liveReviews.length > 0 ? liveReviews : detail.reviews;
+                    const count = reviews_.filter((r: any) => r.score === star).length;
+                    const pct = reviews_.length > 0 ? Math.round((count / reviews_.length) * 100) : 0;
                     return (
                       <div key={star} className="flex items-center gap-2 text-xs">
                         <span className="w-4 text-end text-muted-foreground">{star}</span>
@@ -432,16 +476,24 @@ export default function ConsultantProfilePage() {
 
               {/* Review list */}
               <div className="space-y-4">
-                {detail.reviews.map((review, i) => (
-                  <div key={i} className="p-4 rounded-xl border border-border/30">
+                {(liveReviews && liveReviews.length > 0 ? liveReviews : detail.reviews).map((review: any, i: number) => (
+                  <div key={review.id || i} className="p-4 rounded-xl border border-border/30">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-xs font-bold text-foreground">
-                          {review.avatar}
+                          {review.is_anonymous ? (
+                            <EyeOff className="w-4 h-4 text-muted-foreground" />
+                          ) : (
+                            review.avatar || <User className="w-4 h-4 text-muted-foreground" />
+                          )}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-foreground">{review.client}</p>
-                          <p className="text-xs text-muted-foreground">{review.date}</p>
+                          <p className="text-sm font-medium text-foreground">
+                            {review.is_anonymous ? t('reviews.anonymous', 'Anonymous') : (review.client_name || review.client)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {review.created_at ? format(new Date(review.created_at), 'MMM d, yyyy') : review.date}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-0.5">
@@ -576,6 +628,13 @@ export default function ConsultantProfilePage() {
         consultantId={consultant.id}
         rate={consultant.rate}
         availableSlots={detail.availableSlots}
+      />
+
+      <WriteReviewDialog
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+        consultantId={consultant.id}
+        sessionId=""
       />
     </div>
   );
