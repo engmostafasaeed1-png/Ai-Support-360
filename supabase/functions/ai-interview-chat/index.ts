@@ -217,9 +217,10 @@ CRITICAL LANGUAGE INSTRUCTION: You MUST conduct this entire interview in ${inter
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: chatMessages,
         stream: true,
+        max_tokens: 300,
       }),
     });
 

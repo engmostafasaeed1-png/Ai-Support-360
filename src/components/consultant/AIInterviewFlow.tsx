@@ -321,7 +321,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         setMessages(newHistory);
         sendToAI(newHistory);
       }
-    }, 1800);
+    }, 1200);
   }, []);
 
   const formatTime = (s: number) => {
@@ -360,7 +360,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     utterance.onend = () => {
       setIsSpeaking(false);
       if (conversationMode && shouldAutoResumeRef.current && SpeechRecognition) {
-        setTimeout(() => startListening(), 300);
+        setTimeout(() => startListening(), 100);
       }
     };
     utterance.onerror = () => setIsSpeaking(false);
@@ -482,7 +482,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         setTimeout(() => {
           setIsSpeaking(false);
           if (conversationMode && shouldAutoResumeRef.current && SpeechRecognition) startListening();
-        }, 500);
+        }, 150);
       }
     }
   };
