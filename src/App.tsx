@@ -108,6 +108,8 @@ import ProjectManagementTicketsPage from "./pages/client/ProjectManagementTicket
 import SolutionArchitecturePage from "./pages/client/SolutionArchitecturePage.tsx";
 import LandingEditorPage from "./pages/admin/LandingEditorPage.tsx";
 import AdminConsolePage from "./pages/admin/AdminConsolePage.tsx";
+import AdminVMwareSettingsPage from "./pages/admin/VMwareSettingsPage.tsx";
+import ClientVMwareSettingsPage from "./pages/client/VMwareSettingsPage.tsx";
 
 const queryClient = new QueryClient();
 
