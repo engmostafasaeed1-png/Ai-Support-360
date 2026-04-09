@@ -1671,9 +1671,12 @@ export type Database = {
           name: string
           notes: string | null
           os_type: string | null
+          platform_type: string
           status: Database["public"]["Enums"]["environment_status"]
           tenant_id: string | null
           updated_at: string
+          vm_name: string | null
+          vmware_host: string | null
         }
         Insert: {
           client_id: string
@@ -1684,9 +1687,12 @@ export type Database = {
           name: string
           notes?: string | null
           os_type?: string | null
+          platform_type?: string
           status?: Database["public"]["Enums"]["environment_status"]
           tenant_id?: string | null
           updated_at?: string
+          vm_name?: string | null
+          vmware_host?: string | null
         }
         Update: {
           client_id?: string
@@ -1697,9 +1703,12 @@ export type Database = {
           name?: string
           notes?: string | null
           os_type?: string | null
+          platform_type?: string
           status?: Database["public"]["Enums"]["environment_status"]
           tenant_id?: string | null
           updated_at?: string
+          vm_name?: string | null
+          vmware_host?: string | null
         }
         Relationships: [
           {
