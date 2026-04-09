@@ -85,11 +85,16 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('female');
   const [speechRate, setSpeechRate] = useState(1.0);
   const [interviewLang, setInterviewLang] = useState<'en' | 'ar'>('en');
+  const [conversationMode, setConversationMode] = useState(true); // continuous hands-free mode
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
   const lastSpokenRef = useRef('');
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const pendingTextRef = useRef('');
+  const shouldAutoResumeRef = useRef(true);
+  const messagesRef = useRef<ChatMessage[]>([]);
 
   // Timer
   useEffect(() => {
@@ -99,9 +104,10 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     return () => clearInterval(timerRef.current);
   }, [phase]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom on new messages & keep ref in sync
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesRef.current = messages;
   }, [messages]);
 
   // Start conversation — AI greets first
@@ -115,8 +121,33 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
       if (recognitionRef.current) {
         try { recognitionRef.current.stop(); } catch {}
       }
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       window.speechSynthesis.cancel();
     };
+  }, []);
+
+  // Auto-send accumulated speech after silence
+  const scheduleSilenceSend = useCallback(() => {
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    silenceTimerRef.current = setTimeout(() => {
+      const text = pendingTextRef.current.trim();
+      if (text) {
+        pendingTextRef.current = '';
+        setInput('');
+        setInterimTranscript('');
+        // Stop listening during AI response
+        if (recognitionRef.current) {
+          try { recognitionRef.current.stop(); } catch {}
+          recognitionRef.current = null;
+        }
+        setIsListening(false);
+        // Send directly
+        const userMsg: ChatMessage = { role: 'user', content: text };
+        const newHistory = [...messagesRef.current, userMsg];
+        setMessages(newHistory);
+        sendToAI(newHistory);
+      }
+    }, 1800); // 1.8s silence = auto send
   }, []);
 
   const formatTime = (s: number) => {
@@ -164,7 +195,13 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     if (preferred) utterance.voice = preferred;
 
     utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      // Auto-resume listening after AI finishes speaking
+      if (conversationMode && shouldAutoResumeRef.current && SpeechRecognition) {
+        setTimeout(() => startListening(), 300);
+      }
+    };
     utterance.onerror = () => setIsSpeaking(false);
 
     window.speechSynthesis.speak(utterance);
@@ -196,10 +233,19 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
       }
       
       if (final) {
-        setInput(prev => (prev + ' ' + final).trim());
+        pendingTextRef.current = (pendingTextRef.current + ' ' + final).trim();
+        setInput(pendingTextRef.current);
         setInterimTranscript('');
+        // In conversation mode, auto-send after silence
+        if (conversationMode) {
+          scheduleSilenceSend();
+        }
       } else {
         setInterimTranscript(interim);
+        // Reset silence timer while still speaking
+        if (conversationMode && silenceTimerRef.current) {
+          clearTimeout(silenceTimerRef.current);
+        }
       }
     };
 
@@ -315,7 +361,13 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     } finally {
       setIsStreaming(false);
       if (!ttsEnabled) {
-        setTimeout(() => setIsSpeaking(false), 500);
+        setTimeout(() => {
+          setIsSpeaking(false);
+          // Auto-resume listening when TTS is off
+          if (conversationMode && shouldAutoResumeRef.current && SpeechRecognition) {
+            startListening();
+          }
+        }, 500);
       }
     }
   };
@@ -325,6 +377,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     if (!text || isStreaming) return;
     setInput('');
     setInterimTranscript('');
+    pendingTextRef.current = '';
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     
     // Stop listening while AI responds
     if (isListening) stopListening();
@@ -337,9 +391,11 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   };
 
   const handleEndInterview = async () => {
+    shouldAutoResumeRef.current = false;
     setPhase('evaluating');
     clearInterval(timerRef.current);
     if (isListening) stopListening();
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     window.speechSynthesis.cancel();
     
     try {
@@ -465,8 +521,18 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             <span className="text-xs font-medium text-white/80">LIVE — AI Interview</span>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setConversationMode(!conversationMode)}
+              className={`px-2.5 py-1 rounded-full text-[10px] font-medium border transition-colors ${
+                conversationMode
+                  ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                  : 'bg-white/5 text-white/50 border-white/10'
+              }`}
+            >
+              {conversationMode ? '🗣️ Hands-free' : '⌨️ Manual'}
+            </button>
             <Badge variant="secondary" className="bg-green-500/10 text-green-400 text-[10px]">
-              {isListening ? '🎤 Listening...' : 'Voice Discussion'}
+              {isListening ? '🎤 Listening...' : isSpeaking ? '🔊 AI Speaking' : isStreaming ? '💭 Thinking...' : 'Ready'}
             </Badge>
             <span className="text-xs text-white/60 font-mono">{formatTime(elapsedTime)}</span>
             <span className="text-xs text-white/40">{userMessageCount} exchanges</span>
