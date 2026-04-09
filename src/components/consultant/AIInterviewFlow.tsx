@@ -252,6 +252,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         body: JSON.stringify({
           interview_id: interviewId,
           messages: chatHistory,
+          lang: interviewLang,
         }),
       });
 
