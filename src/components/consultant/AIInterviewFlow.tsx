@@ -121,8 +121,33 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
       if (recognitionRef.current) {
         try { recognitionRef.current.stop(); } catch {}
       }
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       window.speechSynthesis.cancel();
     };
+  }, []);
+
+  // Auto-send accumulated speech after silence
+  const scheduleSilenceSend = useCallback(() => {
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    silenceTimerRef.current = setTimeout(() => {
+      const text = pendingTextRef.current.trim();
+      if (text) {
+        pendingTextRef.current = '';
+        setInput('');
+        setInterimTranscript('');
+        // Stop listening during AI response
+        if (recognitionRef.current) {
+          try { recognitionRef.current.stop(); } catch {}
+          recognitionRef.current = null;
+        }
+        setIsListening(false);
+        // Send directly
+        const userMsg: ChatMessage = { role: 'user', content: text };
+        const newHistory = [...messagesRef.current, userMsg];
+        setMessages(newHistory);
+        sendToAI(newHistory);
+      }
+    }, 1800); // 1.8s silence = auto send
   }, []);
 
   const formatTime = (s: number) => {
