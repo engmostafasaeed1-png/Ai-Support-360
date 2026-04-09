@@ -945,6 +945,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                   <RefreshCw className="w-3 h-3" /> Repeat
                 </button>
               </div>
+              <div className="flex gap-2">
                 <textarea
                   ref={inputRef}
                   value={input}
