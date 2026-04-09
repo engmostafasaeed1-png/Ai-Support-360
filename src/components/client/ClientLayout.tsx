@@ -6,8 +6,8 @@ import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Outlet } from 'react-router-dom';
 import {
   Search, AlertTriangle, LayoutDashboard, TicketPlus, Users,
-  MessageSquare, Settings, Briefcase, Calendar, CreditCard,
-  FileText, BookOpen, Bell, Plug,
+  MessageSquare, Settings, Settings2, Briefcase, Calendar, CreditCard,
+  FileText, BookOpen, Bell, Plug, Server,
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,8 @@ const moreNavItems = [
   { key: 'payments', icon: CreditCard, path: '/client/payments', labelKey: 'sidebar.payments' },
   { key: 'invoices', icon: FileText, path: '/client/invoices', labelKey: 'sidebar.invoices' },
   { key: 'integrations', icon: Plug, path: '/client/integrations', labelKey: 'sidebar.integrations' },
+  { key: 'remote_access', icon: Server, path: '/client/remote-access', labelKey: 'sidebar.remote_access' },
+  { key: 'vmware_settings', icon: Settings2, path: '/client/vmware-settings', labelKey: 'sidebar.vmware_settings' },
   { key: 'knowledge', icon: BookOpen, path: '/client/knowledge', labelKey: 'sidebar.knowledge' },
   { key: 'notifications', icon: Bell, path: '/client/notifications', labelKey: 'sidebar.notifications' },
   { key: 'settings', icon: Settings, path: '/client/settings', labelKey: 'sidebar.settings' },
