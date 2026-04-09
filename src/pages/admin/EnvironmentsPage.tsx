@@ -145,10 +145,45 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
           </Select>
         </div>
         <div>
-          <label className="text-sm font-medium text-foreground">{t('admin.env_label_os', 'OS Type')}</label>
-          <Input value={osType} onChange={(e) => setOsType(e.target.value)} placeholder="Windows Server 2022" />
+          <label className="text-sm font-medium text-foreground">{t('admin.env_label_platform', 'Platform')}</label>
+          <Select value={platformType} onValueChange={setPlatformType}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="vmware">VMware</SelectItem>
+              <SelectItem value="hyperv">Hyper-V</SelectItem>
+              <SelectItem value="citrix">Citrix</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-sm font-medium text-foreground">{t('admin.env_label_os', 'OS Type')}</label>
+          <Select value={osType} onValueChange={setOsType}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Windows Server 2022">Windows Server 2022</SelectItem>
+              <SelectItem value="Windows Server 2019">Windows Server 2019</SelectItem>
+              <SelectItem value="Windows 11">Windows 11</SelectItem>
+              <SelectItem value="Windows 10">Windows 10</SelectItem>
+              <SelectItem value="Ubuntu Server">Ubuntu Server</SelectItem>
+              <SelectItem value="RHEL">RHEL</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-foreground">{t('admin.env_label_vmname', 'VM Name')}</label>
+          <Input value={vmName} onChange={(e) => setVmName(e.target.value)} placeholder="SAP-PROD-VM01" />
+        </div>
+      </div>
+      {platformType === 'vmware' && (
+        <div>
+          <label className="text-sm font-medium text-foreground">{t('admin.env_label_vmhost', 'vCenter / ESXi Host')}</label>
+          <Input value={vmwareHost} onChange={(e) => setVmwareHost(e.target.value)} placeholder="vcenter.example.com" />
+        </div>
+      )}
       <div>
         <label className="text-sm font-medium text-foreground">{t('admin.env_label_notes', 'Notes')}</label>
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="..." rows={2} />
