@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import GuestExploreModal from '@/components/guest/GuestExploreModal';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -22,6 +22,28 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  // If user is already logged in, redirect them away from login page
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        if (from) {
+          navigate(from, { replace: true });
+          return;
+        }
+        const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).limit(1);
+        const role = roles?.[0]?.role;
+        if (role === 'consultant') navigate('/consultant', { replace: true });
+        else if (role === 'admin') navigate('/admin', { replace: true });
+        else navigate('/client', { replace: true });
+      } else {
+        setChecking(false);
+      }
+    };
+    checkSession();
+  }, [navigate, from]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
