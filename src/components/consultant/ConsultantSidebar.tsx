@@ -68,17 +68,11 @@ export default function ConsultantSidebar() {
     <>
     <Sidebar collapsible="icon" className="border-e border-border/50">
       <SidebarContent className="bg-sidebar text-sidebar-foreground">
-        <div className="p-3 flex items-center gap-2.5 border-b border-sidebar-border/30">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
-              <img src={logo} alt="AI SAP Support Hub" width={48} height={48} className="w-full h-full object-contain" />
+        <div className="p-3 flex items-center justify-center border-b border-sidebar-border/30">
+          <Link to="/" className="group">
+            <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
+              <img src={logo} alt="Logo" width={40} height={40} className="w-full h-full object-contain" />
             </div>
-            {!collapsed && (
-              <div className="min-w-0">
-                <span className="font-bold text-sm text-sidebar-foreground block leading-tight">AI SAP Support Hub</span>
-                <span className="text-[10px] text-sidebar-foreground/40 leading-tight">{t('sidebar.consultant_portal')}</span>
-              </div>
-            )}
           </Link>
         </div>
 
