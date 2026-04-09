@@ -211,7 +211,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         .select('skill_results, status')
         .eq('id', interviewId)
         .single();
-      const saved = data?.skill_results as ChatMessage[] | null;
+      const saved = data?.skill_results as unknown as ChatMessage[] | null;
       if (saved && Array.isArray(saved) && saved.length > 0 && data?.status === 'in_progress') {
         setMessages(saved);
       } else {
