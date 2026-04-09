@@ -635,7 +635,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                 onClick={async () => {
                   const { data: iv } = await supabase.from('interview_sessions').select('consultant_id').eq('id', interviewId).single();
                   if (iv) {
-                    await supabase.from('interview_sessions').insert({ consultant_id: iv.consultant_id, interview_type: 'ai', status: 'pending' });
+                    await supabase.from('interview_sessions').insert([{ consultant_id: iv.consultant_id, interview_type: 'ai' as const, status: 'pending' as const }]);
                     await supabase.from('consultants').update({ verification_status: 'under_review' }).eq('id', iv.consultant_id);
                   }
                   onComplete?.();
@@ -650,7 +650,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                 onClick={async () => {
                   const { data: iv } = await supabase.from('interview_sessions').select('consultant_id').eq('id', interviewId).single();
                   if (iv) {
-                    await supabase.from('interview_sessions').insert({ consultant_id: iv.consultant_id, interview_type: 'manual', status: 'pending' });
+                    await supabase.from('interview_sessions').insert([{ consultant_id: iv.consultant_id, interview_type: 'physical' as const, status: 'pending' as const }]);
                     await supabase.from('consultants').update({ verification_status: 'under_review' }).eq('id', iv.consultant_id);
                   }
                   onComplete?.();
