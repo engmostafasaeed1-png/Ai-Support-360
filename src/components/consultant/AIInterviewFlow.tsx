@@ -195,7 +195,13 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     if (preferred) utterance.voice = preferred;
 
     utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      // Auto-resume listening after AI finishes speaking
+      if (conversationMode && shouldAutoResumeRef.current && SpeechRecognition) {
+        setTimeout(() => startListening(), 300);
+      }
+    };
     utterance.onerror = () => setIsSpeaking(false);
 
     window.speechSynthesis.speak(utterance);
