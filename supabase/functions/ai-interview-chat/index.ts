@@ -146,6 +146,14 @@ Return ONLY valid JSON.`;
       });
     }
 
+    // Update status to in_progress
+    if (interview.status === "pending") {
+      await supabase.from("interview_sessions").update({
+        status: "in_progress",
+        started_at: new Date().toISOString(),
+      }).eq("id", interview_id);
+    }
+
     // Fetch admin training configs for relevant modules
     const consultantModules = (skills || []).map(s => s.sap_module);
     const { data: trainingConfigs } = await supabase
