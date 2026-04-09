@@ -298,7 +298,10 @@ export default function EnvironmentsPage() {
                         <h3 className="font-semibold text-foreground">{env.name}</h3>
                         <Badge variant={statusColors[env.status]}>{env.status}</Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground">{env.os_type}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {env.platform_type === 'vmware' ? 'VMware' : env.platform_type === 'hyperv' ? 'Hyper-V' : env.platform_type === 'citrix' ? 'Citrix' : env.platform_type} · {env.os_type}
+                        {env.vm_name && <> · <span className="font-mono">{env.vm_name}</span></>}
+                      </p>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
                         <span>{t('admin.env_client_label', 'Client')}: <span className="font-medium text-foreground">{clientMap[env.client_id] || '—'}</span></span>
                         <span>{t('admin.env_consultant_label', 'Consultant')}: <span className="font-medium text-foreground">{env.consultant_id ? (consultantMap[env.consultant_id] || '—') : t('admin.env_unassigned', 'Unassigned')}</span></span>
