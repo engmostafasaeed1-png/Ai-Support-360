@@ -1,0 +1,1 @@
+ALTER TYPE public.verification_status ADD VALUE IF NOT EXISTS 'on_hold' AFTER 'under_review';

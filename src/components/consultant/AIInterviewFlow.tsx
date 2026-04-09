@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import {
   Brain, Loader2, CheckCircle, Send, AlertTriangle, Video, VideoOff,
   Mic, MicOff, Monitor, PhoneOff, MessageSquare, Award, Volume2, VolumeX,
-  Gauge, Globe, User, Eye, Smile, Activity,
+  Gauge, Globe, User, Eye, Smile, Activity, Clock,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Slider } from '@/components/ui/slider';
 import ReactMarkdown from 'react-markdown';
 import aiMaleAvatar from '@/assets/ai-interviewer-male.jpg';
@@ -584,9 +585,82 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
           </Card>
         )}
 
-        <Button className="w-full gradient-primary border-0" onClick={onComplete}>
-          <CheckCircle className="w-4 h-4 me-2" /> Done
-        </Button>
+        {/* Interview Decision Actions */}
+        <Card className="rounded-2xl border-border/50">
+          <CardContent className="p-6">
+            <h3 className="text-sm font-semibold text-foreground mb-1">Interview Decision</h3>
+            <p className="text-xs text-muted-foreground mb-4">Based on the results, choose a verification outcome for this consultant.</p>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white border-0"
+                onClick={async () => {
+                  await supabase.from('interview_sessions').update({ status: 'reviewed' }).eq('id', interviewId);
+                  const { data: iv } = await supabase.from('interview_sessions').select('consultant_id').eq('id', interviewId).single();
+                  if (iv) await supabase.from('consultants').update({ verification_status: 'verified' }).eq('id', iv.consultant_id);
+                  onComplete?.();
+                }}
+              >
+                <CheckCircle className="w-4 h-4 me-1.5" /> Pass
+              </Button>
+              <Button
+                variant="outline"
+                className="border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                onClick={async () => {
+                  await supabase.from('interview_sessions').update({ status: 'reviewed' }).eq('id', interviewId);
+                  const { data: iv } = await supabase.from('interview_sessions').select('consultant_id').eq('id', interviewId).single();
+                  if (iv) await supabase.from('consultants').update({ verification_status: 'on_hold' }).eq('id', iv.consultant_id);
+                  onComplete?.();
+                }}
+              >
+                <Clock className="w-4 h-4 me-1.5" /> On Hold
+              </Button>
+              <Button
+                variant="outline"
+                className="border-red-500/50 text-red-600 hover:bg-red-500/10"
+                onClick={async () => {
+                  await supabase.from('interview_sessions').update({ status: 'reviewed' }).eq('id', interviewId);
+                  const { data: iv } = await supabase.from('interview_sessions').select('consultant_id').eq('id', interviewId).single();
+                  if (iv) await supabase.from('consultants').update({ verification_status: 'rejected' }).eq('id', iv.consultant_id);
+                  onComplete?.();
+                }}
+              >
+                <AlertTriangle className="w-4 h-4 me-1.5" /> Reject
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs"
+                onClick={async () => {
+                  const { data: iv } = await supabase.from('interview_sessions').select('consultant_id').eq('id', interviewId).single();
+                  if (iv) {
+                    await supabase.from('interview_sessions').insert([{ consultant_id: iv.consultant_id, interview_type: 'ai' as const, status: 'pending' as const }]);
+                    await supabase.from('consultants').update({ verification_status: 'under_review' }).eq('id', iv.consultant_id);
+                  }
+                  onComplete?.();
+                }}
+              >
+                <Brain className="w-3.5 h-3.5 me-1" /> Request Re-Interview
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs"
+                onClick={async () => {
+                  const { data: iv } = await supabase.from('interview_sessions').select('consultant_id').eq('id', interviewId).single();
+                  if (iv) {
+                    await supabase.from('interview_sessions').insert([{ consultant_id: iv.consultant_id, interview_type: 'physical' as const, status: 'pending' as const }]);
+                    await supabase.from('consultants').update({ verification_status: 'under_review' }).eq('id', iv.consultant_id);
+                  }
+                  onComplete?.();
+                }}
+              >
+                <Video className="w-3.5 h-3.5 me-1" /> Request Manual Interview
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

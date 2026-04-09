@@ -136,25 +136,34 @@ export default function InterviewsPage() {
                 <CheckCircle className="w-5 h-5 text-green-500" />
                 Completed ({completedInterviews.length})
               </h2>
-              {completedInterviews.map((interview) => (
+              {completedInterviews.map((interview) => {
+                const isReviewed = interview.status === 'reviewed';
+                const score = interview.overall_score || 0;
+                const scoreColor = score >= 70 ? 'bg-green-100 text-green-700' : score >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
+                return (
                 <Card key={interview.id} className="rounded-2xl border-border/50">
                   <CardContent className="p-5 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
-                        <CheckCircle className="w-6 h-6 text-green-500" />
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isReviewed ? 'bg-primary/10' : 'bg-green-500/10'}`}>
+                        {isReviewed ? <CheckCircle className="w-6 h-6 text-primary" /> : <CheckCircle className="w-6 h-6 text-green-500" />}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">AI Skills Assessment</h3>
+                        <h3 className="font-semibold text-foreground">
+                          {interview.interview_type === 'physical' ? 'Manual Interview' : 'AI Skills Assessment'}
+                        </h3>
                         <p className="text-xs text-muted-foreground">
                           Completed {format(new Date(interview.created_at), 'MMM d, yyyy')}
                         </p>
-                        {interview.overall_score && (
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="secondary" className="bg-green-100 text-green-700 text-[10px]">
+                        <div className="flex items-center gap-2 mt-1">
+                          {interview.overall_score != null && (
+                            <Badge variant="secondary" className={`text-[10px] ${scoreColor}`}>
                               Score: {interview.overall_score}/100
                             </Badge>
-                          </div>
-                        )}
+                          )}
+                          <Badge variant="secondary" className={`text-[10px] ${isReviewed ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                            {isReviewed ? 'Reviewed' : 'Pending Review'}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                     {interview.ai_summary && (
@@ -164,7 +173,8 @@ export default function InterviewsPage() {
                     )}
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           )}
         </>

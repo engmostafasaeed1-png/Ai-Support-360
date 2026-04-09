@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import {
   Search, Star, BadgeCheck, Zap, Heart, Filter, Map, LayoutGrid,
   Wifi, WifiOff, X, ChevronDown, ChevronUp, Clock, Globe, DollarSign,
-  Users, Circle, Award,
+  Users, Circle, Award, ShieldAlert, ShieldCheck, ShieldQuestion,
 } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -473,6 +473,25 @@ export default function ConsultantsPage() {
                           </span>
                         );
                       })}
+                      {/* Verification Status Badge */}
+                      {c.verification_status !== 'verified' && (
+                        <span className={`inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full ${
+                          c.verification_status === 'rejected' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                          c.verification_status === 'on_hold' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' :
+                          c.verification_status === 'under_review' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
+                          'bg-muted text-muted-foreground'
+                        }`}>
+                          {c.verification_status === 'rejected' ? <ShieldAlert className="w-2.5 h-2.5" /> :
+                           c.verification_status === 'on_hold' ? <Clock className="w-2.5 h-2.5" /> :
+                           c.verification_status === 'under_review' ? <ShieldQuestion className="w-2.5 h-2.5" /> :
+                           <ShieldQuestion className="w-2.5 h-2.5" />}
+                          {c.verification_status === 'pending' ? 'Unverified' :
+                           c.verification_status === 'on_hold' ? 'On Hold' :
+                           c.verification_status === 'under_review' ? 'Under Review' :
+                           c.verification_status === 'rejected' ? 'Rejected' :
+                           c.verification_status}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between mt-4">

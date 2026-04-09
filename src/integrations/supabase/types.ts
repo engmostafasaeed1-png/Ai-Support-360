@@ -2499,6 +2499,7 @@ export type Database = {
       verification_status:
         | "pending"
         | "under_review"
+        | "on_hold"
         | "verified"
         | "rejected"
         | "suspended"
@@ -2687,6 +2688,7 @@ export const Constants = {
       verification_status: [
         "pending",
         "under_review",
+        "on_hold",
         "verified",
         "rejected",
         "suspended",
