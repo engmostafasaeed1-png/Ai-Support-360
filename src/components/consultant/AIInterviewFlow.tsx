@@ -233,10 +233,19 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
       }
       
       if (final) {
-        setInput(prev => (prev + ' ' + final).trim());
+        pendingTextRef.current = (pendingTextRef.current + ' ' + final).trim();
+        setInput(pendingTextRef.current);
         setInterimTranscript('');
+        // In conversation mode, auto-send after silence
+        if (conversationMode) {
+          scheduleSilenceSend();
+        }
       } else {
         setInterimTranscript(interim);
+        // Reset silence timer while still speaking
+        if (conversationMode && silenceTimerRef.current) {
+          clearTimeout(silenceTimerRef.current);
+        }
       }
     };
 
