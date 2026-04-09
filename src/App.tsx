@@ -180,6 +180,7 @@ const App = () => (
               <Route path="integrations" element={<IntegrationsPage />} />
               <Route path="onboarding" element={<ClientOnboardingPage />} />
               <Route path="remote-access" element={<ClientRemoteAccessPage />} />
+              <Route path="vmware-settings" element={<ClientVMwareSettingsPage />} />
               <Route path="invoices" element={<InvoicesPage />} />
               <Route path="knowledge" element={<KnowledgePage />} />
               <Route path="milestones" element={<MilestonesPage />} />
