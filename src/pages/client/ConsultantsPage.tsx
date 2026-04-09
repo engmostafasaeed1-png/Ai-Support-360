@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import {
   Search, Star, BadgeCheck, Zap, Heart, Filter, Map, LayoutGrid,
   Wifi, WifiOff, X, ChevronDown, ChevronUp, Clock, Globe, DollarSign,
-  Users, Circle, Award,
+  Users, Circle, Award, ShieldAlert, ShieldCheck, ShieldQuestion,
 } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
