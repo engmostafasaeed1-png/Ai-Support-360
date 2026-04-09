@@ -204,7 +204,21 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   }, [messages]);
 
   useEffect(() => {
-    sendToAI([]);
+    // Check if there's a saved conversation to resume
+    const loadSavedConversation = async () => {
+      const { data } = await supabase
+        .from('interview_sessions')
+        .select('skill_results, status')
+        .eq('id', interviewId)
+        .single();
+      const saved = data?.skill_results as ChatMessage[] | null;
+      if (saved && Array.isArray(saved) && saved.length > 0 && data?.status === 'in_progress') {
+        setMessages(saved);
+      } else {
+        sendToAI([]);
+      }
+    };
+    loadSavedConversation();
   }, []);
 
   useEffect(() => {
