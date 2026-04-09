@@ -815,26 +815,22 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         <div className="grid md:grid-cols-5 gap-0 min-h-[450px]">
           {/* AI Avatar + User webcam */}
           <div className="md:col-span-2 relative flex flex-col items-center justify-center bg-gradient-to-br from-[#0a1128] via-[#0f1628] to-[#1a1f3a] p-6">
-            <AvatarParticles />
-            <div className="relative">
-              <div className={`w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-3 transition-all duration-500 ${
-                isSpeaking ? 'border-green-400 shadow-[0_0_30px_rgba(74,222,128,0.3)] scale-105' : 'border-primary/40'
-              }`}>
-                <img src={avatarImg} alt="AI Interviewer" className="w-full h-full object-cover" />
-              </div>
-              {isSpeaking && (
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-green-500/20 backdrop-blur-sm rounded-full px-3 py-1">
-                  <SpeakingIndicator />
-                  <span className="text-[10px] text-green-300 ms-1">Speaking</span>
-                </div>
-              )}
-              {isListening && !isSpeaking && (
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-blue-500/20 backdrop-blur-sm rounded-full px-3 py-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                  <span className="text-[10px] text-blue-300 ms-1">Listening</span>
-                </div>
-              )}
+            {/* Ambient particles */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-1 h-1 rounded-full bg-primary/15 animate-pulse"
+                  style={{
+                    left: `${10 + i * 12}%`,
+                    top: `${15 + (i % 4) * 20}%`,
+                    animationDelay: `${i * 0.4}s`,
+                    animationDuration: `${3 + i * 0.3}s`,
+                  }}
+                />
+              ))}
             </div>
+            <DynamicAvatar src={avatarImg} isSpeaking={isSpeaking} isListening={isListening} isThinking={isStreaming && !isSpeaking} />
             <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/50 rounded-lg px-3 py-1.5">
               <Brain className="w-3.5 h-3.5 text-primary" />
               <span className="text-xs font-medium text-white">Qurtuba AI Interviewer</span>
