@@ -3,11 +3,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Monitor, Server, Terminal, Laptop } from 'lucide-react';
+import { Monitor, Server, Terminal, Laptop, ShieldAlert, FileCheck } from 'lucide-react';
 import { useRemoteEnvironments, type RemoteEnvironment } from '@/hooks/useRemoteEnvironments';
 import { useEnvironmentConnections, type EnvironmentConnection } from '@/hooks/useEnvironmentConnections';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import GuacamoleViewer from '@/components/remote/GuacamoleViewer';
 import CredentialsManager from '@/components/remote/CredentialsManager';
+import NDASigningModal from '@/components/consultant/NDASigningModal';
 import { useEnvironmentTracking } from '@/hooks/useEnvironmentTracking';
 import { useState } from 'react';
 
@@ -55,6 +58,123 @@ function ConnectionPicker({ envId, envName, envUrl, envOsType, onConnect }: {
         );
       })}
     </div>
+  );
+}
+
+/** Hook to check if current consultant has a signed NDA with the given client */
+function useNDAStatus(clientId?: string) {
+  return useQuery({
+    queryKey: ['nda-status', clientId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { signed: false, consultantId: null as string | null };
+
+      // Get consultant id
+      const { data: consultant } = await supabase
+        .from('consultants')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!consultant) return { signed: false, consultantId: null };
+
+      // Check for active (non-revoked) NDA
+      const { data: nda } = await supabase
+        .from('nda_agreements')
+        .select('id')
+        .eq('consultant_id', consultant.id)
+        .eq('client_id', clientId!)
+        .is('revoked_at', null)
+        .limit(1)
+        .maybeSingle();
+
+      return { signed: !!nda, consultantId: consultant.id };
+    },
+    enabled: !!clientId,
+  });
+}
+
+function EnvironmentCard({ env, onConnect }: {
+  env: RemoteEnvironment;
+  onConnect: (envId: string, url: string, name: string) => void;
+}) {
+  const { t } = useTranslation();
+  const { data: ndaStatus, isLoading: ndaLoading } = useNDAStatus(env.client_id);
+  const [ndaModalOpen, setNdaModalOpen] = useState(false);
+
+  const hasSigned = ndaStatus?.signed ?? false;
+  const consultantId = ndaStatus?.consultantId;
+
+  return (
+    <Card className="rounded-2xl border-border/50">
+      <CardContent className="p-5">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <Monitor className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-foreground">{env.name}</h3>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="default" className="text-[10px]">Active</Badge>
+              <Badge variant="outline" className="text-[10px]">{env.platform_type === 'vmware' ? 'VMware' : env.platform_type}</Badge>
+              <span className="text-xs text-muted-foreground">{env.os_type}</span>
+            </div>
+            {env.vm_name && <p className="text-xs text-muted-foreground/70 mt-1 font-mono">{env.vm_name}</p>}
+            {env.notes && <p className="text-xs text-muted-foreground mt-2">{env.notes}</p>}
+
+            {/* NDA Gate */}
+            {ndaLoading ? (
+              <Skeleton className="h-10 mt-3 rounded-xl" />
+            ) : !hasSigned ? (
+              <div className="mt-3 p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-2">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
+                  <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                    {t('remote.nda_required', 'NDA Required')}
+                  </p>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {t('remote.nda_required_desc', 'You must sign a Non-Disclosure Agreement before accessing this environment.')}
+                </p>
+                <Button
+                  size="sm"
+                  className="w-full gradient-primary border-0 h-8 text-xs"
+                  onClick={() => setNdaModalOpen(true)}
+                >
+                  <FileCheck className="w-3.5 h-3.5 me-1.5" />
+                  {t('remote.sign_nda', 'Sign NDA to Continue')}
+                </Button>
+                {consultantId && (
+                  <NDASigningModal
+                    open={ndaModalOpen}
+                    onOpenChange={setNdaModalOpen}
+                    clientId={env.client_id}
+                    consultantId={consultantId}
+                  />
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="mt-3 flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
+                  <FileCheck className="w-3.5 h-3.5" />
+                  {t('remote.nda_signed', 'NDA Signed — Access Authorized')}
+                </div>
+                <div className="mt-3 pt-3 border-t border-border/30">
+                  <CredentialsManager environmentId={env.id} canEdit={false} />
+                </div>
+                <ConnectionPicker
+                  envId={env.id}
+                  envName={env.name}
+                  envUrl={env.guacamole_url}
+                  envOsType={env.os_type}
+                  onConnect={(url, name) => onConnect(env.id, url, name)}
+                />
+              </>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -110,35 +230,11 @@ export default function RemoteAccessPage() {
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
           {activeEnvs.map((env) => (
-            <Card key={env.id} className="rounded-2xl border-border/50">
-              <CardContent className="p-5">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <Monitor className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">{env.name}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="default" className="text-[10px]">Active</Badge>
-                      <Badge variant="outline" className="text-[10px]">{env.platform_type === 'vmware' ? 'VMware' : env.platform_type}</Badge>
-                      <span className="text-xs text-muted-foreground">{env.os_type}</span>
-                    </div>
-                    {env.vm_name && <p className="text-xs text-muted-foreground/70 mt-1 font-mono">{env.vm_name}</p>}
-                    {env.notes && <p className="text-xs text-muted-foreground mt-2">{env.notes}</p>}
-                    <div className="mt-3 pt-3 border-t border-border/30">
-                      <CredentialsManager environmentId={env.id} canEdit={false} />
-                    </div>
-                    <ConnectionPicker
-                      envId={env.id}
-                      envName={env.name}
-                      envUrl={env.guacamole_url}
-                      envOsType={env.os_type}
-                      onConnect={(url, name) => setActiveConn({ envId: env.id, url, name })}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <EnvironmentCard
+              key={env.id}
+              env={env}
+              onConnect={(envId, url, name) => setActiveConn({ envId, url, name })}
+            />
           ))}
         </div>
       )}
