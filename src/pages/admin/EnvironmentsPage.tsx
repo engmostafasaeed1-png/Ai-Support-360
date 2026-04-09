@@ -90,6 +90,9 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
       consultant_id: consultantId || null,
       status,
       os_type: osType,
+      platform_type: platformType,
+      vmware_host: vmwareHost || null,
+      vm_name: vmName || null,
       notes: notes || null,
     });
   };
