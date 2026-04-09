@@ -24,21 +24,115 @@ export default function LoginPage() {
   const [exploreOpen, setExploreOpen] = useState(false);
   const [checking, setChecking] = useState(true);
 
+  const getRoleAndRepairAccount = async (user: {
+    id: string;
+    email?: string | null;
+    user_metadata?: Record<string, any>;
+  }) => {
+    const { data: roles, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .limit(1);
+
+    if (roleError) throw roleError;
+
+    const role = roles?.[0]?.role as 'client' | 'consultant' | 'admin' | undefined;
+    const displayName = user.user_metadata?.display_name || user.email?.split('@')[0] || 'User';
+
+    const { data: existingProfile, error: profileLookupError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (profileLookupError) throw profileLookupError;
+
+    if (!existingProfile) {
+      const { error: profileInsertError } = await supabase.from('profiles').insert({
+        user_id: user.id,
+        display_name: displayName,
+        onboarding_completed: false,
+      });
+
+      if (profileInsertError) throw profileInsertError;
+    }
+
+    if (role === 'consultant') {
+      const { data: existingConsultant, error: consultantLookupError } = await supabase
+        .from('consultants')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (consultantLookupError) throw consultantLookupError;
+
+      if (!existingConsultant) {
+        const { error: consultantInsertError } = await supabase.from('consultants').insert({
+          user_id: user.id,
+        });
+
+        if (consultantInsertError) throw consultantInsertError;
+      }
+    }
+
+    if (role === 'client') {
+      const { data: existingClientProfile, error: clientProfileLookupError } = await supabase
+        .from('client_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (clientProfileLookupError) throw clientProfileLookupError;
+
+      if (!existingClientProfile) {
+        const { error: clientProfileInsertError } = await supabase.from('client_profiles').insert({
+          user_id: user.id,
+          onboarding_completed: false,
+        });
+
+        if (clientProfileInsertError) throw clientProfileInsertError;
+      }
+    }
+
+    return role;
+  };
+
+  const navigateByRole = (role?: 'client' | 'consultant' | 'admin') => {
+    if (role === 'consultant') {
+      navigate('/consultant', { replace: true });
+      return;
+    }
+
+    if (role === 'admin') {
+      navigate('/admin', { replace: true });
+      return;
+    }
+
+    navigate('/client', { replace: true });
+  };
+
   // If user is already logged in, redirect them away from login page
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      if (!session) {
+        setChecking(false);
+        return;
+      }
+
+      try {
+        const role = await getRoleAndRepairAccount(session.user);
+
         if (from) {
           navigate(from, { replace: true });
           return;
         }
-        const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).limit(1);
-        const role = roles?.[0]?.role;
-        if (role === 'consultant') navigate('/consultant', { replace: true });
-        else if (role === 'admin') navigate('/admin', { replace: true });
-        else navigate('/client', { replace: true });
-      } else {
+
+        navigateByRole(role);
+      } catch (error) {
+        console.error(error);
+        toast.error('Unable to restore your account. Please try again.');
         setChecking(false);
       }
     };
@@ -48,21 +142,35 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
     if (error) {
+      setLoading(false);
       toast.error(error.message);
       return;
     }
-    if (from) {
-      navigate(from);
+
+    if (!data.session) {
+      setLoading(false);
+      toast.error('Unable to start your session. Please try again.');
       return;
     }
-    const { data: roles } = await supabase.from('user_roles').select('role').limit(1);
-    const role = roles?.[0]?.role;
-    if (role === 'consultant') navigate('/consultant');
-    else if (role === 'admin') navigate('/admin');
-    else navigate('/client/companies');
+
+    try {
+      const role = await getRoleAndRepairAccount(data.session.user);
+
+      if (from) {
+        navigate(from, { replace: true });
+        return;
+      }
+
+      navigateByRole(role);
+    } catch (repairError) {
+      console.error(repairError);
+      toast.error('Login succeeded, but your account setup could not be restored.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (checking) {

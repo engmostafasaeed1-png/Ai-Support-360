@@ -140,11 +140,14 @@ export default function ConsultantOnboarding() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error(t('onboarding.error_auth')); return; }
 
-      // Update profile
-      await supabase.from('profiles').update({
+      // Update or create profile
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        user_id: user.id,
         display_name: data.displayName,
         onboarding_completed: true,
-      }).eq('user_id', user.id);
+      }, { onConflict: 'user_id' });
+
+      if (profileError) throw profileError;
 
       // Upsert consultant record
       const { data: consultant, error: consultantErr } = await supabase

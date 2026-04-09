@@ -112,14 +112,16 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
     return <Navigate to="/" replace />;
   }
 
+  const isOnClientSetupPage = location.pathname === '/client/companies' || location.pathname === '/client/onboarding';
+  const isOnConsultantOnboardingPage = location.pathname === '/consultant/onboarding';
+
   // Client has no company — redirect to company setup (unless already there)
-  const isOnCompanyPages = location.pathname === '/client/companies' || location.pathname === '/client/onboarding';
-  if (requiredRole === 'client' && !hasTenant && !isOnCompanyPages) {
+  if (requiredRole === 'client' && !hasTenant && !isOnClientSetupPage) {
     return <Navigate to="/client/companies" replace />;
   }
 
-  // Redirect to onboarding if not completed (skip if already on onboarding or companies page)
-  if (needsOnboarding && !isOnCompanyPages) {
+  // Redirect to onboarding if not completed (skip if already on the relevant setup page)
+  if (needsOnboarding && !isOnClientSetupPage && !isOnConsultantOnboardingPage) {
     const onboardingPath = requiredRole === 'client' ? '/client/onboarding' : '/consultant/onboarding';
     return <Navigate to={onboardingPath} replace />;
   }
