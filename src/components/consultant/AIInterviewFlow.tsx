@@ -84,7 +84,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [interimTranscript, setInterimTranscript] = useState('');
   const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('female');
   const [speechRate, setSpeechRate] = useState(1.0);
-  const [interviewLang, setInterviewLang] = useState<'en' | 'ar'>('en');
+  const [interviewLang, setInterviewLang] = useState<'en' | 'fr' | 'ar' | 'es' | 'de' | 'ar-SA'>('en');
   const [conversationMode, setConversationMode] = useState(true); // continuous hands-free mode
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
@@ -177,11 +177,15 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     utterance.rate = speechRate;
     utterance.pitch = voiceGender === 'female' ? 1.1 : 0.85;
     utterance.volume = 1.0;
-    utterance.lang = interviewLang === 'ar' ? 'ar-SA' : 'en-US';
+    
+    const langMap: Record<string, string> = {
+      'en': 'en-US', 'fr': 'fr-FR', 'ar': 'ar-EG', 'es': 'es-ES', 'de': 'de-DE', 'ar-SA': 'ar-SA'
+    };
+    utterance.lang = langMap[interviewLang] || 'en-US';
     
     // Pick voice matching gender and language
     const voices = window.speechSynthesis.getVoices();
-    const langPrefix = interviewLang === 'ar' ? 'ar' : 'en';
+    const langPrefix = interviewLang.startsWith('ar') ? 'ar' : interviewLang;
     const genderHints = voiceGender === 'female'
       ? ['female', 'woman', 'zira', 'samantha', 'karen', 'victoria', 'fiona', 'Google.*Female']
       : ['male', 'man', 'david', 'daniel', 'james', 'Google.*Male', 'alex'];
@@ -218,7 +222,10 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = interviewLang === 'ar' ? 'ar-SA' : 'en-US';
+    const sttLangMap: Record<string, string> = {
+      'en': 'en-US', 'fr': 'fr-FR', 'ar': 'ar-EG', 'es': 'es-ES', 'de': 'de-DE', 'ar-SA': 'ar-SA'
+    };
+    recognition.lang = sttLangMap[interviewLang] || 'en-US';
 
     recognition.onresult = (event: any) => {
       let interim = '';
@@ -720,20 +727,18 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             {/* Language */}
             <div className="flex items-center gap-2">
               <Globe className="w-3.5 h-3.5 text-white/50" />
-              <div className="flex rounded-lg overflow-hidden border border-white/10">
-                <button
-                  onClick={() => setInterviewLang('en')}
-                  className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${
-                    interviewLang === 'en' ? 'bg-primary/30 text-primary' : 'text-white/50 hover:text-white/80'
-                  }`}
-                >English</button>
-                <button
-                  onClick={() => setInterviewLang('ar')}
-                  className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${
-                    interviewLang === 'ar' ? 'bg-primary/30 text-primary' : 'text-white/50 hover:text-white/80'
-                  }`}
-                >العربية</button>
-              </div>
+              <select
+                value={interviewLang}
+                onChange={(e) => setInterviewLang(e.target.value as any)}
+                className="bg-white/5 border border-white/10 text-white/80 text-[10px] rounded-lg px-2 py-1 focus:outline-none focus:border-primary/50 appearance-none cursor-pointer"
+              >
+                <option value="en" className="bg-[#111827]">🇬🇧 English</option>
+                <option value="fr" className="bg-[#111827]">🇫🇷 Français</option>
+                <option value="ar" className="bg-[#111827]">🇪🇬 العربية</option>
+                <option value="ar-SA" className="bg-[#111827]">🇸🇦 السعودية</option>
+                <option value="es" className="bg-[#111827]">🇪🇸 Español</option>
+                <option value="de" className="bg-[#111827]">🇩🇪 Deutsch</option>
+              </select>
             </div>
           </div>
 
