@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Brain, Loader2, CheckCircle, Send, AlertTriangle, Video, VideoOff,
-  Mic, MicOff, Monitor, PhoneOff, MessageSquare, Award,
+  Mic, MicOff, Monitor, PhoneOff, MessageSquare, Award, Volume2, VolumeX,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import aiAvatarImg from '@/assets/ai-interviewer-avatar.jpg';
@@ -32,6 +32,9 @@ interface Props {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-interview-chat`;
+
+// Check for SpeechRecognition support
+const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
 function SpeakingIndicator() {
   return (
@@ -74,9 +77,14 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [isListening, setIsListening] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(true);
+  const [interimTranscript, setInterimTranscript] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const lastSpokenRef = useRef('');
 
   // Timer
   useEffect(() => {
@@ -96,15 +104,130 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     sendToAI([]);
   }, []);
 
+  // Cleanup speech on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch {}
+      }
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
     return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
+  // --- TTS: Speak AI response ---
+  const speakText = useCallback((text: string) => {
+    if (!ttsEnabled || !window.speechSynthesis) return;
+    
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    
+    // Strip markdown formatting for cleaner speech
+    const cleanText = text
+      .replace(/[#*_`~\[\]()>]/g, '')
+      .replace(/\n+/g, '. ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    if (!cleanText || cleanText === lastSpokenRef.current) return;
+    lastSpokenRef.current = cleanText;
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    // Try to pick a natural-sounding voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v => 
+      v.name.includes('Google') && v.lang.startsWith('en')
+    ) || voices.find(v => v.lang.startsWith('en') && !v.localService) 
+      || voices.find(v => v.lang.startsWith('en'));
+    if (preferred) utterance.voice = preferred;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  }, [ttsEnabled]);
+
+  // --- STT: Speech Recognition ---
+  const startListening = useCallback(() => {
+    if (!SpeechRecognition || isListening) return;
+
+    // Stop TTS when user starts speaking
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: any) => {
+      let interim = '';
+      let final = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          final += transcript;
+        } else {
+          interim += transcript;
+        }
+      }
+      
+      if (final) {
+        setInput(prev => (prev + ' ' + final).trim());
+        setInterimTranscript('');
+      } else {
+        setInterimTranscript(interim);
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      if (event.error !== 'no-speech') {
+        setIsListening(false);
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      setInterimTranscript('');
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  }, [isListening]);
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch {}
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+    setInterimTranscript('');
+  }, []);
+
+  const toggleListening = useCallback(() => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  }, [isListening, startListening, stopListening]);
+
   const sendToAI = async (chatHistory: ChatMessage[]) => {
     setIsStreaming(true);
     setIsSpeaking(true);
+    lastSpokenRef.current = '';
 
     try {
       const resp = await fetch(CHAT_URL, {
@@ -167,12 +290,19 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
           }
         }
       }
+
+      // Speak the complete response
+      if (assistantText) {
+        speakText(assistantText);
+      }
     } catch (err: any) {
       console.error('Stream error:', err);
       setError(err.message || 'Connection failed');
     } finally {
       setIsStreaming(false);
-      setTimeout(() => setIsSpeaking(false), 500);
+      if (!ttsEnabled) {
+        setTimeout(() => setIsSpeaking(false), 500);
+      }
     }
   };
 
@@ -180,6 +310,11 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     const text = input.trim();
     if (!text || isStreaming) return;
     setInput('');
+    setInterimTranscript('');
+    
+    // Stop listening while AI responds
+    if (isListening) stopListening();
+    
     const userMsg: ChatMessage = { role: 'user', content: text };
     const newHistory = [...messages, userMsg];
     setMessages(newHistory);
@@ -190,6 +325,9 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const handleEndInterview = async () => {
     setPhase('evaluating');
     clearInterval(timerRef.current);
+    if (isListening) stopListening();
+    window.speechSynthesis.cancel();
+    
     try {
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
@@ -314,7 +452,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="secondary" className="bg-green-500/10 text-green-400 text-[10px]">
-              Free Discussion
+              {isListening ? '🎤 Listening...' : 'Voice Discussion'}
             </Badge>
             <span className="text-xs text-white/60 font-mono">{formatTime(elapsedTime)}</span>
             <span className="text-xs text-white/40">{userMessageCount} exchanges</span>
@@ -336,6 +474,12 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-green-500/20 backdrop-blur-sm rounded-full px-3 py-1">
                   <SpeakingIndicator />
                   <span className="text-[10px] text-green-300 ms-1">Speaking</span>
+                </div>
+              )}
+              {isListening && !isSpeaking && (
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-blue-500/20 backdrop-blur-sm rounded-full px-3 py-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                  <span className="text-[10px] text-blue-300 ms-1">Listening</span>
                 </div>
               )}
             </div>
@@ -406,17 +550,43 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                   {error}
                 </div>
               )}
+              
+              {/* Interim transcript display */}
+              {interimTranscript && (
+                <div className="flex items-center gap-2 text-xs text-blue-300/70 mb-2 italic">
+                  <Mic className="w-3 h-3 animate-pulse" />
+                  {interimTranscript}
+                </div>
+              )}
+              
               <div className="flex gap-2">
                 <textarea
                   ref={inputRef}
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Type your response..."
+                  placeholder={isListening ? "Speak now... or type here" : "Type your response or click 🎤"}
                   rows={2}
                   disabled={isStreaming}
                   className="flex-1 resize-none bg-white/5 border border-white/10 text-white placeholder:text-white/30 text-sm rounded-xl p-3 focus:outline-none focus:border-primary/50 disabled:opacity-50"
                 />
+                
+                {/* Voice input button */}
+                {SpeechRecognition && (
+                  <Button
+                    size="icon"
+                    onClick={toggleListening}
+                    disabled={isStreaming}
+                    className={`h-auto w-12 rounded-xl shrink-0 transition-all ${
+                      isListening 
+                        ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+                        : 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400'
+                    }`}
+                  >
+                    {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </Button>
+                )}
+                
                 <Button
                   size="icon"
                   onClick={handleSend}
@@ -434,12 +604,15 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         <div className="flex items-center justify-between px-4 py-3 bg-black/50 border-t border-white/10">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setMicOn(!micOn)}
+              onClick={toggleListening}
               className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                micOn ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'
+                isListening 
+                  ? 'bg-red-500/30 text-red-400 ring-2 ring-red-500/50 animate-pulse' 
+                  : micOn ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'
               }`}
+              title={isListening ? 'Stop listening' : 'Start voice input'}
             >
-              {micOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </button>
             <button
               onClick={() => setCamOn(!camOn)}
@@ -448,6 +621,21 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
               }`}
             >
               {camOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={() => {
+                setTtsEnabled(!ttsEnabled);
+                if (ttsEnabled) {
+                  window.speechSynthesis.cancel();
+                  setIsSpeaking(false);
+                }
+              }}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                ttsEnabled ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'
+              }`}
+              title={ttsEnabled ? 'Mute AI voice' : 'Enable AI voice'}
+            >
+              {ttsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
             <button className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors">
               <Monitor className="w-4 h-4" />
