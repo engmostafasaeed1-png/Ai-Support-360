@@ -7,7 +7,7 @@ import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Outlet } from 'react-router-dom';
 import {
   Search, LayoutDashboard, Briefcase, Calendar, MessageSquare,
-  CreditCard, Star, User, ShieldCheck, BookOpen, Bell, Settings, Brain,
+  CreditCard, Star, User, ShieldCheck, BookOpen, Bell, Settings, Settings2, Brain, Server,
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,7 @@ const moreNavItems = [
   { key: 'interviews', icon: Brain, path: '/consultant/interviews', labelKey: 'sidebar.interviews' },
   { key: 'profile', icon: User, path: '/consultant/profile', labelKey: 'sidebar.profile' },
   { key: 'verification', icon: ShieldCheck, path: '/consultant/verification', labelKey: 'sidebar.verification' },
+  { key: 'remote_access', icon: Server, path: '/consultant/remote-access', labelKey: 'sidebar.remote_access' },
   { key: 'knowledge', icon: BookOpen, path: '/consultant/knowledge', labelKey: 'sidebar.knowledge' },
   { key: 'notifications', icon: Bell, path: '/consultant/notifications', labelKey: 'sidebar.notifications' },
   { key: 'settings', icon: Settings, path: '/consultant/settings', labelKey: 'sidebar.settings' },
