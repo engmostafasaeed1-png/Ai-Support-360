@@ -65,6 +65,14 @@ export default function LoginPage() {
     else navigate('/client/companies');
   };
 
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative">
       <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
