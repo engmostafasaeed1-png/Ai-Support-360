@@ -108,6 +108,8 @@ import ProjectManagementTicketsPage from "./pages/client/ProjectManagementTicket
 import SolutionArchitecturePage from "./pages/client/SolutionArchitecturePage.tsx";
 import LandingEditorPage from "./pages/admin/LandingEditorPage.tsx";
 import AdminConsolePage from "./pages/admin/AdminConsolePage.tsx";
+import AdminVMwareSettingsPage from "./pages/admin/VMwareSettingsPage.tsx";
+import ClientVMwareSettingsPage from "./pages/client/VMwareSettingsPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -178,6 +180,7 @@ const App = () => (
               <Route path="integrations" element={<IntegrationsPage />} />
               <Route path="onboarding" element={<ClientOnboardingPage />} />
               <Route path="remote-access" element={<ClientRemoteAccessPage />} />
+              <Route path="vmware-settings" element={<ClientVMwareSettingsPage />} />
               <Route path="invoices" element={<InvoicesPage />} />
               <Route path="knowledge" element={<KnowledgePage />} />
               <Route path="milestones" element={<MilestonesPage />} />
@@ -227,6 +230,7 @@ const App = () => (
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="integrations" element={<AdminIntegrationsPage />} />
               <Route path="environments" element={<EnvironmentsPage />} />
+              <Route path="vmware-settings" element={<AdminVMwareSettingsPage />} />
               <Route path="environment-logs" element={<EnvironmentLogsPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="nda-management" element={<NDAManagementPage />} />
