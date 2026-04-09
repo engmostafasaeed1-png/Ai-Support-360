@@ -918,7 +918,33 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                   <Mic className="w-3 h-3 animate-pulse" /> {interimTranscript}
                 </div>
               )}
-              <div className="flex gap-2">
+              {/* Quick action buttons */}
+              <div className="flex gap-1.5 mb-2">
+                <button
+                  onClick={() => {
+                    const clarifyMsg: ChatMessage = { role: 'user', content: 'Can you please clarify or rephrase the last question? I want to make sure I understand it correctly.' };
+                    const newHistory = [...messages, clarifyMsg];
+                    setMessages(newHistory);
+                    sendToAI(newHistory);
+                  }}
+                  disabled={isStreaming || messages.length === 0}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white/90 hover:bg-white/10 text-[10px] transition-colors disabled:opacity-30"
+                >
+                  <HelpCircle className="w-3 h-3" /> Clarify Question
+                </button>
+                <button
+                  onClick={() => {
+                    const repeatMsg: ChatMessage = { role: 'user', content: 'Could you repeat the question please?' };
+                    const newHistory = [...messages, repeatMsg];
+                    setMessages(newHistory);
+                    sendToAI(newHistory);
+                  }}
+                  disabled={isStreaming || messages.length === 0}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white/90 hover:bg-white/10 text-[10px] transition-colors disabled:opacity-30"
+                >
+                  <RefreshCw className="w-3 h-3" /> Repeat
+                </button>
+              </div>
                 <textarea
                   ref={inputRef}
                   value={input}
