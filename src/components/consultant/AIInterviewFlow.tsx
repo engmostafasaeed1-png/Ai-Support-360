@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import {
   Brain, Loader2, CheckCircle, Send, AlertTriangle, Video, VideoOff,
   Mic, MicOff, Monitor, PhoneOff, MessageSquare, Award, Volume2, VolumeX,
-  Gauge, Globe, User, Eye, Smile, Activity,
+  Gauge, Globe, User, Eye, Smile, Activity, Clock,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Slider } from '@/components/ui/slider';
 import ReactMarkdown from 'react-markdown';
 import aiMaleAvatar from '@/assets/ai-interviewer-male.jpg';
