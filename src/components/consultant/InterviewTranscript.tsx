@@ -206,9 +206,9 @@ export default function InterviewTranscript({ consultantId, viewMode = 'consulta
                                 ? 'bg-muted/30 border border-border/30 text-foreground' 
                                 : 'bg-primary/10 border border-primary/20 text-foreground'
                             }`}>
-                              <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none [&>p]:mb-1 [&>p:last-child]:mb-0">
-                                {msg.content}
-                              </ReactMarkdown>
+                              <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:mb-1 [&>p:last-child]:mb-0">
+                                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                              </div>
                             </div>
                           </div>
                         ))}

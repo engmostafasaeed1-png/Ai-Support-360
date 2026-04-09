@@ -53,7 +53,7 @@ export default function InterviewTrainingPage() {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []) as TrainingConfig[];
+      return (data || []) as unknown as TrainingConfig[];
     },
   });
 
