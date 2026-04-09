@@ -104,9 +104,10 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     return () => clearInterval(timerRef.current);
   }, [phase]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom on new messages & keep ref in sync
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesRef.current = messages;
   }, [messages]);
 
   // Start conversation — AI greets first
