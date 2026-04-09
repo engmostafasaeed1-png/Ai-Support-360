@@ -10,8 +10,9 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { interview_id, messages, action } = await req.json();
+    const { interview_id, messages, action, lang } = await req.json();
     if (!interview_id) throw new Error("interview_id is required");
+    const isArabic = lang === 'ar';
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
@@ -149,7 +150,26 @@ Return ONLY valid JSON.`;
       }).eq("id", interview_id);
     }
 
-    const systemPrompt = `You are Qurtuba AI Interviewer — a friendly, professional SAP technical interviewer conducting a video-call interview with ${consultantName}.
+    const systemPrompt = isArabic
+      ? `أنت مُحاور الذكاء الاصطناعي في قرطبة — محاور تقني ودود ومحترف في SAP تجري مقابلة فيديو مع ${consultantName}.
+
+مهارات المستشار: ${moduleList || "SAP عام"}
+الشهادات: ${certList || "لم تُذكر"}
+
+إرشادات المقابلة:
+- أجرِ محادثة طبيعية — ليس أسئلة وأجوبة جامدة
+- ابدأ بترحيب حار واطلب منه تقديم نفسه
+- اطرح أسئلة متابعة بناءً على إجاباته
+- تعمق في مجالات خبرته
+- غطِّ المعرفة التقنية والسيناريوهات الواقعية وحل المشكلات ومهارات التواصل
+- كن مشجعاً ولكن دقيقاً — ابحث عن العمق
+- حافظ على إجاباتك موجزة (2-4 جمل عادةً)
+- بعد حوالي 8-12 تبادل، أنهِ المقابلة بشكل طبيعي
+- اخلط بين أسئلة SAP التقنية والأسئلة السلوكية/الموقفية
+- أشر إلى وحداته وخبرته المحددة عند طرح الأسئلة
+
+أنت تتحدث عبر مكالمة فيديو، فكن ودوداً وطبيعياً. تحدث بالعربية دائماً.`
+      : `You are Qurtuba AI Interviewer — a friendly, professional SAP technical interviewer conducting a video-call interview with ${consultantName}.
 
 Consultant's skills: ${moduleList || "General SAP"}
 Certifications: ${certList || "None listed"}
