@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Brain, Loader2, CheckCircle, Send, AlertTriangle, Video, VideoOff,
   Mic, MicOff, Monitor, PhoneOff, MessageSquare, Award, Volume2, VolumeX,
-  Gauge, Globe, User,
+  Gauge, Globe, User, Eye, Smile, Activity,
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import ReactMarkdown from 'react-markdown';
@@ -27,6 +27,19 @@ interface EvaluationResult {
   detailed_feedback?: string;
 }
 
+interface BodyLanguageResult {
+  eye_contact_score: number;
+  facial_expression_score: number;
+  posture_score: number;
+  confidence_score: number;
+  engagement_score: number;
+  professional_presence_score: number;
+  overall_body_language_score: number;
+  summary: string;
+  observations?: string[];
+  tips?: string[];
+}
+
 interface Props {
   interviewId: string;
   onComplete: () => void;
@@ -34,8 +47,8 @@ interface Props {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-interview-chat`;
+const BODY_LANG_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-body-language`;
 
-// Check for SpeechRecognition support
 const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
 function SpeakingIndicator() {
@@ -67,6 +80,24 @@ function AvatarParticles() {
   );
 }
 
+function ScoreBar({ label, score, icon }: { label: string; score: number; icon: React.ReactNode }) {
+  const color = score >= 75 ? 'bg-green-500' : score >= 50 ? 'bg-amber-500' : 'bg-red-500';
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-5 h-5 text-muted-foreground shrink-0">{icon}</div>
+      <div className="flex-1">
+        <div className="flex justify-between text-xs mb-1">
+          <span className="text-foreground font-medium">{label}</span>
+          <span className="text-muted-foreground">{score}/100</span>
+        </div>
+        <div className="h-2 rounded-full bg-muted/30 overflow-hidden">
+          <div className={`h-full rounded-full ${color} transition-all duration-700`} style={{ width: `${score}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: Props) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<'chat' | 'evaluating' | 'results'>('chat');
@@ -75,6 +106,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [isStreaming, setIsStreaming] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
+  const [bodyLanguage, setBodyLanguage] = useState<BodyLanguageResult | null>(null);
   const [error, setError] = useState('');
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
@@ -85,7 +117,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('female');
   const [speechRate, setSpeechRate] = useState(1.0);
   const [interviewLang, setInterviewLang] = useState<'en' | 'fr' | 'ar' | 'es' | 'de' | 'ar-SA'>('en');
-  const [conversationMode, setConversationMode] = useState(true); // continuous hands-free mode
+  const [conversationMode, setConversationMode] = useState(true);
+  const [capturedFrames, setCapturedFrames] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -96,6 +129,64 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const shouldAutoResumeRef = useRef(true);
   const messagesRef = useRef<ChatMessage[]>([]);
 
+  // Webcam refs
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const framesRef = useRef<string[]>([]);
+  const frameCaptureRef = useRef<ReturnType<typeof setInterval>>();
+
+  // --- Webcam setup ---
+  useEffect(() => {
+    if (camOn) {
+      navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' } })
+        .then(stream => {
+          streamRef.current = stream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+          // Capture a frame every 30 seconds for body language analysis
+          frameCaptureRef.current = setInterval(() => {
+            captureFrame();
+          }, 30000);
+          // Capture first frame after 3 seconds
+          setTimeout(() => captureFrame(), 3000);
+        })
+        .catch(err => {
+          console.error('Camera access denied:', err);
+          setCamOn(false);
+        });
+    } else {
+      stopCamera();
+    }
+    return () => {
+      stopCamera();
+    };
+  }, [camOn]);
+
+  const stopCamera = () => {
+    if (frameCaptureRef.current) clearInterval(frameCaptureRef.current);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+  };
+
+  const captureFrame = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (video.videoWidth === 0) return;
+    canvas.width = 320;
+    canvas.height = 240;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, 320, 240);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+    framesRef.current.push(dataUrl);
+    setCapturedFrames(framesRef.current.length);
+  };
+
   // Timer
   useEffect(() => {
     if (phase === 'chat') {
@@ -104,18 +195,15 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     return () => clearInterval(timerRef.current);
   }, [phase]);
 
-  // Scroll to bottom on new messages & keep ref in sync
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     messagesRef.current = messages;
   }, [messages]);
 
-  // Start conversation — AI greets first
   useEffect(() => {
     sendToAI([]);
   }, []);
 
-  // Cleanup speech on unmount
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {
@@ -123,10 +211,10 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
       }
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       window.speechSynthesis.cancel();
+      stopCamera();
     };
   }, []);
 
-  // Auto-send accumulated speech after silence
   const scheduleSilenceSend = useCallback(() => {
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     silenceTimerRef.current = setTimeout(() => {
@@ -135,19 +223,17 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         pendingTextRef.current = '';
         setInput('');
         setInterimTranscript('');
-        // Stop listening during AI response
         if (recognitionRef.current) {
           try { recognitionRef.current.stop(); } catch {}
           recognitionRef.current = null;
         }
         setIsListening(false);
-        // Send directly
         const userMsg: ChatMessage = { role: 'user', content: text };
         const newHistory = [...messagesRef.current, userMsg];
         setMessages(newHistory);
         sendToAI(newHistory);
       }
-    }, 1800); // 1.8s silence = auto send
+    }, 1800);
   }, []);
 
   const formatTime = (s: number) => {
@@ -156,20 +242,10 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
-  // --- TTS: Speak AI response ---
   const speakText = useCallback((text: string) => {
     if (!ttsEnabled || !window.speechSynthesis) return;
-    
-    // Cancel any ongoing speech
     window.speechSynthesis.cancel();
-    
-    // Strip markdown formatting for cleaner speech
-    const cleanText = text
-      .replace(/[#*_`~\[\]()>]/g, '')
-      .replace(/\n+/g, '. ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    
+    const cleanText = text.replace(/[#*_`~\[\]()>]/g, '').replace(/\n+/g, '. ').replace(/\s+/g, ' ').trim();
     if (!cleanText || cleanText === lastSpokenRef.current) return;
     lastSpokenRef.current = cleanText;
 
@@ -177,21 +253,15 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     utterance.rate = speechRate;
     utterance.pitch = voiceGender === 'female' ? 1.1 : 0.85;
     utterance.volume = 1.0;
-    
-    const langMap: Record<string, string> = {
-      'en': 'en-US', 'fr': 'fr-FR', 'ar': 'ar-EG', 'es': 'es-ES', 'de': 'de-DE', 'ar-SA': 'ar-SA'
-    };
+    const langMap: Record<string, string> = { 'en': 'en-US', 'fr': 'fr-FR', 'ar': 'ar-EG', 'es': 'es-ES', 'de': 'de-DE', 'ar-SA': 'ar-SA' };
     utterance.lang = langMap[interviewLang] || 'en-US';
-    
-    // Pick voice matching gender and language
+
     const voices = window.speechSynthesis.getVoices();
     const langPrefix = interviewLang.startsWith('ar') ? 'ar' : interviewLang;
     const genderHints = voiceGender === 'female'
       ? ['female', 'woman', 'zira', 'samantha', 'karen', 'victoria', 'fiona', 'Google.*Female']
       : ['male', 'man', 'david', 'daniel', 'james', 'Google.*Male', 'alex'];
-    
     const matchesGender = (name: string) => genderHints.some(h => new RegExp(h, 'i').test(name));
-    
     const preferred = voices.find(v => v.lang.startsWith(langPrefix) && matchesGender(v.name) && !v.localService)
       || voices.find(v => v.lang.startsWith(langPrefix) && matchesGender(v.name))
       || voices.find(v => v.lang.startsWith(langPrefix) && !v.localService)
@@ -201,30 +271,23 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => {
       setIsSpeaking(false);
-      // Auto-resume listening after AI finishes speaking
       if (conversationMode && shouldAutoResumeRef.current && SpeechRecognition) {
         setTimeout(() => startListening(), 300);
       }
     };
     utterance.onerror = () => setIsSpeaking(false);
-
     window.speechSynthesis.speak(utterance);
   }, [ttsEnabled, speechRate, voiceGender, interviewLang]);
 
-  // --- STT: Speech Recognition ---
   const startListening = useCallback(() => {
     if (!SpeechRecognition || isListening) return;
-
-    // Stop TTS when user starts speaking
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    const sttLangMap: Record<string, string> = {
-      'en': 'en-US', 'fr': 'fr-FR', 'ar': 'ar-EG', 'es': 'es-ES', 'de': 'de-DE', 'ar-SA': 'ar-SA'
-    };
+    const sttLangMap: Record<string, string> = { 'en': 'en-US', 'fr': 'fr-FR', 'ar': 'ar-EG', 'es': 'es-ES', 'de': 'de-DE', 'ar-SA': 'ar-SA' };
     recognition.lang = sttLangMap[interviewLang] || 'en-US';
 
     recognition.onresult = (event: any) => {
@@ -232,41 +295,25 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
       let final = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          final += transcript;
-        } else {
-          interim += transcript;
-        }
+        if (event.results[i].isFinal) final += transcript;
+        else interim += transcript;
       }
-      
       if (final) {
         pendingTextRef.current = (pendingTextRef.current + ' ' + final).trim();
         setInput(pendingTextRef.current);
         setInterimTranscript('');
-        // In conversation mode, auto-send after silence
-        if (conversationMode) {
-          scheduleSilenceSend();
-        }
+        if (conversationMode) scheduleSilenceSend();
       } else {
         setInterimTranscript(interim);
-        // Reset silence timer while still speaking
-        if (conversationMode && silenceTimerRef.current) {
-          clearTimeout(silenceTimerRef.current);
-        }
+        if (conversationMode && silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       }
     };
 
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
-      if (event.error !== 'no-speech') {
-        setIsListening(false);
-      }
+      if (event.error !== 'no-speech') setIsListening(false);
     };
-
-    recognition.onend = () => {
-      setIsListening(false);
-      setInterimTranscript('');
-    };
+    recognition.onend = () => { setIsListening(false); setInterimTranscript(''); };
 
     recognitionRef.current = recognition;
     recognition.start();
@@ -274,61 +321,37 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   }, [isListening, interviewLang]);
 
   const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch {}
-      recognitionRef.current = null;
-    }
+    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
     setIsListening(false);
     setInterimTranscript('');
   }, []);
 
   const toggleListening = useCallback(() => {
-    if (isListening) {
-      stopListening();
-    } else {
-      startListening();
-    }
+    if (isListening) stopListening(); else startListening();
   }, [isListening, startListening, stopListening]);
 
   const sendToAI = async (chatHistory: ChatMessage[]) => {
     setIsStreaming(true);
     setIsSpeaking(true);
     lastSpokenRef.current = '';
-
     try {
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
-          interview_id: interviewId,
-          messages: chatHistory,
-          lang: interviewLang,
-        }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({ interview_id: interviewId, messages: chatHistory, lang: interviewLang }),
       });
-
       if (!resp.ok || !resp.body) {
-        if (resp.status === 429) {
-          setError('Rate limited — please try again in a moment.');
-          setIsStreaming(false);
-          setIsSpeaking(false);
-          return;
-        }
+        if (resp.status === 429) { setError('Rate limited — please try again in a moment.'); setIsStreaming(false); setIsSpeaking(false); return; }
         throw new Error('Failed to connect to interviewer');
       }
-
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
       let assistantText = '';
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
-
         let newlineIdx: number;
         while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
           let line = buffer.slice(0, newlineIdx);
@@ -351,17 +374,10 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                 return [...prev, { role: 'assistant', content: assistantText }];
               });
             }
-          } catch {
-            buffer = line + '\n' + buffer;
-            break;
-          }
+          } catch { buffer = line + '\n' + buffer; break; }
         }
       }
-
-      // Speak the complete response
-      if (assistantText) {
-        speakText(assistantText);
-      }
+      if (assistantText) speakText(assistantText);
     } catch (err: any) {
       console.error('Stream error:', err);
       setError(err.message || 'Connection failed');
@@ -370,10 +386,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
       if (!ttsEnabled) {
         setTimeout(() => {
           setIsSpeaking(false);
-          // Auto-resume listening when TTS is off
-          if (conversationMode && shouldAutoResumeRef.current && SpeechRecognition) {
-            startListening();
-          }
+          if (conversationMode && shouldAutoResumeRef.current && SpeechRecognition) startListening();
         }, 500);
       }
     }
@@ -386,15 +399,29 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     setInterimTranscript('');
     pendingTextRef.current = '';
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    
-    // Stop listening while AI responds
     if (isListening) stopListening();
-    
     const userMsg: ChatMessage = { role: 'user', content: text };
     const newHistory = [...messages, userMsg];
     setMessages(newHistory);
     await sendToAI(newHistory);
     inputRef.current?.focus();
+  };
+
+  const analyzeBodyLanguage = async (): Promise<BodyLanguageResult | null> => {
+    if (framesRef.current.length === 0) return null;
+    try {
+      const resp = await fetch(BODY_LANG_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({ frames: framesRef.current }),
+      });
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      return data.analysis || null;
+    } catch (err) {
+      console.error('Body language analysis error:', err);
+      return null;
+    }
   };
 
   const handleEndInterview = async () => {
@@ -404,24 +431,26 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     if (isListening) stopListening();
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     window.speechSynthesis.cancel();
-    
+
+    // Capture one last frame before analysis
+    captureFrame();
+
     try {
-      const resp = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
-          interview_id: interviewId,
-          messages,
-          action: 'evaluate',
+      // Run both evaluations in parallel
+      const [evalResp, blResult] = await Promise.all([
+        fetch(CHAT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          body: JSON.stringify({ interview_id: interviewId, messages, action: 'evaluate' }),
         }),
-      });
-      if (!resp.ok) throw new Error('Evaluation failed');
-      const data = await resp.json();
+        analyzeBodyLanguage(),
+      ]);
+
+      if (!evalResp.ok) throw new Error('Evaluation failed');
+      const data = await evalResp.json();
       if (data.error) throw new Error(data.error);
       setEvaluation(data.evaluation);
+      setBodyLanguage(blResult);
       setPhase('results');
     } catch (err: any) {
       console.error('Eval error:', err);
@@ -431,10 +460,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
   // Results screen
@@ -494,6 +520,68 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
           </CardContent>
         </Card>
 
+        {/* Body Language Analysis Section */}
+        {bodyLanguage && (
+          <Card className="rounded-2xl border-border/50">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                  <Eye className="w-4 h-4 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">Body Language & Presence</h3>
+                  <p className="text-xs text-muted-foreground">AI analysis of facial expressions & body language during the interview</p>
+                </div>
+                <div className="ms-auto text-center">
+                  <div className="w-14 h-14 rounded-full border-3 border-purple-400 flex items-center justify-center">
+                    <span className="text-lg font-bold text-foreground">{bodyLanguage.overall_body_language_score}</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">Overall</span>
+                </div>
+              </div>
+
+              <div className="space-y-3 mb-5">
+                <ScoreBar label="Eye Contact & Gaze" score={bodyLanguage.eye_contact_score} icon={<Eye className="w-full h-full" />} />
+                <ScoreBar label="Facial Expressions" score={bodyLanguage.facial_expression_score} icon={<Smile className="w-full h-full" />} />
+                <ScoreBar label="Posture & Body Language" score={bodyLanguage.posture_score} icon={<Activity className="w-full h-full" />} />
+                <ScoreBar label="Confidence Level" score={bodyLanguage.confidence_score} icon={<Award className="w-full h-full" />} />
+                <ScoreBar label="Engagement" score={bodyLanguage.engagement_score} icon={<Brain className="w-full h-full" />} />
+                <ScoreBar label="Professional Presence" score={bodyLanguage.professional_presence_score} icon={<User className="w-full h-full" />} />
+              </div>
+
+              <div className="p-3 rounded-xl bg-purple-500/5 border border-purple-500/20 mb-4">
+                <p className="text-sm text-foreground">{bodyLanguage.summary}</p>
+              </div>
+
+              {bodyLanguage.observations && bodyLanguage.observations.length > 0 && (
+                <div className="mb-3">
+                  <h4 className="text-xs font-semibold text-foreground mb-2">📋 Key Observations</h4>
+                  <ul className="space-y-1">
+                    {bodyLanguage.observations.map((o, i) => (
+                      <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                        <span className="text-purple-400 mt-0.5">•</span> {o}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {bodyLanguage.tips && bodyLanguage.tips.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-foreground mb-2">💡 Improvement Tips</h4>
+                  <ul className="space-y-1">
+                    {bodyLanguage.tips.map((tip, i) => (
+                      <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                        <span className="text-amber-400 mt-0.5">→</span> {tip}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         <Button className="w-full gradient-primary border-0" onClick={onComplete}>
           <CheckCircle className="w-4 h-4 me-2" /> Done
         </Button>
@@ -510,16 +598,22 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         </div>
         <Loader2 className="w-8 h-8 text-primary mx-auto mb-4 animate-spin" />
         <p className="text-lg font-semibold text-white mb-1">Evaluating Your Interview...</p>
-        <p className="text-sm text-gray-400">AI is reviewing the entire conversation and scoring your responses</p>
+        <p className="text-sm text-gray-400">AI is reviewing your conversation and analyzing body language</p>
+        {framesRef.current.length > 0 && (
+          <p className="text-xs text-gray-500 mt-2">📸 Analyzing {framesRef.current.length} video snapshots for body language</p>
+        )}
       </div>
     );
   }
 
-  // Chat phase — Video Call UI with conversation
+  // Chat phase
   const userMessageCount = messages.filter(m => m.role === 'user').length;
 
   return (
     <div className="space-y-0">
+      {/* Hidden canvas for frame capture */}
+      <canvas ref={canvasRef} className="hidden" />
+
       <div className="rounded-2xl overflow-hidden bg-[#0f1628] border border-white/10">
         {/* Top bar */}
         <div className="flex items-center justify-between px-4 py-2.5 bg-black/40 border-b border-white/10">
@@ -541,6 +635,9 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             <Badge variant="secondary" className="bg-green-500/10 text-green-400 text-[10px]">
               {isListening ? '🎤 Listening...' : isSpeaking ? '🔊 AI Speaking' : isStreaming ? '💭 Thinking...' : 'Ready'}
             </Badge>
+            {capturedFrames > 0 && (
+              <span className="text-[10px] text-purple-400/70">📸 {capturedFrames}</span>
+            )}
             <span className="text-xs text-white/60 font-mono">{formatTime(elapsedTime)}</span>
             <span className="text-xs text-white/40">{userMessageCount} exchanges</span>
           </div>
@@ -548,8 +645,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
 
         {/* Main area */}
         <div className="grid md:grid-cols-5 gap-0 min-h-[450px]">
-          {/* AI Avatar */}
-          <div className="md:col-span-2 relative flex items-center justify-center bg-gradient-to-br from-[#0a1128] via-[#0f1628] to-[#1a1f3a] p-6">
+          {/* AI Avatar + User webcam */}
+          <div className="md:col-span-2 relative flex flex-col items-center justify-center bg-gradient-to-br from-[#0a1128] via-[#0f1628] to-[#1a1f3a] p-6">
             <AvatarParticles />
             <div className="relative">
               <div className={`w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-3 transition-all duration-500 ${
@@ -574,11 +671,27 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
               <Brain className="w-3.5 h-3.5 text-primary" />
               <span className="text-xs font-medium text-white">Qurtuba AI Interviewer</span>
             </div>
+
+            {/* User webcam preview */}
+            {camOn && (
+              <div className="absolute top-3 right-3 w-24 h-18 rounded-lg overflow-hidden border border-white/20 shadow-lg">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover mirror"
+                  style={{ transform: 'scaleX(-1)' }}
+                />
+                <div className="absolute bottom-0.5 left-0.5 right-0.5 flex items-center justify-center">
+                  <span className="text-[8px] text-white/60 bg-black/50 rounded px-1">You</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Chat panel */}
           <div className="md:col-span-3 flex flex-col bg-[#111827] border-s border-white/10">
-            {/* Messages */}
             <div className="flex-1 p-4 overflow-y-auto space-y-3 max-h-[350px]">
               {messages.length === 0 && !isStreaming && (
                 <div className="flex items-center justify-center h-full">
@@ -633,19 +746,14 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             <div className="p-3 border-t border-white/10 bg-black/20">
               {error && (
                 <div className="flex items-center gap-2 text-xs text-red-400 mb-2">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  {error}
+                  <AlertTriangle className="w-3.5 h-3.5" /> {error}
                 </div>
               )}
-              
-              {/* Interim transcript display */}
               {interimTranscript && (
                 <div className="flex items-center gap-2 text-xs text-blue-300/70 mb-2 italic">
-                  <Mic className="w-3 h-3 animate-pulse" />
-                  {interimTranscript}
+                  <Mic className="w-3 h-3 animate-pulse" /> {interimTranscript}
                 </div>
               )}
-              
               <div className="flex gap-2">
                 <textarea
                   ref={inputRef}
@@ -657,23 +765,18 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                   disabled={isStreaming}
                   className="flex-1 resize-none bg-white/5 border border-white/10 text-white placeholder:text-white/30 text-sm rounded-xl p-3 focus:outline-none focus:border-primary/50 disabled:opacity-50"
                 />
-                
-                {/* Voice input button */}
                 {SpeechRecognition && (
                   <Button
                     size="icon"
                     onClick={toggleListening}
                     disabled={isStreaming}
                     className={`h-auto w-12 rounded-xl shrink-0 transition-all ${
-                      isListening 
-                        ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-                        : 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400'
+                      isListening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400'
                     }`}
                   >
                     {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                   </Button>
                 )}
-                
                 <Button
                   size="icon"
                   onClick={handleSend}
@@ -689,49 +792,22 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
 
         {/* Bottom control bar */}
         <div className="flex flex-col bg-black/50 border-t border-white/10">
-          {/* Settings row */}
           <div className="flex items-center gap-4 px-4 py-2 border-b border-white/5 flex-wrap">
-            {/* Voice Gender */}
             <div className="flex items-center gap-2">
               <User className="w-3.5 h-3.5 text-white/50" />
               <div className="flex rounded-lg overflow-hidden border border-white/10">
-                <button
-                  onClick={() => setVoiceGender('female')}
-                  className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${
-                    voiceGender === 'female' ? 'bg-pink-500/30 text-pink-300' : 'text-white/50 hover:text-white/80'
-                  }`}
-                >♀ Female</button>
-                <button
-                  onClick={() => setVoiceGender('male')}
-                  className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${
-                    voiceGender === 'male' ? 'bg-blue-500/30 text-blue-300' : 'text-white/50 hover:text-white/80'
-                  }`}
-                >♂ Male</button>
+                <button onClick={() => setVoiceGender('female')} className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${voiceGender === 'female' ? 'bg-pink-500/30 text-pink-300' : 'text-white/50 hover:text-white/80'}`}>♀ Female</button>
+                <button onClick={() => setVoiceGender('male')} className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${voiceGender === 'male' ? 'bg-blue-500/30 text-blue-300' : 'text-white/50 hover:text-white/80'}`}>♂ Male</button>
               </div>
             </div>
-
-            {/* Speed */}
             <div className="flex items-center gap-2 min-w-[140px]">
               <Gauge className="w-3.5 h-3.5 text-white/50" />
-              <Slider
-                value={[speechRate]}
-                onValueChange={([v]) => setSpeechRate(v)}
-                min={0.5}
-                max={2.0}
-                step={0.25}
-                className="flex-1 [&_[data-radix-slider-track]]:bg-white/10 [&_[data-radix-slider-range]]:bg-primary/60 [&_[data-radix-slider-thumb]]:w-3 [&_[data-radix-slider-thumb]]:h-3 [&_[data-radix-slider-thumb]]:border-primary"
-              />
+              <Slider value={[speechRate]} onValueChange={([v]) => setSpeechRate(v)} min={0.5} max={2.0} step={0.25} className="flex-1 [&_[data-radix-slider-track]]:bg-white/10 [&_[data-radix-slider-range]]:bg-primary/60 [&_[data-radix-slider-thumb]]:w-3 [&_[data-radix-slider-thumb]]:h-3 [&_[data-radix-slider-thumb]]:border-primary" />
               <span className="text-[10px] text-white/50 w-8">{speechRate}x</span>
             </div>
-
-            {/* Language */}
             <div className="flex items-center gap-2">
               <Globe className="w-3.5 h-3.5 text-white/50" />
-              <select
-                value={interviewLang}
-                onChange={(e) => setInterviewLang(e.target.value as any)}
-                className="bg-white/5 border border-white/10 text-white/80 text-[10px] rounded-lg px-2 py-1 focus:outline-none focus:border-primary/50 appearance-none cursor-pointer"
-              >
+              <select value={interviewLang} onChange={(e) => setInterviewLang(e.target.value as any)} className="bg-white/5 border border-white/10 text-white/80 text-[10px] rounded-lg px-2 py-1 focus:outline-none focus:border-primary/50 appearance-none cursor-pointer">
                 <option value="en" className="bg-[#111827]">🇬🇧 English</option>
                 <option value="fr" className="bg-[#111827]">🇫🇷 Français</option>
                 <option value="ar" className="bg-[#111827]">🇪🇬 العربية</option>
@@ -742,41 +818,15 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             </div>
           </div>
 
-          {/* Main controls row */}
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2">
-              <button
-                onClick={toggleListening}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                  isListening 
-                    ? 'bg-red-500/30 text-red-400 ring-2 ring-red-500/50 animate-pulse' 
-                    : micOn ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'
-                }`}
-                title={isListening ? 'Stop listening' : 'Start voice input'}
-              >
+              <button onClick={toggleListening} className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isListening ? 'bg-red-500/30 text-red-400 ring-2 ring-red-500/50 animate-pulse' : micOn ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'}`} title={isListening ? 'Stop listening' : 'Start voice input'}>
                 {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
-              <button
-                onClick={() => setCamOn(!camOn)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                  camOn ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'
-                }`}
-              >
+              <button onClick={() => setCamOn(!camOn)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${camOn ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'}`}>
                 {camOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
               </button>
-              <button
-                onClick={() => {
-                  setTtsEnabled(!ttsEnabled);
-                  if (ttsEnabled) {
-                    window.speechSynthesis.cancel();
-                    setIsSpeaking(false);
-                  }
-                }}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                  ttsEnabled ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'
-                }`}
-                title={ttsEnabled ? 'Mute AI voice' : 'Enable AI voice'}
-              >
+              <button onClick={() => { setTtsEnabled(!ttsEnabled); if (ttsEnabled) { window.speechSynthesis.cancel(); setIsSpeaking(false); } }} className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${ttsEnabled ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'}`} title={ttsEnabled ? 'Mute AI voice' : 'Enable AI voice'}>
                 {ttsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
               </button>
               <button className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors">
@@ -786,20 +836,12 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
 
             <div className="flex items-center gap-2">
               {userMessageCount >= 3 && (
-                <Button
-                  size="sm"
-                  onClick={handleEndInterview}
-                  disabled={isStreaming}
-                  className="gradient-primary border-0"
-                >
+                <Button size="sm" onClick={handleEndInterview} disabled={isStreaming} className="gradient-primary border-0">
                   <CheckCircle className="w-4 h-4 me-1" />
                   {interviewLang === 'ar' ? 'إنهاء وتقييم' : 'End & Evaluate'}
                 </Button>
               )}
-              <button
-                onClick={onCancel}
-                className="w-10 h-10 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-400 flex items-center justify-center transition-colors"
-              >
+              <button onClick={onCancel} className="w-10 h-10 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-400 flex items-center justify-center transition-colors">
                 <PhoneOff className="w-4 h-4" />
               </button>
             </div>
