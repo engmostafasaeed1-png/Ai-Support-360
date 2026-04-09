@@ -911,6 +911,25 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             </div>
 
             <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  shouldAutoResumeRef.current = false;
+                  if (isListening) stopListening();
+                  if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+                  window.speechSynthesis.cancel();
+                  // Save conversation progress to DB for resuming later
+                  await supabase.from('interview_sessions').update({
+                    skill_results: messages as any,
+                  }).eq('id', interviewId);
+                  onCancel?.();
+                }}
+                className="border-amber-500/40 text-amber-400 hover:bg-amber-500/10 text-xs"
+              >
+                <Clock className="w-3.5 h-3.5 me-1" />
+                Pause & Resume Later
+              </Button>
               {userMessageCount >= 3 && (
                 <Button size="sm" onClick={handleEndInterview} disabled={isStreaming} className="gradient-primary border-0">
                   <CheckCircle className="w-4 h-4 me-1" />
