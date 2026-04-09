@@ -462,10 +462,109 @@ export default function ConsultantProfilePage() {
         </TabsContent>
       </Tabs>
 
+      {/* Profile Credibility Score */}
+      <Card className="rounded-2xl border-border/50">
+        <CardContent className="p-6">
+          <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" /> Profile Credibility
+          </h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            Credibility is calculated from certifications, experience, reviews, and AI interview performance.
+          </p>
+
+          {/* Credibility breakdown */}
+          {(() => {
+            const hasInterview = true; // Would come from real data
+            const interviewScore = 82; // Would come from real data (best overall_score)
+            
+            const certScore = Math.min(detail.certifications.length * 10, 25);
+            const expScore = Math.min(detail.skills.reduce((s, sk) => s + sk.years, 0), 25);
+            const reviewScore = Math.min(Math.round(consultant.rating * 5), 25);
+            // Interview contributes 20% if completed, based on score (0-100 → 0-20)
+            const interviewContrib = hasInterview ? Math.round((interviewScore / 100) * 20) : 0;
+            // Remaining 5% for profile completeness
+            const profileScore = 5;
+            const total = Math.min(certScore + expScore + reviewScore + interviewContrib + profileScore, 100);
+
+            const segments = [
+              { label: 'Certifications', value: certScore, max: 25, color: 'bg-blue-500' },
+              { label: 'Experience', value: expScore, max: 25, color: 'bg-green-500' },
+              { label: 'Client Reviews', value: reviewScore, max: 25, color: 'bg-amber-500' },
+              { label: 'AI Interview', value: interviewContrib, max: 20, color: 'bg-purple-500', highlight: true },
+              { label: 'Profile Completeness', value: profileScore, max: 5, color: 'bg-muted-foreground/40' },
+            ];
+
+            return (
+              <div className="space-y-4">
+                {/* Total score ring */}
+                <div className="flex items-center gap-6">
+                  <div className="relative w-20 h-20 shrink-0">
+                    <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                      <circle cx="50" cy="50" r="42" fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
+                      <circle cx="50" cy="50" r="42" fill="none" stroke="hsl(var(--primary))" strokeWidth="8"
+                        strokeDasharray={`${total * 2.64} 264`} strokeLinecap="round" className="transition-all duration-1000" />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-xl font-bold text-foreground">{total}%</span>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-foreground">
+                      {total >= 80 ? 'Highly Credible' : total >= 60 ? 'Credible' : total >= 40 ? 'Moderate' : 'Building Profile'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {hasInterview
+                        ? `AI Interview adds ${interviewContrib}% credibility (score: ${interviewScore}/100)`
+                        : 'No AI interview taken yet — up to 20% credibility available'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Breakdown bars */}
+                <div className="space-y-2.5">
+                  {segments.map((seg) => (
+                    <div key={seg.label}>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className={`font-medium ${seg.highlight ? 'text-purple-600 dark:text-purple-400' : 'text-foreground'}`}>
+                          {seg.label}
+                          {seg.highlight && (
+                            <Badge variant="secondary" className="ms-1.5 text-[9px] bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400">
+                              20% weight
+                            </Badge>
+                          )}
+                        </span>
+                        <span className="text-muted-foreground">{seg.value}/{seg.max}</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted/30 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${seg.color} transition-all duration-700`}
+                          style={{ width: `${(seg.value / seg.max) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {!hasInterview && (
+                  <div className="p-3 rounded-xl bg-purple-500/5 border border-purple-500/20">
+                    <p className="text-xs text-muted-foreground">
+                      💡 This consultant has not taken an AI interview yet. Interview results can add up to 20% to their credibility score.
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>
+
       {/* Interview Results visible to clients */}
       <div>
         <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
           <Brain className="w-5 h-5 text-primary" /> Interview Results
+          <Badge variant="secondary" className="text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400">
+            Optional · 20% credibility
+          </Badge>
         </h2>
         <InterviewTranscript consultantId={consultant.id} viewMode="client" />
       </div>
