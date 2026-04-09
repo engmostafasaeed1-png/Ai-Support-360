@@ -11,7 +11,7 @@ import {
   LayoutDashboard, TicketPlus, Briefcase, Users, Calendar, Video,
   CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
   Plug, Server, Building2, Gift, Milestone, Sparkles, Crown, ChevronRight, Plus,
-  Activity, Shield, UsersRound, BarChart3, ClipboardList, FolderKanban, FileSignature, LifeBuoy,
+  Activity, Shield, UsersRound, BarChart3, ClipboardList, FolderKanban, FileSignature, LifeBuoy, Settings2,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
