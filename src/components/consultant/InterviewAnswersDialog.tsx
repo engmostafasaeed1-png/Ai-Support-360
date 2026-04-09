@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, Download, MessageSquare, Star } from 'lucide-react';
+import { CheckCircle, Download, MessageSquare, Star, TrendingUp, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { generateInterviewPdf } from '@/lib/interviewPdf';
 import ShareMenu from '@/components/ShareMenu';
@@ -96,12 +96,24 @@ export default function InterviewAnswersDialog({ interviewId, open, onOpenChange
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="outline" className="text-[10px] capitalize">{a.category}</Badge>
-                      {a.score != null && (
-                        <span className="ms-auto flex items-center gap-1 text-sm font-semibold text-foreground">
-                          <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                          {a.score}/10
-                        </span>
-                      )}
+                      {a.score != null && (() => {
+                        const status = a.score >= 7 ? 'Good' : a.score >= 4 ? 'Mild' : 'Far Away';
+                        const styles = a.score >= 7
+                          ? 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400'
+                          : a.score >= 4
+                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400'
+                          : 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400';
+                        const Icon = a.score >= 7 ? CheckCircle : a.score >= 4 ? TrendingUp : XCircle;
+                        return (
+                          <span className="ms-auto flex items-center gap-1.5">
+                            <Badge variant="secondary" className={`text-[10px] ${styles}`}>
+                              <Icon className="w-2.5 h-2.5 me-0.5" />
+                              {status}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">{a.score}/10</span>
+                          </span>
+                        );
+                      })()}
                     </div>
                     <p className="text-sm font-medium text-foreground">{a.question}</p>
                   </div>
