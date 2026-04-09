@@ -361,7 +361,13 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     } finally {
       setIsStreaming(false);
       if (!ttsEnabled) {
-        setTimeout(() => setIsSpeaking(false), 500);
+        setTimeout(() => {
+          setIsSpeaking(false);
+          // Auto-resume listening when TTS is off
+          if (conversationMode && shouldAutoResumeRef.current && SpeechRecognition) {
+            startListening();
+          }
+        }, 500);
       }
     }
   };
@@ -371,6 +377,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     if (!text || isStreaming) return;
     setInput('');
     setInterimTranscript('');
+    pendingTextRef.current = '';
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     
     // Stop listening while AI responds
     if (isListening) stopListening();
