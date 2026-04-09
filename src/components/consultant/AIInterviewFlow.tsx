@@ -12,7 +12,7 @@ import {
   AlertTriangle, Clock, Video, VideoOff, Mic, MicOff, Monitor, PhoneOff,
   MessageSquare,
 } from 'lucide-react';
-import aiAvatarImg from '@/assets/ai-interviewer-avatar.png';
+import aiAvatarImg from '@/assets/ai-interviewer-avatar.jpg';
 
 interface Question {
   id?: string;
