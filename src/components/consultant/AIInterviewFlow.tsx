@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import {
   Brain, Loader2, CheckCircle, Send, AlertTriangle, Video, VideoOff,
   Mic, MicOff, Monitor, PhoneOff, MessageSquare, Award, Volume2, VolumeX,
+  Gauge, Globe, User,
 } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 import ReactMarkdown from 'react-markdown';
 import aiAvatarImg from '@/assets/ai-interviewer-avatar.jpg';
 
@@ -80,6 +82,9 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [isListening, setIsListening] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const [interimTranscript, setInterimTranscript] = useState('');
+  const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('female');
+  const [speechRate, setSpeechRate] = useState(1.0);
+  const [interviewLang, setInterviewLang] = useState<'en' | 'ar'>('en');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -138,16 +143,24 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     lastSpokenRef.current = cleanText;
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
+    utterance.rate = speechRate;
+    utterance.pitch = voiceGender === 'female' ? 1.1 : 0.85;
     utterance.volume = 1.0;
+    utterance.lang = interviewLang === 'ar' ? 'ar-SA' : 'en-US';
     
-    // Try to pick a natural-sounding voice
+    // Pick voice matching gender and language
     const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find(v => 
-      v.name.includes('Google') && v.lang.startsWith('en')
-    ) || voices.find(v => v.lang.startsWith('en') && !v.localService) 
-      || voices.find(v => v.lang.startsWith('en'));
+    const langPrefix = interviewLang === 'ar' ? 'ar' : 'en';
+    const genderHints = voiceGender === 'female'
+      ? ['female', 'woman', 'zira', 'samantha', 'karen', 'victoria', 'fiona', 'Google.*Female']
+      : ['male', 'man', 'david', 'daniel', 'james', 'Google.*Male', 'alex'];
+    
+    const matchesGender = (name: string) => genderHints.some(h => new RegExp(h, 'i').test(name));
+    
+    const preferred = voices.find(v => v.lang.startsWith(langPrefix) && matchesGender(v.name) && !v.localService)
+      || voices.find(v => v.lang.startsWith(langPrefix) && matchesGender(v.name))
+      || voices.find(v => v.lang.startsWith(langPrefix) && !v.localService)
+      || voices.find(v => v.lang.startsWith(langPrefix));
     if (preferred) utterance.voice = preferred;
 
     utterance.onstart = () => setIsSpeaking(true);
@@ -155,7 +168,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     utterance.onerror = () => setIsSpeaking(false);
 
     window.speechSynthesis.speak(utterance);
-  }, [ttsEnabled]);
+  }, [ttsEnabled, speechRate, voiceGender, interviewLang]);
 
   // --- STT: Speech Recognition ---
   const startListening = useCallback(() => {
@@ -168,7 +181,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    recognition.lang = interviewLang === 'ar' ? 'ar-SA' : 'en-US';
 
     recognition.onresult = (event: any) => {
       let interim = '';
@@ -205,7 +218,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     recognitionRef.current = recognition;
     recognition.start();
     setIsListening(true);
-  }, [isListening]);
+  }, [isListening, interviewLang]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
