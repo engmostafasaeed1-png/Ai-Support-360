@@ -85,11 +85,16 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('female');
   const [speechRate, setSpeechRate] = useState(1.0);
   const [interviewLang, setInterviewLang] = useState<'en' | 'ar'>('en');
+  const [conversationMode, setConversationMode] = useState(true); // continuous hands-free mode
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
   const lastSpokenRef = useRef('');
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const pendingTextRef = useRef('');
+  const shouldAutoResumeRef = useRef(true);
+  const messagesRef = useRef<ChatMessage[]>([]);
 
   // Timer
   useEffect(() => {
