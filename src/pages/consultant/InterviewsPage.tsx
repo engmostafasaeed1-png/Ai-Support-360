@@ -44,7 +44,7 @@ export default function InterviewsPage() {
   });
 
   const pendingInterviews = interviews?.filter(i => i.status === 'pending' || i.status === 'in_progress') || [];
-  const completedInterviews = interviews?.filter(i => i.status === 'completed' || i.status === 'evaluated') || [];
+  const completedInterviews = interviews?.filter(i => i.status === 'completed' || i.status === 'reviewed') || [];
 
   if (activeInterviewId) {
     return (
