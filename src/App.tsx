@@ -187,6 +187,8 @@ const App = () => (
               <Route path="projects" element={<ProjectsPage />} />
               <Route path="contracts" element={<ContractsPage />} />
               <Route path="support" element={<SupportPage />} />
+              <Route path="pm-tickets" element={<ProjectManagementTicketsPage />} />
+              <Route path="solution-architecture" element={<SolutionArchitecturePage />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminConsolePage />} />
