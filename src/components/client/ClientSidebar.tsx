@@ -58,6 +58,7 @@ const navGroups = [
     items: [
       { key: 'integrations', icon: Plug, path: '/client/integrations' },
       { key: 'remote_access', icon: Server, path: '/client/remote-access' },
+      { key: 'vmware_settings', icon: Settings2, path: '/client/vmware-settings' },
       { key: 'knowledge', icon: BookOpen, path: '/client/knowledge' },
       { key: 'pm_tickets', icon: ClipboardList, path: '/client/pm-tickets' },
       { key: 'solution_architecture', icon: Sparkles, path: '/client/solution-architecture' },

@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Users, Kanban, UserCheck, BarChart3,
-  Settings, Shield, Globe, LogOut, Plug, Server, ClipboardList, FileSignature, PanelTop, Brain,
+  Settings, Shield, Globe, LogOut, Plug, Server, ClipboardList, FileSignature, PanelTop, Brain, Settings2,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
@@ -24,6 +24,7 @@ const menuItems = [
   { key: 'integrations', icon: Plug, path: '/admin/integrations' },
   { key: 'environments', icon: Server, path: '/admin/environments' },
   { key: 'environment_logs', icon: ClipboardList, path: '/admin/environment-logs' },
+  { key: 'vmware_settings', icon: Settings2, path: '/admin/vmware-settings' },
   { key: 'nda_management', icon: FileSignature, path: '/admin/nda-management' },
   { key: 'landing_editor', icon: PanelTop, path: '/admin/landing-editor' },
   { key: 'interview_training', icon: Brain, path: '/admin/interview-training' },
