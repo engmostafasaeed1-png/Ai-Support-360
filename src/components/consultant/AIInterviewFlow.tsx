@@ -353,14 +353,26 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
 
     const voices = window.speechSynthesis.getVoices();
     const langPrefix = interviewLang.startsWith('ar') ? 'ar' : interviewLang;
-    const genderHints = voiceGender === 'female'
-      ? ['female', 'woman', 'zira', 'samantha', 'karen', 'victoria', 'fiona', 'Google.*Female']
-      : ['male', 'man', 'david', 'daniel', 'james', 'Google.*Male', 'alex', 'mark', 'reed', 'richard', 'thomas', 'google uk english male'];
-    const matchesGender = (name: string) => genderHints.some(h => new RegExp(h, 'i').test(name));
-    const preferred = voices.find(v => v.lang.startsWith(langPrefix) && matchesGender(v.name) && !v.localService)
-      || voices.find(v => v.lang.startsWith(langPrefix) && matchesGender(v.name))
-      || voices.find(v => v.lang.startsWith(langPrefix) && !v.localService)
-      || voices.find(v => v.lang.startsWith(langPrefix));
+    const femaleHints = ['female', 'woman', 'zira', 'samantha', 'karen', 'victoria', 'fiona', 'Google.*Female', 'tessa', 'moira', 'allison', 'ava', 'susan', 'kate', 'emma', 'serena'];
+    const maleHints = ['male', 'man', 'david', 'daniel', 'james', 'Google.*Male', 'alex', 'mark', 'reed', 'richard', 'thomas', 'google uk english male', 'aaron', 'fred', 'jorge', 'ralph', 'tom', 'rishi'];
+    const isFemaleVoice = (name: string) => femaleHints.some(h => new RegExp(h, 'i').test(name));
+    const isMaleVoice = (name: string) => maleHints.some(h => new RegExp(h, 'i').test(name));
+
+    let preferred;
+    if (voiceGender === 'male') {
+      // Strictly pick male voice; never fall back to female
+      preferred = voices.find(v => v.lang.startsWith(langPrefix) && isMaleVoice(v.name) && !v.localService)
+        || voices.find(v => v.lang.startsWith(langPrefix) && isMaleVoice(v.name))
+        || voices.find(v => isMaleVoice(v.name) && !v.localService)
+        || voices.find(v => isMaleVoice(v.name))
+        || voices.find(v => v.lang.startsWith(langPrefix) && !isFemaleVoice(v.name) && !v.localService)
+        || voices.find(v => v.lang.startsWith(langPrefix) && !isFemaleVoice(v.name));
+    } else {
+      preferred = voices.find(v => v.lang.startsWith(langPrefix) && isFemaleVoice(v.name) && !v.localService)
+        || voices.find(v => v.lang.startsWith(langPrefix) && isFemaleVoice(v.name))
+        || voices.find(v => v.lang.startsWith(langPrefix) && !v.localService)
+        || voices.find(v => v.lang.startsWith(langPrefix));
+    }
     if (preferred) utterance.voice = preferred;
 
     utterance.onstart = () => setIsSpeaking(true);
