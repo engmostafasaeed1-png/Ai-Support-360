@@ -30,7 +30,7 @@ export default function Navbar() {
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-white/95 backdrop-blur-xl border-b border-border/50 shadow-sm' : 'bg-white/90 backdrop-blur-lg'}`}>
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         <Link to="/" className="flex items-center gap-2.5 group">
-          <img src={logo} alt="AI SAP Support Hub" className="w-20 h-20 rounded-xl object-contain group-hover:scale-105 transition-transform shadow-sm" />
+          <img src={logo} alt="AI SAP Support Hub" className="w-40 h-40 rounded-xl object-contain group-hover:scale-105 transition-transform shadow-sm" />
           <span className="font-black text-lg text-foreground tracking-tight">
             AI SAP Support Hub
           </span>
