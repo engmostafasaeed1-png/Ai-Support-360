@@ -285,6 +285,16 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
       const saved = data?.skill_results as unknown as ChatMessage[] | null;
       if (saved && Array.isArray(saved) && saved.length > 0 && data?.status === 'in_progress') {
         setMessages(saved);
+        messagesRef.current = saved;
+        // Resume: send existing conversation to AI so it continues from where it left off
+        const lastMsg = saved[saved.length - 1];
+        if (lastMsg?.role === 'user') {
+          // Last message was from user — AI needs to respond
+          sendToAI(saved);
+        } else {
+          // Last message was from AI — add a system hint to continue, then let user speak
+          // Just restore and wait for user input (don't restart)
+        }
       } else {
         sendToAI([]);
       }
