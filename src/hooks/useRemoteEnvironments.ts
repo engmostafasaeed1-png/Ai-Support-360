@@ -8,12 +8,13 @@ export interface RemoteEnvironment {
   guacamole_url: string;
   client_id: string;
   consultant_id: string | null;
-  status: 'active' | 'inactive' | 'maintenance';
+  status: 'active' | 'inactive' | 'maintenance' | 'hold' | 'cancelled';
   os_type: string | null;
   notes: string | null;
   platform_type: string;
   vmware_host: string | null;
   vm_name: string | null;
+  ticket_id: string | null;
   created_at: string;
   updated_at: string;
 }

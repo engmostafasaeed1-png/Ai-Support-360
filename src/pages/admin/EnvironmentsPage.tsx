@@ -23,10 +23,12 @@ import {
 } from '@/hooks/useRemoteEnvironments';
 import ConnectionsManager from '@/components/remote/ConnectionsManager';
 
-const statusColors: Record<string, 'default' | 'secondary' | 'destructive'> = {
+const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   active: 'default',
   inactive: 'destructive',
   maintenance: 'secondary',
+  hold: 'outline',
+  cancelled: 'destructive',
 };
 
 function EnvironmentForm({ env, onSubmit, onCancel }: {
