@@ -799,7 +799,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
               Hi, I'm {interviewerName} 👋
             </h2>
             <p className="text-sm text-gray-400">
-              I'll be your AI interviewer today. Let me walk you through a few things before we begin.
+              I'm from <strong className="text-white">SAP Support Hub</strong>. I'm here to help you increase your credibility score through a quick skills assessment. Let me walk you through a few things before we begin.
             </p>
           </div>
 
@@ -922,7 +922,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             <DynamicAvatar src={avatarImg} isSpeaking={isSpeaking} isListening={isListening} isThinking={isStreaming && !isSpeaking} />
             <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/50 rounded-lg px-3 py-1.5">
               <Brain className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-medium text-white">{voiceGender === 'female' ? 'Mariam' : 'Ezz'} — AI Interviewer</span>
+              <span className="text-xs font-medium text-white">{voiceGender === 'female' ? 'Mariam' : 'Ezz'} — SAP Support Hub</span>
             </div>
 
             {/* User webcam preview */}
