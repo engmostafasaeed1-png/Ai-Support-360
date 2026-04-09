@@ -28,8 +28,43 @@ export default function ConsultantProfilePage() {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [credlyBadges, setCredlyBadges] = useState<any[]>([]);
   const [credlyLoading, setCredlyLoading] = useState(false);
+
+  // Fetch live reviews for this consultant
+  const { data: liveReviews, isLoading: reviewsLoading } = useQuery({
+    queryKey: ['consultant-profile-reviews', id],
+    queryFn: async () => {
+      if (!id) return [];
+      // Find consultant by mock id - in real app would query by consultant.id
+      const { data: ratings } = await supabase
+        .from('ratings')
+        .select('id, score, comment, created_at, client_id, is_anonymous')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (!ratings || ratings.length === 0) return [];
+
+      const nonAnonIds = ratings.filter((r: any) => !r.is_anonymous).map((r: any) => r.client_id);
+      let clientMap: Record<string, string> = {};
+      if (nonAnonIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, display_name')
+          .in('user_id', nonAnonIds);
+        if (profiles) {
+          clientMap = Object.fromEntries(profiles.map(p => [p.user_id, p.display_name || 'Client']));
+        }
+      }
+
+      return ratings.map((r: any) => ({
+        ...r,
+        client_name: r.is_anonymous ? null : (clientMap[r.client_id] || 'Client'),
+        avatar: r.is_anonymous ? '?' : (clientMap[r.client_id]?.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || 'CL'),
+      }));
+    },
+  });
 
   const consultant = mockRecommendedConsultants.find(c => c.id === id);
   const detail = mockConsultantDetailData;
