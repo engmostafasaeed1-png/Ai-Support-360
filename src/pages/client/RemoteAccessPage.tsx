@@ -6,6 +6,7 @@ import { Monitor, Server, Terminal, Laptop } from 'lucide-react';
 import { useRemoteEnvironments, type RemoteEnvironment } from '@/hooks/useRemoteEnvironments';
 import { useEnvironmentConnections } from '@/hooks/useEnvironmentConnections';
 import GuacamoleViewer from '@/components/remote/GuacamoleViewer';
+import CredentialsManager from '@/components/remote/CredentialsManager';
 import { useEnvironmentTracking } from '@/hooks/useEnvironmentTracking';
 import { useState } from 'react';
 
