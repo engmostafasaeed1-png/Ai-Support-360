@@ -11,6 +11,9 @@ export interface RemoteEnvironment {
   status: 'active' | 'inactive' | 'maintenance';
   os_type: string | null;
   notes: string | null;
+  platform_type: string;
+  vmware_host: string | null;
+  vm_name: string | null;
   created_at: string;
   updated_at: string;
 }

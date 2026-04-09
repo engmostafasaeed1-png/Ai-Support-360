@@ -41,6 +41,9 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
   const [consultantId, setConsultantId] = useState(env?.consultant_id || '');
   const [status, setStatus] = useState(env?.status || 'active');
   const [osType, setOsType] = useState(env?.os_type || 'Windows Server 2022');
+  const [platformType, setPlatformType] = useState(env?.platform_type || 'vmware');
+  const [vmwareHost, setVmwareHost] = useState(env?.vmware_host || '');
+  const [vmName, setVmName] = useState(env?.vm_name || '');
   const [notes, setNotes] = useState(env?.notes || '');
 
   const { data: clients } = useQuery({
