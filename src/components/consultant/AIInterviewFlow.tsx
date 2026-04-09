@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import ReactMarkdown from 'react-markdown';
-import aiAvatarImg from '@/assets/ai-interviewer-avatar.jpg';
+import aiMaleAvatar from '@/assets/ai-interviewer-male.jpg';
+import aiFemaleAvatar from '@/assets/ai-interviewer-female.jpg';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -114,7 +115,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [isListening, setIsListening] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const [interimTranscript, setInterimTranscript] = useState('');
-  const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('female');
+  const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('male');
+  const avatarImg = voiceGender === 'male' ? aiMaleAvatar : aiFemaleAvatar;
   const [speechRate, setSpeechRate] = useState(1.0);
   const [interviewLang, setInterviewLang] = useState<'en' | 'fr' | 'ar' | 'es' | 'de' | 'ar-SA'>('en');
   const [conversationMode, setConversationMode] = useState(true);
@@ -594,7 +596,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     return (
       <div className="rounded-2xl bg-[#0f1628] p-8 text-center">
         <div className="w-24 h-24 rounded-full mx-auto mb-6 overflow-hidden border-2 border-primary/50">
-          <img src={aiAvatarImg} alt="AI Interviewer" className="w-full h-full object-cover" />
+          <img src={avatarImg} alt="AI Interviewer" className="w-full h-full object-cover" />
         </div>
         <Loader2 className="w-8 h-8 text-primary mx-auto mb-4 animate-spin" />
         <p className="text-lg font-semibold text-white mb-1">Evaluating Your Interview...</p>
@@ -652,7 +654,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
               <div className={`w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-3 transition-all duration-500 ${
                 isSpeaking ? 'border-green-400 shadow-[0_0_30px_rgba(74,222,128,0.3)] scale-105' : 'border-primary/40'
               }`}>
-                <img src={aiAvatarImg} alt="AI Interviewer" className="w-full h-full object-cover" />
+                <img src={avatarImg} alt="AI Interviewer" className="w-full h-full object-cover" />
               </div>
               {isSpeaking && (
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-green-500/20 backdrop-blur-sm rounded-full px-3 py-1">
@@ -706,7 +708,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                 <div key={i} className={`flex items-start gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                   {msg.role === 'assistant' ? (
                     <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 mt-0.5">
-                      <img src={aiAvatarImg} alt="" className="w-full h-full object-cover" />
+                      <img src={avatarImg} alt="" className="w-full h-full object-cover" />
                     </div>
                   ) : (
                     <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
@@ -728,7 +730,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
               {isStreaming && messages[messages.length - 1]?.role !== 'assistant' && (
                 <div className="flex items-start gap-2">
                   <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 mt-0.5">
-                    <img src={aiAvatarImg} alt="" className="w-full h-full object-cover" />
+                    <img src={avatarImg} alt="" className="w-full h-full object-cover" />
                   </div>
                   <div className="bg-white/5 rounded-xl rounded-tl-sm p-3 border border-white/10">
                     <div className="flex gap-1">
