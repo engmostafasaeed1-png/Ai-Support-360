@@ -95,12 +95,18 @@ export default function InterviewsPage() {
                         <Video className="w-6 h-6 text-primary" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">AI Skills Assessment</h3>
+                        <h3 className="font-semibold text-foreground">
+                          {interview.interview_type === 'physical' ? 'Manual Interview' : 'AI Skills Assessment'}
+                        </h3>
                         <p className="text-xs text-muted-foreground">
                           Requested {format(new Date(interview.created_at), 'MMM d, yyyy')}
                         </p>
-                        <Badge variant="secondary" className="mt-1 bg-amber-100 text-amber-700 text-[10px]">
-                          Pending — Join anytime
+                        <Badge variant="secondary" className={`mt-1 text-[10px] ${
+                          interview.status === 'in_progress' 
+                            ? 'bg-blue-100 text-blue-700' 
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {interview.status === 'in_progress' ? 'Paused — Resume anytime' : 'Pending — Join anytime'}
                         </Badge>
                       </div>
                     </div>
@@ -109,7 +115,7 @@ export default function InterviewsPage() {
                       className="gap-2"
                     >
                       <Play className="w-4 h-4" />
-                      Join Interview
+                      {interview.status === 'in_progress' ? 'Resume' : 'Join Interview'}
                     </Button>
                   </CardContent>
                 </Card>
