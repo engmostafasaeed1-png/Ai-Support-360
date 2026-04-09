@@ -38,6 +38,7 @@ import EarningsPage from "./pages/consultant/EarningsPage.tsx";
 import VerificationPage from "./pages/consultant/VerificationPage.tsx";
 import ProfilePage from "./pages/consultant/ProfilePage.tsx";
 import OnboardingPage from "./pages/consultant/OnboardingPage.tsx";
+import InterviewsPage from "./pages/consultant/InterviewsPage.tsx";
 import ConsultantChatPage from "./pages/consultant/ConsultantChatPage.tsx";
 import ClientLayout from "./components/client/ClientLayout.tsx";
 import ClientDashboard from "./pages/client/ClientDashboard.tsx";
@@ -139,6 +140,7 @@ const App = () => (
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="earnings" element={<EarningsPage />} />
               <Route path="verification" element={<VerificationPage />} />
+              <Route path="interviews" element={<InterviewsPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="chat" element={<ConsultantChatPage />} />
               <Route path="chat/:sessionId" element={<ChatSessionPage role="consultant" />} />

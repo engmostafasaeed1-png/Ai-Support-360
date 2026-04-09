@@ -65,7 +65,7 @@ export default function ReinterviewDialog({ open, onOpenChange, consultantId, co
           title: t('interview.reinterview_requested', 'Re-Interview Requested'),
           body: t('interview.reinterview_body', `You have been requested for a ${typeLabel} re-interview.`, { type: typeLabel }),
           type: 'interview',
-          link: '/consultant/verification',
+          link: '/consultant/interviews',
         });
       }
 
