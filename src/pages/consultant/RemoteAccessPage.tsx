@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Monitor, Server, Terminal, Laptop, ShieldAlert, FileCheck, ExternalLink } from 'lucide-react';
+import { Monitor, Server, Terminal, Laptop, ShieldAlert, FileCheck, ExternalLink, Settings, Plug, Link2, Pencil } from 'lucide-react';
 import { useRemoteEnvironments, type RemoteEnvironment } from '@/hooks/useRemoteEnvironments';
 import { useEnvironmentConnections, type EnvironmentConnection } from '@/hooks/useEnvironmentConnections';
 import { useQuery } from '@tanstack/react-query';
