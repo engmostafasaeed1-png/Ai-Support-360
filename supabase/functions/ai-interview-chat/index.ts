@@ -146,12 +146,41 @@ Return ONLY valid JSON.`;
       });
     }
 
-    // Regular chat — stream the AI response
+    // Update status to in_progress
     if (interview.status === "pending") {
       await supabase.from("interview_sessions").update({
         status: "in_progress",
         started_at: new Date().toISOString(),
       }).eq("id", interview_id);
+    }
+
+    // Fetch admin training configs for relevant modules
+    const consultantModules = (skills || []).map(s => s.sap_module);
+    const { data: trainingConfigs } = await supabase
+      .from("interview_training_config")
+      .select("*")
+      .eq("is_active", true)
+      .in("sap_module", ["general", ...consultantModules]);
+
+    let customQuestionsBlock = "";
+    let trainingInstructionsBlock = "";
+    let difficultyBlock = "";
+
+    if (trainingConfigs && trainingConfigs.length > 0) {
+      const allQuestions = trainingConfigs.flatMap((c: any) => 
+        (c.custom_questions || []).map((q: any) => `- [${q.weight > 1 ? 'IMPORTANT' : 'Normal'}] ${q.question}${q.expected_topics ? ` (look for: ${q.expected_topics})` : ''}`)
+      );
+      if (allQuestions.length > 0) {
+        customQuestionsBlock = `\n\nMANDATORY QUESTIONS (you MUST ask these during the interview):\n${allQuestions.join("\n")}`;
+      }
+      const instructions = trainingConfigs.map((c: any) => c.training_instructions).filter(Boolean);
+      if (instructions.length > 0) {
+        trainingInstructionsBlock = `\n\nADMIN TRAINING INSTRUCTIONS:\n${instructions.join("\n")}`;
+      }
+      const levels = trainingConfigs.map((c: any) => c.difficulty_level);
+      if (levels.includes("expert") || levels.includes("hard")) {
+        difficultyBlock = "\n\nDIFFICULTY: Ask advanced, expert-level questions. Probe deeply into architecture decisions, edge cases, and performance optimization.";
+      }
     }
 
     const systemPrompt = `You are Qurtuba AI Interviewer — a friendly, professional SAP technical interviewer conducting a video-call interview with ${consultantName}.
@@ -170,6 +199,7 @@ INTERVIEW GUIDELINES:
 - After about 8-12 exchanges, naturally wrap up the interview
 - Mix technical SAP questions with situational/behavioral ones
 - Reference their specific modules and experience when asking questions
+${customQuestionsBlock}${trainingInstructionsBlock}${difficultyBlock}
 
 You are speaking via video call, so be personable and natural.
 

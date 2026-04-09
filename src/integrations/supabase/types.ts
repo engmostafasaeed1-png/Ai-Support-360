@@ -854,6 +854,42 @@ export type Database = {
           },
         ]
       }
+      interview_training_config: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          custom_questions: Json
+          difficulty_level: string
+          id: string
+          is_active: boolean
+          sap_module: string
+          training_instructions: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          custom_questions?: Json
+          difficulty_level?: string
+          id?: string
+          is_active?: boolean
+          sap_module?: string
+          training_instructions?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          custom_questions?: Json
+          difficulty_level?: string
+          id?: string
+          is_active?: boolean
+          sap_module?: string
+          training_instructions?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       knowledge_articles: {
         Row: {
           author_id: string

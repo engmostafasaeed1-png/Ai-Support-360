@@ -39,6 +39,7 @@ import VerificationPage from "./pages/consultant/VerificationPage.tsx";
 import ProfilePage from "./pages/consultant/ProfilePage.tsx";
 import OnboardingPage from "./pages/consultant/OnboardingPage.tsx";
 import InterviewsPage from "./pages/consultant/InterviewsPage.tsx";
+import InterviewTrainingPage from "./pages/admin/InterviewTrainingPage.tsx";
 import ConsultantChatPage from "./pages/consultant/ConsultantChatPage.tsx";
 import ClientLayout from "./components/client/ClientLayout.tsx";
 import ClientDashboard from "./pages/client/ClientDashboard.tsx";
@@ -230,6 +231,7 @@ const App = () => (
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="nda-management" element={<NDAManagementPage />} />
               <Route path="landing-editor" element={<LandingEditorPage />} />
+              <Route path="interview-training" element={<InterviewTrainingPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
             </Route>
             <Route path="/super-admin" element={<ProtectedRoute requiredRole="admin"><SuperAdminLayout /></ProtectedRoute>}>

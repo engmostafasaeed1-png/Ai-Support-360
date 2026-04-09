@@ -11,8 +11,9 @@ import { mockRecommendedConsultants } from '@/data/clientMockData';
 import { mockConsultantDetailData } from '@/data/consultantDetailMockData';
 import {
   Star, MapPin, Clock, Globe, Shield, Award, Video,
-  MessageSquare, Monitor, ChevronLeft, CalendarDays, BadgeCheck, ExternalLink
+  MessageSquare, Monitor, ChevronLeft, CalendarDays, BadgeCheck, ExternalLink, Brain,
 } from 'lucide-react';
+import InterviewTranscript from '@/components/consultant/InterviewTranscript';
 import ShareMenu from '@/components/ShareMenu';
 import { useState, useEffect } from 'react';
 import BookingModal from '@/components/client/BookingModal';
@@ -460,6 +461,14 @@ export default function ConsultantProfilePage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Interview Results visible to clients */}
+      <div>
+        <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+          <Brain className="w-5 h-5 text-primary" /> Interview Results
+        </h2>
+        <InterviewTranscript consultantId={consultant.id} viewMode="client" />
+      </div>
 
       <BookingModal
         open={bookingOpen}

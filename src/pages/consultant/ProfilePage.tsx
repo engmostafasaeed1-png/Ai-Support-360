@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { User, Globe, Clock, DollarSign, Save, RotateCcw, Loader2 } from 'lucide-react';
+import { User, Globe, Clock, DollarSign, Save, RotateCcw, Loader2, Brain } from 'lucide-react';
+import InterviewTranscript from '@/components/consultant/InterviewTranscript';
 import AvatarUpload from '@/components/profile/AvatarUpload';
 import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
 import { useConsultantProfile } from '@/hooks/useConsultantProfile';
@@ -213,6 +214,14 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Interview History & Transcripts */}
+      <div>
+        <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+          <Brain className="w-5 h-5 text-primary" /> Interview History & Results
+        </h2>
+        <InterviewTranscript consultantId={profile?.id || ''} viewMode="consultant" />
+      </div>
     </div>
 
     <ReinterviewDialog
