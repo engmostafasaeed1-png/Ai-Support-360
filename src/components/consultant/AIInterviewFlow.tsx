@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Brain, Loader2, CheckCircle, Send, AlertTriangle, Video, VideoOff,
   Mic, MicOff, Monitor, PhoneOff, MessageSquare, Award, Volume2, VolumeX,
-  Gauge, Globe, User, Eye, Smile, Activity, Clock,
+  Gauge, Globe, User, Eye, Smile, Activity, Clock, HelpCircle, RefreshCw,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Slider } from '@/components/ui/slider';
