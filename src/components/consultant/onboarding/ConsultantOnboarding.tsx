@@ -128,11 +128,9 @@ export default function ConsultantOnboarding() {
     setData(prev => ({ ...prev, ...partial }));
   };
 
-  const handleSubmit = async () => {
+  const handleSaveAndContinue = async () => {
     if (isGuest) {
-      fireConfetti();
-      toast.success(t('guest.onboarding_demo'));
-      setTimeout(() => navigate('/consultant?welcome=true'), 1200);
+      setCurrentStep(STEP_COUNT - 1);
       return;
     }
     setSubmitting(true);
@@ -265,9 +263,8 @@ export default function ConsultantOnboarding() {
         );
       }
 
-      fireConfetti();
-      toast.success(t('onboarding.success'));
-      setTimeout(() => navigate('/consultant?welcome=true'), 1200);
+      toast.success('Profile saved! Proceeding to AI Interview...');
+      setCurrentStep(STEP_COUNT - 1);
     } catch (err) {
       console.error(err);
       toast.error(t('onboarding.error_generic'));
@@ -361,7 +358,7 @@ export default function ConsultantOnboarding() {
               <ChevronRight className="w-4 h-4 rtl:rotate-180" />
             </Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={submitting} className="gap-1.5">
+            <Button onClick={handleSaveAndContinue} disabled={submitting} className="gap-1.5">
               {submitting ? t('common.loading') : 'Save & Continue to Interview'}
               <ChevronRight className="w-4 h-4 rtl:rotate-180" />
             </Button>
