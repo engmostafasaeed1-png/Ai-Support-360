@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Users, Kanban, UserCheck, BarChart3,
-  Settings, Shield, Globe, LogOut, Plug, Server, ClipboardList, FileSignature, PanelTop,
+  Settings, Shield, Globe, LogOut, Plug, Server, ClipboardList, FileSignature, PanelTop, Brain,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
@@ -26,6 +26,7 @@ const menuItems = [
   { key: 'environment_logs', icon: ClipboardList, path: '/admin/environment-logs' },
   { key: 'nda_management', icon: FileSignature, path: '/admin/nda-management' },
   { key: 'landing_editor', icon: PanelTop, path: '/admin/landing-editor' },
+  { key: 'interview_training', icon: Brain, path: '/admin/interview-training' },
   { key: 'settings', icon: Settings, path: '/admin/settings' },
   { key: 'super_admin', icon: Shield, path: '/super-admin' },
 ];
