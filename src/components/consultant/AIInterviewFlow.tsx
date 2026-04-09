@@ -115,7 +115,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [isListening, setIsListening] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const [interimTranscript, setInterimTranscript] = useState('');
-  const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('female');
+  const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('male');
+  const avatarImg = voiceGender === 'male' ? aiMaleAvatar : aiFemaleAvatar;
   const [speechRate, setSpeechRate] = useState(1.0);
   const [interviewLang, setInterviewLang] = useState<'en' | 'fr' | 'ar' | 'es' | 'de' | 'ar-SA'>('en');
   const [conversationMode, setConversationMode] = useState(true);
