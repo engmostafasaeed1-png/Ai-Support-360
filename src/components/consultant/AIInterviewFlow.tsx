@@ -63,21 +63,92 @@ function SpeakingIndicator() {
   );
 }
 
-function AvatarParticles() {
+function DynamicAvatar({ src, isSpeaking, isListening, isThinking }: { src: string; isSpeaking: boolean; isListening: boolean; isThinking: boolean }) {
+  const [blink, setBlink] = useState(false);
+
+  // Natural blink every 3-6 seconds
+  useEffect(() => {
+    const blinkLoop = () => {
+      setBlink(true);
+      setTimeout(() => setBlink(false), 180);
+      const next = 2500 + Math.random() * 4000;
+      return setTimeout(blinkLoop, next);
+    };
+    const t = setTimeout(blinkLoop, 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Dynamic ring color & glow
+  const ringColor = isSpeaking
+    ? 'border-green-400 shadow-[0_0_30px_rgba(74,222,128,0.35)]'
+    : isListening
+    ? 'border-blue-400 shadow-[0_0_25px_rgba(96,165,250,0.3)]'
+    : isThinking
+    ? 'border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.25)]'
+    : 'border-primary/40';
+
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(6)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute w-1 h-1 rounded-full bg-primary/20 animate-pulse"
-          style={{
-            left: `${15 + i * 15}%`,
-            top: `${20 + (i % 3) * 25}%`,
-            animationDelay: `${i * 0.5}s`,
-            animationDuration: `${2 + i * 0.5}s`,
-          }}
-        />
-      ))}
+    <div className="relative">
+      {/* Breathing ring */}
+      <div
+        className={`absolute -inset-3 rounded-full border-2 transition-all duration-1000 ${
+          isSpeaking ? 'border-green-400/20 animate-[breathe_2s_ease-in-out_infinite]'
+          : isListening ? 'border-blue-400/15 animate-[breathe_3s_ease-in-out_infinite]'
+          : 'border-white/5 animate-[breathe_4s_ease-in-out_infinite]'
+        }`}
+      />
+      {/* Sound wave rings when speaking */}
+      {isSpeaking && (
+        <>
+          <div className="absolute -inset-5 rounded-full border border-green-400/10 animate-ping" style={{ animationDuration: '1.5s' }} />
+          <div className="absolute -inset-8 rounded-full border border-green-400/5 animate-ping" style={{ animationDuration: '2s' }} />
+        </>
+      )}
+      {/* Avatar container */}
+      <div
+        className={`w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-3 transition-all duration-500 ${ringColor}`}
+        style={{
+          animation: isSpeaking ? 'headBob 1.5s ease-in-out infinite' : isThinking ? 'headTilt 3s ease-in-out infinite' : 'breatheScale 4s ease-in-out infinite',
+        }}
+      >
+        <div className="relative w-full h-full">
+          <img src={src} alt="AI Interviewer" className="w-full h-full object-cover" />
+          {/* Blink overlay */}
+          <div
+            className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-transparent pointer-events-none transition-opacity"
+            style={{
+              opacity: blink ? 0.15 : 0,
+              background: 'linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.4) 45%, rgba(0,0,0,0.4) 55%, transparent 70%)',
+              transitionDuration: '80ms',
+            }}
+          />
+          {/* Speaking mouth animation overlay */}
+          {isSpeaking && (
+            <div className="absolute bottom-[15%] left-1/2 -translate-x-1/2 w-[30%] h-[8%] pointer-events-none">
+              <div className="w-full h-full rounded-full bg-black/20 animate-[mouthMove_0.3s_ease-in-out_infinite]" />
+            </div>
+          )}
+        </div>
+      </div>
+      {/* Status badge */}
+      {isSpeaking && (
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-green-500/20 backdrop-blur-sm rounded-full px-3 py-1">
+          <SpeakingIndicator />
+          <span className="text-[10px] text-green-300 ms-1">Speaking</span>
+        </div>
+      )}
+      {isListening && !isSpeaking && (
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-blue-500/20 backdrop-blur-sm rounded-full px-3 py-1">
+          <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+          <span className="text-[10px] text-blue-300 ms-1">Listening</span>
+        </div>
+      )}
+      {isThinking && !isSpeaking && !isListening && (
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-amber-500/20 backdrop-blur-sm rounded-full px-3 py-1">
+          <Loader2 className="w-2.5 h-2.5 text-amber-300 animate-spin" />
+          <span className="text-[10px] text-amber-300 ms-1">Thinking</span>
+        </div>
+      )}
     </div>
   );
 }
