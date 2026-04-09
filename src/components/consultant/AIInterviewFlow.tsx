@@ -521,8 +521,18 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             <span className="text-xs font-medium text-white/80">LIVE — AI Interview</span>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setConversationMode(!conversationMode)}
+              className={`px-2.5 py-1 rounded-full text-[10px] font-medium border transition-colors ${
+                conversationMode
+                  ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                  : 'bg-white/5 text-white/50 border-white/10'
+              }`}
+            >
+              {conversationMode ? '🗣️ Hands-free' : '⌨️ Manual'}
+            </button>
             <Badge variant="secondary" className="bg-green-500/10 text-green-400 text-[10px]">
-              {isListening ? '🎤 Listening...' : 'Voice Discussion'}
+              {isListening ? '🎤 Listening...' : isSpeaking ? '🔊 AI Speaking' : isStreaming ? '💭 Thinking...' : 'Ready'}
             </Badge>
             <span className="text-xs text-white/60 font-mono">{formatTime(elapsedTime)}</span>
             <span className="text-xs text-white/40">{userMessageCount} exchanges</span>
