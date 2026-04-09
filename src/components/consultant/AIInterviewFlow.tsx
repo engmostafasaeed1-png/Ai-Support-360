@@ -833,7 +833,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             <DynamicAvatar src={avatarImg} isSpeaking={isSpeaking} isListening={isListening} isThinking={isStreaming && !isSpeaking} />
             <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/50 rounded-lg px-3 py-1.5">
               <Brain className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-medium text-white">Qurtuba AI Interviewer</span>
+              <span className="text-xs font-medium text-white">{voiceGender === 'female' ? 'Mariam' : 'Ezz'} — AI Interviewer</span>
             </div>
 
             {/* User webcam preview */}
@@ -987,8 +987,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             <div className="flex items-center gap-2">
               <User className="w-3.5 h-3.5 text-white/50" />
               <div className="flex rounded-lg overflow-hidden border border-white/10">
-                <button onClick={() => setVoiceGender('female')} className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${voiceGender === 'female' ? 'bg-pink-500/30 text-pink-300' : 'text-white/50 hover:text-white/80'}`}>♀ Female</button>
-                <button onClick={() => setVoiceGender('male')} className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${voiceGender === 'male' ? 'bg-blue-500/30 text-blue-300' : 'text-white/50 hover:text-white/80'}`}>♂ Male</button>
+                <button onClick={() => setVoiceGender('female')} className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${voiceGender === 'female' ? 'bg-pink-500/30 text-pink-300' : 'text-white/50 hover:text-white/80'}`}>♀ Mariam</button>
+                <button onClick={() => setVoiceGender('male')} className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${voiceGender === 'male' ? 'bg-blue-500/30 text-blue-300' : 'text-white/50 hover:text-white/80'}`}>♂ Ezz</button>
               </div>
             </div>
             <div className="flex items-center gap-2 min-w-[140px]">
