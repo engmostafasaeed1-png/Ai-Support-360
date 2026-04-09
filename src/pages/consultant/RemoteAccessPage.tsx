@@ -7,6 +7,7 @@ import { Monitor, Server, Terminal, Laptop } from 'lucide-react';
 import { useRemoteEnvironments, type RemoteEnvironment } from '@/hooks/useRemoteEnvironments';
 import { useEnvironmentConnections, type EnvironmentConnection } from '@/hooks/useEnvironmentConnections';
 import GuacamoleViewer from '@/components/remote/GuacamoleViewer';
+import CredentialsManager from '@/components/remote/CredentialsManager';
 import { useEnvironmentTracking } from '@/hooks/useEnvironmentTracking';
 import { useState } from 'react';
 
@@ -124,6 +125,9 @@ export default function RemoteAccessPage() {
                     </div>
                     {env.vm_name && <p className="text-xs text-muted-foreground/70 mt-1 font-mono">{env.vm_name}</p>}
                     {env.notes && <p className="text-xs text-muted-foreground mt-2">{env.notes}</p>}
+                    <div className="mt-3 pt-3 border-t border-border/30">
+                      <CredentialsManager environmentId={env.id} canEdit={false} />
+                    </div>
                     <ConnectionPicker
                       envId={env.id}
                       envName={env.name}

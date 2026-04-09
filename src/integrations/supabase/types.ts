@@ -600,6 +600,56 @@ export type Database = {
           },
         ]
       }
+      environment_credentials: {
+        Row: {
+          created_at: string
+          credential_label: string
+          domain: string | null
+          entered_by: string
+          environment_id: string
+          hostname: string | null
+          id: string
+          password_encrypted: string
+          port: number | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          credential_label?: string
+          domain?: string | null
+          entered_by: string
+          environment_id: string
+          hostname?: string | null
+          id?: string
+          password_encrypted: string
+          port?: number | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          credential_label?: string
+          domain?: string | null
+          entered_by?: string
+          environment_id?: string
+          hostname?: string | null
+          id?: string
+          password_encrypted?: string
+          port?: number | null
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "environment_credentials_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "remote_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       environment_sessions: {
         Row: {
           connected_at: string
