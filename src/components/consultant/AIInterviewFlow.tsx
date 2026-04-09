@@ -391,9 +391,11 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   };
 
   const handleEndInterview = async () => {
+    shouldAutoResumeRef.current = false;
     setPhase('evaluating');
     clearInterval(timerRef.current);
     if (isListening) stopListening();
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     window.speechSynthesis.cancel();
     
     try {
