@@ -345,8 +345,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     lastSpokenRef.current = cleanText;
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = speechRate;
-    utterance.pitch = voiceGender === 'female' ? 1.1 : 0.85;
+    utterance.rate = voiceGender === 'male' ? speechRate * 0.92 : speechRate;
+    utterance.pitch = voiceGender === 'female' ? 1.1 : 0.72;
     utterance.volume = 1.0;
     const langMap: Record<string, string> = { 'en': 'en-US', 'fr': 'fr-FR', 'ar': 'ar-EG', 'es': 'es-ES', 'de': 'de-DE', 'ar-SA': 'ar-SA' };
     utterance.lang = langMap[interviewLang] || 'en-US';
@@ -355,7 +355,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     const langPrefix = interviewLang.startsWith('ar') ? 'ar' : interviewLang;
     const genderHints = voiceGender === 'female'
       ? ['female', 'woman', 'zira', 'samantha', 'karen', 'victoria', 'fiona', 'Google.*Female']
-      : ['male', 'man', 'david', 'daniel', 'james', 'Google.*Male', 'alex'];
+      : ['male', 'man', 'david', 'daniel', 'james', 'Google.*Male', 'alex', 'mark', 'reed', 'richard', 'thomas', 'google uk english male'];
     const matchesGender = (name: string) => genderHints.some(h => new RegExp(h, 'i').test(name));
     const preferred = voices.find(v => v.lang.startsWith(langPrefix) && matchesGender(v.name) && !v.localService)
       || voices.find(v => v.lang.startsWith(langPrefix) && matchesGender(v.name))
