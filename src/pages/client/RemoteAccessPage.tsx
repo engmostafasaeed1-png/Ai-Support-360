@@ -97,8 +97,10 @@ export default function ClientRemoteAccessPage() {
                     <h3 className="font-semibold text-foreground">{env.name}</h3>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant="default" className="text-[10px]">Active</Badge>
+                      <Badge variant="outline" className="text-[10px]">{env.platform_type === 'vmware' ? 'VMware' : env.platform_type}</Badge>
                       <span className="text-xs text-muted-foreground">{env.os_type}</span>
                     </div>
+                    {env.vm_name && <p className="text-xs text-muted-foreground/70 mt-1 font-mono">{env.vm_name}</p>}
                     {env.notes && <p className="text-xs text-muted-foreground mt-2">{env.notes}</p>}
                     <ConnectionPicker envId={env.id} envName={env.name} envUrl={env.guacamole_url}
                       onConnect={(url, name) => setActiveConn({ envId: env.id, url, name })} />

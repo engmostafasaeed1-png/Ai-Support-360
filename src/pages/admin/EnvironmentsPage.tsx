@@ -41,6 +41,9 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
   const [consultantId, setConsultantId] = useState(env?.consultant_id || '');
   const [status, setStatus] = useState(env?.status || 'active');
   const [osType, setOsType] = useState(env?.os_type || 'Windows Server 2022');
+  const [platformType, setPlatformType] = useState(env?.platform_type || 'vmware');
+  const [vmwareHost, setVmwareHost] = useState(env?.vmware_host || '');
+  const [vmName, setVmName] = useState(env?.vm_name || '');
   const [notes, setNotes] = useState(env?.notes || '');
 
   const { data: clients } = useQuery({
@@ -87,6 +90,9 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
       consultant_id: consultantId || null,
       status,
       os_type: osType,
+      platform_type: platformType,
+      vmware_host: vmwareHost || null,
+      vm_name: vmName || null,
       notes: notes || null,
     });
   };
@@ -139,10 +145,45 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
           </Select>
         </div>
         <div>
-          <label className="text-sm font-medium text-foreground">{t('admin.env_label_os', 'OS Type')}</label>
-          <Input value={osType} onChange={(e) => setOsType(e.target.value)} placeholder="Windows Server 2022" />
+          <label className="text-sm font-medium text-foreground">{t('admin.env_label_platform', 'Platform')}</label>
+          <Select value={platformType} onValueChange={setPlatformType}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="vmware">VMware</SelectItem>
+              <SelectItem value="hyperv">Hyper-V</SelectItem>
+              <SelectItem value="citrix">Citrix</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-sm font-medium text-foreground">{t('admin.env_label_os', 'OS Type')}</label>
+          <Select value={osType} onValueChange={setOsType}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Windows Server 2022">Windows Server 2022</SelectItem>
+              <SelectItem value="Windows Server 2019">Windows Server 2019</SelectItem>
+              <SelectItem value="Windows 11">Windows 11</SelectItem>
+              <SelectItem value="Windows 10">Windows 10</SelectItem>
+              <SelectItem value="Ubuntu Server">Ubuntu Server</SelectItem>
+              <SelectItem value="RHEL">RHEL</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-foreground">{t('admin.env_label_vmname', 'VM Name')}</label>
+          <Input value={vmName} onChange={(e) => setVmName(e.target.value)} placeholder="SAP-PROD-VM01" />
+        </div>
+      </div>
+      {platformType === 'vmware' && (
+        <div>
+          <label className="text-sm font-medium text-foreground">{t('admin.env_label_vmhost', 'vCenter / ESXi Host')}</label>
+          <Input value={vmwareHost} onChange={(e) => setVmwareHost(e.target.value)} placeholder="vcenter.example.com" />
+        </div>
+      )}
       <div>
         <label className="text-sm font-medium text-foreground">{t('admin.env_label_notes', 'Notes')}</label>
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="..." rows={2} />
@@ -257,7 +298,10 @@ export default function EnvironmentsPage() {
                         <h3 className="font-semibold text-foreground">{env.name}</h3>
                         <Badge variant={statusColors[env.status]}>{env.status}</Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground">{env.os_type}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {env.platform_type === 'vmware' ? 'VMware' : env.platform_type === 'hyperv' ? 'Hyper-V' : env.platform_type === 'citrix' ? 'Citrix' : env.platform_type} · {env.os_type}
+                        {env.vm_name && <> · <span className="font-mono">{env.vm_name}</span></>}
+                      </p>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
                         <span>{t('admin.env_client_label', 'Client')}: <span className="font-medium text-foreground">{clientMap[env.client_id] || '—'}</span></span>
                         <span>{t('admin.env_consultant_label', 'Consultant')}: <span className="font-medium text-foreground">{env.consultant_id ? (consultantMap[env.consultant_id] || '—') : t('admin.env_unassigned', 'Unassigned')}</span></span>
