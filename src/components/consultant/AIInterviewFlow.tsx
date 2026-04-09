@@ -615,65 +615,123 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         </div>
 
         {/* Bottom control bar */}
-        <div className="flex items-center justify-between px-4 py-3 bg-black/50 border-t border-white/10">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleListening}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                isListening 
-                  ? 'bg-red-500/30 text-red-400 ring-2 ring-red-500/50 animate-pulse' 
-                  : micOn ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'
-              }`}
-              title={isListening ? 'Stop listening' : 'Start voice input'}
-            >
-              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            </button>
-            <button
-              onClick={() => setCamOn(!camOn)}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                camOn ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'
-              }`}
-            >
-              {camOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
-            </button>
-            <button
-              onClick={() => {
-                setTtsEnabled(!ttsEnabled);
-                if (ttsEnabled) {
-                  window.speechSynthesis.cancel();
-                  setIsSpeaking(false);
-                }
-              }}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                ttsEnabled ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'
-              }`}
-              title={ttsEnabled ? 'Mute AI voice' : 'Enable AI voice'}
-            >
-              {ttsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </button>
-            <button className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors">
-              <Monitor className="w-4 h-4" />
-            </button>
+        <div className="flex flex-col bg-black/50 border-t border-white/10">
+          {/* Settings row */}
+          <div className="flex items-center gap-4 px-4 py-2 border-b border-white/5 flex-wrap">
+            {/* Voice Gender */}
+            <div className="flex items-center gap-2">
+              <User className="w-3.5 h-3.5 text-white/50" />
+              <div className="flex rounded-lg overflow-hidden border border-white/10">
+                <button
+                  onClick={() => setVoiceGender('female')}
+                  className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${
+                    voiceGender === 'female' ? 'bg-pink-500/30 text-pink-300' : 'text-white/50 hover:text-white/80'
+                  }`}
+                >♀ Female</button>
+                <button
+                  onClick={() => setVoiceGender('male')}
+                  className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${
+                    voiceGender === 'male' ? 'bg-blue-500/30 text-blue-300' : 'text-white/50 hover:text-white/80'
+                  }`}
+                >♂ Male</button>
+              </div>
+            </div>
+
+            {/* Speed */}
+            <div className="flex items-center gap-2 min-w-[140px]">
+              <Gauge className="w-3.5 h-3.5 text-white/50" />
+              <Slider
+                value={[speechRate]}
+                onValueChange={([v]) => setSpeechRate(v)}
+                min={0.5}
+                max={2.0}
+                step={0.25}
+                className="flex-1 [&_[data-radix-slider-track]]:bg-white/10 [&_[data-radix-slider-range]]:bg-primary/60 [&_[data-radix-slider-thumb]]:w-3 [&_[data-radix-slider-thumb]]:h-3 [&_[data-radix-slider-thumb]]:border-primary"
+              />
+              <span className="text-[10px] text-white/50 w-8">{speechRate}x</span>
+            </div>
+
+            {/* Language */}
+            <div className="flex items-center gap-2">
+              <Globe className="w-3.5 h-3.5 text-white/50" />
+              <div className="flex rounded-lg overflow-hidden border border-white/10">
+                <button
+                  onClick={() => setInterviewLang('en')}
+                  className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${
+                    interviewLang === 'en' ? 'bg-primary/30 text-primary' : 'text-white/50 hover:text-white/80'
+                  }`}
+                >English</button>
+                <button
+                  onClick={() => setInterviewLang('ar')}
+                  className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${
+                    interviewLang === 'ar' ? 'bg-primary/30 text-primary' : 'text-white/50 hover:text-white/80'
+                  }`}
+                >العربية</button>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {userMessageCount >= 3 && (
-              <Button
-                size="sm"
-                onClick={handleEndInterview}
-                disabled={isStreaming}
-                className="gradient-primary border-0"
+          {/* Main controls row */}
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleListening}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                  isListening 
+                    ? 'bg-red-500/30 text-red-400 ring-2 ring-red-500/50 animate-pulse' 
+                    : micOn ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'
+                }`}
+                title={isListening ? 'Stop listening' : 'Start voice input'}
               >
-                <CheckCircle className="w-4 h-4 me-1" />
-                End & Evaluate
-              </Button>
-            )}
-            <button
-              onClick={onCancel}
-              className="w-10 h-10 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-400 flex items-center justify-center transition-colors"
-            >
-              <PhoneOff className="w-4 h-4" />
-            </button>
+                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={() => setCamOn(!camOn)}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                  camOn ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'
+                }`}
+              >
+                {camOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={() => {
+                  setTtsEnabled(!ttsEnabled);
+                  if (ttsEnabled) {
+                    window.speechSynthesis.cancel();
+                    setIsSpeaking(false);
+                  }
+                }}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                  ttsEnabled ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'
+                }`}
+                title={ttsEnabled ? 'Mute AI voice' : 'Enable AI voice'}
+              >
+                {ttsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              </button>
+              <button className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors">
+                <Monitor className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {userMessageCount >= 3 && (
+                <Button
+                  size="sm"
+                  onClick={handleEndInterview}
+                  disabled={isStreaming}
+                  className="gradient-primary border-0"
+                >
+                  <CheckCircle className="w-4 h-4 me-1" />
+                  {interviewLang === 'ar' ? 'إنهاء وتقييم' : 'End & Evaluate'}
+                </Button>
+              )}
+              <button
+                onClick={onCancel}
+                className="w-10 h-10 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-400 flex items-center justify-center transition-colors"
+              >
+                <PhoneOff className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
