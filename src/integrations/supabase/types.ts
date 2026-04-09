@@ -2429,6 +2429,92 @@ export type Database = {
         }
         Relationships: []
       }
+      vmware_settings: {
+        Row: {
+          allowed_ports: string[] | null
+          auto_shutdown_hours: number | null
+          cluster: string | null
+          created_at: string
+          datacenter: string | null
+          datastore: string | null
+          default_cpu: number | null
+          default_disk_gb: number | null
+          default_os_template: string | null
+          default_ram_gb: number | null
+          environment_id: string
+          firewall_rules: Json | null
+          id: string
+          network_vlan: string | null
+          notes: string | null
+          resource_pool: string | null
+          snapshot_enabled: boolean | null
+          updated_at: string
+          vcenter_password_encrypted: string | null
+          vcenter_url: string | null
+          vcenter_username: string | null
+          vpn_gateway: string | null
+          vpn_type: string | null
+        }
+        Insert: {
+          allowed_ports?: string[] | null
+          auto_shutdown_hours?: number | null
+          cluster?: string | null
+          created_at?: string
+          datacenter?: string | null
+          datastore?: string | null
+          default_cpu?: number | null
+          default_disk_gb?: number | null
+          default_os_template?: string | null
+          default_ram_gb?: number | null
+          environment_id: string
+          firewall_rules?: Json | null
+          id?: string
+          network_vlan?: string | null
+          notes?: string | null
+          resource_pool?: string | null
+          snapshot_enabled?: boolean | null
+          updated_at?: string
+          vcenter_password_encrypted?: string | null
+          vcenter_url?: string | null
+          vcenter_username?: string | null
+          vpn_gateway?: string | null
+          vpn_type?: string | null
+        }
+        Update: {
+          allowed_ports?: string[] | null
+          auto_shutdown_hours?: number | null
+          cluster?: string | null
+          created_at?: string
+          datacenter?: string | null
+          datastore?: string | null
+          default_cpu?: number | null
+          default_disk_gb?: number | null
+          default_os_template?: string | null
+          default_ram_gb?: number | null
+          environment_id?: string
+          firewall_rules?: Json | null
+          id?: string
+          network_vlan?: string | null
+          notes?: string | null
+          resource_pool?: string | null
+          snapshot_enabled?: boolean | null
+          updated_at?: string
+          vcenter_password_encrypted?: string | null
+          vcenter_url?: string | null
+          vcenter_username?: string | null
+          vpn_gateway?: string | null
+          vpn_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vmware_settings_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: true
+            referencedRelation: "remote_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_diary_entries: {
         Row: {
           activity_level: number | null
