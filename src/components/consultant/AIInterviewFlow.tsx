@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import ReactMarkdown from 'react-markdown';
-import aiAvatarImg from '@/assets/ai-interviewer-avatar.jpg';
+import aiMaleAvatar from '@/assets/ai-interviewer-male.jpg';
+import aiFemaleAvatar from '@/assets/ai-interviewer-female.jpg';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
