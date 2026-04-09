@@ -400,6 +400,13 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
       setError(err.message || 'Connection failed');
     } finally {
       setIsStreaming(false);
+      // Auto-save conversation after each exchange
+      const latest = messagesRef.current;
+      if (latest.length > 0) {
+        supabase.from('interview_sessions').update({
+          skill_results: latest as any,
+        }).eq('id', interviewId).then(() => {});
+      }
       if (!ttsEnabled) {
         setTimeout(() => {
           setIsSpeaking(false);
