@@ -135,6 +135,22 @@ function EnvironmentCard({ env, ticketInfo, onConnect }: {
 
             {env.notes && <p className="text-xs text-muted-foreground mt-2">{env.notes}</p>}
 
+            {/* Quick action buttons */}
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5"
+                onClick={() => navigate('/consultant/settings')}>
+                <Settings className="w-3 h-3" /> {t('remote.settings', 'Settings')}
+              </Button>
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5"
+                onClick={() => navigate('/consultant/remote-access')}>
+                <Link2 className="w-3 h-3" /> {t('remote.connections', 'Connections')}
+              </Button>
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5"
+                onClick={() => navigate('/client/integrations')}>
+                <Plug className="w-3 h-3" /> {t('remote.integrations', 'Integrations')}
+              </Button>
+            </div>
+
             {!isAccessible ? (
               <div className="mt-3 p-3 rounded-xl border border-border/30 bg-muted/20 text-center">
                 <p className="text-xs text-muted-foreground">
