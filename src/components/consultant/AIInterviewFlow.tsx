@@ -173,7 +173,7 @@ function ScoreBar({ label, score, icon }: { label: string; score: number; icon: 
 
 export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: Props) {
   const { t } = useTranslation();
-  const [phase, setPhase] = useState<'chat' | 'evaluating' | 'results'>('chat');
+  const [phase, setPhase] = useState<'disclaimer' | 'chat' | 'evaluating' | 'results'>('disclaimer');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
