@@ -64,14 +64,55 @@ export default function InterviewsPage() {
     );
   }
 
+  const handleStartOptionalInterview = async () => {
+    if (isGuest) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: consultant } = await supabase
+      .from('consultants')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (!consultant) return;
+    const { data: session, error } = await supabase
+      .from('interview_sessions')
+      .insert([{ consultant_id: consultant.id, interview_type: 'ai' as const, status: 'pending' as const }])
+      .select('id')
+      .single();
+    if (!error && session) {
+      setActiveInterviewId(session.id);
+      refetch();
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">AI Interviews</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Join pending AI interviews or review your past results.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">AI Interviews</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Take an optional AI interview to boost your profile credibility by 20%.
+          </p>
+        </div>
+        <Button onClick={handleStartOptionalInterview} className="gradient-primary border-0 gap-2">
+          <Brain className="w-4 h-4" /> Start AI Interview
+        </Button>
       </div>
+
+      {/* Credibility info banner */}
+      <Card className="rounded-2xl border-primary/20 bg-primary/5">
+        <CardContent className="p-4 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <span className="text-lg font-bold text-primary">20%</span>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Profile Credibility Boost</p>
+            <p className="text-xs text-muted-foreground">
+              Completing an AI interview adds 20% credibility weight to your profile, visible to all clients. This is optional but highly recommended.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {isLoading ? (
         <div className="space-y-4">
