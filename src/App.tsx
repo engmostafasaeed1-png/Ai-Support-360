@@ -102,6 +102,8 @@ import TaskBoardPage from "./pages/client/TaskBoardPage.tsx";
 import ProjectsPage from "./pages/client/ProjectsPage.tsx";
 import ContractsPage from "./pages/client/ContractsPage.tsx";
 import SupportPage from "./pages/client/SupportPage.tsx";
+import ProjectManagementTicketsPage from "./pages/client/ProjectManagementTicketsPage.tsx";
+import SolutionArchitecturePage from "./pages/client/SolutionArchitecturePage.tsx";
 import LandingEditorPage from "./pages/admin/LandingEditorPage.tsx";
 import AdminConsolePage from "./pages/admin/AdminConsolePage.tsx";
 
@@ -185,6 +187,8 @@ const App = () => (
               <Route path="projects" element={<ProjectsPage />} />
               <Route path="contracts" element={<ContractsPage />} />
               <Route path="support" element={<SupportPage />} />
+              <Route path="pm-tickets" element={<ProjectManagementTicketsPage />} />
+              <Route path="solution-architecture" element={<SolutionArchitecturePage />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminConsolePage />} />
