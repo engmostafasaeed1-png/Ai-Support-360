@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useQuery } from '@tanstack/react-query';
 import { useRealtimeConsultants, type ConsultantLive } from '@/hooks/useRealtimeConsultants';
 import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
 
@@ -98,6 +100,25 @@ export default function NewRequestPage() {
   const [manualPickOpen, setManualPickOpen] = useState(false);
   const [manualSearch, setManualSearch] = useState('');
   const [selectedConsultant, setSelectedConsultant] = useState<ConsultantLive | null>(null);
+  const [linkedTickets, setLinkedTickets] = useState<{ id: string; title: string; linkType: string }[]>([]);
+  const [linkSearch, setLinkSearch] = useState('');
+  const [linkType, setLinkType] = useState('related');
+
+  const { data: linkSearchResults = [] } = useQuery({
+    queryKey: ['ticket-link-search', linkSearch],
+    enabled: linkSearch.length >= 2,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data } = await supabase
+        .from('tickets')
+        .select('id, title, status, sap_module')
+        .eq('client_id', user.id)
+        .ilike('title', `%${linkSearch}%`)
+        .limit(5);
+      return (data || []).filter(t => !linkedTickets.some(l => l.id === t.id));
+    },
+  });
   const { consultants: allConsultants, isLoading: consultantsLoading } = useRealtimeConsultants();
 
   // Auto-fill from chatbot query params
