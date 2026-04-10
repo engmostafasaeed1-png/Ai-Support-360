@@ -369,6 +369,19 @@ export default function TicketDetailPage() {
         <TicketTimeline ticketId={ticket.id} ticket={ticket} />
       </SectionWrapper>
 
+      {/* ─── Emergency Contact ─── */}
+      {ticket.consultant_id && (
+        <SectionWrapper icon={Phone} title="Quick Contact" defaultOpen>
+          <EmergencyContactPanel
+            consultantId={ticket.consultant_id}
+            consultantName={ticket.consultant_name || undefined}
+            ticketId={ticket.id}
+            ticketTitle={ticket.title}
+            urgency={ticket.urgency}
+          />
+        </SectionWrapper>
+      )}
+
       {/* ─── Dialogs ─── */}
       <TicketEditDialog ticket={ticket} open={editOpen} onOpenChange={setEditOpen} />
       <SendMatchRequestDialog
@@ -388,6 +401,15 @@ export default function TicketDetailPage() {
         isOpenForBids={ticket.open_for_bids || false}
         open={bidOpen}
         onOpenChange={setBidOpen}
+      />
+      <ScheduleMeetingDialog
+        open={meetingOpen}
+        onOpenChange={setMeetingOpen}
+        ticketId={ticket.id}
+        ticketTitle={ticket.title}
+        clientId={ticket.client_id}
+        consultantId={ticket.consultant_id}
+        consultantName={ticket.consultant_name || undefined}
       />
     </div>
   );
