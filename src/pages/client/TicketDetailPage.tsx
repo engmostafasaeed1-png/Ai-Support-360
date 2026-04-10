@@ -285,6 +285,11 @@ export default function TicketDetailPage() {
         <ChatInline messages={messages || []} isLoading={messagesLoading} />
       </SectionWrapper>
 
+      {/* ─── Timesheet / Work Log ─── */}
+      <SectionWrapper icon={ClipboardList} title="Timesheet & Work Log" defaultOpen>
+        <TicketTimesheet ticketId={ticket.id} ticketTitle={ticket.title} isReadOnly={isClient} />
+      </SectionWrapper>
+
       {/* ─── Documents ─── */}
       <SectionWrapper icon={FileText} title="Documents" defaultOpen>
         <TicketDocuments ticketId={ticket.id} />
