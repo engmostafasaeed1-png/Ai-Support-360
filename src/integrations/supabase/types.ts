@@ -208,6 +208,153 @@ export type Database = {
         }
         Relationships: []
       }
+      catalog_items: {
+        Row: {
+          approval_roles: string[] | null
+          category: string
+          cost_currency: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estimated_cost: number | null
+          estimated_time: string | null
+          form_schema: Json | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          requires_approval: boolean | null
+          sap_module: string | null
+          sort_order: number | null
+          tenant_id: string | null
+          title: string
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          approval_roles?: string[] | null
+          category?: string
+          cost_currency?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_cost?: number | null
+          estimated_time?: string | null
+          form_schema?: Json | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          requires_approval?: boolean | null
+          sap_module?: string | null
+          sort_order?: number | null
+          tenant_id?: string | null
+          title: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          approval_roles?: string[] | null
+          category?: string
+          cost_currency?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_cost?: number | null
+          estimated_time?: string | null
+          form_schema?: Json | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          requires_approval?: boolean | null
+          sap_module?: string | null
+          sort_order?: number | null
+          tenant_id?: string | null
+          title?: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalog_requests: {
+        Row: {
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
+          catalog_item_id: string
+          created_at: string
+          form_data: Json | null
+          fulfilled_at: string | null
+          id: string
+          notes: string | null
+          requested_by: string
+          status: string
+          tenant_id: string | null
+          ticket_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          catalog_item_id: string
+          created_at?: string
+          form_data?: Json | null
+          fulfilled_at?: string | null
+          id?: string
+          notes?: string | null
+          requested_by: string
+          status?: string
+          tenant_id?: string | null
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          catalog_item_id?: string
+          created_at?: string
+          form_data?: Json | null
+          fulfilled_at?: string | null
+          id?: string
+          notes?: string | null
+          requested_by?: string
+          status?: string
+          tenant_id?: string | null
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_requests_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_requests_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       certifications: {
         Row: {
           consultant_id: string
@@ -248,6 +395,140 @@ export type Database = {
             columns: ["consultant_id"]
             isOneToOne: false
             referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      change_approvals: {
+        Row: {
+          approver_id: string
+          change_request_id: string
+          comments: string | null
+          created_at: string
+          decided_at: string | null
+          decision: string
+          id: string
+        }
+        Insert: {
+          approver_id: string
+          change_request_id: string
+          comments?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decision?: string
+          id?: string
+        }
+        Update: {
+          approver_id?: string
+          change_request_id?: string
+          comments?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decision?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "change_approvals_change_request_id_fkey"
+            columns: ["change_request_id"]
+            isOneToOne: false
+            referencedRelation: "change_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      change_requests: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          affected_modules: string[] | null
+          affected_services: string[] | null
+          assigned_to: string | null
+          cab_decision: string | null
+          cab_decision_at: string | null
+          cab_notes: string | null
+          cab_required: boolean | null
+          change_type: string
+          created_at: string
+          description: string | null
+          id: string
+          implementation_plan: string | null
+          requested_by: string
+          risk_level: string
+          rollback_plan: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          status: string
+          tenant_id: string | null
+          ticket_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          affected_modules?: string[] | null
+          affected_services?: string[] | null
+          assigned_to?: string | null
+          cab_decision?: string | null
+          cab_decision_at?: string | null
+          cab_notes?: string | null
+          cab_required?: boolean | null
+          change_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          implementation_plan?: string | null
+          requested_by: string
+          risk_level?: string
+          rollback_plan?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          status?: string
+          tenant_id?: string | null
+          ticket_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          affected_modules?: string[] | null
+          affected_services?: string[] | null
+          assigned_to?: string | null
+          cab_decision?: string | null
+          cab_decision_at?: string | null
+          cab_notes?: string | null
+          cab_required?: boolean | null
+          change_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          implementation_plan?: string | null
+          requested_by?: string
+          risk_level?: string
+          rollback_plan?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          status?: string
+          tenant_id?: string | null
+          ticket_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "change_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "change_requests_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
         ]
@@ -1173,6 +1454,149 @@ export type Database = {
         }
         Relationships: []
       }
+      major_incident_updates: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_public: boolean | null
+          major_incident_id: string
+          posted_by: string
+          update_type: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_public?: boolean | null
+          major_incident_id: string
+          posted_by: string
+          update_type?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_public?: boolean | null
+          major_incident_id?: string
+          posted_by?: string
+          update_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "major_incident_updates_major_incident_id_fkey"
+            columns: ["major_incident_id"]
+            isOneToOne: false
+            referencedRelation: "major_incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      major_incidents: {
+        Row: {
+          action_items: Json | null
+          affected_services: string[] | null
+          affected_users_count: number | null
+          business_impact: string | null
+          communication_lead_id: string | null
+          created_at: string
+          created_by: string
+          declared_at: string | null
+          description: string | null
+          id: string
+          incident_commander_id: string | null
+          lessons_learned: string | null
+          mitigated_at: string | null
+          pir_completed_at: string | null
+          pir_notes: string | null
+          pir_scheduled_at: string | null
+          resolution_summary: string | null
+          resolved_at: string | null
+          root_cause: string | null
+          severity: string
+          status: string
+          tenant_id: string | null
+          ticket_id: string | null
+          timeline_summary: string | null
+          title: string
+          updated_at: string
+          war_room_link: string | null
+        }
+        Insert: {
+          action_items?: Json | null
+          affected_services?: string[] | null
+          affected_users_count?: number | null
+          business_impact?: string | null
+          communication_lead_id?: string | null
+          created_at?: string
+          created_by: string
+          declared_at?: string | null
+          description?: string | null
+          id?: string
+          incident_commander_id?: string | null
+          lessons_learned?: string | null
+          mitigated_at?: string | null
+          pir_completed_at?: string | null
+          pir_notes?: string | null
+          pir_scheduled_at?: string | null
+          resolution_summary?: string | null
+          resolved_at?: string | null
+          root_cause?: string | null
+          severity?: string
+          status?: string
+          tenant_id?: string | null
+          ticket_id?: string | null
+          timeline_summary?: string | null
+          title: string
+          updated_at?: string
+          war_room_link?: string | null
+        }
+        Update: {
+          action_items?: Json | null
+          affected_services?: string[] | null
+          affected_users_count?: number | null
+          business_impact?: string | null
+          communication_lead_id?: string | null
+          created_at?: string
+          created_by?: string
+          declared_at?: string | null
+          description?: string | null
+          id?: string
+          incident_commander_id?: string | null
+          lessons_learned?: string | null
+          mitigated_at?: string | null
+          pir_completed_at?: string | null
+          pir_notes?: string | null
+          pir_scheduled_at?: string | null
+          resolution_summary?: string | null
+          resolved_at?: string | null
+          root_cause?: string | null
+          severity?: string
+          status?: string
+          tenant_id?: string | null
+          ticket_id?: string | null
+          timeline_summary?: string | null
+          title?: string
+          updated_at?: string
+          war_room_link?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "major_incidents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "major_incidents_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string | null
@@ -1373,6 +1797,104 @@ export type Database = {
           },
         ]
       }
+      oncall_rotations: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          end_date: string
+          id: string
+          is_override: boolean | null
+          override_reason: string | null
+          schedule_id: string
+          start_date: string
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          end_date: string
+          id?: string
+          is_override?: boolean | null
+          override_reason?: string | null
+          schedule_id: string
+          start_date: string
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_override?: boolean | null
+          override_reason?: string | null
+          schedule_id?: string
+          start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oncall_rotations_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oncall_rotations_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "oncall_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oncall_schedules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          rotation_type: string
+          sap_module: string | null
+          tenant_id: string | null
+          timezone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          rotation_type?: string
+          sap_module?: string | null
+          tenant_id?: string | null
+          timezone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          rotation_type?: string
+          sap_module?: string | null
+          tenant_id?: string | null
+          timezone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oncall_schedules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1513,6 +2035,273 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      playbook_executions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_step: number | null
+          executed_by: string
+          id: string
+          playbook_id: string
+          started_at: string | null
+          status: string
+          step_results: Json | null
+          ticket_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number | null
+          executed_by: string
+          id?: string
+          playbook_id: string
+          started_at?: string | null
+          status?: string
+          step_results?: Json | null
+          ticket_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number | null
+          executed_by?: string
+          id?: string
+          playbook_id?: string
+          started_at?: string | null
+          status?: string
+          step_results?: Json | null
+          ticket_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_executions_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playbook_executions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playbooks: {
+        Row: {
+          avg_completion_minutes: number | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          sap_module: string | null
+          steps: Json
+          tenant_id: string | null
+          title: string
+          trigger_conditions: Json | null
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          avg_completion_minutes?: number | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          sap_module?: string | null
+          steps?: Json
+          tenant_id?: string | null
+          title: string
+          trigger_conditions?: Json | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          avg_completion_minutes?: number | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          sap_module?: string | null
+          steps?: Json
+          tenant_id?: string | null
+          title?: string
+          trigger_conditions?: Json | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbooks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prediction_logs: {
+        Row: {
+          accepted: boolean | null
+          confidence: number | null
+          created_at: string
+          feedback: string | null
+          id: string
+          model_used: string | null
+          predicted_value: Json
+          prediction_type: string
+          ticket_id: string | null
+        }
+        Insert: {
+          accepted?: boolean | null
+          confidence?: number | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          model_used?: string | null
+          predicted_value: Json
+          prediction_type: string
+          ticket_id?: string | null
+        }
+        Update: {
+          accepted?: boolean | null
+          confidence?: number | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          model_used?: string | null
+          predicted_value?: Json
+          prediction_type?: string
+          ticket_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prediction_logs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      problem_incidents: {
+        Row: {
+          created_at: string
+          id: string
+          linked_by: string | null
+          problem_id: string
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          linked_by?: string | null
+          problem_id: string
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          linked_by?: string | null
+          problem_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "problem_incidents_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "problem_incidents_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      problems: {
+        Row: {
+          affected_services: string[] | null
+          assigned_to: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          incident_count: number | null
+          is_known_error: boolean | null
+          priority: string
+          resolution: string | null
+          resolved_at: string | null
+          root_cause: string | null
+          sap_module: string | null
+          status: string
+          tenant_id: string | null
+          title: string
+          updated_at: string
+          workaround: string | null
+        }
+        Insert: {
+          affected_services?: string[] | null
+          assigned_to?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          incident_count?: number | null
+          is_known_error?: boolean | null
+          priority?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          root_cause?: string | null
+          sap_module?: string | null
+          status?: string
+          tenant_id?: string | null
+          title: string
+          updated_at?: string
+          workaround?: string | null
+        }
+        Update: {
+          affected_services?: string[] | null
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          incident_count?: number | null
+          is_known_error?: boolean | null
+          priority?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          root_cause?: string | null
+          sap_module?: string | null
+          status?: string
+          tenant_id?: string | null
+          title?: string
+          updated_at?: string
+          workaround?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "problems_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

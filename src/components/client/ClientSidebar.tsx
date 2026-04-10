@@ -12,6 +12,7 @@ import {
   CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
   Plug, Server, Building2, Gift, Milestone, Sparkles, Crown, ChevronRight, Plus,
   Activity, Shield, UsersRound, BarChart3, ClipboardList, FolderKanban, FileSignature, LifeBuoy, Settings2,
+  GitBranch, Bug, Package, Siren, BookMarked, Brain,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
@@ -44,6 +45,16 @@ const navGroups = [
       { key: 'tasks', icon: ClipboardList, path: '/client/tasks' },
       { key: 'contracts', icon: FileSignature, path: '/client/contracts' },
       { key: 'chat', icon: MessageSquare, path: '/client/chat' },
+    ],
+  },
+  {
+    labelKey: 'sidebar.servicenow',
+    items: [
+      { key: 'change_management', icon: GitBranch, path: '/client/changes' },
+      { key: 'problem_management', icon: Bug, path: '/client/problems' },
+      { key: 'service_catalog', icon: Package, path: '/client/catalog' },
+      { key: 'major_incidents', icon: Siren, path: '/client/major-incidents' },
+      { key: 'playbooks', icon: BookMarked, path: '/client/playbooks' },
     ],
   },
   {
