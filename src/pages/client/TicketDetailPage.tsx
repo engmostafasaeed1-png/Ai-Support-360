@@ -10,7 +10,7 @@ import {
   ArrowLeft, Clock, User, Calendar, Tag, MessageSquare,
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
   Pencil, UserPlus, Gavel, ChevronDown, Play, GitBranch, Network, Users,
-  Calculator, ClipboardList,
+  Calculator, ClipboardList, MessageSquareText, Timer, Star, Link2, Tags,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
@@ -27,6 +27,11 @@ import RequestBidDialog from '@/components/client/RequestBidDialog';
 import TicketPlanApproval from '@/components/client/TicketPlanApproval';
 import TicketTimesheet from '@/components/client/TicketTimesheet';
 import TicketStatusStepper from '@/components/client/TicketStatusStepper';
+import TicketInternalNotes from '@/components/client/TicketInternalNotes';
+import TicketTagsWatchers from '@/components/client/TicketTagsWatchers';
+import TicketSLATracker from '@/components/client/TicketSLATracker';
+import TicketCSAT from '@/components/client/TicketCSAT';
+import TicketLinks from '@/components/client/TicketLinks';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
@@ -213,6 +218,22 @@ export default function TicketDetailPage() {
         </Card>
       )}
 
+      {/* ─── SLA Tracking ─── */}
+      <TicketSLATracker
+        ticketId={ticket.id}
+        urgency={ticket.urgency}
+        status={ticket.status}
+        createdAt={ticket.created_at}
+        slaDeadline={ticket.sla_deadline}
+        firstResponseAt={(ticket as any).first_response_at}
+        slaBreach={(ticket as any).sla_breached || false}
+      />
+
+      {/* ─── Tags & Watchers ─── */}
+      <SectionWrapper icon={Tags} title="Tags & Watchers" defaultOpen>
+        <TicketTagsWatchers ticketId={ticket.id} isReadOnly={false} />
+      </SectionWrapper>
+
       {/* ─── Cost & Effort Plan ─── */}
       <SectionWrapper icon={Calculator} title="Cost & Effort Plan" defaultOpen>
         <TicketPlanApproval ticket={ticket} isClient={isClient} />
@@ -288,6 +309,23 @@ export default function TicketDetailPage() {
       {/* ─── Timesheet / Work Log ─── */}
       <SectionWrapper icon={ClipboardList} title="Timesheet & Work Log" defaultOpen>
         <TicketTimesheet ticketId={ticket.id} ticketTitle={ticket.title} isReadOnly={isClient} />
+      </SectionWrapper>
+
+      {/* ─── Internal Notes ─── */}
+      {!isClient && (
+        <SectionWrapper icon={MessageSquareText} title="Internal Notes" defaultOpen>
+          <TicketInternalNotes ticketId={ticket.id} />
+        </SectionWrapper>
+      )}
+
+      {/* ─── Linked Tickets ─── */}
+      <SectionWrapper icon={Link2} title="Linked Tickets" defaultOpen={false}>
+        <TicketLinks ticketId={ticket.id} isReadOnly={isConsultant} />
+      </SectionWrapper>
+
+      {/* ─── CSAT Satisfaction ─── */}
+      <SectionWrapper icon={Star} title="Satisfaction" defaultOpen>
+        <TicketCSAT ticketId={ticket.id} ticketTitle={ticket.title} ticketStatus={ticket.status} clientId={ticket.client_id} consultantId={ticket.consultant_id} />
       </SectionWrapper>
 
       {/* ─── Documents ─── */}

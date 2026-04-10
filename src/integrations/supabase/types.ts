@@ -80,6 +80,51 @@ export type Database = {
         }
         Relationships: []
       }
+      auto_assignment_rules: {
+        Row: {
+          assignment_method: string
+          consultant_pool: string[] | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          priority: number | null
+          sap_module: string | null
+          updated_at: string
+          urgency: string | null
+        }
+        Insert: {
+          assignment_method?: string
+          consultant_pool?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          priority?: number | null
+          sap_module?: string | null
+          updated_at?: string
+          urgency?: string | null
+        }
+        Update: {
+          assignment_method?: string
+          consultant_pool?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          priority?: number | null
+          sap_module?: string | null
+          updated_at?: string
+          urgency?: string | null
+        }
+        Relationships: []
+      }
       availability_slots: {
         Row: {
           consultant_id: string
@@ -120,6 +165,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      canned_responses: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          sap_module: string | null
+          shortcut: string | null
+          title: string
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          sap_module?: string | null
+          shortcut?: string | null
+          title: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          sap_module?: string | null
+          shortcut?: string | null
+          title?: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: []
       }
       certifications: {
         Row: {
@@ -2277,6 +2364,96 @@ export type Database = {
           },
         ]
       }
+      ticket_custom_field_definitions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          display_order: number | null
+          field_label: string
+          field_name: string
+          field_type: string
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          options: Json | null
+          placeholder: string | null
+          sap_module: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          display_order?: number | null
+          field_label: string
+          field_name: string
+          field_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          options?: Json | null
+          placeholder?: string | null
+          sap_module?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          display_order?: number | null
+          field_label?: string
+          field_name?: string
+          field_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          options?: Json | null
+          placeholder?: string | null
+          sap_module?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ticket_custom_field_values: {
+        Row: {
+          created_at: string
+          field_id: string
+          id: string
+          ticket_id: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          created_at?: string
+          field_id: string
+          id?: string
+          ticket_id: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          created_at?: string
+          field_id?: string
+          id?: string
+          ticket_id?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_custom_field_values_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_custom_field_definitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_custom_field_values_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_documents: {
         Row: {
           comment: string | null
@@ -2318,6 +2495,140 @@ export type Database = {
           {
             foreignKeyName: "ticket_documents_ticket_id_fkey"
             columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_escalation_rules: {
+        Row: {
+          auto_change_urgency: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          escalate_to_role: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notify_users: string[] | null
+          sap_module_filter: string | null
+          time_threshold_minutes: number | null
+          trigger_condition: string
+          updated_at: string
+          urgency_filter: string | null
+        }
+        Insert: {
+          auto_change_urgency?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          escalate_to_role?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notify_users?: string[] | null
+          sap_module_filter?: string | null
+          time_threshold_minutes?: number | null
+          trigger_condition?: string
+          updated_at?: string
+          urgency_filter?: string | null
+        }
+        Update: {
+          auto_change_urgency?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          escalate_to_role?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notify_users?: string[] | null
+          sap_module_filter?: string | null
+          time_threshold_minutes?: number | null
+          trigger_condition?: string
+          updated_at?: string
+          urgency_filter?: string | null
+        }
+        Relationships: []
+      }
+      ticket_internal_notes: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          is_pinned: boolean | null
+          mentioned_users: string[] | null
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean | null
+          mentioned_users?: string[] | null
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean | null
+          mentioned_users?: string[] | null
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_internal_notes_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          link_type: string
+          source_ticket_id: string
+          target_ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          link_type?: string
+          source_ticket_id: string
+          target_ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          link_type?: string
+          source_ticket_id?: string
+          target_ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_links_source_ticket_id_fkey"
+            columns: ["source_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_links_target_ticket_id_fkey"
+            columns: ["target_ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
             referencedColumns: ["id"]
@@ -2368,6 +2679,130 @@ export type Database = {
           },
           {
             foreignKeyName: "ticket_match_requests_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_satisfaction_surveys: {
+        Row: {
+          client_id: string
+          consultant_id: string | null
+          created_at: string
+          feedback: string | null
+          id: string
+          rating: number | null
+          responded_at: string | null
+          sent_at: string | null
+          ticket_id: string
+        }
+        Insert: {
+          client_id: string
+          consultant_id?: string | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          rating?: number | null
+          responded_at?: string | null
+          sent_at?: string | null
+          ticket_id: string
+        }
+        Update: {
+          client_id?: string
+          consultant_id?: string | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          rating?: number | null
+          responded_at?: string | null
+          sent_at?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_satisfaction_surveys_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_sla_policies: {
+        Row: {
+          business_hours_only: boolean | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          resolution_time_minutes: number
+          response_time_minutes: number
+          sap_module: string | null
+          updated_at: string
+          urgency: string
+        }
+        Insert: {
+          business_hours_only?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          resolution_time_minutes?: number
+          response_time_minutes?: number
+          sap_module?: string | null
+          updated_at?: string
+          urgency?: string
+        }
+        Update: {
+          business_hours_only?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          resolution_time_minutes?: number
+          response_time_minutes?: number
+          sap_module?: string | null
+          updated_at?: string
+          urgency?: string
+        }
+        Relationships: []
+      }
+      ticket_tags: {
+        Row: {
+          added_by: string | null
+          color: string | null
+          created_at: string
+          id: string
+          tag: string
+          ticket_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          tag: string
+          ticket_id: string
+        }
+        Update: {
+          added_by?: string | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          tag?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_tags_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
@@ -2433,6 +2868,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "ticket_timesheet_submissions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_watchers: {
+        Row: {
+          created_at: string
+          id: string
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_watchers_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
@@ -2510,7 +2974,11 @@ export type Database = {
           cost_currency: string | null
           created_at: string
           description: string | null
+          editing_by: string | null
+          editing_since: string | null
+          first_response_at: string | null
           id: string
+          merged_into_ticket_id: string | null
           open_for_bids: boolean
           opened_for_bids_at: string | null
           parent_ticket_id: string | null
@@ -2527,7 +2995,10 @@ export type Database = {
             | null
           resolved_at: string | null
           sap_module: string
+          sla_breached: boolean | null
           sla_deadline: string | null
+          sla_policy_id: string | null
+          sla_response_deadline: string | null
           status: Database["public"]["Enums"]["ticket_status"] | null
           tenant_id: string | null
           title: string
@@ -2543,7 +3014,11 @@ export type Database = {
           cost_currency?: string | null
           created_at?: string
           description?: string | null
+          editing_by?: string | null
+          editing_since?: string | null
+          first_response_at?: string | null
           id?: string
+          merged_into_ticket_id?: string | null
           open_for_bids?: boolean
           opened_for_bids_at?: string | null
           parent_ticket_id?: string | null
@@ -2560,7 +3035,10 @@ export type Database = {
             | null
           resolved_at?: string | null
           sap_module: string
+          sla_breached?: boolean | null
           sla_deadline?: string | null
+          sla_policy_id?: string | null
+          sla_response_deadline?: string | null
           status?: Database["public"]["Enums"]["ticket_status"] | null
           tenant_id?: string | null
           title: string
@@ -2576,7 +3054,11 @@ export type Database = {
           cost_currency?: string | null
           created_at?: string
           description?: string | null
+          editing_by?: string | null
+          editing_since?: string | null
+          first_response_at?: string | null
           id?: string
+          merged_into_ticket_id?: string | null
           open_for_bids?: boolean
           opened_for_bids_at?: string | null
           parent_ticket_id?: string | null
@@ -2593,7 +3075,10 @@ export type Database = {
             | null
           resolved_at?: string | null
           sap_module?: string
+          sla_breached?: boolean | null
           sla_deadline?: string | null
+          sla_policy_id?: string | null
+          sla_response_deadline?: string | null
           status?: Database["public"]["Enums"]["ticket_status"] | null
           tenant_id?: string | null
           title?: string
@@ -2609,10 +3094,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tickets_merged_into_ticket_id_fkey"
+            columns: ["merged_into_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tickets_parent_ticket_id_fkey"
             columns: ["parent_ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_sla_policy_id_fkey"
+            columns: ["sla_policy_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_sla_policies"
             referencedColumns: ["id"]
           },
           {
