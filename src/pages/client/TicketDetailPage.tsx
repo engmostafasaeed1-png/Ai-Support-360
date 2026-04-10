@@ -37,12 +37,21 @@ const urgencyColors: Record<string, string> = {
 
 const statusColors: Record<string, string> = {
   new: 'bg-accent/10 text-accent',
+  triaging: 'bg-indigo-100 text-indigo-700',
   under_review: 'bg-indigo-100 text-indigo-700',
+  planning: 'bg-violet-100 text-violet-700',
+  pending_approval: 'bg-amber-100 text-amber-700',
+  approved: 'bg-emerald-100 text-emerald-700',
   matched: 'bg-purple-100 text-purple-700',
   in_progress: 'bg-blue-100 text-blue-700',
+  on_hold: 'bg-orange-100 text-orange-700',
   waiting_for_client: 'bg-amber-100 text-amber-700',
+  waiting_for_vendor: 'bg-yellow-100 text-yellow-700',
+  testing: 'bg-cyan-100 text-cyan-700',
   resolved: 'bg-green-100 text-green-700',
   closed: 'bg-muted text-muted-foreground',
+  cancelled: 'bg-red-100 text-red-700',
+  reopened: 'bg-pink-100 text-pink-700',
 };
 
 const sessionTypeIcons: Record<string, typeof MessageSquare> = {
