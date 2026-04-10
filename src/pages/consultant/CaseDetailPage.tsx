@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,10 +9,12 @@ import {
   ArrowLeft, Clock, Calendar, User, Tag, AlertTriangle,
   CheckCircle2, MessageSquare, FileText, Activity, Circle,
   Database, Server, HardDrive, Cpu, Code, Link2, Package, Building2,
+  ShieldCheck, Lock,
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, formatDistanceToNow } from 'date-fns';
+import NDASigningModal from '@/components/consultant/NDASigningModal';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
