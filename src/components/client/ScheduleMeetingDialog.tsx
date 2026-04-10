@@ -113,25 +113,14 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
 
   // Fetch assigned consultants for this ticket
   const { data: assignedConsultants = [] } = useQuery({
-    queryKey: ['ticket-assigned-consultants', ticketId],
+    queryKey: ['ticket-assigned-consultants', ticketId, consultantId],
     queryFn: async () => {
-      const { data: matches } = await supabase
-        .from('match_requests')
-        .select('consultant_id')
-        .eq('ticket_id', ticketId)
-        .eq('status', 'accepted');
-
-      const ids = [...new Set([
-        ...(consultantId ? [consultantId] : []),
-        ...(matches?.map(m => m.consultant_id) || []),
-      ])];
-
-      if (ids.length === 0) return [];
+      if (!consultantId) return [];
 
       const { data: consultants } = await supabase
         .from('consultants')
         .select('id, user_id')
-        .in('id', ids);
+        .eq('id', consultantId);
 
       if (!consultants?.length) return [];
 
@@ -148,7 +137,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
           user_id: c.user_id,
           display_name: p?.display_name || 'Consultant',
           avatar_url: p?.avatar_url,
-          isAssigned: c.id === consultantId,
+          isAssigned: true,
         } as ConsultantOption;
       });
     },
