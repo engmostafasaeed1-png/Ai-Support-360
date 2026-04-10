@@ -21,6 +21,7 @@ export interface TicketDetail {
   consultant_name?: string;
   open_for_bids: boolean;
   opened_for_bids_at: string | null;
+  parent_ticket_id: string | null;
 }
 
 export function useTicketDetail(ticketId: string | undefined) {
