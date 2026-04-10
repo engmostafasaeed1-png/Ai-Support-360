@@ -25,6 +25,7 @@ import TicketEditDialog from '@/components/client/TicketEditDialog';
 import SendMatchRequestDialog from '@/components/client/SendMatchRequestDialog';
 import RequestBidDialog from '@/components/client/RequestBidDialog';
 import TicketPlanApproval from '@/components/client/TicketPlanApproval';
+import TicketTimesheet from '@/components/client/TicketTimesheet';
 import TicketStatusStepper from '@/components/client/TicketStatusStepper';
 import { formatDistanceToNow, format } from 'date-fns';
 
