@@ -605,11 +605,22 @@ export type Database = {
           onboarding_completed: boolean | null
           phone: string | null
           preferred_language: string | null
+          sap_custom_dev_count: number | null
+          sap_database_type: string | null
+          sap_go_live_date: string | null
           sap_hosting_type: string | null
+          sap_interfaces: string[] | null
           sap_landscape: string | null
+          sap_landscape_notes: string | null
           sap_module_versions: Json | null
           sap_modules: string[] | null
+          sap_os_type: string | null
+          sap_product: string | null
+          sap_support_pack: string | null
           sap_system_ids: string[] | null
+          sap_third_party_tools: string[] | null
+          sap_user_count: number | null
+          sap_version: string | null
           timezone: string | null
           updated_at: string
           user_id: string
@@ -629,11 +640,22 @@ export type Database = {
           onboarding_completed?: boolean | null
           phone?: string | null
           preferred_language?: string | null
+          sap_custom_dev_count?: number | null
+          sap_database_type?: string | null
+          sap_go_live_date?: string | null
           sap_hosting_type?: string | null
+          sap_interfaces?: string[] | null
           sap_landscape?: string | null
+          sap_landscape_notes?: string | null
           sap_module_versions?: Json | null
           sap_modules?: string[] | null
+          sap_os_type?: string | null
+          sap_product?: string | null
+          sap_support_pack?: string | null
           sap_system_ids?: string[] | null
+          sap_third_party_tools?: string[] | null
+          sap_user_count?: number | null
+          sap_version?: string | null
           timezone?: string | null
           updated_at?: string
           user_id: string
@@ -653,11 +675,22 @@ export type Database = {
           onboarding_completed?: boolean | null
           phone?: string | null
           preferred_language?: string | null
+          sap_custom_dev_count?: number | null
+          sap_database_type?: string | null
+          sap_go_live_date?: string | null
           sap_hosting_type?: string | null
+          sap_interfaces?: string[] | null
           sap_landscape?: string | null
+          sap_landscape_notes?: string | null
           sap_module_versions?: Json | null
           sap_modules?: string[] | null
+          sap_os_type?: string | null
+          sap_product?: string | null
+          sap_support_pack?: string | null
           sap_system_ids?: string[] | null
+          sap_third_party_tools?: string[] | null
+          sap_user_count?: number | null
+          sap_version?: string | null
           timezone?: string | null
           updated_at?: string
           user_id?: string
