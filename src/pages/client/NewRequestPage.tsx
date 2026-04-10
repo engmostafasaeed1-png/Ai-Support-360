@@ -14,10 +14,12 @@ import {
   ArrowLeft, ArrowRight, Check, Sparkles, Brain,
   Clock, AlertTriangle, Info, Loader2, Zap, Target, List,
   Star, BadgeCheck, Circle, Users, Crown, ChevronRight, Search, UserPlus,
-  Upload, X, FileText, Paperclip,
+  Upload, X, FileText, Paperclip, Link2,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useQuery } from '@tanstack/react-query';
 import { useRealtimeConsultants, type ConsultantLive } from '@/hooks/useRealtimeConsultants';
 import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
 
@@ -98,6 +100,25 @@ export default function NewRequestPage() {
   const [manualPickOpen, setManualPickOpen] = useState(false);
   const [manualSearch, setManualSearch] = useState('');
   const [selectedConsultant, setSelectedConsultant] = useState<ConsultantLive | null>(null);
+  const [linkedTickets, setLinkedTickets] = useState<{ id: string; title: string; linkType: string }[]>([]);
+  const [linkSearch, setLinkSearch] = useState('');
+  const [linkType, setLinkType] = useState('related');
+
+  const { data: linkSearchResults = [] } = useQuery({
+    queryKey: ['ticket-link-search', linkSearch],
+    enabled: linkSearch.length >= 2,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data } = await supabase
+        .from('tickets')
+        .select('id, title, status, sap_module')
+        .eq('client_id', user.id)
+        .ilike('title', `%${linkSearch}%`)
+        .limit(5);
+      return (data || []).filter(t => !linkedTickets.some(l => l.id === t.id));
+    },
+  });
   const { consultants: allConsultants, isLoading: consultantsLoading } = useRealtimeConsultants();
 
   // Auto-fill from chatbot query params
@@ -275,6 +296,18 @@ export default function NewRequestPage() {
         }
       }
 
+      // Create ticket links
+      if (ticketData && linkedTickets.length > 0) {
+        for (const link of linkedTickets) {
+          await supabase.from('ticket_links').insert({
+            source_ticket_id: ticketData.id,
+            target_ticket_id: link.id,
+            link_type: link.linkType,
+            created_by: user.id,
+          } as any);
+        }
+      }
+
       setSubmitted(true);
       toast.success(t('ticket_create.submit_success'));
     } catch (err) {
@@ -336,7 +369,7 @@ export default function NewRequestPage() {
           <Button onClick={() => {
             setSubmitted(false); setStep(0);
             setForm({ sap_module: '', issue_type: '', title: '', description: '', urgency: 'medium', preferred_session: 'video', preferred_language: 'en' });
-            setAiCategorization(null); setAiSummary(null); setAiMatch(null); setAiRecommendations(null); setAttachedFiles([]);
+            setAiCategorization(null); setAiSummary(null); setAiMatch(null); setAiRecommendations(null); setAttachedFiles([]); setLinkedTickets([]);
           }} variant="outline">
             {t('ticket_create.submit_another')}
           </Button>
@@ -457,6 +490,75 @@ export default function NewRequestPage() {
                         <button
                           type="button"
                           onClick={() => setAttachedFiles(prev => prev.filter((_, idx) => idx !== i))}
+                          className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Link Existing Tickets */}
+            <div>
+              <label className="text-sm font-medium mb-1.5 block flex items-center gap-1.5">
+                <Link2 className="w-3.5 h-3.5" /> Link to Existing Tickets
+              </label>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Select value={linkType} onValueChange={setLinkType}>
+                    <SelectTrigger className="w-[140px] rounded-xl h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="related">Related to</SelectItem>
+                      <SelectItem value="blocks">Blocks</SelectItem>
+                      <SelectItem value="blocked_by">Blocked by</SelectItem>
+                      <SelectItem value="duplicate">Duplicate of</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="relative flex-1">
+                    <Search className="w-3.5 h-3.5 absolute start-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={linkSearch}
+                      onChange={e => setLinkSearch(e.target.value)}
+                      placeholder="Search tickets to link..."
+                      className="ps-8 rounded-xl h-9 text-xs"
+                    />
+                  </div>
+                </div>
+                {linkSearchResults.length > 0 && linkSearch.length >= 2 && (
+                  <div className="border border-border/50 rounded-xl overflow-hidden">
+                    {linkSearchResults.map((t: any) => (
+                      <button
+                        key={t.id}
+                        onClick={() => {
+                          setLinkedTickets(prev => [...prev, { id: t.id, title: t.title, linkType }]);
+                          setLinkSearch('');
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted/30 transition-colors border-b border-border/20 last:border-0"
+                      >
+                        <p className="font-medium text-foreground truncate">{t.title}</p>
+                        <div className="flex gap-1.5 mt-0.5">
+                          <Badge variant="secondary" className="text-[9px]">{t.sap_module}</Badge>
+                          <Badge variant="secondary" className="text-[9px]">{t.status?.replace(/_/g, ' ')}</Badge>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {linkedTickets.length > 0 && (
+                  <div className="space-y-1.5">
+                    {linkedTickets.map((link, i) => (
+                      <div key={link.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/40 text-sm">
+                        <Link2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <Badge variant="secondary" className="text-[9px] shrink-0">{link.linkType.replace(/_/g, ' ')}</Badge>
+                        <span className="truncate flex-1 text-foreground">{link.title}</span>
+                        <button
+                          type="button"
+                          onClick={() => setLinkedTickets(prev => prev.filter((_, idx) => idx !== i))}
                           className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
                         >
                           <X className="w-3.5 h-3.5" />
