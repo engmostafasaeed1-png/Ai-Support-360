@@ -10,6 +10,7 @@ import {
   ArrowLeft, Clock, User, Calendar, Tag, MessageSquare,
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
   Pencil, UserPlus, Gavel, ChevronDown, Play, GitBranch, Network, Users,
+  Calculator,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
@@ -23,6 +24,8 @@ import TicketTimeline from '@/components/client/TicketTimeline';
 import TicketEditDialog from '@/components/client/TicketEditDialog';
 import SendMatchRequestDialog from '@/components/client/SendMatchRequestDialog';
 import RequestBidDialog from '@/components/client/RequestBidDialog';
+import TicketPlanApproval from '@/components/client/TicketPlanApproval';
+import TicketStatusStepper from '@/components/client/TicketStatusStepper';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
@@ -34,12 +37,21 @@ const urgencyColors: Record<string, string> = {
 
 const statusColors: Record<string, string> = {
   new: 'bg-accent/10 text-accent',
+  triaging: 'bg-indigo-100 text-indigo-700',
   under_review: 'bg-indigo-100 text-indigo-700',
+  planning: 'bg-violet-100 text-violet-700',
+  pending_approval: 'bg-amber-100 text-amber-700',
+  approved: 'bg-emerald-100 text-emerald-700',
   matched: 'bg-purple-100 text-purple-700',
   in_progress: 'bg-blue-100 text-blue-700',
+  on_hold: 'bg-orange-100 text-orange-700',
   waiting_for_client: 'bg-amber-100 text-amber-700',
+  waiting_for_vendor: 'bg-yellow-100 text-yellow-700',
+  testing: 'bg-cyan-100 text-cyan-700',
   resolved: 'bg-green-100 text-green-700',
   closed: 'bg-muted text-muted-foreground',
+  cancelled: 'bg-red-100 text-red-700',
+  reopened: 'bg-pink-100 text-pink-700',
 };
 
 const sessionTypeIcons: Record<string, typeof MessageSquare> = {
@@ -61,6 +73,7 @@ export default function TicketDetailPage() {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
   const isConsultant = location.pathname.startsWith('/consultant');
+  const isClient = !isAdmin && !isConsultant;
   const backPath = isAdmin ? '/admin/tickets' : isConsultant ? '/consultant/open-tickets' : '/client/tickets';
   const { data: ticket, isLoading } = useTicketDetail(ticketId);
   const { data: sessions, isLoading: sessionsLoading } = useTicketSessions(ticketId);
@@ -150,6 +163,13 @@ export default function TicketDetailPage() {
         </div>
       </div>
 
+      {/* ─── Status Stepper ─── */}
+      <Card className="rounded-2xl border-border/50">
+        <CardContent className="p-3">
+          <TicketStatusStepper currentStatus={ticket.status} />
+        </CardContent>
+      </Card>
+
       {/* ─── Info Cards ─── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <InfoCard icon={Tag} label="SAP Module" value={ticket.sap_module} />
@@ -191,6 +211,11 @@ export default function TicketDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* ─── Cost & Effort Plan ─── */}
+      <SectionWrapper icon={Calculator} title="Cost & Effort Plan" defaultOpen>
+        <TicketPlanApproval ticket={ticket} isClient={isClient} />
+      </SectionWrapper>
 
       {/* ─── Available Consultants (Acceptors) ─── */}
       <TicketAcceptors ticketId={ticket.id} currentConsultantId={ticket.consultant_id} />

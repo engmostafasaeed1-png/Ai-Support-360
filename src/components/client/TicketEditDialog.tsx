@@ -14,12 +14,21 @@ import type { TicketDetail } from '@/hooks/useTicketDetail';
 const urgencyOptions = ['low', 'medium', 'high', 'critical'];
 const statusOptions = [
   { value: 'new', label: 'New' },
+  { value: 'triaging', label: 'Triaging' },
   { value: 'under_review', label: 'Under Review' },
+  { value: 'planning', label: 'Planning' },
+  { value: 'pending_approval', label: 'Pending Approval' },
+  { value: 'approved', label: 'Approved' },
   { value: 'matched', label: 'Matched' },
   { value: 'in_progress', label: 'In Progress' },
+  { value: 'on_hold', label: 'On Hold' },
   { value: 'waiting_for_client', label: 'Waiting for Client' },
+  { value: 'waiting_for_vendor', label: 'Waiting for Vendor' },
+  { value: 'testing', label: 'Testing' },
   { value: 'resolved', label: 'Resolved' },
   { value: 'closed', label: 'Closed' },
+  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'reopened', label: 'Reopened' },
 ];
 const sessionTypes = ['chat', 'video', 'screen_share'];
 const languages = [

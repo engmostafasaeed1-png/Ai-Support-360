@@ -2381,12 +2381,21 @@ export type Database = {
           ai_suggested_priority: string | null
           client_id: string
           consultant_id: string | null
+          cost_breakdown: Json | null
+          cost_currency: string | null
           created_at: string
           description: string | null
           id: string
           open_for_bids: boolean
           opened_for_bids_at: string | null
           parent_ticket_id: string | null
+          plan_approved_at: string | null
+          plan_approved_by: string | null
+          plan_rejected_at: string | null
+          plan_rejection_reason: string | null
+          plan_submitted_at: string | null
+          planned_cost: number | null
+          planned_hours: number | null
           preferred_language: string | null
           preferred_session_type:
             | Database["public"]["Enums"]["session_type"]
@@ -2405,12 +2414,21 @@ export type Database = {
           ai_suggested_priority?: string | null
           client_id: string
           consultant_id?: string | null
+          cost_breakdown?: Json | null
+          cost_currency?: string | null
           created_at?: string
           description?: string | null
           id?: string
           open_for_bids?: boolean
           opened_for_bids_at?: string | null
           parent_ticket_id?: string | null
+          plan_approved_at?: string | null
+          plan_approved_by?: string | null
+          plan_rejected_at?: string | null
+          plan_rejection_reason?: string | null
+          plan_submitted_at?: string | null
+          planned_cost?: number | null
+          planned_hours?: number | null
           preferred_language?: string | null
           preferred_session_type?:
             | Database["public"]["Enums"]["session_type"]
@@ -2429,12 +2447,21 @@ export type Database = {
           ai_suggested_priority?: string | null
           client_id?: string
           consultant_id?: string | null
+          cost_breakdown?: Json | null
+          cost_currency?: string | null
           created_at?: string
           description?: string | null
           id?: string
           open_for_bids?: boolean
           opened_for_bids_at?: string | null
           parent_ticket_id?: string | null
+          plan_approved_at?: string | null
+          plan_approved_by?: string | null
+          plan_rejected_at?: string | null
+          plan_rejection_reason?: string | null
+          plan_submitted_at?: string | null
+          planned_cost?: number | null
+          planned_hours?: number | null
           preferred_language?: string | null
           preferred_session_type?:
             | Database["public"]["Enums"]["session_type"]
