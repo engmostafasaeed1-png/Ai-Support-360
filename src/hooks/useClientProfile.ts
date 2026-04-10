@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getClientOnboardingState } from '@/lib/clientOnboarding';
 
 export interface ClientProfile {
   id: string;
@@ -59,7 +60,7 @@ export function useClientProfileData() {
         key_contacts: (data.key_contacts || []) as ClientProfile['key_contacts'],
         sap_interfaces: data.sap_interfaces || [],
         sap_third_party_tools: data.sap_third_party_tools || [],
-        onboarding_completed: data.onboarding_completed ?? false,
+        onboarding_completed: getClientOnboardingState(data).completed,
       } as ClientProfile;
     },
   });
@@ -71,15 +72,33 @@ export function useUpdateClientProfile() {
     mutationFn: async (updates: Partial<ClientProfile>) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
-      
-      // Remove read-only fields
-      const { id, user_id, created_at, updated_at, ...payload } = updates as any;
-      
-      const { error, count } = await supabase
+
+      const { id, user_id, created_at, updated_at, ...payload } = updates as Record<string, unknown>;
+
+      const { data: existingProfile, error: existingError } = await supabase
         .from('client_profiles')
-        .update(payload)
+        .select('onboarding_completed, company_name, company_size, industry, phone, sap_modules')
         .eq('user_id', session.user.id)
-        .select('id');
+        .maybeSingle();
+
+      if (existingError) throw existingError;
+
+      const onboardingState = getClientOnboardingState({
+        ...existingProfile,
+        ...payload,
+      });
+
+      const { error } = await supabase
+        .from('client_profiles')
+        .upsert(
+          {
+            user_id: session.user.id,
+            ...payload,
+            onboarding_completed: onboardingState.completed,
+          },
+          { onConflict: 'user_id' }
+        );
+
       if (error) throw error;
     },
     onSuccess: () => {
