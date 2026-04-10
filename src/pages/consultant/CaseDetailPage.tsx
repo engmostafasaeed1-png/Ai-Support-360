@@ -9,12 +9,13 @@ import {
   ArrowLeft, Clock, Calendar, User, Tag, AlertTriangle,
   CheckCircle2, MessageSquare, FileText, Activity, Circle,
   Database, Server, HardDrive, Cpu, Code, Link2, Package, Building2,
-  ShieldCheck, Lock,
+  ShieldCheck, Lock, Download,
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, formatDistanceToNow } from 'date-fns';
 import NDASigningModal from '@/components/consultant/NDASigningModal';
+import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -104,13 +105,13 @@ export default function CaseDetailPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from('nda_agreements')
-        .select('id, revoked_at')
+        .select('id, revoked_at, signed_at, signature_data, signature_type, nda_content')
         .eq('consultant_id', consultantData!.id)
         .eq('client_id', ticket!.client_id)
         .is('revoked_at', null)
         .limit(1)
         .maybeSingle();
-      return { signed: !!data };
+      return data ? { signed: true, ...data } : { signed: false };
     },
     enabled: !!consultantData?.id && !!ticket?.client_id,
   });
@@ -322,12 +323,31 @@ export default function CaseDetailPage() {
       {clientProfile && ndaSigned && (
         <Card className="rounded-2xl border-border/50 border-green-500/30">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2 flex-wrap">
               <Building2 className="w-4 h-4 text-primary" />
               Client System Landscape
               <Badge variant="outline" className="text-[10px] gap-1 text-green-600 border-green-500/30"><ShieldCheck className="w-3 h-3" /> NDA Signed</Badge>
-              Client System Landscape
               {clientProfile.company_name && <span className="text-muted-foreground font-normal">— {clientProfile.company_name}</span>}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground ms-auto"
+                onClick={async () => {
+                  if (ndaStatus && 'nda_content' in ndaStatus) {
+                    const { data: profile } = await supabase.from('profiles').select('display_name').eq('user_id', (await supabase.auth.getUser()).data.user?.id || '').maybeSingle();
+                    await exportNDAAsPDF({
+                      ndaContent: (ndaStatus as any).nda_content || '',
+                      signatureData: (ndaStatus as any).signature_data || '',
+                      signatureType: (ndaStatus as any).signature_type || 'type',
+                      signedAt: (ndaStatus as any).signed_at,
+                      consultantName: profile?.display_name || 'Consultant',
+                      clientName: clientProfile?.company_name || 'Client',
+                    });
+                  }
+                }}
+              >
+                <Download className="w-3 h-3 me-0.5" /> Export NDA
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

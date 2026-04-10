@@ -3,10 +3,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useConsultantMatchRequests, useRespondToMatch } from '@/hooks/useMatchRequests';
-import { Check, X, Inbox, Clock, AlertTriangle } from 'lucide-react';
+import { Check, X, Inbox, Clock, ShieldCheck, FileSignature, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import NDASigningModal from '@/components/consultant/NDASigningModal';
+import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -24,14 +28,121 @@ const statusBadge: Record<string, { label: string; className: string }> = {
 
 export default function RequestsPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { data: requests, isLoading } = useConsultantMatchRequests();
   const respond = useRespondToMatch();
   const [filter, setFilter] = useState<string>('all');
+  const [ndaModalOpen, setNdaModalOpen] = useState(false);
+  const [pendingAcceptId, setPendingAcceptId] = useState<string | null>(null);
+  const [ndaClientId, setNdaClientId] = useState<string | null>(null);
+  const [ndaClientName, setNdaClientName] = useState<string>('');
 
-  const handleRespond = (requestId: string, status: 'accepted' | 'rejected') => {
-    respond.mutate({ requestId, status }, {
-      onSuccess: () => toast.success(status === 'accepted' ? 'Match accepted!' : 'Match declined.'),
+  // Get current consultant
+  const { data: consultantData } = useQuery({
+    queryKey: ['my-consultant-id'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data } = await supabase.from('consultants').select('id').eq('user_id', user.id).maybeSingle();
+      return data;
+    },
+  });
+
+  // Get NDA status for all unique client_ids from ticket data
+  const { data: ndaMap } = useQuery({
+    queryKey: ['consultant-nda-map', consultantData?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('nda_agreements')
+        .select('client_id, id, signed_at, signature_data, signature_type, nda_content, revoked_at')
+        .eq('consultant_id', consultantData!.id)
+        .is('revoked_at', null)
+        .order('signed_at', { ascending: false });
+      const map = new Map<string, any>();
+      (data || []).forEach(a => { if (!map.has(a.client_id)) map.set(a.client_id, a); });
+      return map;
+    },
+    enabled: !!consultantData?.id,
+  });
+
+  // Get ticket → client_id mapping for enrichment
+  const { data: ticketClientMap } = useQuery({
+    queryKey: ['request-ticket-clients', requests?.map(r => r.ticket_id)],
+    queryFn: async () => {
+      const ticketIds = (requests || []).map(r => r.ticket_id);
+      if (!ticketIds.length) return new Map<string, { client_id: string; client_name: string }>();
+      const { data: tickets } = await supabase
+        .from('tickets')
+        .select('id, client_id')
+        .in('id', ticketIds);
+      const clientIds = [...new Set((tickets || []).map(t => t.client_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', clientIds.length ? clientIds : ['none']);
+      const profileMap = new Map((profiles || []).map(p => [p.user_id, p.display_name]));
+      const map = new Map<string, { client_id: string; client_name: string }>();
+      (tickets || []).forEach(t => map.set(t.id, { client_id: t.client_id, client_name: profileMap.get(t.client_id) || 'Client' }));
+      return map;
+    },
+    enabled: !!requests && requests.length > 0,
+  });
+
+  const handleAccept = (requestId: string, ticketId: string) => {
+    const clientInfo = ticketClientMap?.get(ticketId);
+    const clientId = clientInfo?.client_id;
+    if (!clientId) return;
+
+    const hasNda = ndaMap?.has(clientId);
+    if (!hasNda) {
+      // Need NDA first
+      setPendingAcceptId(requestId);
+      setNdaClientId(clientId);
+      setNdaClientName(clientInfo?.client_name || 'Client');
+      setNdaModalOpen(true);
+      return;
+    }
+
+    // NDA already signed, proceed
+    doAccept(requestId);
+  };
+
+  const doAccept = (requestId: string) => {
+    respond.mutate({ requestId, status: 'accepted' }, {
+      onSuccess: () => toast.success('Match accepted!'),
       onError: () => toast.error('Failed to respond. Please try again.'),
+    });
+  };
+
+  const handleNdaSigned = () => {
+    queryClient.invalidateQueries({ queryKey: ['consultant-nda-map'] });
+    setNdaModalOpen(false);
+    if (pendingAcceptId) {
+      doAccept(pendingAcceptId);
+      setPendingAcceptId(null);
+    }
+  };
+
+  const handleDecline = (requestId: string) => {
+    respond.mutate({ requestId, status: 'rejected' }, {
+      onSuccess: () => toast.success('Match declined.'),
+      onError: () => toast.error('Failed to respond. Please try again.'),
+    });
+  };
+
+  const handleExportNDA = async (ticketId: string) => {
+    const clientInfo = ticketClientMap?.get(ticketId);
+    if (!clientInfo) return;
+    const nda = ndaMap?.get(clientInfo.client_id);
+    if (!nda) return;
+    const { data: profile } = await supabase.from('profiles').select('display_name').eq('user_id', (await supabase.auth.getUser()).data.user?.id || '').maybeSingle();
+    await exportNDAAsPDF({
+      ndaContent: nda.nda_content || '',
+      signatureData: nda.signature_data || '',
+      signatureType: nda.signature_type || 'type',
+      signedAt: nda.signed_at,
+      consultantName: profile?.display_name || 'Consultant',
+      clientName: clientInfo.client_name,
     });
   };
 
@@ -75,8 +186,10 @@ export default function RequestsPage() {
         ) : (
           filtered.map((req: any) => {
             const badge = statusBadge[req.status] || statusBadge.pending;
+            const clientInfo = ticketClientMap?.get(req.ticket_id);
+            const hasNda = clientInfo ? ndaMap?.has(clientInfo.client_id) : false;
             return (
-              <Card key={req.id} className="rounded-2xl border-border/50 hover:shadow-premium hover:border-accent/30 transition-all cursor-pointer">
+              <Card key={req.id} className="rounded-2xl border-border/50 hover:shadow-premium hover:border-accent/30 transition-all">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -85,6 +198,12 @@ export default function RequestsPage() {
                         <span>{req.sap_module}</span>
                         <span className="text-xs">•</span>
                         <span>{new Date(req.created_at).toLocaleDateString()}</span>
+                        {clientInfo && (
+                          <>
+                            <span className="text-xs">•</span>
+                            <span>{clientInfo.client_name}</span>
+                          </>
+                        )}
                       </div>
                       {req.message && (
                         <p className="text-xs text-muted-foreground mt-2 italic">"{req.message}"</p>
@@ -93,6 +212,27 @@ export default function RequestsPage() {
                         <div className="flex items-center gap-1 mt-2 text-xs text-amber-600">
                           <Clock className="w-3 h-3" />
                           Awaiting your response
+                        </div>
+                      )}
+                      {/* NDA status indicator */}
+                      {hasNda && (
+                        <div className="flex items-center gap-1 mt-1.5 text-xs text-green-600">
+                          <ShieldCheck className="w-3 h-3" />
+                          NDA Signed
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
+                            onClick={() => handleExportNDA(req.ticket_id)}
+                          >
+                            <Download className="w-3 h-3 me-0.5" /> PDF
+                          </Button>
+                        </div>
+                      )}
+                      {req.status === 'pending' && !hasNda && (
+                        <div className="flex items-center gap-1 mt-1.5 text-xs text-muted-foreground">
+                          <FileSignature className="w-3 h-3" />
+                          NDA required before accepting
                         </div>
                       )}
                     </div>
@@ -111,7 +251,7 @@ export default function RequestsPage() {
                             size="sm"
                             variant="outline"
                             className="h-8 text-xs text-destructive hover:bg-destructive/10"
-                            onClick={() => handleRespond(req.id, 'rejected')}
+                            onClick={() => handleDecline(req.id)}
                             disabled={respond.isPending}
                           >
                             <X className="w-3.5 h-3.5 me-1" /> Decline
@@ -119,10 +259,11 @@ export default function RequestsPage() {
                           <Button
                             size="sm"
                             className="h-8 text-xs gradient-primary border-0"
-                            onClick={() => handleRespond(req.id, 'accepted')}
+                            onClick={() => handleAccept(req.id, req.ticket_id)}
                             disabled={respond.isPending}
                           >
-                            <Check className="w-3.5 h-3.5 me-1" /> Accept
+                            {hasNda ? <Check className="w-3.5 h-3.5 me-1" /> : <FileSignature className="w-3.5 h-3.5 me-1" />}
+                            {hasNda ? 'Accept' : 'Sign NDA & Accept'}
                           </Button>
                         </div>
                       )}
@@ -134,6 +275,21 @@ export default function RequestsPage() {
           })
         )}
       </div>
+
+      {/* NDA Modal */}
+      {consultantData?.id && ndaClientId && (
+        <NDASigningModal
+          open={ndaModalOpen}
+          onOpenChange={(open) => {
+            setNdaModalOpen(open);
+            if (!open) { setPendingAcceptId(null); setNdaClientId(null); }
+          }}
+          consultantId={consultantData.id}
+          clientId={ndaClientId}
+          clientName={ndaClientName}
+          onSigned={handleNdaSigned}
+        />
+      )}
     </div>
   );
 }
