@@ -22,6 +22,15 @@ export interface TicketDetail {
   open_for_bids: boolean;
   opened_for_bids_at: string | null;
   parent_ticket_id: string | null;
+  planned_hours: number;
+  planned_cost: number;
+  cost_currency: string;
+  cost_breakdown: any[];
+  plan_submitted_at: string | null;
+  plan_approved_at: string | null;
+  plan_rejected_at: string | null;
+  plan_approved_by: string | null;
+  plan_rejection_reason: string | null;
 }
 
 export function useTicketDetail(ticketId: string | undefined) {
