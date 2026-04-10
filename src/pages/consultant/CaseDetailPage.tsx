@@ -295,12 +295,37 @@ export default function CaseDetailPage() {
         </Card>
       </div>
 
-      {/* Client System Landscape */}
-      {clientProfile && (
-        <Card className="rounded-2xl border-border/50">
+      {/* Client System Landscape — gated behind NDA */}
+      {clientProfile && !ndaSigned && (
+        <Card className="rounded-2xl border-border/50 border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-10 text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+              <Lock className="w-6 h-6 text-destructive" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold">NDA Required</h3>
+              <p className="text-xs text-muted-foreground max-w-sm mt-1">
+                You must sign a Non-Disclosure Agreement before accessing the client's system landscape, server details, and confidential infrastructure information.
+              </p>
+            </div>
+            <Button
+              onClick={() => setNdaModalOpen(true)}
+              className="gap-2 gradient-primary border-0"
+              size="sm"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Sign NDA & Disclaimer
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+      {clientProfile && ndaSigned && (
+        <Card className="rounded-2xl border-border/50 border-green-500/30">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Building2 className="w-4 h-4 text-primary" />
+              Client System Landscape
+              <Badge variant="outline" className="text-[10px] gap-1 text-green-600 border-green-500/30"><ShieldCheck className="w-3 h-3" /> NDA Signed</Badge>
               Client System Landscape
               {clientProfile.company_name && <span className="text-muted-foreground font-normal">— {clientProfile.company_name}</span>}
             </CardTitle>
