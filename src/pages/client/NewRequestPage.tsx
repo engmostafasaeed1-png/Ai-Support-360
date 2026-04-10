@@ -507,9 +507,9 @@ export default function NewRequestPage() {
                 <Link2 className="w-3.5 h-3.5" /> Link to Existing Tickets
               </label>
               <div className="space-y-2">
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Select value={linkType} onValueChange={setLinkType}>
-                    <SelectTrigger className="w-[140px] rounded-xl h-9 text-xs">
+                    <SelectTrigger className="w-full sm:w-[140px] rounded-xl h-9 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
