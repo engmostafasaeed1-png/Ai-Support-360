@@ -218,6 +218,22 @@ export default function TicketDetailPage() {
         </Card>
       )}
 
+      {/* ─── SLA Tracking ─── */}
+      <TicketSLATracker
+        ticketId={ticket.id}
+        urgency={ticket.urgency}
+        status={ticket.status}
+        createdAt={ticket.created_at}
+        slaDeadline={ticket.sla_deadline}
+        firstResponseAt={(ticket as any).first_response_at}
+        slaBreach={(ticket as any).sla_breached || false}
+      />
+
+      {/* ─── Tags & Watchers ─── */}
+      <SectionWrapper icon={Tags} title="Tags & Watchers" defaultOpen>
+        <TicketTagsWatchers ticketId={ticket.id} isReadOnly={false} />
+      </SectionWrapper>
+
       {/* ─── Cost & Effort Plan ─── */}
       <SectionWrapper icon={Calculator} title="Cost & Effort Plan" defaultOpen>
         <TicketPlanApproval ticket={ticket} isClient={isClient} />
