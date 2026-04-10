@@ -568,6 +568,7 @@ export default function NewRequestPage() {
                   </div>
                 )}
               </div>
+            </div>
             {form.description.length > 15 && !aiCategorization && (
               <Button variant="outline" size="sm" onClick={runAiCategorize} disabled={aiLoading === 'categorize'} className="gap-1.5">
                 {aiLoading === 'categorize' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
