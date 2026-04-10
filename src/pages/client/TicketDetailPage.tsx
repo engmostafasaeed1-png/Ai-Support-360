@@ -10,6 +10,7 @@ import {
   ArrowLeft, Clock, User, Calendar, Tag, MessageSquare,
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
   Pencil, UserPlus, Gavel, ChevronDown, Play, GitBranch, Network, Users,
+  Calculator,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
@@ -23,6 +24,8 @@ import TicketTimeline from '@/components/client/TicketTimeline';
 import TicketEditDialog from '@/components/client/TicketEditDialog';
 import SendMatchRequestDialog from '@/components/client/SendMatchRequestDialog';
 import RequestBidDialog from '@/components/client/RequestBidDialog';
+import TicketPlanApproval from '@/components/client/TicketPlanApproval';
+import TicketStatusStepper from '@/components/client/TicketStatusStepper';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
