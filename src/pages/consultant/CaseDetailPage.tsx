@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import {
   ArrowLeft, Clock, Calendar, User, Tag, AlertTriangle,
   CheckCircle2, MessageSquare, FileText, Activity, Circle,
+  Database, Server, HardDrive, Cpu, Code, Link2, Package, Building2,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,6 +65,21 @@ export default function CaseDetailPage() {
       return data;
     },
     enabled: !!caseId,
+  });
+
+  // Fetch client system landscape
+  const { data: clientProfile } = useQuery({
+    queryKey: ['case-client-profile', ticket?.client_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('client_profiles')
+        .select('company_name, industry, company_size, sap_landscape, sap_hosting_type, sap_modules, sap_system_ids, sap_product, sap_version, sap_database_type, sap_os_type, sap_support_pack, sap_go_live_date, sap_user_count, sap_custom_dev_count, sap_interfaces, sap_third_party_tools, sap_landscape_notes')
+        .eq('user_id', ticket!.client_id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!ticket?.client_id,
   });
 
   const { data: sessions } = useQuery({
@@ -244,7 +260,145 @@ export default function CaseDetailPage() {
         </Card>
       </div>
 
-      {/* Stats Row */}
+      {/* Client System Landscape */}
+      {clientProfile && (
+        <Card className="rounded-2xl border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-primary" />
+              Client System Landscape
+              {clientProfile.company_name && <span className="text-muted-foreground font-normal">— {clientProfile.company_name}</span>}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Company & SAP Overview */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {clientProfile.industry && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Industry</p>
+                  <p className="text-sm font-medium">{clientProfile.industry}</p>
+                </div>
+              )}
+              {clientProfile.company_size && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Company Size</p>
+                  <p className="text-sm font-medium">{clientProfile.company_size} employees</p>
+                </div>
+              )}
+              {(clientProfile as any).sap_product && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1"><Package className="w-3 h-3" /> SAP Product</p>
+                  <p className="text-sm font-medium">{(clientProfile as any).sap_product} {(clientProfile as any).sap_version && `(${(clientProfile as any).sap_version})`}</p>
+                </div>
+              )}
+              {clientProfile.sap_hosting_type && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1"><Server className="w-3 h-3" /> Hosting</p>
+                  <p className="text-sm font-medium capitalize">{clientProfile.sap_hosting_type}</p>
+                </div>
+              )}
+              {(clientProfile as any).sap_database_type && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1"><HardDrive className="w-3 h-3" /> Database</p>
+                  <p className="text-sm font-medium">{(clientProfile as any).sap_database_type}</p>
+                </div>
+              )}
+              {(clientProfile as any).sap_os_type && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1"><Cpu className="w-3 h-3" /> OS</p>
+                  <p className="text-sm font-medium">{(clientProfile as any).sap_os_type}</p>
+                </div>
+              )}
+              {(clientProfile as any).sap_support_pack && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Support Pack</p>
+                  <p className="text-sm font-medium">{(clientProfile as any).sap_support_pack}</p>
+                </div>
+              )}
+              {(clientProfile as any).sap_go_live_date && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1"><Calendar className="w-3 h-3" /> Go-Live</p>
+                  <p className="text-sm font-medium">{format(new Date((clientProfile as any).sap_go_live_date), 'MMM yyyy')}</p>
+                </div>
+              )}
+              {(clientProfile as any).sap_user_count != null && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Active Users</p>
+                  <p className="text-sm font-medium">{(clientProfile as any).sap_user_count.toLocaleString()}</p>
+                </div>
+              )}
+              {(clientProfile as any).sap_custom_dev_count != null && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1"><Code className="w-3 h-3" /> Custom Dev (Z/Y)</p>
+                  <p className="text-sm font-medium">{(clientProfile as any).sap_custom_dev_count.toLocaleString()}</p>
+                </div>
+              )}
+            </div>
+
+            {/* SAP Modules */}
+            {clientProfile.sap_modules && clientProfile.sap_modules.length > 0 && (
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">SAP Modules</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {clientProfile.sap_modules.map(m => (
+                    <Badge key={m} variant="secondary" className="text-[10px]">{m}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* System IDs */}
+            {clientProfile.sap_system_ids && clientProfile.sap_system_ids.length > 0 && (
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1"><Database className="w-3 h-3" /> System IDs</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {clientProfile.sap_system_ids.map(s => (
+                    <Badge key={s} variant="outline" className="text-[10px] font-mono">{s}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Interfaces & Tools */}
+            {(clientProfile as any).sap_interfaces?.length > 0 && (
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1"><Link2 className="w-3 h-3" /> Interfaces / Middleware</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {(clientProfile as any).sap_interfaces.map((i: string) => (
+                    <Badge key={i} variant="secondary" className="text-[10px]">{i}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {(clientProfile as any).sap_third_party_tools?.length > 0 && (
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Third-Party Tools</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {(clientProfile as any).sap_third_party_tools.map((t: string) => (
+                    <Badge key={t} variant="secondary" className="text-[10px]">{t}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Landscape notes */}
+            {(clientProfile as any).sap_landscape_notes && (
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Landscape Notes</p>
+                <p className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-3">{(clientProfile as any).sap_landscape_notes}</p>
+              </div>
+            )}
+
+            {clientProfile.sap_landscape && (
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Landscape Summary</p>
+                <p className="text-xs text-muted-foreground">{clientProfile.sap_landscape}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="rounded-2xl border-border/50">
           <CardContent className="p-4 text-center">
