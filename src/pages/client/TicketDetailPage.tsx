@@ -27,6 +27,11 @@ import RequestBidDialog from '@/components/client/RequestBidDialog';
 import TicketPlanApproval from '@/components/client/TicketPlanApproval';
 import TicketTimesheet from '@/components/client/TicketTimesheet';
 import TicketStatusStepper from '@/components/client/TicketStatusStepper';
+import TicketInternalNotes from '@/components/client/TicketInternalNotes';
+import TicketTagsWatchers from '@/components/client/TicketTagsWatchers';
+import TicketSLATracker from '@/components/client/TicketSLATracker';
+import TicketCSAT from '@/components/client/TicketCSAT';
+import TicketLinks from '@/components/client/TicketLinks';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
