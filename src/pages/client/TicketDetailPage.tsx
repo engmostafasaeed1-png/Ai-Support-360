@@ -37,6 +37,7 @@ import TicketLinks from '@/components/client/TicketLinks';
 import TicketInterview from '@/components/client/TicketInterview';
 import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
 import EmergencyContactPanel from '@/components/client/EmergencyContactPanel';
+import TicketMeetingsList from '@/components/client/TicketMeetingsList';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
@@ -301,6 +302,11 @@ export default function TicketDetailPage() {
       {/* ─── Sessions Section ─── */}
       <SectionWrapper icon={Video} title="Sessions" count={sessions?.length} defaultOpen>
         <SessionsList sessions={sessions || []} isLoading={sessionsLoading} />
+      </SectionWrapper>
+
+      {/* ─── Meetings List with AI Insights ─── */}
+      <SectionWrapper icon={CalendarDays} title="Meetings" defaultOpen>
+        <TicketMeetingsList ticketId={ticket.id} onSchedule={() => setMeetingOpen(true)} />
       </SectionWrapper>
 
       {/* ─── Recorded Sessions ─── */}
