@@ -11,6 +11,7 @@ import {
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
   Pencil, UserPlus, Gavel, ChevronDown, Play, GitBranch, Network, Users,
   Calculator, ClipboardList, MessageSquareText, Timer, Star, Link2, Tags,
+  CalendarDays, Phone,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import TicketNDAStatus from '@/components/client/TicketNDAStatus';
