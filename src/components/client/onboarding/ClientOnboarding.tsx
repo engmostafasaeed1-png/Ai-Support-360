@@ -168,6 +168,27 @@ export default function ClientOnboarding() {
         </p>
       </div>
 
+      {/* Skip onboarding */}
+      <div className="flex justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs text-muted-foreground"
+          onClick={async () => {
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                await supabase.from('profiles').update({ onboarding_completed: true }).eq('user_id', user.id);
+                await supabase.from('client_profiles').update({ onboarding_completed: true }).eq('user_id', user.id);
+              }
+            } catch {}
+            navigate('/client');
+          }}
+        >
+          Skip for now
+        </Button>
+      </div>
+
       {/* Step indicator */}
       <div className="flex items-center justify-center gap-1 flex-wrap">
         {steps.map((step, i) => {
