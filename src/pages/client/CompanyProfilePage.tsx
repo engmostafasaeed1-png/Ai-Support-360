@@ -339,6 +339,130 @@ export default function CompanyProfilePage() {
         </CardContent>
       </Card>
 
+      {/* System Details */}
+      <Card className="rounded-2xl border-border/50">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Cpu className="w-4 h-4 text-primary" /> System Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1"><Package className="w-3.5 h-3.5" /> SAP Product</Label>
+              <Select value={sapProduct} onValueChange={setSapProduct}>
+                <SelectTrigger><SelectValue placeholder="Select product..." /></SelectTrigger>
+                <SelectContent>
+                  {['S/4HANA', 'S/4HANA Cloud', 'ECC 6.0', 'SAP BW/4HANA', 'SAP BW on HANA', 'SAP CRM', 'SAP SRM', 'SAP SCM', 'SAP GTS', 'SAP Solution Manager', 'SAP BTP', 'SAP SuccessFactors', 'SAP Ariba', 'SAP Concur', 'Other'].map(p => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Version / Release</Label>
+              <Input value={sapVersion} onChange={e => setSapVersion(e.target.value)} placeholder="e.g., 2023 FPS01, EHP8" maxLength={50} />
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1"><HardDrive className="w-3.5 h-3.5" /> Database</Label>
+              <Select value={sapDatabaseType} onValueChange={setSapDatabaseType}>
+                <SelectTrigger><SelectValue placeholder="Select database..." /></SelectTrigger>
+                <SelectContent>
+                  {['SAP HANA', 'SAP HANA Cloud', 'Oracle', 'Microsoft SQL Server', 'IBM DB2', 'SAP ASE (Sybase)', 'SAP MaxDB', 'Other'].map(d => (
+                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Operating System</Label>
+              <Select value={sapOsType} onValueChange={setSapOsType}>
+                <SelectTrigger><SelectValue placeholder="Select OS..." /></SelectTrigger>
+                <SelectContent>
+                  {['SUSE Linux (SLES)', 'Red Hat Enterprise Linux', 'Windows Server', 'IBM AIX', 'HP-UX', 'Oracle Solaris', 'Cloud-managed', 'Other'].map(o => (
+                    <SelectItem key={o} value={o}>{o}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Support Pack Level</Label>
+              <Input value={sapSupportPack} onChange={e => setSapSupportPack(e.target.value)} placeholder="e.g., SP05" maxLength={20} />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> Go-Live Date</Label>
+              <Input type="date" value={sapGoLiveDate} onChange={e => setSapGoLiveDate(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1"><Users2 className="w-3.5 h-3.5" /> Active Users</Label>
+              <Input type="number" min={0} value={sapUserCount} onChange={e => setSapUserCount(e.target.value ? Number(e.target.value) : '')} placeholder="e.g., 500" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1"><Code className="w-3.5 h-3.5" /> Custom Developments (Z/Y Objects)</Label>
+            <Input type="number" min={0} value={sapCustomDevCount} onChange={e => setSapCustomDevCount(e.target.value ? Number(e.target.value) : '')} placeholder="Approximate count" className="max-w-xs" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Integrations & Tools */}
+      <Card className="rounded-2xl border-border/50">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Link2 className="w-4 h-4 text-primary" /> Integrations & Third-Party Tools
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Interfaces / Middleware</Label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {sapInterfaces.map(i => (
+                <Badge key={i} variant="secondary" className="gap-1 text-xs">
+                  {i}
+                  <button onClick={() => setSapInterfaces(sapInterfaces.filter(x => x !== i))} className="hover:text-destructive">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input value={newInterface} onChange={e => setNewInterface(e.target.value)} placeholder="e.g., SAP PI/PO, MuleSoft, Dell Boomi" className="max-w-xs" maxLength={60}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newInterface.trim() && !sapInterfaces.includes(newInterface.trim())) { setSapInterfaces([...sapInterfaces, newInterface.trim()]); setNewInterface(''); } } }} />
+              <Button variant="outline" size="sm" onClick={() => { if (newInterface.trim() && !sapInterfaces.includes(newInterface.trim())) { setSapInterfaces([...sapInterfaces, newInterface.trim()]); setNewInterface(''); } }}>
+                <Plus className="w-3.5 h-3.5 me-1" /> Add
+              </Button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Third-Party Tools</Label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {sapThirdPartyTools.map(t => (
+                <Badge key={t} variant="secondary" className="gap-1 text-xs">
+                  {t}
+                  <button onClick={() => setSapThirdPartyTools(sapThirdPartyTools.filter(x => x !== t))} className="hover:text-destructive">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input value={newTool} onChange={e => setNewTool(e.target.value)} placeholder="e.g., OpenText, Fiori Launchpad, BOBJ" className="max-w-xs" maxLength={60}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newTool.trim() && !sapThirdPartyTools.includes(newTool.trim())) { setSapThirdPartyTools([...sapThirdPartyTools, newTool.trim()]); setNewTool(''); } } }} />
+              <Button variant="outline" size="sm" onClick={() => { if (newTool.trim() && !sapThirdPartyTools.includes(newTool.trim())) { setSapThirdPartyTools([...sapThirdPartyTools, newTool.trim()]); setNewTool(''); } }}>
+                <Plus className="w-3.5 h-3.5 me-1" /> Add
+              </Button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Landscape Notes</Label>
+            <Textarea value={sapLandscapeNotes} onChange={e => setSapLandscapeNotes(e.target.value)} placeholder="Any additional notes about your system landscape, architecture, or special configurations..." rows={3} maxLength={2000} />
+          </div>
+        </CardContent>
+
       {/* Key Contacts */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader className="flex-row items-center justify-between">
