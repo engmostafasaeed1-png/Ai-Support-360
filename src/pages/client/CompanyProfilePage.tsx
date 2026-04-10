@@ -462,6 +462,7 @@ export default function CompanyProfilePage() {
             <Textarea value={sapLandscapeNotes} onChange={e => setSapLandscapeNotes(e.target.value)} placeholder="Any additional notes about your system landscape, architecture, or special configurations..." rows={3} maxLength={2000} />
           </div>
         </CardContent>
+      </Card>
 
       {/* Key Contacts */}
       <Card className="rounded-2xl border-border/50">
