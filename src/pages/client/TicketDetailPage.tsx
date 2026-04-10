@@ -32,6 +32,7 @@ import TicketTagsWatchers from '@/components/client/TicketTagsWatchers';
 import TicketSLATracker from '@/components/client/TicketSLATracker';
 import TicketCSAT from '@/components/client/TicketCSAT';
 import TicketLinks from '@/components/client/TicketLinks';
+import TicketInterview from '@/components/client/TicketInterview';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
@@ -232,6 +233,18 @@ export default function TicketDetailPage() {
       {/* ─── Tags & Watchers ─── */}
       <SectionWrapper icon={Tags} title="Tags & Watchers" defaultOpen>
         <TicketTagsWatchers ticketId={ticket.id} isReadOnly={false} />
+      </SectionWrapper>
+
+      {/* ─── Pre-Work Interview ─── */}
+      <SectionWrapper icon={Video} title="Pre-Work Interview" defaultOpen>
+        <TicketInterview
+          ticketId={ticket.id}
+          consultantId={ticket.consultant_id}
+          clientId={ticket.client_id}
+          isClient={isClient}
+          isConsultant={isConsultant}
+          consultantName={ticket.consultant_name || undefined}
+        />
       </SectionWrapper>
 
       {/* ─── Cost & Effort Plan ─── */}

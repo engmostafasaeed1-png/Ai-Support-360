@@ -2593,6 +2593,87 @@ export type Database = {
           },
         ]
       }
+      ticket_interviews: {
+        Row: {
+          ai_summary: string | null
+          body_language_analysis: Json | null
+          client_id: string
+          client_notes: string | null
+          consultant_id: string
+          consultant_notes: string | null
+          created_at: string
+          ended_at: string | null
+          facial_verification_result: Json | null
+          id: string
+          overall_recommendation: string | null
+          recording_url: string | null
+          room_id: string | null
+          scheduled_at: string | null
+          started_at: string | null
+          status: string
+          ticket_id: string
+          transcript: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          body_language_analysis?: Json | null
+          client_id: string
+          client_notes?: string | null
+          consultant_id: string
+          consultant_notes?: string | null
+          created_at?: string
+          ended_at?: string | null
+          facial_verification_result?: Json | null
+          id?: string
+          overall_recommendation?: string | null
+          recording_url?: string | null
+          room_id?: string | null
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+          ticket_id: string
+          transcript?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_summary?: string | null
+          body_language_analysis?: Json | null
+          client_id?: string
+          client_notes?: string | null
+          consultant_id?: string
+          consultant_notes?: string | null
+          created_at?: string
+          ended_at?: string | null
+          facial_verification_result?: Json | null
+          id?: string
+          overall_recommendation?: string | null
+          recording_url?: string | null
+          room_id?: string | null
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+          ticket_id?: string
+          transcript?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_interviews_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_interviews_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_links: {
         Row: {
           created_at: string
