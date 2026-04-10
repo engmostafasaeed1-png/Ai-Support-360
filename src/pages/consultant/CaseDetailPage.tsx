@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import {
   ArrowLeft, Clock, Calendar, User, Tag, AlertTriangle,
   CheckCircle2, MessageSquare, FileText, Activity, Circle,
+  Database, Server, HardDrive, Cpu, Code, Link2, Package, Building2,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,6 +65,21 @@ export default function CaseDetailPage() {
       return data;
     },
     enabled: !!caseId,
+  });
+
+  // Fetch client system landscape
+  const { data: clientProfile } = useQuery({
+    queryKey: ['case-client-profile', ticket?.client_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('client_profiles')
+        .select('company_name, industry, company_size, sap_landscape, sap_hosting_type, sap_modules, sap_system_ids, sap_product, sap_version, sap_database_type, sap_os_type, sap_support_pack, sap_go_live_date, sap_user_count, sap_custom_dev_count, sap_interfaces, sap_third_party_tools, sap_landscape_notes')
+        .eq('user_id', ticket!.client_id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!ticket?.client_id,
   });
 
   const { data: sessions } = useQuery({
