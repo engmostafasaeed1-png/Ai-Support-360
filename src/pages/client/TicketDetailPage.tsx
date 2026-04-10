@@ -10,7 +10,7 @@ import {
   ArrowLeft, Clock, User, Calendar, Tag, MessageSquare,
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
   Pencil, UserPlus, Gavel, ChevronDown, Play, GitBranch, Network, Users,
-  Calculator,
+  Calculator, ClipboardList,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
