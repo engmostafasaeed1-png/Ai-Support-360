@@ -416,6 +416,57 @@ export default function NewRequestPage() {
               <Textarea value={form.description} onChange={e => updateForm('description', e.target.value)} placeholder={t('ticket_create.desc_placeholder')} rows={5} className="rounded-xl" maxLength={2000} />
             </div>
 
+            {/* File Attachments */}
+            <div>
+              <label className="text-sm font-medium mb-1.5 block flex items-center gap-1.5">
+                <Paperclip className="w-3.5 h-3.5" /> Attachments
+              </label>
+              <div className="p-3 rounded-xl border-2 border-dashed border-border/50 bg-muted/20 space-y-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    const valid = files.filter(f => f.size <= 20 * 1024 * 1024);
+                    if (valid.length < files.length) toast.error('Some files exceed 20MB limit');
+                    setAttachedFiles(prev => [...prev, ...valid]);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="w-3.5 h-3.5" /> Add Files
+                  </Button>
+                  <span className="text-[11px] text-muted-foreground">Screenshots, logs, error reports (max 20MB each)</span>
+                </div>
+                {attachedFiles.length > 0 && (
+                  <div className="space-y-1.5 mt-2">
+                    {attachedFiles.map((file, i) => (
+                      <div key={`${file.name}-${i}`} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/40 text-sm">
+                        <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span className="truncate flex-1 text-foreground">{file.name}</span>
+                        <span className="text-[10px] text-muted-foreground shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
+                        <button
+                          type="button"
+                          onClick={() => setAttachedFiles(prev => prev.filter((_, idx) => idx !== i))}
+                          className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
             {form.description.length > 15 && !aiCategorization && (
               <Button variant="outline" size="sm" onClick={runAiCategorize} disabled={aiLoading === 'categorize'} className="gap-1.5">
                 {aiLoading === 'categorize' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
