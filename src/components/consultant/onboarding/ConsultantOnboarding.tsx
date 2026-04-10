@@ -290,6 +290,26 @@ export default function ConsultantOnboarding() {
         <p className="text-muted-foreground text-sm">{t('onboarding.subtitle')}</p>
       </div>
 
+      {/* Skip onboarding */}
+      <div className="flex justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs text-muted-foreground"
+          onClick={async () => {
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                await supabase.from('profiles').update({ onboarding_completed: true }).eq('user_id', user.id);
+              }
+            } catch {}
+            navigate('/consultant');
+          }}
+        >
+          Skip for now
+        </Button>
+      </div>
+
       {/* Step indicator - scrollable */}
       <div className="flex items-center justify-start gap-1 overflow-x-auto pb-2 scrollbar-hide">
         {steps.map((step, i) => {
@@ -377,7 +397,13 @@ export default function ConsultantOnboarding() {
             {t('onboarding.back')}
           </Button>
           <Button
-            onClick={() => {
+            onClick={async () => {
+              try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                  await supabase.from('profiles').update({ onboarding_completed: true }).eq('user_id', user.id);
+                }
+              } catch {}
               fireConfetti();
               toast.success('Profile setup complete!');
               setTimeout(() => navigate('/consultant?welcome=true'), 1200);
