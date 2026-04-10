@@ -41,8 +41,8 @@ export default function AdminLayout() {
             <div className="flex items-center gap-3">
               <SidebarTrigger />
               <Link to="/" className="flex items-center gap-2 md:hidden">
-                <img src={logo} alt="AI SAP Support Hub" className="w-8 h-8 rounded-lg object-contain" />
-                <span className="font-bold text-sm text-foreground">AI SAP Support Hub</span>
+                <img src={logo} alt="AI SAP Support Now" className="w-8 h-8 rounded-lg object-contain" />
+                <span className="font-bold text-sm text-foreground">AI SAP Support Now</span>
               </Link>
               <div className="relative hidden sm:block">
                 <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

@@ -33,8 +33,8 @@ export default function Footer() {
         <div className="grid md:grid-cols-5 gap-10">
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-5">
-              <img src={logo} alt="AI SAP Support Hub" className="w-11 h-11 rounded-xl object-contain shadow-sm" />
-              <span className="font-black text-lg text-foreground tracking-tight">AI SAP Support Hub</span>
+              <img src={logo} alt="AI SAP Support Now" className="w-11 h-11 rounded-xl object-contain shadow-sm" />
+              <span className="font-black text-lg text-foreground tracking-tight">AI SAP Support Now</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
               {t('footer.description')}
@@ -61,7 +61,7 @@ export default function Footer() {
 
         <div className="mt-14 pt-6 border-t border-border/30 text-center">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} AI SAP Support Hub. {t('footer.rights')}
+            © {new Date().getFullYear()} AI SAP Support Now. {t('footer.rights')}
           </p>
         </div>
       </div>

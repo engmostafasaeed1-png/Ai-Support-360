@@ -21,7 +21,7 @@ const QUICK_PROMPTS = [
   { label: "🔧 SAP Basis Issue", prompt: "I have an SAP Basis issue, can you help me triage it?" },
   { label: "📊 FI/CO Question", prompt: "I need help with an SAP FI/CO configuration question" },
   { label: "🛒 MM Problem", prompt: "I'm having a problem with SAP MM procurement" },
-  { label: "🚀 Get Started", prompt: "I'm new here — what can AI SAP Support Hub help me with?" },
+  { label: "🚀 Get Started", prompt: "I'm new here — what can AI SAP Support Now help me with?" },
 ];
 
 function parseTicketSummary(content: string) {

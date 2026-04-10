@@ -40,8 +40,8 @@ export default function SuperAdminLayout() {
             <div className="flex items-center gap-3">
               <SidebarTrigger />
               <Link to="/" className="flex items-center gap-2 md:hidden">
-                <img src={logo} alt="AI SAP Support Hub" className="w-8 h-8 rounded-lg object-contain" />
-                <span className="font-bold text-sm text-foreground">AI SAP Support Hub</span>
+                <img src={logo} alt="AI SAP Support Now" className="w-8 h-8 rounded-lg object-contain" />
+                <span className="font-bold text-sm text-foreground">AI SAP Support Now</span>
               </Link>
               <Badge className="bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0 text-[10px] gap-1 shadow-sm">
                 <Crown className="w-3 h-3" />

@@ -191,7 +191,7 @@ export function generateInterviewPdf(
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(160, 160, 180);
-    doc.text('AI SAP Support Hub — Interview Results', margin, 290);
+    doc.text('AI SAP Support Now — Interview Results', margin, 290);
     doc.text(`Page ${i} of ${totalPages}`, pw - margin, 290, { align: 'right' });
   }
 
