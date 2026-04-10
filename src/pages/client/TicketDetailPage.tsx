@@ -157,6 +157,9 @@ export default function TicketDetailPage() {
                 <Gavel className="w-3.5 h-3.5" />
                 {ticket.open_for_bids ? 'Manage Bids' : 'Request Bids'}
               </Button>
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setMeetingOpen(true)}>
+                <CalendarDays className="w-3.5 h-3.5" /> Schedule Meeting
+              </Button>
             </div>
           )}
           <div className="flex flex-wrap items-center gap-2 mt-1.5">
