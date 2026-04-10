@@ -9,13 +9,14 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import {
   ArrowLeft, Clock, User, Calendar, Tag, MessageSquare,
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
-  Pencil, UserPlus, Gavel, ChevronDown, Play, GitBranch, Network,
+  Pencil, UserPlus, Gavel, ChevronDown, Play, GitBranch, Network, Users,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
 import TicketDocuments from '@/components/client/TicketDocuments';
 import ChildTickets, { TicketBreadcrumbs } from '@/components/client/ChildTickets';
 import TicketHierarchyTree from '@/components/client/TicketHierarchyTree';
+import TicketAssignments from '@/components/client/TicketAssignments';
 import TicketAcceptors from '@/components/client/TicketAcceptors';
 import TicketBids from '@/components/client/TicketBids';
 import TicketTimeline from '@/components/client/TicketTimeline';
@@ -193,6 +194,11 @@ export default function TicketDetailPage() {
 
       {/* ─── Available Consultants (Acceptors) ─── */}
       <TicketAcceptors ticketId={ticket.id} currentConsultantId={ticket.consultant_id} />
+
+      {/* ─── Multi-Consultant Assignments ─── */}
+      <SectionWrapper icon={Users} title="Consultant Assignments" defaultOpen>
+        <TicketAssignments ticketId={ticket.id} isReadOnly={isConsultant} />
+      </SectionWrapper>
 
       {/* ─── Bids Section ─── */}
       <SectionWrapper icon={Gavel} title="Bids & Proposals" defaultOpen>

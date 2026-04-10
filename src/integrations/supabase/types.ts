@@ -2223,6 +2223,60 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_assignments: {
+        Row: {
+          assigned_by: string | null
+          consultant_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          role: Database["public"]["Enums"]["assignment_role"]
+          status: Database["public"]["Enums"]["assignment_status"]
+          ticket_id: string
+          updated_at: string
+          work_mode: Database["public"]["Enums"]["assignment_work_mode"]
+        }
+        Insert: {
+          assigned_by?: string | null
+          consultant_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          role?: Database["public"]["Enums"]["assignment_role"]
+          status?: Database["public"]["Enums"]["assignment_status"]
+          ticket_id: string
+          updated_at?: string
+          work_mode?: Database["public"]["Enums"]["assignment_work_mode"]
+        }
+        Update: {
+          assigned_by?: string | null
+          consultant_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          role?: Database["public"]["Enums"]["assignment_role"]
+          status?: Database["public"]["Enums"]["assignment_status"]
+          ticket_id?: string
+          updated_at?: string
+          work_mode?: Database["public"]["Enums"]["assignment_work_mode"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_assignments_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_assignments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_documents: {
         Row: {
           comment: string | null
@@ -2651,6 +2705,9 @@ export type Database = {
     Enums: {
       app_role: "client" | "consultant" | "admin"
       article_status: "draft" | "published" | "archived"
+      assignment_role: "lead" | "support" | "observer"
+      assignment_status: "active" | "completed" | "removed"
+      assignment_work_mode: "collaborative" | "individual"
       availability_status: "available" | "busy" | "offline"
       environment_status: "active" | "inactive" | "maintenance"
       escrow_status:
@@ -2836,6 +2893,9 @@ export const Constants = {
     Enums: {
       app_role: ["client", "consultant", "admin"],
       article_status: ["draft", "published", "archived"],
+      assignment_role: ["lead", "support", "observer"],
+      assignment_status: ["active", "completed", "removed"],
+      assignment_work_mode: ["collaborative", "individual"],
       availability_status: ["available", "busy", "offline"],
       environment_status: ["active", "inactive", "maintenance"],
       escrow_status: [
