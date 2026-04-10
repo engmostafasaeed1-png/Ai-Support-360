@@ -304,6 +304,11 @@ export default function TicketDetailPage() {
         <SessionsList sessions={sessions || []} isLoading={sessionsLoading} />
       </SectionWrapper>
 
+      {/* ─── Meetings List with AI Insights ─── */}
+      <SectionWrapper icon={CalendarDays} title="Meetings" defaultOpen>
+        <TicketMeetingsList ticketId={ticket.id} onSchedule={() => setMeetingOpen(true)} />
+      </SectionWrapper>
+
       {/* ─── Recorded Sessions ─── */}
       {recordedSessions.length > 0 && (
         <SectionWrapper icon={Play} title="Recorded Sessions" count={recordedSessions.length} defaultOpen={false}>
