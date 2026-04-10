@@ -235,6 +235,18 @@ export default function TicketDetailPage() {
         <TicketTagsWatchers ticketId={ticket.id} isReadOnly={false} />
       </SectionWrapper>
 
+      {/* ─── Pre-Work Interview ─── */}
+      <SectionWrapper icon={Video} title="Pre-Work Interview" defaultOpen>
+        <TicketInterview
+          ticketId={ticket.id}
+          consultantId={ticket.consultant_id}
+          clientId={ticket.client_id}
+          isClient={isClient}
+          isConsultant={isConsultant}
+          consultantName={ticket.consultant_name || undefined}
+        />
+      </SectionWrapper>
+
       {/* ─── Cost & Effort Plan ─── */}
       <SectionWrapper icon={Calculator} title="Cost & Effort Plan" defaultOpen>
         <TicketPlanApproval ticket={ticket} isClient={isClient} />
