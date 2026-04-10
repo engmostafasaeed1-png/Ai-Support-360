@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ClipboardList, ChevronRight, Circle, CheckCircle2 } from 'lucide-react';
+import { getClientOnboardingState } from '@/lib/clientOnboarding';
 
 interface ChecklistItem {
   labelKey: string;
@@ -61,14 +62,19 @@ export default function OnboardingProgressCard({ role }: Props) {
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (data?.onboarding_completed) { setCompleted(true); return; }
+        const onboardingState = getClientOnboardingState(data);
+
+        if (onboardingState.completed) {
+          setCompleted(true);
+          return;
+        }
 
         setChecklist([
-          { labelKey: 'onboarding.check_company', fallback: 'Company name', done: !!data?.company_name, step: 0, tooltipKey: 'onboarding.tip_company', tooltipFallback: 'Enter your organization\'s official name' },
-          { labelKey: 'onboarding.check_size', fallback: 'Company size', done: !!data?.company_size, step: 0, tooltipKey: 'onboarding.tip_size', tooltipFallback: 'Select the number of employees in your company' },
-          { labelKey: 'onboarding.check_industry', fallback: 'Industry', done: !!data?.industry, step: 0, tooltipKey: 'onboarding.tip_industry', tooltipFallback: 'Choose the industry your business operates in' },
-          { labelKey: 'onboarding.check_phone', fallback: 'Phone number', done: !!data?.phone, step: 1, tooltipKey: 'onboarding.tip_phone', tooltipFallback: 'Provide a contact number for session coordination' },
-          { labelKey: 'onboarding.check_modules', fallback: 'SAP modules', done: (data?.sap_modules?.length ?? 0) > 0, step: 2, tooltipKey: 'onboarding.tip_modules', tooltipFallback: 'Select which SAP modules you need support with' },
+          { labelKey: 'onboarding.check_company', fallback: 'Company name', done: onboardingState.checks.companyName, step: 0, tooltipKey: 'onboarding.tip_company', tooltipFallback: 'Enter your organization\'s official name' },
+          { labelKey: 'onboarding.check_size', fallback: 'Company size', done: onboardingState.checks.companySize, step: 0, tooltipKey: 'onboarding.tip_size', tooltipFallback: 'Select the number of employees in your company' },
+          { labelKey: 'onboarding.check_industry', fallback: 'Industry', done: onboardingState.checks.industry, step: 0, tooltipKey: 'onboarding.tip_industry', tooltipFallback: 'Choose the industry your business operates in' },
+          { labelKey: 'onboarding.check_phone', fallback: 'Phone number', done: onboardingState.checks.phone, step: 1, tooltipKey: 'onboarding.tip_phone', tooltipFallback: 'Provide a contact number for session coordination' },
+          { labelKey: 'onboarding.check_modules', fallback: 'SAP modules', done: onboardingState.checks.sapModules, step: 2, tooltipKey: 'onboarding.tip_modules', tooltipFallback: 'Select which SAP modules you need support with' },
         ]);
         setCompleted(false);
       } else {
@@ -141,7 +147,6 @@ export default function OnboardingProgressCard({ role }: Props) {
               </span>
             </div>
 
-            {/* Checklist */}
             <TooltipProvider delayDuration={300}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 mt-3">
                 {checklist.map((item) => (

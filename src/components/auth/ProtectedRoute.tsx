@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { Session } from '@supabase/supabase-js';
 import { Loader2 } from 'lucide-react';
+import { getClientOnboardingState } from '@/lib/clientOnboarding';
 
 interface Props {
   children: React.ReactNode;
@@ -28,7 +29,6 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Validate role from the database
   useEffect(() => {
     if (!session || !requiredRole) {
       setRoleOk(requiredRole ? undefined : true);
@@ -45,7 +45,6 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       });
   }, [session, requiredRole]);
 
-  // Check tenant membership for clients
   useEffect(() => {
     if (!session || !roleOk || requiredRole !== 'client') {
       setTenantChecked(true);
@@ -63,7 +62,6 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       });
   }, [session, roleOk, requiredRole]);
 
-  // Check onboarding status once role & tenant are confirmed
   useEffect(() => {
     if (!session || !roleOk || !requiredRole || requiredRole === 'admin' || !tenantChecked || !hasTenant) {
       setOnboardingChecked(true);
@@ -73,10 +71,11 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       if (requiredRole === 'client') {
         const { data } = await supabase
           .from('client_profiles')
-          .select('onboarding_completed')
+          .select('onboarding_completed, company_name, company_size, industry, sap_modules, phone')
           .eq('user_id', session.user.id)
           .maybeSingle();
-        setNeedsOnboarding(!data || !data.onboarding_completed);
+
+        setNeedsOnboarding(!getClientOnboardingState(data).completed);
       } else {
         const { data } = await supabase
           .from('profiles')
@@ -90,7 +89,6 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
     checkOnboarding();
   }, [session, roleOk, requiredRole, tenantChecked, hasTenant]);
 
-  // Loading state
   if (
     session === undefined ||
     (session && requiredRole && roleOk === undefined) ||
@@ -115,12 +113,10 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
   const isOnClientSetupPage = location.pathname === '/client/companies' || location.pathname === '/client/onboarding';
   const isOnConsultantOnboardingPage = location.pathname === '/consultant/onboarding';
 
-  // Client has no company — redirect to company setup (unless already there)
   if (requiredRole === 'client' && !hasTenant && !isOnClientSetupPage) {
     return <Navigate to="/client/companies" replace />;
   }
 
-  // Redirect to onboarding if not completed (skip if already on the relevant setup page)
   if (needsOnboarding && !isOnClientSetupPage && !isOnConsultantOnboardingPage) {
     const onboardingPath = requiredRole === 'client' ? '/client/onboarding' : '/consultant/onboarding';
     return <Navigate to={onboardingPath} replace />;
