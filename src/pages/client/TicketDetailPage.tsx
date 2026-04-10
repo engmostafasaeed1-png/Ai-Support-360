@@ -9,12 +9,13 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import {
   ArrowLeft, Clock, User, Calendar, Tag, MessageSquare,
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
-  Pencil, UserPlus, Gavel, ChevronDown, Play, GitBranch,
+  Pencil, UserPlus, Gavel, ChevronDown, Play, GitBranch, Network,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
 import TicketDocuments from '@/components/client/TicketDocuments';
 import ChildTickets, { TicketBreadcrumbs } from '@/components/client/ChildTickets';
+import TicketHierarchyTree from '@/components/client/TicketHierarchyTree';
 import TicketAcceptors from '@/components/client/TicketAcceptors';
 import TicketBids from '@/components/client/TicketBids';
 import TicketTimeline from '@/components/client/TicketTimeline';
@@ -196,6 +197,11 @@ export default function TicketDetailPage() {
       {/* ─── Bids Section ─── */}
       <SectionWrapper icon={Gavel} title="Bids & Proposals" defaultOpen>
         <TicketBids ticketId={ticket.id} />
+      </SectionWrapper>
+
+      {/* ─── Ticket Hierarchy Tree ─── */}
+      <SectionWrapper icon={Network} title="Ticket Hierarchy" defaultOpen>
+        <TicketHierarchyTree ticketId={ticket.id} onEditTicket={(id) => { if (id === ticket.id) setEditOpen(true); }} />
       </SectionWrapper>
 
       {/* ─── Child Tickets (Sub-tickets) ─── */}
