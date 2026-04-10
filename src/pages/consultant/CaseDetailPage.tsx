@@ -55,6 +55,19 @@ interface TimelineEvent {
 
 export default function CaseDetailPage() {
   const { caseId } = useParams<{ caseId: string }>();
+  const queryClient = useQueryClient();
+  const [ndaModalOpen, setNdaModalOpen] = useState(false);
+
+  // Get current consultant ID
+  const { data: consultantData } = useQuery({
+    queryKey: ['my-consultant-id'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data } = await supabase.from('consultants').select('id').eq('user_id', user.id).maybeSingle();
+      return data;
+    },
+  });
 
   const { data: ticket, isLoading } = useQuery({
     queryKey: ['case-detail', caseId],
