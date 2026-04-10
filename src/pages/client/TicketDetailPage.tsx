@@ -311,7 +311,21 @@ export default function TicketDetailPage() {
         <TicketTimesheet ticketId={ticket.id} ticketTitle={ticket.title} isReadOnly={isClient} />
       </SectionWrapper>
 
-      {/* ─── Documents ─── */}
+      {/* ─── Internal Notes ─── */}
+      {!isClient && (
+        <SectionWrapper icon={MessageSquareText} title="Internal Notes" defaultOpen>
+          <TicketInternalNotes ticketId={ticket.id} />
+        </SectionWrapper>
+      )}
+
+      {/* ─── Linked Tickets ─── */}
+      <SectionWrapper icon={Link2} title="Linked Tickets" defaultOpen={false}>
+        <TicketLinks ticketId={ticket.id} isReadOnly={isConsultant} />
+      </SectionWrapper>
+
+      {/* ─── CSAT Satisfaction ─── */}
+      <SectionWrapper icon={Star} title="Satisfaction" defaultOpen>
+        <TicketCSAT ticketId={ticket.id} ticketTitle={ticket.title} ticketStatus={ticket.status} clientId={ticket.client_id} consultantId={ticket.consultant_id} />
       <SectionWrapper icon={FileText} title="Documents" defaultOpen>
         <TicketDocuments ticketId={ticket.id} />
       </SectionWrapper>
