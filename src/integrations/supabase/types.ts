@@ -2375,6 +2375,131 @@ export type Database = {
           },
         ]
       }
+      ticket_timesheet_submissions: {
+        Row: {
+          cost_currency: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          pdf_url: string | null
+          sent_to_email: string | null
+          signature_data: string | null
+          signature_method: string | null
+          signed_at: string | null
+          signed_by_name: string | null
+          status: string
+          submitted_by: string
+          ticket_id: string
+          total_cost: number | null
+          total_hours: number | null
+          updated_at: string
+        }
+        Insert: {
+          cost_currency?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          pdf_url?: string | null
+          sent_to_email?: string | null
+          signature_data?: string | null
+          signature_method?: string | null
+          signed_at?: string | null
+          signed_by_name?: string | null
+          status?: string
+          submitted_by: string
+          ticket_id: string
+          total_cost?: number | null
+          total_hours?: number | null
+          updated_at?: string
+        }
+        Update: {
+          cost_currency?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          pdf_url?: string | null
+          sent_to_email?: string | null
+          signature_data?: string | null
+          signature_method?: string | null
+          signed_at?: string | null
+          signed_by_name?: string | null
+          status?: string
+          submitted_by?: string
+          ticket_id?: string
+          total_cost?: number | null
+          total_hours?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_timesheet_submissions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_work_logs: {
+        Row: {
+          billable: boolean
+          category: string
+          consultant_id: string
+          created_at: string
+          description: string | null
+          hourly_rate: number | null
+          hours: number
+          id: string
+          ticket_id: string
+          total_cost: number | null
+          updated_at: string
+          work_date: string
+        }
+        Insert: {
+          billable?: boolean
+          category?: string
+          consultant_id: string
+          created_at?: string
+          description?: string | null
+          hourly_rate?: number | null
+          hours?: number
+          id?: string
+          ticket_id: string
+          total_cost?: number | null
+          updated_at?: string
+          work_date?: string
+        }
+        Update: {
+          billable?: boolean
+          category?: string
+          consultant_id?: string
+          created_at?: string
+          description?: string | null
+          hourly_rate?: number | null
+          hours?: number
+          id?: string
+          ticket_id?: string
+          total_cost?: number | null
+          updated_at?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_work_logs_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_work_logs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tickets: {
         Row: {
           ai_suggested_category: string | null

@@ -10,7 +10,7 @@ import {
   ArrowLeft, Clock, User, Calendar, Tag, MessageSquare,
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
   Pencil, UserPlus, Gavel, ChevronDown, Play, GitBranch, Network, Users,
-  Calculator,
+  Calculator, ClipboardList,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
@@ -25,6 +25,7 @@ import TicketEditDialog from '@/components/client/TicketEditDialog';
 import SendMatchRequestDialog from '@/components/client/SendMatchRequestDialog';
 import RequestBidDialog from '@/components/client/RequestBidDialog';
 import TicketPlanApproval from '@/components/client/TicketPlanApproval';
+import TicketTimesheet from '@/components/client/TicketTimesheet';
 import TicketStatusStepper from '@/components/client/TicketStatusStepper';
 import { formatDistanceToNow, format } from 'date-fns';
 
@@ -282,6 +283,11 @@ export default function TicketDetailPage() {
       {/* ─── Chat / Messages ─── */}
       <SectionWrapper icon={MessageSquare} title="Chat History" count={messages?.length} defaultOpen>
         <ChatInline messages={messages || []} isLoading={messagesLoading} />
+      </SectionWrapper>
+
+      {/* ─── Timesheet / Work Log ─── */}
+      <SectionWrapper icon={ClipboardList} title="Timesheet & Work Log" defaultOpen>
+        <TicketTimesheet ticketId={ticket.id} ticketTitle={ticket.title} isReadOnly={isClient} />
       </SectionWrapper>
 
       {/* ─── Documents ─── */}
