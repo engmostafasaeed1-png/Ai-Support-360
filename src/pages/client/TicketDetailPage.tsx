@@ -93,6 +93,9 @@ export default function TicketDetailPage() {
 
   return (
     <div className="space-y-5">
+      {/* ─── Breadcrumb Tracing ─── */}
+      {ticket.parent_ticket_id && <TicketBreadcrumbs ticketId={ticket.id} />}
+
       {/* ─── Header ─── */}
       <div className="flex items-start gap-3">
         <Link to={backPath}>
