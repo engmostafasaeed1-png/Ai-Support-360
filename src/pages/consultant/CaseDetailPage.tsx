@@ -98,7 +98,25 @@ export default function CaseDetailPage() {
     enabled: !!ticket?.client_id,
   });
 
-  const { data: sessions } = useQuery({
+  // Check NDA status for this client
+  const { data: ndaStatus } = useQuery({
+    queryKey: ['case-nda-status', consultantData?.id, ticket?.client_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('nda_agreements')
+        .select('id, revoked_at')
+        .eq('consultant_id', consultantData!.id)
+        .eq('client_id', ticket!.client_id)
+        .is('revoked_at', null)
+        .limit(1)
+        .maybeSingle();
+      return { signed: !!data };
+    },
+    enabled: !!consultantData?.id && !!ticket?.client_id,
+  });
+
+  const ndaSigned = ndaStatus?.signed ?? false;
+
     queryKey: ['case-sessions', caseId],
     queryFn: async () => {
       const { data, error } = await supabase
