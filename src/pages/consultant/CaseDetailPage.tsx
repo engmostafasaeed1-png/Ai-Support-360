@@ -117,6 +117,7 @@ export default function CaseDetailPage() {
 
   const ndaSigned = ndaStatus?.signed ?? false;
 
+  const { data: sessions } = useQuery({
     queryKey: ['case-sessions', caseId],
     queryFn: async () => {
       const { data, error } = await supabase
