@@ -163,6 +163,13 @@ export default function TicketDetailPage() {
         </div>
       </div>
 
+      {/* ─── Status Stepper ─── */}
+      <Card className="rounded-2xl border-border/50">
+        <CardContent className="p-3">
+          <TicketStatusStepper currentStatus={ticket.status} />
+        </CardContent>
+      </Card>
+
       {/* ─── Info Cards ─── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <InfoCard icon={Tag} label="SAP Module" value={ticket.sap_module} />
