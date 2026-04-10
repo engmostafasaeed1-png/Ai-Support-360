@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -6,15 +6,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { format, addMinutes, setHours, setMinutes } from 'date-fns';
 import {
   CalendarDays, Clock, Video, MessageSquare, Monitor, Bell,
-  Loader2, CheckCircle2, Globe,
+  Loader2, CheckCircle2, X, UserPlus, Users, Mail, Search,
 } from 'lucide-react';
 
 interface Props {
@@ -26,6 +29,20 @@ interface Props {
   consultantId: string | null;
   consultantName?: string;
 }
+
+interface ConsultantOption {
+  id: string;
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  isAssigned?: boolean;
+}
+
+interface ExternalInvitee {
+  email: string;
+}
+
+type InviteeSource = 'assigned' | 'all' | 'external';
 
 const SESSION_TYPES = [
   { value: 'video', icon: Video, label: 'Video Call' },
@@ -80,23 +97,139 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const handleSchedule = async () => {
-    if (!date) {
-      toast.error('Please select a date');
+  // Consultant selection state
+  const [inviteeSource, setInviteeSource] = useState<InviteeSource>('assigned');
+  const [selectedConsultantIds, setSelectedConsultantIds] = useState<string[]>([]);
+  const [externalEmails, setExternalEmails] = useState<ExternalInvitee[]>([]);
+  const [externalInput, setExternalInput] = useState('');
+  const [consultantSearch, setConsultantSearch] = useState('');
+
+  // Pre-select assigned consultant
+  useEffect(() => {
+    if (consultantId && inviteeSource === 'assigned') {
+      setSelectedConsultantIds([consultantId]);
+    }
+  }, [consultantId, inviteeSource]);
+
+  // Fetch assigned consultants for this ticket
+  const { data: assignedConsultants = [] } = useQuery({
+    queryKey: ['ticket-assigned-consultants', ticketId, consultantId],
+    queryFn: async () => {
+      if (!consultantId) return [];
+
+      const { data: consultants } = await supabase
+        .from('consultants')
+        .select('id, user_id')
+        .eq('id', consultantId);
+
+      if (!consultants?.length) return [];
+
+      const userIds = consultants.map(c => c.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', userIds);
+
+      return consultants.map(c => {
+        const p = profiles?.find(pr => pr.user_id === c.user_id);
+        return {
+          id: c.id,
+          user_id: c.user_id,
+          display_name: p?.display_name || 'Consultant',
+          avatar_url: p?.avatar_url,
+          isAssigned: true,
+        } as ConsultantOption;
+      });
+    },
+    enabled: open,
+  });
+
+  // Fetch all consultants
+  const { data: allConsultants = [] } = useQuery({
+    queryKey: ['all-consultants-for-meeting'],
+    queryFn: async () => {
+      const { data: consultants } = await supabase
+        .from('consultants')
+        .select('id, user_id')
+        .eq('verification_status', 'verified')
+        .limit(100);
+
+      if (!consultants?.length) return [];
+
+      const userIds = consultants.map(c => c.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', userIds);
+
+      return consultants.map(c => {
+        const p = profiles?.find(pr => pr.user_id === c.user_id);
+        return {
+          id: c.id,
+          user_id: c.user_id,
+          display_name: p?.display_name || 'Consultant',
+          avatar_url: p?.avatar_url,
+          isAssigned: c.id === consultantId,
+        } as ConsultantOption;
+      });
+    },
+    enabled: open && inviteeSource === 'all',
+  });
+
+  const displayedConsultants = inviteeSource === 'assigned' ? assignedConsultants : allConsultants;
+  const filteredConsultants = displayedConsultants.filter(c =>
+    c.display_name.toLowerCase().includes(consultantSearch.toLowerCase())
+  );
+
+  const toggleConsultant = (id: string) => {
+    setSelectedConsultantIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const addExternalEmail = () => {
+    const email = externalInput.trim();
+    if (!email) return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Invalid email address');
       return;
     }
-    setSaving(true);
+    if (externalEmails.some(e => e.email === email)) {
+      toast.error('Email already added');
+      return;
+    }
+    setExternalEmails(prev => [...prev, { email }]);
+    setExternalInput('');
+  };
 
+  const removeExternalEmail = (email: string) => {
+    setExternalEmails(prev => prev.filter(e => e.email !== email));
+  };
+
+  const selectedConsultantNames = displayedConsultants
+    .filter(c => selectedConsultantIds.includes(c.id))
+    .map(c => c.display_name);
+
+  const totalInvitees = selectedConsultantIds.length + externalEmails.length;
+
+  const handleSchedule = async () => {
+    if (!date) { toast.error('Please select a date'); return; }
+    if (totalInvitees === 0) { toast.error('Please select at least one participant'); return; }
+
+    setSaving(true);
     const [h, m] = time.split(':').map(Number);
     const scheduledAt = setMinutes(setHours(date, h), m);
     const sessionId = crypto.randomUUID();
     const meetingUrl = generateMeetingUrl(platform, sessionId);
 
+    // Create session for first selected consultant (primary)
+    const primaryConsultantId = selectedConsultantIds[0] || null;
     const { error } = await supabase.from('sessions').insert({
       id: sessionId,
       ticket_id: ticketId,
       client_id: clientId,
-      consultant_id: consultantId,
+      consultant_id: primaryConsultantId,
       session_type: sessionType as any,
       video_platform: platform,
       scheduled_at: scheduledAt.toISOString(),
@@ -110,32 +243,38 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
     if (error) {
       toast.error('Failed to schedule meeting');
       console.error(error);
-    } else {
-      // Send notification to consultant
-      if (consultantId) {
-        const { data: consultant } = await supabase
-          .from('consultants')
-          .select('user_id')
-          .eq('id', consultantId)
-          .maybeSingle();
-        if (consultant) {
-          await supabase.from('notifications').insert({
-            user_id: consultant.user_id,
-            title: 'Meeting Scheduled',
-            body: `A ${sessionType} meeting for "${ticketTitle}" is scheduled on ${format(scheduledAt, 'MMM d, yyyy')} at ${format(scheduledAt, 'h:mm a')}. Reminder: ${REMINDER_OPTIONS.find(r => r.value === reminder)?.label || '15 min before'}.`,
-            type: 'session',
-            link: `/consultant/cases/${ticketId}`,
-          });
-        }
-      }
-
-      // Generate .ics calendar download
-      downloadICS(scheduledAt, parseInt(duration), ticketTitle, meetingUrl, consultantName);
-
-      toast.success('Meeting scheduled! Calendar invite downloaded.');
-      queryClient.invalidateQueries({ queryKey: ['ticket-sessions', ticketId] });
-      onOpenChange(false);
+      setSaving(false);
+      return;
     }
+
+    // Notify all selected consultants
+    for (const cId of selectedConsultantIds) {
+      const { data: consultant } = await supabase
+        .from('consultants')
+        .select('user_id')
+        .eq('id', cId)
+        .maybeSingle();
+      if (consultant) {
+        await supabase.from('notifications').insert({
+          user_id: consultant.user_id,
+          title: 'Meeting Invitation',
+          body: `You're invited to a ${sessionType} meeting for "${ticketTitle}" on ${format(scheduledAt, 'MMM d, yyyy')} at ${format(scheduledAt, 'h:mm a')}. Join: ${meetingUrl}`,
+          type: 'session',
+          link: `/consultant/cases/${ticketId}`,
+        });
+      }
+    }
+
+    // Download .ics
+    downloadICS(scheduledAt, parseInt(duration), ticketTitle, meetingUrl, selectedConsultantNames, externalEmails.map(e => e.email));
+
+    const inviteeSummary = [
+      ...selectedConsultantNames,
+      ...externalEmails.map(e => e.email),
+    ];
+    toast.success(`Meeting scheduled with ${inviteeSummary.length} participant(s)! Calendar invite downloaded.`);
+    queryClient.invalidateQueries({ queryKey: ['ticket-sessions', ticketId] });
+    onOpenChange(false);
     setSaving(false);
   };
 
@@ -148,11 +287,123 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
             Schedule Meeting
           </DialogTitle>
           <DialogDescription>
-            {consultantName ? `Meeting with ${consultantName}` : 'Schedule a session for this ticket'}
+            Invite consultants or external participants to a session
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {/* ── Participant Selection ── */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium flex items-center gap-1">
+              <Users className="w-3.5 h-3.5" /> Participants
+            </Label>
+            <RadioGroup value={inviteeSource} onValueChange={(v) => { setInviteeSource(v as InviteeSource); setSelectedConsultantIds([]); setExternalEmails([]); }} className="flex gap-2">
+              {[
+                { value: 'assigned', label: 'Assigned', icon: CheckCircle2 },
+                { value: 'all', label: 'All Consultants', icon: Users },
+                { value: 'external', label: 'External', icon: Mail },
+              ].map(opt => (
+                <Label
+                  key={opt.value}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border cursor-pointer transition-all text-xs ${
+                    inviteeSource === opt.value ? 'border-accent bg-accent/5 text-accent' : 'border-border/50'
+                  }`}
+                >
+                  <RadioGroupItem value={opt.value} className="sr-only" />
+                  <opt.icon className="w-3.5 h-3.5" />
+                  {opt.label}
+                </Label>
+              ))}
+            </RadioGroup>
+          </div>
+
+          {/* Consultant list (assigned or all) */}
+          {(inviteeSource === 'assigned' || inviteeSource === 'all') && (
+            <div className="space-y-2">
+              {inviteeSource === 'all' && (
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search consultants..."
+                    value={consultantSearch}
+                    onChange={e => setConsultantSearch(e.target.value)}
+                    className="pl-8 h-8 text-xs"
+                  />
+                </div>
+              )}
+              <ScrollArea className="max-h-36 rounded-lg border border-border/50">
+                <div className="p-2 space-y-1">
+                  {filteredConsultants.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-3">No consultants found</p>
+                  ) : filteredConsultants.map(c => (
+                    <label
+                      key={c.id}
+                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors text-xs ${
+                        selectedConsultantIds.includes(c.id) ? 'bg-accent/5' : ''
+                      }`}
+                    >
+                      <Checkbox
+                        checked={selectedConsultantIds.includes(c.id)}
+                        onCheckedChange={() => toggleConsultant(c.id)}
+                      />
+                      <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center text-[10px] font-semibold text-accent">
+                        {c.display_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                      </div>
+                      <span className="flex-1 truncate">{c.display_name}</span>
+                      {c.isAssigned && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Primary</Badge>}
+                    </label>
+                  ))}
+                </div>
+              </ScrollArea>
+              {selectedConsultantIds.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {selectedConsultantNames.map(name => (
+                    <Badge key={name} variant="secondary" className="text-[10px] gap-1">
+                      {name}
+                      <X className="w-3 h-3 cursor-pointer" onClick={() => {
+                        const c = displayedConsultants.find(c => c.display_name === name);
+                        if (c) toggleConsultant(c.id);
+                      }} />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* External email input */}
+          {inviteeSource === 'external' && (
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter email address..."
+                  value={externalInput}
+                  onChange={e => setExternalInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addExternalEmail())}
+                  className="h-8 text-xs flex-1"
+                  type="email"
+                />
+                <Button size="sm" variant="outline" onClick={addExternalEmail} className="h-8 text-xs gap-1">
+                  <UserPlus className="w-3.5 h-3.5" /> Add
+                </Button>
+              </div>
+              {externalEmails.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {externalEmails.map(e => (
+                    <Badge key={e.email} variant="secondary" className="text-[10px] gap-1">
+                      <Mail className="w-3 h-3" />
+                      {e.email}
+                      <X className="w-3 h-3 cursor-pointer" onClick={() => removeExternalEmail(e.email)} />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground">
+                External participants will receive a calendar invitation via the downloaded .ics file
+              </p>
+            </div>
+          )}
+
           {/* Session Type */}
           <div className="space-y-2">
             <Label className="text-xs font-medium">Session Type</Label>
@@ -172,14 +423,12 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
             </RadioGroup>
           </div>
 
-          {/* Platform (for video/screen_share) */}
+          {/* Platform */}
           {(sessionType === 'video' || sessionType === 'screen_share') && (
             <div className="space-y-2">
               <Label className="text-xs font-medium">Platform</Label>
               <Select value={platform} onValueChange={setPlatform}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {PLATFORMS.map(p => (
                     <SelectItem key={p.value} value={p.value} className="text-xs">
@@ -192,7 +441,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
             </div>
           )}
 
-          {/* Date Picker */}
+          {/* Date */}
           <div className="space-y-2">
             <Label className="text-xs font-medium">Date</Label>
             <Calendar
@@ -211,9 +460,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
                 <Clock className="w-3.5 h-3.5" /> Time
               </Label>
               <Select value={time} onValueChange={setTime}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent className="max-h-48">
                   {TIME_SLOTS.map(s => (
                     <SelectItem key={s.value} value={s.value} className="text-xs">{s.label}</SelectItem>
@@ -224,9 +471,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
             <div className="space-y-2">
               <Label className="text-xs font-medium">Duration</Label>
               <Select value={duration} onValueChange={setDuration}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="30" className="text-xs">30 min</SelectItem>
                   <SelectItem value="60" className="text-xs">1 hour</SelectItem>
@@ -243,9 +488,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
               <Bell className="w-3.5 h-3.5" /> Reminder
             </Label>
             <Select value={reminder} onValueChange={setReminder}>
-              <SelectTrigger className="h-9 text-xs">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {REMINDER_OPTIONS.map(r => (
                   <SelectItem key={r.value} value={r.value} className="text-xs">{r.label}</SelectItem>
@@ -266,7 +509,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
           </div>
 
           {/* Summary */}
-          {date && (
+          {date && totalInvitees > 0 && (
             <Card className="rounded-xl border-accent/20 bg-accent/5">
               <CardContent className="p-3">
                 <div className="flex items-center gap-2 mb-1.5">
@@ -279,8 +522,20 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
                   <span>Type: {SESSION_TYPES.find(s => s.value === sessionType)?.label}</span>
                   <span>Duration: {duration} min</span>
                   <span>Reminder: {REMINDER_OPTIONS.find(r => r.value === reminder)?.label}</span>
-                  {consultantName && <span>With: {consultantName}</span>}
+                  <span>Participants: {totalInvitees}</span>
                 </div>
+                {(selectedConsultantNames.length > 0 || externalEmails.length > 0) && (
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {selectedConsultantNames.map(n => (
+                      <Badge key={n} variant="secondary" className="text-[10px]">{n}</Badge>
+                    ))}
+                    {externalEmails.map(e => (
+                      <Badge key={e.email} variant="outline" className="text-[10px] gap-1">
+                        <Mail className="w-2.5 h-2.5" />{e.email}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -288,7 +543,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
 
         <DialogFooter className="gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button className="gradient-primary border-0 gap-2" onClick={handleSchedule} disabled={saving || !date}>
+          <Button className="gradient-primary border-0 gap-2" onClick={handleSchedule} disabled={saving || !date || totalInvitees === 0}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
             Schedule Meeting
           </Button>
@@ -298,20 +553,28 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
   );
 }
 
-/** Generate and download a .ics calendar file */
-function downloadICS(start: Date, durationMin: number, title: string, url: string, attendee?: string) {
+/** Generate and download a .ics calendar file with attendees */
+function downloadICS(start: Date, durationMin: number, title: string, url: string, attendees: string[], externalEmails: string[]) {
   const end = addMinutes(start, durationMin);
   const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+  const attendeeLines = [
+    ...attendees.map(name => `ATTENDEE;CN=${name};ROLE=REQ-PARTICIPANT:MAILTO:noreply@qurtuba.com`),
+    ...externalEmails.map(email => `ATTENDEE;ROLE=REQ-PARTICIPANT;RSVP=TRUE:MAILTO:${email}`),
+  ];
+
   const ics = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//Qurtuba//EN',
+    'METHOD:REQUEST',
     'BEGIN:VEVENT',
     `DTSTART:${fmt(start)}`,
     `DTEND:${fmt(end)}`,
     `SUMMARY:${title}`,
-    `DESCRIPTION:Meeting${attendee ? ' with ' + attendee : ''}\\nJoin: ${url}`,
+    `DESCRIPTION:Meeting with ${[...attendees, ...externalEmails].join(', ')}\\nJoin: ${url}`,
     `URL:${url}`,
+    ...attendeeLines,
     'BEGIN:VALARM',
     'TRIGGER:-PT15M',
     'ACTION:DISPLAY',
