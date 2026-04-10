@@ -32,6 +32,7 @@ import TicketTagsWatchers from '@/components/client/TicketTagsWatchers';
 import TicketSLATracker from '@/components/client/TicketSLATracker';
 import TicketCSAT from '@/components/client/TicketCSAT';
 import TicketLinks from '@/components/client/TicketLinks';
+import TicketInterview from '@/components/client/TicketInterview';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
