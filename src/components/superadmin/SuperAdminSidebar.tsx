@@ -41,11 +41,11 @@ export default function SuperAdminSidebar() {
         <div className="p-3 flex items-center gap-2.5 border-b border-sidebar-border/30">
           <Link to="/super-admin" className="flex items-center gap-2.5 group">
             <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
-              <img src={logo} alt="AI SAP Support Hub" width={48} height={48} className="w-full h-full object-contain" />
+              <img src={logo} alt="AI SAP Support Now" width={48} height={48} className="w-full h-full object-contain" />
             </div>
             {!collapsed && (
               <div className="min-w-0">
-                <span className="font-bold text-sm text-sidebar-foreground block leading-tight">AI SAP Support Hub</span>
+                <span className="font-bold text-sm text-sidebar-foreground block leading-tight">AI SAP Support Now</span>
                 <span className="text-[10px] text-sidebar-foreground/40 leading-tight">{t('super_admin.title', 'Super Admin')}</span>
               </div>
             )}

@@ -30,7 +30,7 @@ export default function ReferralsPage() {
   };
 
   const shareWhatsApp = () => {
-    const text = encodeURIComponent(`Join me on AI SAP Support Hub — the smartest SAP support platform! Use my referral link and get a $15 welcome bonus: ${link}`);
+    const text = encodeURIComponent(`Join me on AI SAP Support Now — the smartest SAP support platform! Use my referral link and get a $15 welcome bonus: ${link}`);
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
@@ -40,7 +40,7 @@ export default function ReferralsPage() {
   };
 
   const shareTwitter = () => {
-    const text = encodeURIComponent(`Join AI SAP Support Hub — the smartest SAP support platform! Get a $15 welcome bonus with my referral: ${link}`);
+    const text = encodeURIComponent(`Join AI SAP Support Now — the smartest SAP support platform! Get a $15 welcome bonus with my referral: ${link}`);
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
   };
 
