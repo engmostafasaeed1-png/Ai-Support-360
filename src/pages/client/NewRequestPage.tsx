@@ -500,6 +500,74 @@ export default function NewRequestPage() {
                 )}
               </div>
             </div>
+
+            {/* Link Existing Tickets */}
+            <div>
+              <label className="text-sm font-medium mb-1.5 block flex items-center gap-1.5">
+                <Link2 className="w-3.5 h-3.5" /> Link to Existing Tickets
+              </label>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Select value={linkType} onValueChange={setLinkType}>
+                    <SelectTrigger className="w-[140px] rounded-xl h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="related">Related to</SelectItem>
+                      <SelectItem value="blocks">Blocks</SelectItem>
+                      <SelectItem value="blocked_by">Blocked by</SelectItem>
+                      <SelectItem value="duplicate">Duplicate of</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="relative flex-1">
+                    <Search className="w-3.5 h-3.5 absolute start-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={linkSearch}
+                      onChange={e => setLinkSearch(e.target.value)}
+                      placeholder="Search tickets to link..."
+                      className="ps-8 rounded-xl h-9 text-xs"
+                    />
+                  </div>
+                </div>
+                {linkSearchResults.length > 0 && linkSearch.length >= 2 && (
+                  <div className="border border-border/50 rounded-xl overflow-hidden">
+                    {linkSearchResults.map((t: any) => (
+                      <button
+                        key={t.id}
+                        onClick={() => {
+                          setLinkedTickets(prev => [...prev, { id: t.id, title: t.title, linkType }]);
+                          setLinkSearch('');
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted/30 transition-colors border-b border-border/20 last:border-0"
+                      >
+                        <p className="font-medium text-foreground truncate">{t.title}</p>
+                        <div className="flex gap-1.5 mt-0.5">
+                          <Badge variant="secondary" className="text-[9px]">{t.sap_module}</Badge>
+                          <Badge variant="secondary" className="text-[9px]">{t.status?.replace(/_/g, ' ')}</Badge>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {linkedTickets.length > 0 && (
+                  <div className="space-y-1.5">
+                    {linkedTickets.map((link, i) => (
+                      <div key={link.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/40 text-sm">
+                        <Link2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <Badge variant="secondary" className="text-[9px] shrink-0">{link.linkType.replace(/_/g, ' ')}</Badge>
+                        <span className="truncate flex-1 text-foreground">{link.title}</span>
+                        <button
+                          type="button"
+                          onClick={() => setLinkedTickets(prev => prev.filter((_, idx) => idx !== i))}
+                          className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             {form.description.length > 15 && !aiCategorization && (
               <Button variant="outline" size="sm" onClick={runAiCategorize} disabled={aiLoading === 'categorize'} className="gap-1.5">
                 {aiLoading === 'categorize' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
