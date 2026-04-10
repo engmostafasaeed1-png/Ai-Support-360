@@ -243,7 +243,7 @@ export default function NewRequestPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error(t('onboarding.error_auth')); return; }
 
-      const { error } = await supabase.from('tickets').insert({
+      const { data: ticketData, error } = await supabase.from('tickets').insert({
         client_id: user.id,
         tenant_id: tenant?.id || null,
         sap_module: form.sap_module,
@@ -254,9 +254,27 @@ export default function NewRequestPage() {
         preferred_language: form.preferred_language,
         ai_suggested_category: aiCategorization?.category || null,
         ai_suggested_priority: aiCategorization?.suggested_priority || null,
-      });
+      }).select('id').single();
 
       if (error) throw error;
+
+      // Upload attached files
+      if (ticketData && attachedFiles.length > 0) {
+        for (const file of attachedFiles) {
+          const storagePath = `${ticketData.id}/${user.id}/${Date.now()}_${file.name}`;
+          await supabase.storage.from('ticket-documents').upload(storagePath, file);
+          await supabase.from('ticket_documents').insert({
+            ticket_id: ticketData.id,
+            uploaded_by: user.id,
+            file_name: file.name,
+            file_url: storagePath,
+            file_size: file.size,
+            mime_type: file.type || null,
+            version: 1,
+          } as any);
+        }
+      }
+
       setSubmitted(true);
       toast.success(t('ticket_create.submit_success'));
     } catch (err) {
