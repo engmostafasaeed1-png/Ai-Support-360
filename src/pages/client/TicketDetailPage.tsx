@@ -92,6 +92,7 @@ export default function TicketDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [matchOpen, setMatchOpen] = useState(false);
   const [bidOpen, setBidOpen] = useState(false);
+  const [meetingOpen, setMeetingOpen] = useState(false);
 
   if (isLoading) {
     return (
