@@ -80,7 +80,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (clientProfile) {
       setTimezone(clientProfile.timezone || 'Asia/Riyadh');
-      setCommunicationPreference((clientProfile as any).communication_preference || 'email');
+      setCommunicationPreference(clientProfile.communication_preference || 'email');
     }
   }, [clientProfile]);
 
@@ -111,7 +111,7 @@ export default function SettingsPage() {
         communication_preference: communicationPreference,
         preferred_language: preferredLanguage,
         phone: phone.trim() || null,
-      } as any);
+      });
 
       toast.success(t('settings_page.saved', 'Profile updated successfully!'));
     } catch (err: any) {

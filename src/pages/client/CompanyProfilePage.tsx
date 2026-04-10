@@ -76,25 +76,25 @@ export default function CompanyProfilePage() {
       setCompanyName(profile.company_name || '');
       setCompanySize(profile.company_size || '');
       setIndustry(profile.industry || '');
-      setDescription((profile as any).company_description || '');
-      setWebsite((profile as any).company_website || '');
-      setHeadquarters((profile as any).headquarters || '');
+      setDescription(profile.company_description || '');
+      setWebsite(profile.company_website || '');
+      setHeadquarters(profile.headquarters || '');
       setSapLandscape(profile.sap_landscape || '');
-      setSapHostingType((profile as any).sap_hosting_type || 'on-prem');
-      setSapSystemIds((profile as any).sap_system_ids || []);
-      setContacts(((profile as any).key_contacts || []) as Contact[]);
-      setLogoUrl((profile as any).company_logo_url || null);
-      setSapProduct((profile as any).sap_product || '');
-      setSapVersion((profile as any).sap_version || '');
-      setSapDatabaseType((profile as any).sap_database_type || '');
-      setSapOsType((profile as any).sap_os_type || '');
-      setSapSupportPack((profile as any).sap_support_pack || '');
-      setSapGoLiveDate((profile as any).sap_go_live_date || '');
-      setSapUserCount((profile as any).sap_user_count ?? '');
-      setSapCustomDevCount((profile as any).sap_custom_dev_count ?? '');
-      setSapInterfaces((profile as any).sap_interfaces || []);
-      setSapThirdPartyTools((profile as any).sap_third_party_tools || []);
-      setSapLandscapeNotes((profile as any).sap_landscape_notes || '');
+      setSapHostingType(profile.sap_hosting_type || 'on-prem');
+      setSapSystemIds(profile.sap_system_ids || []);
+      setContacts((profile.key_contacts || []) as Contact[]);
+      setLogoUrl(profile.company_logo_url || null);
+      setSapProduct(profile.sap_product || '');
+      setSapVersion(profile.sap_version || '');
+      setSapDatabaseType(profile.sap_database_type || '');
+      setSapOsType(profile.sap_os_type || '');
+      setSapSupportPack(profile.sap_support_pack || '');
+      setSapGoLiveDate(profile.sap_go_live_date || '');
+      setSapUserCount(profile.sap_user_count ?? '');
+      setSapCustomDevCount(profile.sap_custom_dev_count ?? '');
+      setSapInterfaces(profile.sap_interfaces || []);
+      setSapThirdPartyTools(profile.sap_third_party_tools || []);
+      setSapLandscapeNotes(profile.sap_landscape_notes || '');
       setLoaded(true);
     }
   }, [profile, loaded]);
@@ -123,7 +123,7 @@ export default function CompanyProfilePage() {
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
       const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
       setLogoUrl(newUrl);
-      updateProfile.mutate({ company_logo_url: newUrl } as any);
+      updateProfile.mutate({ company_logo_url: newUrl });
       toast.success('Logo uploaded');
     } catch (err: any) {
       toast.error('Upload failed', { description: err.message });
@@ -160,7 +160,7 @@ export default function CompanyProfilePage() {
       sap_interfaces: sapInterfaces,
       sap_third_party_tools: sapThirdPartyTools,
       sap_landscape_notes: sapLandscapeNotes.trim() || null,
-    } as any);
+    });
   };
 
   const addSystemId = () => {
