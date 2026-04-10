@@ -106,6 +106,12 @@ import ContractsPage from "./pages/client/ContractsPage.tsx";
 import SupportPage from "./pages/client/SupportPage.tsx";
 import ProjectManagementTicketsPage from "./pages/client/ProjectManagementTicketsPage.tsx";
 import SolutionArchitecturePage from "./pages/client/SolutionArchitecturePage.tsx";
+import ChangeManagementPage from "./pages/client/ChangeManagementPage.tsx";
+import ProblemManagementPage from "./pages/client/ProblemManagementPage.tsx";
+import ServiceCatalogPage from "./pages/client/ServiceCatalogPage.tsx";
+import MajorIncidentsPage from "./pages/client/MajorIncidentsPage.tsx";
+import PlaybooksPage from "./pages/client/PlaybooksPage.tsx";
+import OnCallSchedulePage from "./pages/admin/OnCallSchedulePage.tsx";
 import LandingEditorPage from "./pages/admin/LandingEditorPage.tsx";
 import AdminConsolePage from "./pages/admin/AdminConsolePage.tsx";
 import AdminVMwareSettingsPage from "./pages/admin/VMwareSettingsPage.tsx";
@@ -195,6 +201,11 @@ const App = () => (
               <Route path="support" element={<SupportPage />} />
               <Route path="pm-tickets" element={<ProjectManagementTicketsPage />} />
               <Route path="solution-architecture" element={<SolutionArchitecturePage />} />
+              <Route path="changes" element={<ChangeManagementPage />} />
+              <Route path="problems" element={<ProblemManagementPage />} />
+              <Route path="catalog" element={<ServiceCatalogPage />} />
+              <Route path="major-incidents" element={<MajorIncidentsPage />} />
+              <Route path="playbooks" element={<PlaybooksPage />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminConsolePage />} />
@@ -237,6 +248,7 @@ const App = () => (
               <Route path="landing-editor" element={<LandingEditorPage />} />
               <Route path="interview-training" element={<InterviewTrainingPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="oncall" element={<OnCallSchedulePage />} />
             </Route>
             <Route path="/super-admin" element={<ProtectedRoute requiredRole="admin"><SuperAdminLayout /></ProtectedRoute>}>
               <Route index element={<SuperAdminOverview />} />
