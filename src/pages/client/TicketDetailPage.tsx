@@ -35,6 +35,8 @@ import TicketSLATracker from '@/components/client/TicketSLATracker';
 import TicketCSAT from '@/components/client/TicketCSAT';
 import TicketLinks from '@/components/client/TicketLinks';
 import TicketInterview from '@/components/client/TicketInterview';
+import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
+import EmergencyContactPanel from '@/components/client/EmergencyContactPanel';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
