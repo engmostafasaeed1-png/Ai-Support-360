@@ -16,6 +16,7 @@ import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/u
 import TicketDocuments from '@/components/client/TicketDocuments';
 import ChildTickets, { TicketBreadcrumbs } from '@/components/client/ChildTickets';
 import TicketHierarchyTree from '@/components/client/TicketHierarchyTree';
+import TicketAssignments from '@/components/client/TicketAssignments';
 import TicketAcceptors from '@/components/client/TicketAcceptors';
 import TicketBids from '@/components/client/TicketBids';
 import TicketTimeline from '@/components/client/TicketTimeline';
