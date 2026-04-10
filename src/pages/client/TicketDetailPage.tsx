@@ -198,6 +198,16 @@ export default function TicketDetailPage() {
         <TicketBids ticketId={ticket.id} />
       </SectionWrapper>
 
+      {/* ─── Child Tickets (Sub-tickets) ─── */}
+      <SectionWrapper icon={GitBranch} title="Sub-Tickets" defaultOpen>
+        <ChildTickets
+          ticketId={ticket.id}
+          ticketSapModule={ticket.sap_module}
+          ticketClientId={ticket.client_id}
+          tenantId={(ticket as any).tenant_id}
+        />
+      </SectionWrapper>
+
       {/* ─── Sessions Section ─── */}
       <SectionWrapper icon={Video} title="Sessions" count={sessions?.length} defaultOpen>
         <SessionsList sessions={sessions || []} isLoading={sessionsLoading} />
