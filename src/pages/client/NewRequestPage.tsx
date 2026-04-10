@@ -92,6 +92,8 @@ export default function NewRequestPage() {
     urgency: 'medium', preferred_session: 'video', preferred_language: 'en',
   });
   const [submitted, setSubmitted] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedModel, setSelectedModel] = useState<AIModelId>(DEFAULT_MODEL);
   const [manualPickOpen, setManualPickOpen] = useState(false);
   const [manualSearch, setManualSearch] = useState('');
