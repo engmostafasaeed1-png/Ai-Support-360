@@ -377,6 +377,7 @@ export default function TicketDetailPage() {
       <RequestBidDialog
         ticketId={ticket.id}
         ticketTitle={ticket.title}
+        ticketModule={ticket.sap_module}
         isOpenForBids={ticket.open_for_bids || false}
         open={bidOpen}
         onOpenChange={setBidOpen}
