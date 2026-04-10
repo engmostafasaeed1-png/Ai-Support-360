@@ -1,9 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { Phone, MessageSquare, AlertTriangle } from 'lucide-react';
+import { Phone, MessageSquare, AlertTriangle, DollarSign, Zap, Clock, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Props {
@@ -14,6 +15,13 @@ interface Props {
   urgency: string;
 }
 
+const EMERGENCY_PRICING = {
+  critical: { multiplier: 2.0, label: '2× Standard Rate', responseTime: '< 30 min', surcharge: '100%' },
+  high:     { multiplier: 1.5, label: '1.5× Standard Rate', responseTime: '< 1 hour', surcharge: '50%' },
+  medium:   { multiplier: 1.0, label: 'Standard Rate', responseTime: '< 4 hours', surcharge: '0%' },
+  low:      { multiplier: 1.0, label: 'Standard Rate', responseTime: '< 24 hours', surcharge: '0%' },
+};
+
 function useConsultantContact(consultantId: string | null) {
   return useQuery({
     queryKey: ['consultant-contact', consultantId],
@@ -22,7 +30,7 @@ function useConsultantContact(consultantId: string | null) {
       if (!consultantId) return null;
       const { data: consultant } = await supabase
         .from('consultants')
-        .select('user_id')
+        .select('user_id, hourly_rate')
         .eq('id', consultantId)
         .maybeSingle();
       if (!consultant) return null;
@@ -32,7 +40,7 @@ function useConsultantContact(consultantId: string | null) {
         .select('display_name, phone')
         .eq('user_id', consultant.user_id)
         .maybeSingle();
-      return profile;
+      return { ...profile, hourly_rate: consultant.hourly_rate };
     },
   });
 }
@@ -40,7 +48,10 @@ function useConsultantContact(consultantId: string | null) {
 export default function EmergencyContactPanel({ consultantId, consultantName, ticketId, ticketTitle, urgency }: Props) {
   const { data: contact } = useConsultantContact(consultantId);
   const phone = (contact as any)?.phone;
+  const hourlyRate = (contact as any)?.hourly_rate || 0;
   const isEmergency = urgency === 'critical' || urgency === 'high';
+  const pricing = EMERGENCY_PRICING[urgency as keyof typeof EMERGENCY_PRICING] || EMERGENCY_PRICING.medium;
+  const emergencyRate = Math.round(hourlyRate * pricing.multiplier);
 
   if (!consultantId) return null;
 
@@ -57,34 +68,25 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
         entity_type: 'ticket',
         entity_id: ticketId,
         user_id: user.id,
-        metadata: { consultant_id: consultantId, method } as any,
+        metadata: { consultant_id: consultantId, method, urgency, rate: emergencyRate } as any,
       });
     }
   };
 
   const handleCall = () => {
-    if (!cleanPhone) {
-      toast.error('Consultant phone number not available');
-      return;
-    }
+    if (!cleanPhone) { toast.error('Consultant phone number not available'); return; }
     logContact('call');
     window.open(callUrl, '_self');
   };
 
   const handleSMS = () => {
-    if (!cleanPhone) {
-      toast.error('Consultant phone number not available');
-      return;
-    }
+    if (!cleanPhone) { toast.error('Consultant phone number not available'); return; }
     logContact('sms');
     window.open(smsUrl, '_self');
   };
 
   const handleWhatsApp = () => {
-    if (!cleanPhone) {
-      toast.error('Consultant phone number not available');
-      return;
-    }
+    if (!cleanPhone) { toast.error('Consultant phone number not available'); return; }
     logContact('whatsapp');
     window.open(whatsappUrl, '_blank');
   };
@@ -92,13 +94,11 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
   const handlePortalMessage = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !consultantId) return;
-
     const { data: consultant } = await supabase
       .from('consultants')
       .select('user_id')
       .eq('id', consultantId)
       .maybeSingle();
-
     if (consultant) {
       await supabase.from('notifications').insert({
         user_id: consultant.user_id,
@@ -114,8 +114,9 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
 
   return (
     <Card className={`rounded-2xl ${isEmergency ? 'border-red-500/30 bg-red-500/5' : 'border-border/50'}`}>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 mb-3">
+      <CardContent className="p-4 space-y-3">
+        {/* Header */}
+        <div className="flex items-center gap-2">
           <AlertTriangle className={`w-4 h-4 ${isEmergency ? 'text-red-500' : 'text-amber-500'}`} />
           <span className="text-sm font-semibold text-foreground">
             {isEmergency ? 'Emergency Contact' : 'Quick Contact'}
@@ -125,11 +126,61 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
           )}
         </div>
 
-        <p className="text-xs text-muted-foreground mb-3">
+        <p className="text-xs text-muted-foreground">
           {consultantName ? `Reach ${consultantName} directly` : 'Contact assigned consultant'}
           {isEmergency ? ' — for critical issues requiring immediate attention.' : '.'}
         </p>
 
+        {/* ─── Emergency Pricing Card ─── */}
+        <Card className={`rounded-xl ${isEmergency ? 'border-red-500/20 bg-red-500/5' : 'border-amber-500/20 bg-amber-500/5'}`}>
+          <CardContent className="p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <DollarSign className={`w-4 h-4 ${isEmergency ? 'text-red-500' : 'text-amber-500'}`} />
+              <span className="text-xs font-semibold text-foreground">Emergency Pricing</span>
+              {pricing.surcharge !== '0%' && (
+                <Badge variant="secondary" className="text-[9px] bg-red-500/15 text-red-600 ml-auto">
+                  +{pricing.surcharge} surcharge
+                </Badge>
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="text-center p-2 rounded-lg bg-background/60 border border-border/30">
+                <TrendingUp className="w-3.5 h-3.5 mx-auto text-muted-foreground mb-1" />
+                <p className="text-[10px] text-muted-foreground">Rate</p>
+                <p className="text-sm font-bold text-foreground">
+                  {hourlyRate > 0 ? `$${emergencyRate}` : '—'}
+                  <span className="text-[9px] font-normal text-muted-foreground">/hr</span>
+                </p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-background/60 border border-border/30">
+                <Clock className="w-3.5 h-3.5 mx-auto text-muted-foreground mb-1" />
+                <p className="text-[10px] text-muted-foreground">Response</p>
+                <p className="text-sm font-bold text-foreground">{pricing.responseTime}</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-background/60 border border-border/30">
+                <Zap className="w-3.5 h-3.5 mx-auto text-muted-foreground mb-1" />
+                <p className="text-[10px] text-muted-foreground">Level</p>
+                <p className="text-sm font-bold text-foreground capitalize">{urgency}</p>
+              </div>
+            </div>
+
+            {hourlyRate > 0 && pricing.multiplier > 1 && (
+              <p className="text-[10px] text-muted-foreground text-center">
+                Standard rate: ${hourlyRate}/hr → Emergency: ${emergencyRate}/hr ({pricing.label})
+              </p>
+            )}
+            {hourlyRate === 0 && (
+              <p className="text-[10px] text-muted-foreground text-center">
+                Rate not set. Contact consultant to agree on emergency pricing.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Separator className="my-1" />
+
+        {/* ─── Contact Buttons ─── */}
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="outline"
@@ -175,8 +226,8 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
         </div>
 
         {!cleanPhone && (
-          <p className="text-[10px] text-muted-foreground mt-2 text-center">
-            📞 Phone/SMS/WhatsApp requires consultant phone number in profile. Portal alert is always available.
+          <p className="text-[10px] text-muted-foreground text-center">
+            📞 Phone/SMS/WhatsApp requires consultant phone number. Portal alert is always available.
           </p>
         )}
       </CardContent>
