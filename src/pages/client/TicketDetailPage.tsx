@@ -212,6 +212,11 @@ export default function TicketDetailPage() {
         </Card>
       )}
 
+      {/* ─── Cost & Effort Plan ─── */}
+      <SectionWrapper icon={Calculator} title="Cost & Effort Plan" defaultOpen>
+        <TicketPlanApproval ticket={ticket} isClient={isClient} />
+      </SectionWrapper>
+
       {/* ─── Available Consultants (Acceptors) ─── */}
       <TicketAcceptors ticketId={ticket.id} currentConsultantId={ticket.consultant_id} />
 
