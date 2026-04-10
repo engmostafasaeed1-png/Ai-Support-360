@@ -105,13 +105,13 @@ export default function CaseDetailPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from('nda_agreements')
-        .select('id, revoked_at')
+        .select('id, revoked_at, signed_at, signature_data, signature_type, nda_content')
         .eq('consultant_id', consultantData!.id)
         .eq('client_id', ticket!.client_id)
         .is('revoked_at', null)
         .limit(1)
         .maybeSingle();
-      return { signed: !!data };
+      return data ? { signed: true, ...data } : { signed: false };
     },
     enabled: !!consultantData?.id && !!ticket?.client_id,
   });
