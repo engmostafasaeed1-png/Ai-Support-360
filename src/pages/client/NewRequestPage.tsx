@@ -296,6 +296,18 @@ export default function NewRequestPage() {
         }
       }
 
+      // Create ticket links
+      if (ticketData && linkedTickets.length > 0) {
+        for (const link of linkedTickets) {
+          await supabase.from('ticket_links').insert({
+            source_ticket_id: ticketData.id,
+            target_ticket_id: link.id,
+            link_type: link.linkType,
+            created_by: user.id,
+          } as any);
+        }
+      }
+
       setSubmitted(true);
       toast.success(t('ticket_create.submit_success'));
     } catch (err) {
