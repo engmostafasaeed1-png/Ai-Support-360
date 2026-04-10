@@ -529,6 +529,20 @@ export default function CaseDetailPage() {
           )}
         </CardContent>
       </Card>
+      {/* NDA Signing Modal */}
+      {consultantData?.id && ticket?.client_id && (
+        <NDASigningModal
+          open={ndaModalOpen}
+          onOpenChange={setNdaModalOpen}
+          consultantId={consultantData.id}
+          clientId={ticket.client_id}
+          clientName={clientProfile?.company_name || 'Client'}
+          onSigned={() => {
+            queryClient.invalidateQueries({ queryKey: ['case-nda-status'] });
+            setNdaModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
