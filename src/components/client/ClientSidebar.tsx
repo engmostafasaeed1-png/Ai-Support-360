@@ -56,7 +56,6 @@ const navGroups = [
       { key: 'major_incidents', icon: Siren, path: '/client/major-incidents' },
       { key: 'playbooks', icon: BookMarked, path: '/client/playbooks' },
     ],
-    ],
   },
   {
     labelKey: 'sidebar.finance',
