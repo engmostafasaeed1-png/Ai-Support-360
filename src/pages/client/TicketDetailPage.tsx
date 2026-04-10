@@ -326,6 +326,9 @@ export default function TicketDetailPage() {
       {/* ─── CSAT Satisfaction ─── */}
       <SectionWrapper icon={Star} title="Satisfaction" defaultOpen>
         <TicketCSAT ticketId={ticket.id} ticketTitle={ticket.title} ticketStatus={ticket.status} clientId={ticket.client_id} consultantId={ticket.consultant_id} />
+      </SectionWrapper>
+
+      {/* ─── Documents ─── */}
       <SectionWrapper icon={FileText} title="Documents" defaultOpen>
         <TicketDocuments ticketId={ticket.id} />
       </SectionWrapper>
