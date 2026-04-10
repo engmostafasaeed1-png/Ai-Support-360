@@ -71,8 +71,7 @@ export default function TicketDetailPage() {
   const { t } = useTranslation();
   const { ticketId } = useParams<{ ticketId: string }>();
   const location = useLocation();
-  const isAdmin = location.pathname.startsWith('/admin');
-  const isConsultant = location.pathname.startsWith('/consultant');
+  const isClient = !isAdmin && !isConsultant;
   const backPath = isAdmin ? '/admin/tickets' : isConsultant ? '/consultant/open-tickets' : '/client/tickets';
   const { data: ticket, isLoading } = useTicketDetail(ticketId);
   const { data: sessions, isLoading: sessionsLoading } = useTicketSessions(ticketId);
