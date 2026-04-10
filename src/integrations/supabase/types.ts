@@ -2803,6 +2803,7 @@ export type Database = {
         Row: {
           ai_action_items: string[] | null
           ai_summary: string | null
+          calendar_event_id: string | null
           client_id: string
           consultant_id: string | null
           created_at: string
@@ -2812,6 +2813,8 @@ export type Database = {
           meeting_url: string | null
           notes: string | null
           recording_url: string | null
+          reminder_minutes: number | null
+          reminder_sent: boolean | null
           scheduled_at: string | null
           session_type: Database["public"]["Enums"]["session_type"] | null
           started_at: string | null
@@ -2824,6 +2827,7 @@ export type Database = {
         Insert: {
           ai_action_items?: string[] | null
           ai_summary?: string | null
+          calendar_event_id?: string | null
           client_id: string
           consultant_id?: string | null
           created_at?: string
@@ -2833,6 +2837,8 @@ export type Database = {
           meeting_url?: string | null
           notes?: string | null
           recording_url?: string | null
+          reminder_minutes?: number | null
+          reminder_sent?: boolean | null
           scheduled_at?: string | null
           session_type?: Database["public"]["Enums"]["session_type"] | null
           started_at?: string | null
@@ -2845,6 +2851,7 @@ export type Database = {
         Update: {
           ai_action_items?: string[] | null
           ai_summary?: string | null
+          calendar_event_id?: string | null
           client_id?: string
           consultant_id?: string | null
           created_at?: string
@@ -2854,6 +2861,8 @@ export type Database = {
           meeting_url?: string | null
           notes?: string | null
           recording_url?: string | null
+          reminder_minutes?: number | null
+          reminder_sent?: boolean | null
           scheduled_at?: string | null
           session_type?: Database["public"]["Enums"]["session_type"] | null
           started_at?: string | null

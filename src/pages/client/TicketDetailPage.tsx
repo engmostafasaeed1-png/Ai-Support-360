@@ -11,6 +11,7 @@ import {
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
   Pencil, UserPlus, Gavel, ChevronDown, Play, GitBranch, Network, Users,
   Calculator, ClipboardList, MessageSquareText, Timer, Star, Link2, Tags,
+  CalendarDays, Phone,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import TicketNDAStatus from '@/components/client/TicketNDAStatus';
@@ -34,6 +35,8 @@ import TicketSLATracker from '@/components/client/TicketSLATracker';
 import TicketCSAT from '@/components/client/TicketCSAT';
 import TicketLinks from '@/components/client/TicketLinks';
 import TicketInterview from '@/components/client/TicketInterview';
+import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
+import EmergencyContactPanel from '@/components/client/EmergencyContactPanel';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
@@ -89,6 +92,7 @@ export default function TicketDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [matchOpen, setMatchOpen] = useState(false);
   const [bidOpen, setBidOpen] = useState(false);
+  const [meetingOpen, setMeetingOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -152,6 +156,9 @@ export default function TicketDetailPage() {
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setBidOpen(true)}>
                 <Gavel className="w-3.5 h-3.5" />
                 {ticket.open_for_bids ? 'Manage Bids' : 'Request Bids'}
+              </Button>
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setMeetingOpen(true)}>
+                <CalendarDays className="w-3.5 h-3.5" /> Schedule Meeting
               </Button>
             </div>
           )}
@@ -362,6 +369,19 @@ export default function TicketDetailPage() {
         <TicketTimeline ticketId={ticket.id} ticket={ticket} />
       </SectionWrapper>
 
+      {/* ─── Emergency Contact ─── */}
+      {ticket.consultant_id && (
+        <SectionWrapper icon={Phone} title="Quick Contact" defaultOpen>
+          <EmergencyContactPanel
+            consultantId={ticket.consultant_id}
+            consultantName={ticket.consultant_name || undefined}
+            ticketId={ticket.id}
+            ticketTitle={ticket.title}
+            urgency={ticket.urgency}
+          />
+        </SectionWrapper>
+      )}
+
       {/* ─── Dialogs ─── */}
       <TicketEditDialog ticket={ticket} open={editOpen} onOpenChange={setEditOpen} />
       <SendMatchRequestDialog
@@ -381,6 +401,15 @@ export default function TicketDetailPage() {
         isOpenForBids={ticket.open_for_bids || false}
         open={bidOpen}
         onOpenChange={setBidOpen}
+      />
+      <ScheduleMeetingDialog
+        open={meetingOpen}
+        onOpenChange={setMeetingOpen}
+        ticketId={ticket.id}
+        ticketTitle={ticket.title}
+        clientId={ticket.client_id}
+        consultantId={ticket.consultant_id}
+        consultantName={ticket.consultant_name || undefined}
       />
     </div>
   );
