@@ -14,16 +14,32 @@ interface Props {
   slaDeadline: string | null;
   firstResponseAt: string | null;
   slaBreach: boolean;
+  clientId?: string;
 }
 
-export default function TicketSLATracker({ ticketId, urgency, status, createdAt, slaDeadline, firstResponseAt, slaBreach }: Props) {
+export default function TicketSLATracker({ ticketId, urgency, status, createdAt, slaDeadline, firstResponseAt, slaBreach, clientId }: Props) {
+  // Prefer client-specific SLA policy, fall back to system default
   const { data: policy } = useQuery({
-    queryKey: ['sla-policy', urgency],
+    queryKey: ['sla-policy', urgency, clientId],
     queryFn: async () => {
+      // First try client-specific policy
+      if (clientId) {
+        const { data: clientPolicy } = await supabase
+          .from('ticket_sla_policies')
+          .select('*')
+          .eq('urgency', urgency)
+          .eq('client_id', clientId)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+        if (clientPolicy) return clientPolicy;
+      }
+      // Fall back to system default
       const { data } = await supabase
         .from('ticket_sla_policies')
         .select('*')
         .eq('urgency', urgency)
+        .is('client_id', null)
         .eq('is_active', true)
         .limit(1)
         .maybeSingle();

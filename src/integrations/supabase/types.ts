@@ -2733,6 +2733,7 @@ export type Database = {
       ticket_sla_policies: {
         Row: {
           business_hours_only: boolean | null
+          client_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -2747,6 +2748,7 @@ export type Database = {
         }
         Insert: {
           business_hours_only?: boolean | null
+          client_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -2761,6 +2763,7 @@ export type Database = {
         }
         Update: {
           business_hours_only?: boolean | null
+          client_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null

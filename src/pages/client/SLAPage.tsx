@@ -2,7 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Shield, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Shield, Clock, CheckCircle2, AlertTriangle, Settings2, BarChart3 } from 'lucide-react';
+import SLAPolicyManager from '@/components/client/SLAPolicyManager';
 
 const slaMetrics = [
   { label: 'Avg. First Response', value: '1.2 hrs', target: '< 2 hrs', met: true, progress: 85 },
@@ -38,73 +40,86 @@ export default function SLAPage() {
     <div className="p-4 md:p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">{t('sidebar.sla', 'Service Level Agreements')}</h1>
-        <p className="text-sm text-muted-foreground mt-1">Monitor SLA metrics and compliance</p>
+        <p className="text-sm text-muted-foreground mt-1">Monitor SLA metrics, compliance & configure your policies</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {slaMetrics.map((metric) => (
-          <Card key={metric.label}>
-            <CardContent className="pt-5 pb-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">{metric.label}</span>
-                {metric.met ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                ) : (
-                  <AlertTriangle className="w-4 h-4 text-amber-500" />
-                )}
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview" className="gap-1.5"><BarChart3 className="w-3.5 h-3.5" /> Overview</TabsTrigger>
+          <TabsTrigger value="configure" className="gap-1.5"><Settings2 className="w-3.5 h-3.5" /> Configure</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {slaMetrics.map((metric) => (
+              <Card key={metric.label}>
+                <CardContent className="pt-5 pb-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">{metric.label}</span>
+                    {metric.met ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    )}
+                  </div>
+                  <p className="text-2xl font-bold">{metric.value}</p>
+                  <Progress value={metric.progress} className="h-1.5" />
+                  <p className="text-[10px] text-muted-foreground">Target: {metric.target}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Ticket SLA Tracking
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/30">
+                      <th className="text-start px-4 py-2.5 font-medium text-muted-foreground">Ticket</th>
+                      <th className="text-start px-4 py-2.5 font-medium text-muted-foreground">Priority</th>
+                      <th className="text-start px-4 py-2.5 font-medium text-muted-foreground">Response</th>
+                      <th className="text-start px-4 py-2.5 font-medium text-muted-foreground">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {ticketSLA.map((ticket) => (
+                      <tr key={ticket.id} className="hover:bg-muted/20">
+                        <td className="px-4 py-3">
+                          <p className="font-medium">{ticket.id}</p>
+                          <p className="text-xs text-muted-foreground">{ticket.title}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant="outline" className={priorityColors[ticket.priority]}>{ticket.priority}</Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>{ticket.responseTime}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant="outline" className={statusColors[ticket.status]}>{ticket.status}</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <p className="text-2xl font-bold">{metric.value}</p>
-              <Progress value={metric.progress} className="h-1.5" />
-              <p className="text-[10px] text-muted-foreground">Target: {metric.target}</p>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        </TabsContent>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Shield className="w-4 h-4" />
-            Ticket SLA Tracking
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/30">
-                  <th className="text-start px-4 py-2.5 font-medium text-muted-foreground">Ticket</th>
-                  <th className="text-start px-4 py-2.5 font-medium text-muted-foreground">Priority</th>
-                  <th className="text-start px-4 py-2.5 font-medium text-muted-foreground">Response</th>
-                  <th className="text-start px-4 py-2.5 font-medium text-muted-foreground">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {ticketSLA.map((ticket) => (
-                  <tr key={ticket.id} className="hover:bg-muted/20">
-                    <td className="px-4 py-3">
-                      <p className="font-medium">{ticket.id}</p>
-                      <p className="text-xs text-muted-foreground">{ticket.title}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="outline" className={priorityColors[ticket.priority]}>{ticket.priority}</Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>{ticket.responseTime}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="outline" className={statusColors[ticket.status]}>{ticket.status}</Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="configure">
+          <SLAPolicyManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
