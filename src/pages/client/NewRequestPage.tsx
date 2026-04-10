@@ -336,7 +336,7 @@ export default function NewRequestPage() {
           <Button onClick={() => {
             setSubmitted(false); setStep(0);
             setForm({ sap_module: '', issue_type: '', title: '', description: '', urgency: 'medium', preferred_session: 'video', preferred_language: 'en' });
-            setAiCategorization(null); setAiSummary(null); setAiMatch(null); setAiRecommendations(null);
+            setAiCategorization(null); setAiSummary(null); setAiMatch(null); setAiRecommendations(null); setAttachedFiles([]);
           }} variant="outline">
             {t('ticket_create.submit_another')}
           </Button>
