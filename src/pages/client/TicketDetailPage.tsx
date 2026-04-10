@@ -195,6 +195,11 @@ export default function TicketDetailPage() {
       {/* ─── Available Consultants (Acceptors) ─── */}
       <TicketAcceptors ticketId={ticket.id} currentConsultantId={ticket.consultant_id} />
 
+      {/* ─── Multi-Consultant Assignments ─── */}
+      <SectionWrapper icon={Users} title="Consultant Assignments" defaultOpen>
+        <TicketAssignments ticketId={ticket.id} isReadOnly={isConsultant} />
+      </SectionWrapper>
+
       {/* ─── Bids Section ─── */}
       <SectionWrapper icon={Gavel} title="Bids & Proposals" defaultOpen>
         <TicketBids ticketId={ticket.id} />
