@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Building2, Globe, MapPin, Save, Loader2, Plus, Trash2,
   Server, Database, Users2, Mail, Phone, Briefcase, Camera,
+  HardDrive, Cpu, Calendar, Code, Link2, Package,
 } from 'lucide-react';
 import { useClientProfileData, useUpdateClientProfile, type ClientProfile } from '@/hooks/useClientProfile';
 import { useGuestMode } from '@/contexts/GuestModeContext';
@@ -55,6 +56,21 @@ export default function CompanyProfilePage() {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [loaded, setLoaded] = useState(false);
 
+  // New landscape fields
+  const [sapProduct, setSapProduct] = useState('');
+  const [sapVersion, setSapVersion] = useState('');
+  const [sapDatabaseType, setSapDatabaseType] = useState('');
+  const [sapOsType, setSapOsType] = useState('');
+  const [sapSupportPack, setSapSupportPack] = useState('');
+  const [sapGoLiveDate, setSapGoLiveDate] = useState('');
+  const [sapUserCount, setSapUserCount] = useState<number | ''>('');
+  const [sapCustomDevCount, setSapCustomDevCount] = useState<number | ''>('');
+  const [sapInterfaces, setSapInterfaces] = useState<string[]>([]);
+  const [newInterface, setNewInterface] = useState('');
+  const [sapThirdPartyTools, setSapThirdPartyTools] = useState<string[]>([]);
+  const [newTool, setNewTool] = useState('');
+  const [sapLandscapeNotes, setSapLandscapeNotes] = useState('');
+
   useEffect(() => {
     if (profile && !loaded) {
       setCompanyName(profile.company_name || '');
@@ -68,6 +84,17 @@ export default function CompanyProfilePage() {
       setSapSystemIds((profile as any).sap_system_ids || []);
       setContacts(((profile as any).key_contacts || []) as Contact[]);
       setLogoUrl((profile as any).company_logo_url || null);
+      setSapProduct((profile as any).sap_product || '');
+      setSapVersion((profile as any).sap_version || '');
+      setSapDatabaseType((profile as any).sap_database_type || '');
+      setSapOsType((profile as any).sap_os_type || '');
+      setSapSupportPack((profile as any).sap_support_pack || '');
+      setSapGoLiveDate((profile as any).sap_go_live_date || '');
+      setSapUserCount((profile as any).sap_user_count ?? '');
+      setSapCustomDevCount((profile as any).sap_custom_dev_count ?? '');
+      setSapInterfaces((profile as any).sap_interfaces || []);
+      setSapThirdPartyTools((profile as any).sap_third_party_tools || []);
+      setSapLandscapeNotes((profile as any).sap_landscape_notes || '');
       setLoaded(true);
     }
   }, [profile, loaded]);
@@ -122,6 +149,17 @@ export default function CompanyProfilePage() {
       sap_hosting_type: sapHostingType,
       sap_system_ids: sapSystemIds,
       key_contacts: contacts,
+      sap_product: sapProduct.trim() || null,
+      sap_version: sapVersion.trim() || null,
+      sap_database_type: sapDatabaseType || null,
+      sap_os_type: sapOsType || null,
+      sap_support_pack: sapSupportPack.trim() || null,
+      sap_go_live_date: sapGoLiveDate || null,
+      sap_user_count: sapUserCount === '' ? null : sapUserCount,
+      sap_custom_dev_count: sapCustomDevCount === '' ? null : sapCustomDevCount,
+      sap_interfaces: sapInterfaces,
+      sap_third_party_tools: sapThirdPartyTools,
+      sap_landscape_notes: sapLandscapeNotes.trim() || null,
     } as any);
   };
 
