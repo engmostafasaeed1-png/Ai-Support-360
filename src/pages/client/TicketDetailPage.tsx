@@ -9,11 +9,12 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import {
   ArrowLeft, Clock, User, Calendar, Tag, MessageSquare,
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
-  Pencil, UserPlus, Gavel, ChevronDown, Play,
+  Pencil, UserPlus, Gavel, ChevronDown, Play, GitBranch,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
 import TicketDocuments from '@/components/client/TicketDocuments';
+import ChildTickets, { TicketBreadcrumbs } from '@/components/client/ChildTickets';
 import TicketAcceptors from '@/components/client/TicketAcceptors';
 import TicketBids from '@/components/client/TicketBids';
 import TicketTimeline from '@/components/client/TicketTimeline';
@@ -92,6 +93,9 @@ export default function TicketDetailPage() {
 
   return (
     <div className="space-y-5">
+      {/* ─── Breadcrumb Tracing ─── */}
+      {ticket.parent_ticket_id && <TicketBreadcrumbs ticketId={ticket.id} />}
+
       {/* ─── Header ─── */}
       <div className="flex items-start gap-3">
         <Link to={backPath}>
@@ -192,6 +196,16 @@ export default function TicketDetailPage() {
       {/* ─── Bids Section ─── */}
       <SectionWrapper icon={Gavel} title="Bids & Proposals" defaultOpen>
         <TicketBids ticketId={ticket.id} />
+      </SectionWrapper>
+
+      {/* ─── Child Tickets (Sub-tickets) ─── */}
+      <SectionWrapper icon={GitBranch} title="Sub-Tickets" defaultOpen>
+        <ChildTickets
+          ticketId={ticket.id}
+          ticketSapModule={ticket.sap_module}
+          ticketClientId={ticket.client_id}
+          tenantId={(ticket as any).tenant_id}
+        />
       </SectionWrapper>
 
       {/* ─── Sessions Section ─── */}

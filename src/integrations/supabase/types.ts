@@ -2332,6 +2332,7 @@ export type Database = {
           id: string
           open_for_bids: boolean
           opened_for_bids_at: string | null
+          parent_ticket_id: string | null
           preferred_language: string | null
           preferred_session_type:
             | Database["public"]["Enums"]["session_type"]
@@ -2355,6 +2356,7 @@ export type Database = {
           id?: string
           open_for_bids?: boolean
           opened_for_bids_at?: string | null
+          parent_ticket_id?: string | null
           preferred_language?: string | null
           preferred_session_type?:
             | Database["public"]["Enums"]["session_type"]
@@ -2378,6 +2380,7 @@ export type Database = {
           id?: string
           open_for_bids?: boolean
           opened_for_bids_at?: string | null
+          parent_ticket_id?: string | null
           preferred_language?: string | null
           preferred_session_type?:
             | Database["public"]["Enums"]["session_type"]
@@ -2397,6 +2400,13 @@ export type Database = {
             columns: ["consultant_id"]
             isOneToOne: false
             referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_parent_ticket_id_fkey"
+            columns: ["parent_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
           {
