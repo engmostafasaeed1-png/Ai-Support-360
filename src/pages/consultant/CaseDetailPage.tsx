@@ -15,6 +15,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, formatDistanceToNow } from 'date-fns';
 import NDASigningModal from '@/components/consultant/NDASigningModal';
+import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',

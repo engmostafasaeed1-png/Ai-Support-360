@@ -13,6 +13,7 @@ import {
   Calculator, ClipboardList, MessageSquareText, Timer, Star, Link2, Tags,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
+import TicketNDAStatus from '@/components/client/TicketNDAStatus';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
 import TicketDocuments from '@/components/client/TicketDocuments';
 import ChildTickets, { TicketBreadcrumbs } from '@/components/client/ChildTickets';
@@ -217,6 +218,16 @@ export default function TicketDetailPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* ─── NDA Status (when consultant assigned) ─── */}
+      {ticket.consultant_id && (
+        <TicketNDAStatus
+          consultantId={ticket.consultant_id}
+          clientId={ticket.client_id}
+          consultantName={ticket.consultant_name || undefined}
+          clientName="Your Company"
+        />
       )}
 
       {/* ─── SLA Tracking ─── */}
