@@ -140,7 +140,31 @@ const NotificationsPage = React.lazy(() => import("./pages/notifications/Notific
 const ReferralsPage = React.lazy(() => import("./pages/ReferralsPage.tsx"));
 const MatchRequestPopup = React.lazy(() => import("./components/consultant/MatchRequestPopup.tsx"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error) => logger.error('Query failed', error),
+  }),
+  mutationCache: new MutationCache({
+    onError: (error) => logger.error('Mutation failed', error),
+  }),
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2,
+      gcTime: 1000 * 60 * 10,
+      retry: (failureCount, error) => {
+        if (error instanceof Error && (error.message.includes('403') || error.message.includes('404'))) return false;
+        return failureCount < 2;
+      },
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+    },
+    mutations: {
+      retry: 1,
+      retryDelay: 1000,
+    },
+  },
+});
 
 const PageLoader = () => (
   <div className="min-h-[50vh] flex items-center justify-center">
