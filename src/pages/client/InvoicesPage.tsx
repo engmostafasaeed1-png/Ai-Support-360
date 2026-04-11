@@ -314,7 +314,7 @@ export default function InvoicesPage() {
             const sc = statusConfig[inv.status] || statusConfig.pending;
             const StatusIcon = sc.icon;
             return (
-              <Card key={inv.id} className="rounded-2xl border-border/50 hover:border-primary/30 hover:shadow-premium transition-all cursor-pointer" onClick={() => setSelected(inv)}>
+              <Card key={inv.id} className="rounded-2xl border-border/50 hover:border-primary/30 hover:shadow-premium transition-all cursor-pointer" onClick={() => openEdit(inv)}>
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
