@@ -105,9 +105,9 @@ const tierColors: Record<string, string> = {
   enterprise: 'bg-amber-500/10 text-amber-600',
 };
 
-const tierIcons: Record<string, typeof Sparkles> = {
-  basic: Sparkles,
-  professional: Sparkles,
+const tierIcons: Record<string, typeof Wand2> = {
+  basic: Wand2,
+  professional: Wand2,
   enterprise: Crown,
 };
 
