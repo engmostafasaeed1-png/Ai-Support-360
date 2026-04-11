@@ -5,6 +5,8 @@ import PageTransition from '@/components/PageTransition';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Outlet } from 'react-router-dom';
 import { usePortalMargin } from '@/hooks/usePortalMargin';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import SecurityAlert from '@/components/SecurityAlert';
 import {
   Search, AlertTriangle, LayoutDashboard, TicketPlus, Users,
   MessageSquare, Settings, Settings2, Briefcase, Calendar, CreditCard,
@@ -65,6 +67,7 @@ const moreNavItems = [
 
 export default function ClientLayout() {
   const portalMargin = usePortalMargin();
+  useSessionTimeout();
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background relative">
@@ -107,7 +110,8 @@ export default function ClientLayout() {
           <FixedSubHeader>
             <HeaderNav role="client" />
           </FixedSubHeader>
-          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-20 md:pb-6 mt-14 md:mt-24" style={{ marginLeft: `${portalMargin}%`, marginRight: `${portalMargin}%` }}>
+          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-20 md:pb-6 mt-14 md:mt-24 protected-content" style={{ marginLeft: `${portalMargin}%`, marginRight: `${portalMargin}%` }}>
+            <SecurityAlert />
             <PageTransition>
               <Outlet />
             </PageTransition>

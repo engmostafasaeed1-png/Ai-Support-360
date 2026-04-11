@@ -11,6 +11,7 @@ import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
 import HeaderNav from '@/components/HeaderNav';
 import logo from '@/assets/logo.png';
 import { Link } from 'react-router-dom';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 
 const bottomNavItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/admin', labelKey: 'sidebar.dashboard' },
@@ -36,6 +37,7 @@ const moreNavItems = [
 ];
 
 export default function AdminLayout() {
+  useSessionTimeout();
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background relative">

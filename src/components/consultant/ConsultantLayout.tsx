@@ -16,6 +16,8 @@ import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
 import HeaderNav from '@/components/HeaderNav';
 import logo from '@/assets/logo.png';
 import { Link } from 'react-router-dom';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import SecurityAlert from '@/components/SecurityAlert';
 
 const bottomNavItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/consultant', labelKey: 'sidebar.dashboard' },
@@ -44,6 +46,7 @@ const moreNavItems = [
 ];
 
 export default function ConsultantLayout() {
+  useSessionTimeout();
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background relative">
@@ -80,7 +83,8 @@ export default function ConsultantLayout() {
           <FixedSubHeader>
             <HeaderNav role="consultant" />
           </FixedSubHeader>
-          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-20 md:pb-6 mt-14 md:mt-24">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-20 md:pb-6 mt-14 md:mt-24 protected-content">
+            <SecurityAlert />
             <PageTransition>
               <Outlet />
             </PageTransition>

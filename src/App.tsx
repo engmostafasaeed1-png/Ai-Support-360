@@ -13,6 +13,7 @@ import AIChatbot from "./components/chatbot/AIChatbot.tsx";
 import MaintenanceBanner from "./components/MaintenanceBanner.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
 import ScreenProtection from "./components/ScreenProtection.tsx";
+import Watermark from "./components/Watermark.tsx";
 import WhatsAppButton from "./components/WhatsAppButton.tsx";
 import GlobalSearch from "./components/GlobalSearch.tsx";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
@@ -193,6 +194,7 @@ const App = () => (
           <a href="#main-content" className="skip-to-main">Skip to main content</a>
           <ScrollToTop />
           <ScreenProtection />
+          <Watermark />
           <GlobalSearch />
           <MaintenanceBanner />
           <GuestBanner />
