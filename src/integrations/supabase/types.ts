@@ -166,6 +166,109 @@ export type Database = {
           },
         ]
       }
+      business_process_documents: {
+        Row: {
+          business_process_id: string
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          mime_type: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          business_process_id: string
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          business_process_id?: string
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_process_documents_business_process_id_fkey"
+            columns: ["business_process_id"]
+            isOneToOne: false
+            referencedRelation: "business_processes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_processes: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          category: string | null
+          client_id: string
+          consultant_visible: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          process_owner: string | null
+          sap_module: string | null
+          status: string
+          tags: string[] | null
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string | null
+          client_id: string
+          consultant_visible?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          process_owner?: string | null
+          sap_module?: string | null
+          status?: string
+          tags?: string[] | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string | null
+          client_id?: string
+          consultant_visible?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          process_owner?: string | null
+          sap_module?: string | null
+          status?: string
+          tags?: string[] | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_processes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       canned_responses: {
         Row: {
           category: string | null
@@ -3317,6 +3420,45 @@ export type Database = {
           },
           {
             foreignKeyName: "ticket_assignments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_business_processes: {
+        Row: {
+          business_process_id: string
+          created_at: string
+          id: string
+          linked_by: string
+          ticket_id: string
+        }
+        Insert: {
+          business_process_id: string
+          created_at?: string
+          id?: string
+          linked_by: string
+          ticket_id: string
+        }
+        Update: {
+          business_process_id?: string
+          created_at?: string
+          id?: string
+          linked_by?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_business_processes_business_process_id_fkey"
+            columns: ["business_process_id"]
+            isOneToOne: false
+            referencedRelation: "business_processes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_business_processes_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
