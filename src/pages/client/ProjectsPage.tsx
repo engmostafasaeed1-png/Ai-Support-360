@@ -4,16 +4,71 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import {
   FolderKanban, Plus, Clock, Users, CalendarDays, ChevronDown, ChevronRight,
   CheckCircle2, Circle, ListTodo, Activity, Ticket, Milestone as MilestoneIcon,
-  AlertTriangle, Eye, Link2, ArrowRight
+  Eye, Link2, ArrowRight
 } from 'lucide-react';
 
-/* ── Mock Data ── */
-const projects = [
+/* ── Types ── */
+interface ProjectTask {
+  id: string;
+  title: string;
+  description?: string;
+  status: string;
+  priority: string;
+  assignee: string;
+}
+
+interface ProjectTicket {
+  id: string;
+  title: string;
+  status: string;
+  urgency: string;
+  children: { id: string; title: string; status: string; urgency: string }[];
+}
+
+interface ProjectMilestone {
+  id: string;
+  title: string;
+  status: string;
+  dueDate: string;
+  amount: number;
+}
+
+interface ProjectActivity {
+  id: string;
+  text: string;
+  time: string;
+  type: string;
+}
+
+interface Project {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  progress: number;
+  consultant: string;
+  startDate: string;
+  endDate: string;
+  modules: string[];
+  milestones: ProjectMilestone[];
+  tasks: ProjectTask[];
+  activities: ProjectActivity[];
+  tickets: ProjectTicket[];
+}
+
+/* ── Initial Data ── */
+const initialProjects: Project[] = [
   {
     id: '1',
     title: 'SAP S/4HANA Migration',
@@ -50,15 +105,10 @@ const projects = [
           { id: 'tk1-c2', title: 'Cost center posting rule fix', status: 'resolved', urgency: 'low' },
         ],
       },
-      {
-        id: 'tk2', title: 'MM purchase order number range', status: 'new', urgency: 'medium',
-        children: [],
-      },
+      { id: 'tk2', title: 'MM purchase order number range', status: 'new', urgency: 'medium', children: [] },
       {
         id: 'tk3', title: 'SD pricing condition mapping', status: 'under_review', urgency: 'low',
-        children: [
-          { id: 'tk3-c1', title: 'Discount condition type setup', status: 'new', urgency: 'low' },
-        ],
+        children: [{ id: 'tk3-c1', title: 'Discount condition type setup', status: 'new', urgency: 'low' }],
       },
     ],
   },
@@ -101,9 +151,7 @@ const projects = [
       { id: 'm8', title: 'Go-Live', status: 'completed', dueDate: '2025-01-10', amount: 5000 },
     ],
     tasks: [],
-    activities: [
-      { id: 'a7', text: 'Project completed and closed', time: '3 months ago', type: 'milestone' },
-    ],
+    activities: [{ id: 'a7', text: 'Project completed and closed', time: '3 months ago', type: 'milestone' }],
     tickets: [],
   },
 ];
@@ -142,17 +190,76 @@ const milestoneStatusIcon: Record<string, React.ReactNode> = {
   pending: <Circle className="w-4 h-4 text-muted-foreground" />,
 };
 
-const stats = [
-  { label: 'Active Projects', value: '2', color: 'text-primary' },
-  { label: 'Completed', value: '1', color: 'text-emerald-500' },
-  { label: 'Total Tasks', value: '6', color: 'text-amber-500' },
-  { label: 'Open Tickets', value: '3', color: 'text-blue-500' },
-];
-
 /* ── Component ── */
 export default function ProjectsPage() {
   const { t } = useTranslation();
   const [expandedId, setExpandedId] = useState<string | null>('1');
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+
+  // Add Task dialog state
+  const [addTaskOpen, setAddTaskOpen] = useState(false);
+  const [addTaskProjectId, setAddTaskProjectId] = useState('');
+  const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium', assignee: '' });
+
+  // Assign Ticket dialog state
+  const [assignTicketOpen, setAssignTicketOpen] = useState(false);
+  const [assignTicketProjectId, setAssignTicketProjectId] = useState('');
+  const [newTicket, setNewTicket] = useState({ title: '', urgency: 'medium' });
+
+  const handleAddTask = () => {
+    if (!newTask.title.trim()) { toast.error('Task title is required'); return; }
+    setProjects(prev => prev.map(p => {
+      if (p.id !== addTaskProjectId) return p;
+      const task: ProjectTask = {
+        id: `t-${Date.now()}`,
+        title: newTask.title.trim(),
+        description: newTask.description,
+        status: 'todo',
+        priority: newTask.priority,
+        assignee: newTask.assignee || 'Unassigned',
+      };
+      return {
+        ...p,
+        tasks: [...p.tasks, task],
+        activities: [{ id: `a-${Date.now()}`, text: `Task "${task.title}" added`, time: 'Just now', type: 'task' }, ...p.activities],
+      };
+    }));
+    setNewTask({ title: '', description: '', priority: 'medium', assignee: '' });
+    setAddTaskOpen(false);
+    toast.success('Task added successfully');
+  };
+
+  const handleAssignTicket = () => {
+    if (!newTicket.title.trim()) { toast.error('Ticket title is required'); return; }
+    setProjects(prev => prev.map(p => {
+      if (p.id !== assignTicketProjectId) return p;
+      const ticket: ProjectTicket = {
+        id: `tk-${Date.now()}`,
+        title: newTicket.title.trim(),
+        status: 'new',
+        urgency: newTicket.urgency,
+        children: [],
+      };
+      return {
+        ...p,
+        tickets: [...p.tickets, ticket],
+        activities: [{ id: `a-${Date.now()}`, text: `Ticket "${ticket.title}" assigned to project`, time: 'Just now', type: 'ticket' }, ...p.activities],
+      };
+    }));
+    setNewTicket({ title: '', urgency: 'medium' });
+    setAssignTicketOpen(false);
+    toast.success('Ticket assigned to project');
+  };
+
+  const totalTasks = projects.reduce((s, p) => s + p.tasks.length, 0);
+  const totalTickets = projects.reduce((s, p) => s + p.tickets.length, 0);
+
+  const stats = [
+    { label: 'Active Projects', value: String(projects.filter(p => p.status === 'in_progress' || p.status === 'planning').length), color: 'text-primary' },
+    { label: 'Completed', value: String(projects.filter(p => p.status === 'completed').length), color: 'text-emerald-500' },
+    { label: 'Total Tasks', value: String(totalTasks), color: 'text-amber-500' },
+    { label: 'Open Tickets', value: String(totalTickets), color: 'text-blue-500' },
+  ];
 
   return (
     <div className="space-y-6">
@@ -205,13 +312,11 @@ export default function ProjectsPage() {
                           </div>
                           <Badge variant="outline" className={`shrink-0 text-[10px] ${sc.color}`}>{sc.label}</Badge>
                         </div>
-
                         <div className="flex flex-wrap gap-1.5 ml-6">
                           {project.modules.map((m) => (
                             <Badge key={m} variant="secondary" className="text-[10px]">{m}</Badge>
                           ))}
                         </div>
-
                         <div className="space-y-1.5 ml-6">
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground">Progress</span>
@@ -219,7 +324,6 @@ export default function ProjectsPage() {
                           </div>
                           <Progress value={project.progress} className="h-1.5" />
                         </div>
-
                         <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground ml-6">
                           <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {project.consultant}</span>
                           <span className="flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5" /> {project.startDate} → {project.endDate}</span>
@@ -248,7 +352,14 @@ export default function ProjectsPage() {
                       <TabsContent value="tasks" className="space-y-2 mt-0">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-xs text-muted-foreground">{project.tasks.filter(t => t.status === 'done').length} of {project.tasks.length} completed</p>
-                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1"><Plus className="w-3 h-3" /> Add Task</Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1"
+                            onClick={(e) => { e.stopPropagation(); setAddTaskProjectId(project.id); setAddTaskOpen(true); }}
+                          >
+                            <Plus className="w-3 h-3" /> Add Task
+                          </Button>
                         </div>
                         {project.tasks.length === 0 ? (
                           <p className="text-sm text-muted-foreground text-center py-6">No tasks yet</p>
@@ -270,7 +381,14 @@ export default function ProjectsPage() {
                       <TabsContent value="tickets" className="space-y-2 mt-0">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-xs text-muted-foreground">{project.tickets.length} tickets assigned</p>
-                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1"><Link2 className="w-3 h-3" /> Assign Ticket</Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1"
+                            onClick={(e) => { e.stopPropagation(); setAssignTicketProjectId(project.id); setAssignTicketOpen(true); }}
+                          >
+                            <Link2 className="w-3 h-3" /> Assign Ticket
+                          </Button>
                         </div>
                         {project.tickets.length === 0 ? (
                           <p className="text-sm text-muted-foreground text-center py-6">No tickets assigned to this project</p>
@@ -308,7 +426,7 @@ export default function ProjectsPage() {
                           <Button variant="outline" size="sm" className="h-7 text-xs gap-1"><Plus className="w-3 h-3" /> Add Milestone</Button>
                         </div>
                         <div className="space-y-1.5">
-                          {project.milestones.map((ms, idx) => (
+                          {project.milestones.map((ms) => (
                             <div key={ms.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
                               {milestoneStatusIcon[ms.status]}
                               <div className="flex-1 min-w-0">
@@ -346,6 +464,95 @@ export default function ProjectsPage() {
           );
         })}
       </div>
+
+      {/* Add Task Dialog */}
+      <Dialog open={addTaskOpen} onOpenChange={setAddTaskOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Task</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Title *</Label>
+              <Input
+                placeholder="Enter task title..."
+                value={newTask.title}
+                onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea
+                placeholder="Task description (optional)"
+                value={newTask.description}
+                onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select value={newTask.priority} onValueChange={(v) => setNewTask(prev => ({ ...prev, priority: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Assignee</Label>
+                <Input
+                  placeholder="Assignee name"
+                  value={newTask.assignee}
+                  onChange={(e) => setNewTask(prev => ({ ...prev, assignee: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddTaskOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddTask}>Add Task</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Ticket Dialog */}
+      <Dialog open={assignTicketOpen} onOpenChange={setAssignTicketOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assign Ticket to Project</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Ticket Title *</Label>
+              <Input
+                placeholder="Enter ticket title..."
+                value={newTicket.title}
+                onChange={(e) => setNewTicket(prev => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Urgency</Label>
+              <Select value={newTicket.urgency} onValueChange={(v) => setNewTicket(prev => ({ ...prev, urgency: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignTicketOpen(false)}>Cancel</Button>
+            <Button onClick={handleAssignTicket}>Assign Ticket</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
