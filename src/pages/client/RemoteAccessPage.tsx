@@ -15,7 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  Monitor, Server, Terminal, Laptop, Plus, Pencil, Trash2, Pause, Play, XCircle,
+  Monitor, Server, Terminal, Laptop, Plus, Pencil, Trash2, Pause, Play, XCircle, Send,
 } from 'lucide-react';
 import { useRemoteEnvironments, useCreateEnvironment, useUpdateEnvironment, useDeleteEnvironment, type RemoteEnvironment } from '@/hooks/useRemoteEnvironments';
 import { useEnvironmentConnections } from '@/hooks/useEnvironmentConnections';
