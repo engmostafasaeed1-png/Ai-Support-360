@@ -1,6 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useClientPayments } from '@/hooks/useClientPayments';
+import { useClientTickets } from '@/hooks/useClientTickets';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,10 +13,14 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import {
   FileText, Download, Search, Calendar, User, DollarSign, Ticket,
   ArrowRight, CheckCircle2, Clock, XCircle, AlertCircle, ReceiptText,
-  CreditCard, Eye, Printer,
+  CreditCard, Eye, Printer, Plus,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 
@@ -35,6 +42,57 @@ export default function InvoicesPage() {
   const [tab, setTab] = useState('all');
   const [selected, setSelected] = useState<any>(null);
   const [pdfPreview, setPdfPreview] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ ticket_id: '', amount: '', currency: 'USD', vat: '', description: '', due_date: '' });
+  const [creating, setCreating] = useState(false);
+  const { data: tickets } = useClientTickets();
+  const queryClient = useQueryClient();
+
+  const selectedTicket = (tickets || []).find((t: any) => t.id === createForm.ticket_id);
+
+  const handleTicketSelect = (ticketId: string) => {
+    const ticket = (tickets || []).find((t: any) => t.id === ticketId);
+    if (ticket) {
+      setCreateForm(prev => ({
+        ...prev,
+        ticket_id: ticketId,
+        description: `Invoice for ticket: ${ticket.title} (${ticket.sap_module})${ticket.description ? ' — ' + ticket.description.slice(0, 120) : ''}`,
+        amount: (ticket as any).planned_cost ? String((ticket as any).planned_cost) : prev.amount,
+        currency: (ticket as any).cost_currency || prev.currency,
+      }));
+    }
+  };
+
+  const handleCreateInvoice = async () => {
+    if (!createForm.amount || Number(createForm.amount) <= 0) { toast.error('Enter a valid amount'); return; }
+    setCreating(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      const invoiceNum = `INV-${Date.now().toString(36).toUpperCase()}`;
+      const { error } = await (supabase.from('payments') as any).insert({
+        client_id: user.id,
+        ticket_id: createForm.ticket_id || null,
+        amount: Number(createForm.amount),
+        currency: createForm.currency,
+        vat_amount: Number(createForm.vat || 0),
+        description: createForm.description || null,
+        due_date: createForm.due_date || null,
+        invoice_number: invoiceNum,
+        status: 'pending',
+        consultant_id: selectedTicket?.consultant_id || null,
+      });
+      if (error) throw error;
+      toast.success(`Invoice ${invoiceNum} created`);
+      setCreateOpen(false);
+      setCreateForm({ ticket_id: '', amount: '', currency: 'USD', vat: '', description: '', due_date: '' });
+      queryClient.invalidateQueries({ queryKey: ['client-payments'] });
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to create invoice');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const all = payments || [];
   const filtered = all.filter((p: any) => {
@@ -175,11 +233,16 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
-          <ReceiptText className="w-6 h-6 text-primary" /> {t('sidebar.invoices', 'Invoices')}
-        </h1>
-        <p className="text-xs md:text-sm text-muted-foreground mt-1">View invoice details, link to tickets, and export as PDF.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+            <ReceiptText className="w-6 h-6 text-primary" /> {t('sidebar.invoices', 'Invoices')}
+          </h1>
+          <p className="text-xs md:text-sm text-muted-foreground mt-1">View invoice details, link to tickets, and export as PDF.</p>
+        </div>
+        <Button className="gap-1.5 gradient-primary border-0" onClick={() => setCreateOpen(true)}>
+          <Plus className="w-4 h-4" /> Create Invoice
+        </Button>
       </div>
 
       {/* Search + Filter */}
@@ -340,6 +403,105 @@ export default function InvoicesPage() {
           {pdfPreview && (
             <iframe src={pdfPreview} className="w-full flex-1 h-full" title="Invoice PDF Preview" />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Invoice Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-primary" /> Create Invoice
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Ticket Selection */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Link to Ticket</Label>
+              <Select value={createForm.ticket_id} onValueChange={handleTicketSelect}>
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue placeholder="Select a ticket to auto-fill details..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {(tickets || []).map((t: any) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      <div className="flex items-center gap-2">
+                        <span className="truncate">{t.title}</span>
+                        <Badge variant="outline" className="text-[9px] shrink-0">{t.sap_module}</Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Auto-filled ticket info */}
+            {selectedTicket && (
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-sm space-y-1">
+                <p className="text-xs font-semibold text-primary uppercase">Ticket Details</p>
+                <p className="font-medium text-foreground">{selectedTicket.title}</p>
+                <div className="flex gap-1.5 flex-wrap">
+                  <Badge variant="secondary" className="text-[10px]">{selectedTicket.sap_module}</Badge>
+                  <Badge variant="outline" className="text-[10px]">{selectedTicket.urgency}</Badge>
+                  <Badge variant="outline" className="text-[10px]">{selectedTicket.status}</Badge>
+                  {selectedTicket.consultant && <Badge className="text-[10px] bg-accent/10 text-accent border-0">{selectedTicket.consultant}</Badge>}
+                </div>
+              </div>
+            )}
+
+            {/* Amount & Currency */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Amount *</Label>
+                <Input type="number" placeholder="0.00" value={createForm.amount} onChange={e => setCreateForm(f => ({ ...f, amount: e.target.value }))} className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Currency</Label>
+                <Select value={createForm.currency} onValueChange={v => setCreateForm(f => ({ ...f, currency: v }))}>
+                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="SAR">SAR</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="GBP">GBP</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* VAT & Due Date */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">VAT Amount</Label>
+                <Input type="number" placeholder="0.00" value={createForm.vat} onChange={e => setCreateForm(f => ({ ...f, vat: e.target.value }))} className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Due Date</Label>
+                <Input type="date" value={createForm.due_date} onChange={e => setCreateForm(f => ({ ...f, due_date: e.target.value }))} className="rounded-xl" />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Description</Label>
+              <Textarea placeholder="Invoice description (auto-filled from ticket)..." value={createForm.description} onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))} className="rounded-xl min-h-[80px]" />
+            </div>
+
+            {/* Total preview */}
+            {createForm.amount && (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/50">
+                <span className="text-sm text-muted-foreground">Total</span>
+                <span className="text-lg font-bold text-foreground">
+                  {fmt(Number(createForm.amount) + Number(createForm.vat || 0), createForm.currency)}
+                </span>
+              </div>
+            )}
+
+            <Button className="w-full gap-1.5 gradient-primary border-0" onClick={handleCreateInvoice} disabled={creating}>
+              {creating ? <Clock className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              {creating ? 'Creating...' : 'Create Invoice'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
