@@ -19,7 +19,7 @@ export default function VMwarePricingPage() {
   const { data: plans, isLoading } = useVMwarePricingPlans();
   const { data: subscriptions } = useVMwareSubscriptions();
   const subscribe = useSubscribeVMwarePlan();
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'hourly'>('monthly');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'hourly' | 'payg'>('monthly');
 
   const activePlanIds = (subscriptions || []).filter(s => s.status === 'active').map(s => s.plan_id);
 
@@ -46,13 +46,66 @@ export default function VMwarePricingPage() {
       </div>
 
       <Tabs value={billingCycle} onValueChange={v => setBillingCycle(v as any)}>
-        <TabsList className="w-full max-w-xs">
+        <TabsList className="w-full max-w-md">
           <TabsTrigger value="monthly" className="flex-1">Monthly</TabsTrigger>
           <TabsTrigger value="hourly" className="flex-1">Hourly</TabsTrigger>
+          <TabsTrigger value="payg" className="flex-1">Pay as you go</TabsTrigger>
         </TabsList>
       </Tabs>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      {billingCycle === 'payg' && (
+        <Card className="rounded-2xl border-primary/30 bg-primary/5">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-primary" />
+              <span className="font-semibold text-foreground">Pay as you go</span>
+              <Badge className="bg-emerald-500/10 text-emerald-600 text-[10px]">No commitment</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              No monthly fee — pay only for the resources you consume. Ideal for dev/test workloads or unpredictable usage patterns.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 py-3 border-y border-border/40">
+              <div className="flex items-center gap-2 text-sm">
+                <Cpu className="w-4 h-4 text-primary" />
+                <div>
+                  <span className="font-semibold text-foreground">$0.05</span>
+                  <span className="text-muted-foreground text-xs"> /vCPU/hr</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <MemoryStick className="w-4 h-4 text-primary" />
+                <div>
+                  <span className="font-semibold text-foreground">$0.01</span>
+                  <span className="text-muted-foreground text-xs"> /GB RAM/hr</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <HardDrive className="w-4 h-4 text-primary" />
+                <div>
+                  <span className="font-semibold text-foreground">$0.0005</span>
+                  <span className="text-muted-foreground text-xs"> /GB Disk/hr</span>
+                </div>
+              </div>
+            </div>
+            <ul className="space-y-1.5 text-xs">
+              <li className="flex items-start gap-2"><Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" /> No minimum spend or lock-in</li>
+              <li className="flex items-start gap-2"><Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" /> Billed per-second, invoiced monthly</li>
+              <li className="flex items-start gap-2"><Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" /> Auto-scale resources up or down</li>
+              <li className="flex items-start gap-2"><Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" /> Real-time usage dashboard</li>
+            </ul>
+            <Button
+              className="w-full"
+              variant="default"
+              disabled={subscribe.isPending}
+              onClick={() => subscribe.mutate({ plan_id: 'payg', billing_cycle: 'payg' })}
+            >
+              Enable Pay as you go
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {billingCycle !== 'payg' && <div className="grid gap-4 md:grid-cols-3">
         {(plans || []).map(plan => {
           const config = tierConfig[plan.tier] || tierConfig.basic;
           const TierIcon = config.icon;
@@ -126,7 +179,7 @@ export default function VMwarePricingPage() {
             </Card>
           );
         })}
-      </div>
+      </div>}
 
       {/* Resource pricing table */}
       <Card className="rounded-2xl border-border/50">
