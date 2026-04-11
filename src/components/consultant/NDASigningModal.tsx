@@ -198,7 +198,10 @@ export default function NDASigningModal({
         ? canvasRef.current!.toDataURL('image/png')
         : typedName.trim();
 
-    const success = await signNDA(sigData, sigType, filledTemplate);
+    const ndaContentForRecord = hasCustomNDA
+      ? `[Custom NDA Document: ${customNdaFilename}] ${customNdaPublicUrl}`
+      : filledTemplate;
+    const success = await signNDA(sigData, sigType, ndaContentForRecord);
     setSubmitting(false);
     if (success) {
       onOpenChange(false);
