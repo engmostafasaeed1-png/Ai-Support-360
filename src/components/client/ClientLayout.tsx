@@ -96,12 +96,10 @@ export default function ClientLayout() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Link to="/client">
-                <Badge className="bg-primary/90 hover:bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold gap-1.5 cursor-pointer shadow-sm hover:shadow-md transition-all">
-                  <LayoutDashboard className="w-3.5 h-3.5" />
-                  Dashboard
-                </Badge>
-              </Link>
+              <Badge className="bg-accent/10 text-accent border border-accent/30 px-3 py-1 text-xs font-semibold gap-1.5">
+                <Building2 className="w-3.5 h-3.5" />
+                Client
+              </Badge>
               <Link to="/client/new-request">
                 <Button size="sm" variant="destructive" className="text-xs gap-1.5 shadow-sm hover:shadow-md transition-shadow">
                   <AlertTriangle className="w-3.5 h-3.5" />
