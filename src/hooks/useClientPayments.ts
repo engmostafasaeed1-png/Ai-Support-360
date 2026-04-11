@@ -15,7 +15,7 @@ export function useClientPayments() {
         .from('payments')
         .select(`
           id, amount, currency, vat_amount, status, invoice_number, payment_method,
-          description, due_date, created_at, updated_at, ticket_id,
+          description, due_date, created_at, updated_at, ticket_id, consultant_id,
           consultants:consultant_id (
             user_id,
             profiles:user_id (display_name)
