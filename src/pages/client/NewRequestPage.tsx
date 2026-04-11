@@ -260,7 +260,41 @@ export default function NewRequestPage() {
     }
   }, [form.title, form.description, form.sap_module, form.urgency, form.preferred_language, selectedModel]);
 
+  const validateStep = (currentStep: number): boolean => {
+    const result = ticketSchema.safeParse(form);
+    const errors: Record<string, string> = {};
+
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as string;
+        errors[field] = issue.message;
+      }
+    }
+
+    // Step-specific validation
+    if (currentStep === 0 && errors.sap_module) {
+      setFieldErrors({ sap_module: errors.sap_module });
+      toast.error(errors.sap_module);
+      return false;
+    }
+    if (currentStep === 1) {
+      const stepErrors: Record<string, string> = {};
+      if (errors.title) stepErrors.title = errors.title;
+      if (errors.description) stepErrors.description = errors.description;
+      if (Object.keys(stepErrors).length > 0) {
+        setFieldErrors(stepErrors);
+        toast.error(Object.values(stepErrors)[0]);
+        return false;
+      }
+    }
+
+    setFieldErrors({});
+    return true;
+  };
+
   const handleNext = () => {
+    if (!validateStep(step)) return;
+
     if (step === 1 && !aiCategorization && form.description.length > 15) {
       runAiCategorize();
     }
