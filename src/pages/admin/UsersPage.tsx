@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +23,7 @@ const statusColors: Record<string, string> = {
 
 export default function UsersPage() {
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const { t } = useTranslation();
   const { data: users, isLoading } = useAdminUsers();
@@ -29,7 +31,7 @@ export default function UsersPage() {
   const allUsers = users || [];
 
   const filtered = allUsers.filter((u) => {
-    const matchSearch = u.name.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = u.name.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchRole = roleFilter === 'all' || u.role === roleFilter;
     return matchSearch && matchRole;
   });
