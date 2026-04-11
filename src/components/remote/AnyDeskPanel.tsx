@@ -18,6 +18,8 @@ import {
   useAnyDeskLicense,
   useAnyDeskConnectionLink,
   useAnyDeskSetAlias,
+  type AnyDeskClient,
+  type AnyDeskSession,
 } from '@/hooks/useAnyDesk';
 import { format } from 'date-fns';
 
@@ -155,8 +157,8 @@ function ClientsList({ search, onlineOnly, enabled }: { search: string; onlineOn
     );
   }
 
-  const clients = (data?.clients || data || []).filter((c: any) =>
-    !search || c.alias?.toLowerCase().includes(search.toLowerCase()) || String(c.cid || c.id).includes(search)
+  const clients = (data?.clients ?? []).filter((client: AnyDeskClient) =>
+    !search || client.alias?.toLowerCase().includes(search.toLowerCase()) || String(client.cid || client.id).includes(search)
   );
 
   const handleConnect = async (clientId: string) => {
@@ -194,7 +196,7 @@ function ClientsList({ search, onlineOnly, enabled }: { search: string; onlineOn
         </div>
       ) : (
         <div className="space-y-2">
-          {clients.map((client: any) => {
+          {clients.map((client: AnyDeskClient) => {
             const id = client.cid || client.id || '';
             const isOnline = client.online || client.status === 'online';
             return (
@@ -269,7 +271,7 @@ function SessionsList({ enabled }: { enabled: boolean }) {
     );
   }
 
-  const sessions = data?.sessions || data || [];
+  const sessions = data?.sessions ?? [];
 
   if (sessions.length === 0) {
     return (
@@ -282,7 +284,7 @@ function SessionsList({ enabled }: { enabled: boolean }) {
 
   return (
     <div className="space-y-2">
-      {sessions.map((session: any, idx: number) => (
+      {sessions.map((session: AnyDeskSession, idx: number) => (
         <Card key={session.sid || idx} className="rounded-xl border-border/30">
           <CardContent className="p-3">
             <div className="flex items-center justify-between gap-2">

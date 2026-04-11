@@ -8,6 +8,77 @@ type AnyDeskStatus = {
   missing?: string[];
 };
 
+export type AnyDeskClient = {
+  cid?: string | number;
+  id?: string | number;
+  alias?: string;
+  online?: boolean;
+  status?: string;
+  os?: string;
+};
+
+export type AnyDeskSession = {
+  sid?: string;
+  source?: { alias?: string; cid?: string | number };
+  destination?: { alias?: string; cid?: string | number };
+  start?: string;
+  duration?: number;
+};
+
+export type AnyDeskLicense = {
+  name?: string;
+  expires?: string;
+  max_clients?: number;
+  max_sessions?: number;
+  namespaces?: string[] | string;
+};
+
+type AnyDeskClientsResponse = {
+  clients: AnyDeskClient[];
+};
+
+type AnyDeskSessionsResponse = {
+  sessions: AnyDeskSession[];
+};
+
+type AnyDeskConnectionLinkResponse = {
+  uri: string;
+  clientId: string;
+  instructions: string;
+};
+
+function normalizeClientsResponse(payload: unknown): AnyDeskClientsResponse {
+  if (Array.isArray(payload)) {
+    return { clients: payload as AnyDeskClient[] };
+  }
+
+  if (payload && typeof payload === 'object' && Array.isArray((payload as { clients?: unknown }).clients)) {
+    return { clients: (payload as { clients: AnyDeskClient[] }).clients };
+  }
+
+  return { clients: [] };
+}
+
+function normalizeSessionsResponse(payload: unknown): AnyDeskSessionsResponse {
+  if (Array.isArray(payload)) {
+    return { sessions: payload as AnyDeskSession[] };
+  }
+
+  if (payload && typeof payload === 'object' && Array.isArray((payload as { sessions?: unknown }).sessions)) {
+    return { sessions: (payload as { sessions: AnyDeskSession[] }).sessions };
+  }
+
+  return { sessions: [] };
+}
+
+function normalizeLicenseResponse(payload: unknown): AnyDeskLicense {
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    return payload as AnyDeskLicense;
+  }
+
+  return {};
+}
+
 async function getFunctionErrorMessage(error: unknown) {
   if (error && typeof error === 'object' && 'context' in error) {
     const response = (error as { context?: unknown }).context;
@@ -63,9 +134,9 @@ export function useAnyDeskStatus() {
 }
 
 export function useAnyDeskClients(online?: boolean, enabled = true) {
-  return useQuery({
+  return useQuery<AnyDeskClientsResponse>({
     queryKey: ['anydesk-clients', online],
-    queryFn: () => callAnyDesk('clients', online ? { online: 'true' } : {}),
+    queryFn: async () => normalizeClientsResponse(await callAnyDesk('clients', online ? { online: 'true' } : {})),
     enabled,
     refetchInterval: enabled ? 30000 : false,
   });
@@ -80,24 +151,24 @@ export function useAnyDeskClientDetail(clientId: string | null) {
 }
 
 export function useAnyDeskSessions(clientId?: string, enabled = true) {
-  return useQuery({
+  return useQuery<AnyDeskSessionsResponse>({
     queryKey: ['anydesk-sessions', clientId],
-    queryFn: () => callAnyDesk('sessions', clientId ? { clientId } : {}),
+    queryFn: async () => normalizeSessionsResponse(await callAnyDesk('sessions', clientId ? { clientId } : {})),
     enabled,
   });
 }
 
 export function useAnyDeskLicense(enabled = true) {
-  return useQuery({
+  return useQuery<AnyDeskLicense>({
     queryKey: ['anydesk-license'],
-    queryFn: () => callAnyDesk('license'),
+    queryFn: async () => normalizeLicenseResponse(await callAnyDesk('license')),
     enabled,
   });
 }
 
 export function useAnyDeskConnectionLink() {
   return useMutation({
-    mutationFn: (clientId: string) => callAnyDesk('connection-link', { clientId }),
+    mutationFn: (clientId: string) => callAnyDesk<AnyDeskConnectionLinkResponse>('connection-link', { clientId }),
   });
 }
 
