@@ -98,7 +98,7 @@ const SupportPage = React.lazy(() => import("./pages/client/SupportPage.tsx"));
 const ProjectManagementTicketsPage = React.lazy(() => import("./pages/client/ProjectManagementTicketsPage.tsx"));
 const SolutionArchitecturePage = React.lazy(() => import("./pages/client/SolutionArchitecturePage.tsx"));
 const ChangeManagementPage = React.lazy(() => import("./pages/client/ChangeManagementPage.tsx"));
-const ProblemManagementPage = React.lazy(() => import("./pages/client/ProblemManagementPage.tsx"));
+
 const ServiceCatalogPage = React.lazy(() => import("./pages/client/ServiceCatalogPage.tsx"));
 const MajorIncidentsPage = React.lazy(() => import("./pages/client/MajorIncidentsPage.tsx"));
 const PlaybooksPage = React.lazy(() => import("./pages/client/PlaybooksPage.tsx"));
@@ -276,7 +276,7 @@ const App = () => (
               <Route path="pm-tickets" element={<ProjectManagementTicketsPage />} />
               <Route path="solution-architecture" element={<SolutionArchitecturePage />} />
               <Route path="changes" element={<ChangeManagementPage />} />
-              <Route path="problems" element={<ProblemManagementPage />} />
+              
               <Route path="catalog" element={<ServiceCatalogPage />} />
               <Route path="major-incidents" element={<MajorIncidentsPage />} />
               <Route path="playbooks" element={<PlaybooksPage />} />
