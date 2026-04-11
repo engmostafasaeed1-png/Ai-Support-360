@@ -213,9 +213,10 @@ export default function AIChatbot() {
           role="dialog"
           aria-label="AI Support Chat"
           aria-modal="true"
-          className="fixed bottom-0 end-0 sm:bottom-6 sm:end-6 z-50 w-full sm:w-[380px] h-[100dvh] sm:h-[560px] sm:rounded-2xl bg-background border border-border/60 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-200"
+      className="fixed bottom-0 end-0 sm:bottom-6 sm:end-6 z-50 w-full sm:w-[380px] h-[100dvh] sm:h-[560px] sm:rounded-2xl bg-background border border-border/60 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-200"
           onMouseMove={resetChatIdle}
           onClick={resetChatIdle}
+          onKeyDown={(e) => { if (e.key === 'Escape') setIsOpen(false); }}
         >
           {/* Header */}
           <div className="relative flex items-center gap-3 px-4 py-3 border-b border-border/40 bg-card/90 backdrop-blur shrink-0">

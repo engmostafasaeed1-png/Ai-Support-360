@@ -10,8 +10,10 @@ import {
   Clock, User, Calendar, Tag, Video, MessageSquare, Monitor,
   Globe, Brain, Gavel, Pencil, ArrowUpRight, Timer,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import TicketDocuments from '@/components/client/TicketDocuments';
 import { format, formatDistanceToNow } from 'date-fns';
 
