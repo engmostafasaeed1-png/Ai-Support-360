@@ -41,7 +41,7 @@ export function useSatisfactionSurveys() {
       if (error) throw error;
 
       // Fetch profile names
-      const userIds = [...new Set((data || []).flatMap((s: any) => [s.rated_by, s.rated_user]))];
+      const userIds: string[] = [...new Set((data || []).flatMap((s: any) => [s.rated_by, s.rated_user]))] as string[];
       let profileMap: Record<string, string> = {};
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
