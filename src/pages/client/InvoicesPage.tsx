@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import {
   FileText, Download, Search, Calendar, User, DollarSign, Ticket,
   ArrowRight, CheckCircle2, Clock, XCircle, AlertCircle, ReceiptText,
-  CreditCard, Eye, Printer, Plus,
+  CreditCard, Eye, Printer, Plus, Pencil,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 
