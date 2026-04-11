@@ -4192,6 +4192,13 @@ export type Database = {
         Row: {
           allowed_ports: string[] | null
           auto_shutdown_hours: number | null
+          availability_zone: string | null
+          cloud_account_id: string | null
+          cloud_api_endpoint: string | null
+          cloud_api_key_encrypted: string | null
+          cloud_project_id: string | null
+          cloud_region: string | null
+          cloud_vendor: string
           cluster: string | null
           created_at: string
           datacenter: string | null
@@ -4202,11 +4209,16 @@ export type Database = {
           default_ram_gb: number | null
           environment_id: string
           firewall_rules: Json | null
+          hypervisor_type: string
           id: string
+          instance_type: string | null
           network_vlan: string | null
           notes: string | null
           resource_pool: string | null
+          security_group: string | null
           snapshot_enabled: boolean | null
+          storage_type: string | null
+          subnet_id: string | null
           updated_at: string
           vcenter_password_encrypted: string | null
           vcenter_url: string | null
@@ -4217,6 +4229,13 @@ export type Database = {
         Insert: {
           allowed_ports?: string[] | null
           auto_shutdown_hours?: number | null
+          availability_zone?: string | null
+          cloud_account_id?: string | null
+          cloud_api_endpoint?: string | null
+          cloud_api_key_encrypted?: string | null
+          cloud_project_id?: string | null
+          cloud_region?: string | null
+          cloud_vendor?: string
           cluster?: string | null
           created_at?: string
           datacenter?: string | null
@@ -4227,11 +4246,16 @@ export type Database = {
           default_ram_gb?: number | null
           environment_id: string
           firewall_rules?: Json | null
+          hypervisor_type?: string
           id?: string
+          instance_type?: string | null
           network_vlan?: string | null
           notes?: string | null
           resource_pool?: string | null
+          security_group?: string | null
           snapshot_enabled?: boolean | null
+          storage_type?: string | null
+          subnet_id?: string | null
           updated_at?: string
           vcenter_password_encrypted?: string | null
           vcenter_url?: string | null
@@ -4242,6 +4266,13 @@ export type Database = {
         Update: {
           allowed_ports?: string[] | null
           auto_shutdown_hours?: number | null
+          availability_zone?: string | null
+          cloud_account_id?: string | null
+          cloud_api_endpoint?: string | null
+          cloud_api_key_encrypted?: string | null
+          cloud_project_id?: string | null
+          cloud_region?: string | null
+          cloud_vendor?: string
           cluster?: string | null
           created_at?: string
           datacenter?: string | null
@@ -4252,11 +4283,16 @@ export type Database = {
           default_ram_gb?: number | null
           environment_id?: string
           firewall_rules?: Json | null
+          hypervisor_type?: string
           id?: string
+          instance_type?: string | null
           network_vlan?: string | null
           notes?: string | null
           resource_pool?: string | null
+          security_group?: string | null
           snapshot_enabled?: boolean | null
+          storage_type?: string | null
+          subnet_id?: string | null
           updated_at?: string
           vcenter_password_encrypted?: string | null
           vcenter_url?: string | null
