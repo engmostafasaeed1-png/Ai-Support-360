@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Monitor, Plus, Trash2, Pencil, Globe, ExternalLink, Copy } from 'lucide-react';
+import { Monitor, Plus, Trash2, Pencil, Globe, ExternalLink, Copy, Share2 } from 'lucide-react';
 
 interface RDPConnection {
   id: string;
@@ -17,7 +17,7 @@ interface RDPConnection {
   gatewayUrl?: string;
 }
 
-export default function RDPWebClientPanel() {
+export default function RDPWebClientPanel({ onShare }: { onShare?: () => void }) {
   const [connections, setConnections] = useState<RDPConnection[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [editConn, setEditConn] = useState<RDPConnection | null>(null);
@@ -88,6 +88,11 @@ export default function RDPWebClientPanel() {
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => { resetForm(); setAddOpen(true); }}>
               <Plus className="w-3 h-3" /> Add Connection
             </Button>
+            {onShare && (
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={onShare}>
+                <Share2 className="w-3 h-3" /> Share
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>

@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
   Monitor, Wifi, WifiOff, Clock, ExternalLink, Search,
-  Copy, RefreshCw, Shield, Users, Pencil, Loader2,
+  Copy, RefreshCw, Shield, Users, Pencil, Loader2, Share2,
 } from 'lucide-react';
 import {
   useAnyDeskStatus,
@@ -23,7 +23,7 @@ import {
 } from '@/hooks/useAnyDesk';
 import { format } from 'date-fns';
 
-export default function AnyDeskPanel() {
+export default function AnyDeskPanel({ onShare }: { onShare?: () => void }) {
   const [tab, setTab] = useState('clients');
   const [search, setSearch] = useState('');
   const [onlineOnly, setOnlineOnly] = useState(false);
@@ -50,6 +50,11 @@ export default function AnyDeskPanel() {
           <Badge variant="outline" className="text-[10px] gap-1">
              <Shield className="w-3 h-3" /> {statusLabel}
           </Badge>
+          {onShare && (
+            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={onShare}>
+              <Share2 className="w-3 h-3" /> Share
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
