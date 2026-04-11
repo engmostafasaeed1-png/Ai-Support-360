@@ -321,3 +321,46 @@ textarea:focus-visible {
   font-weight: 600;
   z-index: 9999;
 }
+
+/* Content protection */
+.protected-content {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.protected-content input,
+.protected-content textarea,
+.protected-content select,
+.protected-content [contenteditable] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Print protection */
+@media print {
+  body {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  * {
+    display: none !important;
+  }
+}
+
+/* Protected value overlay for screenshots */
+.protected-value {
+  position: relative;
+  display: inline-block;
+}
+.protected-value::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    rgba(128, 128, 128, 0.03) 2px,
+    rgba(128, 128, 128, 0.03) 4px
+  );
+  pointer-events: none;
+}
