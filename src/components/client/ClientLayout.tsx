@@ -11,7 +11,7 @@ import {
   FileText, BookOpen, Bell, Plug, Server, Video, FolderKanban, Milestone,
   ClipboardList, FileSignature, GitBranch, Bug, Package, Siren, BookMarked,
   DollarSign, Monitor, Sparkles, Gift, UsersRound, BarChart3, Shield,
-  Activity, Building2, LifeBuoy,
+  Activity, Building2, LifeBuoy, Brain, Network,
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Button } from '@/components/ui/button';

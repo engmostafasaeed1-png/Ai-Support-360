@@ -111,6 +111,7 @@ import ProblemManagementPage from "./pages/client/ProblemManagementPage.tsx";
 import ServiceCatalogPage from "./pages/client/ServiceCatalogPage.tsx";
 import MajorIncidentsPage from "./pages/client/MajorIncidentsPage.tsx";
 import PlaybooksPage from "./pages/client/PlaybooksPage.tsx";
+import BusinessProcessesPage from "./pages/client/BusinessProcessesPage.tsx";
 import OnCallSchedulePage from "./pages/admin/OnCallSchedulePage.tsx";
 import LandingEditorPage from "./pages/admin/LandingEditorPage.tsx";
 import AdminConsolePage from "./pages/admin/AdminConsolePage.tsx";
@@ -210,6 +211,7 @@ const App = () => (
               <Route path="catalog" element={<ServiceCatalogPage />} />
               <Route path="major-incidents" element={<MajorIncidentsPage />} />
               <Route path="playbooks" element={<PlaybooksPage />} />
+              <Route path="business-processes" element={<BusinessProcessesPage />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminConsolePage />} />
