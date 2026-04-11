@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  Cpu, MemoryStick, HardDrive, Monitor as GpuIcon, Network, Shield, Clock,
+  Cpu, MemoryStick, HardDrive, MonitorSpeaker, Network, Shield, Clock,
   Database, Monitor, Zap, DollarSign, TrendingUp, Server,
 } from 'lucide-react';
 
