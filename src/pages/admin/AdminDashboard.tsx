@@ -59,7 +59,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="border-border/50 rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">{t('admin_dashboard.revenue_vs_expenses')}</CardTitle>

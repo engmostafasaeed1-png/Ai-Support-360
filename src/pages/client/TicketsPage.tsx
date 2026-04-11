@@ -95,6 +95,7 @@ export default function TicketsPage() {
               </Button>
             ))}
           </div>
+          <ScrollBar orientation="horizontal" className="h-1" />
         </ScrollArea>
       </div>
 
