@@ -155,7 +155,9 @@ export default function AnalyticsPage() {
       const consultantRevenue: Record<string, number> = {};
       const consultantSessions: Record<string, number> = {};
       (payments || []).forEach(p => {
-        consultantRevenue[p.consultant_id] = (consultantRevenue[p.consultant_id] || 0) + Number(p.amount);
+        if (p.consultant_id) {
+          consultantRevenue[p.consultant_id] = (consultantRevenue[p.consultant_id] || 0) + Number(p.amount);
+        }
       });
       (sessions || []).filter(s => s.status === 'completed').forEach(s => {
         if (s.consultant_id) {
