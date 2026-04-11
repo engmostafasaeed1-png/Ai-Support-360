@@ -16,6 +16,23 @@ const VALID_MODELS = [
 
 const DEFAULT_MODEL = "google/gemini-2.5-flash";
 
+// Simple in-memory rate limiter
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 20;
+const WINDOW_MS = 60_000;
+const MAX_BODY_SIZE = 50 * 1024;
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(identifier);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(identifier, { count: 1, resetAt: now + WINDOW_MS });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= RATE_LIMIT;
+}
+
 const SYSTEM_PROMPT = `You are Qurtuba AI, the smart SAP support triage assistant for Qurtuba Talks — a premium SAP consulting platform.
 
 Your role is to help users describe their SAP issues clearly and prepare them to submit a support ticket. You should:

@@ -16,6 +16,23 @@ const VALID_MODELS = [
 
 const DEFAULT_MODEL = "google/gemini-2.5-flash";
 
+// Simple in-memory rate limiter
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 20;
+const WINDOW_MS = 60_000;
+const MAX_BODY_SIZE = 50 * 1024;
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(identifier);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(identifier, { count: 1, resetAt: now + WINDOW_MS });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= RATE_LIMIT;
+}
+
 function aiRequest(apiKey: string, systemPrompt: string, userPrompt: string, tools: any[], toolChoice: any, model: string) {
   return fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
