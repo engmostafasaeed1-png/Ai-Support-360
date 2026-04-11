@@ -442,11 +442,17 @@ export default function NewRequestPage() {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">{t('ticket_create.ticket_title')}</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-medium">{t('ticket_create.ticket_title')}</label>
+                <VoiceInput size="sm" onTranscript={(t) => updateForm('title', t)} />
+              </div>
               <Input value={form.title} onChange={e => updateForm('title', e.target.value)} placeholder={t('ticket_create.title_placeholder')} className="rounded-xl" maxLength={200} />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">{t('ticket_create.description')}</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-medium">{t('ticket_create.description')}</label>
+                <VoiceInput size="sm" onTranscript={(t) => updateForm('description', form.description + t)} />
+              </div>
               <Textarea value={form.description} onChange={e => updateForm('description', e.target.value)} placeholder={t('ticket_create.desc_placeholder')} rows={5} className="rounded-xl" maxLength={2000} />
             </div>
 
