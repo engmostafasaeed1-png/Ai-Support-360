@@ -365,15 +365,15 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      {/* Invoice Detail Dialog */}
-      <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
+      {/* Invoice Detail / Edit Dialog */}
+      <Dialog open={!!selected} onOpenChange={() => { setSelected(null); setEditing(false); }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ReceiptText className="w-5 h-5 text-primary" /> {selected?.invoice}
             </DialogTitle>
           </DialogHeader>
-          {selected && (() => {
+          {selected && !editing && (() => {
             const sc = statusConfig[selected.status] || statusConfig.pending;
             const Icon = sc.icon;
             return (
@@ -416,16 +416,76 @@ export default function InvoicesPage() {
                 )}
 
                 <div className="flex gap-2 pt-2">
+                  <Button className="flex-1 gap-1.5" variant="outline" size="sm" onClick={() => setEditing(true)}>
+                    <Pencil className="w-4 h-4" /> Edit
+                  </Button>
                   <Button className="flex-1 gap-1.5" variant="outline" size="sm" onClick={() => generateInvoicePdf(selected, true)}>
                     <Eye className="w-4 h-4" /> Preview PDF
                   </Button>
                   <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={() => generateInvoicePdf(selected, false)}>
-                    <Download className="w-4 h-4" /> Download PDF
+                    <Download className="w-4 h-4" /> Download
                   </Button>
                 </div>
               </div>
             );
           })()}
+
+          {/* Edit Mode */}
+          {selected && editing && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Amount</Label>
+                  <Input type="number" value={editForm.amount} onChange={e => setEditForm(f => ({ ...f, amount: e.target.value }))} className="rounded-xl" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Currency</Label>
+                  <Select value={editForm.currency} onValueChange={v => setEditForm(f => ({ ...f, currency: v }))}>
+                    <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="SAR">SAR</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                      <SelectItem value="GBP">GBP</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">VAT</Label>
+                  <Input type="number" value={editForm.vat} onChange={e => setEditForm(f => ({ ...f, vat: e.target.value }))} className="rounded-xl" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Status</Label>
+                  <Select value={editForm.status} onValueChange={v => setEditForm(f => ({ ...f, status: v }))}>
+                    <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="completed">Paid</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
+                      <SelectItem value="refunded">Refunded</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Due Date</Label>
+                <Input type="date" value={editForm.due_date} onChange={e => setEditForm(f => ({ ...f, due_date: e.target.value }))} className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Description</Label>
+                <Textarea value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} className="rounded-xl min-h-[80px]" />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => setEditing(false)}>Cancel</Button>
+                <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={handleSaveEdit} disabled={saving}>
+                  {saving ? <Clock className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
