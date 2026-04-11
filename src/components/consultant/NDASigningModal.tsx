@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { Download, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -35,6 +36,8 @@ export default function NDASigningModal({
   const [clientDisplayName, setClientDisplayName] = useState(clientName || '');
   const [clientIndustry, setClientIndustry] = useState('');
   const [clientSapModules, setClientSapModules] = useState('');
+  const [customNdaUrl, setCustomNdaUrl] = useState<string | null>(null);
+  const [customNdaFilename, setCustomNdaFilename] = useState<string | null>(null);
 
   // Fetch consultant & client details when modal opens
   useEffect(() => {
@@ -62,7 +65,7 @@ export default function NDASigningModal({
         }
       });
 
-    // Fetch client profile details
+    // Fetch client profile details (including custom NDA)
     supabase
       .from('profiles')
       .select('display_name')
@@ -72,15 +75,25 @@ export default function NDASigningModal({
 
     supabase
       .from('client_profiles')
-      .select('company_name, industry, sap_modules')
+      .select('company_name, industry, sap_modules, custom_nda_url, custom_nda_filename')
       .eq('user_id', clientId)
       .maybeSingle()
       .then(({ data }) => {
         setClientCompany(data?.company_name || '');
         setClientIndustry(data?.industry || '');
         setClientSapModules((data?.sap_modules || []).join(', '));
+        setCustomNdaUrl(data?.custom_nda_url || null);
+        setCustomNdaFilename(data?.custom_nda_filename || null);
       });
   }, [open, consultantId, clientId, clientName]);
+
+  const hasCustomNDA = !!customNdaUrl;
+
+  const customNdaPublicUrl = useMemo(() => {
+    if (!customNdaUrl) return null;
+    const { data } = supabase.storage.from('nda-documents').getPublicUrl(customNdaUrl);
+    return data.publicUrl;
+  }, [customNdaUrl]);
 
   // Replace placeholders in template
   const filledTemplate = useMemo(() => {
