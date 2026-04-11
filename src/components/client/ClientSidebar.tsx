@@ -53,7 +53,7 @@ const navGroups = [
     items: [
       { key: 'change_management', icon: GitPullRequestArrow, path: '/client/changes' },
       
-      { key: 'service_catalog', icon: Store, path: '/client/catalog' },
+      
       { key: 'major_incidents', icon: AlertOctagon, path: '/client/major-incidents' },
       { key: 'playbooks', icon: BookMarked, path: '/client/playbooks' },
     ],

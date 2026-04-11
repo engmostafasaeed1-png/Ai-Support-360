@@ -99,7 +99,7 @@ const ProjectManagementTicketsPage = React.lazy(() => import("./pages/client/Pro
 const SolutionArchitecturePage = React.lazy(() => import("./pages/client/SolutionArchitecturePage.tsx"));
 const ChangeManagementPage = React.lazy(() => import("./pages/client/ChangeManagementPage.tsx"));
 
-const ServiceCatalogPage = React.lazy(() => import("./pages/client/ServiceCatalogPage.tsx"));
+
 const MajorIncidentsPage = React.lazy(() => import("./pages/client/MajorIncidentsPage.tsx"));
 const PlaybooksPage = React.lazy(() => import("./pages/client/PlaybooksPage.tsx"));
 const BusinessProcessesPage = React.lazy(() => import("./pages/client/BusinessProcessesPage.tsx"));
@@ -277,7 +277,7 @@ const App = () => (
               <Route path="solution-architecture" element={<SolutionArchitecturePage />} />
               <Route path="changes" element={<ChangeManagementPage />} />
               
-              <Route path="catalog" element={<ServiceCatalogPage />} />
+              
               <Route path="major-incidents" element={<MajorIncidentsPage />} />
               <Route path="playbooks" element={<PlaybooksPage />} />
               <Route path="business-processes" element={<BusinessProcessesPage />} />
