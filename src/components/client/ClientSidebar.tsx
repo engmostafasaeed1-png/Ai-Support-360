@@ -159,11 +159,7 @@ export default function ClientSidebar() {
         <div className="flex-1 overflow-y-auto py-2 space-y-1">
           {navGroups.map((group) => (
             <SidebarGroup key={group.labelKey}>
-              {!collapsed && (
-                <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/35 font-semibold px-3 mb-0.5">
-                  {t(group.labelKey, group.labelKey.split('.')[1])}
-                </SidebarGroupLabel>
-              )}
+              
               <SidebarGroupContent>
                 <SidebarMenu>
                   {group.items.map((item) => {
