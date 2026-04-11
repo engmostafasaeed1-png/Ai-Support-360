@@ -340,7 +340,45 @@ export default function ClientDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* VMware Infrastructure */}
+      <Card className="rounded-2xl border-border/50">
+        <CardHeader className="flex-row items-center justify-between pb-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Monitor className="w-4 h-4 text-primary" /> VMware Infrastructure
+          </CardTitle>
+          <Link to="/client/vmware-console">
+            <Button variant="ghost" size="sm" className="text-xs group">Console <ChevronRight className="w-3 h-3 ms-1 group-hover:translate-x-0.5 transition-transform" /></Button>
+          </Link>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-3">
+            <Link to="/client/vmware-console">
+              <div className="p-3 rounded-xl bg-muted/20 border border-border/30 text-center card-interactive">
+                <Monitor className="w-5 h-5 text-primary mx-auto mb-1" />
+                <p className="text-xs font-medium">Console</p>
+                <p className="text-[10px] text-muted-foreground">Power & Monitor</p>
+              </div>
+            </Link>
+            <Link to="/client/vmware-pricing">
+              <div className="p-3 rounded-xl bg-muted/20 border border-border/30 text-center card-interactive">
+                <CreditCard className="w-5 h-5 text-primary mx-auto mb-1" />
+                <p className="text-xs font-medium">Pricing</p>
+                <p className="text-[10px] text-muted-foreground">Plans & Billing</p>
+              </div>
+            </Link>
+            <Link to="/client/vmware-settings">
+              <div className="p-3 rounded-xl bg-muted/20 border border-border/30 text-center card-interactive">
+                <TrendingUp className="w-5 h-5 text-primary mx-auto mb-1" />
+                <p className="text-xs font-medium">Settings</p>
+                <p className="text-[10px] text-muted-foreground">Configure VMs</p>
+              </div>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
     </PullToRefresh>
+  );
   );
 }
