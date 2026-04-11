@@ -4,7 +4,7 @@ import AdminSidebar from './AdminSidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import PageTransition from '@/components/PageTransition';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
-import { Search, LayoutDashboard, Users, Kanban, UserCheck, BarChart3, Settings, Plug } from 'lucide-react';
+import { Search, LayoutDashboard, Users, Kanban, UserCheck, BarChart3, Settings, Plug, Shield, Server, ClipboardList, Settings2, FileSignature, PanelTop, Brain, Bell } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
@@ -20,9 +20,19 @@ const bottomNavItems = [
 ];
 
 const moreNavItems = [
+  { key: 'console', icon: Shield, path: '/admin/console', labelKey: 'sidebar.console' },
   { key: 'analytics', icon: BarChart3, path: '/admin/analytics', labelKey: 'sidebar.analytics' },
   { key: 'integrations', icon: Plug, path: '/admin/integrations', labelKey: 'sidebar.integrations' },
+  { key: 'environments', icon: Server, path: '/admin/environments', labelKey: 'sidebar.environments' },
+  { key: 'environment_logs', icon: ClipboardList, path: '/admin/environment-logs', labelKey: 'sidebar.environment_logs' },
+  { key: 'vmware_settings', icon: Settings2, path: '/admin/vmware-settings', labelKey: 'sidebar.vmware_settings' },
+  { key: 'nda_management', icon: FileSignature, path: '/admin/nda-management', labelKey: 'sidebar.nda_management' },
+  { key: 'landing_editor', icon: PanelTop, path: '/admin/landing-editor', labelKey: 'sidebar.landing_editor' },
+  { key: 'interview_training', icon: Brain, path: '/admin/interview-training', labelKey: 'sidebar.interview_training' },
+  { key: 'oncall', icon: Bell, path: '/admin/oncall', labelKey: 'sidebar.oncall' },
+  { key: 'notifications', icon: Bell, path: '/admin/notifications', labelKey: 'sidebar.notifications' },
   { key: 'settings', icon: Settings, path: '/admin/settings', labelKey: 'sidebar.settings' },
+  { key: 'super_admin', icon: Shield, path: '/super-admin', labelKey: 'sidebar.super_admin' },
 ];
 
 export default function AdminLayout() {
