@@ -53,7 +53,7 @@ export default function SuperAdminSidebar() {
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/50">{t('super_admin.control_center', 'Control Center')}</SidebarGroupLabel>
+          
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
@@ -79,7 +79,7 @@ export default function SuperAdminSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/50">{t('super_admin.quick_links', 'Quick Links')}</SidebarGroupLabel>
+          
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
