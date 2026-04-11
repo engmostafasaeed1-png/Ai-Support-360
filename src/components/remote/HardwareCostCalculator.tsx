@@ -217,7 +217,7 @@ export default function HardwareCostCalculator({
               { label: 'Compute', val: cost.breakdown.compute, icon: Cpu },
               { label: 'Memory', val: cost.breakdown.memory, icon: MemoryStick },
               { label: 'Storage', val: cost.breakdown.storage, icon: HardDrive },
-              { label: 'GPU', val: cost.breakdown.gpu, icon: Gpu },
+              { label: 'GPU', val: cost.breakdown.gpu, icon: MonitorSpeaker },
               { label: 'Network', val: cost.breakdown.network, icon: Network },
               { label: 'Licensing', val: cost.breakdown.licensing, icon: Monitor },
               { label: 'Backup', val: cost.breakdown.backup, icon: Database },
@@ -350,7 +350,7 @@ export default function HardwareCostCalculator({
       {/* GPU */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2"><Gpu className="w-4 h-4 text-primary" /> GPU Acceleration</CardTitle>
+          <CardTitle className="text-sm flex items-center gap-2"><MonitorSpeaker className="w-4 h-4 text-primary" /> GPU Acceleration</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
