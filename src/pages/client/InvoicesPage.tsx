@@ -233,11 +233,16 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
-          <ReceiptText className="w-6 h-6 text-primary" /> {t('sidebar.invoices', 'Invoices')}
-        </h1>
-        <p className="text-xs md:text-sm text-muted-foreground mt-1">View invoice details, link to tickets, and export as PDF.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+            <ReceiptText className="w-6 h-6 text-primary" /> {t('sidebar.invoices', 'Invoices')}
+          </h1>
+          <p className="text-xs md:text-sm text-muted-foreground mt-1">View invoice details, link to tickets, and export as PDF.</p>
+        </div>
+        <Button className="gap-1.5 gradient-primary border-0" onClick={() => setCreateOpen(true)}>
+          <Plus className="w-4 h-4" /> Create Invoice
+        </Button>
       </div>
 
       {/* Search + Filter */}
