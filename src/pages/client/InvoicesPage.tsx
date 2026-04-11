@@ -1,49 +1,358 @@
+import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Download, Eye } from 'lucide-react';
+import { useClientPayments } from '@/hooks/useClientPayments';
+import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  FileText, Download, Search, Calendar, User, DollarSign, Ticket,
+  ArrowRight, CheckCircle2, Clock, XCircle, AlertCircle, ReceiptText,
+  CreditCard, Eye, Printer,
+} from 'lucide-react';
+import jsPDF from 'jspdf';
 
-const mockInvoices = [
-  { id: 'INV-001', date: '2026-03-15', amount: 1200, currency: 'SAR', status: 'paid' as const, description: 'SAP FI Consultation - March' },
-  { id: 'INV-002', date: '2026-03-28', amount: 800, currency: 'SAR', status: 'pending' as const, description: 'SAP MM Support Session' },
-  { id: 'INV-003', date: '2026-04-01', amount: 2400, currency: 'SAR', status: 'overdue' as const, description: 'SAP S/4HANA Migration Support' },
-];
+const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
+  completed: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
+  paid: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
+  pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: Clock },
+  failed: { label: 'Failed', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: XCircle },
+  refunded: { label: 'Refunded', color: 'bg-muted text-muted-foreground', icon: AlertCircle },
+};
 
-const statusColors = { paid: 'bg-green-500/10 text-green-600', pending: 'bg-yellow-500/10 text-yellow-600', overdue: 'bg-red-500/10 text-red-600' };
+const fmt = (amount: number, currency: string = 'USD') =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
 
 export default function InvoicesPage() {
   const { t } = useTranslation();
+  const { data: payments, isLoading } = useClientPayments();
+  const [search, setSearch] = useState('');
+  const [tab, setTab] = useState('all');
+  const [selected, setSelected] = useState<any>(null);
+  const [pdfPreview, setPdfPreview] = useState<string | null>(null);
+
+  const all = payments || [];
+  const filtered = all.filter((p: any) => {
+    const s = search.toLowerCase();
+    const matchSearch = !s ||
+      p.invoice?.toLowerCase().includes(s) ||
+      p.consultant?.toLowerCase().includes(s) ||
+      p.ticket_title?.toLowerCase().includes(s) ||
+      p.description?.toLowerCase().includes(s);
+    const matchTab = tab === 'all' ||
+      (tab === 'paid' && (p.status === 'completed' || p.status === 'paid')) ||
+      (tab === 'pending' && p.status === 'pending');
+    return matchSearch && matchTab;
+  });
+
+  const generateInvoicePdf = (inv: any, preview = false) => {
+    const doc = new jsPDF();
+    const w = doc.internal.pageSize.getWidth();
+
+    // Header
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('INVOICE', 20, 30);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100);
+    doc.text(inv.invoice || 'N/A', 20, 38);
+    doc.text(`Date: ${inv.date || 'N/A'}`, 20, 44);
+    if (inv.due_date) doc.text(`Due: ${format(new Date(inv.due_date), 'MMM d, yyyy')}`, 20, 50);
+
+    // Status badge
+    const sc = statusConfig[inv.status] || statusConfig.pending;
+    doc.setTextColor(0);
+    doc.setFontSize(11);
+    doc.text(`Status: ${sc.label}`, w - 60, 30);
+
+    // Line
+    doc.setDrawColor(200);
+    doc.line(20, 56, w - 20, 56);
+
+    // Consultant
+    doc.setFontSize(10);
+    doc.setTextColor(80);
+    doc.text('Consultant', 20, 66);
+    doc.setTextColor(0);
+    doc.setFont('helvetica', 'bold');
+    doc.text(inv.consultant || 'N/A', 20, 72);
+
+    // Payment Method
+    if (inv.payment_method) {
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80);
+      doc.text('Payment Method', w / 2, 66);
+      doc.setTextColor(0);
+      doc.setFont('helvetica', 'bold');
+      doc.text(inv.payment_method, w / 2, 72);
+    }
+
+    // Linked Ticket
+    let yPos = 86;
+    if (inv.ticket_title) {
+      doc.setDrawColor(200);
+      doc.setFillColor(245, 247, 250);
+      doc.roundedRect(20, yPos - 6, w - 40, 24, 3, 3, 'F');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(80);
+      doc.text('Linked Ticket', 26, yPos);
+      doc.setTextColor(0);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text(inv.ticket_title, 26, yPos + 7);
+      if (inv.ticket_sap_module) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(100);
+        doc.text(`Module: ${inv.ticket_sap_module}  |  Urgency: ${inv.ticket_urgency || 'N/A'}`, 26, yPos + 14);
+      }
+      yPos += 32;
+    }
+
+    // Description
+    if (inv.description) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(80);
+      doc.text('Description', 20, yPos);
+      doc.setTextColor(0);
+      doc.setFontSize(10);
+      const lines = doc.splitTextToSize(inv.description, w - 40);
+      doc.text(lines, 20, yPos + 7);
+      yPos += 7 + lines.length * 5 + 8;
+    }
+
+    // Amount Table
+    doc.setDrawColor(200);
+    doc.line(20, yPos, w - 20, yPos);
+    yPos += 10;
+
+    const tableData = [
+      ['Subtotal', fmt(Number(inv.amount) - Number(inv.vat || 0), inv.currency)],
+      ['VAT', fmt(Number(inv.vat || 0), inv.currency)],
+    ];
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    tableData.forEach(([label, val]) => {
+      doc.setTextColor(80);
+      doc.text(label, 20, yPos);
+      doc.setTextColor(0);
+      doc.text(val, w - 20, yPos, { align: 'right' });
+      yPos += 8;
+    });
+
+    doc.setDrawColor(200);
+    doc.line(20, yPos, w - 20, yPos);
+    yPos += 10;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('Total', 20, yPos);
+    doc.text(fmt(Number(inv.amount), inv.currency), w - 20, yPos, { align: 'right' });
+
+    // Footer
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text('This is a system-generated invoice.', 20, 280);
+
+    if (preview) {
+      const blobUrl = doc.output('bloburl') as unknown as string;
+      setPdfPreview(blobUrl);
+    } else {
+      doc.save(`${inv.invoice || 'invoice'}.pdf`);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t('sidebar.invoices', 'Invoices')}</h1>
-          <p className="text-muted-foreground text-sm">View and download your invoices</p>
-        </div>
+      <div>
+        <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+          <ReceiptText className="w-6 h-6 text-primary" /> {t('sidebar.invoices', 'Invoices')}
+        </h1>
+        <p className="text-xs md:text-sm text-muted-foreground mt-1">View invoice details, link to tickets, and export as PDF.</p>
       </div>
-      <div className="space-y-3">
-        {mockInvoices.map((inv) => (
-          <Card key={inv.id} className="border-border/40 hover:border-accent/30 hover:shadow-premium transition-all cursor-pointer">
-            <CardContent className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-primary" />
+
+      {/* Search + Filter */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div className="relative max-w-sm w-full">
+          <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search invoices, tickets, consultants..." value={search} onChange={e => setSearch(e.target.value)} className="ps-9 rounded-xl" />
+        </div>
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabsList className="h-9">
+            <TabsTrigger value="all" className="text-xs">All ({all.length})</TabsTrigger>
+            <TabsTrigger value="paid" className="text-xs">Paid</TabsTrigger>
+            <TabsTrigger value="pending" className="text-xs">Pending</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {/* Invoice List */}
+      {isLoading ? (
+        <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-2xl" />)}</div>
+      ) : filtered.length === 0 ? (
+        <div className="py-16 text-center">
+          <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">No invoices found.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((inv: any) => {
+            const sc = statusConfig[inv.status] || statusConfig.pending;
+            const StatusIcon = sc.icon;
+            return (
+              <Card key={inv.id} className="rounded-2xl border-border/50 hover:border-primary/30 hover:shadow-premium transition-all cursor-pointer" onClick={() => setSelected(inv)}>
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <ReceiptText className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-semibold text-foreground">{inv.invoice}</p>
+                          <Badge variant="secondary" className={`text-[10px] gap-1 ${sc.color}`}>
+                            <StatusIcon className="w-3 h-3" /> {sc.label}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          <span className="inline-flex items-center gap-1"><User className="w-3 h-3" /> {inv.consultant}</span>
+                          <span className="mx-2">·</span>
+                          <span className="inline-flex items-center gap-1"><Calendar className="w-3 h-3" /> {inv.date}</span>
+                        </p>
+                        {inv.ticket_title && (
+                          <div className="mt-1 flex items-center gap-1.5">
+                            <Ticket className="w-3 h-3 text-primary" />
+                            <span className="text-xs text-primary font-medium truncate">{inv.ticket_title}</span>
+                            {inv.ticket_sap_module && <Badge variant="outline" className="text-[9px]">{inv.ticket_sap_module}</Badge>}
+                          </div>
+                        )}
+                        {inv.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{inv.description}</p>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-end">
+                        <p className="text-sm font-bold text-foreground">{fmt(Number(inv.amount), inv.currency)}</p>
+                        {Number(inv.vat) > 0 && <p className="text-[10px] text-muted-foreground">VAT: {fmt(Number(inv.vat), inv.currency)}</p>}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" title="Preview PDF" onClick={e => { e.stopPropagation(); generateInvoicePdf(inv, true); }}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" title="Download PDF" onClick={e => { e.stopPropagation(); generateInvoicePdf(inv, false); }}>
+                          <Download className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Invoice Detail Dialog */}
+      <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ReceiptText className="w-5 h-5 text-primary" /> {selected?.invoice}
+            </DialogTitle>
+          </DialogHeader>
+          {selected && (() => {
+            const sc = statusConfig[selected.status] || statusConfig.pending;
+            const Icon = sc.icon;
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Badge className={`gap-1 ${sc.color}`}><Icon className="w-3.5 h-3.5" /> {sc.label}</Badge>
+                  <span className="text-lg font-bold text-foreground ml-auto">{fmt(Number(selected.amount), selected.currency)}</span>
                 </div>
-                <div>
-                  <p className="font-semibold text-sm">{inv.id}</p>
-                  <p className="text-xs text-muted-foreground">{inv.description}</p>
-                  <p className="text-xs text-muted-foreground">{inv.date}</p>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <DetailRow label="Consultant" value={selected.consultant} icon={User} />
+                  <DetailRow label="Date" value={selected.date} icon={Calendar} />
+                  <DetailRow label="Currency" value={selected.currency} icon={DollarSign} />
+                  <DetailRow label="VAT" value={fmt(Number(selected.vat || 0), selected.currency)} icon={FileText} />
+                  {selected.payment_method && <DetailRow label="Method" value={selected.payment_method} icon={CreditCard} />}
+                  {selected.due_date && <DetailRow label="Due Date" value={format(new Date(selected.due_date), 'MMM d, yyyy')} icon={Calendar} />}
+                </div>
+
+                {selected.description && (
+                  <div className="rounded-lg bg-muted/30 p-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Description</p>
+                    <p className="text-sm text-foreground">{selected.description}</p>
+                  </div>
+                )}
+
+                {selected.ticket_id && (
+                  <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
+                    <p className="text-xs font-semibold text-primary uppercase mb-1 flex items-center gap-1">
+                      <Ticket className="w-3 h-3" /> Linked Ticket
+                    </p>
+                    <p className="text-sm font-medium text-foreground">{selected.ticket_title}</p>
+                    <div className="flex gap-1.5 mt-1">
+                      {selected.ticket_sap_module && <Badge variant="secondary" className="text-[10px]">{selected.ticket_sap_module}</Badge>}
+                      {selected.ticket_urgency && <Badge variant="outline" className="text-[10px]">{selected.ticket_urgency}</Badge>}
+                    </div>
+                    <Link to={`/client/tickets/${selected.ticket_id}`} className="inline-flex items-center gap-1 text-xs text-primary mt-2 hover:underline">
+                      View Ticket <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <Button className="flex-1 gap-1.5" variant="outline" size="sm" onClick={() => generateInvoicePdf(selected, true)}>
+                    <Eye className="w-4 h-4" /> Preview PDF
+                  </Button>
+                  <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={() => generateInvoicePdf(selected, false)}>
+                    <Download className="w-4 h-4" /> Download PDF
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Badge className={statusColors[inv.status]}>{inv.status}</Badge>
-                <span className="font-bold text-sm">{inv.amount} {inv.currency}</span>
-                <Button size="icon" variant="ghost"><Download className="w-4 h-4" /></Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* PDF Preview Dialog */}
+      <Dialog open={!!pdfPreview} onOpenChange={() => setPdfPreview(null)}>
+        <DialogContent className="max-w-3xl h-[85vh] p-0 overflow-hidden">
+          <div className="flex items-center justify-between p-4 border-b border-border">
+            <DialogTitle className="flex items-center gap-2 text-sm font-semibold">
+              <FileText className="w-4 h-4 text-primary" /> Invoice Preview
+            </DialogTitle>
+            <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => { if (pdfPreview) window.open(pdfPreview, '_blank'); }}>
+              <Printer className="w-3.5 h-3.5" /> Print
+            </Button>
+          </div>
+          {pdfPreview && (
+            <iframe src={pdfPreview} className="w-full flex-1 h-full" title="Invoice PDF Preview" />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, icon: Icon }: { label: string; value: string; icon: any }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+      <div>
+        <p className="text-[10px] text-muted-foreground uppercase">{label}</p>
+        <p className="text-sm font-medium text-foreground">{value}</p>
       </div>
     </div>
   );
