@@ -134,12 +134,12 @@ export default function ConsultantReportsPage() {
         ratingTrend,
         // Export data
         casesExport: rangeTickets.map(t => ({
-          Title: t.title, Status: t.status, Module: t.sap_module,
+          Title: t.title, Status: t.status || 'unknown', Module: t.sap_module,
           Created: format(new Date(t.created_at), 'PPP'),
           Resolved: t.resolved_at ? format(new Date(t.resolved_at), 'PPP') : '—',
         })),
         earningsExport: rangePayments.map(p => ({
-          Amount: `$${Number(p.amount).toFixed(2)}`, Status: p.status,
+          Amount: `$${Number(p.amount).toFixed(2)}`, Status: p.status || 'unknown',
           Date: format(new Date(p.created_at), 'PPP'),
         })),
       };

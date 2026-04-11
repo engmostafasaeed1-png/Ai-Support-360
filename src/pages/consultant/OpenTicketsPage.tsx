@@ -148,7 +148,7 @@ export default function OpenTicketsPage() {
                       <Badge variant="secondary" className="text-[9px] bg-accent/10 text-accent gap-1">
                         <Globe className="w-2.5 h-2.5" /> Accepting Bids
                       </Badge>
-                      <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>
+                      <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency || 'medium']}`}>
                         {ticket.urgency}
                       </Badge>
                     </div>

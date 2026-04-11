@@ -105,7 +105,7 @@ export function useTicketSessions(ticketId: string | undefined) {
 
       return (data || []).map(s => ({
         ...s,
-        consultant_name: consultantUserMap[s.consultant_id] || 'Unassigned',
+        consultant_name: s.consultant_id ? (consultantUserMap[s.consultant_id] || 'Unassigned') : 'Unassigned',
       }));
     },
   });
