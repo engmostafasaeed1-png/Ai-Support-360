@@ -66,7 +66,7 @@ export default function SharedConfigsConsultantPanel() {
       </CardHeader>
       <CardContent className="space-y-2">
         {configs.map(cfg => {
-          const config = cfg.config as Record<string, unknown>;
+          const config = (cfg.config || {}) as Record<string, string>;
           const connectionId = (config.connectionId as string) || '';
           const alias = (config.alias as string) || '';
           const isPending = cfg.status === 'pending';
