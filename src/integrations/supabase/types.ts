@@ -598,6 +598,8 @@ export type Database = {
           company_size: string | null
           company_website: string | null
           created_at: string
+          custom_nda_filename: string | null
+          custom_nda_url: string | null
           headquarters: string | null
           id: string
           industry: string | null
@@ -633,6 +635,8 @@ export type Database = {
           company_size?: string | null
           company_website?: string | null
           created_at?: string
+          custom_nda_filename?: string | null
+          custom_nda_url?: string | null
           headquarters?: string | null
           id?: string
           industry?: string | null
@@ -668,6 +672,8 @@ export type Database = {
           company_size?: string | null
           company_website?: string | null
           created_at?: string
+          custom_nda_filename?: string | null
+          custom_nda_url?: string | null
           headquarters?: string | null
           id?: string
           industry?: string | null

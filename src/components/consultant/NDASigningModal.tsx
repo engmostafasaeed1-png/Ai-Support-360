@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { Download, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -35,6 +36,8 @@ export default function NDASigningModal({
   const [clientDisplayName, setClientDisplayName] = useState(clientName || '');
   const [clientIndustry, setClientIndustry] = useState('');
   const [clientSapModules, setClientSapModules] = useState('');
+  const [customNdaUrl, setCustomNdaUrl] = useState<string | null>(null);
+  const [customNdaFilename, setCustomNdaFilename] = useState<string | null>(null);
 
   // Fetch consultant & client details when modal opens
   useEffect(() => {
@@ -62,7 +65,7 @@ export default function NDASigningModal({
         }
       });
 
-    // Fetch client profile details
+    // Fetch client profile details (including custom NDA)
     supabase
       .from('profiles')
       .select('display_name')
@@ -72,15 +75,25 @@ export default function NDASigningModal({
 
     supabase
       .from('client_profiles')
-      .select('company_name, industry, sap_modules')
+      .select('company_name, industry, sap_modules, custom_nda_url, custom_nda_filename')
       .eq('user_id', clientId)
       .maybeSingle()
       .then(({ data }) => {
         setClientCompany(data?.company_name || '');
         setClientIndustry(data?.industry || '');
         setClientSapModules((data?.sap_modules || []).join(', '));
+        setCustomNdaUrl(data?.custom_nda_url || null);
+        setCustomNdaFilename(data?.custom_nda_filename || null);
       });
   }, [open, consultantId, clientId, clientName]);
+
+  const hasCustomNDA = !!customNdaUrl;
+
+  const customNdaPublicUrl = useMemo(() => {
+    if (!customNdaUrl) return null;
+    const { data } = supabase.storage.from('nda-documents').getPublicUrl(customNdaUrl);
+    return data.publicUrl;
+  }, [customNdaUrl]);
 
   // Replace placeholders in template
   const filledTemplate = useMemo(() => {
@@ -185,7 +198,10 @@ export default function NDASigningModal({
         ? canvasRef.current!.toDataURL('image/png')
         : typedName.trim();
 
-    const success = await signNDA(sigData, sigType, filledTemplate);
+    const ndaContentForRecord = hasCustomNDA
+      ? `[Custom NDA Document: ${customNdaFilename}] ${customNdaPublicUrl}`
+      : filledTemplate;
+    const success = await signNDA(sigData, sigType, ndaContentForRecord);
     setSubmitting(false);
     if (success) {
       onOpenChange(false);
@@ -218,15 +234,41 @@ export default function NDASigningModal({
         )}
 
         {/* NDA Content */}
-        <ScrollArea className="flex-1 max-h-[280px] border rounded-lg p-4 bg-muted/30">
-          {templateLoading ? (
-            <p className="text-muted-foreground">{t('nda.loading', 'Loading...')}</p>
-          ) : (
-            <pre className="whitespace-pre-wrap text-sm font-sans text-foreground leading-relaxed">
-              {filledTemplate}
-            </pre>
-          )}
-        </ScrollArea>
+        {hasCustomNDA ? (
+          <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <FileSignature className="w-4 h-4 text-primary" />
+              {t('nda.custom_nda_label', 'Client Custom NDA Document')}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {t('nda.custom_nda_review', 'The client has provided a custom NDA. Please download, review, and sign below to confirm your agreement.')}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                <a href={customNdaPublicUrl || '#'} target="_blank" rel="noopener noreferrer">
+                  <Download className="w-3.5 h-3.5" />
+                  {customNdaFilename || 'Download NDA'}
+                </a>
+              </Button>
+              <Button variant="ghost" size="sm" className="gap-1.5" asChild>
+                <a href={customNdaPublicUrl || '#'} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  {t('nda.open_in_tab', 'Open')}
+                </a>
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <ScrollArea className="flex-1 max-h-[280px] border rounded-lg p-4 bg-muted/30">
+            {templateLoading ? (
+              <p className="text-muted-foreground">{t('nda.loading', 'Loading...')}</p>
+            ) : (
+              <pre className="whitespace-pre-wrap text-sm font-sans text-foreground leading-relaxed">
+                {filledTemplate}
+              </pre>
+            )}
+          </ScrollArea>
+        )}
 
         {/* Agreement Checkbox */}
         <div className="flex items-start gap-2 py-2">
