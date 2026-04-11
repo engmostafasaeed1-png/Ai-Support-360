@@ -104,6 +104,7 @@ export default function NewRequestPage() {
   const [form, setForm] = useState({
     sap_module: '', issue_type: '', title: '', description: '',
     urgency: 'medium', preferred_session: 'video', preferred_language: 'en',
+    ticket_type: 'standard',
   });
   const [submitted, setSubmitted] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -328,6 +329,7 @@ export default function NewRequestPage() {
         preferred_language: form.preferred_language,
         ai_suggested_category: aiCategorization?.category || null,
         ai_suggested_priority: aiCategorization?.suggested_priority || null,
+        ticket_type: form.ticket_type,
       }).select('id').single();
 
       if (error) throw error;
@@ -421,7 +423,7 @@ export default function NewRequestPage() {
         <div className="flex gap-3 justify-center">
           <Button onClick={() => {
             setSubmitted(false); setStep(0);
-            setForm({ sap_module: '', issue_type: '', title: '', description: '', urgency: 'medium', preferred_session: 'video', preferred_language: 'en' });
+            setForm({ sap_module: '', issue_type: '', title: '', description: '', urgency: 'medium', preferred_session: 'video', preferred_language: 'en', ticket_type: 'standard' });
             setAiCategorization(null); setAiSummary(null); setAiMatch(null); setAiRecommendations(null); setAttachedFiles([]); setLinkedTickets([]);
           }} variant="outline">
             {t('ticket_create.submit_another')}
@@ -688,6 +690,36 @@ export default function NewRequestPage() {
                     <p className="text-xs text-muted-foreground">{t(`ticket_create.${level.desc}`)}</p>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Major Incident Toggle */}
+            <div>
+              <label className="text-sm font-medium mb-3 block">Ticket Type</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => updateForm('ticket_type', 'standard')}
+                  className={`p-4 rounded-xl border-2 text-start transition-all ${form.ticket_type === 'standard' ? 'border-accent bg-accent/5' : 'border-border/50 hover:border-accent/30'}`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileText className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-semibold">Standard</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Regular support ticket</p>
+                </button>
+                <button
+                  onClick={() => {
+                    updateForm('ticket_type', 'major_incident');
+                    updateForm('urgency', 'critical');
+                  }}
+                  className={`p-4 rounded-xl border-2 text-start transition-all ${form.ticket_type === 'major_incident' ? 'border-destructive bg-destructive/5' : 'border-red-300 hover:border-red-500'}`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                    <span className="text-sm font-semibold text-destructive">Major Incident</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">P1/P2 critical — requires immediate action</p>
+                </button>
               </div>
             </div>
             <div>
