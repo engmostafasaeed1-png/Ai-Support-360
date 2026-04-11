@@ -3,13 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Link } from 'react-router-dom';
 import {
   Briefcase, Clock, CreditCard, CheckCircle, TrendingUp,
   ChevronRight, Star, BadgeCheck, Zap, TicketPlus, Users,
   Calendar, DollarSign, Video, MessageSquare, Monitor, Award, ExternalLink,
+  ArrowUpRight, ArrowDownRight, Activity, Target, Shield, Flame,
 } from 'lucide-react';
-import { subDays, isSameDay } from 'date-fns';
+import { subDays, isSameDay, format } from 'date-fns';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import OnboardingProgressCard from '@/components/onboarding/OnboardingProgressCard';
 import WelcomeBanner from '@/components/onboarding/WelcomeBanner';
@@ -82,6 +84,8 @@ export default function ClientDashboard() {
   const activeSessions = useMemo(() => sessions.filter((s: any) => s.status === 'scheduled'), [sessions]);
   const resolvedCount = useMemo(() => tickets.filter((t: any) => t.status === 'resolved').length, [tickets]);
   const pendingTotal = useMemo(() => pendingPayments.reduce((a: number, p: any) => a + p.amount, 0), [pendingPayments]);
+  const totalTickets = tickets.length;
+  const resolutionRate = totalTickets > 0 ? Math.round((resolvedCount / totalTickets) * 100) : 0;
 
   const recommendedConsultants = useMemo(() => isGuest ? mockRecommendedConsultants : (
     realtimeConsultants.length > 0 ? realtimeConsultants.slice(0, 6).map(c => ({
@@ -100,14 +104,36 @@ export default function ClientDashboard() {
     payments.filter((p: any) => isSameDay(new Date(p.date || p.created_at), subDays(new Date(), 6 - i))).reduce((sum: number, p: any) => sum + (p.amount || 0), 0)
   ), [payments]);
 
-  const kpis = useMemo(() => [
-    { labelKey: 'client_dashboard.open_tickets', value: openTickets.length, prefix: '', icon: Briefcase, sparkData: ticketSpark, link: '/client/tickets', color: 'hsl(var(--accent))' },
-    { labelKey: 'client_dashboard.active_sessions', value: activeSessions.length, prefix: '', icon: Calendar, sparkData: sessionSpark, link: '/client/sessions', color: 'hsl(142, 71%, 45%)' },
-    { labelKey: 'client_dashboard.pending_payments', value: pendingTotal, prefix: '$', icon: CreditCard, sparkData: paymentSpark, link: '/client/payments', color: 'hsl(38, 92%, 50%)' },
-    { labelKey: 'client_dashboard.resolved', value: resolvedCount, prefix: '', icon: CheckCircle, sparkData: [2, 4, 3, 5, 7, 6, resolvedCount], link: '/client/tickets', color: 'hsl(142, 71%, 45%)' },
-  ], [openTickets.length, activeSessions.length, pendingTotal, resolvedCount, ticketSpark, sessionSpark, paymentSpark]);
-
   const isLoading = ticketsLoading || sessionsLoading || paymentsLoading;
+
+  const kpis = useMemo(() => [
+    {
+      labelKey: 'client_dashboard.open_tickets', value: openTickets.length, prefix: '',
+      icon: Briefcase, sparkData: ticketSpark, link: '/client/tickets',
+      color: 'hsl(var(--accent))', trend: openTickets.length > 3 ? 'up' : 'down',
+      trendValue: openTickets.length > 0 ? `${openTickets.length} active` : 'All clear',
+      description: 'Tickets awaiting resolution',
+    },
+    {
+      labelKey: 'client_dashboard.active_sessions', value: activeSessions.length, prefix: '',
+      icon: Calendar, sparkData: sessionSpark, link: '/client/sessions',
+      color: 'hsl(142, 71%, 45%)', trend: 'up', trendValue: `${activeSessions.length} scheduled`,
+      description: 'Upcoming consultations',
+    },
+    {
+      labelKey: 'client_dashboard.pending_payments', value: pendingTotal, prefix: '$',
+      icon: CreditCard, sparkData: paymentSpark, link: '/client/payments',
+      color: 'hsl(38, 92%, 50%)', trend: pendingTotal > 0 ? 'up' : 'neutral',
+      trendValue: pendingTotal > 0 ? 'Due soon' : 'Settled',
+      description: 'Outstanding balance',
+    },
+    {
+      labelKey: 'client_dashboard.resolved', value: resolvedCount, prefix: '',
+      icon: CheckCircle, sparkData: [2, 4, 3, 5, 7, 6, resolvedCount], link: '/client/tickets',
+      color: 'hsl(142, 71%, 45%)', trend: 'up', trendValue: `${resolutionRate}% rate`,
+      description: 'Successfully closed tickets',
+    },
+  ], [openTickets.length, activeSessions.length, pendingTotal, resolvedCount, ticketSpark, sessionSpark, paymentSpark, resolutionRate]);
 
   return (
     <PullToRefresh>
@@ -116,24 +142,37 @@ export default function ClientDashboard() {
       <EmailVerificationBanner />
       <OnboardingProgressCard role="client" />
 
-      {/* Welcome */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('client_dashboard.title')}, {displayName.split(' ')[0]}</h1>
-          {company && <p className="text-sm text-muted-foreground mt-1">{company} · {t('client_dashboard.subtitle')}</p>}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <AIInsightsButton role="client" metrics={{ openTickets: openTickets.length, resolvedTickets: resolvedCount, activeSessions: activeSessions.length, pendingPayments: pendingTotal, totalTickets: tickets.length }} />
-          <Link to="/client/new-request">
-            <Button className="gradient-primary border-0 shadow-premium hover:shadow-glow transition-all" size="sm">
-              <TicketPlus className="w-4 h-4 me-1" /> {t('client_dashboard.new_request')}
-            </Button>
-          </Link>
-          <Link to="/client/consultants">
-            <Button variant="outline" size="sm" className="hover:border-accent/50 transition-colors">
-              <Users className="w-4 h-4 me-1" /> {t('consultants_page.title')}
-            </Button>
-          </Link>
+      {/* Hero Welcome Section */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-accent/80 p-6 md:p-8 text-primary-foreground">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDE4YzAtOS45NC04LjA2LTE4LTE4LTE4UzAgOC4wNiAwIDE4czguMDYgMTggMTggMTggMTgtOC4wNiAxOC0xOHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50" />
+        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <p className="text-primary-foreground/70 text-sm font-medium mb-1">
+              {format(new Date(), 'EEEE, MMMM d, yyyy')}
+            </p>
+            <h1 className="text-2xl md:text-3xl font-bold">
+              {t('client_dashboard.title')}, {displayName.split(' ')[0]} 👋
+            </h1>
+            {company && (
+              <p className="text-primary-foreground/80 mt-1 text-sm">{company} · {t('client_dashboard.subtitle')}</p>
+            )}
+            <p className="text-primary-foreground/60 mt-2 text-xs max-w-lg">
+              Track your support tickets, manage sessions, and connect with SAP experts — all from one place.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <AIInsightsButton role="client" metrics={{ openTickets: openTickets.length, resolvedTickets: resolvedCount, activeSessions: activeSessions.length, pendingPayments: pendingTotal, totalTickets: tickets.length }} />
+            <Link to="/client/new-request">
+              <Button className="bg-white/20 backdrop-blur-sm border border-white/20 text-white hover:bg-white/30 shadow-lg" size="sm">
+                <TicketPlus className="w-4 h-4 me-1" /> {t('client_dashboard.new_request')}
+              </Button>
+            </Link>
+            <Link to="/client/consultants">
+              <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
+                <Users className="w-4 h-4 me-1" /> {t('consultants_page.title')}
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -141,33 +180,88 @@ export default function ClientDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-fade">
         {kpis.map((kpi, i) => (
           <Link key={i} to={kpi.link}>
-            <Card className="rounded-2xl border-border/50 card-interactive gradient-border">
+            <Card className="rounded-2xl border-border/50 card-interactive group relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-[0.04] -translate-y-8 translate-x-8" style={{ background: kpi.color }} />
               <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                    <kpi.icon className="w-5 h-5 text-accent" />
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: `${kpi.color}15` }}>
+                    <kpi.icon className="w-5 h-5" style={{ color: kpi.color }} />
                   </div>
-                  <Sparkline data={kpi.sparkData} color={kpi.color} width={64} height={20} />
+                  <Sparkline data={kpi.sparkData} color={kpi.color} width={64} height={22} />
                 </div>
                 {isLoading ? (
-                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-9 w-20" />
                 ) : (
-                  <div className="text-2xl font-bold text-foreground">
+                  <div className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
                     <AnimatedCounter value={kpi.value} prefix={kpi.prefix} />
                   </div>
                 )}
-                <div className="text-xs text-muted-foreground mt-1">{t(kpi.labelKey)}</div>
+                <div className="text-xs font-medium text-muted-foreground mt-1">{t(kpi.labelKey)}</div>
+                <div className="flex items-center gap-1 mt-2">
+                  {kpi.trend === 'up' ? (
+                    <ArrowUpRight className="w-3 h-3 text-green-500" />
+                  ) : kpi.trend === 'down' ? (
+                    <ArrowDownRight className="w-3 h-3 text-accent" />
+                  ) : null}
+                  <span className="text-[10px] text-muted-foreground">{kpi.trendValue}</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground/60 mt-0.5">{kpi.description}</p>
               </CardContent>
             </Card>
           </Link>
         ))}
       </div>
 
+      {/* Resolution Health Bar */}
+      <Card className="rounded-2xl border-border/50">
+        <CardContent className="p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center shrink-0">
+                <Target className="w-5 h-5 text-green-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-semibold text-foreground">Resolution Rate</span>
+                  <span className="text-sm font-bold text-foreground">{resolutionRate}%</span>
+                </div>
+                <Progress value={resolutionRate} className="h-2" />
+                <p className="text-[10px] text-muted-foreground mt-1">{resolvedCount} of {totalTickets} tickets resolved</p>
+              </div>
+            </div>
+            <div className="flex gap-4 shrink-0">
+              <div className="text-center">
+                <div className="text-lg font-bold text-foreground">{openTickets.length}</div>
+                <div className="text-[10px] text-muted-foreground">Open</div>
+              </div>
+              <div className="w-px bg-border" />
+              <div className="text-center">
+                <div className="text-lg font-bold text-foreground">{activeSessions.length}</div>
+                <div className="text-[10px] text-muted-foreground">Sessions</div>
+              </div>
+              <div className="w-px bg-border" />
+              <div className="text-center">
+                <div className="text-lg font-bold text-green-500">{resolvedCount}</div>
+                <div className="text-[10px] text-muted-foreground">Resolved</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Recent Tickets */}
         <Card className="lg:col-span-2 rounded-2xl border-border/50">
           <CardHeader className="flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-semibold">{t('tickets_page.title')}</CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                <Briefcase className="w-4 h-4 text-accent" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-semibold">{t('tickets_page.title')}</CardTitle>
+                <p className="text-[10px] text-muted-foreground">{openTickets.length} open · {resolvedCount} resolved</p>
+              </div>
+            </div>
             <Link to="/client/tickets">
               <Button variant="ghost" size="sm" className="text-xs group">{t('client_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1 group-hover:translate-x-0.5 transition-transform" /></Button>
             </Link>
@@ -176,21 +270,38 @@ export default function ClientDashboard() {
             {ticketsLoading ? (
               Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)
             ) : tickets.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">{t('common.no_data', 'No tickets yet')}</p>
+              <div className="text-center py-8">
+                <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-3">
+                  <Briefcase className="w-6 h-6 text-accent" />
+                </div>
+                <p className="text-sm font-medium text-foreground">No tickets yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Create your first support request to get started</p>
+                <Link to="/client/new-request">
+                  <Button size="sm" className="mt-3 gradient-primary border-0" variant="default">
+                    <TicketPlus className="w-3 h-3 me-1" /> New Request
+                  </Button>
+                </Link>
+              </div>
             ) : (
-              <div className="stagger-fade">
-                {tickets.slice(0, 4).map((ticket: any) => (
+              <div className="stagger-fade space-y-2">
+                {tickets.slice(0, 5).map((ticket: any) => (
                   <Link key={ticket.id} to={`/client/tickets/${ticket.id}`} className="block">
-                    <div className="flex items-center gap-4 p-3 rounded-xl bg-muted/20 border border-border/30 card-interactive">
+                    <div className="flex items-center gap-4 p-3 rounded-xl bg-muted/20 border border-border/30 card-interactive group">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{
+                        background: ticket.urgency === 'critical' ? 'hsl(0, 84%, 60%, 0.1)' :
+                          ticket.urgency === 'high' ? 'hsl(25, 95%, 53%, 0.1)' :
+                          'hsl(var(--accent) / 0.1)'
+                      }}>
+                        {ticket.urgency === 'critical' ? <Flame className="w-4 h-4 text-red-500" /> :
+                         ticket.urgency === 'high' ? <Activity className="w-4 h-4 text-orange-500" /> :
+                         <Briefcase className="w-4 h-4 text-accent" />}
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-foreground truncate">{ticket.title}</h4>
+                        <h4 className="text-sm font-medium text-foreground truncate group-hover:text-accent transition-colors">{ticket.title}</h4>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                          <span>{ticket.sap_module}</span>
+                          <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-border/50">{ticket.sap_module}</Badge>
                           {ticket.consultant && (
-                            <>
-                              <span>·</span>
-                              <span>{ticket.consultant}</span>
-                            </>
+                            <span className="truncate">→ {ticket.consultant}</span>
                           )}
                         </div>
                       </div>
@@ -201,7 +312,7 @@ export default function ClientDashboard() {
                         <Badge variant="secondary" className={`text-[10px] ${statusColors[ticket.status]}`}>
                           {ticket.status.replace(/_/g, ' ')}
                         </Badge>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </div>
                   </Link>
@@ -214,23 +325,38 @@ export default function ClientDashboard() {
         {/* Activity Feed */}
         <Card className="rounded-2xl border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">{t('client_dashboard.recent_activity')}</CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                <Activity className="w-4 h-4 text-accent" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-semibold">{t('client_dashboard.recent_activity')}</CardTitle>
+                <p className="text-[10px] text-muted-foreground">Latest updates & changes</p>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-1">
             {activities.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">{t('common.no_data', 'No activity yet')}</p>
+              <div className="text-center py-8">
+                <div className="w-12 h-12 rounded-2xl bg-muted/40 flex items-center justify-center mx-auto mb-3">
+                  <Activity className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium text-foreground">No activity yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Your recent actions will appear here</p>
+              </div>
             ) : (
-              <div className="stagger-fade space-y-4">
-                {activities.map((activity: any) => {
+              <div className="stagger-fade space-y-1 relative">
+                <div className="absolute start-[15px] top-4 bottom-4 w-px bg-border/50" />
+                {activities.map((activity: any, idx: number) => {
                   const Icon = activityIcons[activity.icon] || Briefcase;
                   return (
-                    <div key={activity.id} className="flex items-start gap-3 group">
-                      <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-accent/20 transition-colors">
-                        <Icon className="w-4 h-4 text-accent" />
+                    <div key={activity.id} className="flex items-start gap-3 group relative p-2 rounded-lg hover:bg-muted/30 transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-background border-2 border-border flex items-center justify-center shrink-0 z-10 group-hover:border-accent/50 transition-colors">
+                        <Icon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-accent transition-colors" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground leading-snug">{activity.message}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
+                      <div className="flex-1 min-w-0 pt-0.5">
+                        <p className="text-xs text-foreground leading-snug">{activity.message}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{activity.time}</p>
                       </div>
                     </div>
                   );
@@ -244,7 +370,15 @@ export default function ClientDashboard() {
       {/* Upcoming Sessions */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader className="flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base font-semibold">{t('consultant_dashboard.upcoming_sessions')}</CardTitle>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+              <Calendar className="w-4 h-4 text-green-500" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold">{t('consultant_dashboard.upcoming_sessions')}</CardTitle>
+              <p className="text-[10px] text-muted-foreground">{activeSessions.length} session{activeSessions.length !== 1 ? 's' : ''} scheduled</p>
+            </div>
+          </div>
           <Link to="/client/sessions">
             <Button variant="ghost" size="sm" className="text-xs group">{t('client_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1 group-hover:translate-x-0.5 transition-transform" /></Button>
           </Link>
@@ -255,16 +389,31 @@ export default function ClientDashboard() {
               {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
             </div>
           ) : sessions.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">{t('common.no_data', 'No sessions scheduled')}</p>
+            <div className="text-center py-8">
+              <div className="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto mb-3">
+                <Calendar className="w-6 h-6 text-green-500" />
+              </div>
+              <p className="text-sm font-medium text-foreground">No sessions scheduled</p>
+              <p className="text-xs text-muted-foreground mt-1">Book a session with a consultant to get started</p>
+            </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-4 stagger-fade">
               {sessions.slice(0, 4).map((session: any) => {
                 const typeIcons: Record<string, typeof Video> = { video: Video, chat: MessageSquare, screen_share: Monitor };
                 const TypeIcon = typeIcons[session.session_type] || Video;
                 const time = new Date(session.scheduled_at);
+                const isToday = isSameDay(time, new Date());
                 return (
                   <Link key={session.id} to={`/client/sessions/${session.id}`} className="block">
-                    <div className="p-4 rounded-xl bg-muted/20 border border-border/30 card-interactive">
+                    <div className="p-4 rounded-xl bg-muted/20 border border-border/30 card-interactive relative overflow-hidden">
+                      {isToday && (
+                        <div className="absolute top-2 end-2">
+                          <Badge className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px]">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse me-1" />
+                            Today
+                          </Badge>
+                        </div>
+                      )}
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
                           <TypeIcon className="w-5 h-5 text-accent" />
@@ -293,7 +442,15 @@ export default function ClientDashboard() {
       {/* Recommended Consultants */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader className="flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base font-semibold">{t('client_dashboard.recommended_consultants')}</CardTitle>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+              <Users className="w-4 h-4 text-purple-500" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold">{t('client_dashboard.recommended_consultants')}</CardTitle>
+              <p className="text-[10px] text-muted-foreground">Matched to your SAP environment</p>
+            </div>
+          </div>
           <Link to="/client/consultants">
             <Button variant="ghost" size="sm" className="text-xs group">{t('client_dashboard.view_all')} <ChevronRight className="w-3 h-3 ms-1 group-hover:translate-x-0.5 transition-transform" /></Button>
           </Link>
@@ -302,7 +459,8 @@ export default function ClientDashboard() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-fade">
             {recommendedConsultants.map((c: any) => (
               <Link key={c.id} to={`/client/consultants/${c.id}`} className="block">
-              <div className="p-4 rounded-xl bg-muted/20 border border-border/30 card-interactive flex flex-col gradient-border">
+              <div className="p-4 rounded-xl bg-muted/20 border border-border/30 card-interactive flex flex-col group relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-accent/5 -translate-y-6 translate-x-6" />
                 <div className="flex items-center gap-3 mb-3">
                   <div className="relative">
                     <div className="w-11 h-11 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
@@ -311,7 +469,7 @@ export default function ClientDashboard() {
                     <StatusDot status="online" size="sm" pulse className="absolute -bottom-0.5 -end-0.5 ring-2 ring-background" />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="text-sm font-semibold text-foreground truncate">{c.name}</h4>
+                    <h4 className="text-sm font-semibold text-foreground truncate group-hover:text-accent transition-colors">{c.name}</h4>
                     <p className="text-xs text-muted-foreground truncate">{c.specialty}</p>
                   </div>
                 </div>
@@ -326,10 +484,10 @@ export default function ClientDashboard() {
                   {c.credly_username && (
                     <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                       <Award className="w-2.5 h-2.5" />
-                      {t('consultants.credly_verified', 'Credly Verified')}
+                      Credly
                     </span>
                   )}
-                  {(c.badges || []).map((badge: string) => {
+                  {(c.badges || []).slice(0, 2).map((badge: string) => {
                     const config = badgeConfig[badge];
                     if (!config) return null;
                     const BIcon = config.icon;
@@ -342,14 +500,14 @@ export default function ClientDashboard() {
                   })}
                 </div>
 
-                <div className="mt-auto flex items-center justify-between">
+                <div className="mt-auto flex items-center justify-between pt-2 border-t border-border/30">
                   <div>
                     <span className="text-base font-bold text-foreground">${c.rate}</span>
                     <span className="text-xs text-muted-foreground">/hr</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-medium text-accent">{c.matchScore}% match</span>
-                  </div>
+                  <Badge variant="outline" className="text-[10px] border-accent/30 text-accent">
+                    {c.matchScore}% match
+                  </Badge>
                 </div>
               </div>
               </Link>
@@ -358,44 +516,28 @@ export default function ClientDashboard() {
         </CardContent>
       </Card>
 
-      {/* VMware Infrastructure */}
-      <Card className="rounded-2xl border-border/50">
-        <CardHeader className="flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Monitor className="w-4 h-4 text-primary" /> VMware Infrastructure
-          </CardTitle>
-          <Link to="/client/vmware-console">
-            <Button variant="ghost" size="sm" className="text-xs group">Console <ChevronRight className="w-3 h-3 ms-1 group-hover:translate-x-0.5 transition-transform" /></Button>
+      {/* Quick Access Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { icon: Monitor, label: 'VM Console', desc: 'Power & Monitor', link: '/client/vmware-console', color: 'text-primary' },
+          { icon: CreditCard, label: 'VM Pricing', desc: 'Plans & Billing', link: '/client/vmware-pricing', color: 'text-accent' },
+          { icon: Shield, label: 'Remote Access', desc: 'Secure connect', link: '/client/remote-access', color: 'text-green-500' },
+          { icon: TrendingUp, label: 'Reports', desc: 'Analytics', link: '/client/reports', color: 'text-purple-500' },
+        ].map((item) => (
+          <Link key={item.label} to={item.link}>
+            <Card className="rounded-2xl border-border/50 card-interactive group">
+              <CardContent className="p-4 text-center">
+                <div className="w-10 h-10 rounded-xl bg-muted/40 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                  <item.icon className={`w-5 h-5 ${item.color}`} />
+                </div>
+                <p className="text-sm font-medium text-foreground">{item.label}</p>
+                <p className="text-[10px] text-muted-foreground">{item.desc}</p>
+              </CardContent>
+            </Card>
           </Link>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-3">
-            <Link to="/client/vmware-console">
-              <div className="p-3 rounded-xl bg-muted/20 border border-border/30 text-center card-interactive">
-                <Monitor className="w-5 h-5 text-primary mx-auto mb-1" />
-                <p className="text-xs font-medium">Console</p>
-                <p className="text-[10px] text-muted-foreground">Power & Monitor</p>
-              </div>
-            </Link>
-            <Link to="/client/vmware-pricing">
-              <div className="p-3 rounded-xl bg-muted/20 border border-border/30 text-center card-interactive">
-                <CreditCard className="w-5 h-5 text-primary mx-auto mb-1" />
-                <p className="text-xs font-medium">Pricing</p>
-                <p className="text-[10px] text-muted-foreground">Plans & Billing</p>
-              </div>
-            </Link>
-            <Link to="/client/vmware-settings">
-              <div className="p-3 rounded-xl bg-muted/20 border border-border/30 text-center card-interactive">
-                <TrendingUp className="w-5 h-5 text-primary mx-auto mb-1" />
-                <p className="text-xs font-medium">Settings</p>
-                <p className="text-[10px] text-muted-foreground">Configure VMs</p>
-              </div>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+        ))}
+      </div>
     </div>
     </PullToRefresh>
   );
 }
-
