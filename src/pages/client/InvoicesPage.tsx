@@ -42,6 +42,57 @@ export default function InvoicesPage() {
   const [tab, setTab] = useState('all');
   const [selected, setSelected] = useState<any>(null);
   const [pdfPreview, setPdfPreview] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ ticket_id: '', amount: '', currency: 'USD', vat: '', description: '', due_date: '' });
+  const [creating, setCreating] = useState(false);
+  const { data: tickets } = useClientTickets();
+  const queryClient = useQueryClient();
+
+  const selectedTicket = (tickets || []).find((t: any) => t.id === createForm.ticket_id);
+
+  const handleTicketSelect = (ticketId: string) => {
+    const ticket = (tickets || []).find((t: any) => t.id === ticketId);
+    if (ticket) {
+      setCreateForm(prev => ({
+        ...prev,
+        ticket_id: ticketId,
+        description: `Invoice for ticket: ${ticket.title} (${ticket.sap_module})${ticket.description ? ' — ' + ticket.description.slice(0, 120) : ''}`,
+        amount: ticket.planned_cost ? String(ticket.planned_cost) : prev.amount,
+        currency: ticket.cost_currency || prev.currency,
+      }));
+    }
+  };
+
+  const handleCreateInvoice = async () => {
+    if (!createForm.amount || Number(createForm.amount) <= 0) { toast.error('Enter a valid amount'); return; }
+    setCreating(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      const invoiceNum = `INV-${Date.now().toString(36).toUpperCase()}`;
+      const { error } = await (supabase.from('payments') as any).insert({
+        client_id: user.id,
+        ticket_id: createForm.ticket_id || null,
+        amount: Number(createForm.amount),
+        currency: createForm.currency,
+        vat_amount: Number(createForm.vat || 0),
+        description: createForm.description || null,
+        due_date: createForm.due_date || null,
+        invoice_number: invoiceNum,
+        status: 'pending',
+        consultant_id: selectedTicket?.consultant_id || null,
+      });
+      if (error) throw error;
+      toast.success(`Invoice ${invoiceNum} created`);
+      setCreateOpen(false);
+      setCreateForm({ ticket_id: '', amount: '', currency: 'USD', vat: '', description: '', due_date: '' });
+      queryClient.invalidateQueries({ queryKey: ['client-payments'] });
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to create invoice');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const all = payments || [];
   const filtered = all.filter((p: any) => {
