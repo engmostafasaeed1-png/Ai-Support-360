@@ -1,0 +1,1 @@
+ALTER TABLE public.payments ALTER COLUMN consultant_id DROP NOT NULL;

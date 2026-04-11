@@ -2093,7 +2093,7 @@ export type Database = {
         Row: {
           amount: number
           client_id: string
-          consultant_id: string
+          consultant_id: string | null
           created_at: string
           currency: string | null
           description: string | null
@@ -2112,7 +2112,7 @@ export type Database = {
         Insert: {
           amount: number
           client_id: string
-          consultant_id: string
+          consultant_id?: string | null
           created_at?: string
           currency?: string | null
           description?: string | null
@@ -2131,7 +2131,7 @@ export type Database = {
         Update: {
           amount?: number
           client_id?: string
-          consultant_id?: string
+          consultant_id?: string | null
           created_at?: string
           currency?: string | null
           description?: string | null
