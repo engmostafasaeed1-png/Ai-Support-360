@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 export interface VMwareSettings {
   id: string;
   environment_id: string;
+  cloud_vendor: string;
+  hypervisor_type: string;
   vcenter_url: string | null;
   vcenter_username: string | null;
   vcenter_password_encrypted: string | null;
@@ -12,6 +14,16 @@ export interface VMwareSettings {
   cluster: string | null;
   resource_pool: string | null;
   datastore: string | null;
+  cloud_region: string | null;
+  cloud_account_id: string | null;
+  cloud_project_id: string | null;
+  cloud_api_key_encrypted: string | null;
+  cloud_api_endpoint: string | null;
+  instance_type: string | null;
+  availability_zone: string | null;
+  security_group: string | null;
+  subnet_id: string | null;
+  storage_type: string | null;
   default_os_template: string;
   default_cpu: number;
   default_ram_gb: number;
