@@ -9,20 +9,16 @@ import {
 import { Brain } from 'lucide-react';
 
 export const AI_MODELS = [
-  { id: 'google/gemini-3-flash-preview', label: 'Gemini 3 Flash', provider: 'Google', tier: 'fast' },
   { id: 'google/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite', provider: 'Google', tier: 'fast' },
   { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash', provider: 'Google', tier: 'balanced' },
   { id: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro', provider: 'Google', tier: 'premium' },
-  { id: 'google/gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro', provider: 'Google', tier: 'premium' },
-  { id: 'openai/gpt-5-nano', label: 'GPT-5 Nano', provider: 'OpenAI', tier: 'fast' },
-  { id: 'openai/gpt-5-mini', label: 'GPT-5 Mini', provider: 'OpenAI', tier: 'balanced' },
-  { id: 'openai/gpt-5', label: 'GPT-5', provider: 'OpenAI', tier: 'premium' },
-  { id: 'openai/gpt-5.2', label: 'GPT-5.2', provider: 'OpenAI', tier: 'premium' },
+  { id: 'openai/gpt-4o-mini', label: 'GPT-4o Mini', provider: 'OpenAI', tier: 'fast' },
+  { id: 'openai/gpt-4o', label: 'GPT-4o', provider: 'OpenAI', tier: 'premium' },
 ] as const;
 
 export type AIModelId = typeof AI_MODELS[number]['id'];
 
-export const DEFAULT_MODEL: AIModelId = 'google/gemini-3-flash-preview';
+export const DEFAULT_MODEL: AIModelId = 'google/gemini-2.5-flash';
 
 const tierColors: Record<string, string> = {
   fast: 'text-green-500',
