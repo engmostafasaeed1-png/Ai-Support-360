@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Loader2, Save, Globe, Bell, Clock, MessageSquare, Cpu, ChevronRight } from 'lucide-react';
 import AvatarUpload from '@/components/profile/AvatarUpload';
+import ClientNDAUpload from '@/components/client/ClientNDAUpload';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useClientProfileData, useUpdateClientProfile } from '@/hooks/useClientProfile';
 import { useGuestMode } from '@/contexts/GuestModeContext';
@@ -223,6 +224,9 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Custom NDA */}
+      <ClientNDAUpload />
 
       {/* Quick Links */}
       <Card className="rounded-2xl shadow-sm">
