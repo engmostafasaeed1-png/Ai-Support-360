@@ -2294,6 +2294,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           sap_module: string | null
+          source_ticket_id: string | null
           steps: Json
           tenant_id: string | null
           title: string
@@ -2310,6 +2311,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           sap_module?: string | null
+          source_ticket_id?: string | null
           steps?: Json
           tenant_id?: string | null
           title: string
@@ -2326,6 +2328,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           sap_module?: string | null
+          source_ticket_id?: string | null
           steps?: Json
           tenant_id?: string | null
           title?: string
@@ -2334,6 +2337,13 @@ export type Database = {
           usage_count?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "playbooks_source_ticket_id_fkey"
+            columns: ["source_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "playbooks_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -4317,6 +4327,7 @@ export type Database = {
           preferred_session_type:
             | Database["public"]["Enums"]["session_type"]
             | null
+          resolution_notes: string | null
           resolved_at: string | null
           sap_module: string
           sla_breached: boolean | null
@@ -4358,6 +4369,7 @@ export type Database = {
           preferred_session_type?:
             | Database["public"]["Enums"]["session_type"]
             | null
+          resolution_notes?: string | null
           resolved_at?: string | null
           sap_module: string
           sla_breached?: boolean | null
@@ -4399,6 +4411,7 @@ export type Database = {
           preferred_session_type?:
             | Database["public"]["Enums"]["session_type"]
             | null
+          resolution_notes?: string | null
           resolved_at?: string | null
           sap_module?: string
           sla_breached?: boolean | null
