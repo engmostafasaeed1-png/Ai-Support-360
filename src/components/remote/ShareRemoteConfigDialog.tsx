@@ -1,11 +1,15 @@
 import { useState } from 'react';
+import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Send } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Loader2, Send, CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useAvailableConsultants, useShareRemoteConfig } from '@/hooks/useSharedRemoteConfigs';
 
 interface ShareRemoteConfigDialogProps {
@@ -27,13 +31,21 @@ export default function ShareRemoteConfigDialog({
   const [message, setMessage] = useState('');
   const [alias, setAlias] = useState((defaultConfig.alias as string) || '');
   const [connectionId, setConnectionId] = useState((defaultConfig.connectionId as string) || '');
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   const handleShare = async () => {
     if (!consultantId) return;
     await shareMutation.mutateAsync({
       consultant_id: consultantId,
       tool_type: toolType,
-      config: { ...defaultConfig, alias, connectionId },
+      config: {
+        ...defaultConfig,
+        alias,
+        connectionId,
+        startDate: startDate?.toISOString() || null,
+        endDate: endDate?.toISOString() || null,
+      },
       message: message || undefined,
     });
     onOpenChange(false);
@@ -41,6 +53,8 @@ export default function ShareRemoteConfigDialog({
     setMessage('');
     setAlias('');
     setConnectionId('');
+    setStartDate(undefined);
+    setEndDate(undefined);
   };
 
   const toolLabel = toolType === 'anydesk' ? 'AnyDesk' : toolType === 'teamviewer' ? 'TeamViewer' : toolType === 'rustdesk' ? 'RustDesk' : toolType === 'rdp' ? 'RDP/VNC' : toolType;
@@ -94,6 +108,37 @@ export default function ShareRemoteConfigDialog({
           <div>
             <label className="text-xs font-medium text-foreground mb-1 block">{toolLabel} ID / Hostname</label>
             <Input value={connectionId} onChange={e => setConnectionId(e.target.value)} placeholder="e.g. 123456789 or 192.168.1.100" className="h-8 text-sm" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-foreground mb-1 block">Start Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("h-8 w-full justify-start text-xs font-normal", !startDate && "text-muted-foreground")}>
+                    <CalendarIcon className="w-3 h-3 mr-1.5" />
+                    {startDate ? format(startDate, 'MMM d, yyyy') : 'Pick date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-foreground mb-1 block">End Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("h-8 w-full justify-start text-xs font-normal", !endDate && "text-muted-foreground")}>
+                    <CalendarIcon className="w-3 h-3 mr-1.5" />
+                    {endDate ? format(endDate, 'MMM d, yyyy') : 'Pick date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={endDate} onSelect={setEndDate} disabled={(d) => startDate ? d < startDate : false} initialFocus className={cn("p-3 pointer-events-auto")} />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
           <div>

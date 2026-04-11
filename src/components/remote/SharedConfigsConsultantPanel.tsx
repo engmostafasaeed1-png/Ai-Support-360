@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Inbox, CheckCircle2, ExternalLink, Copy, Clock } from 'lucide-react';
+import { Inbox, CheckCircle2, ExternalLink, Copy, Clock, CalendarDays } from 'lucide-react';
 import { useConsultantSharedConfigs, useAcceptRemoteConfig } from '@/hooks/useSharedRemoteConfigs';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -66,7 +66,7 @@ export default function SharedConfigsConsultantPanel() {
       </CardHeader>
       <CardContent className="space-y-2">
         {configs.map(cfg => {
-          const config = cfg.config as Record<string, unknown>;
+          const config = (cfg.config || {}) as Record<string, string>;
           const connectionId = (config.connectionId as string) || '';
           const alias = (config.alias as string) || '';
           const isPending = cfg.status === 'pending';
@@ -92,6 +92,12 @@ export default function SharedConfigsConsultantPanel() {
                       )}
                     </div>
                     {connectionId && <p className="text-xs text-muted-foreground font-mono mt-0.5">ID: {connectionId}</p>}
+                    {(config.startDate || config.endDate) && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                        <CalendarDays className="w-2.5 h-2.5" />
+                        {config.startDate ? format(new Date(config.startDate as string), 'MMM d, yyyy') : '—'} → {config.endDate ? format(new Date(config.endDate as string), 'MMM d, yyyy') : 'Ongoing'}
+                      </p>
+                    )}
                     <p className="text-[10px] text-muted-foreground mt-0.5">
                       Shared {format(new Date(cfg.shared_at), 'MMM d, yyyy HH:mm')}
                     </p>

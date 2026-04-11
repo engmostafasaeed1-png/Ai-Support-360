@@ -60,6 +60,11 @@ export default function SharedConfigsClientPanel() {
                     {config.connectionId && (
                       <p className="text-xs text-muted-foreground font-mono mt-0.5">ID: {String(config.connectionId)}</p>
                     )}
+                    {(config.startDate || config.endDate) && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {config.startDate ? format(new Date(config.startDate), 'MMM d, yyyy') : '—'} → {config.endDate ? format(new Date(config.endDate), 'MMM d, yyyy') : 'Ongoing'}
+                      </p>
+                    )}
                     <p className="text-[10px] text-muted-foreground mt-0.5">
                       Shared {format(new Date(cfg.shared_at), 'MMM d, yyyy HH:mm')}
                     </p>
