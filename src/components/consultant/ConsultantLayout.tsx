@@ -7,7 +7,7 @@ import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Outlet } from 'react-router-dom';
 import {
   Search, LayoutDashboard, Briefcase, Calendar, MessageSquare,
-  CreditCard, Star, User, ShieldCheck, BookOpen, Bell, Settings, Settings2, Brain, Server,
+  CreditCard, Star, User, ShieldCheck, BookOpen, Bell, Settings, Settings2, Brain, Server, Building2,
   Handshake, FileText, Gavel, Clock, ClipboardList, BarChart3, Gift, Zap, Plus,
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
