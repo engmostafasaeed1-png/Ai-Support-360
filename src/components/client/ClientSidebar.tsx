@@ -76,6 +76,7 @@ const navGroups = [
       { key: 'knowledge', icon: BookOpenCheck, path: '/client/knowledge' },
       { key: 'pm_tickets', icon: ListChecks, path: '/client/pm-tickets' },
       { key: 'solution_architecture', icon: Wand2, path: '/client/solution-architecture' },
+      { key: 'satisfaction', icon: Crown, path: '/client/satisfaction' },
       { key: 'referrals', icon: PartyPopper, path: '/client/referrals' },
     ],
   },

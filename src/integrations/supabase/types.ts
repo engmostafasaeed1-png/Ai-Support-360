@@ -2941,6 +2941,78 @@ export type Database = {
           },
         ]
       }
+      satisfaction_surveys: {
+        Row: {
+          comment: string | null
+          communication_score: number | null
+          created_at: string
+          id: string
+          overall_score: number | null
+          professionalism_score: number | null
+          rated_by: string
+          rated_user: string
+          requested_by: string | null
+          role: string
+          session_id: string | null
+          status: string
+          technical_quality_score: number | null
+          ticket_id: string | null
+          timeliness_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          communication_score?: number | null
+          created_at?: string
+          id?: string
+          overall_score?: number | null
+          professionalism_score?: number | null
+          rated_by: string
+          rated_user: string
+          requested_by?: string | null
+          role: string
+          session_id?: string | null
+          status?: string
+          technical_quality_score?: number | null
+          ticket_id?: string | null
+          timeliness_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          communication_score?: number | null
+          created_at?: string
+          id?: string
+          overall_score?: number | null
+          professionalism_score?: number | null
+          rated_by?: string
+          rated_user?: string
+          requested_by?: string | null
+          role?: string
+          session_id?: string | null
+          status?: string
+          technical_quality_score?: number | null
+          ticket_id?: string | null
+          timeliness_score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "satisfaction_surveys_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "satisfaction_surveys_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_feedback: {
         Row: {
           action_items: string[] | null

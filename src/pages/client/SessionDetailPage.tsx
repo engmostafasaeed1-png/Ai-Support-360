@@ -24,6 +24,7 @@ import AnalyzeSessionButton from '@/components/session/AnalyzeSessionButton';
 import SessionFeedbackDialog from '@/components/session/SessionFeedbackDialog';
 import SessionSurveyDialog from '@/components/session/SessionSurveyDialog';
 import MeetingMinutesCard from '@/components/session/MeetingMinutesCard';
+import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfactionDialog';
 
 const typeIcons = {
   video: Video,
@@ -46,6 +47,7 @@ export default function SessionDetailPage() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showSurvey, setShowSurvey] = useState(false);
+  const [showCsat, setShowCsat] = useState(false);
 
   const handleCancel = async () => {
     setIsCancelling(true);
@@ -181,6 +183,9 @@ export default function SessionDetailPage() {
               </Button>
               <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowSurvey(true)}>
                 <ClipboardCheck className="w-3.5 h-3.5" /> Survey
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowCsat(true)}>
+                <ClipboardCheck className="w-3.5 h-3.5" /> CSAT
               </Button>
             {status === 'scheduled' && (
               <div className="flex items-center gap-2">
@@ -332,6 +337,30 @@ export default function SessionDetailPage() {
 
       <SessionFeedbackDialog sessionId={sessionId || null} open={showFeedback} onOpenChange={setShowFeedback} />
       <SessionSurveyDialog sessionId={sessionId || null} open={showSurvey} onOpenChange={setShowSurvey} />
+      {showCsat && session?.consultants && (
+        <RequestSatisfactionDialog
+          open={showCsat}
+          onOpenChange={setShowCsat}
+          isPending={false}
+          parties={[
+            { id: session.consultants.user_id, name: (session as any).consultant_name || 'Consultant', role: 'consultant' },
+          ]}
+          onRequest={async (targetUserId, role) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+            await (supabase.from('satisfaction_surveys') as any).insert({
+              rated_by: targetUserId,
+              rated_user: user.id,
+              role,
+              session_id: sessionId,
+              requested_by: user.id,
+              status: 'pending',
+            });
+            toast.success('CSAT survey requested!');
+            setShowCsat(false);
+          }}
+        />
+      )}
     </div>
   );
 }

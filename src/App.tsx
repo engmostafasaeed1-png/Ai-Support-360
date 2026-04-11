@@ -106,6 +106,7 @@ const BusinessProcessesPage = React.lazy(() => import("./pages/client/BusinessPr
 const ClientVMwareSettingsPage = React.lazy(() => import("./pages/client/VMwareSettingsPage.tsx"));
 const VMwarePricingPage = React.lazy(() => import("./pages/client/VMwarePricingPage.tsx"));
 const VMwareConsolePage = React.lazy(() => import("./pages/client/VMwareConsolePage.tsx"));
+const SatisfactionPage = React.lazy(() => import("./pages/client/SatisfactionPage.tsx"));
 
 // Admin pages
 const AdminDashboard = React.lazy(() => import("./pages/admin/AdminDashboard.tsx"));
@@ -279,6 +280,7 @@ const App = () => (
               <Route path="major-incidents" element={<MajorIncidentsPage />} />
               <Route path="playbooks" element={<PlaybooksPage />} />
               <Route path="business-processes" element={<BusinessProcessesPage />} />
+              <Route path="satisfaction" element={<SatisfactionPage />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminConsolePage />} />

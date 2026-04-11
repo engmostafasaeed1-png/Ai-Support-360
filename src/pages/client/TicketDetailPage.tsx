@@ -11,8 +11,10 @@ import {
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
   Pencil, UserPlus, Gavel, ChevronDown, Play, GitBranch, Network, Users,
   Calculator, ClipboardList, MessageSquareText, Timer, Star, Link2, Tags,
-  CalendarDays, Phone,
+  CalendarDays, Phone, ClipboardCheck,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import ShareMenu from '@/components/ShareMenu';
 import TicketNDAStatus from '@/components/client/TicketNDAStatus';
 import { useTicketDetail, useTicketSessions, useTicketMessages } from '@/hooks/useTicketDetail';
@@ -39,6 +41,8 @@ import TicketInterview from '@/components/client/TicketInterview';
 import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
 import EmergencyContactPanel from '@/components/client/EmergencyContactPanel';
 import TicketMeetingsList from '@/components/client/TicketMeetingsList';
+import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfactionDialog';
+import { useSatisfactionSurveys } from '@/hooks/useSatisfactionSurveys';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
@@ -95,6 +99,7 @@ export default function TicketDetailPage() {
   const [matchOpen, setMatchOpen] = useState(false);
   const [bidOpen, setBidOpen] = useState(false);
   const [meetingOpen, setMeetingOpen] = useState(false);
+  const [csatOpen, setCsatOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -161,6 +166,9 @@ export default function TicketDetailPage() {
               </Button>
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setMeetingOpen(true)}>
                 <CalendarDays className="w-3.5 h-3.5" /> Schedule Meeting
+              </Button>
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setCsatOpen(true)}>
+                <ClipboardCheck className="w-3.5 h-3.5" /> Request CSAT
               </Button>
             </div>
           )}
@@ -422,6 +430,30 @@ export default function TicketDetailPage() {
         clientId={ticket.client_id}
         consultantId={ticket.consultant_id}
         consultantName={ticket.consultant_name || undefined}
+      />
+      <RequestSatisfactionDialog
+        open={csatOpen}
+        onOpenChange={setCsatOpen}
+        isPending={false}
+        parties={[
+          ...(ticket.consultant_id ? [{ id: ticket.consultant_id, name: ticket.consultant_name || 'Consultant', role: 'consultant' as const }] : []),
+          { id: ticket.client_id, name: 'Client', role: 'client' as const },
+        ]}
+        onRequest={async (targetUserId, role) => {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          // rated_by = target (they fill the survey), rated_user = requester (they get rated)
+          await (supabase.from('satisfaction_surveys') as any).insert({
+            rated_by: targetUserId,
+            rated_user: user.id,
+            role,
+            ticket_id: ticket.id,
+            requested_by: user.id,
+            status: 'pending',
+          });
+          toast.success('CSAT survey requested!');
+          setCsatOpen(false);
+        }}
       />
     </div>
   );
