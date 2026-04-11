@@ -1,6 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useClientPayments } from '@/hooks/useClientPayments';
+import { useClientTickets } from '@/hooks/useClientTickets';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,10 +13,14 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import {
   FileText, Download, Search, Calendar, User, DollarSign, Ticket,
   ArrowRight, CheckCircle2, Clock, XCircle, AlertCircle, ReceiptText,
-  CreditCard, Eye, Printer,
+  CreditCard, Eye, Printer, Plus,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 
