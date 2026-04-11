@@ -12,6 +12,7 @@ import GuacamoleViewer from '@/components/remote/GuacamoleViewer';
 import CredentialsManager from '@/components/remote/CredentialsManager';
 import NDASigningModal from '@/components/consultant/NDASigningModal';
 import { useEnvironmentTracking } from '@/hooks/useEnvironmentTracking';
+import AnyDeskPanel from '@/components/remote/AnyDeskPanel';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -258,6 +259,9 @@ export default function RemoteAccessPage() {
           ))}
         </div>
       )}
+
+      {/* AnyDesk Integration */}
+      <AnyDeskPanel />
     </div>
   );
 }
