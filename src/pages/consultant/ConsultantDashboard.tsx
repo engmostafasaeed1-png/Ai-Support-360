@@ -379,7 +379,7 @@ export default function ConsultantDashboard() {
         </CardHeader>
         <CardContent>
           {(liveData?.ratings && liveData.ratings.length > 0) ? (
-            <div className="grid md:grid-cols-3 gap-4 stagger-fade">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 stagger-fade">
               {liveData.ratings.map((review: any, i: number) => (
                 <div key={i} className="p-4 rounded-xl bg-muted/20 border border-border/30 card-interactive">
                   <div className="flex items-center gap-1 mb-2">
@@ -393,7 +393,7 @@ export default function ConsultantDashboard() {
               ))}
             </div>
           ) : (
-            <div className="grid md:grid-cols-3 gap-4 stagger-fade">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 stagger-fade">
               {mockReviews.map((review) => (
                 <div key={review.id} className="p-4 rounded-xl bg-muted/20 border border-border/30 card-interactive">
                   <div className="flex items-center gap-1 mb-2">
