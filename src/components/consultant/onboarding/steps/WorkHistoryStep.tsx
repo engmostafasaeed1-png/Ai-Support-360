@@ -4,9 +4,37 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Briefcase } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import type { OnboardingData, WorkHistoryEntry } from '../ConsultantOnboarding';
+
+const companies = [
+  'SAP SE', 'Accenture', 'Deloitte', 'PwC', 'EY', 'KPMG', 'IBM',
+  'Capgemini', 'Infosys', 'TCS', 'Wipro', 'HCL Technologies',
+  'Cognizant', 'Tech Mahindra', 'NTT DATA', 'Atos', 'DXC Technology',
+  'Fujitsu', 'CGI', 'LTIMindtree', 'McKinsey', 'BCG', 'Bain',
+  'Amazon', 'Microsoft', 'Google', 'Oracle', 'Aramco', 'SABIC',
+  'STC', 'Etisalat', 'Emirates NBD', 'Al Rajhi Bank', 'ADNOC',
+  'Qatar Energy', 'Kuwait Oil Company', 'Ooredoo',
+  'Other',
+];
+
+const jobTitles = [
+  'SAP Consultant', 'Senior SAP Consultant', 'Lead SAP Consultant',
+  'SAP Solution Architect', 'SAP Project Manager', 'SAP Program Manager',
+  'SAP Functional Analyst', 'SAP Technical Analyst', 'SAP Developer',
+  'Senior SAP Developer', 'SAP ABAP Developer', 'SAP Fiori Developer',
+  'SAP Basis Administrator', 'SAP Security Consultant',
+  'SAP Integration Consultant', 'SAP BTP Developer',
+  'SAP Data Migration Lead', 'SAP Change Manager',
+  'SAP Team Lead', 'SAP Practice Lead', 'SAP Director',
+  'SAP Vice President', 'SAP Partner',
+  'IT Manager', 'IT Director', 'CTO', 'CIO',
+  'Business Analyst', 'Senior Business Analyst',
+  'Project Manager', 'Program Manager', 'Engagement Manager',
+  'Other',
+];
 
 interface Props {
   data: OnboardingData;
@@ -58,11 +86,25 @@ export default function WorkHistoryStep({ data, onChange }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label className="text-xs">Company *</Label>
-              <Input value={item.companyName} onChange={e => update(i, { companyName: e.target.value })} placeholder="Accenture" />
+              <Select value={item.companyName} onValueChange={v => update(i, { companyName: v })}>
+                <SelectTrigger><SelectValue placeholder="Select company" /></SelectTrigger>
+                <SelectContent>
+                  {companies.map(c => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Job Title *</Label>
-              <Input value={item.jobTitle} onChange={e => update(i, { jobTitle: e.target.value })} placeholder="Senior SAP Consultant" />
+              <Select value={item.jobTitle} onValueChange={v => update(i, { jobTitle: v })}>
+                <SelectTrigger><SelectValue placeholder="Select title" /></SelectTrigger>
+                <SelectContent>
+                  {jobTitles.map(jt => (
+                    <SelectItem key={jt} value={jt}>{jt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Start Date</Label>

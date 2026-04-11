@@ -3,8 +3,55 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Award, Upload } from 'lucide-react';
 import type { OnboardingData } from '../ConsultantOnboarding';
+
+const certNames = [
+  'SAP Certified Application Associate - SAP S/4HANA',
+  'SAP Certified Application Associate - SAP S/4HANA Finance',
+  'SAP Certified Application Associate - SAP S/4HANA Sourcing & Procurement',
+  'SAP Certified Application Associate - SAP S/4HANA Sales',
+  'SAP Certified Application Associate - SAP S/4HANA Production Planning',
+  'SAP Certified Application Associate - SAP SuccessFactors',
+  'SAP Certified Application Associate - SAP Ariba',
+  'SAP Certified Technology Associate - SAP BTP Integration Suite',
+  'SAP Certified Technology Associate - SAP Fiori System Administration',
+  'SAP Certified Development Associate - ABAP with SAP NetWeaver',
+  'SAP Certified Technology Associate - SAP HANA',
+  'SAP Certified Application Associate - SAP Analytics Cloud',
+  'SAP Certified Application Associate - SAP EWM',
+  'SAP Certified Application Associate - SAP TM',
+  'SAP Certified Technology Associate - SAP Solution Manager',
+  'SAP Certified Technology Specialist - SAP Security',
+  'SAP Certified Application Associate - SAP S/4HANA Asset Management',
+  'SAP Certified Application Associate - SAP S/4HANA Project Systems',
+  'SAP Certified Professional - SAP S/4HANA Conversion & Migration',
+  'PMP - Project Management Professional',
+  'ITIL Foundation',
+  'ITIL 4 Managing Professional',
+  'AWS Certified Solutions Architect',
+  'Microsoft Azure Fundamentals',
+  'Google Cloud Professional',
+  'Scrum Master (CSM)',
+  'TOGAF Certified',
+  'Other',
+];
+
+const issuers = [
+  'SAP SE',
+  'SAP Global Certification',
+  'PMI',
+  'Axelos (ITIL)',
+  'Amazon Web Services',
+  'Microsoft',
+  'Google',
+  'Scrum Alliance',
+  'The Open Group',
+  'Coursera',
+  'Udemy',
+  'Other',
+];
 
 interface Props {
   data: OnboardingData;
@@ -56,21 +103,25 @@ export default function CertificationsStep({ data, onChange }: Props) {
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>{t('onboarding.cert_name')} *</Label>
-                    <Input
-                      value={cert.name}
-                      onChange={e => updateCert(idx, { name: e.target.value })}
-                      placeholder="SAP S/4HANA Associate"
-                      maxLength={200}
-                    />
+                    <Select value={cert.name} onValueChange={v => updateCert(idx, { name: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select certification" /></SelectTrigger>
+                      <SelectContent>
+                        {certNames.map(n => (
+                          <SelectItem key={n} value={n}>{n}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t('onboarding.cert_issuer')}</Label>
-                    <Input
-                      value={cert.issuer}
-                      onChange={e => updateCert(idx, { issuer: e.target.value })}
-                      placeholder="SAP SE"
-                      maxLength={200}
-                    />
+                    <Select value={cert.issuer} onValueChange={v => updateCert(idx, { issuer: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select issuer" /></SelectTrigger>
+                      <SelectContent>
+                        {issuers.map(i => (
+                          <SelectItem key={i} value={i}>{i}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8" onClick={() => removeCert(idx)}>

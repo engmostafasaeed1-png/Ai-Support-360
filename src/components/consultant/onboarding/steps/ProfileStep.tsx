@@ -11,6 +11,7 @@ const timezones = [
   'Asia/Riyadh', 'Asia/Dubai', 'Asia/Karachi', 'Europe/London',
   'Europe/Berlin', 'America/New_York', 'America/Chicago', 'America/Los_Angeles',
   'Asia/Kolkata', 'Asia/Singapore', 'Asia/Tokyo', 'Australia/Sydney',
+  'Africa/Cairo', 'Asia/Istanbul', 'Asia/Kuala_Lumpur', 'Asia/Manila',
 ];
 
 const allLanguages = [
@@ -22,7 +23,64 @@ const allLanguages = [
   { code: 'hi', label: 'हिन्दी' },
   { code: 'ur', label: 'اردو' },
   { code: 'zh', label: '中文' },
+  { code: 'pt', label: 'Português' },
+  { code: 'ja', label: '日本語' },
+  { code: 'ko', label: '한국어' },
+  { code: 'tr', label: 'Türkçe' },
 ];
+
+const countries = [
+  'Saudi Arabia', 'UAE', 'Qatar', 'Kuwait', 'Bahrain', 'Oman',
+  'Egypt', 'Jordan', 'Lebanon', 'Iraq', 'Morocco', 'Tunisia',
+  'United States', 'United Kingdom', 'Germany', 'France', 'Netherlands',
+  'India', 'Pakistan', 'Philippines', 'Malaysia', 'Singapore',
+  'Turkey', 'South Africa', 'Nigeria', 'Brazil', 'Canada', 'Australia',
+  'Japan', 'South Korea', 'China', 'Indonesia', 'Thailand', 'Vietnam',
+  'Italy', 'Spain', 'Poland', 'Switzerland', 'Sweden', 'Ireland',
+];
+
+const nationalities = [
+  'Saudi', 'Emirati', 'Qatari', 'Kuwaiti', 'Bahraini', 'Omani',
+  'Egyptian', 'Jordanian', 'Lebanese', 'Iraqi', 'Moroccan', 'Tunisian',
+  'American', 'British', 'German', 'French', 'Dutch',
+  'Indian', 'Pakistani', 'Filipino', 'Malaysian', 'Singaporean',
+  'Turkish', 'South African', 'Nigerian', 'Brazilian', 'Canadian', 'Australian',
+  'Japanese', 'Korean', 'Chinese', 'Indonesian', 'Thai', 'Vietnamese',
+  'Italian', 'Spanish', 'Polish', 'Swiss', 'Swedish', 'Irish',
+];
+
+const citiesByCountry: Record<string, string[]> = {
+  'Saudi Arabia': ['Riyadh', 'Jeddah', 'Dammam', 'Khobar', 'Mecca', 'Medina', 'Tabuk', 'Abha'],
+  'UAE': ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah'],
+  'Qatar': ['Doha', 'Al Wakrah', 'Al Khor', 'Lusail'],
+  'Kuwait': ['Kuwait City', 'Hawalli', 'Salmiya'],
+  'Bahrain': ['Manama', 'Riffa', 'Muharraq'],
+  'Oman': ['Muscat', 'Salalah', 'Sohar'],
+  'Egypt': ['Cairo', 'Alexandria', 'Giza', 'Sharm El Sheikh'],
+  'Jordan': ['Amman', 'Aqaba', 'Irbid'],
+  'Lebanon': ['Beirut', 'Tripoli', 'Sidon'],
+  'India': ['Mumbai', 'Bangalore', 'Hyderabad', 'Delhi', 'Chennai', 'Pune', 'Kolkata', 'Noida', 'Gurgaon'],
+  'Pakistan': ['Karachi', 'Lahore', 'Islamabad', 'Rawalpindi'],
+  'United States': ['New York', 'San Francisco', 'Chicago', 'Dallas', 'Houston', 'Atlanta', 'Los Angeles', 'Seattle', 'Boston'],
+  'United Kingdom': ['London', 'Manchester', 'Birmingham', 'Edinburgh', 'Leeds'],
+  'Germany': ['Berlin', 'Munich', 'Frankfurt', 'Hamburg', 'Cologne', 'Walldorf'],
+  'France': ['Paris', 'Lyon', 'Marseille', 'Toulouse'],
+  'Netherlands': ['Amsterdam', 'Rotterdam', 'The Hague', 'Utrecht'],
+  'Singapore': ['Singapore'],
+  'Malaysia': ['Kuala Lumpur', 'Penang', 'Johor Bahru'],
+  'Philippines': ['Manila', 'Cebu', 'Davao'],
+  'Turkey': ['Istanbul', 'Ankara', 'Izmir'],
+  'South Africa': ['Johannesburg', 'Cape Town', 'Durban'],
+  'Nigeria': ['Lagos', 'Abuja', 'Port Harcourt'],
+  'Brazil': ['São Paulo', 'Rio de Janeiro', 'Brasília'],
+  'Canada': ['Toronto', 'Vancouver', 'Montreal', 'Calgary'],
+  'Australia': ['Sydney', 'Melbourne', 'Brisbane', 'Perth'],
+  'Japan': ['Tokyo', 'Osaka', 'Nagoya'],
+  'South Korea': ['Seoul', 'Busan'],
+  'China': ['Shanghai', 'Beijing', 'Shenzhen', 'Guangzhou'],
+};
+
+const currencies = ['USD', 'EUR', 'SAR', 'AED', 'GBP', 'QAR', 'KWD', 'BHD', 'OMR', 'EGP', 'INR', 'PKR', 'MYR', 'SGD', 'AUD', 'CAD', 'CHF'];
 
 interface Props {
   data: OnboardingData;
@@ -38,6 +96,8 @@ export default function ProfileStep({ data, onChange }: Props) {
       : [...data.languages, code];
     onChange({ languages: langs });
   };
+
+  const availableCities = data.country ? (citiesByCountry[data.country] || []) : [];
 
   return (
     <div className="space-y-5">
@@ -69,27 +129,36 @@ export default function ProfileStep({ data, onChange }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-1.5">
           <Label>Nationality</Label>
-          <Input
-            value={data.nationality}
-            onChange={e => onChange({ nationality: e.target.value })}
-            placeholder="Saudi"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>City</Label>
-          <Input
-            value={data.city}
-            onChange={e => onChange({ city: e.target.value })}
-            placeholder="Riyadh"
-          />
+          <Select value={data.nationality} onValueChange={v => onChange({ nationality: v })}>
+            <SelectTrigger><SelectValue placeholder="Select nationality" /></SelectTrigger>
+            <SelectContent>
+              {nationalities.map(n => (
+                <SelectItem key={n} value={n}>{n}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <Label>Country</Label>
-          <Input
-            value={data.country}
-            onChange={e => onChange({ country: e.target.value })}
-            placeholder="Saudi Arabia"
-          />
+          <Select value={data.country} onValueChange={v => onChange({ country: v, city: '' })}>
+            <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
+            <SelectContent>
+              {countries.map(c => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label>City</Label>
+          <Select value={data.city} onValueChange={v => onChange({ city: v })} disabled={!data.country}>
+            <SelectTrigger><SelectValue placeholder={data.country ? 'Select city' : 'Select country first'} /></SelectTrigger>
+            <SelectContent>
+              {availableCities.map(c => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -97,25 +166,23 @@ export default function ProfileStep({ data, onChange }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="hourlyRate">{t('onboarding.hourly_rate')}</Label>
-          <Input
-            id="hourlyRate"
-            type="number"
-            min={0}
-            value={data.hourlyRate || ''}
-            onChange={e => onChange({ hourlyRate: Number(e.target.value) })}
-            placeholder="150"
-          />
+          <Select value={data.hourlyRate ? String(data.hourlyRate) : ''} onValueChange={v => onChange({ hourlyRate: Number(v) })}>
+            <SelectTrigger><SelectValue placeholder="Select rate" /></SelectTrigger>
+            <SelectContent>
+              {[25, 50, 75, 100, 125, 150, 175, 200, 250, 300, 350, 400, 500].map(r => (
+                <SelectItem key={r} value={String(r)}>{r}/hr</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <Label>{t('onboarding.currency')}</Label>
           <Select value={data.currency} onValueChange={v => onChange({ currency: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="USD">USD</SelectItem>
-              <SelectItem value="EUR">EUR</SelectItem>
-              <SelectItem value="SAR">SAR</SelectItem>
-              <SelectItem value="AED">AED</SelectItem>
-              <SelectItem value="GBP">GBP</SelectItem>
+              {currencies.map(c => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -163,7 +230,7 @@ export default function ProfileStep({ data, onChange }: Props) {
         </div>
       </div>
 
-      {/* Languages */}
+      {/* Languages - Multi-select badges */}
       <div className="space-y-1.5">
         <Label>{t('onboarding.languages')}</Label>
         <div className="flex flex-wrap gap-2">
