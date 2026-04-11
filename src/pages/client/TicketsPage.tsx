@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useClientTickets } from '@/hooks/useClientTickets';
 import {
   Search, TicketPlus, Ticket, ChevronDown, ChevronUp,
