@@ -259,6 +259,9 @@ export default function RemoteAccessPage() {
           ))}
         </div>
       )}
+
+      {/* AnyDesk Integration */}
+      <AnyDeskPanel />
     </div>
   );
 }
