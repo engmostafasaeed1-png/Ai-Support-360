@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff, Server, Cpu, Shield, Save, Cloud, Zap } from 'lucide-react';
+import { Eye, EyeOff, Server, Cpu, Shield, Save, Cloud, Zap, DollarSign } from 'lucide-react';
 import type { VMwareSettings } from '@/hooks/useVMwareSettings';
+import HardwareCostCalculator from './HardwareCostCalculator';
 
 const VENDORS = [
   { value: 'vmware', label: 'VMware vSphere', hypervisors: ['esxi', 'workstation'], icon: '🟢' },
