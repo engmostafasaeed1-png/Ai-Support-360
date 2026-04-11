@@ -11,7 +11,7 @@ import {
   FileText, BookOpen, Bell, Plug, Server, Video, FolderKanban, Milestone,
   ClipboardList, FileSignature, GitBranch, Bug, Package, Siren, BookMarked,
   DollarSign, Monitor, Sparkles, Gift, UsersRound, BarChart3, Shield,
-  Activity, Building2, LifeBuoy,
+  Activity, Building2, LifeBuoy, Brain, Network,
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,7 @@ const moreNavItems = [
   { key: 'milestones', icon: Milestone, path: '/client/milestones', labelKey: 'sidebar.milestones' },
   { key: 'tasks', icon: ClipboardList, path: '/client/tasks', labelKey: 'sidebar.tasks' },
   { key: 'contracts', icon: FileSignature, path: '/client/contracts', labelKey: 'sidebar.contracts' },
+  { key: 'business_processes', icon: Network, path: '/client/business-processes', labelKey: 'sidebar.business_processes' },
   { key: 'changes', icon: GitBranch, path: '/client/changes', labelKey: 'sidebar.change_management' },
   { key: 'problems', icon: Bug, path: '/client/problems', labelKey: 'sidebar.problem_management' },
   { key: 'catalog', icon: Package, path: '/client/catalog', labelKey: 'sidebar.service_catalog' },

@@ -44,6 +44,7 @@ const navGroups = [
       { key: 'milestones', icon: Milestone, path: '/client/milestones' },
       { key: 'tasks', icon: ClipboardList, path: '/client/tasks' },
       { key: 'contracts', icon: FileSignature, path: '/client/contracts' },
+      { key: 'business_processes', icon: Brain, path: '/client/business-processes' },
       { key: 'chat', icon: MessageSquare, path: '/client/chat' },
     ],
   },
