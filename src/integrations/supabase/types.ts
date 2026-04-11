@@ -217,7 +217,9 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          level: number
           name: string
+          parent_id: string | null
           process_owner: string | null
           sap_module: string | null
           status: string
@@ -234,7 +236,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          level?: number
           name: string
+          parent_id?: string | null
           process_owner?: string | null
           sap_module?: string | null
           status?: string
@@ -251,7 +255,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          level?: number
           name?: string
+          parent_id?: string | null
           process_owner?: string | null
           sap_module?: string | null
           status?: string
@@ -260,6 +266,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "business_processes_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "business_processes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "business_processes_tenant_id_fkey"
             columns: ["tenant_id"]
