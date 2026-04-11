@@ -239,7 +239,12 @@ export default function ProjectsPage() {
           .eq('client_id', user.id)
           .order('created_at', { ascending: false });
         if (error) throw error;
-        setClientTickets(data || []);
+        setClientTickets((data || []).map(t => ({
+          ...t,
+          status: t.status || 'new',
+          urgency: t.urgency || 'medium',
+          sap_module: t.sap_module || '',
+        })));
       } catch {
         setClientTickets([]);
       } finally {
