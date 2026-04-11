@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Server, Monitor, Settings2 } from 'lucide-react';
+import { Server, Monitor, Settings2, Check, Zap, Crown, Cpu, MemoryStick, HardDrive, CreditCard } from 'lucide-react';
 import { useRemoteEnvironments } from '@/hooks/useRemoteEnvironments';
 import { useVMwareSettings, useSaveVMwareSettings } from '@/hooks/useVMwareSettings';
+import { useVMwarePricingPlans, useVMwareSubscriptions, useSubscribeVMwarePlan } from '@/hooks/useVMwarePricing';
 import VMwareSettingsForm from '@/components/remote/VMwareSettingsForm';
+
+const tierIcons: Record<string, typeof Zap> = { basic: Zap, pro: Server, enterprise: Crown };
 
 export default function ClientVMwareSettingsPage() {
   const { t } = useTranslation();
@@ -15,8 +19,12 @@ export default function ClientVMwareSettingsPage() {
   const [selectedEnvId, setSelectedEnvId] = useState<string>('');
   const { data: settings, isLoading: settingsLoading } = useVMwareSettings(selectedEnvId || undefined);
   const saveSettings = useSaveVMwareSettings();
+  const { data: plans, isLoading: plansLoading } = useVMwarePricingPlans();
+  const { data: subscriptions } = useVMwareSubscriptions();
+  const subscribe = useSubscribeVMwarePlan();
 
   const selectedEnv = (environments || []).find(e => e.id === selectedEnvId);
+  const activePlanIds = (subscriptions || []).filter(s => s.status === 'active').map(s => s.plan_id);
 
   if (envsLoading) {
     return (
@@ -38,6 +46,83 @@ export default function ClientVMwareSettingsPage() {
         <p className="text-sm text-muted-foreground mt-1">
           {t('client.vmware_subtitle', 'Configure your VMware infrastructure, VM defaults, and network security')}
         </p>
+      </div>
+
+      {/* Pricing Plans */}
+      <div>
+        <h2 className="text-base font-semibold text-foreground flex items-center gap-2 mb-3">
+          <CreditCard className="w-4 h-4 text-primary" /> Pricing Plans
+        </h2>
+        {plansLoading ? (
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+            {[1,2,3].map(i => <Skeleton key={i} className="h-52 rounded-2xl" />)}
+          </div>
+        ) : (
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+            {(plans || []).map(plan => {
+              const TierIcon = tierIcons[plan.tier] || Zap;
+              const isActive = activePlanIds.includes(plan.id);
+              const features = Array.isArray(plan.features) ? plan.features : [];
+
+              return (
+                <Card key={plan.id} className={`rounded-2xl ${plan.tier === 'pro' ? 'border-2 border-primary shadow-md relative' : 'border-border/50'}`}>
+                  {plan.tier === 'pro' && (
+                    <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-primary text-primary-foreground text-[9px]">Popular</Badge>
+                    </div>
+                  )}
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <TierIcon className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-semibold">{plan.name}</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground leading-tight">{plan.description}</p>
+
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-foreground">${plan.monthly_rate}</span>
+                      <span className="text-xs text-muted-foreground">/mo</span>
+                      <span className="text-[10px] text-muted-foreground ml-1">(${plan.hourly_rate}/hr)</span>
+                    </div>
+
+                    <div className="space-y-1 py-2 border-y border-border/40">
+                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                        <Cpu className="w-3 h-3" /> {plan.included_cpu} vCPU
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                        <MemoryStick className="w-3 h-3" /> {plan.included_ram_gb} GB RAM
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                        <HardDrive className="w-3 h-3" /> {plan.included_disk_gb} GB Disk
+                      </div>
+                    </div>
+
+                    <ul className="space-y-1">
+                      {features.slice(0, 4).map((f, i) => (
+                        <li key={i} className="flex items-start gap-1.5 text-[10px]">
+                          <Check className="w-3 h-3 text-emerald-500 shrink-0 mt-0.5" />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                      {features.length > 4 && (
+                        <li className="text-[10px] text-muted-foreground pl-4">+{features.length - 4} more</li>
+                      )}
+                    </ul>
+
+                    <Button
+                      size="sm"
+                      className="w-full text-xs h-8"
+                      variant={isActive ? 'outline' : plan.tier === 'pro' ? 'default' : 'secondary'}
+                      disabled={isActive || subscribe.isPending}
+                      onClick={() => subscribe.mutate({ plan_id: plan.id, environment_id: selectedEnvId || undefined })}
+                    >
+                      {isActive ? '✓ Current Plan' : 'Subscribe'}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Environment selector */}
