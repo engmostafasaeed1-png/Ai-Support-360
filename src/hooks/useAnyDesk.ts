@@ -3,7 +3,42 @@ import { supabase } from '@/integrations/supabase/client';
 
 const FUNCTION_NAME = 'anydesk-api';
 
-async function callAnyDesk(action: string, params?: Record<string, string>, body?: Record<string, unknown>) {
+type AnyDeskStatus = {
+  configured: boolean;
+  missing?: string[];
+};
+
+async function getFunctionErrorMessage(error: unknown) {
+  if (error && typeof error === 'object' && 'context' in error) {
+    const response = (error as { context?: unknown }).context;
+
+    if (response instanceof Response) {
+      try {
+        const payload = await response.clone().json();
+        if (payload && typeof payload === 'object' && 'error' in payload && typeof payload.error === 'string') {
+          return payload.error;
+        }
+      } catch {
+        try {
+          const text = await response.clone().text();
+          if (text) return text;
+        } catch {
+          // ignore parsing fallback errors
+        }
+      }
+
+      return `AnyDesk request failed with status ${response.status}`;
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Unexpected AnyDesk error';
+}
+
+async function callAnyDesk<T = unknown>(action: string, params?: Record<string, string>, body?: Record<string, unknown>) {
   const method = body ? 'POST' : 'GET';
   const queryParams = new URLSearchParams({ action, ...params });
 
@@ -12,15 +47,27 @@ async function callAnyDesk(action: string, params?: Record<string, string>, body
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    throw new Error(await getFunctionErrorMessage(error));
+  }
+
+  return data as T;
 }
 
-export function useAnyDeskClients(online?: boolean) {
+export function useAnyDeskStatus() {
+  return useQuery({
+    queryKey: ['anydesk-status'],
+    queryFn: () => callAnyDesk<AnyDeskStatus>('status'),
+    staleTime: 1000 * 60,
+  });
+}
+
+export function useAnyDeskClients(online?: boolean, enabled = true) {
   return useQuery({
     queryKey: ['anydesk-clients', online],
     queryFn: () => callAnyDesk('clients', online ? { online: 'true' } : {}),
-    refetchInterval: 30000, // refresh every 30s
+    enabled,
+    refetchInterval: enabled ? 30000 : false,
   });
 }
 
@@ -32,17 +79,19 @@ export function useAnyDeskClientDetail(clientId: string | null) {
   });
 }
 
-export function useAnyDeskSessions(clientId?: string) {
+export function useAnyDeskSessions(clientId?: string, enabled = true) {
   return useQuery({
     queryKey: ['anydesk-sessions', clientId],
     queryFn: () => callAnyDesk('sessions', clientId ? { clientId } : {}),
+    enabled,
   });
 }
 
-export function useAnyDeskLicense() {
+export function useAnyDeskLicense(enabled = true) {
   return useQuery({
     queryKey: ['anydesk-license'],
     queryFn: () => callAnyDesk('license'),
+    enabled,
   });
 }
 

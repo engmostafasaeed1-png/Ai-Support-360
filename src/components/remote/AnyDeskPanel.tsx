@@ -12,6 +12,7 @@ import {
   Copy, RefreshCw, Shield, Users, Pencil, Loader2,
 } from 'lucide-react';
 import {
+  useAnyDeskStatus,
   useAnyDeskClients,
   useAnyDeskSessions,
   useAnyDeskLicense,
@@ -24,6 +25,15 @@ export default function AnyDeskPanel() {
   const [tab, setTab] = useState('clients');
   const [search, setSearch] = useState('');
   const [onlineOnly, setOnlineOnly] = useState(false);
+  const {
+    data: status,
+    isLoading: isStatusLoading,
+    error: statusError,
+    refetch: refetchStatus,
+  } = useAnyDeskStatus();
+
+  const isConfigured = status?.configured ?? false;
+  const statusLabel = isStatusLoading ? 'Checking' : isConfigured ? 'Integrated' : 'Setup Required';
 
   return (
     <Card className="rounded-2xl border-border/50">
@@ -36,62 +46,84 @@ export default function AnyDeskPanel() {
             AnyDesk Remote Access
           </CardTitle>
           <Badge variant="outline" className="text-[10px] gap-1">
-            <Shield className="w-3 h-3" /> Integrated
+             <Shield className="w-3 h-3" /> {statusLabel}
           </Badge>
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="w-full">
-            <TabsTrigger value="clients" className="flex-1 gap-1.5">
-              <Users className="w-3.5 h-3.5" /> Clients
-            </TabsTrigger>
-            <TabsTrigger value="sessions" className="flex-1 gap-1.5">
-              <Clock className="w-3.5 h-3.5" /> Sessions
-            </TabsTrigger>
-            <TabsTrigger value="license" className="flex-1 gap-1.5">
-              <Shield className="w-3.5 h-3.5" /> License
-            </TabsTrigger>
-          </TabsList>
+         {isStatusLoading ? (
+           <div className="space-y-2">
+             {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 rounded-xl" />)}
+           </div>
+         ) : statusError ? (
+           <div className="text-center py-8">
+             <p className="text-sm text-muted-foreground mb-2">Unable to check AnyDesk status</p>
+             <p className="text-xs text-destructive mb-3">{(statusError as Error).message}</p>
+             <Button variant="outline" size="sm" onClick={() => refetchStatus()} className="gap-1.5">
+               <RefreshCw className="w-3.5 h-3.5" /> Retry
+             </Button>
+           </div>
+         ) : !isConfigured ? (
+           <div className="text-center py-8">
+             <Shield className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
+             <p className="text-sm font-medium text-muted-foreground">AnyDesk Not Configured</p>
+             <p className="text-xs text-muted-foreground/60 mt-1">
+               This optional integration stays disabled until an administrator adds the AnyDesk API key to the backend.
+             </p>
+           </div>
+         ) : (
+           <Tabs value={tab} onValueChange={setTab}>
+             <TabsList className="w-full">
+               <TabsTrigger value="clients" className="flex-1 gap-1.5">
+                 <Users className="w-3.5 h-3.5" /> Clients
+               </TabsTrigger>
+               <TabsTrigger value="sessions" className="flex-1 gap-1.5">
+                 <Clock className="w-3.5 h-3.5" /> Sessions
+               </TabsTrigger>
+               <TabsTrigger value="license" className="flex-1 gap-1.5">
+                 <Shield className="w-3.5 h-3.5" /> License
+               </TabsTrigger>
+             </TabsList>
 
-          <TabsContent value="clients" className="mt-4 space-y-3">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search clients..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="ps-9 h-8 text-sm"
-                />
-              </div>
-              <Button
-                variant={onlineOnly ? 'default' : 'outline'}
-                size="sm"
-                className="gap-1.5 h-8 text-xs"
-                onClick={() => setOnlineOnly(!onlineOnly)}
-              >
-                <Wifi className="w-3.5 h-3.5" /> Online Only
-              </Button>
-            </div>
-            <ClientsList search={search} onlineOnly={onlineOnly} />
-          </TabsContent>
+             <TabsContent value="clients" className="mt-4 space-y-3">
+               <div className="flex gap-2">
+                 <div className="relative flex-1">
+                   <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                   <Input
+                     placeholder="Search clients..."
+                     value={search}
+                     onChange={e => setSearch(e.target.value)}
+                     className="ps-9 h-8 text-sm"
+                   />
+                 </div>
+                 <Button
+                   variant={onlineOnly ? 'default' : 'outline'}
+                   size="sm"
+                   className="gap-1.5 h-8 text-xs"
+                   onClick={() => setOnlineOnly(!onlineOnly)}
+                 >
+                   <Wifi className="w-3.5 h-3.5" /> Online Only
+                 </Button>
+               </div>
+               <ClientsList search={search} onlineOnly={onlineOnly} enabled={isConfigured} />
+             </TabsContent>
 
-          <TabsContent value="sessions" className="mt-4">
-            <SessionsList />
-          </TabsContent>
+             <TabsContent value="sessions" className="mt-4">
+               <SessionsList enabled={isConfigured} />
+             </TabsContent>
 
-          <TabsContent value="license" className="mt-4">
-            <LicenseInfo />
-          </TabsContent>
-        </Tabs>
+             <TabsContent value="license" className="mt-4">
+               <LicenseInfo enabled={isConfigured} />
+             </TabsContent>
+           </Tabs>
+         )}
       </CardContent>
     </Card>
   );
 }
 
-function ClientsList({ search, onlineOnly }: { search: string; onlineOnly: boolean }) {
-  const { data, isLoading, error, refetch } = useAnyDeskClients(onlineOnly);
+function ClientsList({ search, onlineOnly, enabled }: { search: string; onlineOnly: boolean; enabled: boolean }) {
+  const { data, isLoading, error, refetch } = useAnyDeskClients(onlineOnly, enabled);
   const connectionLink = useAnyDeskConnectionLink();
   const setAlias = useAnyDeskSetAlias();
   const [aliasDialog, setAliasDialog] = useState<{ clientId: string; currentAlias: string } | null>(null);
@@ -101,7 +133,8 @@ function ClientsList({ search, onlineOnly }: { search: string; onlineOnly: boole
 
   if (error) {
     const errorMsg = (error as Error).message || '';
-    const isNotConfigured = errorMsg.includes('credentials not configured') || errorMsg.includes('500');
+    const normalizedError = errorMsg.toLowerCase();
+    const isNotConfigured = normalizedError.includes('not configured') || normalizedError.includes('status 503');
     if (isNotConfigured) {
       return (
         <div className="text-center py-8">
@@ -222,8 +255,8 @@ function ClientsList({ search, onlineOnly }: { search: string; onlineOnly: boole
   );
 }
 
-function SessionsList() {
-  const { data, isLoading, error } = useAnyDeskSessions();
+function SessionsList({ enabled }: { enabled: boolean }) {
+  const { data, isLoading, error } = useAnyDeskSessions(undefined, enabled);
 
   if (isLoading) return <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 rounded-xl" />)}</div>;
 
@@ -280,8 +313,8 @@ function SessionsList() {
   );
 }
 
-function LicenseInfo() {
-  const { data, isLoading, error } = useAnyDeskLicense();
+function LicenseInfo({ enabled }: { enabled: boolean }) {
+  const { data, isLoading, error } = useAnyDeskLicense(enabled);
 
   if (isLoading) return <Skeleton className="h-32 rounded-xl" />;
 
