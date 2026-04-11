@@ -6,11 +6,40 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Simple in-memory rate limiter
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 20;
+const WINDOW_MS = 60_000;
+const MAX_BODY_SIZE = 50 * 1024;
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(identifier);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(identifier, { count: 1, resetAt: now + WINDOW_MS });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= RATE_LIMIT;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { session_id } = await req.json();
+    const clientId = req.headers.get("authorization")?.slice(-16) || req.headers.get("x-client-info") || "anon";
+    if (!checkRateLimit(clientId)) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" } });
+    }
+
+    const bodyText = await req.text();
+    if (bodyText.length > MAX_BODY_SIZE) {
+      return new Response(JSON.stringify({ error: "Request too large" }),
+        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const { session_id } = JSON.parse(bodyText);
     if (!session_id) throw new Error("session_id is required");
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

@@ -16,6 +16,23 @@ const VALID_MODELS = [
 
 const DEFAULT_MODEL = "google/gemini-2.5-flash";
 
+// Simple in-memory rate limiter
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 20;
+const WINDOW_MS = 60_000;
+const MAX_BODY_SIZE = 50 * 1024;
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(identifier);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(identifier, { count: 1, resetAt: now + WINDOW_MS });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= RATE_LIMIT;
+}
+
 function aiRequest(apiKey: string, systemPrompt: string, userPrompt: string, tools: any[], toolChoice: any, model: string) {
   return fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -47,7 +64,19 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { action, title, description, sap_module, urgency, preferred_language, model } = await req.json();
+    const clientId = req.headers.get("authorization")?.slice(-16) || req.headers.get("x-client-info") || "anon";
+    if (!checkRateLimit(clientId)) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait before sending more requests." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" } });
+    }
+
+    const bodyText = await req.text();
+    if (bodyText.length > MAX_BODY_SIZE) {
+      return new Response(JSON.stringify({ error: "Request too large" }),
+        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const { action, title, description, sap_module, urgency, preferred_language, model } = JSON.parse(bodyText);
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 

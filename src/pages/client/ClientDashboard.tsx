@@ -77,18 +77,18 @@ export default function ClientDashboard() {
   const displayName = isGuest ? mockClientProfile.display_name : (userProfile?.displayName || 'User');
   const company = isGuest ? mockClientProfile.company : '';
 
-  const openTickets = tickets.filter((t: any) => t.status !== 'resolved' && t.status !== 'closed');
-  const pendingPayments = payments.filter((p: any) => p.status === 'pending');
-  const activeSessions = sessions.filter((s: any) => s.status === 'scheduled');
-  const resolvedCount = tickets.filter((t: any) => t.status === 'resolved').length;
-  const pendingTotal = pendingPayments.reduce((a: number, p: any) => a + p.amount, 0);
+  const openTickets = useMemo(() => tickets.filter((t: any) => t.status !== 'resolved' && t.status !== 'closed'), [tickets]);
+  const pendingPayments = useMemo(() => payments.filter((p: any) => p.status === 'pending'), [payments]);
+  const activeSessions = useMemo(() => sessions.filter((s: any) => s.status === 'scheduled'), [sessions]);
+  const resolvedCount = useMemo(() => tickets.filter((t: any) => t.status === 'resolved').length, [tickets]);
+  const pendingTotal = useMemo(() => pendingPayments.reduce((a: number, p: any) => a + p.amount, 0), [pendingPayments]);
 
-  const recommendedConsultants = isGuest ? mockRecommendedConsultants : (
+  const recommendedConsultants = useMemo(() => isGuest ? mockRecommendedConsultants : (
     realtimeConsultants.length > 0 ? realtimeConsultants.slice(0, 6).map(c => ({
       ...c, avatar: c.name.split(' ').map(w => w[0]).join('').slice(0, 2),
       reviews: c.reviews || 0, badges: c.badges || [], credly_username: c.credly_username,
     })) : mockRecommendedConsultants
-  );
+  ), [realtimeConsultants, isGuest]);
 
   const ticketSpark = useMemo(() => Array.from({ length: 7 }, (_, i) =>
     tickets.filter((t: any) => isSameDay(new Date(t.created_at), subDays(new Date(), 6 - i))).length
@@ -100,12 +100,12 @@ export default function ClientDashboard() {
     payments.filter((p: any) => isSameDay(new Date(p.date || p.created_at), subDays(new Date(), 6 - i))).reduce((sum: number, p: any) => sum + (p.amount || 0), 0)
   ), [payments]);
 
-  const kpis = [
+  const kpis = useMemo(() => [
     { labelKey: 'client_dashboard.open_tickets', value: openTickets.length, prefix: '', icon: Briefcase, sparkData: ticketSpark, link: '/client/tickets', color: 'hsl(var(--accent))' },
     { labelKey: 'client_dashboard.active_sessions', value: activeSessions.length, prefix: '', icon: Calendar, sparkData: sessionSpark, link: '/client/sessions', color: 'hsl(142, 71%, 45%)' },
     { labelKey: 'client_dashboard.pending_payments', value: pendingTotal, prefix: '$', icon: CreditCard, sparkData: paymentSpark, link: '/client/payments', color: 'hsl(38, 92%, 50%)' },
     { labelKey: 'client_dashboard.resolved', value: resolvedCount, prefix: '', icon: CheckCircle, sparkData: [2, 4, 3, 5, 7, 6, resolvedCount], link: '/client/tickets', color: 'hsl(142, 71%, 45%)' },
-  ];
+  ], [openTickets.length, activeSessions.length, pendingTotal, resolvedCount, ticketSpark, sessionSpark, paymentSpark]);
 
   const isLoading = ticketsLoading || sessionsLoading || paymentsLoading;
 
