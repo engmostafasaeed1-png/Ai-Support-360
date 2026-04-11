@@ -1,14 +1,41 @@
 import { useTranslation } from 'react-i18next';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, FolderKanban, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Trash2, FolderKanban, X } from 'lucide-react';
 import { sapModules } from '@/data/clientMockData';
 import type { OnboardingData, ProjectEntry } from '../ConsultantOnboarding';
+
+const industries = [
+  'Oil & Gas', 'Banking & Finance', 'Telecom', 'Retail & Consumer Goods',
+  'Healthcare & Pharma', 'Government & Public Sector', 'Manufacturing',
+  'Logistics & Transportation', 'Education', 'Real Estate & Construction',
+  'Utilities & Energy', 'Mining & Metals', 'Automotive', 'Aerospace & Defense',
+  'Media & Entertainment', 'Insurance', 'Agriculture', 'Other',
+];
+
+const roles = [
+  'Lead Consultant', 'Senior Consultant', 'Consultant', 'Junior Consultant',
+  'Solution Architect', 'Technical Architect', 'Project Manager', 'Program Manager',
+  'Functional Analyst', 'Technical Lead', 'Developer', 'Integration Specialist',
+  'Data Migration Lead', 'Test Lead', 'Change Manager', 'Business Analyst',
+  'Subject Matter Expert', 'Trainer', 'Other',
+];
+
+const durations = [
+  { value: 1, label: '< 1 month' },
+  { value: 3, label: '1–3 months' },
+  { value: 6, label: '3–6 months' },
+  { value: 9, label: '6–9 months' },
+  { value: 12, label: '9–12 months' },
+  { value: 18, label: '12–18 months' },
+  { value: 24, label: '18–24 months' },
+  { value: 36, label: '2–3 years' },
+  { value: 48, label: '3+ years' },
+];
 
 interface Props {
   data: OnboardingData;
@@ -18,8 +45,6 @@ interface Props {
 const emptyProject: ProjectEntry = {
   projectName: '', clientIndustry: '', sapModules: [], description: '', durationMonths: null, role: '',
 };
-
-const industries = ['Oil & Gas', 'Banking', 'Telecom', 'Retail', 'Healthcare', 'Government', 'Manufacturing', 'Logistics', 'Education', 'Other'];
 
 export default function ProjectsStep({ data, onChange }: Props) {
   const { t } = useTranslation();
@@ -38,6 +63,15 @@ export default function ProjectsStep({ data, onChange }: Props) {
     const mods = item.sapModules.includes(mod) ? item.sapModules.filter(m => m !== mod) : [...item.sapModules, mod];
     update(i, { sapModules: mods });
   };
+
+  const projectTypes = [
+    'S/4HANA Greenfield Implementation', 'S/4HANA Brownfield Migration',
+    'System Upgrade', 'Module Implementation', 'Rollout / Template Deployment',
+    'Integration Project', 'Data Migration', 'Support & Maintenance',
+    'Business Process Reengineering', 'Cloud Migration (Rise with SAP)',
+    'Custom Development', 'Performance Optimization', 'Security & GRC',
+    'Training & Knowledge Transfer', 'Other',
+  ];
 
   return (
     <div className="space-y-4">
@@ -67,25 +101,46 @@ export default function ProjectsStep({ data, onChange }: Props) {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label className="text-xs">Project Name *</Label>
-              <Input value={item.projectName} onChange={e => update(i, { projectName: e.target.value })} placeholder="S/4HANA Migration" />
+              <Label className="text-xs">Project Type *</Label>
+              <Select value={item.projectName} onValueChange={v => update(i, { projectName: v })}>
+                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                <SelectContent>
+                  {projectTypes.map(pt => (
+                    <SelectItem key={pt} value={pt}>{pt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Your Role</Label>
-              <Input value={item.role} onChange={e => update(i, { role: e.target.value })} placeholder="Lead Consultant" />
+              <Select value={item.role} onValueChange={v => update(i, { role: v })}>
+                <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
+                <SelectContent>
+                  {roles.map(r => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Client Industry</Label>
               <Select value={item.clientIndustry} onValueChange={v => update(i, { clientIndustry: v })}>
-                <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select industry" /></SelectTrigger>
                 <SelectContent>
                   {industries.map(ind => <SelectItem key={ind} value={ind}>{ind}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Duration (months)</Label>
-              <Input type="number" min={1} value={item.durationMonths || ''} onChange={e => update(i, { durationMonths: e.target.value ? Number(e.target.value) : null })} placeholder="12" />
+              <Label className="text-xs">Duration</Label>
+              <Select value={item.durationMonths ? String(item.durationMonths) : ''} onValueChange={v => update(i, { durationMonths: Number(v) })}>
+                <SelectTrigger><SelectValue placeholder="Select duration" /></SelectTrigger>
+                <SelectContent>
+                  {durations.map(d => (
+                    <SelectItem key={d.value} value={String(d.value)}>{d.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="space-y-1">

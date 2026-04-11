@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,6 +13,16 @@ const sapModules = [
   'SAP WM', 'SAP HCM', 'SAP PM', 'SAP PS', 'SAP BW', 'SAP ABAP',
   'SAP Basis', 'SAP BTP', 'SuccessFactors', 'SAP Ariba', 'SAP CPI',
   'SAP EWM', 'SAP TM', 'SAP IS-Oil', 'SAP FICO',
+];
+
+const yearsOptions = [
+  { value: 1, label: '< 1 year' },
+  { value: 2, label: '1–2 years' },
+  { value: 3, label: '3–5 years' },
+  { value: 5, label: '5–7 years' },
+  { value: 8, label: '8–10 years' },
+  { value: 12, label: '10–15 years' },
+  { value: 20, label: '15+ years' },
 ];
 
 interface Props {
@@ -83,13 +91,14 @@ export default function SkillsStep({ data, onChange }: Props) {
                   </div>
                   <div className="space-y-1.5">
                     <Label>{t('onboarding.years_experience')}</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={30}
-                      value={skill.yearsExperience}
-                      onChange={e => updateSkill(idx, { yearsExperience: Number(e.target.value) })}
-                    />
+                    <Select value={String(skill.yearsExperience)} onValueChange={v => updateSkill(idx, { yearsExperience: Number(v) })}>
+                      <SelectTrigger><SelectValue placeholder="Select years" /></SelectTrigger>
+                      <SelectContent>
+                        {yearsOptions.map(opt => (
+                          <SelectItem key={opt.value} value={String(opt.value)}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8" onClick={() => removeSkill(idx)}>
