@@ -4325,6 +4325,7 @@ export type Database = {
           sla_response_deadline: string | null
           status: Database["public"]["Enums"]["ticket_status"] | null
           tenant_id: string | null
+          ticket_type: string
           title: string
           updated_at: string
           urgency: Database["public"]["Enums"]["urgency_level"] | null
@@ -4365,6 +4366,7 @@ export type Database = {
           sla_response_deadline?: string | null
           status?: Database["public"]["Enums"]["ticket_status"] | null
           tenant_id?: string | null
+          ticket_type?: string
           title: string
           updated_at?: string
           urgency?: Database["public"]["Enums"]["urgency_level"] | null
@@ -4405,6 +4407,7 @@ export type Database = {
           sla_response_deadline?: string | null
           status?: Database["public"]["Enums"]["ticket_status"] | null
           tenant_id?: string | null
+          ticket_type?: string
           title?: string
           updated_at?: string
           urgency?: Database["public"]["Enums"]["urgency_level"] | null
