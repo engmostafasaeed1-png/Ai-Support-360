@@ -48,18 +48,27 @@ const sessionIcons: Record<string, typeof Video> = {
 
 export default function TicketsPage() {
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState('all');
   const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
   const { data: tickets, isLoading } = useClientTickets();
   const navigate = useNavigate();
+  const parentRef = useRef<HTMLDivElement>(null);
 
   const filtered = (tickets || []).filter((t) => {
     const matchSearch =
-      t.title.toLowerCase().includes(search.toLowerCase()) ||
-      t.sap_module.toLowerCase().includes(search.toLowerCase()) ||
-      (t.description || '').toLowerCase().includes(search.toLowerCase());
+      t.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      t.sap_module.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      (t.description || '').toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchStatus = statusFilter === 'all' || t.status === statusFilter;
     return matchSearch && matchStatus;
+  });
+
+  const virtualizer = useVirtualizer({
+    count: filtered.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 120,
+    overscan: 5,
   });
 
   const statuses = ['all', 'new', 'under_review', 'matched', 'in_progress', 'waiting_for_client', 'resolved', 'closed'];
