@@ -23,6 +23,7 @@ function checkRateLimit(identifier: string): boolean {
   return entry.count <= RATE_LIMIT;
 }
 
+serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
