@@ -429,6 +429,30 @@ export default function TicketDetailPage() {
         consultantId={ticket.consultant_id}
         consultantName={ticket.consultant_name || undefined}
       />
+      <RequestSatisfactionDialog
+        open={csatOpen}
+        onOpenChange={setCsatOpen}
+        isPending={false}
+        parties={[
+          ...(ticket.consultant_id ? [{ id: ticket.consultant_id, name: ticket.consultant_name || 'Consultant', role: 'consultant' as const }] : []),
+          { id: ticket.client_id, name: 'Client', role: 'client' as const },
+        ]}
+        onRequest={async (targetUserId, role) => {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          // rated_by = target (they fill the survey), rated_user = requester (they get rated)
+          await (supabase.from('satisfaction_surveys') as any).insert({
+            rated_by: targetUserId,
+            rated_user: user.id,
+            role,
+            ticket_id: ticket.id,
+            requested_by: user.id,
+            status: 'pending',
+          });
+          toast.success('CSAT survey requested!');
+          setCsatOpen(false);
+        }}
+      />
     </div>
   );
 }
