@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Loader2, Send, CalendarIcon } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Send, CalendarIcon, Mail, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAvailableConsultants, useShareRemoteConfig } from '@/hooks/useSharedRemoteConfigs';
+import { toast } from 'sonner';
 
 interface ShareRemoteConfigDialogProps {
   open: boolean;
@@ -33,28 +35,55 @@ export default function ShareRemoteConfigDialog({
   const [connectionId, setConnectionId] = useState((defaultConfig.connectionId as string) || '');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [shareMode, setShareMode] = useState<'consultant' | 'email'>('consultant');
+  const [recipientEmail, setRecipientEmail] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      setAlias((defaultConfig?.alias as string) || '');
+      setConnectionId((defaultConfig?.connectionId as string) || '');
+    }
+  }, [open, defaultConfig]);
 
   const handleShare = async () => {
-    if (!consultantId) return;
-    await shareMutation.mutateAsync({
-      consultant_id: consultantId,
-      tool_type: toolType,
-      config: {
-        ...defaultConfig,
-        alias,
-        connectionId,
-        startDate: startDate?.toISOString() || null,
-        endDate: endDate?.toISOString() || null,
-      },
-      message: message || undefined,
-    });
+    if (shareMode === 'consultant') {
+      if (!consultantId) return;
+      await shareMutation.mutateAsync({
+        consultant_id: consultantId,
+        tool_type: toolType,
+        config: {
+          ...defaultConfig,
+          alias,
+          connectionId,
+          startDate: startDate?.toISOString() || null,
+          endDate: endDate?.toISOString() || null,
+        },
+        message: message || undefined,
+      });
+    } else {
+      if (!recipientEmail) return;
+      const subject = encodeURIComponent(`${toolLabel} Remote Access Shared`);
+      const period = startDate && endDate
+        ? `\nValid: ${format(startDate, 'MMM d, yyyy')} → ${format(endDate, 'MMM d, yyyy')}`
+        : startDate ? `\nStarting: ${format(startDate, 'MMM d, yyyy')}` : '';
+      const body = encodeURIComponent(
+        `Hi,\n\nI'm sharing ${toolLabel} remote access credentials with you.\n\nTool: ${toolLabel}\nAlias: ${alias || 'N/A'}\nConnection ID: ${connectionId || 'N/A'}${period}\n\n${message ? `Note: ${message}\n\n` : ''}Please use these details to connect.\n\nBest regards`
+      );
+      window.open(`mailto:${recipientEmail}?subject=${subject}&body=${body}`, '_blank');
+      toast.success('Email client opened with share details');
+    }
+    resetForm();
     onOpenChange(false);
+  };
+
+  const resetForm = () => {
     setConsultantId('');
     setMessage('');
     setAlias('');
     setConnectionId('');
     setStartDate(undefined);
     setEndDate(undefined);
+    setRecipientEmail('');
   };
 
   const toolLabel = toolType === 'anydesk' ? 'AnyDesk' : toolType === 'teamviewer' ? 'TeamViewer' : toolType === 'rustdesk' ? 'RustDesk' : toolType === 'rdp' ? 'RDP/VNC' : toolType;
@@ -70,35 +99,52 @@ export default function ShareRemoteConfigDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div>
-            <label className="text-xs font-medium text-foreground mb-1 block">Select Consultant</label>
-            {loadingConsultants ? (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
-                <Loader2 className="w-3 h-3 animate-spin" /> Loading consultants...
-              </div>
-            ) : !consultants?.length ? (
-              <p className="text-xs text-muted-foreground py-2">No consultants assigned to your tickets yet.</p>
-            ) : (
-              <Select value={consultantId} onValueChange={setConsultantId}>
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue placeholder="Choose a consultant..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {consultants.map(c => (
-                    <SelectItem key={c.id} value={c.id}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="w-5 h-5">
-                          <AvatarImage src={c.avatar_url || ''} />
-                          <AvatarFallback className="text-[8px]">{c.display_name?.[0]}</AvatarFallback>
-                        </Avatar>
-                        {c.display_name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+          <Tabs value={shareMode} onValueChange={(v) => setShareMode(v as 'consultant' | 'email')}>
+            <TabsList className="grid w-full grid-cols-2 h-8">
+              <TabsTrigger value="consultant" className="text-xs gap-1.5"><Users className="w-3 h-3" /> Consultant</TabsTrigger>
+              <TabsTrigger value="email" className="text-xs gap-1.5"><Mail className="w-3 h-3" /> Email Anyone</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="consultant" className="mt-3">
+              {loadingConsultants ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Loading consultants...
+                </div>
+              ) : !consultants?.length ? (
+                <p className="text-xs text-muted-foreground py-2">No consultants assigned to your tickets yet.</p>
+              ) : (
+                <Select value={consultantId} onValueChange={setConsultantId}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Choose a consultant..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {consultants.map(c => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-5 h-5">
+                            <AvatarImage src={c.avatar_url || ''} />
+                            <AvatarFallback className="text-[8px]">{c.display_name?.[0]}</AvatarFallback>
+                          </Avatar>
+                          {c.display_name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </TabsContent>
+
+            <TabsContent value="email" className="mt-3">
+              <Input
+                type="email"
+                value={recipientEmail}
+                onChange={e => setRecipientEmail(e.target.value)}
+                placeholder="recipient@example.com"
+                className="h-9 text-sm"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">Opens your email client with connection details pre-filled.</p>
+            </TabsContent>
+          </Tabs>
 
           <div>
             <label className="text-xs font-medium text-foreground mb-1 block">Connection Alias</label>
@@ -151,11 +197,14 @@ export default function ShareRemoteConfigDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
             onClick={handleShare}
-            disabled={!consultantId || !connectionId || shareMutation.isPending}
+            disabled={
+              !connectionId ||
+              (shareMode === 'consultant' ? (!consultantId || shareMutation.isPending) : !recipientEmail) 
+            }
             className="gradient-primary border-0 gap-1.5"
           >
-            {shareMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            Share
+            {shareMutation.isPending && shareMode === 'consultant' ? <Loader2 className="w-4 h-4 animate-spin" /> : shareMode === 'email' ? <Mail className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+            {shareMode === 'email' ? 'Send Email' : 'Share'}
           </Button>
         </DialogFooter>
       </DialogContent>
