@@ -168,6 +168,8 @@ export default function ClientVMwareSettingsPage() {
               </CardContent>
             </Card>
           </div>
+        )}
+      </div>
 
       {/* Environment selector */}
       <Card className="rounded-2xl border-border/50">
