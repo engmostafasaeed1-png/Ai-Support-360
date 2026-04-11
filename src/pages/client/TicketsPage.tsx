@@ -63,10 +63,10 @@ export default function TicketsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">My Tickets</h1>
-          <p className="text-sm text-muted-foreground mt-1">Track all your support requests with full details.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">My Tickets</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Track all your support requests with full details.</p>
         </div>
         <Link to="/client/new-request">
           <Button className="gradient-primary border-0" size="sm">
@@ -80,19 +80,21 @@ export default function TicketsPage() {
           <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Search tickets..." value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9 rounded-xl h-10" />
         </div>
-        <div className="flex gap-1.5 flex-wrap">
-          {statuses.map((s) => (
-            <Button
-              key={s}
-              size="sm"
-              variant={statusFilter === s ? 'default' : 'outline'}
-              className={`text-xs rounded-full h-8 ${statusFilter === s ? 'gradient-primary border-0' : ''}`}
-              onClick={() => setStatusFilter(s)}
-            >
-              {s === 'all' ? 'All' : s.replace(/_/g, ' ')}
-            </Button>
-          ))}
-        </div>
+        <ScrollArea className="w-full">
+          <div className="flex gap-1.5 pb-1">
+            {statuses.map((s) => (
+              <Button
+                key={s}
+                size="sm"
+                variant={statusFilter === s ? 'default' : 'outline'}
+                className={`text-xs rounded-full h-8 whitespace-nowrap shrink-0 ${statusFilter === s ? 'gradient-primary border-0' : ''}`}
+                onClick={() => setStatusFilter(s)}
+              >
+                {s === 'all' ? 'All' : s.replace(/_/g, ' ')}
+              </Button>
+            ))}
+          </div>
+        </ScrollArea>
       </div>
 
       <div className="space-y-3">
