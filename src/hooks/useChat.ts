@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface ChatMessage {
   id: string;
@@ -11,6 +12,7 @@ export interface ChatMessage {
   file_name: string | null;
   is_read: boolean;
   created_at: string;
+  optimistic?: boolean;
 }
 
 interface UseChatOptions {
@@ -47,7 +49,7 @@ export function useChat({ sessionId, userId }: UseChatOptions) {
   // Subscribe to realtime messages + presence
   useEffect(() => {
     const channel = supabase
-      .channel(`chat:${sessionId}`)
+      .channel(`chat:${sessionId}:${userId}`)
       .on(
         'postgres_changes',
         {
@@ -59,8 +61,12 @@ export function useChat({ sessionId, userId }: UseChatOptions) {
         (payload) => {
           const newMsg = payload.new as unknown as ChatMessage;
           setMessages((prev) => {
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
-            return [...prev, newMsg];
+            // Remove optimistic message with same content from same sender
+            const filtered = prev.filter(
+              (m) => !(m.optimistic && m.sender_id === newMsg.sender_id && m.content === newMsg.content)
+            );
+            if (filtered.some((m) => m.id === newMsg.id)) return filtered;
+            return [...filtered, newMsg];
           });
         }
       )
@@ -93,6 +99,22 @@ export function useChat({ sessionId, userId }: UseChatOptions) {
 
   const sendMessage = useCallback(
     async (content: string, type: 'text' | 'file' = 'text', fileUrl?: string, fileName?: string) => {
+      // Optimistic message
+      const optimisticMsg: ChatMessage = {
+        id: `optimistic-${Date.now()}`,
+        session_id: sessionId,
+        sender_id: userId,
+        content: type === 'text' ? content : fileName || 'File',
+        message_type: type,
+        file_url: fileUrl || null,
+        file_name: fileName || null,
+        is_read: false,
+        created_at: new Date().toISOString(),
+        optimistic: true,
+      };
+
+      setMessages((prev) => [...prev, optimisticMsg]);
+
       const { error } = await supabase.from('messages').insert({
         session_id: sessionId,
         sender_id: userId,
@@ -101,7 +123,13 @@ export function useChat({ sessionId, userId }: UseChatOptions) {
         file_url: fileUrl || null,
         file_name: fileName || null,
       });
-      if (error) console.error('Send message error:', error);
+
+      if (error) {
+        console.error('Send message error:', error);
+        // Remove optimistic message on error
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
+        toast.error('Failed to send message. Please try again.');
+      }
     },
     [sessionId, userId]
   );

@@ -1,3 +1,4 @@
+import React, { Suspense, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -12,8 +13,17 @@ import ScrollToTop from "./components/ScrollToTop.tsx";
 import ScreenProtection from "./components/ScreenProtection.tsx";
 import WhatsAppButton from "./components/WhatsAppButton.tsx";
 import GlobalSearch from "./components/GlobalSearch.tsx";
+import ErrorBoundary from "./components/ErrorBoundary.tsx";
+import { Loader2 } from 'lucide-react';
 
-// Admin console section imports
+// Eager layout imports
+import ConsultantLayout from "./components/consultant/ConsultantLayout.tsx";
+import ClientLayout from "./components/client/ClientLayout.tsx";
+import AdminLayout from "./components/admin/AdminLayout.tsx";
+import SuperAdminLayout from "./components/superadmin/SuperAdminLayout.tsx";
+import ProtectedRoute from "./components/auth/ProtectedRoute.tsx";
+
+// Admin console sections (eagerly loaded since they're small)
 import OverviewSection from "./components/admin/console/sections/OverviewSection.tsx";
 import UserManagementSection from "./components/admin/console/sections/UserManagementSection.tsx";
 import RolesPermissionsSection from "./components/admin/console/sections/RolesPermissionsSection.tsx";
@@ -21,107 +31,120 @@ import SubscriptionsSection from "./components/admin/console/sections/Subscripti
 import { SecuritySettingsSection, AuthenticationSection, DataAccessSection, AuditLogSection } from "./components/admin/console/sections/SecuritySections.tsx";
 import { TicketManagementSection, ConsultantApprovalsSection, NDAManagementSection, MatchRequestsSection, ProjectsMilestonesSection } from "./components/admin/console/sections/OperationsSections.tsx";
 import { NotificationsSection, LocalizationSection, AppearanceSection, StorageSection, EmailSection, IntegrationsSection as AdminIntSection, EnvironmentsSection, LandingEditorSection, PlatformSettingsSection, MaintenanceSection } from "./components/admin/console/sections/SystemSections.tsx";
-import Index from "./pages/Index.tsx";
-import NotFound from "./pages/NotFound.tsx";
-import ConsultantLayout from "./components/consultant/ConsultantLayout.tsx";
-import ConsultantDashboard from "./pages/consultant/ConsultantDashboard.tsx";
-import CasesPage from "./pages/consultant/CasesPage.tsx";
-import CaseDetailPage from "./pages/consultant/CaseDetailPage.tsx";
-import RequestsPage from "./pages/consultant/RequestsPage.tsx";
-import ProposalsPage from "./pages/consultant/ProposalsPage.tsx";
-import OpenTicketsPage from "./pages/consultant/OpenTicketsPage.tsx";
-import WorkDiaryPage from "./pages/consultant/WorkDiaryPage.tsx";
-import MilestonesPage from "./pages/client/MilestonesPage.tsx";
-import MatchRequestPopup from "./components/consultant/MatchRequestPopup.tsx";
-import CalendarPage from "./pages/consultant/CalendarPage.tsx";
-import EarningsPage from "./pages/consultant/EarningsPage.tsx";
-import VerificationPage from "./pages/consultant/VerificationPage.tsx";
-import ProfilePage from "./pages/consultant/ProfilePage.tsx";
-import OnboardingPage from "./pages/consultant/OnboardingPage.tsx";
-import InterviewsPage from "./pages/consultant/InterviewsPage.tsx";
-import InterviewTrainingPage from "./pages/admin/InterviewTrainingPage.tsx";
-import ConsultantChatPage from "./pages/consultant/ConsultantChatPage.tsx";
-import ClientLayout from "./components/client/ClientLayout.tsx";
-import ClientDashboard from "./pages/client/ClientDashboard.tsx";
-import NewRequestPage from "./pages/client/NewRequestPage.tsx";
-import TicketsPage from "./pages/client/TicketsPage.tsx";
-import TicketDetailPage from "./pages/client/TicketDetailPage.tsx";
-import ConsultantsPage from "./pages/client/ConsultantsPage.tsx";
-import ConsultantProfilePage from "./pages/client/ConsultantProfilePage.tsx";
-import PaymentsPage from "./pages/client/PaymentsPage.tsx";
-import ClientChatPage from "./pages/client/ClientChatPage.tsx";
-import ClientOnboardingPage from "./pages/client/ClientOnboardingPage.tsx";
-import SessionsPage from "./pages/client/SessionsPage.tsx";
-import VideoSessionsPage from "./pages/client/VideoSessionsPage.tsx";
-import SessionDetailPage from "./pages/client/SessionDetailPage.tsx";
-import SettingsPage from "./pages/client/SettingsPage.tsx";
-import IntegrationsPage from "./pages/client/IntegrationsPage.tsx";
-import CompanyProfilePage from "./pages/client/CompanyProfilePage.tsx";
-import CompanySelectorPage from "./pages/client/CompanySelectorPage.tsx";
-import ChatSessionPage from "./pages/chat/ChatSessionPage.tsx";
-import NotificationsPage from "./pages/notifications/NotificationsPage.tsx";
-import PricingPage from "./pages/PricingPage.tsx";
-import AdminLayout from "./components/admin/AdminLayout.tsx";
-import AdminDashboard from "./pages/admin/AdminDashboard.tsx";
-import UsersPage from "./pages/admin/UsersPage.tsx";
-import TicketKanbanPage from "./pages/admin/TicketKanbanPage.tsx";
-import ConsultantApprovalsPage from "./pages/admin/ConsultantApprovalsPage.tsx";
-import AnalyticsPage from "./pages/admin/AnalyticsPage.tsx";
-import AdminIntegrationsPage from "./pages/admin/AdminIntegrationsPage.tsx";
-import EnvironmentsPage from "./pages/admin/EnvironmentsPage.tsx";
-import EnvironmentLogsPage from "./pages/admin/EnvironmentLogsPage.tsx";
-import AdminSettingsPage from "./pages/admin/AdminSettingsPage.tsx";
-import NDAManagementPage from "./pages/admin/NDAManagementPage.tsx";
-import LoginPage from "./pages/auth/LoginPage.tsx";
-import SignupPage from "./pages/auth/SignupPage.tsx";
-import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.tsx";
-import ResetPasswordPage from "./pages/auth/ResetPasswordPage.tsx";
-import ProtectedRoute from "./components/auth/ProtectedRoute.tsx";
-import RemoteAccessPage from "./pages/consultant/RemoteAccessPage.tsx";
-import ClientRemoteAccessPage from "./pages/client/RemoteAccessPage.tsx";
-import InvoicesPage from "./pages/client/InvoicesPage.tsx";
-import KnowledgePage from "./pages/client/KnowledgePage.tsx";
-import ActivityLogPage from "./pages/client/ActivityLogPage.tsx";
-import SLAPage from "./pages/client/SLAPage.tsx";
-import TeamMembersPage from "./pages/client/TeamMembersPage.tsx";
-import ClientReportsPage from "./pages/client/ReportsPage.tsx";
-import ReviewsPage from "./pages/consultant/ReviewsPage.tsx";
-import ConsultantSettingsPage from "./pages/consultant/SettingsPage.tsx";
-import ConsultantKnowledgePage from "./pages/consultant/KnowledgePage.tsx";
-import ConsultantReportsPage from "./pages/consultant/ReportsPage.tsx";
-import SuperAdminLayout from "./components/superadmin/SuperAdminLayout.tsx";
-import SuperAdminOverview from "./pages/superadmin/SuperAdminOverview.tsx";
-import RolesAuthPage from "./pages/superadmin/RolesAuthPage.tsx";
-import UserManagementPage from "./pages/superadmin/UserManagementPage.tsx";
-import ReportsPage from "./pages/superadmin/ReportsPage.tsx";
-import ConfigPage from "./pages/superadmin/ConfigPage.tsx";
-import WorkflowsPage from "./pages/superadmin/WorkflowsPage.tsx";
-import AuditLogsPage from "./pages/superadmin/AuditLogsPage.tsx";
-import SystemHealthPage from "./pages/superadmin/SystemHealthPage.tsx";
-import ExecutiveDashboardPage from "./pages/superadmin/ExecutiveDashboardPage.tsx";
-import ReferralsPage from "./pages/ReferralsPage.tsx";
-import TaskBoardPage from "./pages/client/TaskBoardPage.tsx";
-import ProjectsPage from "./pages/client/ProjectsPage.tsx";
-import ContractsPage from "./pages/client/ContractsPage.tsx";
-import SupportPage from "./pages/client/SupportPage.tsx";
-import ProjectManagementTicketsPage from "./pages/client/ProjectManagementTicketsPage.tsx";
-import SolutionArchitecturePage from "./pages/client/SolutionArchitecturePage.tsx";
-import ChangeManagementPage from "./pages/client/ChangeManagementPage.tsx";
-import ProblemManagementPage from "./pages/client/ProblemManagementPage.tsx";
-import ServiceCatalogPage from "./pages/client/ServiceCatalogPage.tsx";
-import MajorIncidentsPage from "./pages/client/MajorIncidentsPage.tsx";
-import PlaybooksPage from "./pages/client/PlaybooksPage.tsx";
-import BusinessProcessesPage from "./pages/client/BusinessProcessesPage.tsx";
-import ConsultantBusinessProcessesPage from "./pages/consultant/BusinessProcessesPage.tsx";
-import OnCallSchedulePage from "./pages/admin/OnCallSchedulePage.tsx";
-import LandingEditorPage from "./pages/admin/LandingEditorPage.tsx";
-import AdminConsolePage from "./pages/admin/AdminConsolePage.tsx";
-import AdminVMwareSettingsPage from "./pages/admin/VMwareSettingsPage.tsx";
-import ClientVMwareSettingsPage from "./pages/client/VMwareSettingsPage.tsx";
-import VMwarePricingPage from "./pages/client/VMwarePricingPage.tsx";
-import VMwareConsolePage from "./pages/client/VMwareConsolePage.tsx";
+
+// Lazy page imports
+const Index = React.lazy(() => import("./pages/Index.tsx"));
+const NotFound = React.lazy(() => import("./pages/NotFound.tsx"));
+const PricingPage = React.lazy(() => import("./pages/PricingPage.tsx"));
+const LoginPage = React.lazy(() => import("./pages/auth/LoginPage.tsx"));
+const SignupPage = React.lazy(() => import("./pages/auth/SignupPage.tsx"));
+const ForgotPasswordPage = React.lazy(() => import("./pages/auth/ForgotPasswordPage.tsx"));
+const ResetPasswordPage = React.lazy(() => import("./pages/auth/ResetPasswordPage.tsx"));
+
+// Consultant pages
+const ConsultantDashboard = React.lazy(() => import("./pages/consultant/ConsultantDashboard.tsx"));
+const CasesPage = React.lazy(() => import("./pages/consultant/CasesPage.tsx"));
+const CaseDetailPage = React.lazy(() => import("./pages/consultant/CaseDetailPage.tsx"));
+const RequestsPage = React.lazy(() => import("./pages/consultant/RequestsPage.tsx"));
+const ProposalsPage = React.lazy(() => import("./pages/consultant/ProposalsPage.tsx"));
+const OpenTicketsPage = React.lazy(() => import("./pages/consultant/OpenTicketsPage.tsx"));
+const WorkDiaryPage = React.lazy(() => import("./pages/consultant/WorkDiaryPage.tsx"));
+const CalendarPage = React.lazy(() => import("./pages/consultant/CalendarPage.tsx"));
+const EarningsPage = React.lazy(() => import("./pages/consultant/EarningsPage.tsx"));
+const VerificationPage = React.lazy(() => import("./pages/consultant/VerificationPage.tsx"));
+const ProfilePage = React.lazy(() => import("./pages/consultant/ProfilePage.tsx"));
+const OnboardingPage = React.lazy(() => import("./pages/consultant/OnboardingPage.tsx"));
+const InterviewsPage = React.lazy(() => import("./pages/consultant/InterviewsPage.tsx"));
+const ConsultantChatPage = React.lazy(() => import("./pages/consultant/ConsultantChatPage.tsx"));
+const RemoteAccessPage = React.lazy(() => import("./pages/consultant/RemoteAccessPage.tsx"));
+const ReviewsPage = React.lazy(() => import("./pages/consultant/ReviewsPage.tsx"));
+const ConsultantSettingsPage = React.lazy(() => import("./pages/consultant/SettingsPage.tsx"));
+const ConsultantKnowledgePage = React.lazy(() => import("./pages/consultant/KnowledgePage.tsx"));
+const ConsultantReportsPage = React.lazy(() => import("./pages/consultant/ReportsPage.tsx"));
+const ConsultantBusinessProcessesPage = React.lazy(() => import("./pages/consultant/BusinessProcessesPage.tsx"));
+
+// Client pages
+const ClientDashboard = React.lazy(() => import("./pages/client/ClientDashboard.tsx"));
+const NewRequestPage = React.lazy(() => import("./pages/client/NewRequestPage.tsx"));
+const TicketsPage = React.lazy(() => import("./pages/client/TicketsPage.tsx"));
+const TicketDetailPage = React.lazy(() => import("./pages/client/TicketDetailPage.tsx"));
+const ConsultantsPage = React.lazy(() => import("./pages/client/ConsultantsPage.tsx"));
+const ConsultantProfilePage = React.lazy(() => import("./pages/client/ConsultantProfilePage.tsx"));
+const PaymentsPage = React.lazy(() => import("./pages/client/PaymentsPage.tsx"));
+const ClientChatPage = React.lazy(() => import("./pages/client/ClientChatPage.tsx"));
+const ClientOnboardingPage = React.lazy(() => import("./pages/client/ClientOnboardingPage.tsx"));
+const SessionsPage = React.lazy(() => import("./pages/client/SessionsPage.tsx"));
+const VideoSessionsPage = React.lazy(() => import("./pages/client/VideoSessionsPage.tsx"));
+const SessionDetailPage = React.lazy(() => import("./pages/client/SessionDetailPage.tsx"));
+const SettingsPage = React.lazy(() => import("./pages/client/SettingsPage.tsx"));
+const IntegrationsPage = React.lazy(() => import("./pages/client/IntegrationsPage.tsx"));
+const CompanyProfilePage = React.lazy(() => import("./pages/client/CompanyProfilePage.tsx"));
+const CompanySelectorPage = React.lazy(() => import("./pages/client/CompanySelectorPage.tsx"));
+const ClientRemoteAccessPage = React.lazy(() => import("./pages/client/RemoteAccessPage.tsx"));
+const InvoicesPage = React.lazy(() => import("./pages/client/InvoicesPage.tsx"));
+const KnowledgePage = React.lazy(() => import("./pages/client/KnowledgePage.tsx"));
+const MilestonesPage = React.lazy(() => import("./pages/client/MilestonesPage.tsx"));
+const ActivityLogPage = React.lazy(() => import("./pages/client/ActivityLogPage.tsx"));
+const SLAPage = React.lazy(() => import("./pages/client/SLAPage.tsx"));
+const TeamMembersPage = React.lazy(() => import("./pages/client/TeamMembersPage.tsx"));
+const ClientReportsPage = React.lazy(() => import("./pages/client/ReportsPage.tsx"));
+const TaskBoardPage = React.lazy(() => import("./pages/client/TaskBoardPage.tsx"));
+const ProjectsPage = React.lazy(() => import("./pages/client/ProjectsPage.tsx"));
+const ContractsPage = React.lazy(() => import("./pages/client/ContractsPage.tsx"));
+const SupportPage = React.lazy(() => import("./pages/client/SupportPage.tsx"));
+const ProjectManagementTicketsPage = React.lazy(() => import("./pages/client/ProjectManagementTicketsPage.tsx"));
+const SolutionArchitecturePage = React.lazy(() => import("./pages/client/SolutionArchitecturePage.tsx"));
+const ChangeManagementPage = React.lazy(() => import("./pages/client/ChangeManagementPage.tsx"));
+const ProblemManagementPage = React.lazy(() => import("./pages/client/ProblemManagementPage.tsx"));
+const ServiceCatalogPage = React.lazy(() => import("./pages/client/ServiceCatalogPage.tsx"));
+const MajorIncidentsPage = React.lazy(() => import("./pages/client/MajorIncidentsPage.tsx"));
+const PlaybooksPage = React.lazy(() => import("./pages/client/PlaybooksPage.tsx"));
+const BusinessProcessesPage = React.lazy(() => import("./pages/client/BusinessProcessesPage.tsx"));
+const ClientVMwareSettingsPage = React.lazy(() => import("./pages/client/VMwareSettingsPage.tsx"));
+const VMwarePricingPage = React.lazy(() => import("./pages/client/VMwarePricingPage.tsx"));
+const VMwareConsolePage = React.lazy(() => import("./pages/client/VMwareConsolePage.tsx"));
+
+// Admin pages
+const AdminDashboard = React.lazy(() => import("./pages/admin/AdminDashboard.tsx"));
+const UsersPage = React.lazy(() => import("./pages/admin/UsersPage.tsx"));
+const TicketKanbanPage = React.lazy(() => import("./pages/admin/TicketKanbanPage.tsx"));
+const ConsultantApprovalsPage = React.lazy(() => import("./pages/admin/ConsultantApprovalsPage.tsx"));
+const AnalyticsPage = React.lazy(() => import("./pages/admin/AnalyticsPage.tsx"));
+const AdminIntegrationsPage = React.lazy(() => import("./pages/admin/AdminIntegrationsPage.tsx"));
+const EnvironmentsPage = React.lazy(() => import("./pages/admin/EnvironmentsPage.tsx"));
+const EnvironmentLogsPage = React.lazy(() => import("./pages/admin/EnvironmentLogsPage.tsx"));
+const AdminSettingsPage = React.lazy(() => import("./pages/admin/AdminSettingsPage.tsx"));
+const NDAManagementPage = React.lazy(() => import("./pages/admin/NDAManagementPage.tsx"));
+const InterviewTrainingPage = React.lazy(() => import("./pages/admin/InterviewTrainingPage.tsx"));
+const OnCallSchedulePage = React.lazy(() => import("./pages/admin/OnCallSchedulePage.tsx"));
+const LandingEditorPage = React.lazy(() => import("./pages/admin/LandingEditorPage.tsx"));
+const AdminConsolePage = React.lazy(() => import("./pages/admin/AdminConsolePage.tsx"));
+const AdminVMwareSettingsPage = React.lazy(() => import("./pages/admin/VMwareSettingsPage.tsx"));
+
+// Super admin pages
+const SuperAdminOverview = React.lazy(() => import("./pages/superadmin/SuperAdminOverview.tsx"));
+const RolesAuthPage = React.lazy(() => import("./pages/superadmin/RolesAuthPage.tsx"));
+const UserManagementPage = React.lazy(() => import("./pages/superadmin/UserManagementPage.tsx"));
+const ReportsPage = React.lazy(() => import("./pages/superadmin/ReportsPage.tsx"));
+const ConfigPage = React.lazy(() => import("./pages/superadmin/ConfigPage.tsx"));
+const WorkflowsPage = React.lazy(() => import("./pages/superadmin/WorkflowsPage.tsx"));
+const AuditLogsPage = React.lazy(() => import("./pages/superadmin/AuditLogsPage.tsx"));
+const SystemHealthPage = React.lazy(() => import("./pages/superadmin/SystemHealthPage.tsx"));
+const ExecutiveDashboardPage = React.lazy(() => import("./pages/superadmin/ExecutiveDashboardPage.tsx"));
+
+// Shared pages
+const ChatSessionPage = React.lazy(() => import("./pages/chat/ChatSessionPage.tsx"));
+const NotificationsPage = React.lazy(() => import("./pages/notifications/NotificationsPage.tsx"));
+const ReferralsPage = React.lazy(() => import("./pages/ReferralsPage.tsx"));
+const MatchRequestPopup = React.lazy(() => import("./components/consultant/MatchRequestPopup.tsx"));
 
 const queryClient = new QueryClient();
+
+const PageLoader = () => (
+  <div className="min-h-[50vh] flex items-center justify-center">
+    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -138,6 +161,8 @@ const App = () => (
           <GuestBanner />
           <AIChatbot />
           <WhatsAppButton />
+          <ErrorBoundary>
+          <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/pricing" element={<PricingPage />} />
@@ -258,7 +283,7 @@ const App = () => (
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="oncall" element={<OnCallSchedulePage />} />
             </Route>
-            <Route path="/super-admin" element={<ProtectedRoute requiredRole="admin"><SuperAdminLayout /></ProtectedRoute>}>
+            <Route path="/super-admin" element={<ProtectedRoute requiredRole="super-admin"><SuperAdminLayout /></ProtectedRoute>}>
               <Route index element={<SuperAdminOverview />} />
               <Route path="executive" element={<ExecutiveDashboardPage />} />
               <Route path="roles" element={<RolesAuthPage />} />
@@ -273,6 +298,8 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
+          </ErrorBoundary>
         </TenantProvider>
         </GuestModeProvider>
       </BrowserRouter>

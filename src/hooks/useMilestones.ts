@@ -9,7 +9,7 @@ export function useProjectMilestones(projectId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('milestones')
-        .select('*')
+        .select('id, project_id, title, description, amount, currency, position, escrow_status, due_date, funded_at, submitted_at, approved_at, released_at')
         .eq('project_id', projectId)
         .order('position', { ascending: true });
       if (error) throw error;

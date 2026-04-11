@@ -7,7 +7,7 @@ import {
   History, Plus, ChevronLeft, Pencil, Check, Zap,
 } from 'lucide-react';
 import { useTriageChat } from '@/hooks/useTriageChat';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
@@ -61,7 +61,9 @@ export default function AIChatbot() {
   const closeTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const countdownRef = useRef<ReturnType<typeof setInterval>>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
+  const isPublicPage = ['/', '/login', '/signup', '/forgot-password', '/reset-password', '/pricing'].includes(location.pathname);
 
   // Reset inactivity timer
   const resetChatIdle = useCallback(() => {
@@ -110,6 +112,7 @@ export default function AIChatbot() {
 
   // Auto-open after idle (once per session)
   useEffect(() => {
+    if (isPublicPage) return;
     if (sessionStorage.getItem(AUTO_OPEN_DONE_KEY)) return;
     const resetTimer = () => {
       if (hasAutoOpened.current) return;
@@ -133,6 +136,7 @@ export default function AIChatbot() {
 
   // Periodic pulse when closed
   useEffect(() => {
+    if (isPublicPage) return;
     const interval = setInterval(() => {
       if (!isOpen) setShowPulse(true);
     }, 60_000);
