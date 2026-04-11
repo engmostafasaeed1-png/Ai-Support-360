@@ -46,7 +46,7 @@ export default function PasswordStrength({ password }: Props) {
         ))}
       </div>
       <p className={cn('text-[10px]', strength <= 1 ? 'text-destructive' : 'text-muted-foreground')}>
-        {t(level.label, level.label.split('_').pop())}
+        {t(level.label, level.label.split('_').pop() || '')}
       </p>
     </div>
   );

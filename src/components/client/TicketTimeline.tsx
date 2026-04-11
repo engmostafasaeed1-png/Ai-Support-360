@@ -79,7 +79,7 @@ export default function TicketTimeline({ ticketId, ticket }: Props) {
 
   // 2. Sessions
   (sessions || []).forEach(s => {
-    const TypeIcon = sessionTypeIcons[s.session_type] || Video;
+    const TypeIcon = sessionTypeIcons[s.session_type || ''] || Video;
     events.push({
       id: `session-${s.id}`,
       timestamp: s.scheduled_at || s.started_at || ticket.created_at,
@@ -91,7 +91,7 @@ export default function TicketTimeline({ ticketId, ticket }: Props) {
       iconColor: 'text-primary',
       iconBg: 'bg-primary/10',
       badges: [
-        { label: s.status, className: s.status === 'completed' ? 'bg-green-100 text-green-700' : s.status === 'scheduled' ? 'bg-blue-100 text-blue-700' : 'bg-muted text-muted-foreground' },
+        { label: s.status || 'unknown', className: s.status === 'completed' ? 'bg-green-100 text-green-700' : s.status === 'scheduled' ? 'bg-blue-100 text-blue-700' : 'bg-muted text-muted-foreground' },
       ],
       meta: [
         ...(s.duration_minutes ? [{ label: 'Duration', value: `${s.duration_minutes} min` }] : []),

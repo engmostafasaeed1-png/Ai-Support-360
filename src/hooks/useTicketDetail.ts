@@ -91,7 +91,7 @@ export function useTicketSessions(ticketId: string | undefined) {
         const { data: consultants } = await supabase
           .from('consultants')
           .select('id, user_id')
-          .in('id', consultantIds);
+          .in('id', consultantIds as string[]);
         const userIds = (consultants || []).map(c => c.user_id);
         const { data: profiles } = await supabase
           .from('profiles')
