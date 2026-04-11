@@ -73,9 +73,9 @@ export function useShareRemoteConfig() {
         client_id: user.id,
         consultant_id: payload.consultant_id,
         tool_type: payload.tool_type,
-        config: payload.config,
+        config: payload.config as any,
         message: payload.message || null,
-      });
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {

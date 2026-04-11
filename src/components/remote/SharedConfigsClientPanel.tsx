@@ -58,7 +58,7 @@ export default function SharedConfigsClientPanel() {
                       </Badge>
                     </div>
                     {config.connectionId && (
-                      <p className="text-xs text-muted-foreground font-mono mt-0.5">ID: {config.connectionId as string}</p>
+                      <p className="text-xs text-muted-foreground font-mono mt-0.5">ID: {String(config.connectionId)}</p>
                     )}
                     <p className="text-[10px] text-muted-foreground mt-0.5">
                       Shared {format(new Date(cfg.shared_at), 'MMM d, yyyy HH:mm')}
