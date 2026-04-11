@@ -44,6 +44,9 @@ export default function InvoicesPage() {
   const [pdfPreview, setPdfPreview] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ ticket_id: '', amount: '', currency: 'USD', vat: '', description: '', due_date: '' });
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ amount: '', currency: '', vat: '', description: '', due_date: '', status: '' });
+  const [saving, setSaving] = useState(false);
   const [creating, setCreating] = useState(false);
   const { data: tickets } = useClientTickets();
   const queryClient = useQueryClient();
