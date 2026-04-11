@@ -159,6 +159,25 @@ export default function SignupPage() {
               <Label htmlFor="password">{t('auth.password')}</Label>
               <PasswordInput id="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
               <PasswordStrength password={password} />
+              {password.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {PASSWORD_RULES.map((rule, i) => (
+                    <div key={i} className={cn('text-[10px] flex items-center gap-1', rule.test(password) ? 'text-green-600' : 'text-destructive')}>
+                      <span>{rule.test(password) ? '✓' : '✗'}</span>
+                      <span>{rule.label}</span>
+                    </div>
+                  ))}
+                  <div className="flex gap-1 mt-1">
+                    {['weak', 'fair', 'strong', 'very-strong'].map((level, i) => {
+                      const strength = getPasswordStrength(password);
+                      const levels = ['weak', 'fair', 'strong', 'very-strong'];
+                      const active = levels.indexOf(strength) >= i;
+                      const colors = ['bg-destructive', 'bg-orange-500', 'bg-accent', 'bg-green-500'];
+                      return <div key={level} className={cn('h-1 flex-1 rounded-full', active ? colors[i] : 'bg-muted')} />;
+                    })}
+                  </div>
+                </div>
+              )}
               <p className="text-[10px] text-muted-foreground">{t('auth.password_hint')}</p>
             </div>
           </CardContent>
