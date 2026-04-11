@@ -42,7 +42,7 @@ export default function CredlyBadgesSection({ initialUsername, consultantUserId 
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke('credly-badges', {
-        body: null,
+        body: undefined,
         headers: { 'Content-Type': 'application/json' },
         method: 'GET',
       });

@@ -158,7 +158,9 @@ export default function AnalyticsPage() {
         consultantRevenue[p.consultant_id] = (consultantRevenue[p.consultant_id] || 0) + Number(p.amount);
       });
       (sessions || []).filter(s => s.status === 'completed').forEach(s => {
-        consultantSessions[s.consultant_id] = (consultantSessions[s.consultant_id] || 0) + 1;
+        if (s.consultant_id) {
+          consultantSessions[s.consultant_id] = (consultantSessions[s.consultant_id] || 0) + 1;
+        }
       });
 
       const consultantIds = [...new Set([...Object.keys(consultantRevenue), ...Object.keys(consultantSessions)])];

@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { sapModules, issueTypes } from '@/data/clientMockData';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { z } from 'zod';
 import {
   ArrowLeft, ArrowRight, Check, Sparkles, Brain,
   Clock, AlertTriangle, Info, Loader2, Zap, Target, List,
@@ -23,6 +24,16 @@ import { useQuery } from '@tanstack/react-query';
 import { useRealtimeConsultants, type ConsultantLive } from '@/hooks/useRealtimeConsultants';
 import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
 import VoiceInput from '@/components/ui/voice-input';
+
+const ticketSchema = z.object({
+  sap_module: z.string().min(1, 'Please select an SAP module'),
+  issue_type: z.string().min(1, 'Please select an issue type'),
+  title: z.string().min(5, 'Title must be at least 5 characters').max(200, 'Title too long'),
+  description: z.string().min(20, 'Please describe your issue in at least 20 characters').max(5000, 'Description too long'),
+  urgency: z.enum(['low', 'medium', 'high', 'critical']),
+  preferred_session: z.enum(['chat', 'video', 'screen_share']),
+  preferred_language: z.enum(['en', 'ar']),
+});
 
 interface AiCategorization {
   suggested_module: string;
@@ -95,6 +106,7 @@ export default function NewRequestPage() {
     urgency: 'medium', preferred_session: 'video', preferred_language: 'en',
   });
   const [submitted, setSubmitted] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedModel, setSelectedModel] = useState<AIModelId>(DEFAULT_MODEL);
@@ -248,7 +260,41 @@ export default function NewRequestPage() {
     }
   }, [form.title, form.description, form.sap_module, form.urgency, form.preferred_language, selectedModel]);
 
+  const validateStep = (currentStep: number): boolean => {
+    const result = ticketSchema.safeParse(form);
+    const errors: Record<string, string> = {};
+
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as string;
+        errors[field] = issue.message;
+      }
+    }
+
+    // Step-specific validation
+    if (currentStep === 0 && errors.sap_module) {
+      setFieldErrors({ sap_module: errors.sap_module });
+      toast.error(errors.sap_module);
+      return false;
+    }
+    if (currentStep === 1) {
+      const stepErrors: Record<string, string> = {};
+      if (errors.title) stepErrors.title = errors.title;
+      if (errors.description) stepErrors.description = errors.description;
+      if (Object.keys(stepErrors).length > 0) {
+        setFieldErrors(stepErrors);
+        toast.error(Object.values(stepErrors)[0]);
+        return false;
+      }
+    }
+
+    setFieldErrors({});
+    return true;
+  };
+
   const handleNext = () => {
+    if (!validateStep(step)) return;
+
     if (step === 1 && !aiCategorization && form.description.length > 15) {
       runAiCategorize();
     }
@@ -261,6 +307,12 @@ export default function NewRequestPage() {
   };
 
   const handleSubmit = async () => {
+    const result = ticketSchema.safeParse(form);
+    if (!result.success) {
+      const firstError = result.error.issues[0]?.message || 'Please fix form errors';
+      toast.error(firstError);
+      return;
+    }
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error(t('onboarding.error_auth')); return; }
@@ -446,14 +498,16 @@ export default function NewRequestPage() {
                 <label className="text-sm font-medium">{t('ticket_create.ticket_title')}</label>
                 <VoiceInput size="sm" onTranscript={(t) => updateForm('title', t)} />
               </div>
-              <Input value={form.title} onChange={e => updateForm('title', e.target.value)} placeholder={t('ticket_create.title_placeholder')} className="rounded-xl" maxLength={200} />
+              <Input value={form.title} onChange={e => { updateForm('title', e.target.value); setFieldErrors(prev => ({ ...prev, title: '' })); }} placeholder={t('ticket_create.title_placeholder')} className={`rounded-xl ${fieldErrors.title ? 'border-destructive' : ''}`} maxLength={200} />
+              {fieldErrors.title && <p className="text-[11px] text-destructive mt-1">{fieldErrors.title}</p>}
             </div>
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-sm font-medium">{t('ticket_create.description')}</label>
                 <VoiceInput size="sm" onTranscript={(t) => updateForm('description', form.description + t)} />
               </div>
-              <Textarea value={form.description} onChange={e => updateForm('description', e.target.value)} placeholder={t('ticket_create.desc_placeholder')} rows={5} className="rounded-xl" maxLength={2000} />
+              <Textarea value={form.description} onChange={e => { updateForm('description', e.target.value); setFieldErrors(prev => ({ ...prev, description: '' })); }} placeholder={t('ticket_create.desc_placeholder')} rows={5} className={`rounded-xl ${fieldErrors.description ? 'border-destructive' : ''}`} maxLength={2000} />
+              {fieldErrors.description && <p className="text-[11px] text-destructive mt-1">{fieldErrors.description}</p>}
             </div>
 
             {/* File Attachments */}

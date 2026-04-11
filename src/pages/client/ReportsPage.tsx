@@ -55,7 +55,7 @@ export default function ReportsPage() {
 
       // Status breakdown
       const statusCounts: Record<string, number> = {};
-      rangeTickets.forEach(t => { statusCounts[t.status] = (statusCounts[t.status] || 0) + 1; });
+      rangeTickets.forEach(t => { const key = t.status || 'unknown'; statusCounts[key] = (statusCounts[key] || 0) + 1; });
       const statusData = Object.entries(statusCounts).map(([name, value]) => ({ name: name.replace(/_/g, ' '), value }));
 
       // Module breakdown
@@ -129,12 +129,12 @@ export default function ReportsPage() {
         spendTrend,
         // For export
         ticketsExport: rangeTickets.map(t => ({
-          Title: t.title, Status: t.status, Module: t.sap_module, Urgency: t.urgency,
+          Title: t.title, Status: t.status || 'unknown', Module: t.sap_module, Urgency: t.urgency || 'medium',
           Created: format(new Date(t.created_at), 'PPP'),
           Resolved: t.resolved_at ? format(new Date(t.resolved_at), 'PPP') : '—',
         })),
         paymentsExport: rangePayments.map(p => ({
-          Amount: `$${Number(p.amount).toFixed(2)}`, Status: p.status,
+          Amount: `$${Number(p.amount).toFixed(2)}`, Status: p.status || 'unknown',
           Date: format(new Date(p.created_at), 'PPP'), Currency: p.currency || 'USD',
         })),
       };

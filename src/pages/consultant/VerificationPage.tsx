@@ -263,7 +263,7 @@ export default function VerificationPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">{cert.name}</p>
-                  <p className="text-xs text-muted-foreground">{cert.issuer} · Issued {new Date(cert.issue_date).toLocaleDateString()}</p>
+                  <p className="text-xs text-muted-foreground">{cert.issuer} · Issued {cert.issue_date ? new Date(cert.issue_date).toLocaleDateString() : 'N/A'}</p>
                 </div>
               </div>
               {cert.verified ? (

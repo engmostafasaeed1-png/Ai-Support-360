@@ -87,16 +87,16 @@ function useTicketAncestors(ticketId: string) {
 
       // Walk up the tree (max 10 levels to prevent infinite loops)
       for (let i = 0; i < 10 && currentId; i++) {
-        const { data } = await supabase
+        const { data: ancestorData } = await supabase
           .from('tickets')
           .select('id, title, parent_ticket_id')
           .eq('id', currentId)
-          .single();
-        if (!data) break;
-        if (data.id !== ticketId) {
-          ancestors.unshift({ id: data.id, title: data.title });
+          .single() as { data: { id: string; title: string; parent_ticket_id: string | null } | null };
+        if (!ancestorData) break;
+        if (ancestorData.id !== ticketId) {
+          ancestors.unshift({ id: ancestorData.id, title: ancestorData.title });
         }
-        currentId = (data as any).parent_ticket_id || null;
+        currentId = ancestorData.parent_ticket_id || null;
       }
       return ancestors;
     },

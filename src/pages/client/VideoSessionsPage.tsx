@@ -56,7 +56,7 @@ export default function VideoSessionsPage() {
 
         if (profiles) {
           profileMap = Object.fromEntries(
-            profiles.map(p => [p.user_id, { name: p.display_name || 'Consultant', avatar: p.avatar_url }])
+            profiles.map(p => [p.user_id, { name: p.display_name || 'Consultant', avatar: p.avatar_url || undefined }])
           );
         }
       }

@@ -44,7 +44,7 @@ export function useClientTickets() {
         const { data: consultants } = await supabase
           .from('consultants')
           .select('id, user_id')
-          .in('id', consultantIds);
+          .in('id', consultantIds as string[]);
         if (consultants && consultants.length > 0) {
           const userIds = consultants.map(c => c.user_id);
           const { data: profiles } = await supabase
