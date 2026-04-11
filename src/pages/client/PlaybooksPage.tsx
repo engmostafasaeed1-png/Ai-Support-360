@@ -104,6 +104,7 @@ export default function PlaybooksPage() {
                       <div className="flex gap-1.5 mt-0.5">
                         {pb.category && <Badge variant="outline" className="text-[9px]">{pb.category}</Badge>}
                         {pb.sap_module && <Badge variant="secondary" className="text-[9px]">{pb.sap_module}</Badge>}
+                        {pb.source_ticket_id && <Badge className="text-[9px] bg-primary/10 text-primary border-0">Auto-generated</Badge>}
                       </div>
                     </div>
                   </div>
