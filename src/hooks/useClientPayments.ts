@@ -59,6 +59,6 @@ export function useClientPayments() {
       }));
     },
     enabled: !isGuest,
-    placeholderData: isGuest ? mockClientPayments : undefined,
+    placeholderData: isGuest ? (mockClientPayments as any) : undefined,
   });
 }
