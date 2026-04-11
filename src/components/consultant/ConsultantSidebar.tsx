@@ -36,7 +36,7 @@ const menuItems = [
   { key: 'remote_access', icon: MonitorSmartphone, path: '/consultant/remote-access' },
   { key: 'knowledge', icon: BookOpenCheck, path: '/consultant/knowledge' },
   { key: 'business_processes', icon: Workflow, path: '/consultant/business-processes' },
-  { key: 'satisfaction', icon: CheckCircle2, path: '/client/satisfaction' },
+  { key: 'satisfaction', icon: CheckCircle2, path: '/consultant/satisfaction' },
   { key: 'reports', icon: PieChart, path: '/consultant/reports' },
   { key: 'referrals', icon: PartyPopper, path: '/consultant/referrals' },
   { key: 'notifications', icon: BellRing, path: '/consultant/notifications' },
