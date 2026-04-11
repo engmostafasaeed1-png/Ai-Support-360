@@ -81,6 +81,10 @@ export default function ConsultantLayout() {
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
+              <Badge className="bg-primary/10 text-primary border border-primary/30 px-3 py-1 text-xs font-semibold gap-1.5">
+                <Briefcase className="w-3.5 h-3.5" />
+                Consultant
+              </Badge>
               {/* AI Credits */}
               <Tooltip>
                 <TooltipTrigger asChild>
