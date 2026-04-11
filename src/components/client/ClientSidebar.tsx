@@ -43,7 +43,7 @@ const navGroups = [
       { key: 'projects', icon: Layers3, path: '/client/projects' },
       { key: 'milestones', icon: Flag, path: '/client/milestones' },
       { key: 'tasks', icon: ListChecks, path: '/client/tasks' },
-      { key: 'contracts', icon: ScrollText, path: '/client/contracts' },
+      { key: 'contracts', icon: ScrollText, path: '/client/contracts', label: 'NDA Agreements' },
       { key: 'business_processes', icon: Workflow, path: '/client/business-processes' },
       { key: 'chat', icon: MessagesSquare, path: '/client/chat' },
     ],

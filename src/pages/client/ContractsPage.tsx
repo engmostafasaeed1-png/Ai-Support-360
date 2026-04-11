@@ -128,7 +128,7 @@ export default function ContractsPage() {
   const revokedCount = contracts.filter(c => !!c.revoked_at).length;
 
   const stats = [
-    { label: 'Total Agreements', value: String(contracts.length), color: 'text-primary' },
+    { label: 'Total NDAs', value: String(contracts.length), color: 'text-primary' },
     { label: 'Active', value: String(activeCount), color: 'text-emerald-500' },
     { label: 'Revoked', value: String(revokedCount), color: 'text-destructive' },
   ];
@@ -138,9 +138,9 @@ export default function ContractsPage() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <FileSignature className="w-6 h-6 text-primary" />
-          {t('sidebar.contracts', 'Contracts & Agreements')}
+          {t('sidebar.contracts', 'NDA Agreements')}
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">View and download your signed NDAs with consultants</p>
+        <p className="text-sm text-muted-foreground mt-1">View and download your signed Non-Disclosure Agreements with consultants</p>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
