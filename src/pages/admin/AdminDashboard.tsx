@@ -9,6 +9,7 @@ import { revenueData, ticketsByStatus, ticketsByModule } from '@/data/adminMockD
 import { Link } from 'react-router-dom';
 import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { Sparkline } from '@/components/ui/sparkline';
+import AIInsightsButton from '@/components/ai/AIInsightsButton';
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
@@ -30,9 +31,12 @@ export default function AdminDashboard() {
   return (
     <PullToRefresh>
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{t('admin_dashboard.title')}</h1>
-        <p className="text-sm text-muted-foreground">{t('admin_dashboard.subtitle')}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{t('admin_dashboard.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('admin_dashboard.subtitle')}</p>
+        </div>
+        <AIInsightsButton role="admin" metrics={s} />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-fade">

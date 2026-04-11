@@ -24,6 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { Sparkline } from '@/components/ui/sparkline';
 import { StatusDot } from '@/components/ui/status-dot';
+import AIInsightsButton from '@/components/ai/AIInsightsButton';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -104,7 +105,8 @@ export default function ClientDashboard() {
           <h1 className="text-2xl font-bold text-foreground">{t('client_dashboard.title')}, {displayName.split(' ')[0]}</h1>
           {company && <p className="text-sm text-muted-foreground mt-1">{company} · {t('client_dashboard.subtitle')}</p>}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <AIInsightsButton role="client" metrics={{ openTickets: openTickets.length, resolvedTickets: resolvedCount, activeSessions: activeSessions.length, pendingPayments: pendingTotal, totalTickets: tickets.length }} />
           <Link to="/client/new-request">
             <Button className="gradient-primary border-0 shadow-premium hover:shadow-glow transition-all" size="sm">
               <TicketPlus className="w-4 h-4 me-1" /> {t('client_dashboard.new_request')}

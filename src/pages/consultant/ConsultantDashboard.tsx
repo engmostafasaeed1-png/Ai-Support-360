@@ -21,6 +21,7 @@ import WelcomeBanner from '@/components/onboarding/WelcomeBanner';
 import EmailVerificationBanner from '@/components/onboarding/EmailVerificationBanner';
 import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { Sparkline } from '@/components/ui/sparkline';
+import AIInsightsButton from '@/components/ai/AIInsightsButton';
 
 const sessionTypeIcons: Record<string, typeof Video> = {
   video: Video,
@@ -179,7 +180,8 @@ export default function ConsultantDashboard() {
           <h1 className="text-2xl font-bold text-foreground">{t('consultant_dashboard.title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t('consultant_dashboard.subtitle')}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <AIInsightsButton role="consultant" metrics={{ rating: profile.rating, totalReviews: profile.total_reviews, hourlyRate: profile.hourly_rate, activeCases: mockCases.filter(c => c.status === 'in_progress').length, totalEarnings: mockEarnings.total }} />
           <span className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400 font-medium">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             {t('consultant_dashboard.available')}
