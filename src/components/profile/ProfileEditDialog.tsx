@@ -43,13 +43,13 @@ interface Props {
 
 export default function ProfileEditDialog({ open, onOpenChange, role }: Props) {
   const [data, setData] = useState<ProfileData>(emptyProfile);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
+    setLoading(true);
     const load = async () => {
-      setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { setLoading(false); return; }
       const uid = session.user.id;
