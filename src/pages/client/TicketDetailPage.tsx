@@ -11,7 +11,7 @@ import {
   FileText, Video, Monitor, AlertCircle, CheckCircle2, Circle, History,
   Pencil, UserPlus, Gavel, ChevronDown, Play, GitBranch, Network, Users,
   Calculator, ClipboardList, MessageSquareText, Timer, Star, Link2, Tags,
-  CalendarDays, Phone,
+  CalendarDays, Phone, ClipboardCheck,
 } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 import TicketNDAStatus from '@/components/client/TicketNDAStatus';
@@ -39,6 +39,8 @@ import TicketInterview from '@/components/client/TicketInterview';
 import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
 import EmergencyContactPanel from '@/components/client/EmergencyContactPanel';
 import TicketMeetingsList from '@/components/client/TicketMeetingsList';
+import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfactionDialog';
+import { useSatisfactionSurveys } from '@/hooks/useSatisfactionSurveys';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const urgencyColors: Record<string, string> = {
@@ -95,6 +97,7 @@ export default function TicketDetailPage() {
   const [matchOpen, setMatchOpen] = useState(false);
   const [bidOpen, setBidOpen] = useState(false);
   const [meetingOpen, setMeetingOpen] = useState(false);
+  const [csatOpen, setCsatOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -161,6 +164,9 @@ export default function TicketDetailPage() {
               </Button>
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setMeetingOpen(true)}>
                 <CalendarDays className="w-3.5 h-3.5" /> Schedule Meeting
+              </Button>
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setCsatOpen(true)}>
+                <ClipboardCheck className="w-3.5 h-3.5" /> Request CSAT
               </Button>
             </div>
           )}
