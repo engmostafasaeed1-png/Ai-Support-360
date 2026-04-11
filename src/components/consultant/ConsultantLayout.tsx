@@ -8,7 +8,7 @@ import { Outlet } from 'react-router-dom';
 import {
   Search, LayoutDashboard, Briefcase, Calendar, MessageSquare,
   CreditCard, Star, User, ShieldCheck, BookOpen, Bell, Settings, Settings2, Brain, Server,
-  Handshake, FileText, Gavel, Clock, ClipboardList, BarChart3, Gift,
+  Handshake, FileText, Gavel, Clock, ClipboardList, BarChart3, Gift, Zap, Plus,
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,11 @@ import logo from '@/assets/logo.png';
 import { Link } from 'react-router-dom';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import SecurityAlert from '@/components/SecurityAlert';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const bottomNavItems = [
   { key: 'dashboard', icon: LayoutDashboard, path: '/consultant', labelKey: 'sidebar.dashboard' },
@@ -47,6 +52,8 @@ const moreNavItems = [
 
 export default function ConsultantLayout() {
   useSessionTimeout();
+  const { profile } = useUserProfile();
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background relative">
@@ -73,11 +80,45 @@ export default function ConsultantLayout() {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* AI Credits */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-accent/10 border border-accent/20">
+                    <Zap className="w-3.5 h-3.5 text-accent" />
+                    <span className="text-xs font-semibold text-accent">42</span>
+                    <span className="text-[10px] text-muted-foreground">credits</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs">AI credits consumed this month</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2.5 text-xs gap-1 border-accent/30 text-accent hover:bg-accent/10"
+                onClick={() => window.open('https://pay.link/recharge', '_blank')}
+              >
+                <Plus className="w-3 h-3" />
+                <span className="hidden sm:inline">Recharge</span>
+              </Button>
+
               <NotificationBell basePath="/consultant" />
-              <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold shadow-premium">
-                AR
-              </div>
+
+              {/* Profile avatar with name */}
+              <Link to="/consultant/profile" className="flex items-center gap-2 group">
+                <Avatar className="w-8 h-8 ring-2 ring-border group-hover:ring-accent/50 transition-all">
+                  {profile?.avatarUrl && <AvatarImage src={profile.avatarUrl} alt={profile.displayName} />}
+                  <AvatarFallback className="bg-gradient-to-br from-accent to-primary text-primary-foreground text-xs font-bold">
+                    {profile?.initials || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden lg:block text-sm font-medium text-foreground max-w-[120px] truncate group-hover:text-accent transition-colors">
+                  {profile?.displayName || 'User'}
+                </span>
+              </Link>
             </div>
           </FixedHeader>
           <FixedSubHeader>
