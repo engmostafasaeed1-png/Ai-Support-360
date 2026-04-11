@@ -202,6 +202,18 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const pendingTextRef = useRef('');
   const shouldAutoResumeRef = useRef(true);
   const messagesRef = useRef<ChatMessage[]>([]);
+  const [voicesReady, setVoicesReady] = useState(false);
+
+  // Preload voices — some browsers load them asynchronously
+  useEffect(() => {
+    const loadVoices = () => {
+      const v = window.speechSynthesis?.getVoices();
+      if (v && v.length > 0) setVoicesReady(true);
+    };
+    loadVoices();
+    window.speechSynthesis?.addEventListener('voiceschanged', loadVoices);
+    return () => window.speechSynthesis?.removeEventListener('voiceschanged', loadVoices);
+  }, []);
 
   // Webcam refs
   const videoRef = useRef<HTMLVideoElement>(null);
