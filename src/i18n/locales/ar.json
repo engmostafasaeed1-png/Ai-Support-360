@@ -214,7 +214,8 @@
     "milestones": "المراحل",
     "tasks": "لوحة المهام",
     "plan": "الخطة",
-    "landing_editor": "محرر الصفحة الرئيسية"
+    "landing_editor": "محرر الصفحة الرئيسية",
+    "business_processes": "العمليات التجارية"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",
