@@ -3141,6 +3141,59 @@ export type Database = {
           },
         ]
       }
+      shared_remote_configs: {
+        Row: {
+          accepted_at: string | null
+          client_id: string
+          config: Json
+          consultant_id: string
+          created_at: string
+          id: string
+          message: string | null
+          revoked_at: string | null
+          shared_at: string
+          status: string
+          tool_type: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          client_id: string
+          config?: Json
+          consultant_id: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          revoked_at?: string | null
+          shared_at?: string
+          status?: string
+          tool_type: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          client_id?: string
+          config?: Json
+          consultant_id?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          revoked_at?: string | null
+          shared_at?: string
+          status?: string
+          tool_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_remote_configs_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           created_at: string
