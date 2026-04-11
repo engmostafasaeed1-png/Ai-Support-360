@@ -32,18 +32,26 @@ Deno.serve(async (req) => {
       });
     }
 
+    const url = new URL(req.url);
+    const action = url.searchParams.get("action");
     const ANYDESK_API_KEY = Deno.env.get("ANYDESK_API_KEY");
-    const ANYDESK_LICENSE_ID = Deno.env.get("ANYDESK_LICENSE_ID");
 
-    if (!ANYDESK_API_KEY || !ANYDESK_LICENSE_ID) {
+    if (action === "status") {
       return new Response(
-        JSON.stringify({ error: "AnyDesk credentials not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          configured: Boolean(ANYDESK_API_KEY),
+          missing: ANYDESK_API_KEY ? [] : ["ANYDESK_API_KEY"],
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const url = new URL(req.url);
-    const action = url.searchParams.get("action");
+    if (!ANYDESK_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: "AnyDesk integration not configured" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const headers = {
       Authorization: `Bearer ${ANYDESK_API_KEY}`,
@@ -169,7 +177,7 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({
             error: "Invalid action",
-            validActions: ["clients", "client-detail", "sessions", "session-detail", "set-alias", "connection-link", "license"],
+            validActions: ["status", "clients", "client-detail", "sessions", "session-detail", "set-alias", "connection-link", "license"],
           }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
