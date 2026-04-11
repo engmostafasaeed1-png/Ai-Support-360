@@ -7,18 +7,14 @@ const corsHeaders = {
 };
 
 const VALID_MODELS = [
-  "google/gemini-3-flash-preview",
   "google/gemini-2.5-flash-lite",
   "google/gemini-2.5-flash",
   "google/gemini-2.5-pro",
-  "google/gemini-3.1-pro-preview",
-  "openai/gpt-5-nano",
-  "openai/gpt-5-mini",
-  "openai/gpt-5",
-  "openai/gpt-5.2",
+  "openai/gpt-4o-mini",
+  "openai/gpt-4o",
 ];
 
-const DEFAULT_MODEL = "google/gemini-3-flash-preview";
+const DEFAULT_MODEL = "google/gemini-2.5-flash";
 
 const SYSTEM_PROMPT = `You are Qurtuba AI, the smart SAP support triage assistant for Qurtuba Talks — a premium SAP consulting platform.
 

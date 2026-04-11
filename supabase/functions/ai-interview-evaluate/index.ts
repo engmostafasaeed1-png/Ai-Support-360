@@ -50,7 +50,7 @@ Return ONLY valid JSON.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: "You are an expert SAP interview evaluator. Always respond with valid JSON only." },
           { role: "user", content: prompt },
