@@ -13,6 +13,9 @@ import CredentialsManager from '@/components/remote/CredentialsManager';
 import NDASigningModal from '@/components/consultant/NDASigningModal';
 import { useEnvironmentTracking } from '@/hooks/useEnvironmentTracking';
 import AnyDeskPanel from '@/components/remote/AnyDeskPanel';
+import TeamViewerPanel from '@/components/remote/TeamViewerPanel';
+import RustDeskPanel from '@/components/remote/RustDeskPanel';
+import RDPWebClientPanel from '@/components/remote/RDPWebClientPanel';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -260,8 +263,16 @@ export default function RemoteAccessPage() {
         </div>
       )}
 
-      {/* AnyDesk Integration */}
-      <AnyDeskPanel />
+      {/* Remote Desktop Integrations */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-foreground">Remote Desktop Tools</h2>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <AnyDeskPanel />
+          <TeamViewerPanel />
+          <RustDeskPanel />
+          <RDPWebClientPanel />
+        </div>
+      </div>
     </div>
   );
 }

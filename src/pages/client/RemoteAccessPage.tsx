@@ -25,6 +25,9 @@ import GuacamoleViewer from '@/components/remote/GuacamoleViewer';
 import CredentialsManager from '@/components/remote/CredentialsManager';
 import ConnectionsManager from '@/components/remote/ConnectionsManager';
 import AnyDeskPanel from '@/components/remote/AnyDeskPanel';
+import TeamViewerPanel from '@/components/remote/TeamViewerPanel';
+import RustDeskPanel from '@/components/remote/RustDeskPanel';
+import RDPWebClientPanel from '@/components/remote/RDPWebClientPanel';
 import { useEnvironmentTracking } from '@/hooks/useEnvironmentTracking';
 
 const protocolIcons: Record<string, any> = { rdp: Monitor, ssh: Terminal, vnc: Laptop };
@@ -385,8 +388,16 @@ export default function ClientRemoteAccessPage() {
         </div>
       )}
 
-      {/* AnyDesk Integration */}
-      <AnyDeskPanel />
+      {/* Remote Desktop Integrations */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-foreground">Remote Desktop Tools</h2>
+        <div className="grid lg:grid-cols-2 gap-4">
+          <AnyDeskPanel />
+          <TeamViewerPanel />
+          <RustDeskPanel />
+          <RDPWebClientPanel />
+        </div>
+      </div>
     </div>
   );
 }
