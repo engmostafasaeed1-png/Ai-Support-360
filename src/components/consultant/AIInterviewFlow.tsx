@@ -380,10 +380,13 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         || voices.find(v => v.lang.startsWith(langPrefix) && !isFemaleVoice(v.name) && !v.localService)
         || voices.find(v => v.lang.startsWith(langPrefix) && !isFemaleVoice(v.name));
     } else {
+      // Strictly pick female voice; never fall back to male
       preferred = voices.find(v => v.lang.startsWith(langPrefix) && isFemaleVoice(v.name) && !v.localService)
         || voices.find(v => v.lang.startsWith(langPrefix) && isFemaleVoice(v.name))
-        || voices.find(v => v.lang.startsWith(langPrefix) && !v.localService)
-        || voices.find(v => v.lang.startsWith(langPrefix));
+        || voices.find(v => isFemaleVoice(v.name) && !v.localService)
+        || voices.find(v => isFemaleVoice(v.name))
+        || voices.find(v => v.lang.startsWith(langPrefix) && !isMaleVoice(v.name) && !v.localService)
+        || voices.find(v => v.lang.startsWith(langPrefix) && !isMaleVoice(v.name));
     }
     if (preferred) utterance.voice = preferred;
 
