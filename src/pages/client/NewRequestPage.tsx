@@ -14,7 +14,7 @@ import {
   ArrowLeft, ArrowRight, Check, Sparkles, Brain,
   Clock, AlertTriangle, Info, Loader2, Zap, Target, List,
   Star, BadgeCheck, Circle, Users, Crown, ChevronRight, Search, UserPlus,
-  Upload, X, FileText, Paperclip, Link2,
+  Upload, X, FileText, Paperclip, Link2, Mic,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
