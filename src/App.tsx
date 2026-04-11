@@ -164,6 +164,8 @@ const App = () => (
       <BrowserRouter>
         <GuestModeProvider>
         <TenantProvider>
+          <RTLSync />
+          <a href="#main-content" className="skip-to-main">Skip to main content</a>
           <ScrollToTop />
           <ScreenProtection />
           <GlobalSearch />
