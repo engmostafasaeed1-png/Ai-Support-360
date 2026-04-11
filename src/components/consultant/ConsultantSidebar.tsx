@@ -79,32 +79,41 @@ export default function ConsultantSidebar() {
         </div>
 
         <SidebarGroup>
-          
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1 px-2">
               {visibleItems.map((item) => {
                 const isActive = item.path === '/consultant'
                   ? location.pathname === '/consultant'
                   : location.pathname.startsWith(item.path);
                 return (
                   <SidebarMenuItem key={item.key}>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild className="h-auto p-0">
                       <NavLink
                         to={item.path}
                         end={item.path === '/consultant'}
-                        className={`hover:bg-sidebar-accent/50 ${isActive ? 'bg-sidebar-accent text-sidebar-primary font-medium' : ''}`}
-                        activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                          isActive
+                            ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-sidebar-primary/20'
+                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground hover:shadow-sm'
+                        }`}
+                        activeClassName=""
                       >
-                        {item.key === 'onboarding' && onboardingDone ? (
-                          <CheckCircle2 className="w-4 h-4 me-2 shrink-0 text-green-500" />
-                        ) : (
-                          <item.icon className="w-4 h-4 me-2 shrink-0" />
-                        )}
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 transition-colors ${
+                          isActive
+                            ? 'bg-white/20'
+                            : 'bg-sidebar-accent/40'
+                        }`}>
+                          {item.key === 'onboarding' && onboardingDone ? (
+                            <CheckCircle2 className="w-4.5 h-4.5 text-green-400" />
+                          ) : (
+                            <item.icon className="w-4.5 h-4.5" />
+                          )}
+                        </div>
                         {!collapsed && (
-                          <span className="flex items-center gap-2">
+                          <span className="flex items-center gap-2 truncate">
                             {item.key === 'onboarding' && onboardingDone ? t('sidebar.onboarding_complete', 'Onboarding') : t(`sidebar.${item.key}`)}
                             {item.key === 'onboarding' && onboardingDone && (
-                              <span className="text-[10px] font-medium bg-green-500/10 text-green-600 px-1.5 py-0.5 rounded-full">{t('sidebar.completed', 'Done')}</span>
+                              <span className="text-[10px] font-semibold bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-full">{t('sidebar.completed', 'Done')}</span>
                             )}
                           </span>
                         )}
@@ -117,22 +126,22 @@ export default function ConsultantSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <div className="mt-auto p-4 border-t border-sidebar-border space-y-3">
+        <div className="mt-auto p-3 border-t border-sidebar-border/30 space-y-2">
           <SidebarUserCard collapsed={collapsed} onClick={() => setProfileOpen(true)} />
           {!collapsed && (
-            <div className="space-y-2">
+            <div className="space-y-1 px-1">
               <button
                 onClick={toggleLanguage}
-                className="flex items-center gap-2 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+                className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-xs font-medium text-sidebar-foreground/60 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground transition-all"
               >
-                <Globe className="w-3.5 h-3.5" />
+                <Globe className="w-4 h-4" />
                 {currentLang === 'en' ? 'العربية' : 'English'}
               </button>
               <button
                 onClick={logout}
-                className="flex items-center gap-2 text-xs text-destructive hover:text-destructive/80 transition-colors"
+                className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-all"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-4 h-4" />
                 {t('sidebar.logout')}
               </button>
             </div>
