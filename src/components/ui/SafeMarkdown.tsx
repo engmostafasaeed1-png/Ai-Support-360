@@ -6,15 +6,13 @@ const ALLOWED_ATTR = ['href', 'target', 'rel'];
 
 interface SafeMarkdownProps {
   content: string;
-  className?: string;
 }
 
-export default function SafeMarkdown({ content, className }: SafeMarkdownProps) {
+export default function SafeMarkdown({ content }: SafeMarkdownProps) {
   const clean = DOMPurify.sanitize(content, { ALLOWED_TAGS, ALLOWED_ATTR });
 
   return (
     <ReactMarkdown
-      className={className}
       components={{
         a: ({ href, children, ...props }) => (
           <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
