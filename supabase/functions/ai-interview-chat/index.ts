@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     // Verify authenticated user
@@ -16,7 +16,7 @@ serve(async (req) => {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
-        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     const token = authHeader.replace('Bearer ', '');
@@ -28,7 +28,7 @@ serve(async (req) => {
     if (authError || !authUser) {
       return new Response(JSON.stringify({ error: 'Invalid or expired session' }), {
         status: 401,
-        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -121,7 +121,7 @@ Return ONLY valid JSON.`;
       if (!aiResp.ok) {
         if (aiResp.status === 429) {
           return new Response(JSON.stringify({ error: "Rate limited, please try again later" }), {
-            status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
         throw new Error("AI gateway error");
@@ -164,7 +164,7 @@ Return ONLY valid JSON.`;
       }).eq("id", interview_id);
 
       return new Response(JSON.stringify({ evaluation }), {
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -249,24 +249,24 @@ CRITICAL LANGUAGE INSTRUCTION: You MUST conduct this entire interview in ${inter
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limited, please try again later" }), {
-          status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: "Payment required" }), {
-          status: 402, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       throw new Error("AI gateway error");
     }
 
     return new Response(response.body, {
-      headers: { ...getCorsHeaders(req), "Content-Type": "text/event-stream" },
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
     console.error("Error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
