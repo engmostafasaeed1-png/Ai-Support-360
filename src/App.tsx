@@ -112,6 +112,7 @@ import ServiceCatalogPage from "./pages/client/ServiceCatalogPage.tsx";
 import MajorIncidentsPage from "./pages/client/MajorIncidentsPage.tsx";
 import PlaybooksPage from "./pages/client/PlaybooksPage.tsx";
 import BusinessProcessesPage from "./pages/client/BusinessProcessesPage.tsx";
+import ConsultantBusinessProcessesPage from "./pages/consultant/BusinessProcessesPage.tsx";
 import OnCallSchedulePage from "./pages/admin/OnCallSchedulePage.tsx";
 import LandingEditorPage from "./pages/admin/LandingEditorPage.tsx";
 import AdminConsolePage from "./pages/admin/AdminConsolePage.tsx";
@@ -168,6 +169,7 @@ const App = () => (
               <Route path="work-diary" element={<WorkDiaryPage />} />
               <Route path="reports" element={<ConsultantReportsPage />} />
               <Route path="referrals" element={<ReferralsPage />} />
+              <Route path="business-processes" element={<ConsultantBusinessProcessesPage />} />
             </Route>
             <Route path="/client/companies" element={<ProtectedRoute requiredRole="client"><CompanySelectorPage /></ProtectedRoute>} />
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>

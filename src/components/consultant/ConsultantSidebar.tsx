@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard, Briefcase, Calendar, CreditCard, Star,
-  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, ClipboardList, CheckCircle2, Server, Handshake, Gift, FileText, Clock, Gavel, BarChart3, Video,
+  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, ClipboardList, CheckCircle2, Server, Handshake, Gift, FileText, Clock, Gavel, BarChart3, Video, Network,
 } from 'lucide-react';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,6 +35,7 @@ const menuItems = [
   { key: 'verification', icon: ShieldCheck, path: '/consultant/verification' },
   { key: 'remote_access', icon: Server, path: '/consultant/remote-access' },
   { key: 'knowledge', icon: BookOpen, path: '/consultant/knowledge' },
+  { key: 'business_processes', icon: Network, path: '/consultant/business-processes' },
   { key: 'reports', icon: BarChart3, path: '/consultant/reports' },
   { key: 'referrals', icon: Gift, path: '/consultant/referrals' },
   { key: 'notifications', icon: Bell, path: '/consultant/notifications' },
