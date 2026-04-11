@@ -69,7 +69,7 @@ export default function MobileBottomNav({ items, moreItems = [] }: MobileBottomN
 
   return (
     <>
-      <nav className="fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/50 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+      <nav role="navigation" aria-label="Mobile navigation" className="fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/50 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
         <div className="flex items-center justify-around h-16">
           {items.map((item) => {
             const isActive = location.pathname === item.path;

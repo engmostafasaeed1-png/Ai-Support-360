@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import ReactMarkdown from 'react-markdown';
+import SafeMarkdown from '@/components/ui/SafeMarkdown';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -378,7 +378,7 @@ export default function AIChatbot() {
                             "prose prose-sm dark:prose-invert max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>hr]:my-2",
                             isLoading && i === messages.length - 1 && "chatbot-streaming"
                           )}>
-                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                            <SafeMarkdown content={msg.content} />
                           </div>
                         ) : (
                           <p>{msg.content}</p>
