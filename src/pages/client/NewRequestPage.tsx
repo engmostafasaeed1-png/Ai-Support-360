@@ -498,14 +498,16 @@ export default function NewRequestPage() {
                 <label className="text-sm font-medium">{t('ticket_create.ticket_title')}</label>
                 <VoiceInput size="sm" onTranscript={(t) => updateForm('title', t)} />
               </div>
-              <Input value={form.title} onChange={e => updateForm('title', e.target.value)} placeholder={t('ticket_create.title_placeholder')} className="rounded-xl" maxLength={200} />
+              <Input value={form.title} onChange={e => { updateForm('title', e.target.value); setFieldErrors(prev => ({ ...prev, title: '' })); }} placeholder={t('ticket_create.title_placeholder')} className={`rounded-xl ${fieldErrors.title ? 'border-destructive' : ''}`} maxLength={200} />
+              {fieldErrors.title && <p className="text-[11px] text-destructive mt-1">{fieldErrors.title}</p>}
             </div>
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-sm font-medium">{t('ticket_create.description')}</label>
                 <VoiceInput size="sm" onTranscript={(t) => updateForm('description', form.description + t)} />
               </div>
-              <Textarea value={form.description} onChange={e => updateForm('description', e.target.value)} placeholder={t('ticket_create.desc_placeholder')} rows={5} className="rounded-xl" maxLength={2000} />
+              <Textarea value={form.description} onChange={e => { updateForm('description', e.target.value); setFieldErrors(prev => ({ ...prev, description: '' })); }} placeholder={t('ticket_create.desc_placeholder')} rows={5} className={`rounded-xl ${fieldErrors.description ? 'border-destructive' : ''}`} maxLength={2000} />
+              {fieldErrors.description && <p className="text-[11px] text-destructive mt-1">{fieldErrors.description}</p>}
             </div>
 
             {/* File Attachments */}
