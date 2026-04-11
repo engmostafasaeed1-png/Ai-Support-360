@@ -80,7 +80,7 @@ export default function ClientLayout() {
           <FixedSubHeader>
             <HeaderNav role="client" />
           </FixedSubHeader>
-          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-20 md:pb-6 mt-14 md:mt-24">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-20 md:pb-6 mt-14 md:mt-24 mx-[5%]">
             <PageTransition>
               <Outlet />
             </PageTransition>
