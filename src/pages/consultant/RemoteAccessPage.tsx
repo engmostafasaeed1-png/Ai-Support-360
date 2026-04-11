@@ -150,10 +150,7 @@ function EnvironmentCard({ env, ticketInfo, onConnect }: {
                 onClick={() => navigate('/consultant/remote-access')}>
                 <Link2 className="w-3 h-3" /> {t('remote.connections', 'Connections')}
               </Button>
-              <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5"
-                onClick={() => navigate('/client/integrations')}>
-                <Plug className="w-3 h-3" /> {t('remote.integrations', 'Integrations')}
-              </Button>
+              
             </div>
 
             {!isAccessible ? (

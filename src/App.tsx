@@ -236,6 +236,7 @@ const App = () => (
               <Route path="reports" element={<ConsultantReportsPage />} />
               <Route path="referrals" element={<ReferralsPage />} />
               <Route path="business-processes" element={<ConsultantBusinessProcessesPage />} />
+              <Route path="satisfaction" element={<SatisfactionPage />} />
             </Route>
             <Route path="/client/companies" element={<ProtectedRoute requiredRole="client"><CompanySelectorPage /></ProtectedRoute>} />
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
