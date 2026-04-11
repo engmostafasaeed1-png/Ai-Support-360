@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSubmitProposal, useProposalVersions } from '@/hooks/useProposals';
 import { Send, Paperclip, X, FileText, RefreshCw } from 'lucide-react';
+import VoiceInput from '@/components/ui/voice-input';
 import { toast } from 'sonner';
 
 interface SubmitProposalModalProps {
@@ -120,7 +121,10 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger }: 
 
             {/* Cover letter */}
             <div>
-              <Label className="text-xs">Cover Letter</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Cover Letter</Label>
+                <VoiceInput size="sm" onTranscript={(t) => setForm(f => ({ ...f, cover_letter: f.cover_letter + t }))} />
+              </div>
               <Textarea
                 value={form.cover_letter}
                 onChange={e => setForm(f => ({ ...f, cover_letter: e.target.value }))}
