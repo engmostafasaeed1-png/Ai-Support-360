@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Download, ExternalLink } from 'lucide-react';
+import { Download, ExternalLink, Eye, ArrowLeft, ArrowRight, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -13,6 +13,7 @@ import { FileSignature, PenTool, Type, AlertTriangle } from 'lucide-react';
 import { useNDATemplate, useNDAAgreement } from '@/hooks/useNDA';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
+import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 
 interface NDASigningModalProps {
   open: boolean;
@@ -30,6 +31,7 @@ export default function NDASigningModal({
   const { template, loading: templateLoading } = useNDATemplate();
   const { signNDA, wasRevoked } = useNDAAgreement(consultantId, clientId);
 
+  const [step, setStep] = useState<'preview' | 'sign'>('preview');
   const [consultantName, setConsultantName] = useState('');
   const [consultantEmail, setConsultantEmail] = useState('');
   const [clientCompany, setClientCompany] = useState('');
@@ -39,11 +41,9 @@ export default function NDASigningModal({
   const [customNdaUrl, setCustomNdaUrl] = useState<string | null>(null);
   const [customNdaFilename, setCustomNdaFilename] = useState<string | null>(null);
 
-  // Fetch consultant & client details when modal opens
   useEffect(() => {
     if (!open) return;
 
-    // Fetch consultant details
     supabase
       .from('consultants')
       .select('user_id')
@@ -58,14 +58,12 @@ export default function NDASigningModal({
             .maybeSingle()
             .then(({ data: p }) => setConsultantName(p?.display_name || ''));
 
-          // Get consultant email from auth
           supabase.auth.getUser().then(({ data: authData }) => {
             setConsultantEmail(authData?.user?.email || '');
           });
         }
       });
 
-    // Fetch client profile details (including custom NDA)
     supabase
       .from('profiles')
       .select('display_name')
@@ -95,7 +93,6 @@ export default function NDASigningModal({
     return data.publicUrl;
   }, [customNdaUrl]);
 
-  // Replace placeholders in template
   const filledTemplate = useMemo(() => {
     return template
       .replace(/\{\{consultant_name\}\}/g, consultantName || '_______________')
@@ -112,7 +109,6 @@ export default function NDASigningModal({
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Canvas for draw signature
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
@@ -123,6 +119,7 @@ export default function NDASigningModal({
       setAgreed(false);
       setHasDrawn(false);
       setSigType('type');
+      setStep('preview');
     }
   }, [open]);
 
@@ -209,19 +206,48 @@ export default function NDASigningModal({
     }
   };
 
+  const handleDownloadPreview = async () => {
+    if (hasCustomNDA && customNdaPublicUrl) {
+      window.open(customNdaPublicUrl, '_blank');
+      return;
+    }
+    await exportNDAAsPDF({
+      ndaContent: filledTemplate,
+      signatureData: '',
+      signatureType: 'type',
+      signedAt: new Date().toISOString(),
+      consultantName: consultantName || 'Consultant',
+      clientName: clientDisplayName || 'Client',
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileSignature className="w-5 h-5 text-primary" />
-            {t('nda.title', 'Non-Disclosure Agreement')}
+            {step === 'preview'
+              ? t('nda.preview_title', 'Review NDA Before Signing')
+              : t('nda.title', 'Sign Non-Disclosure Agreement')}
           </DialogTitle>
           {clientName && (
             <p className="text-sm text-muted-foreground">
               {t('nda.for_client', 'For client: {{name}}', { name: clientName })}
             </p>
           )}
+          {/* Step indicator */}
+          <div className="flex items-center gap-2 pt-1">
+            <div className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${step === 'preview' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              <Eye className="w-3 h-3" />
+              1. {t('nda.step_review', 'Review')}
+            </div>
+            <div className="w-4 h-px bg-border" />
+            <div className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${step === 'sign' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              <PenTool className="w-3 h-3" />
+              2. {t('nda.step_sign', 'Sign')}
+            </div>
+          </div>
         </DialogHeader>
 
         {wasRevoked && (
@@ -233,109 +259,152 @@ export default function NDASigningModal({
           </Alert>
         )}
 
-        {/* NDA Content */}
-        {hasCustomNDA ? (
-          <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <FileSignature className="w-4 h-4 text-primary" />
-              {t('nda.custom_nda_label', 'Client Custom NDA Document')}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {t('nda.custom_nda_review', 'The client has provided a custom NDA. Please download, review, and sign below to confirm your agreement.')}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                <a href={customNdaPublicUrl || '#'} target="_blank" rel="noopener noreferrer">
-                  <Download className="w-3.5 h-3.5" />
-                  {customNdaFilename || 'Download NDA'}
-                </a>
-              </Button>
-              <Button variant="ghost" size="sm" className="gap-1.5" asChild>
-                <a href={customNdaPublicUrl || '#'} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  {t('nda.open_in_tab', 'Open')}
-                </a>
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <ScrollArea className="flex-1 max-h-[280px] border rounded-lg p-4 bg-muted/30">
-            {templateLoading ? (
-              <p className="text-muted-foreground">{t('nda.loading', 'Loading...')}</p>
+        {step === 'preview' ? (
+          /* ========== PREVIEW STEP ========== */
+          <>
+            {hasCustomNDA ? (
+              <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <FileText className="w-4 h-4 text-primary" />
+                  {t('nda.custom_nda_label', 'Client Custom NDA Document')}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {t('nda.custom_nda_review', 'The client has provided a custom NDA. Please download, review, and sign below to confirm your agreement.')}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                    <a href={customNdaPublicUrl || '#'} target="_blank" rel="noopener noreferrer">
+                      <Download className="w-3.5 h-3.5" />
+                      {customNdaFilename || 'Download NDA'}
+                    </a>
+                  </Button>
+                  <Button variant="ghost" size="sm" className="gap-1.5" asChild>
+                    <a href={customNdaPublicUrl || '#'} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      {t('nda.open_in_tab', 'Open in New Tab')}
+                    </a>
+                  </Button>
+                </div>
+              </div>
             ) : (
-              <pre className="whitespace-pre-wrap text-sm font-sans text-foreground leading-relaxed">
-                {filledTemplate}
-              </pre>
+              <ScrollArea className="flex-1 max-h-[380px] border rounded-lg p-4 bg-muted/30">
+                {templateLoading ? (
+                  <p className="text-muted-foreground">{t('nda.loading', 'Loading...')}</p>
+                ) : (
+                  <pre className="whitespace-pre-wrap text-sm font-sans text-foreground leading-relaxed">
+                    {filledTemplate}
+                  </pre>
+                )}
+              </ScrollArea>
             )}
-          </ScrollArea>
-        )}
 
-        {/* Agreement Checkbox */}
-        <div className="flex items-start gap-2 py-2">
-          <Checkbox
-            id="nda-agree"
-            checked={agreed}
-            onCheckedChange={(v) => setAgreed(v === true)}
-          />
-          <label htmlFor="nda-agree" className="text-sm leading-snug cursor-pointer">
-            {t('nda.agree_text', 'I have read and agree to the terms of this Non-Disclosure Agreement')}
-          </label>
-        </div>
-
-        {/* Signature */}
-        <Tabs value={sigType} onValueChange={(v) => setSigType(v as 'draw' | 'type')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="type" className="flex items-center gap-1.5">
-              <Type className="w-3.5 h-3.5" />
-              {t('nda.type_signature', 'Type Signature')}
-            </TabsTrigger>
-            <TabsTrigger value="draw" className="flex items-center gap-1.5">
-              <PenTool className="w-3.5 h-3.5" />
-              {t('nda.draw_signature', 'Draw Signature')}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="type" className="mt-3">
-            <Input
-              placeholder={t('nda.type_placeholder', 'Type your full name as signature')}
-              value={typedName}
-              onChange={(e) => setTypedName(e.target.value)}
-              className="text-lg font-serif italic"
-            />
-          </TabsContent>
-
-          <TabsContent value="draw" className="mt-3 space-y-2">
-            <div className="border rounded-lg overflow-hidden bg-white">
-              <canvas
-                ref={canvasRef}
-                width={500}
-                height={150}
-                className="w-full cursor-crosshair touch-none"
-                onMouseDown={startDraw}
-                onMouseMove={draw}
-                onMouseUp={stopDraw}
-                onMouseLeave={stopDraw}
-                onTouchStart={startDraw}
-                onTouchMove={draw}
-                onTouchEnd={stopDraw}
-              />
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-accent/50 border border-accent">
+              <Eye className="w-4 h-4 text-muted-foreground shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                {t('nda.preview_hint', 'Please read the entire agreement carefully before proceeding to sign. You can also download it as PDF for offline review.')}
+              </p>
             </div>
-            <Button variant="outline" size="sm" onClick={clearCanvas}>
-              {t('nda.clear', 'Clear')}
-            </Button>
-          </TabsContent>
-        </Tabs>
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('common.cancel', 'Cancel')}
-          </Button>
-          <Button onClick={handleSign} disabled={!canSubmit || submitting}>
-            {submitting
-              ? t('nda.signing', 'Signing...')
-              : t('nda.sign_button', 'Sign NDA')}
-          </Button>
-        </DialogFooter>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" className="gap-1.5" onClick={handleDownloadPreview}>
+                <Download className="w-4 h-4" />
+                {t('nda.download_pdf', 'Download PDF')}
+              </Button>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                {t('common.cancel', 'Cancel')}
+              </Button>
+              <Button className="gap-1.5" onClick={() => setStep('sign')}>
+                {t('nda.proceed_to_sign', 'Proceed to Sign')}
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          /* ========== SIGN STEP ========== */
+          <>
+            {/* Collapsed NDA reference */}
+            {!hasCustomNDA && (
+              <div className="border rounded-lg p-3 bg-muted/20">
+                <ScrollArea className="max-h-[120px]">
+                  <pre className="whitespace-pre-wrap text-xs font-sans text-muted-foreground leading-relaxed">
+                    {filledTemplate}
+                  </pre>
+                </ScrollArea>
+              </div>
+            )}
+
+            {/* Agreement Checkbox */}
+            <div className="flex items-start gap-2 py-2">
+              <Checkbox
+                id="nda-agree"
+                checked={agreed}
+                onCheckedChange={(v) => setAgreed(v === true)}
+              />
+              <label htmlFor="nda-agree" className="text-sm leading-snug cursor-pointer">
+                {t('nda.agree_text', 'I have read and agree to the terms of this Non-Disclosure Agreement')}
+              </label>
+            </div>
+
+            {/* Signature */}
+            <Tabs value={sigType} onValueChange={(v) => setSigType(v as 'draw' | 'type')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="type" className="flex items-center gap-1.5">
+                  <Type className="w-3.5 h-3.5" />
+                  {t('nda.type_signature', 'Type Signature')}
+                </TabsTrigger>
+                <TabsTrigger value="draw" className="flex items-center gap-1.5">
+                  <PenTool className="w-3.5 h-3.5" />
+                  {t('nda.draw_signature', 'Draw Signature')}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="type" className="mt-3">
+                <Input
+                  placeholder={t('nda.type_placeholder', 'Type your full name as signature')}
+                  value={typedName}
+                  onChange={(e) => setTypedName(e.target.value)}
+                  className="text-lg font-serif italic"
+                />
+              </TabsContent>
+
+              <TabsContent value="draw" className="mt-3 space-y-2">
+                <div className="border rounded-lg overflow-hidden bg-white">
+                  <canvas
+                    ref={canvasRef}
+                    width={500}
+                    height={150}
+                    className="w-full cursor-crosshair touch-none"
+                    onMouseDown={startDraw}
+                    onMouseMove={draw}
+                    onMouseUp={stopDraw}
+                    onMouseLeave={stopDraw}
+                    onTouchStart={startDraw}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDraw}
+                  />
+                </div>
+                <Button variant="outline" size="sm" onClick={clearCanvas}>
+                  {t('nda.clear', 'Clear')}
+                </Button>
+              </TabsContent>
+            </Tabs>
+
+            <DialogFooter className="gap-2">
+              <Button variant="ghost" className="gap-1.5" onClick={() => setStep('preview')}>
+                <ArrowLeft className="w-4 h-4" />
+                {t('nda.back_to_review', 'Back to Review')}
+              </Button>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                {t('common.cancel', 'Cancel')}
+              </Button>
+              <Button onClick={handleSign} disabled={!canSubmit || submitting}>
+                {submitting
+                  ? t('nda.signing', 'Signing...')
+                  : t('nda.sign_button', 'Sign NDA')}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
