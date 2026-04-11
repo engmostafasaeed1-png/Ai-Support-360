@@ -52,7 +52,7 @@ const navGroups = [
     labelKey: 'sidebar.servicenow',
     items: [
       { key: 'change_management', icon: GitPullRequestArrow, path: '/client/changes' },
-      { key: 'problem_management', icon: SearchX, path: '/client/problems' },
+      
       { key: 'service_catalog', icon: Store, path: '/client/catalog' },
       { key: 'major_incidents', icon: AlertOctagon, path: '/client/major-incidents' },
       { key: 'playbooks', icon: BookMarked, path: '/client/playbooks' },
