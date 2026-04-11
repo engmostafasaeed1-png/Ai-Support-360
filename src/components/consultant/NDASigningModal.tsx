@@ -231,15 +231,41 @@ export default function NDASigningModal({
         )}
 
         {/* NDA Content */}
-        <ScrollArea className="flex-1 max-h-[280px] border rounded-lg p-4 bg-muted/30">
-          {templateLoading ? (
-            <p className="text-muted-foreground">{t('nda.loading', 'Loading...')}</p>
-          ) : (
-            <pre className="whitespace-pre-wrap text-sm font-sans text-foreground leading-relaxed">
-              {filledTemplate}
-            </pre>
-          )}
-        </ScrollArea>
+        {hasCustomNDA ? (
+          <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <FileSignature className="w-4 h-4 text-primary" />
+              {t('nda.custom_nda_label', 'Client Custom NDA Document')}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {t('nda.custom_nda_review', 'The client has provided a custom NDA. Please download, review, and sign below to confirm your agreement.')}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                <a href={customNdaPublicUrl || '#'} target="_blank" rel="noopener noreferrer">
+                  <Download className="w-3.5 h-3.5" />
+                  {customNdaFilename || 'Download NDA'}
+                </a>
+              </Button>
+              <Button variant="ghost" size="sm" className="gap-1.5" asChild>
+                <a href={customNdaPublicUrl || '#'} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  {t('nda.open_in_tab', 'Open')}
+                </a>
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <ScrollArea className="flex-1 max-h-[280px] border rounded-lg p-4 bg-muted/30">
+            {templateLoading ? (
+              <p className="text-muted-foreground">{t('nda.loading', 'Loading...')}</p>
+            ) : (
+              <pre className="whitespace-pre-wrap text-sm font-sans text-foreground leading-relaxed">
+                {filledTemplate}
+              </pre>
+            )}
+          </ScrollArea>
+        )}
 
         {/* Agreement Checkbox */}
         <div className="flex items-start gap-2 py-2">
