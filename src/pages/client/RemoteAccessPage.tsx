@@ -15,7 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  Monitor, Server, Terminal, Laptop, Plus, Pencil, Trash2, Pause, Play, XCircle, Send,
+  Monitor, Server, Terminal, Laptop, Plus, Pencil, Trash2, Pause, Play, XCircle,
 } from 'lucide-react';
 import { useRemoteEnvironments, useCreateEnvironment, useUpdateEnvironment, useDeleteEnvironment, type RemoteEnvironment } from '@/hooks/useRemoteEnvironments';
 import { useEnvironmentConnections } from '@/hooks/useEnvironmentConnections';
@@ -391,45 +391,31 @@ export default function ClientRemoteAccessPage() {
       )}
 
       {/* Remote Desktop Integrations */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">Remote Desktop Tools</h2>
-          <ShareButton />
-        </div>
-        <div className="grid lg:grid-cols-2 gap-4">
-          <AnyDeskPanel />
-          <TeamViewerPanel />
-          <RustDeskPanel />
-          <RDPWebClientPanel />
-        </div>
-        <SharedConfigsClientPanel />
-      </div>
+      <RemoteToolsSection />
     </div>
   );
 }
 
-function ShareButton() {
+function RemoteToolsSection() {
   const [shareOpen, setShareOpen] = useState(false);
   const [toolType, setToolType] = useState('anydesk');
 
+  const openShare = (tool: string) => {
+    setToolType(tool);
+    setShareOpen(true);
+  };
+
   return (
-    <>
-      <div className="flex items-center gap-2">
-        <select
-          value={toolType}
-          onChange={e => setToolType(e.target.value)}
-          className="h-7 text-xs rounded-lg border border-border bg-background px-2"
-        >
-          <option value="anydesk">AnyDesk</option>
-          <option value="teamviewer">TeamViewer</option>
-          <option value="rustdesk">RustDesk</option>
-          <option value="rdp">RDP/VNC</option>
-        </select>
-        <Button size="sm" className="h-7 text-xs gap-1.5 gradient-primary border-0" onClick={() => setShareOpen(true)}>
-          <Send className="w-3 h-3" /> Share with Consultant
-        </Button>
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold text-foreground">Remote Desktop Tools</h2>
+      <div className="grid lg:grid-cols-2 gap-4">
+        <AnyDeskPanel onShare={() => openShare('anydesk')} />
+        <TeamViewerPanel onShare={() => openShare('teamviewer')} />
+        <RustDeskPanel onShare={() => openShare('rustdesk')} />
+        <RDPWebClientPanel onShare={() => openShare('rdp')} />
       </div>
       <ShareRemoteConfigDialog open={shareOpen} onOpenChange={setShareOpen} toolType={toolType} />
-    </>
+      <SharedConfigsClientPanel />
+    </div>
   );
 }
