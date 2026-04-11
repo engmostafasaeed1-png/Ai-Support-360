@@ -122,7 +122,7 @@ export default function ClientSidebar() {
   const { tenant } = useTenant();
 
   const tier = tenant?.subscription_tier || 'basic';
-  const TierIcon = tierIcons[tier] || Sparkles;
+  const TierIcon = tierIcons[tier] || Wand2;
   const [profileOpen, setProfileOpen] = useState(false);
 
   return (
@@ -143,7 +143,7 @@ export default function ClientSidebar() {
           <div className="mx-3 mt-2">
             <Link to="/client/companies" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-sidebar-accent/30 hover:bg-sidebar-accent/50 transition-colors group border border-sidebar-border/20">
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Building2 className="w-4 h-4 text-primary" />
+                <Building className="w-4 h-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-xs font-semibold text-sidebar-foreground block truncate">{tenant.name}</span>
