@@ -2096,6 +2096,8 @@ export type Database = {
           consultant_id: string
           created_at: string
           currency: string | null
+          description: string | null
+          due_date: string | null
           id: string
           invoice_number: string | null
           payment_method: string | null
@@ -2103,6 +2105,7 @@ export type Database = {
           status: Database["public"]["Enums"]["payment_status"] | null
           stripe_payment_id: string | null
           tenant_id: string | null
+          ticket_id: string | null
           updated_at: string
           vat_amount: number | null
         }
@@ -2112,6 +2115,8 @@ export type Database = {
           consultant_id: string
           created_at?: string
           currency?: string | null
+          description?: string | null
+          due_date?: string | null
           id?: string
           invoice_number?: string | null
           payment_method?: string | null
@@ -2119,6 +2124,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["payment_status"] | null
           stripe_payment_id?: string | null
           tenant_id?: string | null
+          ticket_id?: string | null
           updated_at?: string
           vat_amount?: number | null
         }
@@ -2128,6 +2134,8 @@ export type Database = {
           consultant_id?: string
           created_at?: string
           currency?: string | null
+          description?: string | null
+          due_date?: string | null
           id?: string
           invoice_number?: string | null
           payment_method?: string | null
@@ -2135,6 +2143,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["payment_status"] | null
           stripe_payment_id?: string | null
           tenant_id?: string | null
+          ticket_id?: string | null
           updated_at?: string
           vat_amount?: number | null
         }
@@ -2158,6 +2167,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
         ]

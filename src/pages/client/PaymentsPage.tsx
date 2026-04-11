@@ -1,30 +1,68 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useClientPayments } from '@/hooks/useClientPayments';
-import { Download, CreditCard, DollarSign, FileText, Clock } from 'lucide-react';
+import { Download, CreditCard, DollarSign, FileText, Clock, Search, ArrowRight, Ticket, AlertCircle, CheckCircle2, XCircle, ReceiptText, Calendar, User, Tag } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
+
+const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
+  completed: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
+  paid: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
+  pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: Clock },
+  failed: { label: 'Failed', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: XCircle },
+  refunded: { label: 'Refunded', color: 'bg-muted text-muted-foreground', icon: AlertCircle },
+};
 
 export default function PaymentsPage() {
   const { data: payments, isLoading } = useClientPayments();
+  const [search, setSearch] = useState('');
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [tab, setTab] = useState('all');
 
   const allPayments = payments || [];
   const total = allPayments.reduce((a, p) => a + Number(p.amount), 0);
   const pending = allPayments.filter((p) => p.status === 'pending').reduce((a, p) => a + Number(p.amount), 0);
+  const paid = allPayments.filter((p) => p.status === 'completed' || p.status === 'paid').reduce((a, p) => a + Number(p.amount), 0);
+  const totalVat = allPayments.reduce((a, p) => a + Number(p.vat || 0), 0);
+
+  const filtered = allPayments.filter(p => {
+    const matchSearch = !search || 
+      p.invoice?.toLowerCase().includes(search.toLowerCase()) ||
+      p.consultant?.toLowerCase().includes(search.toLowerCase()) ||
+      p.ticket_title?.toLowerCase().includes(search.toLowerCase()) ||
+      p.description?.toLowerCase().includes(search.toLowerCase());
+    const matchTab = tab === 'all' || 
+      (tab === 'paid' && (p.status === 'completed' || p.status === 'paid')) ||
+      (tab === 'pending' && p.status === 'pending') ||
+      (tab === 'overdue' && p.status === 'failed');
+    return matchSearch && matchTab;
+  });
+
+  const formatCurrency = (amount: number, currency: string = 'USD') =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl md:text-2xl font-bold text-foreground">Payments & Invoices</h1>
-        <p className="text-xs md:text-sm text-muted-foreground mt-1">View payment history and download invoices.</p>
+        <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+          <ReceiptText className="w-6 h-6 text-primary" /> Payments & Invoices
+        </h1>
+        <p className="text-xs md:text-sm text-muted-foreground mt-1">Track payments linked to your tickets and download invoices.</p>
       </div>
 
+      {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Spent', value: `$${total.toLocaleString()}`, icon: DollarSign, color: 'bg-accent/10 text-accent' },
-          { label: 'Pending', value: `$${pending.toLocaleString()}`, icon: Clock, color: 'bg-yellow-100 text-yellow-600' },
-          { label: 'Invoices', value: allPayments.length.toString(), icon: FileText, color: 'bg-purple-100 text-purple-600' },
-          { label: 'Payment Method', value: 'Visa •••• 4242', icon: CreditCard, color: 'bg-green-100 text-green-600' },
+          { label: 'Total Spent', value: formatCurrency(paid), icon: DollarSign, color: 'bg-accent/10 text-accent' },
+          { label: 'Pending', value: formatCurrency(pending), icon: Clock, color: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' },
+          { label: 'Total VAT', value: formatCurrency(totalVat), icon: FileText, color: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' },
+          { label: 'Transactions', value: allPayments.length.toString(), icon: CreditCard, color: 'bg-primary/10 text-primary' },
         ].map((k, i) => (
           <Card key={i} className="rounded-2xl border-border/50">
             <CardContent className="p-5">
@@ -40,6 +78,22 @@ export default function PaymentsPage() {
         ))}
       </div>
 
+      {/* Search + Tabs */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div className="relative max-w-sm w-full">
+          <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search by invoice, consultant, ticket..." value={search} onChange={e => setSearch(e.target.value)} className="ps-9 rounded-xl" />
+        </div>
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabsList className="h-9">
+            <TabsTrigger value="all" className="text-xs">All ({allPayments.length})</TabsTrigger>
+            <TabsTrigger value="paid" className="text-xs">Paid</TabsTrigger>
+            <TabsTrigger value="pending" className="text-xs">Pending</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {/* Payment List */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold">Payment History</CardTitle>
@@ -47,44 +101,157 @@ export default function PaymentsPage() {
         <CardContent>
           {isLoading ? (
             <div className="space-y-3">
-              {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
             </div>
-          ) : allPayments.length === 0 ? (
+          ) : filtered.length === 0 ? (
             <div className="py-12 text-center">
               <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No payments yet.</p>
+              <p className="text-sm text-muted-foreground">No payments found.</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {allPayments.map((payment: any) => (
-                <div key={payment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-muted/20 border border-border/30 hover:border-accent/30 hover:shadow-premium transition-all cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
-                      <FileText className="w-5 h-5 text-accent" />
+              {filtered.map((payment: any) => {
+                const sc = statusConfig[payment.status] || statusConfig.pending;
+                const StatusIcon = sc.icon;
+                return (
+                  <div
+                    key={payment.id}
+                    onClick={() => setSelectedPayment(payment)}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-muted/20 border border-border/30 hover:border-primary/30 hover:shadow-premium transition-all cursor-pointer"
+                  >
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <ReceiptText className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-semibold text-foreground">{payment.invoice}</p>
+                          <Badge variant="secondary" className={`text-[10px] gap-1 ${sc.color}`}>
+                            <StatusIcon className="w-3 h-3" /> {sc.label}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          <span className="inline-flex items-center gap-1"><User className="w-3 h-3" /> {payment.consultant}</span>
+                          <span className="mx-2">·</span>
+                          <span className="inline-flex items-center gap-1"><Calendar className="w-3 h-3" /> {payment.date}</span>
+                        </p>
+                        {payment.ticket_title && (
+                          <div className="mt-1 flex items-center gap-1.5">
+                            <Ticket className="w-3 h-3 text-primary" />
+                            <span className="text-xs text-primary font-medium truncate">{payment.ticket_title}</span>
+                            {payment.ticket_sap_module && (
+                              <Badge variant="outline" className="text-[9px]">{payment.ticket_sap_module}</Badge>
+                            )}
+                          </div>
+                        )}
+                        {payment.description && (
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{payment.description}</p>
+                        )}
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{payment.invoice || `INV-${payment.id.slice(0, 8)}`}</p>
-                      <p className="text-xs text-muted-foreground truncate">{payment.consultant || 'Consultant'} · {payment.date}</p>
+                    <div className="flex items-center gap-3 justify-between sm:justify-end shrink-0">
+                      <div className="text-start sm:text-end">
+                        <p className="text-sm font-bold text-foreground">{formatCurrency(Number(payment.amount), payment.currency)}</p>
+                        {Number(payment.vat) > 0 && (
+                          <p className="text-[10px] text-muted-foreground">VAT: {formatCurrency(Number(payment.vat), payment.currency)}</p>
+                        )}
+                      </div>
+                      <Button variant="ghost" size="icon" title="Download Invoice" className="shrink-0" onClick={e => { e.stopPropagation(); }}>
+                        <Download className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 justify-between sm:justify-end">
-                    <div className="text-start sm:text-end">
-                      <p className="text-sm font-bold text-foreground">${Number(payment.amount).toLocaleString()}</p>
-                      <p className="text-[10px] text-muted-foreground">VAT: ${Number(payment.vat || 0).toLocaleString()}</p>
-                    </div>
-                    <Badge variant="secondary" className={`text-[10px] ${payment.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                      {payment.status}
-                    </Badge>
-                    <Button variant="ghost" size="icon" title="Download Invoice" className="shrink-0">
-                      <Download className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Detail Dialog */}
+      <Dialog open={!!selectedPayment} onOpenChange={() => setSelectedPayment(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ReceiptText className="w-5 h-5 text-primary" />
+              {selectedPayment?.invoice}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedPayment && (
+            <div className="space-y-4">
+              {/* Status */}
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const sc = statusConfig[selectedPayment.status] || statusConfig.pending;
+                  const Icon = sc.icon;
+                  return <Badge className={`gap-1 ${sc.color}`}><Icon className="w-3.5 h-3.5" /> {sc.label}</Badge>;
+                })()}
+                <span className="text-lg font-bold text-foreground ml-auto">
+                  {formatCurrency(Number(selectedPayment.amount), selectedPayment.currency)}
+                </span>
+              </div>
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <DetailRow label="Consultant" value={selectedPayment.consultant} icon={User} />
+                <DetailRow label="Date" value={selectedPayment.date} icon={Calendar} />
+                <DetailRow label="Currency" value={selectedPayment.currency} icon={DollarSign} />
+                <DetailRow label="VAT" value={formatCurrency(Number(selectedPayment.vat || 0), selectedPayment.currency)} icon={FileText} />
+                {selectedPayment.payment_method && (
+                  <DetailRow label="Method" value={selectedPayment.payment_method} icon={CreditCard} />
+                )}
+                {selectedPayment.due_date && (
+                  <DetailRow label="Due Date" value={format(new Date(selectedPayment.due_date), 'MMM d, yyyy')} icon={Calendar} />
+                )}
+              </div>
+
+              {/* Description */}
+              {selectedPayment.description && (
+                <div className="rounded-lg bg-muted/30 p-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Description</p>
+                  <p className="text-sm text-foreground">{selectedPayment.description}</p>
+                </div>
+              )}
+
+              {/* Linked Ticket */}
+              {selectedPayment.ticket_id && (
+                <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
+                  <p className="text-xs font-semibold text-primary uppercase mb-1 flex items-center gap-1">
+                    <Ticket className="w-3 h-3" /> Linked Ticket
+                  </p>
+                  <p className="text-sm font-medium text-foreground">{selectedPayment.ticket_title}</p>
+                  <div className="flex gap-1.5 mt-1">
+                    {selectedPayment.ticket_sap_module && <Badge variant="secondary" className="text-[10px]">{selectedPayment.ticket_sap_module}</Badge>}
+                    {selectedPayment.ticket_urgency && <Badge variant="outline" className="text-[10px]">{selectedPayment.ticket_urgency}</Badge>}
+                  </div>
+                  <Link to={`/client/tickets/${selectedPayment.ticket_id}`} className="inline-flex items-center gap-1 text-xs text-primary mt-2 hover:underline">
+                    View Ticket <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm">
+                  <Download className="w-4 h-4" /> Download Invoice
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, icon: Icon }: { label: string; value: string; icon: any }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+      <div>
+        <p className="text-[10px] text-muted-foreground uppercase">{label}</p>
+        <p className="text-sm font-medium text-foreground">{value}</p>
+      </div>
     </div>
   );
 }
