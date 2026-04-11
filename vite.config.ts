@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
     },
     headers: {
       'X-Content-Type-Options': 'nosniff',
-      'X-Frame-Options': 'DENY',
+      'X-Frame-Options': 'SAMEORIGIN',
       'X-XSS-Protection': '1; mode=block',
       'Referrer-Policy': 'strict-origin-when-cross-origin',
       'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()',
