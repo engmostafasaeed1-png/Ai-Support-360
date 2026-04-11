@@ -1,4 +1,5 @@
 import React, { Suspense, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -146,6 +147,15 @@ const PageLoader = () => (
   </div>
 );
 
+const RTLSync = () => {
+  const { i18n } = useTranslation();
+  useEffect(() => {
+    document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -154,6 +164,8 @@ const App = () => (
       <BrowserRouter>
         <GuestModeProvider>
         <TenantProvider>
+          <RTLSync />
+          <a href="#main-content" className="skip-to-main">Skip to main content</a>
           <ScrollToTop />
           <ScreenProtection />
           <GlobalSearch />

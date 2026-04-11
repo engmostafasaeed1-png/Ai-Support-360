@@ -82,7 +82,7 @@ export default function HeaderNav({ role }: HeaderNavProps) {
 
   return (
     <ScrollArea className="w-full">
-      <nav className="flex items-center gap-0.5 px-1 py-1">
+      <nav aria-label="Main navigation" className="flex items-center gap-0.5 px-1 py-1">
         {items.map((item) => (
           <NavLink
             key={item.path}
