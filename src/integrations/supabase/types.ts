@@ -1007,6 +1007,45 @@ export type Database = {
           },
         ]
       }
+      environment_consultants: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          consultant_id: string
+          environment_id: string
+          id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          consultant_id: string
+          environment_id: string
+          id?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          consultant_id?: string
+          environment_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "environment_consultants_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "environment_consultants_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "remote_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       environment_credentials: {
         Row: {
           created_at: string
@@ -2682,15 +2721,25 @@ export type Database = {
       }
       remote_environments: {
         Row: {
+          access_type: string | null
           client_id: string
           consultant_id: string | null
+          cpu_cores: number | null
           created_at: string
+          description: string | null
+          disk_gb: number | null
+          environment_type: string | null
           guacamole_url: string
           id: string
+          ip_address: string | null
           name: string
           notes: string | null
           os_type: string | null
           platform_type: string
+          ram_gb: number | null
+          region: string | null
+          sap_client_number: string | null
+          sap_sid: string | null
           status: Database["public"]["Enums"]["environment_status"]
           tenant_id: string | null
           ticket_id: string | null
@@ -2699,15 +2748,25 @@ export type Database = {
           vmware_host: string | null
         }
         Insert: {
+          access_type?: string | null
           client_id: string
           consultant_id?: string | null
+          cpu_cores?: number | null
           created_at?: string
+          description?: string | null
+          disk_gb?: number | null
+          environment_type?: string | null
           guacamole_url: string
           id?: string
+          ip_address?: string | null
           name: string
           notes?: string | null
           os_type?: string | null
           platform_type?: string
+          ram_gb?: number | null
+          region?: string | null
+          sap_client_number?: string | null
+          sap_sid?: string | null
           status?: Database["public"]["Enums"]["environment_status"]
           tenant_id?: string | null
           ticket_id?: string | null
@@ -2716,15 +2775,25 @@ export type Database = {
           vmware_host?: string | null
         }
         Update: {
+          access_type?: string | null
           client_id?: string
           consultant_id?: string | null
+          cpu_cores?: number | null
           created_at?: string
+          description?: string | null
+          disk_gb?: number | null
+          environment_type?: string | null
           guacamole_url?: string
           id?: string
+          ip_address?: string | null
           name?: string
           notes?: string | null
           os_type?: string | null
           platform_type?: string
+          ram_gb?: number | null
+          region?: string | null
+          sap_client_number?: string | null
+          sap_sid?: string | null
           status?: Database["public"]["Enums"]["environment_status"]
           tenant_id?: string | null
           ticket_id?: string | null

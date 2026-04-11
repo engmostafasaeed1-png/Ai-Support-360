@@ -15,6 +15,16 @@ export interface RemoteEnvironment {
   vmware_host: string | null;
   vm_name: string | null;
   ticket_id: string | null;
+  ip_address: string | null;
+  cpu_cores: number | null;
+  ram_gb: number | null;
+  disk_gb: number | null;
+  sap_sid: string | null;
+  sap_client_number: string | null;
+  description: string | null;
+  access_type: string | null;
+  region: string | null;
+  environment_type: string | null;
   created_at: string;
   updated_at: string;
 }
