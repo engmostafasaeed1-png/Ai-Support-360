@@ -14,7 +14,7 @@ export function useDevToolsDetection(): boolean {
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .in('role', ['admin', 'superadmin']);
+        .eq('role', 'admin');
       if (data && data.length > 0) {
         setIsAdmin(true);
       }
