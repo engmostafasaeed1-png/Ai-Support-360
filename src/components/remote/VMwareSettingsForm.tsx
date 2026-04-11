@@ -272,7 +272,7 @@ export default function VMwareSettingsForm({
       </Card>
 
       <Tabs defaultValue="connection" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="connection" className="gap-1 text-[10px] sm:text-xs">
             <Server className="w-3.5 h-3.5" /> Connection
           </TabsTrigger>
@@ -283,6 +283,9 @@ export default function VMwareSettingsForm({
           )}
           <TabsTrigger value="vm" className="gap-1 text-[10px] sm:text-xs">
             <Cpu className="w-3.5 h-3.5" /> VM
+          </TabsTrigger>
+          <TabsTrigger value="hardware" className="gap-1 text-[10px] sm:text-xs">
+            <DollarSign className="w-3.5 h-3.5" /> Cost
           </TabsTrigger>
           <TabsTrigger value="network" className="gap-1 text-[10px] sm:text-xs">
             <Shield className="w-3.5 h-3.5" /> Network
