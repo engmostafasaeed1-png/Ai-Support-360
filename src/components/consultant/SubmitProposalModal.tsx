@@ -84,34 +84,37 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger }: 
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] w-[calc(100vw-2rem)] flex flex-col p-4 sm:p-6 rounded-2xl">
+        <DialogHeader className="pb-1">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             Submit Proposal
             {isRevision && (
               <Badge variant="secondary" className="text-[10px] bg-accent/20 text-accent gap-1">
-                <RefreshCw className="w-3 h-3" /> Version {nextVersion}
+                <RefreshCw className="w-3 h-3" /> v{nextVersion}
               </Badge>
             )}
           </DialogTitle>
-          <p className="text-xs text-muted-foreground mt-1">Bidding on: {ticketTitle}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">Bidding on: {ticketTitle}</p>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-2">
-          <div className="space-y-4 pt-2">
-            {/* Previous versions */}
+        <ScrollArea className="flex-1 -mx-1 px-1">
+          <div className="space-y-3 pt-1 pb-2">
+            {/* Previous versions - compact on mobile */}
             {versions && versions.length > 0 && (
-              <div className="bg-muted/30 rounded-xl p-3 space-y-1.5">
-                <p className="text-xs font-medium text-muted-foreground">Previous Versions</p>
-                {versions.map((v: any) => (
-                  <div key={v.id} className="flex items-center justify-between text-xs">
+              <div className="bg-muted/30 rounded-xl p-2.5 space-y-1">
+                <p className="text-[11px] font-medium text-muted-foreground">Previous Versions</p>
+                {versions.slice(0, 3).map((v: any) => (
+                  <div key={v.id} className="flex items-center justify-between text-[11px]">
                     <span className="flex items-center gap-1.5">
-                      <Badge variant="outline" className="text-[10px] h-5">v{v.version}</Badge>
+                      <Badge variant="outline" className="text-[9px] h-4 px-1.5">v{v.version}</Badge>
                       <span className="text-muted-foreground">${v.proposed_rate}/hr • {v.estimated_hours}h</span>
                     </span>
-                    <Badge variant="secondary" className="text-[10px]">{v.status}</Badge>
+                    <Badge variant="secondary" className="text-[9px] h-4">{v.status}</Badge>
                   </div>
                 ))}
+                {versions.length > 3 && (
+                  <p className="text-[10px] text-muted-foreground text-center">+{versions.length - 3} more</p>
+                )}
               </div>
             )}
 
@@ -122,30 +125,48 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger }: 
                 value={form.cover_letter}
                 onChange={e => setForm(f => ({ ...f, cover_letter: e.target.value }))}
                 placeholder={isRevision ? 'Explain what changed in this revision...' : 'Explain why you\'re the best fit...'}
-                className="mt-1 min-h-[100px]"
+                className="mt-1 min-h-[80px] sm:min-h-[100px] text-sm"
               />
             </div>
 
-            {/* Rate fields */}
-            <div className="grid grid-cols-3 gap-3">
+            {/* Rate fields - stack 2+1 on mobile */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <div>
-                <Label className="text-xs">Hourly Rate ($)</Label>
-                <Input type="number" value={form.proposed_rate} onChange={e => setForm(f => ({ ...f, proposed_rate: e.target.value }))} placeholder="150" className="mt-1" />
+                <Label className="text-[11px] sm:text-xs">Rate ($/hr)</Label>
+                <Input
+                  type="number"
+                  value={form.proposed_rate}
+                  onChange={e => setForm(f => ({ ...f, proposed_rate: e.target.value }))}
+                  placeholder="150"
+                  className="mt-1 h-9 text-sm"
+                />
               </div>
               <div>
-                <Label className="text-xs">Est. Hours</Label>
-                <Input type="number" value={form.estimated_hours} onChange={e => setForm(f => ({ ...f, estimated_hours: e.target.value }))} placeholder="20" className="mt-1" />
+                <Label className="text-[11px] sm:text-xs">Est. Hours</Label>
+                <Input
+                  type="number"
+                  value={form.estimated_hours}
+                  onChange={e => setForm(f => ({ ...f, estimated_hours: e.target.value }))}
+                  placeholder="20"
+                  className="mt-1 h-9 text-sm"
+                />
               </div>
               <div>
-                <Label className="text-xs">Timeline (days)</Label>
-                <Input type="number" value={form.timeline_days} onChange={e => setForm(f => ({ ...f, timeline_days: e.target.value }))} placeholder="14" className="mt-1" />
+                <Label className="text-[11px] sm:text-xs">Days</Label>
+                <Input
+                  type="number"
+                  value={form.timeline_days}
+                  onChange={e => setForm(f => ({ ...f, timeline_days: e.target.value }))}
+                  placeholder="14"
+                  className="mt-1 h-9 text-sm"
+                />
               </div>
             </div>
 
             {/* Estimated total */}
             {form.proposed_rate && form.estimated_hours && (
-              <div className="bg-muted/50 rounded-xl p-3 text-sm">
-                <span className="text-muted-foreground">Estimated Total: </span>
+              <div className="bg-muted/50 rounded-xl p-2.5 text-sm flex items-center justify-between">
+                <span className="text-muted-foreground text-xs">Estimated Total</span>
                 <span className="font-semibold text-foreground">
                   ${(parseFloat(form.proposed_rate) * parseFloat(form.estimated_hours)).toLocaleString()}
                 </span>
@@ -155,7 +176,6 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger }: 
             {/* File attachments */}
             <div>
               <Label className="text-xs">Attachments</Label>
-              <p className="text-[10px] text-muted-foreground mb-2">Attach scope documents, CVs, or reference materials</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -168,19 +188,19 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger }: 
                 type="button"
                 variant="outline"
                 size="sm"
-                className="w-full gap-1.5 text-xs border-dashed"
+                className="w-full gap-1.5 text-xs border-dashed mt-1 h-9"
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Paperclip className="w-3.5 h-3.5" /> Add Files
               </Button>
               {files.length > 0 && (
-                <div className="mt-2 space-y-1.5">
+                <div className="mt-1.5 space-y-1">
                   {files.map((file, i) => (
-                    <div key={i} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2 text-xs">
-                      <FileText className="w-3.5 h-3.5 text-accent shrink-0" />
-                      <span className="truncate flex-1">{file.name}</span>
+                    <div key={i} className="flex items-center gap-2 bg-muted/50 rounded-lg px-2.5 py-1.5 text-[11px]">
+                      <FileText className="w-3 h-3 text-accent shrink-0" />
+                      <span className="truncate flex-1 min-w-0">{file.name}</span>
                       <span className="text-muted-foreground shrink-0">{formatSize(file.size)}</span>
-                      <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-destructive">
+                      <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-destructive shrink-0">
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -188,13 +208,15 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger }: 
                 </div>
               )}
             </div>
-
-            {/* Submit */}
-            <Button onClick={handleSubmit} disabled={submit.isPending} className="w-full gradient-primary border-0">
-              {submit.isPending ? 'Submitting...' : isRevision ? `Submit Revision v${nextVersion}` : 'Submit Proposal'}
-            </Button>
           </div>
         </ScrollArea>
+
+        {/* Sticky submit button */}
+        <div className="pt-2 border-t border-border/50">
+          <Button onClick={handleSubmit} disabled={submit.isPending} className="w-full gradient-primary border-0 h-10">
+            {submit.isPending ? 'Submitting...' : isRevision ? `Submit Revision v${nextVersion}` : 'Submit Proposal'}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
