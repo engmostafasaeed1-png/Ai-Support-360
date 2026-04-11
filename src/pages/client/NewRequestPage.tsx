@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { sapModules, issueTypes } from '@/data/clientMockData';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { z } from 'zod';
 import {
   ArrowLeft, ArrowRight, Check, Sparkles, Brain,
   Clock, AlertTriangle, Info, Loader2, Zap, Target, List,
@@ -23,6 +24,16 @@ import { useQuery } from '@tanstack/react-query';
 import { useRealtimeConsultants, type ConsultantLive } from '@/hooks/useRealtimeConsultants';
 import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
 import VoiceInput from '@/components/ui/voice-input';
+
+const ticketSchema = z.object({
+  sap_module: z.string().min(1, 'Please select an SAP module'),
+  issue_type: z.string().min(1, 'Please select an issue type'),
+  title: z.string().min(5, 'Title must be at least 5 characters').max(200, 'Title too long'),
+  description: z.string().min(20, 'Please describe your issue in at least 20 characters').max(5000, 'Description too long'),
+  urgency: z.enum(['low', 'medium', 'high', 'critical']),
+  preferred_session: z.enum(['chat', 'video', 'screen_share']),
+  preferred_language: z.enum(['en', 'ar']),
+});
 
 interface AiCategorization {
   suggested_module: string;
