@@ -13,17 +13,30 @@ export function useClientPayments() {
       if (!user) return [];
       const { data, error } = await supabase
         .from('payments')
-        .select(`
-          id, amount, currency, vat_amount, status, invoice_number, payment_method,
-          description, due_date, created_at, updated_at, ticket_id, consultant_id,
-          consultants:consultant_id (
-            user_id,
-            profiles:user_id (display_name)
-          )
-        `)
+        .select('id, amount, currency, vat_amount, status, invoice_number, payment_method, description, due_date, created_at, updated_at, ticket_id, consultant_id')
         .eq('client_id', user.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
+
+      // Fetch consultant names separately
+      const consultantIds = [...new Set((data || []).map((p: any) => p.consultant_id).filter(Boolean))];
+      let consultantMap: Record<string, string> = {};
+      if (consultantIds.length > 0) {
+        const { data: consultants } = await supabase
+          .from('consultants')
+          .select('id, user_id')
+          .in('id', consultantIds);
+        if (consultants && consultants.length > 0) {
+          const userIds = consultants.map((c: any) => c.user_id);
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, display_name')
+            .in('user_id', userIds);
+          const profileMap: Record<string, string> = {};
+          (profiles || []).forEach((p: any) => { profileMap[p.user_id] = p.display_name; });
+          consultants.forEach((c: any) => { consultantMap[c.id] = profileMap[c.user_id] || 'Unknown'; });
+        }
+      }
 
       // Fetch ticket titles for linked payments
       const ticketIds = [...new Set((data || []).map((p: any) => p.ticket_id).filter(Boolean))];
