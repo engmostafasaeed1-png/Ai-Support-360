@@ -77,8 +77,8 @@ export default function ConsultantsPage() {
   const filtered = useMemo(() => {
     let result = consultants.filter((c) => {
       const matchesSearch =
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.specialty.toLowerCase().includes(search.toLowerCase());
+        c.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        c.specialty.toLowerCase().includes(debouncedSearch.toLowerCase());
       const matchesIndustry = !industryFilter || c.industries?.includes(industryFilter);
       const matchesAvailability =
         availabilityFilter === 'all' ||
