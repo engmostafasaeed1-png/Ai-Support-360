@@ -8,11 +8,11 @@ import {
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from '@/components/ui/sidebar';
 import {
-  LayoutDashboard, TicketPlus, Briefcase, Users, Calendar, Video,
-  CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
-  Plug, Server, Building2, Gift, Milestone, Sparkles, Crown, ChevronRight, Plus,
-  Activity, Shield, UsersRound, BarChart3, ClipboardList, FolderKanban, FileSignature, LifeBuoy, Settings2,
-  GitBranch, Bug, Package, Siren, BookMarked, Brain, Monitor,
+  Gauge, Zap, Headset, Search, CalendarClock, VideoIcon,
+  Wallet, Receipt, BookOpenCheck, BellRing, SlidersHorizontal, Globe, MessagesSquare, LogOut,
+  Blocks, MonitorSmartphone, Building, PartyPopper, Flag, Wand2, Crown, ChevronRight, Plus,
+  Radio, ShieldCheck, UserCog, PieChart, ListChecks, Layers3, ScrollText, HelpCircle, Wrench,
+  GitPullRequestArrow, SearchX, Store, AlertOctagon, BookMarked, Workflow, Monitor,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
@@ -29,72 +29,72 @@ const navGroups = [
   {
     labelKey: 'sidebar.overview',
     items: [
-      { key: 'dashboard', icon: LayoutDashboard, path: '/client' },
-      { key: 'new_request', icon: TicketPlus, path: '/client/new-request', accent: true },
+      { key: 'dashboard', icon: Gauge, path: '/client' },
+      { key: 'new_request', icon: Zap, path: '/client/new-request', accent: true },
     ],
   },
   {
     labelKey: 'sidebar.work',
     items: [
-      { key: 'tickets', icon: Briefcase, path: '/client/tickets' },
-      { key: 'consultants', icon: Users, path: '/client/consultants' },
-      { key: 'sessions', icon: Calendar, path: '/client/sessions' },
-      { key: 'video_sessions', icon: Video, path: '/client/video-sessions' },
-      { key: 'projects', icon: FolderKanban, path: '/client/projects' },
-      { key: 'milestones', icon: Milestone, path: '/client/milestones' },
-      { key: 'tasks', icon: ClipboardList, path: '/client/tasks' },
-      { key: 'contracts', icon: FileSignature, path: '/client/contracts' },
-      { key: 'business_processes', icon: Brain, path: '/client/business-processes' },
-      { key: 'chat', icon: MessageSquare, path: '/client/chat' },
+      { key: 'tickets', icon: Headset, path: '/client/tickets' },
+      { key: 'consultants', icon: Search, path: '/client/consultants' },
+      { key: 'sessions', icon: CalendarClock, path: '/client/sessions' },
+      { key: 'video_sessions', icon: VideoIcon, path: '/client/video-sessions' },
+      { key: 'projects', icon: Layers3, path: '/client/projects' },
+      { key: 'milestones', icon: Flag, path: '/client/milestones' },
+      { key: 'tasks', icon: ListChecks, path: '/client/tasks' },
+      { key: 'contracts', icon: ScrollText, path: '/client/contracts' },
+      { key: 'business_processes', icon: Workflow, path: '/client/business-processes' },
+      { key: 'chat', icon: MessagesSquare, path: '/client/chat' },
     ],
   },
   {
     labelKey: 'sidebar.servicenow',
     items: [
-      { key: 'change_management', icon: GitBranch, path: '/client/changes' },
-      { key: 'problem_management', icon: Bug, path: '/client/problems' },
-      { key: 'service_catalog', icon: Package, path: '/client/catalog' },
-      { key: 'major_incidents', icon: Siren, path: '/client/major-incidents' },
+      { key: 'change_management', icon: GitPullRequestArrow, path: '/client/changes' },
+      { key: 'problem_management', icon: SearchX, path: '/client/problems' },
+      { key: 'service_catalog', icon: Store, path: '/client/catalog' },
+      { key: 'major_incidents', icon: AlertOctagon, path: '/client/major-incidents' },
       { key: 'playbooks', icon: BookMarked, path: '/client/playbooks' },
     ],
   },
   {
     labelKey: 'sidebar.finance',
     items: [
-      { key: 'payments', icon: CreditCard, path: '/client/payments' },
-      { key: 'invoices', icon: FileText, path: '/client/invoices' },
+      { key: 'payments', icon: Wallet, path: '/client/payments' },
+      { key: 'invoices', icon: Receipt, path: '/client/invoices' },
     ],
   },
   {
     labelKey: 'sidebar.tools',
     items: [
-      { key: 'integrations', icon: Plug, path: '/client/integrations' },
-      { key: 'remote_access', icon: Server, path: '/client/remote-access' },
-      { key: 'vmware_settings', icon: Settings2, path: '/client/vmware-settings' },
-      { key: 'vmware_pricing', icon: CreditCard, path: '/client/vmware-pricing' },
+      { key: 'integrations', icon: Blocks, path: '/client/integrations' },
+      { key: 'remote_access', icon: MonitorSmartphone, path: '/client/remote-access' },
+      { key: 'vmware_settings', icon: Wrench, path: '/client/vmware-settings' },
+      { key: 'vmware_pricing', icon: Wallet, path: '/client/vmware-pricing' },
       { key: 'vmware_console', icon: Monitor, path: '/client/vmware-console' },
-      { key: 'knowledge', icon: BookOpen, path: '/client/knowledge' },
-      { key: 'pm_tickets', icon: ClipboardList, path: '/client/pm-tickets' },
-      { key: 'solution_architecture', icon: Sparkles, path: '/client/solution-architecture' },
-      { key: 'referrals', icon: Gift, path: '/client/referrals' },
+      { key: 'knowledge', icon: BookOpenCheck, path: '/client/knowledge' },
+      { key: 'pm_tickets', icon: ListChecks, path: '/client/pm-tickets' },
+      { key: 'solution_architecture', icon: Wand2, path: '/client/solution-architecture' },
+      { key: 'referrals', icon: PartyPopper, path: '/client/referrals' },
     ],
   },
   {
     labelKey: 'sidebar.management',
     items: [
-      { key: 'team_members', icon: UsersRound, path: '/client/team' },
-      { key: 'reports', icon: BarChart3, path: '/client/reports' },
-      { key: 'sla', icon: Shield, path: '/client/sla' },
-      { key: 'activity_log', icon: Activity, path: '/client/activity-log' },
+      { key: 'team_members', icon: UserCog, path: '/client/team' },
+      { key: 'reports', icon: PieChart, path: '/client/reports' },
+      { key: 'sla', icon: ShieldCheck, path: '/client/sla' },
+      { key: 'activity_log', icon: Radio, path: '/client/activity-log' },
     ],
   },
   {
     labelKey: 'sidebar.account',
     items: [
-      { key: 'company_profile', icon: Building2, path: '/client/company' },
-      { key: 'notifications', icon: Bell, path: '/client/notifications' },
-      { key: 'settings', icon: Settings, path: '/client/settings' },
-      { key: 'support', icon: LifeBuoy, path: '/client/support' },
+      { key: 'company_profile', icon: Building, path: '/client/company' },
+      { key: 'notifications', icon: BellRing, path: '/client/notifications' },
+      { key: 'settings', icon: SlidersHorizontal, path: '/client/settings' },
+      { key: 'support', icon: HelpCircle, path: '/client/support' },
     ],
   },
 ];
@@ -105,9 +105,9 @@ const tierColors: Record<string, string> = {
   enterprise: 'bg-amber-500/10 text-amber-600',
 };
 
-const tierIcons: Record<string, typeof Sparkles> = {
-  basic: Sparkles,
-  professional: Sparkles,
+const tierIcons: Record<string, typeof Wand2> = {
+  basic: Wand2,
+  professional: Wand2,
   enterprise: Crown,
 };
 
@@ -122,7 +122,7 @@ export default function ClientSidebar() {
   const { tenant } = useTenant();
 
   const tier = tenant?.subscription_tier || 'basic';
-  const TierIcon = tierIcons[tier] || Sparkles;
+  const TierIcon = tierIcons[tier] || Wand2;
   const [profileOpen, setProfileOpen] = useState(false);
 
   return (
@@ -143,7 +143,7 @@ export default function ClientSidebar() {
           <div className="mx-3 mt-2">
             <Link to="/client/companies" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-sidebar-accent/30 hover:bg-sidebar-accent/50 transition-colors group border border-sidebar-border/20">
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Building2 className="w-4 h-4 text-primary" />
+                <Building className="w-4 h-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-xs font-semibold text-sidebar-foreground block truncate">{tenant.name}</span>

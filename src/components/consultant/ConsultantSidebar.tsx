@@ -10,8 +10,8 @@ import {
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from '@/components/ui/sidebar';
 import {
-  LayoutDashboard, Briefcase, Calendar, CreditCard, Star,
-  User, ShieldCheck, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut, ClipboardList, CheckCircle2, Server, Handshake, Gift, FileText, Clock, Gavel, BarChart3, Video, Network,
+  Gauge, Headset, CalendarClock, Wallet, StarHalf,
+  UserCircle, Fingerprint, BookOpenCheck, BellRing, SlidersHorizontal, Globe, MessagesSquare, LogOut, Rocket, CheckCircle2, MonitorSmartphone, Inbox, PartyPopper, Receipt, Timer, ShoppingBag, PieChart, VideoIcon, Workflow,
 } from 'lucide-react';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,27 +19,27 @@ import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 import logo from '@/assets/logo.png';
 
 const menuItems = [
-  { key: 'dashboard', icon: LayoutDashboard, path: '/consultant' },
-  { key: 'onboarding', icon: ClipboardList, path: '/consultant/onboarding' },
-  { key: 'cases', icon: Briefcase, path: '/consultant/cases' },
-  { key: 'requests', icon: Handshake, path: '/consultant/requests' },
-  { key: 'proposals', icon: FileText, path: '/consultant/proposals' },
-  { key: 'open_tickets', icon: Gavel, path: '/consultant/open-tickets' },
-  { key: 'work_diary', icon: Clock, path: '/consultant/work-diary' },
-  { key: 'calendar', icon: Calendar, path: '/consultant/calendar' },
-  { key: 'earnings', icon: CreditCard, path: '/consultant/earnings' },
-  { key: 'chat', icon: MessageSquare, path: '/consultant/chat' },
-  { key: 'reviews', icon: Star, path: '/consultant/reviews' },
-  { key: 'profile', icon: User, path: '/consultant/profile' },
-  { key: 'interviews', icon: Video, path: '/consultant/interviews' },
-  { key: 'verification', icon: ShieldCheck, path: '/consultant/verification' },
-  { key: 'remote_access', icon: Server, path: '/consultant/remote-access' },
-  { key: 'knowledge', icon: BookOpen, path: '/consultant/knowledge' },
-  { key: 'business_processes', icon: Network, path: '/consultant/business-processes' },
-  { key: 'reports', icon: BarChart3, path: '/consultant/reports' },
-  { key: 'referrals', icon: Gift, path: '/consultant/referrals' },
-  { key: 'notifications', icon: Bell, path: '/consultant/notifications' },
-  { key: 'settings', icon: Settings, path: '/consultant/settings' },
+  { key: 'dashboard', icon: Gauge, path: '/consultant' },
+  { key: 'onboarding', icon: Rocket, path: '/consultant/onboarding' },
+  { key: 'cases', icon: Headset, path: '/consultant/cases' },
+  { key: 'requests', icon: Inbox, path: '/consultant/requests' },
+  { key: 'proposals', icon: Receipt, path: '/consultant/proposals' },
+  { key: 'open_tickets', icon: ShoppingBag, path: '/consultant/open-tickets' },
+  { key: 'work_diary', icon: Timer, path: '/consultant/work-diary' },
+  { key: 'calendar', icon: CalendarClock, path: '/consultant/calendar' },
+  { key: 'earnings', icon: Wallet, path: '/consultant/earnings' },
+  { key: 'chat', icon: MessagesSquare, path: '/consultant/chat' },
+  { key: 'reviews', icon: StarHalf, path: '/consultant/reviews' },
+  { key: 'profile', icon: UserCircle, path: '/consultant/profile' },
+  { key: 'interviews', icon: VideoIcon, path: '/consultant/interviews' },
+  { key: 'verification', icon: Fingerprint, path: '/consultant/verification' },
+  { key: 'remote_access', icon: MonitorSmartphone, path: '/consultant/remote-access' },
+  { key: 'knowledge', icon: BookOpenCheck, path: '/consultant/knowledge' },
+  { key: 'business_processes', icon: Workflow, path: '/consultant/business-processes' },
+  { key: 'reports', icon: PieChart, path: '/consultant/reports' },
+  { key: 'referrals', icon: PartyPopper, path: '/consultant/referrals' },
+  { key: 'notifications', icon: BellRing, path: '/consultant/notifications' },
+  { key: 'settings', icon: SlidersHorizontal, path: '/consultant/settings' },
 ];
 
 
