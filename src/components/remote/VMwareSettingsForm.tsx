@@ -490,6 +490,18 @@ export default function VMwareSettingsForm({
           </Card>
         </TabsContent>
 
+        {/* Hardware Cost Calculator Tab */}
+        <TabsContent value="hardware">
+          <HardwareCostCalculator
+            readOnly={readOnly}
+            initialConfig={{
+              cpuCores: parseInt(defaultCpu) || 4,
+              ramGb: parseInt(defaultRam) || 16,
+              diskGb: parseInt(defaultDisk) || 100,
+            }}
+          />
+        </TabsContent>
+
         {/* Network Tab */}
         <TabsContent value="network">
           <Card className="rounded-2xl border-border/50">
