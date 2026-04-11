@@ -307,6 +307,12 @@ export default function NewRequestPage() {
   };
 
   const handleSubmit = async () => {
+    const result = ticketSchema.safeParse(form);
+    if (!result.success) {
+      const firstError = result.error.issues[0]?.message || 'Please fix form errors';
+      toast.error(firstError);
+      return;
+    }
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error(t('onboarding.error_auth')); return; }
