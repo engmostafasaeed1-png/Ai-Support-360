@@ -35,11 +35,11 @@ export function useAdminStats() {
         { data: payments },
         { count: pendingApprovals },
       ] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('consultants').select('*', { count: 'exact', head: true }).eq('verification_status', 'verified'),
-        supabase.from('tickets').select('*', { count: 'exact', head: true }).not('status', 'in', '("resolved","closed")'),
+        supabase.from('profiles').select('user_id', { count: 'exact', head: true }),
+        supabase.from('consultants').select('id', { count: 'exact', head: true }).eq('verification_status', 'verified'),
+        supabase.from('tickets').select('id', { count: 'exact', head: true }).not('status', 'in', '("resolved","closed")'),
         supabase.from('payments').select('amount').eq('status', 'completed'),
-        supabase.from('consultants').select('*', { count: 'exact', head: true }).eq('verification_status', 'pending'),
+        supabase.from('consultants').select('id', { count: 'exact', head: true }).eq('verification_status', 'pending'),
       ]);
 
       const revenue = (payments || []).reduce((s, p) => s + Number(p.amount), 0);
@@ -48,7 +48,7 @@ export function useAdminStats() {
       const now = new Date();
       const { count: ticketsThisMonth } = await supabase
         .from('tickets')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .gte('created_at', new Date(now.getFullYear(), now.getMonth(), 1).toISOString());
 
       // Avg satisfaction from ratings
