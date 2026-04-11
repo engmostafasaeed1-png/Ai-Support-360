@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff, Server, Cpu, Shield, Save, Cloud, Zap } from 'lucide-react';
+import { Eye, EyeOff, Server, Cpu, Shield, Save, Cloud, Zap, DollarSign } from 'lucide-react';
 import type { VMwareSettings } from '@/hooks/useVMwareSettings';
+import HardwareCostCalculator from './HardwareCostCalculator';
 
 const VENDORS = [
   { value: 'vmware', label: 'VMware vSphere', hypervisors: ['esxi', 'workstation'], icon: '🟢' },
@@ -271,7 +272,7 @@ export default function VMwareSettingsForm({
       </Card>
 
       <Tabs defaultValue="connection" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="connection" className="gap-1 text-[10px] sm:text-xs">
             <Server className="w-3.5 h-3.5" /> Connection
           </TabsTrigger>
@@ -282,6 +283,9 @@ export default function VMwareSettingsForm({
           )}
           <TabsTrigger value="vm" className="gap-1 text-[10px] sm:text-xs">
             <Cpu className="w-3.5 h-3.5" /> VM
+          </TabsTrigger>
+          <TabsTrigger value="hardware" className="gap-1 text-[10px] sm:text-xs">
+            <DollarSign className="w-3.5 h-3.5" /> Cost
           </TabsTrigger>
           <TabsTrigger value="network" className="gap-1 text-[10px] sm:text-xs">
             <Shield className="w-3.5 h-3.5" /> Network
@@ -484,6 +488,18 @@ export default function VMwareSettingsForm({
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Hardware Cost Calculator Tab */}
+        <TabsContent value="hardware">
+          <HardwareCostCalculator
+            readOnly={readOnly}
+            initialConfig={{
+              cpuCores: parseInt(defaultCpu) || 4,
+              ramGb: parseInt(defaultRam) || 16,
+              diskGb: parseInt(defaultDisk) || 100,
+            }}
+          />
         </TabsContent>
 
         {/* Network Tab */}
