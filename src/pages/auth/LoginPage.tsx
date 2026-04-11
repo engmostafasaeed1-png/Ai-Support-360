@@ -16,9 +16,6 @@ import { logAudit } from '@/lib/auditLog';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
-import PasswordInput from '@/components/auth/PasswordInput';
-import VideoBackground from '@/components/VideoBackground';
-import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
 
 export default function LoginPage() {
   const { t } = useTranslation();
