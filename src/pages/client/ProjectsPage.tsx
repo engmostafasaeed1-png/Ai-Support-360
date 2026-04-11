@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,11 +11,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   FolderKanban, Plus, Clock, Users, CalendarDays, ChevronDown, ChevronRight,
   CheckCircle2, Circle, ListTodo, Activity, Ticket, Milestone as MilestoneIcon,
-  Eye, Link2, ArrowRight
+  Eye, Link2, ArrowRight, Search, X
 } from 'lucide-react';
 
 /* ── Types ── */
@@ -25,7 +28,7 @@ interface ProjectTask {
   description?: string;
   status: string;
   priority: string;
-  assignee: string;
+  assignees: string[];
 }
 
 interface ProjectTicket {
@@ -67,6 +70,14 @@ interface Project {
   tickets: ProjectTicket[];
 }
 
+interface ClientTicketRow {
+  id: string;
+  title: string;
+  status: string;
+  urgency: string;
+  sap_module: string;
+}
+
 /* ── Initial Data ── */
 const initialProjects: Project[] = [
   {
@@ -86,16 +97,15 @@ const initialProjects: Project[] = [
       { id: 'm4', title: 'UAT & Cutover', status: 'pending', dueDate: '2025-06-01', amount: 10000 },
     ],
     tasks: [
-      { id: 't1', title: 'Configure GL accounts in S/4', status: 'done', priority: 'high', assignee: 'Ahmed' },
-      { id: 't2', title: 'Map legacy cost centers', status: 'in_progress', priority: 'medium', assignee: 'Ahmed' },
-      { id: 't3', title: 'Validate vendor master data', status: 'todo', priority: 'high', assignee: 'Unassigned' },
-      { id: 't4', title: 'Test purchase order flow', status: 'todo', priority: 'urgent', assignee: 'Unassigned' },
+      { id: 't1', title: 'Configure GL accounts in S/4', status: 'done', priority: 'high', assignees: ['Ahmed Al-Rashid'] },
+      { id: 't2', title: 'Map legacy cost centers', status: 'in_progress', priority: 'medium', assignees: ['Ahmed Al-Rashid'] },
+      { id: 't3', title: 'Validate vendor master data', status: 'todo', priority: 'high', assignees: [] },
+      { id: 't4', title: 'Test purchase order flow', status: 'todo', priority: 'urgent', assignees: [] },
     ],
     activities: [
       { id: 'a1', text: 'Ahmed completed GL account configuration', time: '2 hours ago', type: 'task' },
       { id: 'a2', text: 'Milestone "Data Migration Plan" approved', time: '1 day ago', type: 'milestone' },
       { id: 'a3', text: 'Ticket #1042 linked to project', time: '2 days ago', type: 'ticket' },
-      { id: 'a4', text: 'System Configuration milestone started', time: '3 days ago', type: 'milestone' },
     ],
     tickets: [
       {
@@ -106,10 +116,6 @@ const initialProjects: Project[] = [
         ],
       },
       { id: 'tk2', title: 'MM purchase order number range', status: 'new', urgency: 'medium', children: [] },
-      {
-        id: 'tk3', title: 'SD pricing condition mapping', status: 'under_review', urgency: 'low',
-        children: [{ id: 'tk3-c1', title: 'Discount condition type setup', status: 'new', urgency: 'low' }],
-      },
     ],
   },
   {
@@ -127,12 +133,11 @@ const initialProjects: Project[] = [
       { id: 'm6', title: 'Data Model Design', status: 'pending', dueDate: '2025-05-01', amount: 6000 },
     ],
     tasks: [
-      { id: 't5', title: 'Define KPI catalog', status: 'in_progress', priority: 'high', assignee: 'Sara' },
-      { id: 't6', title: 'Review existing BW queries', status: 'todo', priority: 'medium', assignee: 'Sara' },
+      { id: 't5', title: 'Define KPI catalog', status: 'in_progress', priority: 'high', assignees: ['Sara Mohammed'] },
+      { id: 't6', title: 'Review existing BW queries', status: 'todo', priority: 'medium', assignees: ['Sara Mohammed'] },
     ],
     activities: [
       { id: 'a5', text: 'Sara started KPI catalog definition', time: '5 hours ago', type: 'task' },
-      { id: 'a6', text: 'Project kickoff meeting completed', time: '1 day ago', type: 'milestone' },
     ],
     tickets: [],
   },
@@ -154,6 +159,16 @@ const initialProjects: Project[] = [
     activities: [{ id: 'a7', text: 'Project completed and closed', time: '3 months ago', type: 'milestone' }],
     tickets: [],
   },
+];
+
+/* ── Available consultants for assignment ── */
+const availableConsultants = [
+  'Ahmed Al-Rashid',
+  'Sara Mohammed',
+  'Omar Khaled',
+  'Fatima Hassan',
+  'Khalid Ibrahim',
+  'Noura Al-Salem',
 ];
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -199,12 +214,57 @@ export default function ProjectsPage() {
   // Add Task dialog state
   const [addTaskOpen, setAddTaskOpen] = useState(false);
   const [addTaskProjectId, setAddTaskProjectId] = useState('');
-  const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium', assignee: '' });
+  const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium' });
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
 
   // Assign Ticket dialog state
   const [assignTicketOpen, setAssignTicketOpen] = useState(false);
   const [assignTicketProjectId, setAssignTicketProjectId] = useState('');
-  const [newTicket, setNewTicket] = useState({ title: '', urgency: 'medium' });
+  const [clientTickets, setClientTickets] = useState<ClientTicketRow[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [selectedTicketIds, setSelectedTicketIds] = useState<string[]>([]);
+  const [ticketSearch, setTicketSearch] = useState('');
+
+  // Fetch client tickets when assign dialog opens
+  useEffect(() => {
+    if (!assignTicketOpen) return;
+    const fetchTickets = async () => {
+      setTicketsLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data, error } = await supabase
+          .from('tickets')
+          .select('id, title, status, urgency, sap_module')
+          .eq('client_id', user.id)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        setClientTickets((data || []).map(t => ({
+          ...t,
+          status: t.status || 'new',
+          urgency: t.urgency || 'medium',
+          sap_module: t.sap_module || '',
+        })));
+      } catch {
+        setClientTickets([]);
+      } finally {
+        setTicketsLoading(false);
+      }
+    };
+    fetchTickets();
+  }, [assignTicketOpen]);
+
+  const toggleAssignee = (name: string) => {
+    setSelectedAssignees(prev =>
+      prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
+    );
+  };
+
+  const toggleTicketSelection = (id: string) => {
+    setSelectedTicketIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
 
   const handleAddTask = () => {
     if (!newTask.title.trim()) { toast.error('Task title is required'); return; }
@@ -216,39 +276,50 @@ export default function ProjectsPage() {
         description: newTask.description,
         status: 'todo',
         priority: newTask.priority,
-        assignee: newTask.assignee || 'Unassigned',
+        assignees: selectedAssignees.length > 0 ? [...selectedAssignees] : [],
       };
+      const assigneeText = task.assignees.length > 0 ? ` → ${task.assignees.join(', ')}` : '';
       return {
         ...p,
         tasks: [...p.tasks, task],
-        activities: [{ id: `a-${Date.now()}`, text: `Task "${task.title}" added`, time: 'Just now', type: 'task' }, ...p.activities],
+        activities: [{ id: `a-${Date.now()}`, text: `Task "${task.title}" added${assigneeText}`, time: 'Just now', type: 'task' }, ...p.activities],
       };
     }));
-    setNewTask({ title: '', description: '', priority: 'medium', assignee: '' });
+    setNewTask({ title: '', description: '', priority: 'medium' });
+    setSelectedAssignees([]);
     setAddTaskOpen(false);
     toast.success('Task added successfully');
   };
 
-  const handleAssignTicket = () => {
-    if (!newTicket.title.trim()) { toast.error('Ticket title is required'); return; }
+  const handleAssignTickets = () => {
+    // Get already assigned ticket IDs for this project
+    const project = projects.find(p => p.id === assignTicketProjectId);
+    const alreadyAssigned = new Set(project?.tickets.map(t => t.id) || []);
+
+    const ticketsToAdd = clientTickets.filter(t => selectedTicketIds.includes(t.id) && !alreadyAssigned.has(t.id));
+    if (ticketsToAdd.length === 0) { toast.error('No new tickets selected'); return; }
+
     setProjects(prev => prev.map(p => {
       if (p.id !== assignTicketProjectId) return p;
-      const ticket: ProjectTicket = {
-        id: `tk-${Date.now()}`,
-        title: newTicket.title.trim(),
-        status: 'new',
-        urgency: newTicket.urgency,
+      const newTickets: ProjectTicket[] = ticketsToAdd.map(t => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        urgency: t.urgency,
         children: [],
-      };
+      }));
       return {
         ...p,
-        tickets: [...p.tickets, ticket],
-        activities: [{ id: `a-${Date.now()}`, text: `Ticket "${ticket.title}" assigned to project`, time: 'Just now', type: 'ticket' }, ...p.activities],
+        tickets: [...p.tickets, ...newTickets],
+        activities: [
+          { id: `a-${Date.now()}`, text: `${newTickets.length} ticket(s) assigned to project`, time: 'Just now', type: 'ticket' },
+          ...p.activities,
+        ],
       };
     }));
-    setNewTicket({ title: '', urgency: 'medium' });
+    setSelectedTicketIds([]);
     setAssignTicketOpen(false);
-    toast.success('Ticket assigned to project');
+    toast.success(`${ticketsToAdd.length} ticket(s) assigned`);
   };
 
   const totalTasks = projects.reduce((s, p) => s + p.tasks.length, 0);
@@ -260,6 +331,16 @@ export default function ProjectsPage() {
     { label: 'Total Tasks', value: String(totalTasks), color: 'text-amber-500' },
     { label: 'Open Tickets', value: String(totalTickets), color: 'text-blue-500' },
   ];
+
+  const filteredClientTickets = clientTickets.filter(t =>
+    t.title.toLowerCase().includes(ticketSearch.toLowerCase()) ||
+    t.sap_module.toLowerCase().includes(ticketSearch.toLowerCase())
+  );
+
+  // Already assigned ticket IDs for current project
+  const currentProjectTicketIds = new Set(
+    projects.find(p => p.id === assignTicketProjectId)?.tickets.map(t => t.id) || []
+  );
 
   return (
     <div className="space-y-6">
@@ -353,10 +434,8 @@ export default function ProjectsPage() {
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-xs text-muted-foreground">{project.tasks.filter(t => t.status === 'done').length} of {project.tasks.length} completed</p>
                           <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs gap-1"
-                            onClick={(e) => { e.stopPropagation(); setAddTaskProjectId(project.id); setAddTaskOpen(true); }}
+                            variant="outline" size="sm" className="h-7 text-xs gap-1"
+                            onClick={(e) => { e.stopPropagation(); setAddTaskProjectId(project.id); setSelectedAssignees([]); setAddTaskOpen(true); }}
                           >
                             <Plus className="w-3 h-3" /> Add Task
                           </Button>
@@ -370,7 +449,17 @@ export default function ProjectsPage() {
                                 {taskStatusIcon[task.status]}
                                 <span className="text-sm flex-1 truncate">{task.title}</span>
                                 <Badge variant="outline" className={`text-[10px] ${priorityBadge[task.priority]}`}>{task.priority}</Badge>
-                                <span className="text-xs text-muted-foreground hidden sm:inline">{task.assignee}</span>
+                                <div className="flex items-center gap-1 hidden sm:flex">
+                                  {task.assignees.length === 0 ? (
+                                    <span className="text-xs text-muted-foreground">Unassigned</span>
+                                  ) : (
+                                    <div className="flex flex-wrap gap-1">
+                                      {task.assignees.map(a => (
+                                        <Badge key={a} variant="secondary" className="text-[9px] px-1.5 py-0">{a.split(' ')[0]}</Badge>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -382,10 +471,8 @@ export default function ProjectsPage() {
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-xs text-muted-foreground">{project.tickets.length} tickets assigned</p>
                           <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs gap-1"
-                            onClick={(e) => { e.stopPropagation(); setAssignTicketProjectId(project.id); setAssignTicketOpen(true); }}
+                            variant="outline" size="sm" className="h-7 text-xs gap-1"
+                            onClick={(e) => { e.stopPropagation(); setAssignTicketProjectId(project.id); setSelectedTicketIds([]); setTicketSearch(''); setAssignTicketOpen(true); }}
                           >
                             <Link2 className="w-3 h-3" /> Assign Ticket
                           </Button>
@@ -397,7 +484,7 @@ export default function ProjectsPage() {
                             {project.tickets.map(ticket => (
                               <div key={ticket.id} className="rounded-lg border border-border/50 overflow-hidden">
                                 <div className="flex items-center gap-3 px-3 py-2.5 bg-muted/20">
-                                  <span className={`w-2 h-2 rounded-full shrink-0 ${urgencyDot[ticket.urgency]}`} />
+                                  <span className={`w-2 h-2 rounded-full shrink-0 ${urgencyDot[ticket.urgency] || 'bg-muted-foreground'}`} />
                                   <span className="text-sm font-medium flex-1 truncate">{ticket.title}</span>
                                   <Badge variant="outline" className="text-[10px]">{ticket.status.replace('_', ' ')}</Badge>
                                 </div>
@@ -406,7 +493,7 @@ export default function ProjectsPage() {
                                     {ticket.children.map(child => (
                                       <div key={child.id} className="flex items-center gap-3 px-3 py-2 pl-8 text-xs border-b border-border/20 last:border-0">
                                         <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${urgencyDot[child.urgency]}`} />
+                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${urgencyDot[child.urgency] || 'bg-muted-foreground'}`} />
                                         <span className="flex-1 truncate text-muted-foreground">{child.title}</span>
                                         <Badge variant="outline" className="text-[9px]">{child.status.replace('_', ' ')}</Badge>
                                       </div>
@@ -465,9 +552,9 @@ export default function ProjectsPage() {
         })}
       </div>
 
-      {/* Add Task Dialog */}
+      {/* Add Task Dialog — with multi-consultant assignment */}
       <Dialog open={addTaskOpen} onOpenChange={setAddTaskOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Add Task</DialogTitle>
           </DialogHeader>
@@ -486,29 +573,46 @@ export default function ProjectsPage() {
                 placeholder="Task description (optional)"
                 value={newTask.description}
                 onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
-                rows={3}
+                rows={2}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Priority</Label>
-                <Select value={newTask.priority} onValueChange={(v) => setNewTask(prev => ({ ...prev, priority: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="urgent">Urgent</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Assignee</Label>
-                <Input
-                  placeholder="Assignee name"
-                  value={newTask.assignee}
-                  onChange={(e) => setNewTask(prev => ({ ...prev, assignee: e.target.value }))}
-                />
+            <div className="space-y-2">
+              <Label>Priority</Label>
+              <Select value={newTask.priority} onValueChange={(v) => setNewTask(prev => ({ ...prev, priority: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Assign Consultants</Label>
+              {selectedAssignees.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {selectedAssignees.map(a => (
+                    <Badge key={a} variant="secondary" className="text-xs gap-1 pr-1">
+                      {a}
+                      <button onClick={() => toggleAssignee(a)} className="ml-1 hover:text-destructive">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <div className="border rounded-lg divide-y divide-border/50 max-h-40 overflow-y-auto">
+                {availableConsultants.map(name => (
+                  <label key={name} className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer text-sm">
+                    <Checkbox
+                      checked={selectedAssignees.includes(name)}
+                      onCheckedChange={() => toggleAssignee(name)}
+                    />
+                    <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                    {name}
+                  </label>
+                ))}
               </div>
             </div>
           </div>
@@ -519,37 +623,72 @@ export default function ProjectsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Assign Ticket Dialog */}
+      {/* Assign Ticket Dialog — shows all client tickets */}
       <Dialog open={assignTicketOpen} onOpenChange={setAssignTicketOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Assign Ticket to Project</DialogTitle>
+            <DialogTitle>Assign Tickets to Project</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Ticket Title *</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Enter ticket title..."
-                value={newTicket.title}
-                onChange={(e) => setNewTicket(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Search tickets..."
+                className="pl-9"
+                value={ticketSearch}
+                onChange={(e) => setTicketSearch(e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Urgency</Label>
-              <Select value={newTicket.urgency} onValueChange={(v) => setNewTicket(prev => ({ ...prev, urgency: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
+            {selectedTicketIds.length > 0 && (
+              <p className="text-xs text-muted-foreground">{selectedTicketIds.length} ticket(s) selected</p>
+            )}
+
+            <ScrollArea className="h-[300px] border rounded-lg">
+              {ticketsLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Clock className="w-5 h-5 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-sm text-muted-foreground">Loading tickets...</span>
+                </div>
+              ) : filteredClientTickets.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-10">
+                  {clientTickets.length === 0 ? 'No tickets found. Create a ticket first.' : 'No tickets match your search.'}
+                </p>
+              ) : (
+                <div className="divide-y divide-border/50">
+                  {filteredClientTickets.map(ticket => {
+                    const isAlreadyAssigned = currentProjectTicketIds.has(ticket.id);
+                    const isSelected = selectedTicketIds.includes(ticket.id);
+                    return (
+                      <label
+                        key={ticket.id}
+                        className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${isAlreadyAssigned ? 'opacity-50 cursor-not-allowed bg-muted/30' : 'hover:bg-muted/50'}`}
+                      >
+                        <Checkbox
+                          checked={isSelected || isAlreadyAssigned}
+                          disabled={isAlreadyAssigned}
+                          onCheckedChange={() => !isAlreadyAssigned && toggleTicketSelection(ticket.id)}
+                        />
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${urgencyDot[ticket.urgency] || 'bg-muted-foreground'}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm truncate">{ticket.title}</p>
+                          <p className="text-[10px] text-muted-foreground">{ticket.sap_module} • {ticket.status.replace('_', ' ')}</p>
+                        </div>
+                        {isAlreadyAssigned && (
+                          <Badge variant="outline" className="text-[9px] text-muted-foreground">Assigned</Badge>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </ScrollArea>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignTicketOpen(false)}>Cancel</Button>
-            <Button onClick={handleAssignTicket}>Assign Ticket</Button>
+            <Button onClick={handleAssignTickets} disabled={selectedTicketIds.length === 0}>
+              Assign {selectedTicketIds.length > 0 ? `(${selectedTicketIds.length})` : ''}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
