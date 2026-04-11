@@ -194,6 +194,7 @@ export default function AIChatbot() {
           )}
           <button
             onClick={() => { setIsOpen(true); setShowPulse(false); }}
+            aria-label="Open AI support chat"
             className="relative w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center group"
           >
             <Sparkles className="w-6 h-6 group-hover:rotate-12 transition-transform" />
@@ -209,6 +210,9 @@ export default function AIChatbot() {
 
       {isOpen && (
         <div
+          role="dialog"
+          aria-label="AI Support Chat"
+          aria-modal="true"
           className="fixed bottom-0 end-0 sm:bottom-6 sm:end-6 z-50 w-full sm:w-[380px] h-[100dvh] sm:h-[560px] sm:rounded-2xl bg-background border border-border/60 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-200"
           onMouseMove={resetChatIdle}
           onClick={resetChatIdle}
@@ -254,7 +258,7 @@ export default function AIChatbot() {
                   <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
               )}
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setIsOpen(false); setShowHistory(false); }}>
+              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Close chat" onClick={() => { setIsOpen(false); setShowHistory(false); }}>
                 <X className="w-4 h-4 text-muted-foreground" />
               </Button>
             </div>
@@ -333,7 +337,7 @@ export default function AIChatbot() {
           ) : (
             <>
               {/* Messages */}
-              <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+              <div ref={scrollRef} aria-live="polite" aria-atomic="false" className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
                 {messages.length === 0 && (
                   <div className="text-center pt-8 space-y-4">
                     <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
@@ -445,12 +449,14 @@ export default function AIChatbot() {
                     value={input}
                     onChange={(e) => { setInput(e.target.value); resetChatIdle(); }}
                     placeholder={t('chatbot.placeholder')}
+                    aria-label="Type your message"
                     className="flex-1 h-10 rounded-xl text-sm bg-muted/30 border-border/30"
                     disabled={isLoading}
                   />
                   <Button
                     type="submit"
                     size="icon"
+                    aria-label="Send message"
                     className="h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 shrink-0"
                     disabled={!input.trim() || isLoading}
                   >
