@@ -405,6 +405,105 @@ export default function InvoicesPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Create Invoice Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-primary" /> Create Invoice
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Ticket Selection */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Link to Ticket</Label>
+              <Select value={createForm.ticket_id} onValueChange={handleTicketSelect}>
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue placeholder="Select a ticket to auto-fill details..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {(tickets || []).map((t: any) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      <div className="flex items-center gap-2">
+                        <span className="truncate">{t.title}</span>
+                        <Badge variant="outline" className="text-[9px] shrink-0">{t.sap_module}</Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Auto-filled ticket info */}
+            {selectedTicket && (
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-sm space-y-1">
+                <p className="text-xs font-semibold text-primary uppercase">Ticket Details</p>
+                <p className="font-medium text-foreground">{selectedTicket.title}</p>
+                <div className="flex gap-1.5 flex-wrap">
+                  <Badge variant="secondary" className="text-[10px]">{selectedTicket.sap_module}</Badge>
+                  <Badge variant="outline" className="text-[10px]">{selectedTicket.urgency}</Badge>
+                  <Badge variant="outline" className="text-[10px]">{selectedTicket.status}</Badge>
+                  {selectedTicket.consultant && <Badge className="text-[10px] bg-accent/10 text-accent border-0">{selectedTicket.consultant}</Badge>}
+                </div>
+              </div>
+            )}
+
+            {/* Amount & Currency */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Amount *</Label>
+                <Input type="number" placeholder="0.00" value={createForm.amount} onChange={e => setCreateForm(f => ({ ...f, amount: e.target.value }))} className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Currency</Label>
+                <Select value={createForm.currency} onValueChange={v => setCreateForm(f => ({ ...f, currency: v }))}>
+                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="SAR">SAR</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="GBP">GBP</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* VAT & Due Date */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">VAT Amount</Label>
+                <Input type="number" placeholder="0.00" value={createForm.vat} onChange={e => setCreateForm(f => ({ ...f, vat: e.target.value }))} className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Due Date</Label>
+                <Input type="date" value={createForm.due_date} onChange={e => setCreateForm(f => ({ ...f, due_date: e.target.value }))} className="rounded-xl" />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Description</Label>
+              <Textarea placeholder="Invoice description (auto-filled from ticket)..." value={createForm.description} onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))} className="rounded-xl min-h-[80px]" />
+            </div>
+
+            {/* Total preview */}
+            {createForm.amount && (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/50">
+                <span className="text-sm text-muted-foreground">Total</span>
+                <span className="text-lg font-bold text-foreground">
+                  {fmt(Number(createForm.amount) + Number(createForm.vat || 0), createForm.currency)}
+                </span>
+              </div>
+            )}
+
+            <Button className="w-full gap-1.5 gradient-primary border-0" onClick={handleCreateInvoice} disabled={creating}>
+              {creating ? <Clock className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              {creating ? 'Creating...' : 'Create Invoice'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
