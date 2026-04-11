@@ -1,4 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+type PaymentInsert = Database['public']['Tables']['payments']['Insert'];
 
 export const paymentsApi = {
   getByClient: (clientId: string) =>
@@ -10,6 +13,6 @@ export const paymentsApi = {
   getById: (id: string) =>
     supabase.from('payments').select('*').eq('id', id).single(),
 
-  create: (data: Record<string, unknown>) =>
+  create: (data: PaymentInsert) =>
     supabase.from('payments').insert(data).select().single(),
 };

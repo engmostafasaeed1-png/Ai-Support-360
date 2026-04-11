@@ -1,4 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+type SessionInsert = Database['public']['Tables']['sessions']['Insert'];
+type SessionStatus = Database['public']['Tables']['sessions']['Row']['status'];
 
 export const sessionsApi = {
   getByClient: (clientId: string) =>
@@ -10,9 +14,9 @@ export const sessionsApi = {
   getById: (id: string) =>
     supabase.from('sessions').select('*').eq('id', id).single(),
 
-  create: (data: Record<string, unknown>) =>
+  create: (data: SessionInsert) =>
     supabase.from('sessions').insert(data).select().single(),
 
-  updateStatus: (id: string, status: string) =>
+  updateStatus: (id: string, status: SessionStatus) =>
     supabase.from('sessions').update({ status }).eq('id', id),
 };

@@ -1,4 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+type TicketInsert = Database['public']['Tables']['tickets']['Insert'];
+type TicketStatus = Database['public']['Tables']['tickets']['Row']['status'];
 
 export const ticketsApi = {
   getByClient: (clientId: string) =>
@@ -10,10 +14,10 @@ export const ticketsApi = {
   getById: (id: string) =>
     supabase.from('tickets').select('*').eq('id', id).single(),
 
-  create: (data: Record<string, unknown>) =>
+  create: (data: TicketInsert) =>
     supabase.from('tickets').insert(data).select().single(),
 
-  updateStatus: (id: string, status: string) =>
+  updateStatus: (id: string, status: TicketStatus) =>
     supabase.from('tickets').update({ status, updated_at: new Date().toISOString() }).eq('id', id),
 
   delete: (id: string) =>
