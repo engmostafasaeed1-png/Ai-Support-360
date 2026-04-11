@@ -2432,6 +2432,47 @@ export type Database = {
           },
         ]
       }
+      proposal_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          mime_type: string | null
+          proposal_id: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          proposal_id: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          proposal_id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_attachments_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposals: {
         Row: {
           client_notes: string | null
@@ -2440,11 +2481,13 @@ export type Database = {
           created_at: string
           estimated_hours: number | null
           id: string
+          parent_proposal_id: string | null
           proposed_rate: number
           status: Database["public"]["Enums"]["proposal_status"]
           ticket_id: string
           timeline_days: number | null
           updated_at: string
+          version: number
         }
         Insert: {
           client_notes?: string | null
@@ -2453,11 +2496,13 @@ export type Database = {
           created_at?: string
           estimated_hours?: number | null
           id?: string
+          parent_proposal_id?: string | null
           proposed_rate?: number
           status?: Database["public"]["Enums"]["proposal_status"]
           ticket_id: string
           timeline_days?: number | null
           updated_at?: string
+          version?: number
         }
         Update: {
           client_notes?: string | null
@@ -2466,11 +2511,13 @@ export type Database = {
           created_at?: string
           estimated_hours?: number | null
           id?: string
+          parent_proposal_id?: string | null
           proposed_rate?: number
           status?: Database["public"]["Enums"]["proposal_status"]
           ticket_id?: string
           timeline_days?: number | null
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -2478,6 +2525,13 @@ export type Database = {
             columns: ["consultant_id"]
             isOneToOne: false
             referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_parent_proposal_id_fkey"
+            columns: ["parent_proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
             referencedColumns: ["id"]
           },
           {
