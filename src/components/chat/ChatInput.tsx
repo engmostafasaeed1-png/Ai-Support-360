@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Send, Paperclip, X, Image as ImageIcon, File } from 'lucide-react';
+import VoiceInput from '@/components/ui/voice-input';
 
 interface ChatInputProps {
   onSend: (content: string) => void;
@@ -116,6 +117,11 @@ export default function ChatInput({ onSend, onTyping, onFileUpload, disabled }: 
             t.style.height = 'auto';
             t.style.height = Math.min(t.scrollHeight, 120) + 'px';
           }}
+        />
+
+        <VoiceInput
+          onTranscript={(t) => setText(t)}
+          disabled={disabled}
         />
 
         <Button
