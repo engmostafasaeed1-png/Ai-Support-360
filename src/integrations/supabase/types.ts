@@ -4440,7 +4440,12 @@ export type Database = {
       assignment_status: "active" | "completed" | "removed"
       assignment_work_mode: "collaborative" | "individual"
       availability_status: "available" | "busy" | "offline"
-      environment_status: "active" | "inactive" | "maintenance"
+      environment_status:
+        | "active"
+        | "inactive"
+        | "maintenance"
+        | "hold"
+        | "cancelled"
       escrow_status:
         | "unfunded"
         | "funded"
@@ -4628,7 +4633,13 @@ export const Constants = {
       assignment_status: ["active", "completed", "removed"],
       assignment_work_mode: ["collaborative", "individual"],
       availability_status: ["available", "busy", "offline"],
-      environment_status: ["active", "inactive", "maintenance"],
+      environment_status: [
+        "active",
+        "inactive",
+        "maintenance",
+        "hold",
+        "cancelled",
+      ],
       escrow_status: [
         "unfunded",
         "funded",
