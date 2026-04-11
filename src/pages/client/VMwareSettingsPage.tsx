@@ -121,6 +121,52 @@ export default function ClientVMwareSettingsPage() {
                 </Card>
               );
             })}
+
+            {/* Pay as you go card */}
+            <Card className="rounded-2xl border-border/50">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold">Pay as you go</span>
+                  <Badge variant="outline" className="text-[9px]">No commitment</Badge>
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-tight">No monthly fee — pay only for what you use.</p>
+
+                <div className="space-y-1 py-2 border-y border-border/40">
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <Cpu className="w-3 h-3" /> $0.05 /vCPU/hr
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <MemoryStick className="w-3 h-3" /> $0.01 /GB RAM/hr
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <HardDrive className="w-3 h-3" /> $0.0005 /GB Disk/hr
+                  </div>
+                </div>
+
+                <ul className="space-y-1">
+                  <li className="flex items-start gap-1.5 text-[10px]">
+                    <Check className="w-3 h-3 text-emerald-500 shrink-0 mt-0.5" /> Per-second billing
+                  </li>
+                  <li className="flex items-start gap-1.5 text-[10px]">
+                    <Check className="w-3 h-3 text-emerald-500 shrink-0 mt-0.5" /> No minimum spend
+                  </li>
+                  <li className="flex items-start gap-1.5 text-[10px]">
+                    <Check className="w-3 h-3 text-emerald-500 shrink-0 mt-0.5" /> Auto-scale resources
+                  </li>
+                </ul>
+
+                <Button
+                  size="sm"
+                  className="w-full text-xs h-8"
+                  variant="secondary"
+                  disabled={subscribe.isPending}
+                  onClick={() => subscribe.mutate({ plan_id: 'payg', environment_id: selectedEnvId || undefined, billing_cycle: 'payg' })}
+                >
+                  Enable Pay as you go
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
