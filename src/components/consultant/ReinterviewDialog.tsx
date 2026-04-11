@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Bot, MapPin, Video, Loader2 } from 'lucide-react';
+import TimeSlotPicker, { type ProposedSlot } from '@/components/ui/TimeSlotPicker';
+import { format } from 'date-fns';
 
 interface Props {
   open: boolean;
@@ -29,12 +31,27 @@ export default function ReinterviewDialog({ open, onOpenChange, consultantId, co
   const [selectedType, setSelectedType] = useState<'ai' | 'physical' | 'online'>('ai');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [proposedSlots, setProposedSlots] = useState<ProposedSlot[]>([]);
+
+  const needsScheduling = selectedType === 'physical' || selectedType === 'online';
 
   const handleSubmit = async () => {
+    if (needsScheduling && proposedSlots.length === 0) {
+      toast.error(t('interview.select_time_slots', 'Please propose at least one time slot'));
+      return;
+    }
+
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+
+      // Format proposed slots for storage
+      const slotsData = proposedSlots.map(s => ({
+        date: format(s.date, 'yyyy-MM-dd'),
+        start_time: s.startTime,
+        end_time: s.endTime,
+      }));
 
       // Create interview session
       const { data: session, error: sessionError } = await supabase
@@ -45,6 +62,7 @@ export default function ReinterviewDialog({ open, onOpenChange, consultantId, co
           interview_type: selectedType,
           requested_by: user.id,
           ai_summary: notes || null,
+          skill_results: needsScheduling ? { proposed_slots: slotsData } : null,
         } as any)
         .select('id')
         .single();
@@ -60,18 +78,42 @@ export default function ReinterviewDialog({ open, onOpenChange, consultantId, co
 
       if (consultant?.user_id) {
         const typeLabel = t(`interview.type_${selectedType}`, selectedType);
+        const slotsText = proposedSlots.length > 0
+          ? ` Proposed times: ${proposedSlots.map(s => `${format(s.date, 'MMM d')} ${s.startTime}-${s.endTime}`).join(', ')}`
+          : '';
         await supabase.from('notifications').insert({
           user_id: consultant.user_id,
           title: t('interview.reinterview_requested', 'Re-Interview Requested'),
-          body: t('interview.reinterview_body', `You have been requested for a ${typeLabel} re-interview.`, { type: typeLabel }),
+          body: t('interview.reinterview_body', `You have been requested for a ${typeLabel} re-interview.${slotsText}`, { type: typeLabel }),
           type: 'interview',
           link: '/consultant/interviews',
         });
       }
 
+      // Notify admins about the scheduling request
+      if (needsScheduling) {
+        const { data: admins } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'admin');
+
+        if (admins) {
+          for (const admin of admins) {
+            await supabase.from('notifications').insert({
+              user_id: admin.user_id,
+              title: 'Interview Scheduling Request',
+              body: `A ${selectedType} re-interview has been requested for ${consultantName || 'a consultant'} with ${proposedSlots.length} proposed time slot(s).`,
+              type: 'interview',
+              link: '/admin/tickets',
+            });
+          }
+        }
+      }
+
       toast.success(t('interview.reinterview_sent', 'Re-interview request sent'));
       setNotes('');
       setSelectedType('ai');
+      setProposedSlots([]);
       onOpenChange(false);
     } catch (err: any) {
       toast.error(err.message || 'Failed to request re-interview');
@@ -82,7 +124,7 @@ export default function ReinterviewDialog({ open, onOpenChange, consultantId, co
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('interview.request_reinterview', 'Request Re-Interview')}</DialogTitle>
           <DialogDescription>
@@ -100,7 +142,10 @@ export default function ReinterviewDialog({ open, onOpenChange, consultantId, co
                 <button
                   key={type.value}
                   type="button"
-                  onClick={() => setSelectedType(type.value)}
+                  onClick={() => {
+                    setSelectedType(type.value);
+                    if (type.value === 'ai') setProposedSlots([]);
+                  }}
                   className={cn(
                     'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
                     selectedType === type.value
@@ -115,6 +160,15 @@ export default function ReinterviewDialog({ open, onOpenChange, consultantId, co
               ))}
             </div>
           </div>
+
+          {/* Time Slot Picker for physical/online */}
+          {needsScheduling && (
+            <TimeSlotPicker
+              slots={proposedSlots}
+              onChange={setProposedSlots}
+              maxSlots={5}
+            />
+          )}
 
           <div className="space-y-1.5">
             <Label>{t('interview.notes', 'Notes (optional)')}</Label>

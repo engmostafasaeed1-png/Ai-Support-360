@@ -8,12 +8,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import {
   Video, Calendar, Clock, CheckCircle2, AlertTriangle, Play, X,
   Brain, Eye, Shield, FileText, MessageSquare, Loader2, UserCheck,
+  Bot, MapPin,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
+import TimeSlotPicker, { type ProposedSlot } from '@/components/ui/TimeSlotPicker';
 
 interface Props {
   ticketId: string;
@@ -32,6 +36,12 @@ const statusConfig: Record<string, { color: string; icon: typeof Clock; label: s
   cancelled: { color: 'bg-muted text-muted-foreground', icon: X, label: 'Cancelled' },
 };
 
+const interviewTypes = [
+  { value: 'ai' as const, icon: Bot, label: 'AI Interview', desc: 'Automated AI assessment' },
+  { value: 'physical' as const, icon: MapPin, label: 'Physical', desc: 'In-person meeting' },
+  { value: 'online' as const, icon: Video, label: 'Online', desc: 'Video call interview' },
+];
+
 export default function TicketInterview({ ticketId, consultantId, clientId, isClient, isConsultant, consultantName }: Props) {
   const qc = useQueryClient();
   const [requestOpen, setRequestOpen] = useState(false);
@@ -39,6 +49,10 @@ export default function TicketInterview({ ticketId, consultantId, clientId, isCl
   const [reportOpen, setReportOpen] = useState(false);
   const [notes, setNotes] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
+  const [interviewType, setInterviewType] = useState<'ai' | 'physical' | 'online'>('ai');
+  const [proposedSlots, setProposedSlots] = useState<ProposedSlot[]>([]);
+
+  const needsScheduling = interviewType === 'physical' || interviewType === 'online';
 
   const { data: userId } = useQuery({
     queryKey: ['current-user-id-interview'],
@@ -67,6 +81,13 @@ export default function TicketInterview({ ticketId, consultantId, clientId, isCl
   const requestMutation = useMutation({
     mutationFn: async () => {
       if (!consultantId || !userId) throw new Error('Missing data');
+
+      const slotsData = proposedSlots.map(s => ({
+        date: format(s.date, 'yyyy-MM-dd'),
+        start_time: s.startTime,
+        end_time: s.endTime,
+      }));
+
       const roomId = `interview-${ticketId}-${Date.now()}`;
       const { error } = await supabase.from('ticket_interviews').insert({
         ticket_id: ticketId,
@@ -76,12 +97,38 @@ export default function TicketInterview({ ticketId, consultantId, clientId, isCl
         client_notes: notes || null,
       });
       if (error) throw error;
+
+      // Notify admins if scheduling is needed
+      if (needsScheduling && proposedSlots.length > 0) {
+        const { data: admins } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'admin');
+
+        if (admins) {
+          const slotsText = proposedSlots.map(s =>
+            `${format(s.date, 'MMM d')} ${s.startTime}-${s.endTime}`
+          ).join(', ');
+
+          for (const admin of admins) {
+            await supabase.from('notifications').insert({
+              user_id: admin.user_id,
+              title: `${interviewType === 'physical' ? 'Physical' : 'Online'} Interview Request`,
+              body: `Client requested a ${interviewType} interview with ${consultantName || 'consultant'} for ticket. Proposed times: ${slotsText}`,
+              type: 'interview',
+              link: '/admin/tickets',
+            });
+          }
+        }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ticket-interviews', ticketId] });
       toast.success('Interview requested! The consultant will be notified.');
       setRequestOpen(false);
       setNotes('');
+      setInterviewType('ai');
+      setProposedSlots([]);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -347,8 +394,9 @@ export default function TicketInterview({ ticketId, consultantId, clientId, isCl
         );
       })}
 
+      {/* Request Interview Dialog */}
       <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Video className="w-5 h-5 text-primary" /> Request Pre-Work Interview
@@ -356,9 +404,45 @@ export default function TicketInterview({ ticketId, consultantId, clientId, isCl
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <p className="text-sm text-muted-foreground">
-              Schedule a video interview with {consultantName || 'the assigned consultant'} before starting work.
-              AI will analyze the session and provide recommendations.
+              Schedule an interview with {consultantName || 'the assigned consultant'} before starting work.
             </p>
+
+            {/* Interview Type Selection */}
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Interview Type</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {interviewTypes.map(type => (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => {
+                      setInterviewType(type.value);
+                      if (type.value === 'ai') setProposedSlots([]);
+                    }}
+                    className={cn(
+                      'flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center',
+                      interviewType === type.value
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-muted-foreground/30'
+                    )}
+                  >
+                    <type.icon className={cn('w-5 h-5', interviewType === type.value ? 'text-primary' : 'text-muted-foreground')} />
+                    <span className="text-[11px] font-medium">{type.label}</span>
+                    <span className="text-[9px] text-muted-foreground leading-tight">{type.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Time Slot Picker for physical/online */}
+            {needsScheduling && (
+              <TimeSlotPicker
+                slots={proposedSlots}
+                onChange={setProposedSlots}
+                maxSlots={5}
+              />
+            )}
+
             <div className="space-y-1.5">
               <Label>Notes for the Consultant (optional)</Label>
               <Textarea
@@ -368,20 +452,30 @@ export default function TicketInterview({ ticketId, consultantId, clientId, isCl
                 rows={3}
               />
             </div>
-            <div className="p-3 rounded-lg bg-muted/20 space-y-1.5">
-              <p className="text-xs font-semibold">Interview includes:</p>
-              <div className="grid grid-cols-2 gap-1.5 text-[11px] text-muted-foreground">
-                <span className="flex items-center gap-1"><Video className="w-3 h-3" /> HD Video Call</span>
-                <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Live Chat</span>
-                <span className="flex items-center gap-1"><Brain className="w-3 h-3" /> AI Transcript</span>
-                <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> Body Language Analysis</span>
-                <span className="flex items-center gap-1"><UserCheck className="w-3 h-3" /> Identity Verification</span>
-                <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> AI Recommendations</span>
+
+            {interviewType === 'ai' && (
+              <div className="p-3 rounded-lg bg-muted/20 space-y-1.5">
+                <p className="text-xs font-semibold">AI Interview includes:</p>
+                <div className="grid grid-cols-2 gap-1.5 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1"><Video className="w-3 h-3" /> HD Video Call</span>
+                  <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Live Chat</span>
+                  <span className="flex items-center gap-1"><Brain className="w-3 h-3" /> AI Transcript</span>
+                  <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> Body Language Analysis</span>
+                  <span className="flex items-center gap-1"><UserCheck className="w-3 h-3" /> Identity Verification</span>
+                  <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> AI Recommendations</span>
+                </div>
               </div>
-            </div>
+            )}
+
             <Button
               className="w-full gap-1.5"
-              onClick={() => requestMutation.mutate()}
+              onClick={() => {
+                if (needsScheduling && proposedSlots.length === 0) {
+                  toast.error('Please propose at least one time slot');
+                  return;
+                }
+                requestMutation.mutate();
+              }}
               disabled={requestMutation.isPending}
             >
               {requestMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
