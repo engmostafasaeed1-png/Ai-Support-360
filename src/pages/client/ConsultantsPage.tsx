@@ -13,6 +13,7 @@ import {
   Users, Circle, Award, ShieldAlert, ShieldCheck, ShieldQuestion,
 } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useTranslation } from 'react-i18next';
 import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
 import ConsultantMap from '@/components/client/ConsultantMap';
@@ -43,6 +44,7 @@ export default function ConsultantsPage() {
   const industryFilter = searchParams.get('industry');
 
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [view, setView] = useState<'grid' | 'map'>('grid');
   const [showFilters, setShowFilters] = useState(false);
 
