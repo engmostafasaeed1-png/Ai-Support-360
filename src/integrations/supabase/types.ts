@@ -4757,6 +4757,31 @@ export type Database = {
     }
     Functions: {
       get_user_tenant_id: { Args: never; Returns: string }
+      get_vmware_settings_safe: {
+        Args: { p_environment_id: string }
+        Returns: {
+          auto_shutdown_hours: number
+          cloud_vendor: string
+          cluster: string
+          created_at: string
+          datacenter: string
+          datastore: string
+          default_cpu: number
+          default_disk_gb: number
+          default_os_template: string
+          default_ram_gb: number
+          environment_id: string
+          hypervisor_type: string
+          id: string
+          network_vlan: string
+          notes: string
+          resource_pool: string
+          snapshot_enabled: boolean
+          updated_at: string
+          vcenter_url: string
+          vcenter_username: string
+        }[]
+      }
       has_org_role: {
         Args: {
           _role: Database["public"]["Enums"]["org_role"]
