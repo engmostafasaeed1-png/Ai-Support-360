@@ -116,6 +116,8 @@ import LandingEditorPage from "./pages/admin/LandingEditorPage.tsx";
 import AdminConsolePage from "./pages/admin/AdminConsolePage.tsx";
 import AdminVMwareSettingsPage from "./pages/admin/VMwareSettingsPage.tsx";
 import ClientVMwareSettingsPage from "./pages/client/VMwareSettingsPage.tsx";
+import VMwarePricingPage from "./pages/client/VMwarePricingPage.tsx";
+import VMwareConsolePage from "./pages/client/VMwareConsolePage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -187,6 +189,8 @@ const App = () => (
               <Route path="onboarding" element={<ClientOnboardingPage />} />
               <Route path="remote-access" element={<ClientRemoteAccessPage />} />
               <Route path="vmware-settings" element={<ClientVMwareSettingsPage />} />
+              <Route path="vmware-pricing" element={<VMwarePricingPage />} />
+              <Route path="vmware-console" element={<VMwareConsolePage />} />
               <Route path="invoices" element={<InvoicesPage />} />
               <Route path="knowledge" element={<KnowledgePage />} />
               <Route path="milestones" element={<MilestonesPage />} />

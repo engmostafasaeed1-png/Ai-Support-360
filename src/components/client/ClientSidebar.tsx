@@ -12,7 +12,7 @@ import {
   CreditCard, FileText, BookOpen, Bell, Settings, Globe, MessageSquare, LogOut,
   Plug, Server, Building2, Gift, Milestone, Sparkles, Crown, ChevronRight, Plus,
   Activity, Shield, UsersRound, BarChart3, ClipboardList, FolderKanban, FileSignature, LifeBuoy, Settings2,
-  GitBranch, Bug, Package, Siren, BookMarked, Brain,
+  GitBranch, Bug, Package, Siren, BookMarked, Brain, Monitor,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
@@ -70,6 +70,8 @@ const navGroups = [
       { key: 'integrations', icon: Plug, path: '/client/integrations' },
       { key: 'remote_access', icon: Server, path: '/client/remote-access' },
       { key: 'vmware_settings', icon: Settings2, path: '/client/vmware-settings' },
+      { key: 'vmware_pricing', icon: CreditCard, path: '/client/vmware-pricing' },
+      { key: 'vmware_console', icon: Monitor, path: '/client/vmware-console' },
       { key: 'knowledge', icon: BookOpen, path: '/client/knowledge' },
       { key: 'pm_tickets', icon: ClipboardList, path: '/client/pm-tickets' },
       { key: 'solution_architecture', icon: Sparkles, path: '/client/solution-architecture' },

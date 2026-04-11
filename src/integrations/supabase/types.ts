@@ -4188,6 +4188,66 @@ export type Database = {
         }
         Relationships: []
       }
+      vmware_pricing_plans: {
+        Row: {
+          cpu_price_per_core: number | null
+          created_at: string
+          description: string | null
+          disk_price_per_gb: number | null
+          features: Json | null
+          hourly_rate: number | null
+          id: string
+          included_cpu: number | null
+          included_disk_gb: number | null
+          included_ram_gb: number | null
+          is_active: boolean | null
+          monthly_rate: number | null
+          name: string
+          ram_price_per_gb: number | null
+          sort_order: number | null
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          cpu_price_per_core?: number | null
+          created_at?: string
+          description?: string | null
+          disk_price_per_gb?: number | null
+          features?: Json | null
+          hourly_rate?: number | null
+          id?: string
+          included_cpu?: number | null
+          included_disk_gb?: number | null
+          included_ram_gb?: number | null
+          is_active?: boolean | null
+          monthly_rate?: number | null
+          name: string
+          ram_price_per_gb?: number | null
+          sort_order?: number | null
+          tier?: string
+          updated_at?: string
+        }
+        Update: {
+          cpu_price_per_core?: number | null
+          created_at?: string
+          description?: string | null
+          disk_price_per_gb?: number | null
+          features?: Json | null
+          hourly_rate?: number | null
+          id?: string
+          included_cpu?: number | null
+          included_disk_gb?: number | null
+          included_ram_gb?: number | null
+          is_active?: boolean | null
+          monthly_rate?: number | null
+          name?: string
+          ram_price_per_gb?: number | null
+          sort_order?: number | null
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vmware_settings: {
         Row: {
           allowed_ports: string[] | null
@@ -4305,6 +4365,148 @@ export type Database = {
             foreignKeyName: "vmware_settings_environment_id_fkey"
             columns: ["environment_id"]
             isOneToOne: true
+            referencedRelation: "remote_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vmware_snapshots: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          environment_id: string
+          id: string
+          name: string
+          size_gb: number | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          environment_id: string
+          id?: string
+          name: string
+          size_gb?: number | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          environment_id?: string
+          id?: string
+          name?: string
+          size_gb?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vmware_snapshots_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "remote_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vmware_subscriptions: {
+        Row: {
+          billing_cycle: string
+          cancelled_at: string | null
+          client_id: string
+          created_at: string
+          current_monthly_cost: number | null
+          environment_id: string | null
+          expires_at: string | null
+          id: string
+          plan_id: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          billing_cycle?: string
+          cancelled_at?: string | null
+          client_id: string
+          created_at?: string
+          current_monthly_cost?: number | null
+          environment_id?: string | null
+          expires_at?: string | null
+          id?: string
+          plan_id: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          billing_cycle?: string
+          cancelled_at?: string | null
+          client_id?: string
+          created_at?: string
+          current_monthly_cost?: number | null
+          environment_id?: string | null
+          expires_at?: string | null
+          id?: string
+          plan_id?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vmware_subscriptions_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "remote_environments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vmware_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "vmware_pricing_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vmware_vm_actions: {
+        Row: {
+          action: string
+          completed_at: string | null
+          created_at: string
+          environment_id: string
+          error_message: string | null
+          id: string
+          initiated_by: string
+          status: string
+        }
+        Insert: {
+          action: string
+          completed_at?: string | null
+          created_at?: string
+          environment_id: string
+          error_message?: string | null
+          id?: string
+          initiated_by: string
+          status?: string
+        }
+        Update: {
+          action?: string
+          completed_at?: string | null
+          created_at?: string
+          environment_id?: string
+          error_message?: string | null
+          id?: string
+          initiated_by?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vmware_vm_actions_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
             referencedRelation: "remote_environments"
             referencedColumns: ["id"]
           },
