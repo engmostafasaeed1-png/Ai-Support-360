@@ -15,7 +15,7 @@ export function useClientPayments() {
         .from('payments')
         .select(`
           id, amount, currency, vat_amount, status, invoice_number, payment_method,
-          description, due_date, created_at, updated_at, ticket_id,
+          description, due_date, created_at, updated_at, ticket_id, consultant_id,
           consultants:consultant_id (
             user_id,
             profiles:user_id (display_name)
@@ -41,7 +41,7 @@ export function useClientPayments() {
       return (data || []).map((p: any) => ({
         id: p.id,
         invoice: p.invoice_number || `INV-${p.id.slice(0, 8).toUpperCase()}`,
-        consultant: p.consultants?.profiles?.display_name || 'Unknown',
+        consultant: p.consultants?.profiles?.display_name || (p.consultant_id ? 'Unknown' : 'Unassigned'),
         amount: p.amount,
         currency: p.currency || 'USD',
         vat: p.vat_amount || 0,
