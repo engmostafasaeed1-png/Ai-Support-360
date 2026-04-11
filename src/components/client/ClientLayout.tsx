@@ -4,6 +4,7 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 import PageTransition from '@/components/PageTransition';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Outlet } from 'react-router-dom';
+import { usePortalMargin } from '@/hooks/usePortalMargin';
 import {
   Search, AlertTriangle, LayoutDashboard, TicketPlus, Users,
   MessageSquare, Settings, Settings2, Briefcase, Calendar, CreditCard,
