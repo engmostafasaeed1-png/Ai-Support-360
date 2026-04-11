@@ -41,7 +41,7 @@ export function useClientPayments() {
       return (data || []).map((p: any) => ({
         id: p.id,
         invoice: p.invoice_number || `INV-${p.id.slice(0, 8).toUpperCase()}`,
-        consultant: p.consultants?.profiles?.display_name || 'Unknown',
+        consultant: p.consultants?.profiles?.display_name || (p.consultant_id ? 'Unknown' : 'Unassigned'),
         amount: p.amount,
         currency: p.currency || 'USD',
         vat: p.vat_amount || 0,
