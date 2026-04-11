@@ -42,7 +42,7 @@ export default function SharedConfigsClientPanel() {
         {configs.map(cfg => {
           const sc = statusConfig[cfg.status] || statusConfig.pending;
           const StatusIcon = sc.icon;
-          const config = cfg.config as Record<string, unknown>;
+          const config = (cfg.config || {}) as Record<string, string>;
           return (
             <Card key={cfg.id} className="rounded-xl border-border/30">
               <CardContent className="p-3">
