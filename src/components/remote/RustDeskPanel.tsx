@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Monitor, Copy, ExternalLink, Plus, Trash2, Pencil, Server, Settings } from 'lucide-react';
+import { Monitor, Copy, ExternalLink, Plus, Trash2, Pencil, Server, Settings, Share2 } from 'lucide-react';
 
 interface RustDeskHost {
   id: string;
@@ -14,7 +14,7 @@ interface RustDeskHost {
   relayServer?: string;
 }
 
-export default function RustDeskPanel() {
+export default function RustDeskPanel({ onShare }: { onShare?: () => void }) {
   const [hosts, setHosts] = useState<RustDeskHost[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [editHost, setEditHost] = useState<RustDeskHost | null>(null);
@@ -70,6 +70,11 @@ export default function RustDeskPanel() {
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => { setAlias(''); setRdId(''); setRelay(''); setEditHost(null); setAddOpen(true); }}>
               <Plus className="w-3 h-3" /> Add Host
             </Button>
+            {onShare && (
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={onShare}>
+                <Share2 className="w-3 h-3" /> Share
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>

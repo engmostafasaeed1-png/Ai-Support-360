@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Monitor, Copy, ExternalLink, Plus, Trash2, Pencil, Shield } from 'lucide-react';
+import { Monitor, Copy, ExternalLink, Plus, Trash2, Pencil, Shield, Share2 } from 'lucide-react';
 
 interface TeamViewerDevice {
   id: string;
@@ -14,7 +14,7 @@ interface TeamViewerDevice {
   status: 'online' | 'offline';
 }
 
-export default function TeamViewerPanel() {
+export default function TeamViewerPanel({ onShare }: { onShare?: () => void }) {
   const [devices, setDevices] = useState<TeamViewerDevice[]>([
     { id: '1', alias: 'SAP Production', teamviewerId: '', status: 'offline' },
   ]);
@@ -70,6 +70,11 @@ export default function TeamViewerPanel() {
             <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => { setAlias(''); setTvId(''); setEditDevice(null); setAddOpen(true); }}>
               <Plus className="w-3 h-3" /> Add Device
             </Button>
+            {onShare && (
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={onShare}>
+                <Share2 className="w-3 h-3" /> Share
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
