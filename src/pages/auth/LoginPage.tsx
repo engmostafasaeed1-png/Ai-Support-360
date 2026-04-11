@@ -12,6 +12,13 @@ import { Loader2, Eye } from 'lucide-react';
 import PasswordInput from '@/components/auth/PasswordInput';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
+import { logAudit } from '@/lib/auditLog';
+
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 15;
+import PasswordInput from '@/components/auth/PasswordInput';
+import VideoBackground from '@/components/VideoBackground';
+import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -23,6 +30,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [failedAttempts, setFailedAttempts] = useState(() => parseInt(sessionStorage.getItem('login_attempts') || '0'));
+  const [lockoutUntil, setLockoutUntil] = useState<number | null>(() => {
+    const v = parseInt(sessionStorage.getItem('login_lockout') || '0');
+    return v > 0 ? v : null;
+  });
+  const [lockRemaining, setLockRemaining] = useState('');
 
   const getRoleAndRepairAccount = async (user: {
     id: string;
@@ -139,14 +152,48 @@ export default function LoginPage() {
     checkSession();
   }, [navigate, from]);
 
+  // Lockout countdown
+  useEffect(() => {
+    if (!lockoutUntil || Date.now() >= lockoutUntil) { setLockRemaining(''); return; }
+    const tick = () => {
+      const diff = (lockoutUntil ?? 0) - Date.now();
+      if (diff <= 0) { setLockRemaining(''); setLockoutUntil(null); sessionStorage.removeItem('login_lockout'); sessionStorage.removeItem('login_attempts'); setFailedAttempts(0); return; }
+      const m = Math.floor(diff / 60000); const s = Math.floor((diff % 60000) / 1000);
+      setLockRemaining(`${m}:${s.toString().padStart(2, '0')}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [lockoutUntil]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check lockout
+    const now = Date.now();
+    if (lockoutUntil && now < lockoutUntil) {
+      const remaining = Math.ceil((lockoutUntil - now) / 60000);
+      toast.error(`Account temporarily locked. Try again in ${remaining} minute${remaining > 1 ? 's' : ''}.`);
+      return;
+    }
+
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setLoading(false);
-      toast.error(error.message);
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+      sessionStorage.setItem('login_attempts', String(newAttempts));
+      logAudit('login_failed', { email });
+      if (newAttempts >= MAX_ATTEMPTS) {
+        const lockUntil = Date.now() + LOCKOUT_MINUTES * 60 * 1000;
+        setLockoutUntil(lockUntil);
+        sessionStorage.setItem('login_lockout', String(lockUntil));
+        toast.error(`Too many failed attempts. Login locked for ${LOCKOUT_MINUTES} minutes.`);
+        return;
+      }
+      toast.error(`Invalid credentials. ${MAX_ATTEMPTS - newAttempts} attempt${MAX_ATTEMPTS - newAttempts > 1 ? 's' : ''} remaining.`);
       return;
     }
 
@@ -155,6 +202,13 @@ export default function LoginPage() {
       toast.error('Unable to start your session. Please try again.');
       return;
     }
+
+    // Clear lockout on success
+    sessionStorage.removeItem('login_attempts');
+    sessionStorage.removeItem('login_lockout');
+    setFailedAttempts(0);
+    setLockoutUntil(null);
+    logAudit('login');
 
     try {
       const role = await getRoleAndRepairAccount(data.session.user);
@@ -205,9 +259,9 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
-            <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" disabled={loading}>
+            <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" disabled={loading || !!(lockoutUntil && Date.now() < lockoutUntil)}>
               {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
-              {t('auth.login_btn')}
+              {lockRemaining ? `Locked (${lockRemaining})` : t('auth.login_btn')}
             </Button>
             <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('auth.forgot_link')}
