@@ -97,6 +97,43 @@ export default function InvoicesPage() {
     }
   };
 
+  const openEdit = (inv: any) => {
+    setSelected(inv);
+    setEditing(false);
+    setEditForm({
+      amount: String(inv.amount || ''),
+      currency: inv.currency || 'USD',
+      vat: String(inv.vat || ''),
+      description: inv.description || '',
+      due_date: inv.due_date ? inv.due_date.split('T')[0] : '',
+      status: inv.status || 'pending',
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selected) return;
+    setSaving(true);
+    try {
+      const { error } = await (supabase.from('payments') as any).update({
+        amount: Number(editForm.amount),
+        currency: editForm.currency,
+        vat_amount: Number(editForm.vat || 0),
+        description: editForm.description || null,
+        due_date: editForm.due_date || null,
+        status: editForm.status,
+      }).eq('id', selected.id);
+      if (error) throw error;
+      toast.success('Invoice updated');
+      setEditing(false);
+      setSelected(null);
+      queryClient.invalidateQueries({ queryKey: ['client-payments'] });
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to update');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const all = payments || [];
   const filtered = all.filter((p: any) => {
     const s = search.toLowerCase();
