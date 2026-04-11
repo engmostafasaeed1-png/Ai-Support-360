@@ -19,7 +19,7 @@ export default function NDAStatsCards({ total, drawn, active, revoked }: NDAStat
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
       {stats.map((s, i) => (
         <Card key={i} className="rounded-2xl">
           <CardContent className="p-4 text-center">

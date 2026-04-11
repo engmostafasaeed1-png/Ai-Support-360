@@ -22,7 +22,8 @@ export default function NDATable({ ndas, loading, onView, onDownload, onRevoke }
 
   return (
     <Card className="rounded-2xl overflow-hidden">
-      <Table>
+      <div className="overflow-x-auto">
+      <Table className="min-w-[600px]">
         <TableHeader>
           <TableRow>
             <TableHead>{t('admin.nda_consultant', 'Consultant')}</TableHead>
@@ -93,6 +94,7 @@ export default function NDATable({ ndas, loading, onView, onDownload, onRevoke }
           )}
         </TableBody>
       </Table>
+      </div>
     </Card>
   );
 }

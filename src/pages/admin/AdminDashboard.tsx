@@ -59,7 +59,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="border-border/50 rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">{t('admin_dashboard.revenue_vs_expenses')}</CardTitle>
@@ -85,10 +85,10 @@ export default function AdminDashboard() {
             <CardTitle className="text-base">{t('admin_dashboard.tickets_by_status')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-6">
-              <ResponsiveContainer width="50%" height={220}>
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+              <ResponsiveContainer width="100%" height={180} className="sm:max-w-[50%]">
                 <PieChart>
-                  <Pie data={ticketsByStatus} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={3}>
+                  <Pie data={ticketsByStatus} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value" paddingAngle={3}>
                     {ticketsByStatus.map((entry, i) => (
                       <Cell key={i} fill={entry.color} />
                     ))}
@@ -96,11 +96,11 @@ export default function AdminDashboard() {
                   <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px', background: 'hsl(var(--card))' }} />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="space-y-2 flex-1">
+              <div className="space-y-2 w-full sm:flex-1">
                 {ticketsByStatus.map((s) => (
                   <div key={s.name} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
                       <span className="text-muted-foreground">{s.name}</span>
                     </div>
                     <span className="font-medium text-foreground">{s.value}</span>

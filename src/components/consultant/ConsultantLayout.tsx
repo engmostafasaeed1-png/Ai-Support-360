@@ -72,7 +72,7 @@ export default function ConsultantLayout() {
           <FixedSubHeader>
             <HeaderNav role="consultant" />
           </FixedSubHeader>
-          <main className="flex-1 p-4 md:p-6 overflow-auto pb-20 md:pb-6 mt-14 md:mt-24">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-20 md:pb-6 mt-14 md:mt-24">
             <PageTransition>
               <Outlet />
             </PageTransition>

@@ -68,8 +68,8 @@ export default function UsersPage() {
               {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-14" />)}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto -mx-0">
+              <table className="w-full text-sm min-w-[600px]">
                 <thead>
                   <tr className="border-b border-border/50 bg-muted/30">
                     <th className="text-start py-3 px-4 font-medium text-muted-foreground">User</th>

@@ -120,19 +120,20 @@ export default function NDAManagementPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <FileSignature className="w-6 h-6 text-primary" />
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <FileSignature className="w-5 sm:w-6 h-5 sm:h-6 text-primary" />
             {t('admin.nda_management_title', 'NDA Management')}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             {t('admin.nda_management_subtitle', 'View all signed Non-Disclosure Agreements between consultants and clients.')}
           </p>
         </div>
-        <Button variant="outline" className="gap-2" onClick={exportCSV} disabled={ndas.length === 0}>
+        <Button variant="outline" className="gap-2 shrink-0 self-start" onClick={exportCSV} disabled={ndas.length === 0}>
           <FileDown className="w-4 h-4" />
-          {t('admin.nda_export_csv', 'Export CSV')}
+          <span className="hidden sm:inline">{t('admin.nda_export_csv', 'Export CSV')}</span>
+          <span className="sm:hidden">Export</span>
         </Button>
       </div>
 
