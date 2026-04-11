@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import GuacamoleViewer from '@/components/remote/GuacamoleViewer';
 import CredentialsManager from '@/components/remote/CredentialsManager';
 import ConnectionsManager from '@/components/remote/ConnectionsManager';
+import AnyDeskPanel from '@/components/remote/AnyDeskPanel';
 import { useEnvironmentTracking } from '@/hooks/useEnvironmentTracking';
 
 const protocolIcons: Record<string, any> = { rdp: Monitor, ssh: Terminal, vnc: Laptop };
