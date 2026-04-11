@@ -146,7 +146,7 @@ export function useAdminTickets() {
         const status = t.status || 'new';
         if (result[status]) {
           result[status].push({
-            id: t.id.slice(0, 8),
+            id: t.id,
             title: t.title,
             client: 'Client',
             module: t.sap_module,
