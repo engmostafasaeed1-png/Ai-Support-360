@@ -47,7 +47,19 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { action, title, description, sap_module, urgency, preferred_language, model } = await req.json();
+    const clientId = req.headers.get("authorization")?.slice(-16) || req.headers.get("x-client-info") || "anon";
+    if (!checkRateLimit(clientId)) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait before sending more requests." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" } });
+    }
+
+    const bodyText = await req.text();
+    if (bodyText.length > MAX_BODY_SIZE) {
+      return new Response(JSON.stringify({ error: "Request too large" }),
+        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const { action, title, description, sap_module, urgency, preferred_language, model } = JSON.parse(bodyText);
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 

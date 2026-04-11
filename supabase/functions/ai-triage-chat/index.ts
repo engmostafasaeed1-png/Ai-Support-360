@@ -49,7 +49,21 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, model } = await req.json();
+    // Rate limit check
+    const clientId = req.headers.get("authorization")?.slice(-16) || req.headers.get("x-client-info") || "anon";
+    if (!checkRateLimit(clientId)) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait before sending more requests." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" } });
+    }
+
+    // Body size check
+    const bodyText = await req.text();
+    if (bodyText.length > MAX_BODY_SIZE) {
+      return new Response(JSON.stringify({ error: "Request too large" }),
+        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const { messages, model } = JSON.parse(bodyText);
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return new Response(
