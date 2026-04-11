@@ -78,6 +78,27 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
 
   try {
+    // Verify authenticated user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
+      });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!
+    );
+    const { data: { user: authUser }, error: authError } = await supabaseAuth.auth.getUser(token);
+    if (authError || !authUser) {
+      return new Response(JSON.stringify({ error: 'Invalid or expired session' }), {
+        status: 401,
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
+      });
+    }
+
     const clientId = req.headers.get("authorization")?.slice(-16) || req.headers.get("x-client-info") || "anon";
     if (!checkRateLimit(clientId)) {
       return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait before sending more requests." }),
