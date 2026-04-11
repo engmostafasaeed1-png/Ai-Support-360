@@ -34,6 +34,7 @@ import TicketTagsWatchers from '@/components/client/TicketTagsWatchers';
 import TicketSLATracker from '@/components/client/TicketSLATracker';
 import TicketCSAT from '@/components/client/TicketCSAT';
 import TicketLinks from '@/components/client/TicketLinks';
+import TicketBusinessProcesses from '@/components/client/TicketBusinessProcesses';
 import TicketInterview from '@/components/client/TicketInterview';
 import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
 import EmergencyContactPanel from '@/components/client/EmergencyContactPanel';
@@ -358,6 +359,11 @@ export default function TicketDetailPage() {
       {/* ─── Linked Tickets ─── */}
       <SectionWrapper icon={Link2} title="Linked Tickets" defaultOpen={false}>
         <TicketLinks ticketId={ticket.id} isReadOnly={isConsultant} />
+      </SectionWrapper>
+
+      {/* ─── Business Processes ─── */}
+      <SectionWrapper icon={Network} title="Business Processes" defaultOpen={false}>
+        <TicketBusinessProcesses ticketId={ticket.id} isReadOnly={isConsultant} />
       </SectionWrapper>
 
       {/* ─── CSAT Satisfaction ─── */}
