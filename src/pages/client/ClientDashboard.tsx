@@ -379,5 +379,6 @@ export default function ClientDashboard() {
       </Card>
     </div>
     </PullToRefresh>
+  );
 }
 
