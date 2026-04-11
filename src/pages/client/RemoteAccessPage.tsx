@@ -384,6 +384,9 @@ export default function ClientRemoteAccessPage() {
           })}
         </div>
       )}
+
+      {/* AnyDesk Integration */}
+      <AnyDeskPanel />
     </div>
   );
 }
