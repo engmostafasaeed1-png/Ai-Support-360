@@ -100,10 +100,21 @@ function ClientsList({ search, onlineOnly }: { search: string; onlineOnly: boole
   if (isLoading) return <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>;
 
   if (error) {
+    const errorMsg = (error as Error).message || '';
+    const isNotConfigured = errorMsg.includes('credentials not configured') || errorMsg.includes('500');
+    if (isNotConfigured) {
+      return (
+        <div className="text-center py-8">
+          <Shield className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
+          <p className="text-sm font-medium text-muted-foreground">AnyDesk Not Configured</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">API credentials need to be set up by an administrator to enable this integration.</p>
+        </div>
+      );
+    }
     return (
       <div className="text-center py-8">
         <p className="text-sm text-muted-foreground mb-2">Unable to load AnyDesk clients</p>
-        <p className="text-xs text-destructive mb-3">{(error as Error).message}</p>
+        <p className="text-xs text-destructive mb-3">{errorMsg}</p>
         <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-1.5">
           <RefreshCw className="w-3.5 h-3.5" /> Retry
         </Button>
