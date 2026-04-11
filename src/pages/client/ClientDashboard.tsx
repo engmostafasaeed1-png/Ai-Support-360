@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import {
   ChevronRight, Star, BadgeCheck, Zap, TicketPlus, Users,
   Calendar, DollarSign, Video, MessageSquare, Monitor, Award, ExternalLink,
 } from 'lucide-react';
+import { subDays, isSameDay } from 'date-fns';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import OnboardingProgressCard from '@/components/onboarding/OnboardingProgressCard';
 import WelcomeBanner from '@/components/onboarding/WelcomeBanner';
@@ -59,6 +61,11 @@ const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
 
 export default function ClientDashboard() {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    document.title = "Dashboard — Qurtuba Talks";
+    return () => { document.title = "Qurtuba Talks"; };
+  }, []);
   const { isGuest } = useGuestMode();
   const { profile: userProfile } = useUserProfile();
   const { data: tickets = [], isLoading: ticketsLoading } = useClientTickets();
@@ -83,10 +90,20 @@ export default function ClientDashboard() {
     })) : mockRecommendedConsultants
   );
 
+  const ticketSpark = useMemo(() => Array.from({ length: 7 }, (_, i) =>
+    tickets.filter((t: any) => isSameDay(new Date(t.created_at), subDays(new Date(), 6 - i))).length
+  ), [tickets]);
+  const sessionSpark = useMemo(() => Array.from({ length: 7 }, (_, i) =>
+    sessions.filter((s: any) => isSameDay(new Date(s.scheduled_at), subDays(new Date(), 6 - i))).length
+  ), [sessions]);
+  const paymentSpark = useMemo(() => Array.from({ length: 7 }, (_, i) =>
+    payments.filter((p: any) => isSameDay(new Date(p.date || p.created_at), subDays(new Date(), 6 - i))).reduce((sum: number, p: any) => sum + (p.amount || 0), 0)
+  ), [payments]);
+
   const kpis = [
-    { labelKey: 'client_dashboard.open_tickets', value: openTickets.length, prefix: '', icon: Briefcase, sparkData: [3, 5, 4, 7, 6, 8, openTickets.length], link: '/client/tickets', color: 'hsl(var(--accent))' },
-    { labelKey: 'client_dashboard.active_sessions', value: activeSessions.length, prefix: '', icon: Calendar, sparkData: [1, 2, 1, 3, 2, 4, activeSessions.length], link: '/client/sessions', color: 'hsl(142, 71%, 45%)' },
-    { labelKey: 'client_dashboard.pending_payments', value: pendingTotal, prefix: '$', icon: CreditCard, sparkData: [200, 150, 300, 250, 400, 350, pendingTotal || 100], link: '/client/payments', color: 'hsl(38, 92%, 50%)' },
+    { labelKey: 'client_dashboard.open_tickets', value: openTickets.length, prefix: '', icon: Briefcase, sparkData: ticketSpark, link: '/client/tickets', color: 'hsl(var(--accent))' },
+    { labelKey: 'client_dashboard.active_sessions', value: activeSessions.length, prefix: '', icon: Calendar, sparkData: sessionSpark, link: '/client/sessions', color: 'hsl(142, 71%, 45%)' },
+    { labelKey: 'client_dashboard.pending_payments', value: pendingTotal, prefix: '$', icon: CreditCard, sparkData: paymentSpark, link: '/client/payments', color: 'hsl(38, 92%, 50%)' },
     { labelKey: 'client_dashboard.resolved', value: resolvedCount, prefix: '', icon: CheckCircle, sparkData: [2, 4, 3, 5, 7, 6, resolvedCount], link: '/client/tickets', color: 'hsl(142, 71%, 45%)' },
   ];
 
