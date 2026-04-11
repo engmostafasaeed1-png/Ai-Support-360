@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useQuery } from '@tanstack/react-query';
 import { useRealtimeConsultants, type ConsultantLive } from '@/hooks/useRealtimeConsultants';
 import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
+import VoiceInput from '@/components/ui/voice-input';
 
 interface AiCategorization {
   suggested_module: string;
