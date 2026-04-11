@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
@@ -95,10 +96,16 @@ export default function ClientLayout() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <Link to="/client">
+                <Badge className="bg-primary/90 hover:bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold gap-1.5 cursor-pointer shadow-sm hover:shadow-md transition-all">
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  Dashboard
+                </Badge>
+              </Link>
               <Link to="/client/new-request">
                 <Button size="sm" variant="destructive" className="text-xs gap-1.5 shadow-sm hover:shadow-md transition-shadow">
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Emergency Support</span>
+                  <span className="hidden sm:inline">Emergency</span>
                 </Button>
               </Link>
               <NotificationBell basePath="/client" />
