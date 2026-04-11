@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useConsultantProposals } from '@/hooks/useProposals';
-import { FileText, Clock, CheckCircle2, XCircle, Inbox, DollarSign, Calendar } from 'lucide-react';
+import { FileText, Clock, CheckCircle2, XCircle, Inbox, DollarSign, Calendar, Paperclip, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 
@@ -42,7 +42,6 @@ export default function ProposalsPage() {
         </p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <Card className="rounded-2xl border-border/50">
           <CardContent className="p-4 text-center">
@@ -64,7 +63,6 @@ export default function ProposalsPage() {
         </Card>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-1.5 flex-wrap">
         {['all', 'pending', 'accepted', 'rejected'].map(s => (
           <Button
@@ -79,7 +77,6 @@ export default function ProposalsPage() {
         ))}
       </div>
 
-      {/* Proposals List */}
       <div className="space-y-3">
         {isLoading ? (
           [1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)
@@ -114,7 +111,7 @@ export default function ProposalsPage() {
                       {proposal.cover_letter && (
                         <p className="text-xs text-muted-foreground mt-2 line-clamp-2">"{proposal.cover_letter}"</p>
                       )}
-                      <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground flex-wrap">
                         <span className="flex items-center gap-1">
                           <DollarSign className="w-3 h-3" /> ${proposal.proposed_rate}/hr
                         </span>
@@ -124,6 +121,16 @@ export default function ProposalsPage() {
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" /> {proposal.timeline_days} days
                         </span>
+                        {proposal.version > 1 && (
+                          <Badge variant="outline" className="text-[10px] gap-1 h-5">
+                            <RefreshCw className="w-2.5 h-2.5" /> v{proposal.version}
+                          </Badge>
+                        )}
+                        {proposal.attachment_count > 0 && (
+                          <span className="flex items-center gap-1 text-accent">
+                            <Paperclip className="w-3 h-3" /> {proposal.attachment_count} file{proposal.attachment_count > 1 ? 's' : ''}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2 shrink-0">
