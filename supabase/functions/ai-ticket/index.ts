@@ -1,10 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const ALLOWED_ORIGINS = [
+  'https://smartsapsupport.qurtubatalks.com',
+  'https://www.qurtubatalks.com',
+  'http://localhost:8080',
+  'http://localhost:5173',
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('Origin') || '';
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+    'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin',
+  };
+}
 
 const VALID_MODELS = [
   "google/gemini-2.5-flash-lite",
@@ -50,8 +64,8 @@ function aiRequest(apiKey: string, systemPrompt: string, userPrompt: string, too
 }
 
 function handleAiError(status: number) {
-  if (status === 429) return new Response(JSON.stringify({ error: "Rate limited" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-  if (status === 402) return new Response(JSON.stringify({ error: "Credits exhausted" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  if (status === 429) return new Response(JSON.stringify({ error: "Rate limited" }), { status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
+  if (status === 402) return new Response(JSON.stringify({ error: "Credits exhausted" }), { status: 402, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
   return null;
 }
 
@@ -61,19 +75,19 @@ function parseToolResult(data: any) {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
 
   try {
     const clientId = req.headers.get("authorization")?.slice(-16) || req.headers.get("x-client-info") || "anon";
     if (!checkRateLimit(clientId)) {
       return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait before sending more requests." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" } });
+        { status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json", "Retry-After": "60" } });
     }
 
     const bodyText = await req.text();
     if (bodyText.length > MAX_BODY_SIZE) {
       return new Response(JSON.stringify({ error: "Request too large" }),
-        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        { status: 413, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
     }
 
     const { action, title, description, sap_module, urgency, preferred_language, model } = JSON.parse(bodyText);
@@ -117,7 +131,7 @@ serve(async (req) => {
       }
 
       return new Response(JSON.stringify({ result: parseToolResult(await response.json()) }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
 
     } else if (action === "summarize") {
@@ -154,7 +168,7 @@ serve(async (req) => {
       }
 
       return new Response(JSON.stringify({ result: parseToolResult(await response.json()) }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
 
     } else if (action === "match") {
@@ -191,7 +205,7 @@ serve(async (req) => {
       }
 
       return new Response(JSON.stringify({ result: parseToolResult(await response.json()) }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
 
     } else if (action === "match_consultants") {
@@ -212,7 +226,7 @@ serve(async (req) => {
       if (consultantsError) throw new Error(`DB error: ${consultantsError.message}`);
       if (!consultants || consultants.length === 0) {
         return new Response(JSON.stringify({ result: { recommendations: [], rationale: "No consultants available." } }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         });
       }
 
@@ -492,20 +506,20 @@ Rank the top consultants for this ticket. Be specific about why each matches.`,
       }
 
       return new Response(JSON.stringify({ result: rankResult }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
     return new Response(JSON.stringify({ error: "Invalid action" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
 
   } catch (e) {
     console.error("ai-ticket error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });
