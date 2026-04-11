@@ -42,17 +42,14 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
       return;
     }
 
-    // Map super-admin to the DB role value
-    const dbRole = requiredRole === 'super-admin' ? 'super-admin' : requiredRole;
-
     // Run all checks in parallel
     const [roleResult, tenantResult, onboardingResult] = await Promise.all([
-      // Role check
+      // Role check - cast to any to support super-admin role
       supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', session.user.id)
-        .eq('role', dbRole)
+        .eq('role', requiredRole as any)
         .maybeSingle(),
 
       // Tenant check (only for clients)
