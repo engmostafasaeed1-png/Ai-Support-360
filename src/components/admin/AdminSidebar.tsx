@@ -52,7 +52,7 @@ export default function AdminSidebar() {
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/50">{t('sidebar.management')}</SidebarGroupLabel>
+          
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {

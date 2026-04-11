@@ -240,7 +240,8 @@
     "problem_management": "Problem Tracker",
     "service_catalog": "Service Catalog",
     "major_incidents": "Incident Center",
-    "playbooks": "Runbooks"
+    "playbooks": "Runbooks",
+    "super_admin": "Super Admin"
   },
   "client_dashboard": {
     "title": "Welcome back",
