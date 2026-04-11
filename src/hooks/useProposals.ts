@@ -159,6 +159,21 @@ export function useSubmitProposal() {
           if (insertErr) throw insertErr;
         }
       }
+
+      // Notify the client
+      const { data: ticket } = await supabase.from('tickets').select('client_id, title').eq('id', rest.ticket_id).maybeSingle();
+      if (ticket) {
+        const { data: profile } = await supabase.from('profiles').select('display_name').eq('user_id', user.id).maybeSingle();
+        const consultantName = profile?.display_name || 'A consultant';
+        const versionLabel = rest.version && rest.version > 1 ? ` (v${rest.version})` : '';
+        await supabase.from('notifications').insert({
+          user_id: ticket.client_id,
+          title: `New Proposal Received${versionLabel}`,
+          body: `${consultantName} submitted a proposal${versionLabel} for "${ticket.title}" — $${rest.proposed_rate}/hr, ${rest.estimated_hours}h estimated.`,
+          type: 'ticket',
+          link: `/client/tickets/${rest.ticket_id}`,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['consultant-proposals'] });
