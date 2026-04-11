@@ -237,6 +237,48 @@ export default function TicketDetailPage() {
         </Card>
       )}
 
+      {/* ─── Resolution Notes ─── */}
+      {(ticket.status === 'resolved' || ticket.status === 'closed') && (
+        <Card className="rounded-2xl border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wider flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Resolution Notes
+              </p>
+              {!resolutionEditing && (
+                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setResolutionEditing(true); setResolutionDraft((ticket as any).resolution_notes || ''); }}>
+                  <Pencil className="w-3 h-3" /> {(ticket as any).resolution_notes ? 'Edit' : 'Add Notes'}
+                </Button>
+              )}
+            </div>
+            {resolutionEditing ? (
+              <div className="space-y-2">
+                <textarea
+                  className="w-full min-h-[100px] rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  placeholder="Describe how this issue was resolved (will be anonymized and saved to playbooks)..."
+                  value={resolutionDraft}
+                  onChange={e => setResolutionDraft(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" className="text-xs" onClick={async () => {
+                    const { error } = await supabase.from('tickets').update({ resolution_notes: resolutionDraft } as any).eq('id', ticket.id);
+                    if (error) { toast.error('Failed to save'); return; }
+                    toast.success('Resolution notes saved — playbook will be auto-generated');
+                    setResolutionEditing(false);
+                    queryClient.invalidateQueries({ queryKey: ['ticket-detail'] });
+                  }}>Save</Button>
+                  <Button size="sm" variant="ghost" className="text-xs" onClick={() => setResolutionEditing(false)}>Cancel</Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-foreground whitespace-pre-wrap">
+                {(ticket as any).resolution_notes || 'No resolution notes yet. Add notes to document how this issue was resolved.'}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* ─── NDA Status (when consultant assigned) ─── */}
       {ticket.consultant_id && (
         <TicketNDAStatus
