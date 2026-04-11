@@ -7,7 +7,7 @@ import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Outlet } from 'react-router-dom';
 import {
   Search, LayoutDashboard, Briefcase, Calendar, MessageSquare,
-  CreditCard, Star, User, ShieldCheck, BookOpen, Bell, Settings, Settings2, Brain, Server,
+  CreditCard, Star, User, ShieldCheck, BookOpen, Bell, Settings, Settings2, Brain, Server, Building2,
   Handshake, FileText, Gavel, Clock, ClipboardList, BarChart3, Gift, Zap, Plus,
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
 import HeaderNav from '@/components/HeaderNav';
 import logo from '@/assets/logo.png';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import SecurityAlert from '@/components/SecurityAlert';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -85,6 +85,22 @@ export default function ConsultantLayout() {
                 <Briefcase className="w-3.5 h-3.5" />
                 Consultant
               </Badge>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2.5 text-xs gap-1.5 border-border/50 hover:bg-accent/10"
+                    onClick={() => window.location.href = '/client'}
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Switch to Client</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs">Switch to Client view</p>
+                </TooltipContent>
+              </Tooltip>
               {/* AI Credits */}
               <Tooltip>
                 <TooltipTrigger asChild>
