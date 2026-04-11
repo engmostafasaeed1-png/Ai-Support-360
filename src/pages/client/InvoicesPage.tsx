@@ -57,8 +57,8 @@ export default function InvoicesPage() {
         ...prev,
         ticket_id: ticketId,
         description: `Invoice for ticket: ${ticket.title} (${ticket.sap_module})${ticket.description ? ' — ' + ticket.description.slice(0, 120) : ''}`,
-        amount: ticket.planned_cost ? String(ticket.planned_cost) : prev.amount,
-        currency: ticket.cost_currency || prev.currency,
+        amount: (ticket as any).planned_cost ? String((ticket as any).planned_cost) : prev.amount,
+        currency: (ticket as any).cost_currency || prev.currency,
       }));
     }
   };
