@@ -1,9 +1,11 @@
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { FileSignature, Download } from 'lucide-react';
 import type { NDARecord } from './types';
+import { logAudit } from '@/lib/auditLog';
 
 interface NDAViewDialogProps {
   nda: NDARecord | null;
@@ -13,6 +15,29 @@ interface NDAViewDialogProps {
 
 export default function NDAViewDialog({ nda, onClose, onDownload }: NDAViewDialogProps) {
   const { t } = useTranslation();
+  const ndaContentRef = useRef<HTMLDivElement>(null);
+
+  // Log NDA view
+  useEffect(() => {
+    if (nda) {
+      logAudit('nda_viewed', { nda_id: nda.id, consultant: nda.consultant_name, client: nda.client_name });
+    }
+  }, [nda]);
+
+  // Block copy on NDA content
+  useEffect(() => {
+    const el = ndaContentRef.current;
+    if (!el) return;
+    const block = (e: Event) => e.preventDefault();
+    el.addEventListener('copy', block);
+    el.addEventListener('contextmenu', block);
+    el.addEventListener('selectstart', block);
+    return () => {
+      el.removeEventListener('copy', block);
+      el.removeEventListener('contextmenu', block);
+      el.removeEventListener('selectstart', block);
+    };
+  }, [nda]);
 
   return (
     <Dialog open={!!nda} onOpenChange={() => onClose()}>
@@ -44,11 +69,16 @@ export default function NDAViewDialog({ nda, onClose, onDownload }: NDAViewDialo
               </div>
             </div>
 
-            <ScrollArea className="max-h-[200px] border rounded-lg p-4 bg-muted/30">
-              <pre className="whitespace-pre-wrap text-sm font-sans text-foreground leading-relaxed">
-                {nda.nda_content}
-              </pre>
-            </ScrollArea>
+            <div ref={ndaContentRef} className="relative" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 opacity-[0.06]">
+                <span className="text-4xl font-bold text-foreground rotate-[-20deg]">CONFIDENTIAL</span>
+              </div>
+              <ScrollArea className="max-h-[200px] border rounded-lg p-4 bg-muted/30">
+                <pre className="whitespace-pre-wrap text-sm font-sans text-foreground leading-relaxed">
+                  {nda.nda_content}
+                </pre>
+              </ScrollArea>
+            </div>
 
             <div className="border rounded-lg p-4">
               <p className="text-xs text-muted-foreground mb-2">{t('admin.nda_signature', 'Signature')}</p>

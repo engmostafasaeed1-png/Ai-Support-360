@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,9 +47,28 @@ export default function TicketDocuments({ ticketId }: { ticketId: string }) {
   const [comment, setComment] = useState('');
   const [expandedFile, setExpandedFile] = useState<string | null>(null);
 
+  const ALLOWED_TYPES = [
+    'application/pdf', 'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'image/jpeg', 'image/png', 'image/gif', 'text/plain', 'text/csv',
+  ];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024;
+  const DANGEROUS_EXTS = ['exe', 'bat', 'cmd', 'sh', 'php', 'js', 'html', 'htm', 'svg', 'xml'];
+
+  const validateFile = (file: File): string | null => {
+    if (!ALLOWED_TYPES.includes(file.type)) return `File type not allowed: ${file.type}`;
+    if (file.size > MAX_FILE_SIZE) return `File too large: ${(file.size / 1024 / 1024).toFixed(1)}MB. Max 10MB.`;
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext && DANGEROUS_EXTS.includes(ext)) return `File extension .${ext} is not permitted.`;
+    return null;
+  };
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const error = validateFile(file);
+    if (error) { toast.error(error); if (fileInputRef.current) fileInputRef.current.value = ''; return; }
     await uploadMutation.mutateAsync({ file, comment: comment.trim() || undefined });
     setComment('');
     if (fileInputRef.current) fileInputRef.current.value = '';

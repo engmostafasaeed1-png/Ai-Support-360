@@ -1,9 +1,23 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-secret",
-};
+const ALLOWED_ORIGINS = [
+  'https://smartsapsupport.qurtubatalks.com',
+  'https://www.qurtubatalks.com',
+  'http://localhost:8080',
+  'http://localhost:5173',
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('Origin') || '';
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+    'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin',
+  };
+}
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -91,7 +105,7 @@ const parsers: Record<string, (body: Record<string, unknown>) => { event: string
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   const url = new URL(req.url);
@@ -104,7 +118,7 @@ Deno.serve(async (req) => {
   if (!platform || !integrationId) {
     return new Response(
       JSON.stringify({ error: "URL must be /integration-webhook/{platform}/{integration_id}" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
 
@@ -112,7 +126,7 @@ Deno.serve(async (req) => {
   if (!parser) {
     return new Response(
       JSON.stringify({ error: `Unsupported platform: ${platform}. Supported: ${Object.keys(parsers).join(", ")}` }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
 
@@ -130,14 +144,14 @@ Deno.serve(async (req) => {
     if (intError || !integration) {
       return new Response(
         JSON.stringify({ error: "Integration not found or platform mismatch" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 404, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
       );
     }
 
     if (integration.status !== "active") {
       return new Response(
         JSON.stringify({ error: "Integration is not active" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 403, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
       );
     }
 
@@ -147,7 +161,7 @@ Deno.serve(async (req) => {
       if (providedSecret !== integration.webhook_secret) {
         return new Response(
           JSON.stringify({ error: "Invalid webhook secret" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 401, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
         );
       }
     }
@@ -159,7 +173,7 @@ Deno.serve(async (req) => {
     } catch {
       return new Response(
         JSON.stringify({ error: "Invalid JSON body" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
       );
     }
 
@@ -178,7 +192,7 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({ status: "skipped", reason: "Could not extract ticket data from payload" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
       );
     }
 
@@ -236,13 +250,13 @@ Deno.serve(async (req) => {
         external_id: parsed.ticket.external_id,
         local_ticket_id: existingSync?.local_ticket_id || null,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   } catch (err) {
     console.error("Webhook processing error:", err);
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : "Internal error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
 });

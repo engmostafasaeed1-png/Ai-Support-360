@@ -31,8 +31,42 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
 
+  const DISPOSABLE_DOMAINS = ['mailinator.com', 'tempmail.com', 'guerrillamail.com', '10minutemail.com', 'throwaway.email', 'yopmail.com'];
+
+  const PASSWORD_RULES = [
+    { test: (p: string) => p.length >= 12, label: 'At least 12 characters' },
+    { test: (p: string) => /[A-Z]/.test(p), label: 'One uppercase letter' },
+    { test: (p: string) => /[a-z]/.test(p), label: 'One lowercase letter' },
+    { test: (p: string) => /[0-9]/.test(p), label: 'One number' },
+    { test: (p: string) => /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(p), label: 'One special character' },
+    { test: (p: string) => !/(.)\1{2,}/.test(p), label: 'No repeated characters (e.g. aaa)' },
+  ];
+
+  const getPasswordStrength = (p: string): 'weak' | 'fair' | 'strong' | 'very-strong' => {
+    const passed = PASSWORD_RULES.filter(r => r.test(p)).length;
+    if (passed <= 2) return 'weak';
+    if (passed <= 3) return 'fair';
+    if (passed <= 5) return 'strong';
+    return 'very-strong';
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Disposable email check
+    const domain = email.split('@')[1]?.toLowerCase();
+    if (domain && DISPOSABLE_DOMAINS.includes(domain)) {
+      toast.error('Please use a professional or company email address.');
+      return;
+    }
+
+    // Password strength check
+    const strength = getPasswordStrength(password);
+    if (strength === 'weak' || strength === 'fair') {
+      toast.error('Password does not meet security requirements.');
+      return;
+    }
+
     if (password.length < 6) {
       toast.error(t('auth.password_min'));
       return;
@@ -125,6 +159,25 @@ export default function SignupPage() {
               <Label htmlFor="password">{t('auth.password')}</Label>
               <PasswordInput id="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
               <PasswordStrength password={password} />
+              {password.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {PASSWORD_RULES.map((rule, i) => (
+                    <div key={i} className={cn('text-[10px] flex items-center gap-1', rule.test(password) ? 'text-green-600' : 'text-destructive')}>
+                      <span>{rule.test(password) ? '✓' : '✗'}</span>
+                      <span>{rule.label}</span>
+                    </div>
+                  ))}
+                  <div className="flex gap-1 mt-1">
+                    {['weak', 'fair', 'strong', 'very-strong'].map((level, i) => {
+                      const strength = getPasswordStrength(password);
+                      const levels = ['weak', 'fair', 'strong', 'very-strong'];
+                      const active = levels.indexOf(strength) >= i;
+                      const colors = ['bg-destructive', 'bg-orange-500', 'bg-accent', 'bg-green-500'];
+                      return <div key={level} className={cn('h-1 flex-1 rounded-full', active ? colors[i] : 'bg-muted')} />;
+                    })}
+                  </div>
+                </div>
+              )}
               <p className="text-[10px] text-muted-foreground">{t('auth.password_hint')}</p>
             </div>
           </CardContent>
