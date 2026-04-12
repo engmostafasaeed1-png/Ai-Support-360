@@ -4500,6 +4500,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_screen_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          is_visible: boolean
+          screen_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          screen_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          screen_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       vmware_pricing_plans: {
         Row: {
           cpu_price_per_core: number | null
