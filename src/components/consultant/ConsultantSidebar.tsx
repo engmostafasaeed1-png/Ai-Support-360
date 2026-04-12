@@ -15,11 +15,13 @@ import {
 } from 'lucide-react';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useScreenPreferences } from '@/hooks/useScreenPreferences';
+import ScreenPersonalizationDialog from '@/components/sidebar/ScreenPersonalizationDialog';
 import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 import logo from '@/assets/logo.png';
 
 const menuItems = [
-  { key: 'dashboard', icon: Gauge, path: '/consultant' },
+  { key: 'dashboard', icon: Gauge, path: '/consultant', required: true },
   { key: 'onboarding', icon: Rocket, path: '/consultant/onboarding' },
   { key: 'cases', icon: Headset, path: '/consultant/cases' },
   { key: 'requests', icon: Inbox, path: '/consultant/requests' },
@@ -43,6 +45,13 @@ const menuItems = [
   { key: 'settings', icon: SlidersHorizontal, path: '/consultant/settings' },
 ];
 
+const allScreens = menuItems.map(item => ({
+  key: item.key,
+  label: item.key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+  icon: item.icon,
+  group: 'Navigation',
+  required: (item as any).required || false,
+}));
 
 export default function ConsultantSidebar() {
   const { state } = useSidebar();
@@ -54,6 +63,7 @@ export default function ConsultantSidebar() {
   const { isGuest } = useGuestMode();
   const [onboardingDone, setOnboardingDone] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const { hiddenScreens, toggleScreen, resetAll, isVisible } = useScreenPreferences(allScreens);
 
   useEffect(() => {
     if (isGuest) return;
@@ -64,7 +74,7 @@ export default function ConsultantSidebar() {
     });
   }, [isGuest]);
 
-  const visibleItems = menuItems;
+  const visibleItems = menuItems.filter(item => isVisible(item.key));
 
   return (
     <>
@@ -130,6 +140,13 @@ export default function ConsultantSidebar() {
           <SidebarUserCard collapsed={collapsed} onClick={() => setProfileOpen(true)} />
           {!collapsed && (
             <div className="space-y-1 px-1">
+              <ScreenPersonalizationDialog
+                screens={allScreens}
+                hiddenScreens={hiddenScreens}
+                onToggle={toggleScreen}
+                onResetAll={resetAll}
+                collapsed={collapsed}
+              />
               <button
                 onClick={toggleLanguage}
                 className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-xs font-medium text-sidebar-foreground/60 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground transition-all"

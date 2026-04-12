@@ -12,10 +12,12 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
+import { useScreenPreferences } from '@/hooks/useScreenPreferences';
+import ScreenPersonalizationDialog from '@/components/sidebar/ScreenPersonalizationDialog';
 import logo from '@/assets/logo.png';
 
 const menuItems = [
-  { key: 'dashboard', icon: LayoutDashboard, path: '/admin' },
+  { key: 'dashboard', icon: LayoutDashboard, path: '/admin', required: true },
   { key: 'console', icon: Shield, path: '/admin/console' },
   { key: 'users', icon: Users, path: '/admin/users' },
   { key: 'ticket_board', icon: Kanban, path: '/admin/tickets' },
@@ -32,6 +34,14 @@ const menuItems = [
   { key: 'super_admin', icon: Shield, path: '/super-admin' },
 ];
 
+const allScreens = menuItems.map(item => ({
+  key: item.key,
+  label: item.key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+  icon: item.icon,
+  group: 'Admin',
+  required: (item as any).required || false,
+}));
+
 export default function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
@@ -39,6 +49,9 @@ export default function AdminSidebar() {
   const { toggleLanguage, currentLang } = useLanguage();
   const { t } = useTranslation();
   const logout = useLogout();
+  const { hiddenScreens, toggleScreen, resetAll, isVisible } = useScreenPreferences(allScreens);
+
+  const visibleItems = menuItems.filter(item => isVisible(item.key));
 
   return (
     <Sidebar collapsible="icon" className="border-e border-border/50">
@@ -52,10 +65,9 @@ export default function AdminSidebar() {
         </div>
 
         <SidebarGroup>
-          
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {visibleItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <SidebarMenuItem key={item.key}>
@@ -81,6 +93,13 @@ export default function AdminSidebar() {
           <SidebarUserCard collapsed={collapsed} />
           {!collapsed && (
             <div className="space-y-2">
+              <ScreenPersonalizationDialog
+                screens={allScreens}
+                hiddenScreens={hiddenScreens}
+                onToggle={toggleScreen}
+                onResetAll={resetAll}
+                collapsed={collapsed}
+              />
               <button
                 onClick={toggleLanguage}
                 className="flex items-center gap-2 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"

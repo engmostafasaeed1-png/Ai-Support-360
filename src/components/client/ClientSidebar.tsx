@@ -18,6 +18,8 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { useTenant } from '@/contexts/TenantContext';
+import { useScreenPreferences } from '@/hooks/useScreenPreferences';
+import ScreenPersonalizationDialog from '@/components/sidebar/ScreenPersonalizationDialog';
 
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -29,7 +31,7 @@ const navGroups = [
   {
     labelKey: 'sidebar.overview',
     items: [
-      { key: 'dashboard', icon: Gauge, path: '/client' },
+      { key: 'dashboard', icon: Gauge, path: '/client', required: true },
       { key: 'new_request', icon: Zap, path: '/client/new-request', accent: true },
     ],
   },
@@ -52,8 +54,6 @@ const navGroups = [
     labelKey: 'sidebar.servicenow',
     items: [
       { key: 'change_management', icon: GitPullRequestArrow, path: '/client/changes' },
-      
-      
       { key: 'major_incidents', icon: AlertOctagon, path: '/client/major-incidents' },
       { key: 'playbooks', icon: BookMarked, path: '/client/playbooks' },
     ],
@@ -100,6 +100,16 @@ const navGroups = [
   },
 ];
 
+const allScreens = navGroups.flatMap(g =>
+  g.items.map(item => ({
+    key: item.key,
+    label: item.key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+    icon: item.icon,
+    group: g.labelKey.split('.')[1]?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'General',
+    required: (item as any).required || false,
+  }))
+);
+
 const tierColors: Record<string, string> = {
   basic: 'bg-muted text-muted-foreground',
   professional: 'bg-blue-500/10 text-blue-600',
@@ -121,6 +131,7 @@ export default function ClientSidebar() {
   const logout = useLogout();
   const { isGuest } = useGuestMode();
   const { tenant } = useTenant();
+  const { hiddenScreens, toggleScreen, resetAll, isVisible } = useScreenPreferences(allScreens);
 
   const tier = tenant?.subscription_tier || 'basic';
   const TierIcon = tierIcons[tier] || Wand2;
@@ -157,47 +168,50 @@ export default function ClientSidebar() {
 
         {/* Navigation Groups */}
         <div className="flex-1 overflow-y-auto py-2 space-y-1">
-          {navGroups.map((group) => (
-            <SidebarGroup key={group.labelKey}>
-              
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {group.items.map((item) => {
-                    const isActive = location.pathname === item.path;
-                    const isAccent = (item as any).accent;
-                    return (
-                      <SidebarMenuItem key={item.key}>
-                        <SidebarMenuButton asChild>
-                          <NavLink
-                            to={item.path}
-                            end
-                            className={`group/item relative rounded-lg mx-1 transition-all duration-150 ${
-                              isActive
-                                ? 'bg-primary/10 text-primary font-semibold shadow-sm'
-                                : isAccent
-                                ? 'text-primary hover:bg-primary/5'
-                                : 'hover:bg-sidebar-accent/50 text-sidebar-foreground/70 hover:text-sidebar-foreground'
-                            }`}
-                            activeClassName="bg-primary/10 text-primary font-semibold"
-                          >
-                            {isActive && (
-                              <div className="absolute inset-y-1 start-0 w-[3px] rounded-full bg-primary" />
-                            )}
-                            <item.icon className={`w-4 h-4 me-2.5 shrink-0 transition-colors ${
-                              isActive ? 'text-primary' : isAccent ? 'text-primary' : 'text-sidebar-foreground/50 group-hover/item:text-sidebar-foreground/70'
-                            }`} />
-                            {!collapsed && (
-                              <span className="text-[13px]">{t(`sidebar.${item.key}`)}</span>
-                            )}
-                          </NavLink>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ))}
+          {navGroups.map((group) => {
+            const visibleItems = group.items.filter(item => isVisible(item.key));
+            if (visibleItems.length === 0) return null;
+            return (
+              <SidebarGroup key={group.labelKey}>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {visibleItems.map((item) => {
+                      const isActive = location.pathname === item.path;
+                      const isAccent = (item as any).accent;
+                      return (
+                        <SidebarMenuItem key={item.key}>
+                          <SidebarMenuButton asChild>
+                            <NavLink
+                              to={item.path}
+                              end
+                              className={`group/item relative rounded-lg mx-1 transition-all duration-150 ${
+                                isActive
+                                  ? 'bg-primary/10 text-primary font-semibold shadow-sm'
+                                  : isAccent
+                                  ? 'text-primary hover:bg-primary/5'
+                                  : 'hover:bg-sidebar-accent/50 text-sidebar-foreground/70 hover:text-sidebar-foreground'
+                              }`}
+                              activeClassName="bg-primary/10 text-primary font-semibold"
+                            >
+                              {isActive && (
+                                <div className="absolute inset-y-1 start-0 w-[3px] rounded-full bg-primary" />
+                              )}
+                              <item.icon className={`w-4 h-4 me-2.5 shrink-0 transition-colors ${
+                                isActive ? 'text-primary' : isAccent ? 'text-primary' : 'text-sidebar-foreground/50 group-hover/item:text-sidebar-foreground/70'
+                              }`} />
+                              {!collapsed && (
+                                <span className="text-[13px]">{t(`sidebar.${item.key}`)}</span>
+                              )}
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            );
+          })}
         </div>
 
         {/* Banner CTA */}
@@ -222,22 +236,31 @@ export default function ClientSidebar() {
         <div className="p-3 border-t border-sidebar-border/30 space-y-2.5">
           <SidebarUserCard collapsed={collapsed} onClick={() => setProfileOpen(true)} />
           {!collapsed && (
-            <div className="flex items-center gap-3 px-1">
-              <button
-                onClick={toggleLanguage}
-                className="flex items-center gap-1.5 text-[11px] text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
-              >
-                <Globe className="w-3.5 h-3.5" />
-                {currentLang === 'en' ? 'AR' : 'EN'}
-              </button>
-              <div className="w-px h-3 bg-sidebar-border/50" />
-              <button
-                onClick={logout}
-                className="flex items-center gap-1.5 text-[11px] text-destructive/70 hover:text-destructive transition-colors"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                {t('sidebar.logout')}
-              </button>
+            <div className="space-y-1">
+              <ScreenPersonalizationDialog
+                screens={allScreens}
+                hiddenScreens={hiddenScreens}
+                onToggle={toggleScreen}
+                onResetAll={resetAll}
+                collapsed={collapsed}
+              />
+              <div className="flex items-center gap-3 px-1">
+                <button
+                  onClick={toggleLanguage}
+                  className="flex items-center gap-1.5 text-[11px] text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  {currentLang === 'en' ? 'AR' : 'EN'}
+                </button>
+                <div className="w-px h-3 bg-sidebar-border/50" />
+                <button
+                  onClick={logout}
+                  className="flex items-center gap-1.5 text-[11px] text-destructive/70 hover:text-destructive transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  {t('sidebar.logout')}
+                </button>
+              </div>
             </div>
           )}
         </div>
