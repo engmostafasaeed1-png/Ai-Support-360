@@ -81,7 +81,8 @@ export default function AIInsightsButton({ role, metrics }: AIInsightsButtonProp
           }
         }
       }
-    } catch {
+    } catch (err) {
+      console.error('AI Insights error:', err);
       setContent('❌ Failed to connect. Please check your connection.');
     } finally {
       setLoading(false);
