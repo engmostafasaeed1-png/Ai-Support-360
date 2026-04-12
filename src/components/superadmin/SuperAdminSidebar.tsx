@@ -13,10 +13,12 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
+import { useScreenPreferences } from '@/hooks/useScreenPreferences';
+import ScreenPersonalizationDialog from '@/components/sidebar/ScreenPersonalizationDialog';
 import logo from '@/assets/logo.png';
 
 const menuItems = [
-  { key: 'overview', icon: LayoutDashboard, path: '/super-admin', labelKey: 'super_admin.overview' },
+  { key: 'overview', icon: LayoutDashboard, path: '/super-admin', labelKey: 'super_admin.overview', required: true },
   { key: 'executive', icon: PieChart, path: '/super-admin/executive', labelKey: 'super_admin.executive_dashboard' },
   { key: 'roles', icon: ShieldCheck, path: '/super-admin/roles', labelKey: 'super_admin.roles' },
   { key: 'users', icon: Users, path: '/super-admin/users', labelKey: 'super_admin.user_management' },
@@ -27,6 +29,14 @@ const menuItems = [
   { key: 'system', icon: Activity, path: '/super-admin/system', labelKey: 'super_admin.system_health' },
 ];
 
+const allScreens = menuItems.map(item => ({
+  key: item.key,
+  label: item.key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+  icon: item.icon,
+  group: 'Super Admin',
+  required: (item as any).required || false,
+}));
+
 export default function SuperAdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
@@ -34,6 +44,9 @@ export default function SuperAdminSidebar() {
   const { toggleLanguage, currentLang } = useLanguage();
   const { t } = useTranslation();
   const logout = useLogout();
+  const { hiddenScreens, toggleScreen, resetAll, isVisible } = useScreenPreferences(allScreens);
+
+  const visibleItems = menuItems.filter(item => isVisible(item.key));
 
   return (
     <Sidebar collapsible="icon" className="border-e border-border/50">
@@ -53,10 +66,9 @@ export default function SuperAdminSidebar() {
         </div>
 
         <SidebarGroup>
-          
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {visibleItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <SidebarMenuItem key={item.key}>
@@ -79,7 +91,6 @@ export default function SuperAdminSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -98,6 +109,13 @@ export default function SuperAdminSidebar() {
           <SidebarUserCard collapsed={collapsed} />
           {!collapsed && (
             <div className="space-y-2">
+              <ScreenPersonalizationDialog
+                screens={allScreens}
+                hiddenScreens={hiddenScreens}
+                onToggle={toggleScreen}
+                onResetAll={resetAll}
+                collapsed={collapsed}
+              />
               <button
                 onClick={toggleLanguage}
                 className="flex items-center gap-2 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
