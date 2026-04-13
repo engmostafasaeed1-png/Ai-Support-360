@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { Session } from '@supabase/supabase-js';
@@ -27,7 +27,6 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
     needsOnboarding: false,
   });
   const location = useLocation();
-  const checkedRef = useRef(false);
 
   const checkAuth = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -87,16 +86,15 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
   }, [requiredRole]);
 
   useEffect(() => {
-    if (!checkedRef.current) {
-      checkedRef.current = true;
-      checkAuth();
-    }
+    void checkAuth();
+  }, [checkAuth, location.pathname]);
 
+  useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       if (!s) {
         setState({ status: 'ready', session: null, roleOk: false, hasTenant: true, needsOnboarding: false });
       } else {
-        checkAuth();
+        void checkAuth();
       }
     });
     return () => subscription.unsubscribe();
