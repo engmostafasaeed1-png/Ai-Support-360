@@ -49,7 +49,7 @@ export function useRealtimeConsultants() {
       // Fetch all consultants with their skills
       const { data: consultantRows, error } = await supabase
         .from('consultants')
-        .select('id, user_id, bio, hourly_rate, currency, timezone, languages, industries, verification_status, rating, total_reviews, response_time_minutes, availability_status, location, credly_username')
+        .select('id, user_id, bio, hourly_rate, currency, timezone, languages, industries, verification_status, rating, total_reviews, response_time_minutes, availability_status, location, credly_username, credibility_credits, ai_interview_badge')
         .order('rating', { ascending: false });
 
       if (error) throw error;
