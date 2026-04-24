@@ -299,10 +299,24 @@ export default function PaymentsPage() {
               <PaymentStatusTimeline payment={selectedPayment} />
 
               {/* Actions */}
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
                 <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={() => generateInvoicePdf(selectedPayment)}>
                   <Download className="w-4 h-4" /> Download Invoice
                 </Button>
+                {(selectedPayment.status === 'completed' || selectedPayment.status === 'paid') && (
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-1.5 border-green-500/40 text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/30"
+                    size="sm"
+                    onClick={() => generateReceiptPdf({
+                      ...selectedPayment,
+                      paid_at: selectedPayment.paid_at || selectedPayment.updated_at || selectedPayment.date,
+                      transaction_id: selectedPayment.transaction_id || selectedPayment.id,
+                    })}
+                  >
+                    <Receipt className="w-4 h-4" /> Download Receipt
+                  </Button>
+                )}
               </div>
             </div>
           )}
