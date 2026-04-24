@@ -95,11 +95,16 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
+        <button
+          className={`md:hidden inline-flex items-center justify-center -mr-1.5 h-11 w-11 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors active:scale-95 ${scrolled ? 'hover:bg-muted/60 active:bg-muted' : 'hover:bg-white/15 active:bg-white/20'}`}
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Toggle menu"
+          aria-expanded={mobileOpen}
+        >
           {mobileOpen ? (
-            <X className={`w-5 h-5 ${scrolled ? 'text-foreground' : 'text-white drop-shadow-md'}`} />
+            <X className={`w-6 h-6 ${scrolled ? 'text-foreground' : 'text-white drop-shadow-md'}`} />
           ) : (
-            <Menu className={`w-5 h-5 ${scrolled ? 'text-foreground' : 'text-white drop-shadow-md'}`} />
+            <Menu className={`w-6 h-6 ${scrolled ? 'text-foreground' : 'text-white drop-shadow-md'}`} />
           )}
         </button>
       </div>
