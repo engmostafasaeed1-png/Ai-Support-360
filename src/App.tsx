@@ -225,7 +225,7 @@ const App = () => (
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/consultant" element={<ProtectedRoute requiredRole="consultant"><ConsultantLayout /></ProtectedRoute>}>
+            <Route path="/consultant" element={<ProtectedRoute requiredRole="consultant"><ErrorBoundary><ConsultantLayout /></ErrorBoundary></ProtectedRoute>}>
               <Route index element={<ConsultantDashboard />} />
               <Route path="cases" element={<CasesPage />} />
               <Route path="cases/:caseId" element={<CaseDetailPage />} />
@@ -253,7 +253,7 @@ const App = () => (
               <Route path="satisfaction" element={<SatisfactionPage />} />
             </Route>
             <Route path="/client/companies" element={<ProtectedRoute requiredRole="client"><CompanySelectorPage /></ProtectedRoute>} />
-            <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
+            <Route path="/client" element={<ProtectedRoute requiredRole="client"><ErrorBoundary><ClientLayout /></ErrorBoundary></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
               <Route path="timeline" element={<TimelinePage />} />
               <Route path="new-request" element={<NewRequestPage />} />
@@ -298,7 +298,7 @@ const App = () => (
               <Route path="business-processes" element={<BusinessProcessesPage />} />
               <Route path="satisfaction" element={<SatisfactionPage />} />
             </Route>
-            <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
+            <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><ErrorBoundary><AdminLayout /></ErrorBoundary></ProtectedRoute>}>
               <Route index element={<AdminConsolePage />} />
               <Route path="console" element={<AdminConsolePage />}>
                 <Route index element={<OverviewSection />} />
@@ -342,7 +342,7 @@ const App = () => (
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="oncall" element={<OnCallSchedulePage />} />
             </Route>
-            <Route path="/super-admin" element={<ProtectedRoute requiredRole="super-admin"><SuperAdminLayout /></ProtectedRoute>}>
+            <Route path="/super-admin" element={<ProtectedRoute requiredRole="super-admin"><ErrorBoundary><SuperAdminLayout /></ErrorBoundary></ProtectedRoute>}>
               <Route index element={<SuperAdminOverview />} />
               <Route path="executive" element={<ExecutiveDashboardPage />} />
               <Route path="roles" element={<RolesAuthPage />} />
