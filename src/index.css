@@ -384,8 +384,14 @@ textarea:focus-visible {
     overflow-x: hidden;
   }
 
-  /* Wrap raw <table> elements in their own scroll context */
-  table {
+  /* Raw <table> elements (without their own scroll wrapper) get one.
+     We skip tables that already sit inside an overflow container — including
+     the shadcn <Table> wrapper (which has overflow-auto) — so we don't create
+     nested scroll regions that misalign columns. */
+  table:not([data-scroll-wrapped]) {
+    max-width: 100%;
+  }
+  :not(.overflow-auto):not(.overflow-x-auto):not(.overflow-scroll) > table {
     display: block;
     width: 100%;
     overflow-x: auto;
