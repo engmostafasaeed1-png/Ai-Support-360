@@ -176,7 +176,8 @@ export default function MeetingLinkButton({
         );
         return;
       }
-      const opened = window.open(u, '_blank', 'noopener,noreferrer');
+      const handoffUrl = buildHandoffUrl(u);
+      const opened = window.open(handoffUrl, '_blank', 'noopener,noreferrer');
       if (!opened) {
         logProviderEvent('popup_blocked', { provider: providerHint, url: u }, 'error');
         triggerFallback(
