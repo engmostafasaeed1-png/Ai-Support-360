@@ -1037,33 +1037,50 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                 </div>
               )}
 
-              {messages.map((msg, i) => (
-                <div key={i} className={`flex items-start gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                  {msg.role === 'assistant' ? (
-                    <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 mt-0.5">
-                      <img src={avatarImg} alt="" className="w-full h-full object-cover" />
-                    </div>
-                  ) : (
-                    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
-                      <MessageSquare className="w-3.5 h-3.5 text-primary" />
-                    </div>
-                  )}
-                  <div className={`rounded-xl p-3 max-w-[85%] ${
-                    msg.role === 'user'
-                      ? 'bg-primary/20 rounded-tr-sm border border-primary/30'
-                      : 'bg-white/5 rounded-tl-sm border border-white/10'
-                  }`}>
-                    <div className="text-sm text-white/90 leading-relaxed prose prose-sm prose-invert max-w-none">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+              {messages.map((msg, i) => {
+                const interviewerLabel = voiceGender === 'female' ? 'Mariam' : 'Ezz';
+                return (
+                  <div key={i} className={`flex items-start gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                    {msg.role === 'assistant' ? (
+                      <div className="flex flex-col items-center shrink-0 mt-0.5 gap-0.5">
+                        <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-primary/40">
+                          <img src={avatarImg} alt={`${interviewerLabel} avatar`} className="w-full h-full object-cover" />
+                        </div>
+                        <span className="text-[9px] font-medium text-primary/80 leading-none">{interviewerLabel}</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center shrink-0 mt-0.5 gap-0.5">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                          <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                        <span className="text-[9px] font-medium text-white/50 leading-none">You</span>
+                      </div>
+                    )}
+                    <div className={`rounded-xl p-3 max-w-[85%] ${
+                      msg.role === 'user'
+                        ? 'bg-primary/20 rounded-tr-sm border border-primary/30'
+                        : 'bg-white/5 rounded-tl-sm border border-white/10'
+                    }`}>
+                      {msg.role === 'assistant' && (
+                        <div className="text-[10px] font-semibold text-primary/90 mb-1">
+                          {interviewerLabel} <span className="text-white/40 font-normal">· AI SAP Support Now</span>
+                        </div>
+                      )}
+                      <div className="text-sm text-white/90 leading-relaxed prose prose-sm prose-invert max-w-none">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {isStreaming && messages[messages.length - 1]?.role !== 'assistant' && (
                 <div className="flex items-start gap-2">
-                  <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 mt-0.5">
-                    <img src={avatarImg} alt="" className="w-full h-full object-cover" />
+                  <div className="flex flex-col items-center shrink-0 mt-0.5 gap-0.5">
+                    <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-primary/40">
+                      <img src={avatarImg} alt={`${voiceGender === 'female' ? 'Mariam' : 'Ezz'} avatar`} className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-[9px] font-medium text-primary/80 leading-none">{voiceGender === 'female' ? 'Mariam' : 'Ezz'}</span>
                   </div>
                   <div className="bg-white/5 rounded-xl rounded-tl-sm p-3 border border-white/10">
                     <div className="flex gap-1">
