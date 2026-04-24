@@ -25,7 +25,10 @@ export default function ProviderTroubleshootingPanel({
   variant = 'compact',
 }: ProviderTroubleshootingPanelProps) {
   const { t } = useTranslation();
+  const { enabled: translateEnabled } = useTranslateTroubleshooting();
   const guide = getProviderTroubleshooting(provider, reason);
+  const tr = (key: string, fallback: string) =>
+    translateEnabled ? t(key, { defaultValue: fallback }) : fallback;
 
   const Wrapper: React.ElementType = variant === 'card' ? 'section' : 'div';
 
