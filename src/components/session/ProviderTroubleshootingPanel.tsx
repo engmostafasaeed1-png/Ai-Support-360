@@ -6,6 +6,7 @@ import {
   type TroubleshootReason,
 } from './providerTroubleshooting';
 import type { MeetingProvider } from './MeetingLinkButton';
+import { useTranslateTroubleshooting } from './TranslateTroubleshootingContext';
 
 interface ProviderTroubleshootingPanelProps {
   provider: MeetingProvider;
