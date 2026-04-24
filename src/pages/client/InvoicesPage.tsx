@@ -21,6 +21,7 @@ import {
   FileText, Download, Search, Calendar, User, DollarSign, Ticket,
   ArrowRight, CheckCircle2, Clock, XCircle, AlertCircle, ReceiptText,
   CreditCard, Eye, Printer, Plus, Pencil, ArrowUpDown, RefreshCw, PanelRightOpen,
+  Wallet, Landmark, Banknote, Bitcoin, HelpCircle as HelpIcon,
 } from 'lucide-react';
 import { generateInvoicePdf as buildInvoicePdf } from '@/lib/invoicePdf';
 import { Video, MessageSquare, Monitor, PlayCircle, Phone, HelpCircle } from 'lucide-react';
@@ -95,12 +96,34 @@ const matchesTab = (status: string, tab: string) => {
 const fmt = (amount: number, currency: string = 'USD') =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
 
+const PAYMENT_METHOD_OPTIONS: { value: string; label: string; icon: any; match: RegExp }[] = [
+  { value: 'card', label: 'Card', icon: CreditCard, match: /(card|visa|master|amex|stripe|debit|credit)/i },
+  { value: 'bank_transfer', label: 'Bank Transfer', icon: Landmark, match: /(bank|transfer|wire|ach|sepa|iban)/i },
+  { value: 'wallet', label: 'Wallet', icon: Wallet, match: /(wallet|paypal|apple\s*pay|google\s*pay|stc|mada\s*pay)/i },
+  { value: 'cash', label: 'Cash', icon: Banknote, match: /cash/i },
+  { value: 'crypto', label: 'Crypto', icon: Bitcoin, match: /(crypto|bitcoin|btc|eth|usdt|usdc)/i },
+];
+
+function classifyPaymentMethod(method?: string | null): string {
+  if (!method) return 'unspecified';
+  const found = PAYMENT_METHOD_OPTIONS.find(opt => opt.match.test(method));
+  return found ? found.value : 'other';
+}
+
+function getPaymentMethodMeta(value: string) {
+  const opt = PAYMENT_METHOD_OPTIONS.find(o => o.value === value);
+  if (opt) return { label: opt.label, icon: opt.icon };
+  if (value === 'unspecified') return { label: 'Unspecified', icon: HelpIcon };
+  return { label: 'Other', icon: HelpIcon };
+}
+
 export default function InvoicesPage() {
   const { t } = useTranslation();
   const { data: payments, isLoading } = useClientPayments();
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'amount_desc' | 'amount_asc'>('newest');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('all');
   const [selected, setSelected] = useState<any>(null);
   const [drawerPayment, setDrawerPayment] = useState<any>(null);
   const [pdfPreview, setPdfPreview] = useState<string | null>(null);
@@ -207,7 +230,8 @@ export default function InvoicesPage() {
         p.ticket_title?.toLowerCase().includes(s) ||
         p.description?.toLowerCase().includes(s);
       const matchTab = matchesTab(p.status, tab);
-      return matchSearch && matchTab;
+      const matchMethod = paymentMethodFilter === 'all' || classifyPaymentMethod(p.payment_method) === paymentMethodFilter;
+      return matchSearch && matchTab && matchMethod;
     })
     .sort((a: any, b: any) => {
       switch (sortBy) {
@@ -298,6 +322,61 @@ export default function InvoicesPage() {
               <SelectItem value="amount_asc">Lowest amount</SelectItem>
             </SelectContent>
           </Select>
+          {(() => {
+            // Compute counts per method from full list
+            const methodCounts: Record<string, number> = { all: all.length };
+            for (const p of all) {
+              const k = classifyPaymentMethod(p.payment_method);
+              methodCounts[k] = (methodCounts[k] || 0) + 1;
+            }
+            const ActiveIcon = paymentMethodFilter === 'all'
+              ? CreditCard
+              : getPaymentMethodMeta(paymentMethodFilter).icon;
+            return (
+              <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+                <SelectTrigger className="h-9 w-[180px] rounded-xl text-xs">
+                  <ActiveIcon className="w-3.5 h-3.5 me-1.5 text-muted-foreground" />
+                  <SelectValue placeholder="Payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    <span className="inline-flex items-center gap-2">
+                      <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
+                      All methods ({methodCounts.all || 0})
+                    </span>
+                  </SelectItem>
+                  {PAYMENT_METHOD_OPTIONS.map(opt => {
+                    const Icon = opt.icon;
+                    const c = methodCounts[opt.value] || 0;
+                    return (
+                      <SelectItem key={opt.value} value={opt.value} disabled={c === 0}>
+                        <span className="inline-flex items-center gap-2">
+                          <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                          {opt.label} ({c})
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                  {(methodCounts.other || 0) > 0 && (
+                    <SelectItem value="other">
+                      <span className="inline-flex items-center gap-2">
+                        <HelpIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                        Other ({methodCounts.other})
+                      </span>
+                    </SelectItem>
+                  )}
+                  {(methodCounts.unspecified || 0) > 0 && (
+                    <SelectItem value="unspecified">
+                      <span className="inline-flex items-center gap-2">
+                        <HelpIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                        Unspecified ({methodCounts.unspecified})
+                      </span>
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            );
+          })()}
           <CurrencySelector />
         </div>
       </div>
