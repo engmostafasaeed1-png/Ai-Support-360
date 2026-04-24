@@ -121,6 +121,23 @@ export default function SessionDetailPage() {
     enabled: !!sessionId,
   });
 
+  // Existing rating for this session (so we can show submitted state)
+  const { data: existingRating } = useQuery({
+    queryKey: ['session-rating', sessionId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('ratings')
+        .select('id, score, comment, is_anonymous, created_at')
+        .eq('session_id', sessionId!)
+        .eq('client_id', user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sessionId,
+
   if (isLoading) {
     return (
       <div className="space-y-6">
