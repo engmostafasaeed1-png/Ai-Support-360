@@ -402,8 +402,33 @@ textarea:focus-visible {
     padding-bottom: calc(4rem + env(safe-area-inset-bottom));
   }
 
-  /* Minimum tap target for interactive elements */
-  button, a[role="button"], [role="tab"] {
-    min-height: 40px;
+  /* Minimum tap target for interactive elements.
+     Use an invisible ::after overlay so we expand the *hit area* to 40px
+     without changing the visual size of dense icon buttons (h-6/h-7 etc).
+     Skipped inside tables, lists with many siblings, and shadcn input groups
+     where buttons intentionally match input height. */
+  button, a[role="button"], [role="tab"], a.btn {
+    position: relative;
+  }
+  button::after,
+  a[role="button"]::after,
+  [role="tab"]::after {
+    content: "";
+    position: absolute;
+    inset: 50% 50%;
+    width: 40px;
+    height: 40px;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    /* Only extend hit area, never visible */
+    background: transparent;
+  }
+  /* Don't expand hit areas inside dense surfaces where they would overlap */
+  td button::after, th button::after,
+  [role="row"] button::after,
+  [role="combobox"] button::after,
+  [data-radix-popper-content-wrapper] button::after,
+  .no-tap-expand button::after {
+    display: none;
   }
 }
