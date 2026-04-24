@@ -84,12 +84,17 @@ function getSessionTypeConfig(type?: string | null) {
   };
 }
 
-const matchesTab = (status: string, tab: string) => {
+const matchesTab = (inv: any, tab: string) => {
+  const status = inv.status;
   if (tab === 'all') return true;
   if (tab === 'paid') return status === 'completed' || status === 'paid';
   if (tab === 'unpaid') return status === 'pending' || status === 'unpaid';
   if (tab === 'processing') return status === 'processing';
   if (tab === 'failed') return status === 'failed';
+  if (tab === 'overdue') {
+    const info = getDueDateInfo(inv);
+    return !!(info && info.overdue);
+  }
   return true;
 };
 
