@@ -9,7 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Video, MessageSquare, Monitor, Clock, Loader2, CalendarDays, CheckCircle2 } from 'lucide-react';
+import { Video, MessageSquare, Monitor, Clock, Loader2, CalendarDays, CheckCircle2, Zap, CalendarClock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -70,7 +70,8 @@ const DAY_MAP: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6:
 
 export default function BookingModal({ open, onOpenChange, consultantName, consultantId, rate }: BookingModalProps) {
   const { t } = useTranslation();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
+  const [bookingMode, setBookingMode] = useState<'instant' | 'scheduled'>('scheduled');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState('');
   const [sessionType, setSessionType] = useState('video');
@@ -147,7 +148,8 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
   };
 
   const reset = () => {
-    setStep(1);
+    setStep(0);
+    setBookingMode('scheduled');
     setSelectedDate(undefined);
     setSelectedTime('');
     setSessionType('video');
@@ -168,10 +170,21 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
         return;
       }
 
-      const [hours, minutes] = selectedTime.split(':').map(Number);
-      const scheduledAt = new Date(selectedDate!);
-      scheduledAt.setHours(hours, minutes, 0, 0);
-      const dateLabel = format(selectedDate!, 'MMM d, yyyy');
+      let scheduledAt: Date;
+      let timeLabel: string;
+      if (bookingMode === 'instant') {
+        // Round up to next 5 minutes for a clean start time
+        scheduledAt = new Date();
+        const ms = 5 * 60 * 1000;
+        scheduledAt = new Date(Math.ceil(scheduledAt.getTime() / ms) * ms);
+        timeLabel = format(scheduledAt, 'HH:mm');
+      } else {
+        const [hours, minutes] = selectedTime.split(':').map(Number);
+        scheduledAt = new Date(selectedDate!);
+        scheduledAt.setHours(hours, minutes, 0, 0);
+        timeLabel = selectedTime;
+      }
+      const dateLabel = format(scheduledAt, 'MMM d, yyyy');
 
       const sessionId = crypto.randomUUID();
       const realConsultantId = isValidUUID(consultantId) ? consultantId : null;
@@ -192,11 +205,13 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
       if (error) throw error;
       if (generatedMeetingUrl) setMeetingUrl(generatedMeetingUrl);
 
+      const modeLabel = bookingMode === 'instant' ? 'Instant' : 'Scheduled';
+
       // Notify client
       await supabase.from('notifications').insert({
         user_id: user.id,
-        title: 'Session Booked',
-        body: `Your ${sessionType.replace('_', ' ')} session with ${consultantName} is scheduled for ${dateLabel} at ${selectedTime}.`,
+        title: `Session Booked (${modeLabel})`,
+        body: `Your ${sessionType.replace('_', ' ')} session with ${consultantName} is ${bookingMode === 'instant' ? 'starting now' : `scheduled for ${dateLabel} at ${timeLabel}`}.`,
         type: 'booking',
         link: '/client/sessions',
       });
@@ -213,7 +228,7 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
           await supabase.from('notifications').insert({
             user_id: consultant.user_id,
             title: 'New Session Booking',
-            body: `A client booked a ${sessionType.replace('_', ' ')} session for ${dateLabel} at ${selectedTime}.`,
+            body: `A client booked an ${modeLabel.toLowerCase()} ${sessionType.replace('_', ' ')} session ${bookingMode === 'instant' ? 'starting now' : `for ${dateLabel} at ${timeLabel}`}.`,
             type: 'booking',
             link: '/consultant/calendar',
           });
@@ -253,12 +268,21 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
             </div>
             <div className="p-3 rounded-xl bg-muted/30 border border-border/30 text-sm space-y-1.5 text-start">
               <div className="flex justify-between">
+                <span className="text-muted-foreground">Mode</span>
+                <Badge variant={bookingMode === 'instant' ? 'default' : 'secondary'} className="text-[10px] gap-1">
+                  {bookingMode === 'instant' ? <Zap className="w-3 h-3" /> : <CalendarClock className="w-3 h-3" />}
+                  {bookingMode === 'instant' ? 'Instant' : 'Scheduled'}
+                </Badge>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-muted-foreground">Date</span>
-                <span className="font-medium">{selectedDate && format(selectedDate, 'EEEE, MMM d, yyyy')}</span>
+                <span className="font-medium">
+                  {bookingMode === 'instant' ? 'Today' : (selectedDate && format(selectedDate, 'EEEE, MMM d, yyyy'))}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Time</span>
-                <span className="font-medium">{selectedTime}</span>
+                <span className="font-medium">{bookingMode === 'instant' ? 'Starting now' : selectedTime}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Duration</span>
@@ -283,13 +307,73 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
           <>
             {/* Step indicators */}
             <div className="flex items-center gap-2 mb-2">
-              {[1, 2, 3].map(s => (
+              {(bookingMode === 'instant' ? [0, 2, 3] : [0, 1, 2, 3]).map(s => (
                 <div key={s} className={cn(
                   'h-1.5 flex-1 rounded-full transition-colors',
                   s <= step ? 'bg-primary' : 'bg-muted'
                 )} />
               ))}
             </div>
+
+            {/* Step 0: Choose mode (Instant vs Scheduled) */}
+            {step === 0 && (
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-foreground">How would you like to consult?</p>
+                <div className="grid gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setBookingMode('instant')}
+                    className={cn(
+                      'flex items-start gap-3 p-4 rounded-xl border text-start transition-all',
+                      bookingMode === 'instant'
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                        : 'border-border/50 hover:border-primary/40'
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <Zap className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-foreground">Instant consultation</span>
+                        <Badge variant="secondary" className="text-[10px]">Now</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Start a session right away — perfect for urgent issues.
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBookingMode('scheduled')}
+                    className={cn(
+                      'flex items-start gap-3 p-4 rounded-xl border text-start transition-all',
+                      bookingMode === 'scheduled'
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                        : 'border-border/50 hover:border-primary/40'
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                      <CalendarClock className="w-5 h-5 text-accent" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="text-sm font-semibold text-foreground">Schedule for later</span>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Pick a date and time that works best for you.
+                      </p>
+                    </div>
+                  </button>
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                    onClick={() => setStep(bookingMode === 'instant' ? 2 : 1)}
+                    className="gradient-primary border-0"
+                  >
+                    {t('booking.next')}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Step 1: Date */}
             {step === 1 && (
@@ -319,7 +403,8 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
                     {timeSlotsForDate.length} time slot{timeSlotsForDate.length !== 1 ? 's' : ''} available on {format(selectedDate, 'MMM d')}
                   </p>
                 )}
-                <div className="flex justify-end">
+                <div className="flex justify-between">
+                  <Button variant="ghost" onClick={() => setStep(0)}>{t('booking.back')}</Button>
                   <Button disabled={!selectedDate} onClick={() => setStep(2)} className="gradient-primary border-0">
                     {t('booking.next')}
                   </Button>
@@ -330,32 +415,46 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
             {/* Step 2: Time + Session type */}
             {step === 2 && (
               <div className="space-y-4">
-                <p className="text-sm font-medium text-foreground">{t('booking.select_time')}</p>
-
-                {timeSlotsForDate.length === 0 ? (
-                  <div className="py-6 text-center">
-                    <Clock className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">No available time slots for this date</p>
-                    <Button variant="ghost" size="sm" className="mt-2" onClick={() => setStep(1)}>Choose another date</Button>
+                {bookingMode === 'instant' ? (
+                  <div className="flex items-start gap-3 p-3 rounded-xl border border-primary/20 bg-primary/5">
+                    <Zap className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Starting now</p>
+                      <p className="text-xs text-muted-foreground">
+                        Your session will start as soon as you confirm. Choose a session type below.
+                      </p>
+                    </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {timeSlotsForDate.map(time => (
-                      <button
-                        key={time}
-                        onClick={() => setSelectedTime(time)}
-                        className={cn(
-                          'p-2.5 rounded-xl border text-sm font-medium transition-all',
-                          selectedTime === time
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-border/50 text-foreground hover:border-primary/50'
-                        )}
-                      >
-                        <Clock className="w-3 h-3 mx-auto mb-0.5 text-muted-foreground" />
-                        {time}
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    <p className="text-sm font-medium text-foreground">{t('booking.select_time')}</p>
+
+                    {timeSlotsForDate.length === 0 ? (
+                      <div className="py-6 text-center">
+                        <Clock className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">No available time slots for this date</p>
+                        <Button variant="ghost" size="sm" className="mt-2" onClick={() => setStep(1)}>Choose another date</Button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        {timeSlotsForDate.map(time => (
+                          <button
+                            key={time}
+                            onClick={() => setSelectedTime(time)}
+                            className={cn(
+                              'p-2.5 rounded-xl border text-sm font-medium transition-all',
+                              selectedTime === time
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-border/50 text-foreground hover:border-primary/50'
+                            )}
+                          >
+                            <Clock className="w-3 h-3 mx-auto mb-0.5 text-muted-foreground" />
+                            {time}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <p className="text-sm font-medium text-foreground mt-4">{t('booking.session_type')}</p>
@@ -405,8 +504,12 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
                 )}
 
                 <div className="flex justify-between">
-                  <Button variant="ghost" onClick={() => setStep(1)}>{t('booking.back')}</Button>
-                  <Button disabled={!selectedTime} onClick={() => setStep(3)} className="gradient-primary border-0">
+                  <Button variant="ghost" onClick={() => setStep(bookingMode === 'instant' ? 0 : 1)}>{t('booking.back')}</Button>
+                  <Button
+                    disabled={bookingMode === 'scheduled' && !selectedTime}
+                    onClick={() => setStep(3)}
+                    className="gradient-primary border-0"
+                  >
                     {t('booking.next')}
                   </Button>
                 </div>
@@ -419,16 +522,29 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
                 <p className="text-sm font-medium text-foreground">{t('booking.review')}</p>
                 <div className="p-4 rounded-xl bg-muted/30 border border-border/30 space-y-3 text-sm">
                   <div className="flex justify-between">
+                    <span className="text-muted-foreground">Mode</span>
+                    <Badge variant={bookingMode === 'instant' ? 'default' : 'secondary'} className="text-[10px] gap-1 capitalize">
+                      {bookingMode === 'instant' ? <Zap className="w-3 h-3" /> : <CalendarClock className="w-3 h-3" />}
+                      {bookingMode}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('booking.consultant')}</span>
                     <span className="font-medium text-foreground">{consultantName}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('booking.date')}</span>
-                    <span className="font-medium text-foreground">{selectedDate && format(selectedDate, 'EEEE, MMM d, yyyy')}</span>
+                    <span className="font-medium text-foreground">
+                      {bookingMode === 'instant'
+                        ? format(new Date(), 'EEEE, MMM d, yyyy')
+                        : (selectedDate && format(selectedDate, 'EEEE, MMM d, yyyy'))}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('booking.time')}</span>
-                    <span className="font-medium text-foreground">{selectedTime}</span>
+                    <span className="font-medium text-foreground">
+                      {bookingMode === 'instant' ? 'Starting now' : selectedTime}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('booking.type')}</span>
