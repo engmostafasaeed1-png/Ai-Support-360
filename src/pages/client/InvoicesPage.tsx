@@ -28,9 +28,20 @@ import { Video, MessageSquare, Monitor, PlayCircle } from 'lucide-react';
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   completed: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
   paid: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
-  pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: Clock },
+  pending: { label: 'Unpaid', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: Clock },
+  unpaid: { label: 'Unpaid', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: Clock },
+  processing: { label: 'Processing', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: Clock },
   failed: { label: 'Failed', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: XCircle },
   refunded: { label: 'Refunded', color: 'bg-muted text-muted-foreground', icon: AlertCircle },
+};
+
+const matchesTab = (status: string, tab: string) => {
+  if (tab === 'all') return true;
+  if (tab === 'paid') return status === 'completed' || status === 'paid';
+  if (tab === 'unpaid') return status === 'pending' || status === 'unpaid';
+  if (tab === 'processing') return status === 'processing';
+  if (tab === 'failed') return status === 'failed';
+  return true;
 };
 
 const fmt = (amount: number, currency: string = 'USD') =>
@@ -143,11 +154,17 @@ export default function InvoicesPage() {
       p.consultant?.toLowerCase().includes(s) ||
       p.ticket_title?.toLowerCase().includes(s) ||
       p.description?.toLowerCase().includes(s);
-    const matchTab = tab === 'all' ||
-      (tab === 'paid' && (p.status === 'completed' || p.status === 'paid')) ||
-      (tab === 'pending' && p.status === 'pending');
+    const matchTab = matchesTab(p.status, tab);
     return matchSearch && matchTab;
   });
+
+  const counts = {
+    all: all.length,
+    paid: all.filter((p: any) => p.status === 'completed' || p.status === 'paid').length,
+    unpaid: all.filter((p: any) => p.status === 'pending' || p.status === 'unpaid').length,
+    processing: all.filter((p: any) => p.status === 'processing').length,
+    failed: all.filter((p: any) => p.status === 'failed').length,
+  };
 
   const generateInvoicePdf = (inv: any, preview = false) => {
     if (preview) {
@@ -179,10 +196,12 @@ export default function InvoicesPage() {
           <Input placeholder="Search invoices, tickets, consultants..." value={search} onChange={e => setSearch(e.target.value)} className="ps-9 rounded-xl" />
         </div>
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="h-9">
-            <TabsTrigger value="all" className="text-xs">All ({all.length})</TabsTrigger>
-            <TabsTrigger value="paid" className="text-xs">Paid</TabsTrigger>
-            <TabsTrigger value="pending" className="text-xs">Pending</TabsTrigger>
+          <TabsList className="h-9 flex-wrap">
+            <TabsTrigger value="all" className="text-xs">All ({counts.all})</TabsTrigger>
+            <TabsTrigger value="paid" className="text-xs">Paid ({counts.paid})</TabsTrigger>
+            <TabsTrigger value="unpaid" className="text-xs">Unpaid ({counts.unpaid})</TabsTrigger>
+            <TabsTrigger value="processing" className="text-xs">Processing ({counts.processing})</TabsTrigger>
+            <TabsTrigger value="failed" className="text-xs">Failed ({counts.failed})</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
