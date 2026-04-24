@@ -339,7 +339,7 @@ function PermPill({
 }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-background px-2 py-1 text-foreground">
-      <Icon className="w-3.5 h-3.5 text-primary" aria-hidden />
+      <Icon className="w-3.5 h-3.5 text-primary" />
       <span className="font-medium">{label}</span>
     </span>
   );
