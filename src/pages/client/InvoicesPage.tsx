@@ -407,15 +407,36 @@ export default function InvoicesPage() {
 
                 <InvoiceDisputeSection payment={selected} />
 
+                {failedDownloads[selected.id] && (
+                  <div className="flex items-start gap-2 rounded-lg border border-red-300/60 bg-red-50 dark:bg-red-950/20 dark:border-red-900/40 p-3">
+                    <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-red-700 dark:text-red-400">PDF generation failed</p>
+                      <p className="text-[11px] text-red-700/80 dark:text-red-400/80">The invoice PDF couldn't be created. You can retry without refreshing.</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-red-300 text-red-700 hover:bg-red-100 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/40"
+                      onClick={() => generateInvoicePdf(selected, false)}
+                      disabled={retryingId === selected.id}
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${retryingId === selected.id ? 'animate-spin' : ''}`} />
+                      Retry
+                    </Button>
+                  </div>
+                )}
+
                 <div className="flex gap-2 pt-2">
                   <Button className="flex-1 gap-1.5" variant="outline" size="sm" onClick={() => setEditing(true)}>
                     <Pencil className="w-4 h-4" /> Edit
                   </Button>
-                  <Button className="flex-1 gap-1.5" variant="outline" size="sm" onClick={() => generateInvoicePdf(selected, true)}>
+                  <Button className="flex-1 gap-1.5" variant="outline" size="sm" onClick={() => generateInvoicePdf(selected, true)} disabled={retryingId === selected.id}>
                     <Eye className="w-4 h-4" /> Preview PDF
                   </Button>
-                  <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={() => generateInvoicePdf(selected, false)}>
-                    <Download className="w-4 h-4" /> Download
+                  <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={() => generateInvoicePdf(selected, false)} disabled={retryingId === selected.id}>
+                    {retryingId === selected.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    {failedDownloads[selected.id] ? 'Retry Download' : 'Download'}
                   </Button>
                 </div>
               </div>
