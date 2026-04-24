@@ -235,6 +235,50 @@ export default function ConsultantApprovalsPage() {
           })}
         </div>
       )}
+      <Dialog open={!!decisionTarget} onOpenChange={(open) => !open && setDecisionTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {decisionTarget?.status === 'verified' ? 'Approve consultant' : 'Reject consultant'}
+            </DialogTitle>
+            <DialogDescription>
+              {decisionTarget?.name} — add an optional note to record with this decision in the audit log.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="decision-reason" className="text-sm">Reason / notes (optional)</Label>
+            <Textarea
+              id="decision-reason"
+              value={decisionReason}
+              onChange={(e) => setDecisionReason(e.target.value.slice(0, 1000))}
+              placeholder={
+                decisionTarget?.status === 'verified'
+                  ? 'e.g. Documents verified, certifications confirmed.'
+                  : 'e.g. Insufficient experience, missing certifications.'
+              }
+              className="min-h-[100px]"
+              maxLength={1000}
+            />
+            <p className="text-[11px] text-muted-foreground text-end">{decisionReason.length}/1000</p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDecisionTarget(null)} disabled={updateStatus.isPending}>
+              Cancel
+            </Button>
+            <Button
+              onClick={submitDecision}
+              disabled={updateStatus.isPending}
+              className={decisionTarget?.status === 'verified' ? 'gradient-primary border-0' : ''}
+              variant={decisionTarget?.status === 'verified' ? 'default' : 'destructive'}
+            >
+              {updateStatus.isPending
+                ? 'Saving...'
+                : decisionTarget?.status === 'verified' ? 'Approve' : 'Reject'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {reinterviewTarget && (
         <ReinterviewDialog
           open={!!reinterviewTarget}
