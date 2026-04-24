@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Star, ThumbsUp, CheckCircle2, Lock } from 'lucide-react';
+import { Star, ThumbsUp, CheckCircle2, Lock, MessageCircle, Wrench, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -20,10 +20,21 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+const optionalScore = z
+  .number()
+  .int()
+  .min(1)
+  .max(5)
+  .optional()
+  .or(z.literal(0).transform(() => undefined));
+
 const ratingSchema = z.object({
   score: z.number().int().min(1, 'Please select a star rating').max(5),
   comment: z.string().trim().max(1000, 'Feedback must be under 1000 characters').optional(),
   is_anonymous: z.boolean(),
+  communication_score: optionalScore,
+  technical_expertise_score: optionalScore,
+  responsiveness_score: optionalScore,
 });
 
 const SCORE_LABELS: Record<number, string> = {
@@ -33,6 +44,43 @@ const SCORE_LABELS: Record<number, string> = {
   4: 'Very Good',
   5: 'Excellent',
 };
+
+type CategoryKey = 'communication' | 'technical' | 'responsiveness';
+
+const CATEGORIES: { key: CategoryKey; label: string; description: string; icon: any }[] = [
+  { key: 'communication', label: 'Communication', description: 'Clarity, listening, language', icon: MessageCircle },
+  { key: 'technical', label: 'Technical Expertise', description: 'SAP knowledge & problem solving', icon: Wrench },
+  { key: 'responsiveness', label: 'Responsiveness', description: 'Punctuality and follow-through', icon: Zap },
+];
+
+function CategoryStars({
+  value,
+  onChange,
+  ariaLabel,
+}: { value: number; onChange: (v: number) => void; ariaLabel: string }) {
+  const [hoverV, setHoverV] = useState(0);
+  const display = hoverV || value;
+  return (
+    <div className="flex items-center gap-0.5" onMouseLeave={() => setHoverV(0)}>
+      {[1, 2, 3, 4, 5].map((v) => (
+        <button
+          key={v}
+          type="button"
+          aria-label={`${ariaLabel}: ${v} star${v > 1 ? 's' : ''}`}
+          onMouseEnter={() => setHoverV(v)}
+          onClick={() => onChange(v === value ? 0 : v)}
+          className="p-0.5 rounded hover:bg-muted transition-colors"
+        >
+          <Star
+            className={`w-4 h-4 transition-colors ${
+              v <= display ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/40'
+            }`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function RateSessionDialog({
   sessionId,
@@ -46,6 +94,9 @@ export default function RateSessionDialog({
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState('');
   const [anonymous, setAnonymous] = useState(false);
+  const [communicationScore, setCommunicationScore] = useState(0);
+  const [technicalScore, setTechnicalScore] = useState(0);
+  const [responsivenessScore, setResponsivenessScore] = useState(0);
 
   useEffect(() => {
     if (!open) {
@@ -53,6 +104,9 @@ export default function RateSessionDialog({
       setHover(0);
       setComment('');
       setAnonymous(false);
+      setCommunicationScore(0);
+      setTechnicalScore(0);
+      setResponsivenessScore(0);
     }
   }, [open]);
 
@@ -65,7 +119,7 @@ export default function RateSessionDialog({
       if (!user) return null;
       const { data, error } = await supabase
         .from('ratings')
-        .select('id, score, comment, is_anonymous, created_at')
+        .select('id, score, comment, is_anonymous, created_at, communication_score, technical_expertise_score, responsiveness_score')
         .eq('session_id', sessionId)
         .eq('client_id', user.id)
         .maybeSingle();
@@ -81,7 +135,14 @@ export default function RateSessionDialog({
         throw new Error('You have already rated this session.');
       }
 
-      const parsed = ratingSchema.safeParse({ score, comment, is_anonymous: anonymous });
+      const parsed = ratingSchema.safeParse({
+        score,
+        comment,
+        is_anonymous: anonymous,
+        communication_score: communicationScore || undefined,
+        technical_expertise_score: technicalScore || undefined,
+        responsiveness_score: responsivenessScore || undefined,
+      });
       if (!parsed.success) {
         throw new Error(parsed.error.errors[0]?.message || 'Invalid input');
       }
@@ -99,13 +160,16 @@ export default function RateSessionDialog({
         throw new Error('A rating for this session already exists.');
       }
 
-      const { error } = await supabase.from('ratings').insert({
+      const { error } = await (supabase.from('ratings') as any).insert({
         session_id: sessionId,
         client_id: user.id,
         consultant_id: consultantId,
         score: parsed.data.score,
         comment: parsed.data.comment || null,
         is_anonymous: parsed.data.is_anonymous,
+        communication_score: parsed.data.communication_score ?? null,
+        technical_expertise_score: parsed.data.technical_expertise_score ?? null,
+        responsiveness_score: parsed.data.responsiveness_score ?? null,
       });
       if (error) {
         // Handle unique constraint violations gracefully
@@ -176,6 +240,43 @@ export default function RateSessionDialog({
                 </span>
               </div>
 
+              {(() => {
+                const items = [
+                  { key: 'communication', label: 'Communication', icon: MessageCircle, value: (existing.data as any)?.communication_score },
+                  { key: 'technical', label: 'Technical Expertise', icon: Wrench, value: (existing.data as any)?.technical_expertise_score },
+                  { key: 'responsiveness', label: 'Responsiveness', icon: Zap, value: (existing.data as any)?.responsiveness_score },
+                ].filter((it) => typeof it.value === 'number' && it.value > 0);
+                if (items.length === 0) return null;
+                return (
+                  <div className="rounded-lg border border-border/40 bg-background/60 p-3 space-y-2">
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Detailed scores</p>
+                    {items.map((it) => {
+                      const Icon = it.icon;
+                      return (
+                        <div key={it.key} className="flex items-center justify-between gap-3">
+                          <span className="inline-flex items-center gap-1.5 text-xs text-foreground">
+                            <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                            {it.label}
+                          </span>
+                          <div className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map((v) => (
+                              <Star
+                                key={v}
+                                className={`w-3.5 h-3.5 ${
+                                  v <= (it.value as number)
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-muted-foreground/30'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
               {existing.data?.comment ? (
                 <div>
                   <p className="text-[11px] font-semibold text-muted-foreground uppercase mb-1">Your feedback</p>
@@ -226,6 +327,36 @@ export default function RateSessionDialog({
                   </span>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-2.5 rounded-xl border border-border/50 p-3">
+              <div>
+                <Label className="text-sm font-medium">Detailed scores <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <p className="text-[11px] text-muted-foreground">Help the consultant know what to keep doing — and what to improve.</p>
+              </div>
+              {CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                const value =
+                  cat.key === 'communication' ? communicationScore :
+                  cat.key === 'technical' ? technicalScore :
+                  responsivenessScore;
+                const setter =
+                  cat.key === 'communication' ? setCommunicationScore :
+                  cat.key === 'technical' ? setTechnicalScore :
+                  setResponsivenessScore;
+                return (
+                  <div key={cat.key} className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground inline-flex items-center gap-1.5">
+                        <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                        {cat.label}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">{cat.description}</p>
+                    </div>
+                    <CategoryStars value={value} onChange={setter} ariaLabel={cat.label} />
+                  </div>
+                );
+              })}
             </div>
 
             <div className="space-y-2">

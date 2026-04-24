@@ -147,18 +147,27 @@ export default function SessionDetailPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ratings')
-        .select('id, score, comment, is_anonymous, created_at')
+        .select('id, score, comment, is_anonymous, created_at, communication_score, technical_expertise_score, responsiveness_score')
         .eq('consultant_id', consultantId!)
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
-      const rows = data || [];
+      const rows = (data || []) as any[];
       const total = rows.length;
       const avg = total
         ? rows.reduce((sum, r) => sum + (r.score || 0), 0) / total
         : 0;
+      const avgOf = (key: string) => {
+        const vals = rows.map((r) => r[key]).filter((v) => typeof v === 'number' && v > 0);
+        return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+      };
+      const breakdown = {
+        communication: avgOf('communication_score'),
+        technical: avgOf('technical_expertise_score'),
+        responsiveness: avgOf('responsiveness_score'),
+      };
       const recent = rows.filter((r) => (r.comment || '').trim().length > 0).slice(0, 3);
-      return { avg, total, recent };
+      return { avg, total, recent, breakdown };
     },
   });
 
@@ -250,6 +259,22 @@ export default function SessionDetailPage() {
                     <span className="text-[11px] text-muted-foreground">
                       {consultantRatings.total} {consultantRatings.total === 1 ? 'rating' : 'ratings'}
                     </span>
+                    {(['communication', 'technical', 'responsiveness'] as const).map((k) => {
+                      const v = consultantRatings.breakdown?.[k];
+                      if (typeof v !== 'number') return null;
+                      const label = k === 'communication' ? 'Comm' : k === 'technical' ? 'Tech' : 'Resp';
+                      return (
+                        <span
+                          key={k}
+                          className="inline-flex items-center gap-1 rounded-md bg-muted/50 border border-border/50 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                          title={`${k.charAt(0).toUpperCase() + k.slice(1)} avg`}
+                        >
+                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                          <span className="font-semibold text-foreground">{v.toFixed(1)}</span>
+                          <span className="uppercase tracking-wide">{label}</span>
+                        </span>
+                      );
+                    })}
                   </div>
                 ) : consultantRatings && consultantRatings.total === 0 ? (
                   <p className="mt-2 text-[11px] text-muted-foreground italic">
