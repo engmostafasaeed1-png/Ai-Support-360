@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Languages } from 'lucide-react';
 import {
@@ -11,6 +12,14 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { logProviderEvent } from '@/lib/diagnostics';
 import { useTranslateTroubleshooting } from './TranslateTroubleshootingContext';
+import { supabase } from '@/integrations/supabase/client';
+
+const GLOBAL_PREF_KEY = 'troubleshoot:lang:last';
+const buildScopedKey = (userId: string | null, sessionId?: string) =>
+  `troubleshoot:lang:${userId ?? 'anon'}:${sessionId ?? 'global'}`;
+
+const isSupportedLang = (v: string | null | undefined): v is 'en' | 'ar' =>
+  v === 'en' || v === 'ar';
 
 interface TroubleshootingLanguageSwitcherProps {
   /** Forwarded to diagnostics for language-change tracking. */
