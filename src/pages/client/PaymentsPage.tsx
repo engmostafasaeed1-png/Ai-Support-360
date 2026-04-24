@@ -274,6 +274,8 @@ export default function PaymentsPage() {
                 </div>
               )}
 
+              <PaymentStatusTimeline payment={selectedPayment} />
+
               {/* Actions */}
               <div className="flex gap-2 pt-2">
                 <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={() => generateInvoicePdf(selectedPayment)}>
