@@ -27,6 +27,7 @@ import logo from '@/assets/logo.png';
 import sidebarBanner from '@/assets/sidebar-banner.png';
 import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 import TileTooltip from '@/components/sidebar/TileTooltip';
+import { getTileMeta } from '@/components/sidebar/tileMeta';
 
 // Per-tile color tints for visual variety (uses semantic HSL tokens via tailwind utilities)
 const tileTints: Record<string, string> = {
