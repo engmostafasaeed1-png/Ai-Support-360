@@ -78,11 +78,49 @@ const SidebarProvider = React.forwardRef<
   }
 >(({ defaultOpen = true, open: openProp, onOpenChange: setOpenProp, className, style, children, ...props }, ref) => {
   const isMobile = useIsMobile();
-  const [openMobile, setOpenMobile] = React.useState(false);
 
-  // This is the internal state of the sidebar.
-  // We use openProp and setOpenProp for control from outside the component.
-  const [_open, _setOpen] = React.useState(defaultOpen);
+  // Mobile sheet: persisted in sessionStorage so it survives in-app navigation
+  // but resets each new browser session.
+  const [openMobile, _setOpenMobile] = React.useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.sessionStorage.getItem(SIDEBAR_SHEET_SESSION_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+  const setOpenMobile = React.useCallback((value: boolean | ((v: boolean) => boolean)) => {
+    _setOpenMobile((prev) => {
+      const next = typeof value === "function" ? (value as (v: boolean) => boolean)(prev) : value;
+      try {
+        window.sessionStorage.setItem(SIDEBAR_SHEET_SESSION_KEY, String(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
+
+  // Desktop/mobile collapsed-vs-expanded state: persisted per form factor in
+  // localStorage so the user's chosen layout is remembered across sessions.
+  const [_open, _setOpen] = React.useState<boolean>(() => {
+    const persisted = readPersistedOpen(false); // SSR-safe initial guess for desktop
+    return persisted ?? defaultOpen;
+  });
+
+  // When the form factor changes (resize, device rotate, or initial mobile
+  // detection after mount), re-hydrate the open state from the appropriate
+  // storage key so each layout remembers its own preference.
+  React.useEffect(() => {
+    const persisted = readPersistedOpen(isMobile);
+    if (persisted !== undefined) {
+      _setOpen(persisted);
+    } else {
+      _setOpen(defaultOpen);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile]);
+
   const open = openProp ?? _open;
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
@@ -93,10 +131,12 @@ const SidebarProvider = React.forwardRef<
         _setOpen(openState);
       }
 
-      // This sets the cookie to keep the sidebar state.
+      // Keep the legacy cookie in sync (used by SSR consumers) and persist the
+      // per-form-factor preference in localStorage.
       document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+      writePersistedOpen(isMobile, openState);
     },
-    [setOpenProp, open],
+    [setOpenProp, open, isMobile],
   );
 
   // Helper to toggle the sidebar.
