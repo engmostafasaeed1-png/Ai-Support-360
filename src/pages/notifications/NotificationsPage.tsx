@@ -260,6 +260,21 @@ export default function NotificationsPage() {
                 </div>
                 {!selectMode && (
                   <div className="flex items-center gap-1 shrink-0">
+                    {(n as any).delivery_status === 'failed' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        title="Retry delivery"
+                        disabled={busy}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRetry(n.id);
+                        }}
+                      >
+                        <RotateCw className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                     {!n.is_read && (
                       <Button
                         variant="ghost"
