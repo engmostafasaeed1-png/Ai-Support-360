@@ -13,6 +13,7 @@ import {
   Blocks, MonitorSmartphone, Building, PartyPopper, Flag, Wand2, Crown, ChevronRight, Plus,
   Radio, ShieldCheck, UserCog, PieChart, ListChecks, Layers3, ScrollText, HelpCircle, Wrench,
   GitPullRequestArrow, SearchX, Store, AlertOctagon, BookMarked, Workflow, Monitor,
+  Activity,
 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
