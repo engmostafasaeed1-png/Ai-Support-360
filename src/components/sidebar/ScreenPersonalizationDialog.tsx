@@ -6,8 +6,9 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Settings2, Search, RotateCcw, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { Settings2, Search, RotateCcw, Eye, EyeOff, Sparkles, Rows3, Rows2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useTileDensity, type TileDensity } from '@/hooks/useTileDensity';
 
 interface ScreenItem {
   key: string;
@@ -29,6 +30,12 @@ export default function ScreenPersonalizationDialog({ screens, hiddenScreens, on
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const { density, setDensity } = useTileDensity();
+
+  const densityOptions: { value: TileDensity; label: string; hint: string; Icon: LucideIcon }[] = [
+    { value: 'comfortable', label: t('sidebar.density_comfortable', 'Comfortable'), hint: t('sidebar.density_comfortable_hint', 'Bigger labels, easier to tap'), Icon: Rows2 },
+    { value: 'compact', label: t('sidebar.density_compact', 'Compact'), hint: t('sidebar.density_compact_hint', 'Fit more tiles on screen'), Icon: Rows3 },
+  ];
 
   const groups = [...new Set(screens.map(s => s.group || 'General'))];
   const filtered = screens.filter(s =>
@@ -82,6 +89,55 @@ export default function ScreenPersonalizationDialog({ screens, hiddenScreens, on
               onChange={e => setSearch(e.target.value)}
               className="ps-9 h-9 text-sm bg-muted/30"
             />
+          </div>
+        </div>
+
+        {/* Tile density (mobile-focused but applies anywhere the row tile shows) */}
+        <div className="px-4 py-3 border-b border-border/30">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              {t('sidebar.density_title', 'Tile density (mobile)')}
+            </p>
+            <span className="text-[10px] text-muted-foreground/70">
+              {t('sidebar.density_subtitle', 'Choose your reading comfort')}
+            </span>
+          </div>
+          <div
+            role="radiogroup"
+            aria-label={t('sidebar.density_title', 'Tile density (mobile)')}
+            className="grid grid-cols-2 gap-2"
+          >
+            {densityOptions.map(({ value, label, hint, Icon }) => {
+              const active = density === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setDensity(value)}
+                  className={`flex items-start gap-2.5 rounded-xl border p-2.5 text-start transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                    active
+                      ? 'border-primary bg-primary/10 shadow-sm'
+                      : 'border-border/60 bg-background hover:bg-muted/40'
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                    active ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-xs font-semibold ${active ? 'text-primary' : 'text-foreground'}`}>
+                      {label}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                      {hint}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
