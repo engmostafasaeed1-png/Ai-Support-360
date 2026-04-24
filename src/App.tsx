@@ -118,6 +118,7 @@ const AnalyticsPage = React.lazy(() => import("./pages/admin/AnalyticsPage.tsx")
 const AdminIntegrationsPage = React.lazy(() => import("./pages/admin/AdminIntegrationsPage.tsx"));
 const EnvironmentsPage = React.lazy(() => import("./pages/admin/EnvironmentsPage.tsx"));
 const EnvironmentLogsPage = React.lazy(() => import("./pages/admin/EnvironmentLogsPage.tsx"));
+const MeetingJoinEventsExportPage = React.lazy(() => import("./pages/admin/MeetingJoinEventsExportPage.tsx"));
 const AdminSettingsPage = React.lazy(() => import("./pages/admin/AdminSettingsPage.tsx"));
 const NDAManagementPage = React.lazy(() => import("./pages/admin/NDAManagementPage.tsx"));
 const InterviewTrainingPage = React.lazy(() => import("./pages/admin/InterviewTrainingPage.tsx"));
@@ -321,6 +322,7 @@ const App = () => (
               <Route path="environments" element={<EnvironmentsPage />} />
               <Route path="vmware-settings" element={<AdminVMwareSettingsPage />} />
               <Route path="environment-logs" element={<EnvironmentLogsPage />} />
+              <Route path="meeting-join-events" element={<MeetingJoinEventsExportPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="nda-management" element={<NDAManagementPage />} />
               <Route path="landing-editor" element={<LandingEditorPage />} />
