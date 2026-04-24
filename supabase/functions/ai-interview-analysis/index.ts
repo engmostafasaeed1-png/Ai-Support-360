@@ -60,6 +60,21 @@ serve(async (req) => {
       .single();
     if (fetchErr || !interview) throw new Error("Interview not found");
 
+    // --- Ownership check: caller must be the client, the consultant, or an admin ---
+    const { data: consultantRow } = await supabase
+      .from("consultants")
+      .select("user_id")
+      .eq("id", interview.consultant_id)
+      .single();
+    const isAdmin = (await supabase.rpc("has_role", { _user_id: authUser.id, _role: "admin" })).data === true;
+    const isClient = interview.client_id === authUser.id;
+    const isConsultant = consultantRow?.user_id === authUser.id;
+    if (!isClient && !isConsultant && !isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+
     // Fetch ticket info
     const { data: ticket } = await supabase
       .from("tickets")
