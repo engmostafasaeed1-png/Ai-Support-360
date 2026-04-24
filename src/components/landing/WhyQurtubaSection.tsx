@@ -105,7 +105,7 @@ export default function WhyQurtubaSection() {
               {/* Icon */}
               <div className="absolute top-5 left-5 z-10">
                 <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-xl border border-white/25 flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:bg-white/25 transition-all duration-500">
-                  <f.Icon className="w-6 h-6 text-white" strokeWidth={2.2} />
+                  <f.Icon size={24} strokeWidth={1.75} absoluteStrokeWidth className="text-white" aria-hidden="true" />
                 </div>
               </div>
 
