@@ -1,5 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.101.1";
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.101.1/cors";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const SetAliasSchema = z.object({
+  clientId: z.union([z.string().min(1).max(200), z.number()]),
+  alias: z.string().max(200).optional(),
+});
 
 const ANYDESK_API_BASE = "https://v1.api.anydesk.com";
 
@@ -133,9 +139,13 @@ Deno.serve(async (req) => {
       case "set-alias": {
         // Set alias for a client
         if (req.method !== "POST") throw new Error("POST required");
-        const body = await req.json();
-        const { clientId, alias } = body;
-        if (!clientId) throw new Error("clientId is required");
+        const parsed = SetAliasSchema.safeParse(await req.json());
+        if (!parsed.success) {
+          return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const { clientId, alias } = parsed.data;
 
         const res = await fetch(`${ANYDESK_API_BASE}/clients/${clientId}`, {
           method: "PATCH",

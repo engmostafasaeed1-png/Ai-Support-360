@@ -1,5 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const BodySchema = z.object({
+  cv_text: z.string().trim().min(20).max(100_000),
+});
 
 const ALLOWED_ORIGINS = [
   'https://smartsapsupport.qurtubatalks.com',
@@ -45,12 +50,13 @@ serve(async (req) => {
       });
     }
 
-    const { cv_text } = await req.json();
-    if (!cv_text || typeof cv_text !== "string" || cv_text.trim().length < 20) {
-      return new Response(JSON.stringify({ error: "cv_text is required and must be at least 20 characters" }), {
+    const parsed = BodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
         status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
+    const { cv_text } = parsed.data;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
@@ -124,16 +130,16 @@ ${cv_text.substring(0, 15000)}`;
     const aiData = await aiResp.json();
     const rawContent = aiData.choices?.[0]?.message?.content || "{}";
 
-    let parsed;
+    let aiParsed;
     try {
       const cleaned = rawContent.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-      parsed = JSON.parse(cleaned);
+      aiParsed = JSON.parse(cleaned);
     } catch {
       console.error("Failed to parse AI response:", rawContent);
       throw new Error("Failed to parse CV data");
     }
 
-    return new Response(JSON.stringify({ profile: parsed }), {
+    return new Response(JSON.stringify({ profile: aiParsed }), {
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   } catch (e) {

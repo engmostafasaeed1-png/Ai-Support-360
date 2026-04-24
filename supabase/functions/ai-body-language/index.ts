@@ -1,5 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const BodySchema = z.object({
+  frames: z.array(z.string().min(1)).min(1).max(20),
+});
 
 const ALLOWED_ORIGINS = [
   'https://smartsapsupport.qurtubatalks.com',
@@ -45,8 +50,13 @@ serve(async (req) => {
       });
     }
 
-    const { frames } = await req.json();
-    if (!frames?.length) throw new Error("No frames provided");
+    const parsed = BodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
+        status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
+      });
+    }
+    const { frames } = parsed.data;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");

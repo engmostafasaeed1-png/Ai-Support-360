@@ -3,6 +3,13 @@
 // integrations.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const BodySchema = z.object({
+  resource: z.enum(["environment_credentials", "vmware_settings", "integrations"]),
+  field: z.string().min(1).max(100),
+  record_id: z.string().uuid(),
+});
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,13 +72,13 @@ serve(async (req) => {
       });
     }
 
-    const body = await req.json() as { resource: string; field: string; record_id: string };
-    if (!body.resource || !body.field || !body.record_id) {
-      return new Response(JSON.stringify({ error: "resource, field, record_id required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const parsed = BodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const body = parsed.data;
     if (!ALLOWED[body.resource]?.includes(body.field)) {
       return new Response(JSON.stringify({ error: "Invalid resource/field" }), {
         status: 400,

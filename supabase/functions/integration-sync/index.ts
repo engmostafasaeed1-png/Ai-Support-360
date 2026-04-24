@@ -1,4 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const SyncRequestSchema = z.object({
+  integration_id: z.string().uuid(),
+  action: z.enum(["sync_tickets", "push_update", "webhook_inbound"]),
+  payload: z.unknown().optional(),
+});
 
 const ALLOWED_ORIGINS = [
   'https://smartsapsupport.qurtubatalks.com',
@@ -244,14 +251,14 @@ Deno.serve(async (req) => {
     const authUserId = userData.user.id;
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const body: SyncRequest = await req.json();
-
-    if (!body.integration_id || !body.action) {
-      return new Response(JSON.stringify({ error: "integration_id and action are required" }), {
+    const parsedBody = SyncRequestSchema.safeParse(await req.json());
+    if (!parsedBody.success) {
+      return new Response(JSON.stringify({ error: parsedBody.error.flatten().fieldErrors }), {
         status: 400,
         headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
+    const body = parsedBody.data as SyncRequest;
 
     // Fetch integration config
     const { data: integration, error: intError } = await supabase

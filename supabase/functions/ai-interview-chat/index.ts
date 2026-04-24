@@ -1,5 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const BodySchema = z.object({
+  interview_id: z.string().uuid(),
+  messages: z.array(z.object({ role: z.string(), content: z.string() })).optional(),
+  action: z.string().optional(),
+  lang: z.string().max(10).optional(),
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,13 +40,18 @@ serve(async (req) => {
       });
     }
 
-    const { interview_id, messages, action, lang } = await req.json();
-    if (!interview_id) throw new Error("interview_id is required");
+    const parsed = BodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { interview_id, messages, action, lang } = parsed.data;
     
     const langNames: Record<string, string> = {
       en: "English", fr: "French", ar: "Arabic", "ar-SA": "Saudi Arabic", es: "Spanish", de: "German"
     };
-    const interviewLang = langNames[lang] || "English";
+    const interviewLang = (lang && langNames[lang]) || "English";
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");

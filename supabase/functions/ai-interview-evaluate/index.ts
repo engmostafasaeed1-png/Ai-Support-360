@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const BodySchema = z.object({
+  interview_id: z.string().uuid(),
+  answers: z.array(z.unknown()).min(1),
+});
 
 const ALLOWED_ORIGINS = [
   'https://smartsapsupport.qurtubatalks.com',
@@ -45,8 +51,13 @@ serve(async (req) => {
       });
     }
 
-    const { interview_id, answers } = await req.json();
-    if (!interview_id || !answers?.length) throw new Error("interview_id and answers are required");
+    const parsed = BodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
+        status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
+      });
+    }
+    const { interview_id, answers } = parsed.data;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
@@ -142,15 +153,16 @@ Return ONLY valid JSON.`;
     // Update each answer with score and feedback
     for (let i = 0; i < answers.length; i++) {
       const evalAnswer = evaluation.answers?.[i];
-      if (evalAnswer && answers[i].id) {
+      const ans = answers[i] as { id?: string; answer?: string };
+      if (evalAnswer && ans?.id) {
         await supabase
           .from("interview_answers")
           .update({
-            answer_transcript: answers[i].answer,
+            answer_transcript: ans.answer,
             score: evalAnswer.score,
             ai_feedback: evalAnswer.feedback,
           })
-          .eq("id", answers[i].id);
+          .eq("id", ans.id);
       }
     }
 
