@@ -28,6 +28,7 @@ import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfac
 import MeetingLinkButton from '@/components/session/MeetingLinkButton';
 import MediaPermissionsBanner from '@/components/session/MediaPermissionsBanner';
 import FramedAppNotice from '@/components/session/FramedAppNotice';
+import PreJoinChecklist from '@/components/session/PreJoinChecklist';
 
 const typeIcons = {
   video: Video,
