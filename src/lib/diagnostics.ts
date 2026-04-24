@@ -160,13 +160,16 @@ export function installCspViolationLogger() {
       const target = e.target as Element | null;
       if (target && target.tagName === 'IFRAME') {
         const src = (target as HTMLIFrameElement).src;
-        if (/meet\.google\.com|teams\.(microsoft|live)\.com|zoom\.us/i.test(src || '')) {
-          recordDiagnostic({
-            category: 'provider',
-            level: 'error',
-            message: `Iframe failed to load for provider URL`,
-            data: { src, tag: 'iframe', userAgent: navigator.userAgent },
-          });
+        if (/meet\.google\.com|teams\.(microsoft|live)\.com|zoom\.us|jit\.si/i.test(src || '')) {
+          const provider = /meet\.google\.com/i.test(src) ? 'meet'
+            : /teams\.(microsoft|live)\.com/i.test(src) ? 'teams'
+            : /zoom\.us/i.test(src) ? 'zoom'
+            : /jit\.si/i.test(src) ? 'jitsi' : 'unknown';
+          logProviderEvent(
+            'load_failed',
+            { provider, url: src, tag: 'iframe' },
+            'error'
+          );
         }
       }
     },
