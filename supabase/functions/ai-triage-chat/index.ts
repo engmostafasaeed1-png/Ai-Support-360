@@ -53,7 +53,7 @@ function checkRateLimit(id: string): boolean {
   return e.count <= RATE_LIMIT;
 }
 
-const SYSTEM_PROMPT = `You are Qurtuba AI, the AI support agent for Qurtuba Talks — a premium SAP consulting platform.
+const SYSTEM_PROMPT = `You are AI SAP Support Now, the AI support agent for Qurtuba Talks — a premium SAP consulting platform.
 
 You can:
 - Answer general SAP questions (FI, MM, SD, BASIS, ABAP, BW, S/4HANA, SuccessFactors, etc.).
