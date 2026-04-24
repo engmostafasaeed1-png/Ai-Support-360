@@ -8,7 +8,7 @@ import { Outlet } from 'react-router-dom';
 import {
   Search, LayoutDashboard, Briefcase, Calendar, MessageSquare,
   CreditCard, Star, User, ShieldCheck, BookOpen, Bell, Settings, Settings2, Brain, Server, Building2,
-  Handshake, FileText, Gavel, Clock, ClipboardList, BarChart3, Gift, Zap, Plus,
+  Handshake, FileText, Gavel, Clock, ClipboardList, BarChart3, Gift, Zap, Plus, Sparkles,
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Input } from '@/components/ui/input';
