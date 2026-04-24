@@ -501,6 +501,7 @@ export default function ClientDashboard() {
                     );
                   })}
                 </div>
+                <TrustBadge badge={(c as any).ai_interview_badge} credits={(c as any).credibility_credits} className="mb-2" />
 
                 <div className="mt-auto flex items-center justify-between pt-2 border-t border-border/30">
                   <div>
