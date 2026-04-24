@@ -16,7 +16,7 @@ import {
 import InterviewTranscript from '@/components/consultant/InterviewTranscript';
 import ShareMenu from '@/components/ShareMenu';
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import BookingModal from '@/components/client/BookingModal';
@@ -84,6 +84,23 @@ export default function ConsultantProfilePage() {
     },
     enabled: !!id,
   });
+
+  // Realtime: refresh badge when an admin changes the verification status
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`consultant-verification-${id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'consultants', filter: `id=eq.${id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['consultant-verification', id] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id, queryClient]);
 
   const verificationStatus: VerificationStatus =
     (liveConsultant?.verification_status as VerificationStatus) ||
