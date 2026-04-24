@@ -101,6 +101,7 @@ export default function InvoicesPage() {
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'amount_desc' | 'amount_asc'>('newest');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('all');
   const [selected, setSelected] = useState<any>(null);
   const [drawerPayment, setDrawerPayment] = useState<any>(null);
   const [pdfPreview, setPdfPreview] = useState<string | null>(null);
