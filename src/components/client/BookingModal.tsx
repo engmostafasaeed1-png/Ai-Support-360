@@ -415,32 +415,46 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
             {/* Step 2: Time + Session type */}
             {step === 2 && (
               <div className="space-y-4">
-                <p className="text-sm font-medium text-foreground">{t('booking.select_time')}</p>
-
-                {timeSlotsForDate.length === 0 ? (
-                  <div className="py-6 text-center">
-                    <Clock className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">No available time slots for this date</p>
-                    <Button variant="ghost" size="sm" className="mt-2" onClick={() => setStep(1)}>Choose another date</Button>
+                {bookingMode === 'instant' ? (
+                  <div className="flex items-start gap-3 p-3 rounded-xl border border-primary/20 bg-primary/5">
+                    <Zap className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Starting now</p>
+                      <p className="text-xs text-muted-foreground">
+                        Your session will start as soon as you confirm. Choose a session type below.
+                      </p>
+                    </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {timeSlotsForDate.map(time => (
-                      <button
-                        key={time}
-                        onClick={() => setSelectedTime(time)}
-                        className={cn(
-                          'p-2.5 rounded-xl border text-sm font-medium transition-all',
-                          selectedTime === time
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-border/50 text-foreground hover:border-primary/50'
-                        )}
-                      >
-                        <Clock className="w-3 h-3 mx-auto mb-0.5 text-muted-foreground" />
-                        {time}
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    <p className="text-sm font-medium text-foreground">{t('booking.select_time')}</p>
+
+                    {timeSlotsForDate.length === 0 ? (
+                      <div className="py-6 text-center">
+                        <Clock className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">No available time slots for this date</p>
+                        <Button variant="ghost" size="sm" className="mt-2" onClick={() => setStep(1)}>Choose another date</Button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        {timeSlotsForDate.map(time => (
+                          <button
+                            key={time}
+                            onClick={() => setSelectedTime(time)}
+                            className={cn(
+                              'p-2.5 rounded-xl border text-sm font-medium transition-all',
+                              selectedTime === time
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-border/50 text-foreground hover:border-primary/50'
+                            )}
+                          >
+                            <Clock className="w-3 h-3 mx-auto mb-0.5 text-muted-foreground" />
+                            {time}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <p className="text-sm font-medium text-foreground mt-4">{t('booking.session_type')}</p>
