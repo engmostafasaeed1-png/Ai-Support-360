@@ -21,6 +21,7 @@ import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 import logo from '@/assets/logo.png';
 import TileTooltip from '@/components/sidebar/TileTooltip';
 import { getTileMeta } from '@/components/sidebar/tileMeta';
+import SidebarTileSkeleton from '@/components/sidebar/SidebarTileSkeleton';
 
 const tileTints: Record<string, string> = {
   dashboard: 'from-blue-500/25 to-blue-500/5 text-blue-500',
