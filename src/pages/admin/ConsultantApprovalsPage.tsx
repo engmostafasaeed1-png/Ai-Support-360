@@ -6,16 +6,24 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
 import { Check, X, ChevronDown, ChevronUp, Award, Globe, DollarSign, Brain, Users, RotateCcw } from 'lucide-react';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { pendingConsultants } from '@/data/adminMockData';
 import { toast } from 'sonner';
 import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
 import InterviewHistory from '@/components/consultant/InterviewHistory';
+import ConsultantVerificationAuditLog from '@/components/admin/ConsultantVerificationAuditLog';
 
 export default function ConsultantApprovalsPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [reinterviewTarget, setReinterviewTarget] = useState<{ id: string; name: string } | null>(null);
+  const [decisionTarget, setDecisionTarget] = useState<{ id: string; name: string; status: string } | null>(null);
+  const [decisionReason, setDecisionReason] = useState('');
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
   const queryClient = useQueryClient();
@@ -53,19 +61,54 @@ export default function ConsultantApprovalsPage() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status, reason }: { id: string; status: string; reason?: string }) => {
       const { error } = await supabase
         .from('consultants')
         .update({ verification_status: status as any })
         .eq('id', id);
       if (error) throw error;
+
+      // Attach the reviewer's reason to the audit row the trigger just created.
+      if (reason && reason.trim()) {
+        const { data: latest } = await supabase
+          .from('consultant_verification_audit')
+          .select('id')
+          .eq('consultant_id', id)
+          .eq('new_status', status as any)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (latest?.id) {
+          await supabase
+            .from('consultant_verification_audit')
+            .update({ reason: reason.trim() })
+            .eq('id', latest.id);
+        }
+      }
     },
-    onSuccess: (_, { status }) => {
+    onSuccess: (_, { id, status }) => {
       queryClient.invalidateQueries({ queryKey: ['pending-consultants'] });
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['consultant-verification-audit', id] });
       toast.success(status === 'verified' ? 'Consultant approved!' : 'Consultant rejected.');
     },
   });
+
+  const openDecision = (id: string, name: string, status: string) => {
+    setDecisionTarget({ id, name, status });
+    setDecisionReason('');
+  };
+
+  const submitDecision = async () => {
+    if (!decisionTarget) return;
+    await updateStatus.mutateAsync({
+      id: decisionTarget.id,
+      status: decisionTarget.status,
+      reason: decisionReason,
+    });
+    setDecisionTarget(null);
+    setDecisionReason('');
+  };
 
   const list = consultants || [];
 
@@ -168,15 +211,19 @@ export default function ConsultantApprovalsPage() {
 
                       <InterviewHistory consultantId={c.id} />
 
+                      <div className="mt-4 pt-4 border-t border-border/50">
+                        <ConsultantVerificationAuditLog consultantId={c.id} />
+                      </div>
+
                       <div className="flex items-center gap-3 justify-end flex-wrap mt-4">
                         <span className="text-xs text-muted-foreground me-auto">{t('approvals_page.applied')}: {c.appliedAt}</span>
                         <Button variant="outline" size="sm" onClick={() => setReinterviewTarget({ id: c.id, name: c.name })}>
                           <RotateCcw className="w-3.5 h-3.5 me-1" /> {t('interview.reinterview', 'Re-Interview')}
                         </Button>
-                        <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => updateStatus.mutate({ id: c.id, status: 'rejected' })} disabled={updateStatus.isPending}>
+                        <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => openDecision(c.id, c.name, 'rejected')} disabled={updateStatus.isPending}>
                           <X className="w-3.5 h-3.5 me-1" /> {t('approvals_page.reject')}
                         </Button>
-                        <Button size="sm" className="gradient-primary border-0" onClick={() => updateStatus.mutate({ id: c.id, status: 'verified' })} disabled={updateStatus.isPending}>
+                        <Button size="sm" className="gradient-primary border-0" onClick={() => openDecision(c.id, c.name, 'verified')} disabled={updateStatus.isPending}>
                           <Check className="w-3.5 h-3.5 me-1" /> {t('approvals_page.approve')}
                         </Button>
                       </div>
@@ -188,6 +235,50 @@ export default function ConsultantApprovalsPage() {
           })}
         </div>
       )}
+      <Dialog open={!!decisionTarget} onOpenChange={(open) => !open && setDecisionTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {decisionTarget?.status === 'verified' ? 'Approve consultant' : 'Reject consultant'}
+            </DialogTitle>
+            <DialogDescription>
+              {decisionTarget?.name} — add an optional note to record with this decision in the audit log.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="decision-reason" className="text-sm">Reason / notes (optional)</Label>
+            <Textarea
+              id="decision-reason"
+              value={decisionReason}
+              onChange={(e) => setDecisionReason(e.target.value.slice(0, 1000))}
+              placeholder={
+                decisionTarget?.status === 'verified'
+                  ? 'e.g. Documents verified, certifications confirmed.'
+                  : 'e.g. Insufficient experience, missing certifications.'
+              }
+              className="min-h-[100px]"
+              maxLength={1000}
+            />
+            <p className="text-[11px] text-muted-foreground text-end">{decisionReason.length}/1000</p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDecisionTarget(null)} disabled={updateStatus.isPending}>
+              Cancel
+            </Button>
+            <Button
+              onClick={submitDecision}
+              disabled={updateStatus.isPending}
+              className={decisionTarget?.status === 'verified' ? 'gradient-primary border-0' : ''}
+              variant={decisionTarget?.status === 'verified' ? 'default' : 'destructive'}
+            >
+              {updateStatus.isPending
+                ? 'Saving...'
+                : decisionTarget?.status === 'verified' ? 'Approve' : 'Reject'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {reinterviewTarget && (
         <ReinterviewDialog
           open={!!reinterviewTarget}
