@@ -130,7 +130,8 @@ export default function VMwareSettingsForm({
       setCloudRegion((settings as any).cloud_region || '');
       setCloudAccountId((settings as any).cloud_account_id || '');
       setCloudProjectId((settings as any).cloud_project_id || '');
-      setCloudApiKey((settings as any).cloud_api_key_encrypted || '');
+      // API key is stored encrypted; user must re-enter to change it.
+      setCloudApiKey('');
       setCloudApiEndpoint((settings as any).cloud_api_endpoint || '');
       setInstanceType((settings as any).instance_type || '');
       setAvailabilityZone((settings as any).availability_zone || '');
