@@ -30,6 +30,7 @@ import MediaPermissionsBanner from '@/components/session/MediaPermissionsBanner'
 import FramedAppNotice from '@/components/session/FramedAppNotice';
 import PreJoinChecklist from '@/components/session/PreJoinChecklist';
 import MeetingPermissionsNote from '@/components/session/MeetingPermissionsNote';
+import MeetingUrlValidationNotice from '@/components/session/MeetingUrlValidationNotice';
 
 const typeIcons = {
   video: Video,
@@ -150,6 +151,13 @@ export default function SessionDetailPage() {
               (session as any).meeting_url ||
               `https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`
             }
+          />
+          <MeetingUrlValidationNotice
+            url={
+              (session as any).meeting_url ||
+              `https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`
+            }
+            sessionId={sessionId}
           />
           <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
           <MeetingPermissionsNote dismissKey={`perm-note-dismissed:${sessionId}`} />
