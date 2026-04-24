@@ -63,7 +63,7 @@ function aiRequest(apiKey: string, systemPrompt: string, userPrompt: string, too
   });
 }
 
-function handleAiError(status: number) {
+function handleAiError(req: Request, status: number) {
   if (status === 429) return new Response(JSON.stringify({ error: "Rate limited" }), { status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
   if (status === 402) return new Response(JSON.stringify({ error: "Credits exhausted" }), { status: 402, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
   return null;
@@ -146,7 +146,7 @@ serve(async (req) => {
       );
 
       if (!response.ok) {
-        const errResp = handleAiError(response.status);
+        const errResp = handleAiError(req, response.status);
         if (errResp) return errResp;
         throw new Error(`AI gateway error: ${response.status}`);
       }
@@ -183,7 +183,7 @@ serve(async (req) => {
       );
 
       if (!response.ok) {
-        const errResp = handleAiError(response.status);
+        const errResp = handleAiError(req, response.status);
         if (errResp) return errResp;
         throw new Error(`AI gateway error: ${response.status}`);
       }
@@ -220,7 +220,7 @@ serve(async (req) => {
       );
 
       if (!response.ok) {
-        const errResp = handleAiError(response.status);
+        const errResp = handleAiError(req, response.status);
         if (errResp) return errResp;
         throw new Error(`AI gateway error: ${response.status}`);
       }
@@ -493,7 +493,7 @@ Rank the top consultants for this ticket. Be specific about why each matches.`,
       );
 
       if (!rankResponse.ok) {
-        const errResp = handleAiError(rankResponse.status);
+        const errResp = handleAiError(req, rankResponse.status);
         if (errResp) return errResp;
         throw new Error(`AI gateway error: ${rankResponse.status}`);
       }

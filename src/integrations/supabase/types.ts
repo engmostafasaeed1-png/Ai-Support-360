@@ -1296,6 +1296,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "integration_sync_log_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "integration_sync_log_local_ticket_id_fkey"
             columns: ["local_ticket_id"]
             isOneToOne: false
@@ -4951,8 +4958,68 @@ export type Database = {
           },
         ]
       }
+      integrations_safe: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          external_project_id: string | null
+          id: string | null
+          last_synced_at: string | null
+          platform: Database["public"]["Enums"]["integration_platform"] | null
+          platform_url: string | null
+          settings: Json | null
+          status: Database["public"]["Enums"]["integration_status"] | null
+          sync_enabled: boolean | null
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          external_project_id?: string | null
+          id?: string | null
+          last_synced_at?: string | null
+          platform?: Database["public"]["Enums"]["integration_platform"] | null
+          platform_url?: string | null
+          settings?: Json | null
+          status?: Database["public"]["Enums"]["integration_status"] | null
+          sync_enabled?: boolean | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          external_project_id?: string | null
+          id?: string | null
+          last_synced_at?: string | null
+          platform?: Database["public"]["Enums"]["integration_platform"] | null
+          platform_url?: string | null
+          settings?: Json | null
+          status?: Database["public"]["Enums"]["integration_status"] | null
+          sync_enabled?: boolean | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      get_integration_credentials: {
+        Args: { _integration_id: string }
+        Returns: {
+          api_key_encrypted: string
+          webhook_secret: string
+        }[]
+      }
       get_user_tenant_id: { Args: never; Returns: string }
       get_vmware_settings_safe: {
         Args: { p_environment_id: string }

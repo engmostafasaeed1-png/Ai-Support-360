@@ -100,10 +100,16 @@ export default function ClientNDAUpload() {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!clientProfile?.custom_nda_url) return;
-    const { data } = supabase.storage.from('nda-documents').getPublicUrl(clientProfile.custom_nda_url);
-    window.open(data.publicUrl, '_blank');
+    const { data, error } = await supabase.storage
+      .from('nda-documents')
+      .createSignedUrl(clientProfile.custom_nda_url, 3600);
+    if (error || !data?.signedUrl) {
+      toast.error('Could not generate download link');
+      return;
+    }
+    window.open(data.signedUrl, '_blank');
   };
 
   const hasCustomNDA = !!clientProfile?.custom_nda_url;
