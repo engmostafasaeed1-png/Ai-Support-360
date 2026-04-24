@@ -22,6 +22,29 @@ function getCorsHeaders(req: Request) {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// AES-GCM decrypt helper for *_ciphertext columns. Mirrors credentials-decrypt.
+async function getCredKey(): Promise<CryptoKey> {
+  const raw = Deno.env.get("CREDENTIALS_ENCRYPTION_KEY");
+  if (!raw) throw new Error("CREDENTIALS_ENCRYPTION_KEY not configured");
+  const hashed = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+  return crypto.subtle.importKey("raw", hashed, "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+function b64ToBytesSync(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+async function decryptCiphertext(b64: string | null | undefined): Promise<string> {
+  if (!b64) return "";
+  const key = await getCredKey();
+  const buf = b64ToBytesSync(b64);
+  const iv = buf.slice(0, 12);
+  const cipher = buf.slice(12);
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher);
+  return new TextDecoder().decode(plain);
+}
+
 interface SyncRequest {
   integration_id: string;
   action: "sync_tickets" | "push_update" | "webhook_inbound";
