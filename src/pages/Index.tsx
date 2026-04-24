@@ -3,6 +3,7 @@ import HeroSection from '@/components/landing/HeroSection';
 import ExploreServicesSection from '@/components/landing/ExploreServicesSection';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
 import WhyQurtubaSection from '@/components/landing/WhyQurtubaSection';
+import ValueDifferentiationSection from '@/components/landing/ValueDifferentiationSection';
 import ConsultantsSection from '@/components/landing/ConsultantsSection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import PricingSection from '@/components/landing/PricingSection';
@@ -24,6 +25,9 @@ const Index = () => {
       </ScrollFadeIn>
       <ScrollFadeIn delay={50}>
         <WhyQurtubaSection />
+      </ScrollFadeIn>
+      <ScrollFadeIn delay={50}>
+        <ValueDifferentiationSection />
       </ScrollFadeIn>
       <ScrollFadeIn>
         <ConsultantsSection />
