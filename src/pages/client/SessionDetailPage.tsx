@@ -139,6 +139,10 @@ export default function SessionDetailPage() {
         <ChevronLeft className="w-4 h-4" /> {t('session_detail.back')}
       </Button>
 
+      {session.session_type === 'video' && status !== 'completed' && status !== 'cancelled' && (
+        <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
+      )}
+
       {/* Header card */}
       <Card className="rounded-2xl border-border/50">
         <CardContent className="p-6">
