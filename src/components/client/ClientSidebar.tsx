@@ -232,7 +232,7 @@ export default function ClientSidebar() {
                     <SidebarMenu>
                       {visibleItems.map((item) => {
                         const isActive = location.pathname === item.path;
-                        const label = t(`sidebar.${item.key}`, (item as any).label || titleize(item.key));
+                        const label = String(t(`sidebar.${item.key}`, { defaultValue: (item as any).label || titleize(item.key) }));
                         const tint = tileTints[item.key] || 'from-primary/20 to-primary/5 text-primary';
                         return (
                           <SidebarMenuItem key={item.key}>
@@ -259,7 +259,7 @@ export default function ClientSidebar() {
                       {visibleItems.map((item) => {
                         const isActive = location.pathname === item.path;
                         const isAccent = (item as any).accent;
-                        const label = t(`sidebar.${item.key}`, (item as any).label || titleize(item.key));
+                        const label = String(t(`sidebar.${item.key}`, { defaultValue: (item as any).label || titleize(item.key) }));
                         const tint = tileTints[item.key] || 'from-primary/20 to-primary/5 text-primary';
                         return (
                           <NavLink
