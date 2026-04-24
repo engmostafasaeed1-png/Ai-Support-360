@@ -136,7 +136,24 @@ export default function PreflightTestDialog({
   const [recordConfirmed, setRecordConfirmed] = useState(false);
   const RECORD_DURATION = 4; // seconds
 
+  const cleanupRecording = useCallback(() => {
+    if (recordTimerRef.current) {
+      window.clearInterval(recordTimerRef.current);
+      recordTimerRef.current = null;
+    }
+    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+      try {
+        recorderRef.current.stop();
+      } catch {
+        /* ignore */
+      }
+    }
+    recorderRef.current = null;
+    chunksRef.current = [];
+  }, []);
+
   const stopStream = useCallback(() => {
+    cleanupRecording();
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
@@ -152,7 +169,7 @@ export default function PreflightTestDialog({
     }
     if (videoRef.current) videoRef.current.srcObject = null;
     setLevel(0);
-  }, []);
+  }, [cleanupRecording]);
 
   const refreshDevices = useCallback(async () => {
     try {
