@@ -3,7 +3,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
-import { Bell, Check, CheckCheck, Trash2, MessageSquare, Ticket, CreditCard, UserCheck, Info, X } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, MessageSquare, Ticket, CreditCard, UserCheck, Info, X, AlertTriangle, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const typeIcons: Record<string, typeof Bell> = {
   message: MessageSquare,
