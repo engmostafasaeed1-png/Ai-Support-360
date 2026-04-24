@@ -27,6 +27,16 @@ export default function Navbar() {
     return () => mq.removeEventListener('change', update);
   }, []);
 
+  // Close mobile menu on Esc
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileOpen]);
+
   const navItems = [
     { label: t('nav.home'), href: '/' },
     { label: t('nav.services'), href: '#categories' },
