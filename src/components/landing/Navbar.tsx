@@ -28,22 +28,23 @@ export default function Navbar() {
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-white/95 backdrop-blur-xl border-b border-border/50 shadow-sm' : 'bg-white/90 backdrop-blur-lg'}`}>
-      <div className="container mx-auto flex items-center justify-between h-20 sm:h-24 px-4">
+      <div className="container mx-auto flex items-center justify-between h-16 sm:h-20 md:h-24 px-3 sm:px-4 gap-2">
         <Link
           to="/"
           aria-label="AI SAP Support Now — go to home"
           title="Go to home"
-          className="flex items-center gap-2 sm:gap-3 group rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background -ml-1 pl-1 pr-2 py-1 cursor-pointer"
+          className="flex items-center gap-1.5 sm:gap-2.5 md:gap-3 group rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background py-1 cursor-pointer min-w-0 shrink"
         >
           <img
             src={logo}
             alt="AI SAP Support Now logo"
             width={96}
             height={96}
-            className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl object-contain group-hover:scale-105 group-active:scale-95 transition-transform drop-shadow-md"
+            className="w-9 h-9 sm:w-14 sm:h-14 md:w-20 md:h-20 rounded-xl sm:rounded-2xl object-contain shrink-0 group-hover:scale-105 group-active:scale-95 transition-transform drop-shadow-md"
           />
-          <span className="font-black text-base sm:text-xl md:text-2xl text-foreground tracking-tight group-hover:text-primary transition-colors whitespace-nowrap">
-            AI SAP Support Now
+          <span className="font-black text-[13px] leading-tight sm:text-lg md:text-2xl text-foreground tracking-tight group-hover:text-primary transition-colors truncate">
+            <span className="sm:hidden">AI SAP Support</span>
+            <span className="hidden sm:inline">AI SAP Support Now</span>
           </span>
         </Link>
 
