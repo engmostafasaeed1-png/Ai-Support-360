@@ -1,5 +1,11 @@
 import { Check, X, Sparkles, Bot, ShieldCheck, Zap, BrainCircuit, FileSearch, ArrowUpRight } from 'lucide-react';
 import { accents, iconPlate, radius, shadow, type AccentName } from './tokens';
+import aiTriageImg from '@/assets/value/ai-triage.jpg';
+import expertsImg from '@/assets/value/experts.jpg';
+import outcomeImg from '@/assets/value/outcome.jpg';
+import governanceImg from '@/assets/value/governance.jpg';
+import knowledgeImg from '@/assets/value/knowledge.jpg';
+import sapNativeImg from '@/assets/value/sap-native.jpg';
 
 type Pillar = {
   Icon: typeof BrainCircuit;
@@ -7,6 +13,9 @@ type Pillar = {
   desc: string;
   /** Accent identity from shared tokens — drives gradient + glow color. */
   accent: AccentName;
+  /** Decorative background image (subtle, with overlay gradient). */
+  image: string;
+  imageAlt: string;
   span?: string;
   featured?: boolean;
 };
@@ -17,6 +26,8 @@ const valuePillars: Pillar[] = [
     title: 'AI-native triage',
     desc: 'Every ticket is parsed, classified, and pre-solved by AI tuned for SAP — before a human even reads it.',
     accent: 'violet',
+    image: aiTriageImg,
+    imageAlt: 'Glowing neural network nodes representing AI triage',
     span: 'md:col-span-2 md:row-span-2',
     featured: true,
   },
@@ -25,18 +36,24 @@ const valuePillars: Pillar[] = [
     title: 'On-demand experts',
     desc: 'Match with vetted SAP specialists in minutes, not weeks.',
     accent: 'amber',
+    image: expertsImg,
+    imageAlt: 'Amber lightning bolt suggesting fast expert matching',
   },
   {
     Icon: Sparkles,
     title: 'Pay per outcome',
     desc: 'No seats, no licenses. Resolution-based pricing.',
     accent: 'rose',
+    image: outcomeImg,
+    imageAlt: 'Pink sparkle particles representing outcome-based value',
   },
   {
     Icon: ShieldCheck,
     title: 'Governance built-in',
     desc: 'NDAs, RBAC, audit trails, screen protection — native, not bolted on.',
     accent: 'emerald',
+    image: governanceImg,
+    imageAlt: 'Emerald shield representing built-in governance',
     span: 'md:col-span-2',
   },
   {
@@ -44,12 +61,16 @@ const valuePillars: Pillar[] = [
     title: 'Knowledge that compounds',
     desc: 'Every resolved case becomes searchable IP for your team.',
     accent: 'sky',
+    image: knowledgeImg,
+    imageAlt: 'Stacked glowing layers representing a compounding knowledge base',
   },
   {
     Icon: Bot,
     title: 'SAP-specific by design',
     desc: 'Tuned for S/4HANA, ECC, BTP & every module — not generic IT.',
     accent: 'cyan',
+    image: sapNativeImg,
+    imageAlt: 'Modular cyan cubes representing SAP module architecture',
   },
 ];
 
