@@ -196,10 +196,12 @@ export default function InvoicesPage() {
           <Input placeholder="Search invoices, tickets, consultants..." value={search} onChange={e => setSearch(e.target.value)} className="ps-9 rounded-xl" />
         </div>
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="h-9">
-            <TabsTrigger value="all" className="text-xs">All ({all.length})</TabsTrigger>
-            <TabsTrigger value="paid" className="text-xs">Paid</TabsTrigger>
-            <TabsTrigger value="pending" className="text-xs">Pending</TabsTrigger>
+          <TabsList className="h-9 flex-wrap">
+            <TabsTrigger value="all" className="text-xs">All ({counts.all})</TabsTrigger>
+            <TabsTrigger value="paid" className="text-xs">Paid ({counts.paid})</TabsTrigger>
+            <TabsTrigger value="unpaid" className="text-xs">Unpaid ({counts.unpaid})</TabsTrigger>
+            <TabsTrigger value="processing" className="text-xs">Processing ({counts.processing})</TabsTrigger>
+            <TabsTrigger value="failed" className="text-xs">Failed ({counts.failed})</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
