@@ -59,6 +59,13 @@ interface MeetingLinkButtonProps {
   joinLabel?: string;
   /** Show the camera/mic preflight test before opening the meeting URL. Default true. */
   requirePreflight?: boolean;
+  /**
+   * When set, the join button routes through `/join/:sessionId?to=...` — a
+   * dedicated handoff route that guarantees the meeting opens in a top-level
+   * browser tab (escapes any wrapping iframe). Recommended for any context
+   * where the app may be embedded.
+   */
+  sessionId?: string;
 }
 
 /**
