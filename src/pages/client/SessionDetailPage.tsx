@@ -321,6 +321,49 @@ export default function SessionDetailPage() {
         </CardContent>
       </Card>
 
+      {/* Recent feedback for the consultant */}
+      {consultantRatings && consultantRatings.recent.length > 0 && (
+        <Card className="rounded-2xl border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+              Recent feedback for {(session as any).consultant_name}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {consultantRatings.recent.map((r) => (
+              <div key={r.id} className="rounded-xl border border-border/50 p-3 bg-muted/20">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((v) => (
+                      <Star
+                        key={v}
+                        className={`w-3.5 h-3.5 ${
+                          v <= (r.score || 0)
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-muted-foreground/30'
+                        }`}
+                      />
+                    ))}
+                    <span className="ms-1.5 text-[11px] text-muted-foreground">
+                      {r.is_anonymous ? 'Anonymous' : 'Verified client'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">
+                    {format(new Date(r.created_at), 'MMM d, yyyy')}
+                  </span>
+                </div>
+                {r.comment && (
+                  <p className="text-xs text-foreground mt-2 leading-relaxed line-clamp-3">
+                    "{r.comment}"
+                  </p>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Rate consultant CTA — visible after a completed session */}
       {status === 'completed' && session.consultant_id && (
         <Card className="rounded-2xl border-border/50 bg-gradient-to-br from-primary/5 to-accent/5">
