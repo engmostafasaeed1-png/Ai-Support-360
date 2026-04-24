@@ -87,11 +87,14 @@ export default function InterviewsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">AI Interviews</h1>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            AI Interviews
+            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">Optional</span>
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Take an optional AI interview to boost your profile credibility by 20%.
+            Completing an AI interview is <strong>optional</strong>, but it earns you a verified badge + credibility credits clients can see.
           </p>
         </div>
         <Button onClick={handleStartOptionalInterview} className="gradient-primary border-0 gap-2">
@@ -99,17 +102,44 @@ export default function InterviewsPage() {
         </Button>
       </div>
 
-      {/* Credibility info banner */}
-      <Card className="rounded-2xl border-primary/20 bg-primary/5">
-        <CardContent className="p-4 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <span className="text-lg font-bold text-primary">20%</span>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-foreground">Profile Credibility Boost</p>
-            <p className="text-xs text-muted-foreground">
-              Completing an AI interview adds 20% credibility weight to your profile, visible to all clients. This is optional but highly recommended.
-            </p>
+      {/* Reward tier card */}
+      <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+              <span className="text-xl">🎁</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">Earn a verified badge + credibility credits</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Your reward depends on your interview score. The badge appears on your profile so clients instantly see your verified expertise.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+                <div className="rounded-lg p-2.5 bg-gradient-to-br from-amber-200 to-yellow-400 text-amber-950 ring-1 ring-amber-400/50 text-center">
+                  <div className="text-base">🥇</div>
+                  <div className="text-[10px] font-bold">Gold · 85+</div>
+                  <div className="text-[10px]">+150 credits</div>
+                </div>
+                <div className="rounded-lg p-2.5 bg-gradient-to-br from-slate-200 to-slate-400 text-slate-800 ring-1 ring-slate-400/50 text-center">
+                  <div className="text-base">🥈</div>
+                  <div className="text-[10px] font-bold">Silver · 70+</div>
+                  <div className="text-[10px]">+100 credits</div>
+                </div>
+                <div className="rounded-lg p-2.5 bg-gradient-to-br from-orange-300 to-orange-500 text-orange-950 ring-1 ring-orange-500/50 text-center">
+                  <div className="text-base">🥉</div>
+                  <div className="text-[10px] font-bold">Bronze · 50+</div>
+                  <div className="text-[10px]">+75 credits</div>
+                </div>
+                <div className="rounded-lg p-2.5 bg-gradient-to-br from-emerald-300 to-emerald-500 text-emerald-950 ring-1 ring-emerald-500/50 text-center">
+                  <div className="text-base">✅</div>
+                  <div className="text-[10px] font-bold">Verified</div>
+                  <div className="text-[10px]">+50 credits</div>
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2">
+                Credits are awarded once on your first completed interview. Retakes refresh your score and badge tier.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

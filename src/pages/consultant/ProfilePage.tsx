@@ -81,7 +81,14 @@ export default function ProfilePage() {
     );
   }
 
-  const p = profile || { display_name: '', bio: '', hourly_rate: 0, currency: 'USD', timezone: 'Asia/Riyadh', languages: ['en'], rating: 0, total_reviews: 0, response_time_minutes: 0, verification_status: 'pending', availability_status: 'offline', ai_skills_score: 0 };
+  const p: any = profile || { display_name: '', bio: '', hourly_rate: 0, currency: 'USD', timezone: 'Asia/Riyadh', languages: ['en'], rating: 0, total_reviews: 0, response_time_minutes: 0, verification_status: 'pending', availability_status: 'offline', ai_skills_score: 0, credibility_credits: 0, ai_interview_badge: null, ai_interview_completed_at: null };
+  const badgeStyles: Record<string, { bg: string; text: string; ring: string; emoji: string }> = {
+    Gold:     { bg: 'from-amber-300 via-yellow-400 to-amber-500', text: 'text-amber-900',   ring: 'ring-amber-400/50', emoji: '🥇' },
+    Silver:   { bg: 'from-slate-200 via-slate-300 to-slate-400',  text: 'text-slate-800',   ring: 'ring-slate-400/50', emoji: '🥈' },
+    Bronze:   { bg: 'from-orange-300 via-orange-400 to-orange-600', text: 'text-orange-950', ring: 'ring-orange-500/50', emoji: '🥉' },
+    Verified: { bg: 'from-emerald-300 via-emerald-400 to-emerald-600', text: 'text-emerald-950', ring: 'ring-emerald-500/50', emoji: '✅' },
+  };
+  const badgeStyle = p.ai_interview_badge ? badgeStyles[p.ai_interview_badge] : null;
 
   return (
     <>
@@ -114,6 +121,11 @@ export default function ProfilePage() {
               )}
               {(p.rating || 0) >= 4.5 && (
                 <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 text-xs">Top Rated</Badge>
+              )}
+              {p.ai_interview_badge && badgeStyle && (
+                <Badge className={`bg-gradient-to-r ${badgeStyle.bg} ${badgeStyle.text} text-xs border-0 ring-1 ${badgeStyle.ring} shadow-sm`}>
+                  {badgeStyle.emoji} AI Interview · {p.ai_interview_badge}
+                </Badge>
               )}
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2 text-center">
@@ -198,19 +210,64 @@ export default function ProfilePage() {
         </Card>
       </div>
 
-      {/* AI Skills Score */}
-      {(p.ai_skills_score || 0) > 0 && (
+      {/* AI Skills Score + Credibility Credits */}
+      {(p.ai_skills_score || 0) > 0 || (p.credibility_credits || 0) > 0 ? (
         <Card className="rounded-2xl border-border/50">
           <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center">
-                <span className="text-2xl font-bold text-accent">{p.ai_skills_score}</span>
+            <div className="grid md:grid-cols-3 gap-4">
+              {/* Score */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center shrink-0">
+                  <span className="text-2xl font-bold text-accent">{p.ai_skills_score || 0}</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">AI Skills Score</h3>
+                  <p className="text-xs text-muted-foreground">Latest interview evaluation</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-foreground">AI Skills Assessment Score</h3>
-                <p className="text-sm text-muted-foreground">Based on your latest AI interview evaluation</p>
+              {/* Badge */}
+              {p.ai_interview_badge && badgeStyle && (
+                <div className="flex items-center gap-4">
+                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${badgeStyle.bg} flex items-center justify-center shrink-0 shadow-md ring-2 ${badgeStyle.ring}`}>
+                    <span className="text-2xl">{badgeStyle.emoji}</span>
+                  </div>
+                  <div>
+                    <h3 className={`font-semibold ${badgeStyle.text}`}>{p.ai_interview_badge} Interviewer</h3>
+                    <p className="text-xs text-muted-foreground">Earned {p.ai_interview_completed_at ? new Date(p.ai_interview_completed_at).toLocaleDateString() : ''}</p>
+                  </div>
+                </div>
+              )}
+              {/* Credits */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 ring-1 ring-primary/30">
+                  <span className="text-2xl font-bold text-primary">{p.credibility_credits || 0}</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Credibility Credits</h3>
+                  <p className="text-xs text-muted-foreground">Boost your visibility to clients</p>
+                </div>
               </div>
             </div>
+            {(p.ai_skills_score || 0) === 0 && (
+              <p className="text-xs text-muted-foreground mt-4 text-center">
+                💡 Take the optional AI interview to earn a badge + up to 150 credibility credits.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="rounded-2xl border-dashed border-primary/30 bg-primary/5">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <span className="text-xl">🎁</span>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-foreground">Earn a verified badge + credibility credits</h3>
+              <p className="text-xs text-muted-foreground">The AI interview is optional but earns you up to <strong>150 credits</strong> and a Gold badge clients can see.</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => window.location.href = '/consultant/interviews'}>
+              Take Interview
+            </Button>
           </CardContent>
         </Card>
       )}

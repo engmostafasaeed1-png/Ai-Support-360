@@ -1026,6 +1026,8 @@ export type Database = {
       }
       consultants: {
         Row: {
+          ai_interview_badge: string | null
+          ai_interview_completed_at: string | null
           ai_skills_score: number | null
           availability_status:
             | Database["public"]["Enums"]["availability_status"]
@@ -1034,6 +1036,7 @@ export type Database = {
           city: string | null
           country: string | null
           created_at: string
+          credibility_credits: number
           credly_username: string | null
           currency: string | null
           cv_url: string | null
@@ -1058,6 +1061,8 @@ export type Database = {
             | null
         }
         Insert: {
+          ai_interview_badge?: string | null
+          ai_interview_completed_at?: string | null
           ai_skills_score?: number | null
           availability_status?:
             | Database["public"]["Enums"]["availability_status"]
@@ -1066,6 +1071,7 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string
+          credibility_credits?: number
           credly_username?: string | null
           currency?: string | null
           cv_url?: string | null
@@ -1090,6 +1096,8 @@ export type Database = {
             | null
         }
         Update: {
+          ai_interview_badge?: string | null
+          ai_interview_completed_at?: string | null
           ai_skills_score?: number | null
           availability_status?:
             | Database["public"]["Enums"]["availability_status"]
@@ -1098,6 +1106,7 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string
+          credibility_credits?: number
           credly_username?: string | null
           currency?: string | null
           cv_url?: string | null
