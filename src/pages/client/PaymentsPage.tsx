@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { generateInvoicePdf } from '@/lib/invoicePdf';
 import { generateReceiptPdf } from '@/lib/receiptPdf';
 import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
+import { InvoiceDisputeSection } from '@/components/invoice/InvoiceDisputeSection';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
 import { useCurrency, formatMoney } from '@/contexts/CurrencyContext';
