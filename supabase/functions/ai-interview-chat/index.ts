@@ -41,7 +41,32 @@ serve(async (req) => {
     const interviewLang = langNames[lang] || "English";
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get interview + consultant info
+    const { data: interview, error: intErr } = await supabase
+      .from("interview_sessions")
+      .select("consultant_id, interview_type, status")
+      .eq("id", interview_id)
+      .single();
+    if (intErr || !interview) throw new Error("Interview not found");
+
+    // --- Ownership check: caller must be the consultant or an admin ---
+    const { data: consultantRow } = await supabase
+      .from("consultants")
+      .select("user_id")
+      .eq("id", interview.consultant_id)
+      .single();
+    const isAdmin = (await supabase.rpc("has_role", { _user_id: authUser.id, _role: "admin" })).data === true;
+    if (consultantRow?.user_id !== authUser.id && !isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Get consultant skills for context
     const { data: skills } = await supabase
