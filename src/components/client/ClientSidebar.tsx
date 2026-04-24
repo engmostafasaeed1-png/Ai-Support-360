@@ -261,14 +261,16 @@ export default function ClientSidebar() {
                                 <NavLink
                                   to={item.path}
                                   end
-                                  className={`group/item relative flex items-center justify-center rounded-xl mx-1.5 my-0.5 h-10 transition-all duration-200 ${
+                                  aria-label={`${label}. ${getTileMeta('client', item.key, label).description}`}
+                                  aria-current={isActive ? 'page' : undefined}
+                                  className={`group/item relative flex items-center justify-center rounded-xl mx-1.5 my-0.5 h-10 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar ${
                                     isActive
                                       ? `bg-gradient-to-br ${tint} shadow-lg`
                                       : 'hover:bg-sidebar-accent/60 text-sidebar-foreground/70 hover:text-sidebar-foreground'
                                   }`}
                                   activeClassName=""
                                 >
-                                  <item.icon className={`w-4 h-4 shrink-0 ${isActive ? '' : ''}`} />
+                                  <item.icon aria-hidden="true" focusable="false" className={`w-4 h-4 shrink-0 ${isActive ? '' : ''}`} />
                                 </NavLink>
                               </TileTooltip>
                             </SidebarMenuButton>
