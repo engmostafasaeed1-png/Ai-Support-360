@@ -43,6 +43,8 @@ interface FramedAppNoticeProps {
 export default function FramedAppNotice({
   dismissKey = 'framed-app-notice-dismissed',
   topLevelUrl,
+  meetingUrl,
+  provider,
 }: FramedAppNoticeProps) {
   const { t } = useTranslation();
   const [framed, setFramed] = useState(false);
