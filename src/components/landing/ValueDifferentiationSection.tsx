@@ -1,5 +1,6 @@
 import { Check, X, Sparkles, Bot, ShieldCheck, Zap, BrainCircuit, FileSearch, ArrowUpRight } from 'lucide-react';
 import { accents, iconPlate, radius, shadow, type AccentName } from './tokens';
+import { tileImageAlt } from './tileImageAlt';
 import aiTriageImg from '@/assets/value/ai-triage.jpg';
 import expertsImg from '@/assets/value/experts.jpg';
 import outcomeImg from '@/assets/value/outcome.jpg';
