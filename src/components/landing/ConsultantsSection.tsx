@@ -1,13 +1,34 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Star, BadgeCheck, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SectionHeader from './SectionHeader';
+import c01 from '@/assets/consultants/c01-gulf.jpg';
+import c02 from '@/assets/consultants/c09-nordic.jpg';
+import c07 from '@/assets/consultants/c07-pakistani.jpg';
+import c08 from '@/assets/consultants/c08-moroccan.jpg';
 
-const mockConsultants = [
-  { name: 'Ahmed Al-Rashid',  role: 'SAP S/4HANA Finance Expert',     rating: 4.9, reviews: 127, rate: 150, avatar: 'AR', accent: 'from-cyan-500 to-blue-600',     badges: ['verified', 'top_rated'], available: true },
-  { name: 'Sarah Johnson',    role: 'SAP BTP & Integration Architect',rating: 4.8, reviews:  98, rate: 175, avatar: 'SJ', accent: 'from-violet-500 to-purple-600', badges: ['verified', 'fast_responder'], available: true },
-  { name: 'Mohammed Al-Farsi',role: 'SAP MM/SD Functional Lead',      rating: 4.9, reviews: 215, rate: 130, avatar: 'MF', accent: 'from-amber-500 to-orange-600',  badges: ['verified', 'top_rated'], available: false },
-  { name: 'Dr. Fatima Hassan',role: 'SAP SuccessFactors & HCM',       rating: 5.0, reviews:  87, rate: 200, avatar: 'FH', accent: 'from-emerald-500 to-teal-600',  badges: ['verified', 'top_rated', 'fast_responder'], available: true },
+type Consultant = {
+  name: string;
+  role: string;
+  rating: number;
+  reviews: number;
+  rate: number;
+  /** Initials shown as fallback if the photo fails to load. */
+  avatar: string;
+  /** Real portrait photo for the consultant. */
+  photo: string;
+  /** Gradient used for the ring + initials fallback tint. */
+  accent: string;
+  badges: string[];
+  available: boolean;
+};
+
+const mockConsultants: Consultant[] = [
+  { name: 'Ahmed Al-Rashid',  role: 'SAP S/4HANA Finance Expert',     rating: 4.9, reviews: 127, rate: 150, avatar: 'AR', photo: c01, accent: 'from-cyan-500 to-blue-600',     badges: ['verified', 'top_rated'], available: true },
+  { name: 'Sarah Johnson',    role: 'SAP BTP & Integration Architect',rating: 4.8, reviews:  98, rate: 175, avatar: 'SJ', photo: c02, accent: 'from-violet-500 to-purple-600', badges: ['verified', 'fast_responder'], available: true },
+  { name: 'Mohammed Al-Farsi',role: 'SAP MM/SD Functional Lead',      rating: 4.9, reviews: 215, rate: 130, avatar: 'MF', photo: c07, accent: 'from-amber-500 to-orange-600',  badges: ['verified', 'top_rated'], available: false },
+  { name: 'Dr. Fatima Hassan',role: 'SAP SuccessFactors & HCM',       rating: 5.0, reviews:  87, rate: 200, avatar: 'FH', photo: c08, accent: 'from-emerald-500 to-teal-600',  badges: ['verified', 'top_rated', 'fast_responder'], available: true },
 ];
 
 const badgeConfig: Record<string, { Icon: typeof Star; color: string }> = {
@@ -53,9 +74,7 @@ export default function ConsultantsSection() {
 
               <div className="relative">
                 <div className="flex items-center gap-3 mb-5">
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${c.accent} flex items-center justify-center text-white font-bold text-base shadow-lg motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-110 motion-safe:group-hover:-rotate-3`}>
-                    {c.avatar}
-                  </div>
+                  <ConsultantAvatar c={c} />
                   <div className="flex-1 min-w-0">
                     <h4 className="font-bold text-foreground text-sm truncate">{c.name}</h4>
                     <p className="text-xs text-muted-foreground truncate">{c.role}</p>
@@ -109,5 +128,43 @@ export default function ConsultantsSection() {
         </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * Avatar with a real consultant portrait, gradient accent ring, and
+ * graceful initials fallback. Falls back automatically if the image
+ * fails to decode (e.g. asset missing or network error in the future).
+ */
+function ConsultantAvatar({ c }: { c: Consultant }) {
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <div
+      className={`relative w-14 h-14 rounded-2xl p-[2px] bg-gradient-to-br ${c.accent} shadow-lg motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-110 motion-safe:group-hover:-rotate-3`}
+    >
+      <div className="relative w-full h-full rounded-[inherit] overflow-hidden bg-card flex items-center justify-center">
+        {!failed ? (
+          <img
+            src={c.photo}
+            alt={`Portrait of ${c.name}, ${c.role}`}
+            loading="lazy"
+            decoding="async"
+            width={112}
+            height={112}
+            onError={() => setFailed(true)}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          // Fallback — gradient tile with the consultant's initials.
+          <span
+            aria-hidden="true"
+            className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${c.accent} text-white font-bold text-base`}
+          >
+            {c.avatar}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
