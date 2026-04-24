@@ -232,6 +232,7 @@ export default function InvoicesPage() {
               <SelectItem value="amount_asc">Lowest amount</SelectItem>
             </SelectContent>
           </Select>
+          <CurrencySelector />
         </div>
       </div>
 
