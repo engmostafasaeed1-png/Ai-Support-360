@@ -87,10 +87,20 @@ export default function NDASigningModal({
 
   const hasCustomNDA = !!customNdaUrl;
 
-  const customNdaPublicUrl = useMemo(() => {
-    if (!customNdaUrl) return null;
-    const { data } = supabase.storage.from('nda-documents').getPublicUrl(customNdaUrl);
-    return data.publicUrl;
+  const [customNdaPublicUrl, setCustomNdaPublicUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (!customNdaUrl) {
+      setCustomNdaPublicUrl(null);
+      return;
+    }
+    supabase.storage
+      .from('nda-documents')
+      .createSignedUrl(customNdaUrl, 3600)
+      .then(({ data }) => {
+        if (!cancelled) setCustomNdaPublicUrl(data?.signedUrl ?? null);
+      });
+    return () => { cancelled = true; };
   }, [customNdaUrl]);
 
   const filledTemplate = useMemo(() => {
