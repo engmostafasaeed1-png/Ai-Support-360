@@ -39,6 +39,49 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
   refunded: { label: 'Refunded', color: 'bg-muted text-muted-foreground', icon: AlertCircle },
 };
 
+const SESSION_TYPE_CONFIG: Record<string, { label: string; icon: any; className: string }> = {
+  video: {
+    label: 'Video Call',
+    icon: Video,
+    className: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-900/50',
+  },
+  chat: {
+    label: 'Chat',
+    icon: MessageSquare,
+    className: 'bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-900/50',
+  },
+  screen_share: {
+    label: 'Screen Share',
+    icon: Monitor,
+    className: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-900/50',
+  },
+  voice: {
+    label: 'Voice Call',
+    icon: Phone,
+    className: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-900/50',
+  },
+  recorded: {
+    label: 'Recorded Session',
+    icon: PlayCircle,
+    className: 'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-900/50',
+  },
+};
+
+const NO_SESSION_CONFIG = {
+  label: 'No Session',
+  icon: HelpCircle,
+  className: 'bg-muted text-muted-foreground border-border',
+};
+
+function getSessionTypeConfig(type?: string | null) {
+  if (!type) return NO_SESSION_CONFIG;
+  return SESSION_TYPE_CONFIG[type] || {
+    label: type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+    icon: PlayCircle,
+    className: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+  };
+}
+
 const matchesTab = (status: string, tab: string) => {
   if (tab === 'all') return true;
   if (tab === 'paid') return status === 'completed' || status === 'paid';
