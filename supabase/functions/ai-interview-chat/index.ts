@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
 import { z } from "https://esm.sh/zod@3.23.8";
 
 const BodySchema = z.object({
@@ -30,15 +30,17 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     const supabaseAuth = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
     );
-    const { data: { user: authUser }, error: authError } = await supabaseAuth.auth.getUser(token);
-    if (authError || !authUser) {
+    const { data: claimsData, error: authError } = await supabaseAuth.auth.getClaims(token);
+    if (authError || !claimsData?.claims?.sub) {
       return new Response(JSON.stringify({ error: 'Invalid or expired session' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    const authUser = { id: claimsData.claims.sub as string, email: claimsData.claims.email as string | undefined };
 
     const parsed = BodySchema.safeParse(await req.json());
     if (!parsed.success) {
