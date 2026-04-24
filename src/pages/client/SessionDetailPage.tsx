@@ -30,6 +30,7 @@ import MediaPermissionsBanner from '@/components/session/MediaPermissionsBanner'
 import FramedAppNotice from '@/components/session/FramedAppNotice';
 import PreJoinChecklist from '@/components/session/PreJoinChecklist';
 import MeetingPermissionsNote from '@/components/session/MeetingPermissionsNote';
+import MeetingUrlValidationNotice from '@/components/session/MeetingUrlValidationNotice';
 
 const typeIcons = {
   video: Video,
