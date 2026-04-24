@@ -76,6 +76,8 @@ interface ConsultantRecommendation {
   languages: string[];
   verification_status: string;
   top_skills: string[];
+  credibility_credits?: number;
+  ai_interview_badge?: string | null;
 }
 
 interface AiMatchConsultants {
