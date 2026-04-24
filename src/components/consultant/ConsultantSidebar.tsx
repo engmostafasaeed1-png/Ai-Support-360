@@ -153,11 +153,11 @@ export default function ConsultantSidebar() {
             {prefsLoading ? (
               <SidebarTileSkeleton count={12} collapsed={collapsed} />
             ) : collapsed ? (
-              <SidebarMenu className="space-y-1 px-2">
+              <SidebarMenu className="space-y-1.5 px-2">
                 {visibleItems.map((item) => {
                   const isActive = item.path === bestMatchPath;
                   const label = String(t(`sidebar.${item.key}`, { defaultValue: titleize(item.key) }));
-                  const tint = tileTints[item.key] || 'from-primary/20 to-primary/5 text-primary';
+                  const tint = tileTints[item.key] || defaultTint;
                   return (
                     <SidebarMenuItem key={item.key}>
                       <SidebarMenuButton asChild>
@@ -167,17 +167,25 @@ export default function ConsultantSidebar() {
                             end={item.path === '/consultant'}
                             aria-label={`${label}. ${getTileMeta('consultant', item.key, label).description}`}
                             aria-current={isActive ? 'page' : undefined}
-                            className={`flex items-center justify-center rounded-xl h-10 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar ${
+                            className={`group relative flex items-center justify-center rounded-2xl h-11 w-11 transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar ${
                               isActive
-                                ? `bg-gradient-to-br ${tint} shadow-lg`
-                                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
+                                ? `bg-gradient-to-br ${tint.grad} shadow-lg ${tint.glow} ring-2 ${tint.ring} scale-105`
+                                : 'bg-sidebar-accent/20 text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground hover:scale-105 hover:shadow-md'
                             }`}
                             activeClassName=""
                           >
+                            {/* glossy highlight on active */}
+                            {isActive && (
+                              <span aria-hidden="true" className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-white/0 via-white/25 to-white/0 pointer-events-none" />
+                            )}
                             {item.key === 'onboarding' && onboardingDone ? (
-                              <CheckCircle2 aria-hidden="true" focusable="false" className="w-4 h-4 text-green-400" />
+                              <CheckCircle2 aria-hidden="true" focusable="false" className="w-[18px] h-[18px] text-green-300 drop-shadow" strokeWidth={2.4} />
                             ) : (
-                              <item.icon aria-hidden="true" focusable="false" className="w-4 h-4" />
+                              <item.icon aria-hidden="true" focusable="false" className={`w-[18px] h-[18px] transition-transform group-hover:scale-110 ${isActive ? 'text-white drop-shadow-lg' : ''}`} strokeWidth={isActive ? 2.4 : 2} />
+                            )}
+                            {/* active dot indicator */}
+                            {isActive && (
+                              <span aria-hidden="true" className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.9)]" />
                             )}
                           </NavLink>
                         </TileTooltip>
@@ -187,14 +195,14 @@ export default function ConsultantSidebar() {
                 })}
               </SidebarMenu>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 px-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 px-3">
                 {visibleItems.map((item) => {
                   const isActive = item.path === bestMatchPath;
                   const isOnboardingDone = item.key === 'onboarding' && onboardingDone;
                   const label = isOnboardingDone
                     ? String(t('sidebar.onboarding_complete', { defaultValue: 'Onboarding' }))
                     : String(t(`sidebar.${item.key}`, { defaultValue: titleize(item.key) }));
-                  const tint = tileTints[item.key] || 'from-primary/20 to-primary/5 text-primary';
+                  const tint = tileTints[item.key] || defaultTint;
                   return (
                     <TileTooltip key={item.key} scope="consultant" itemKey={item.key} label={label} isActive={isActive} side="right">
                       <NavLink
@@ -202,35 +210,55 @@ export default function ConsultantSidebar() {
                         end={item.path === '/consultant'}
                         aria-label={`${label}${isOnboardingDone ? ' (completed)' : ''}. ${getTileMeta('consultant', item.key, label).description}`}
                         aria-current={isActive ? 'page' : undefined}
-                        className={`group/tile relative flex flex-row sm:flex-col items-center sm:items-center justify-start sm:justify-center ${dens.row} sm:gap-2 rounded-2xl sm:px-2 sm:py-3.5 sm:min-h-0 text-start sm:text-center transition-all duration-200 overflow-hidden border outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar ${
+                        className={`group/tile relative flex flex-row sm:flex-col items-center sm:items-center justify-start sm:justify-center ${dens.row} sm:gap-2.5 rounded-2xl sm:px-2.5 sm:py-4 sm:min-h-0 text-start sm:text-center transition-all duration-300 overflow-hidden border outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar backdrop-blur-sm ${
                           isActive
-                            ? 'bg-gradient-to-br from-primary via-primary/85 to-primary/60 text-primary-foreground border-primary/50 shadow-xl shadow-primary/40 sm:scale-[1.03]'
-                            : 'bg-sidebar-accent/15 hover:bg-sidebar-accent/40 text-sidebar-foreground/90 hover:text-sidebar-foreground border-sidebar-border/30 hover:border-sidebar-border/70 hover:shadow-md hover:-translate-y-0.5'
+                            ? `bg-gradient-to-br ${tint.grad} text-white border-white/20 shadow-xl ${tint.glow} sm:scale-[1.04] ring-1 ring-white/15`
+                            : 'bg-gradient-to-br from-sidebar-accent/25 via-sidebar-accent/15 to-transparent hover:from-sidebar-accent/45 hover:via-sidebar-accent/30 text-sidebar-foreground/90 hover:text-sidebar-foreground border-sidebar-border/30 hover:border-sidebar-border/60 hover:shadow-lg hover:-translate-y-0.5'
                         }`}
                         activeClassName=""
                       >
+                        {/* Active glossy + glow accents */}
                         {isActive && (
                           <>
-                            <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/15 to-white/0 pointer-events-none" />
-                            <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full bg-white/20 blur-2xl pointer-events-none" />
+                            <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 pointer-events-none" />
+                            <div aria-hidden="true" className="absolute -top-8 -right-6 w-20 h-20 rounded-full bg-white/30 blur-2xl pointer-events-none" />
+                            <div aria-hidden="true" className="absolute -bottom-10 -left-6 w-20 h-20 rounded-full bg-white/15 blur-3xl pointer-events-none" />
                           </>
                         )}
-                        <div aria-hidden="true" className={`flex items-center justify-center ${dens.iconBox} sm:w-11 sm:h-11 rounded-2xl shrink-0 transition-all ${
+
+                        {/* Hover shimmer for inactive tiles */}
+                        {!isActive && (
+                          <div aria-hidden="true" className="absolute inset-0 opacity-0 group-hover/tile:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-tr from-transparent via-white/5 to-transparent" />
+                        )}
+
+                        {/* Modern infographic icon container */}
+                        <div aria-hidden="true" className={`relative flex items-center justify-center ${dens.iconBox} sm:w-12 sm:h-12 rounded-2xl shrink-0 transition-all duration-300 ${
                           isActive
-                            ? 'bg-white/25 backdrop-blur-sm shadow-inner'
-                            : `bg-gradient-to-br ${tint} group-hover/tile:scale-110 shadow-sm`
+                            ? 'bg-white/25 backdrop-blur-md shadow-inner ring-1 ring-white/30'
+                            : `bg-gradient-to-br ${tint.grad} shadow-md ${tint.glow} group-hover/tile:scale-110 group-hover/tile:rotate-3 group-hover/tile:shadow-lg ring-1 ${tint.ring}`
                         }`}>
+                          {/* inner gloss */}
+                          <span aria-hidden="true" className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/30 via-transparent to-transparent pointer-events-none" />
                           {isOnboardingDone ? (
-                            <CheckCircle2 aria-hidden="true" focusable="false" className="w-5 h-5 text-green-500" strokeWidth={2.2} />
+                            <CheckCircle2 aria-hidden="true" focusable="false" className="w-[22px] h-[22px] text-white drop-shadow relative z-10" strokeWidth={2.4} />
                           ) : (
-                            <item.icon aria-hidden="true" focusable="false" className={`w-5 h-5 ${isActive ? 'text-primary-foreground drop-shadow' : ''}`} strokeWidth={2.2} />
+                            <item.icon aria-hidden="true" focusable="false" className="w-[22px] h-[22px] text-white drop-shadow relative z-10" strokeWidth={2.2} />
                           )}
                         </div>
-                        <span className={`flex-1 sm:flex-none ${dens.label} sm:text-[11px] font-semibold leading-tight whitespace-normal break-words sm:line-clamp-2 ${isActive ? 'text-primary-foreground' : 'text-sidebar-foreground/85 group-hover/tile:text-sidebar-foreground'}`}>
+
+                        <span className={`flex-1 sm:flex-none ${dens.label} sm:text-[11.5px] font-semibold leading-tight whitespace-normal break-words sm:line-clamp-2 tracking-tight relative z-10 ${
+                          isActive ? 'text-white drop-shadow-sm' : 'text-sidebar-foreground/90 group-hover/tile:text-sidebar-foreground'
+                        }`}>
                           {label}
                         </span>
+
+                        {/* Active indicator pill */}
+                        {isActive && (
+                          <span aria-hidden="true" className="absolute top-1.5 start-1.5 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.95)] animate-pulse" />
+                        )}
+
                         {isOnboardingDone && (
-                          <span aria-hidden="true" className="absolute top-1 end-1 text-[8px] font-bold bg-green-500 text-white px-1 py-0.5 rounded-full">✓</span>
+                          <span aria-hidden="true" className="absolute top-1 end-1 text-[8px] font-bold bg-green-500 text-white px-1.5 py-0.5 rounded-full shadow-md ring-1 ring-white/30">✓</span>
                         )}
                       </NavLink>
                     </TileTooltip>
