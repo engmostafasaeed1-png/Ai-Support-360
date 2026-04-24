@@ -118,11 +118,13 @@ export function useRealtimeConsultants() {
       });
     },
     enabled: !isGuest,
-    placeholderData: isGuest ? mockRecommendedConsultants.map(c => ({
+    placeholderData: isGuest ? mockRecommendedConsultants.map((c, i) => ({
       ...c,
       languages: ['en'],
       response_time_minutes: 15,
       verification_status: 'verified',
+      credibility_credits: [250, 175, 100, 75, 50, 0][i % 6],
+      ai_interview_badge: ['Gold', 'Silver', 'Bronze', 'Verified', 'Verified', null][i % 6],
     })) : undefined,
   });
 
