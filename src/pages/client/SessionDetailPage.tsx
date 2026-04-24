@@ -141,7 +141,10 @@ export default function SessionDetailPage() {
       </Button>
 
       {session.session_type === 'video' && status !== 'completed' && status !== 'cancelled' && (
-        <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
+        <>
+          <FramedAppNotice dismissKey={`framed-notice-dismissed:${sessionId}`} />
+          <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
+        </>
       )}
 
       {/* Header card */}
