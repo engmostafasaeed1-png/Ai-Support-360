@@ -11,6 +11,7 @@ import {
 import { ExternalLink, Play, Video, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import PreflightTestDialog from './PreflightTestDialog';
 
 export type MeetingProvider = 'meet' | 'jitsi' | 'zoom' | 'teams' | 'unknown';
 
