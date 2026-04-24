@@ -27,6 +27,7 @@ import MeetingMinutesCard from '@/components/session/MeetingMinutesCard';
 import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfactionDialog';
 import MeetingLinkButton from '@/components/session/MeetingLinkButton';
 import MediaPermissionsBanner from '@/components/session/MediaPermissionsBanner';
+import FramedAppNotice from '@/components/session/FramedAppNotice';
 
 const typeIcons = {
   video: Video,
@@ -140,7 +141,10 @@ export default function SessionDetailPage() {
       </Button>
 
       {session.session_type === 'video' && status !== 'completed' && status !== 'cancelled' && (
-        <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
+        <>
+          <FramedAppNotice dismissKey={`framed-notice-dismissed:${sessionId}`} />
+          <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
+        </>
       )}
 
       {/* Header card */}
