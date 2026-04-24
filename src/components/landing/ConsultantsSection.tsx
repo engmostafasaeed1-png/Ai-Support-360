@@ -74,9 +74,7 @@ export default function ConsultantsSection() {
 
               <div className="relative">
                 <div className="flex items-center gap-3 mb-5">
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${c.accent} flex items-center justify-center text-white font-bold text-base shadow-lg motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-110 motion-safe:group-hover:-rotate-3`}>
-                    {c.avatar}
-                  </div>
+                  <ConsultantAvatar c={c} />
                   <div className="flex-1 min-w-0">
                     <h4 className="font-bold text-foreground text-sm truncate">{c.name}</h4>
                     <p className="text-xs text-muted-foreground truncate">{c.role}</p>
