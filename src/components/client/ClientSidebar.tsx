@@ -26,6 +26,7 @@ import { Progress } from '@/components/ui/progress';
 import logo from '@/assets/logo.png';
 import sidebarBanner from '@/assets/sidebar-banner.png';
 import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
+import TileTooltip from '@/components/sidebar/TileTooltip';
 
 // Per-tile color tints for visual variety (uses semantic HSL tokens via tailwind utilities)
 const tileTints: Record<string, string> = {
