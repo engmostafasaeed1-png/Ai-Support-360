@@ -334,7 +334,7 @@ export default function InvoicesPage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Badge className={`gap-1 ${sc.color}`}><Icon className="w-3.5 h-3.5" /> {sc.label}</Badge>
-                  <span className="text-lg font-bold text-foreground ml-auto">{fmt(Number(selected.amount), selected.currency)}</span>
+                  <ConvertedAmount amount={Number(selected.amount)} currency={selected.currency} className="ml-auto items-end text-lg font-bold text-foreground" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
