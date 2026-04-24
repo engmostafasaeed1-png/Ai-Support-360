@@ -37,6 +37,8 @@ export default function CredentialsManager({ environmentId, canEdit = true }: Cr
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCred, setEditingCred] = useState<EnvironmentCredential | null>(null);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [revealedPasswords, setRevealedPasswords] = useState<Record<string, string>>({});
+  const [revealing, setRevealing] = useState<Record<string, boolean>>({});
 
   // Form state
   const [label, setLabel] = useState('');
