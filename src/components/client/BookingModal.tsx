@@ -70,7 +70,8 @@ const DAY_MAP: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6:
 
 export default function BookingModal({ open, onOpenChange, consultantName, consultantId, rate }: BookingModalProps) {
   const { t } = useTranslation();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
+  const [bookingMode, setBookingMode] = useState<'instant' | 'scheduled'>('scheduled');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState('');
   const [sessionType, setSessionType] = useState('video');
