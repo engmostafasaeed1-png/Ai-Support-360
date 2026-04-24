@@ -977,6 +977,7 @@ export default function NewRequestPage() {
                                 )}
                               </div>
                               <p className="text-xs text-muted-foreground">{c.specialty} · {c.city}</p>
+                              <TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} className="mt-1" />
                             </div>
                             <div className="text-end shrink-0">
                               <div className="flex items-center gap-1">
