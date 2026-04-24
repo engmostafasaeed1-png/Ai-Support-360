@@ -74,7 +74,7 @@ export default function ConsultantApprovalsPage() {
           .from('consultant_verification_audit')
           .select('id')
           .eq('consultant_id', id)
-          .eq('new_status', status)
+          .eq('new_status', status as any)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
