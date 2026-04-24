@@ -32,6 +32,8 @@ interface FramedAppNoticeProps {
   meetingUrl?: string;
   /** Explicit provider override; auto-detected from `meetingUrl` when omitted. */
   provider?: MeetingProvider;
+  /** When set, the "Open in a new tab" CTA routes through `/join/:sessionId`. */
+  sessionId?: string;
 }
 
 /**
@@ -45,6 +47,7 @@ export default function FramedAppNotice({
   topLevelUrl,
   meetingUrl,
   provider,
+  sessionId,
 }: FramedAppNoticeProps) {
   const { t } = useTranslation();
   const [framed, setFramed] = useState(false);
