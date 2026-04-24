@@ -170,10 +170,21 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
         return;
       }
 
-      const [hours, minutes] = selectedTime.split(':').map(Number);
-      const scheduledAt = new Date(selectedDate!);
-      scheduledAt.setHours(hours, minutes, 0, 0);
-      const dateLabel = format(selectedDate!, 'MMM d, yyyy');
+      let scheduledAt: Date;
+      let timeLabel: string;
+      if (bookingMode === 'instant') {
+        // Round up to next 5 minutes for a clean start time
+        scheduledAt = new Date();
+        const ms = 5 * 60 * 1000;
+        scheduledAt = new Date(Math.ceil(scheduledAt.getTime() / ms) * ms);
+        timeLabel = format(scheduledAt, 'HH:mm');
+      } else {
+        const [hours, minutes] = selectedTime.split(':').map(Number);
+        scheduledAt = new Date(selectedDate!);
+        scheduledAt.setHours(hours, minutes, 0, 0);
+        timeLabel = selectedTime;
+      }
+      const dateLabel = format(scheduledAt, 'MMM d, yyyy');
 
       const sessionId = crypto.randomUUID();
       const realConsultantId = isValidUUID(consultantId) ? consultantId : null;
@@ -194,11 +205,13 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
       if (error) throw error;
       if (generatedMeetingUrl) setMeetingUrl(generatedMeetingUrl);
 
+      const modeLabel = bookingMode === 'instant' ? 'Instant' : 'Scheduled';
+
       // Notify client
       await supabase.from('notifications').insert({
         user_id: user.id,
-        title: 'Session Booked',
-        body: `Your ${sessionType.replace('_', ' ')} session with ${consultantName} is scheduled for ${dateLabel} at ${selectedTime}.`,
+        title: `Session Booked (${modeLabel})`,
+        body: `Your ${sessionType.replace('_', ' ')} session with ${consultantName} is ${bookingMode === 'instant' ? 'starting now' : `scheduled for ${dateLabel} at ${timeLabel}`}.`,
         type: 'booking',
         link: '/client/sessions',
       });
