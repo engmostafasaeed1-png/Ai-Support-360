@@ -302,6 +302,11 @@ export default function MeetingLinkButton({
                   variant="outline"
                   className="justify-between gap-2"
                   onClick={() => {
+                    logProviderEvent('fallback_selected', {
+                      from: failedProvider,
+                      to: alt.provider,
+                      url: alt.url,
+                    });
                     setFallbackOpen(false);
                     startOpen(alt.url, alt.provider);
                   }}
