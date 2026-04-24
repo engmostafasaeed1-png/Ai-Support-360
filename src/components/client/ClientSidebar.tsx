@@ -276,7 +276,7 @@ export default function ClientSidebar() {
                       })}
                     </SidebarMenu>
                   ) : (
-                    <div className="grid grid-cols-2 gap-2 px-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 px-3">
                       {visibleItems.map((item) => {
                         const isActive = item.path === bestMatchPath;
                         const isAccent = (item as any).accent;
@@ -287,9 +287,9 @@ export default function ClientSidebar() {
                             <NavLink
                               to={item.path}
                               end
-                              className={`group/tile relative flex flex-col items-center justify-center gap-2 rounded-2xl px-2 py-3.5 text-center transition-all duration-200 overflow-hidden border ${
+                              className={`group/tile relative flex flex-row sm:flex-col items-center sm:items-center justify-start sm:justify-center gap-3 sm:gap-2 rounded-2xl px-3 sm:px-2 py-2.5 sm:py-3.5 text-start sm:text-center transition-all duration-200 overflow-hidden border min-h-[52px] sm:min-h-0 ${
                                 isActive
-                                  ? 'bg-gradient-to-br from-primary via-primary/85 to-primary/60 text-primary-foreground border-primary/50 shadow-xl shadow-primary/40 scale-[1.03]'
+                                  ? 'bg-gradient-to-br from-primary via-primary/85 to-primary/60 text-primary-foreground border-primary/50 shadow-xl shadow-primary/40 sm:scale-[1.03]'
                                   : isAccent
                                   ? 'bg-gradient-to-br from-primary/20 to-primary/5 text-primary border-primary/40 hover:from-primary/30 hover:to-primary/10 hover:shadow-lg hover:-translate-y-0.5'
                                   : 'bg-sidebar-accent/15 hover:bg-sidebar-accent/40 text-sidebar-foreground/90 hover:text-sidebar-foreground border-sidebar-border/30 hover:border-sidebar-border/70 hover:shadow-md hover:-translate-y-0.5'
@@ -302,14 +302,14 @@ export default function ClientSidebar() {
                                   <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full bg-white/20 blur-2xl pointer-events-none" />
                                 </>
                               )}
-                              <div className={`flex items-center justify-center w-11 h-11 rounded-2xl shrink-0 transition-all ${
+                              <div className={`flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-2xl shrink-0 transition-all ${
                                 isActive
                                   ? 'bg-white/25 backdrop-blur-sm shadow-inner'
                                   : `bg-gradient-to-br ${tint} group-hover/tile:scale-110 shadow-sm`
                               }`}>
                                 <item.icon className={`w-5 h-5 ${isActive ? 'text-primary-foreground drop-shadow' : ''}`} strokeWidth={2.2} />
                               </div>
-                              <span className={`text-[11px] font-semibold leading-tight line-clamp-2 ${isActive ? 'text-primary-foreground' : 'text-sidebar-foreground/85 group-hover/tile:text-sidebar-foreground'}`}>
+                              <span className={`flex-1 sm:flex-none text-[13px] sm:text-[11px] font-semibold leading-tight whitespace-normal break-words sm:line-clamp-2 ${isActive ? 'text-primary-foreground' : 'text-sidebar-foreground/85 group-hover/tile:text-sidebar-foreground'}`}>
                                 {label}
                               </span>
                             </NavLink>
