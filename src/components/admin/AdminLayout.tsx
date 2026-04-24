@@ -34,7 +34,6 @@ const moreNavItems = [
   { key: 'oncall', icon: Bell, path: '/admin/oncall', labelKey: 'sidebar.oncall' },
   { key: 'notifications', icon: Bell, path: '/admin/notifications', labelKey: 'sidebar.notifications' },
   { key: 'settings', icon: Settings, path: '/admin/settings', labelKey: 'sidebar.settings' },
-  { key: 'super_admin', icon: Shield, path: '/super-admin', labelKey: 'sidebar.super_admin' },
 ];
 
 export default function AdminLayout() {
