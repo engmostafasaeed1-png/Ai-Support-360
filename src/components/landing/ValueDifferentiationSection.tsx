@@ -1,5 +1,6 @@
 import { Check, X, Sparkles, Bot, ShieldCheck, Zap, BrainCircuit, FileSearch, ArrowUpRight } from 'lucide-react';
 import { accents, iconPlate, radius, shadow, type AccentName } from './tokens';
+import { tileImageAlt } from './tileImageAlt';
 import aiTriageImg from '@/assets/value/ai-triage.jpg';
 import expertsImg from '@/assets/value/experts.jpg';
 import outcomeImg from '@/assets/value/outcome.jpg';
@@ -123,10 +124,14 @@ export default function ValueDifferentiationSection() {
               style={{ ['--glow' as string]: accents[p.accent].glow }}
               className={`group relative ${radius.tile} border border-border/40 bg-card/40 backdrop-blur-xl overflow-hidden hover:border-primary/40 motion-safe:transition-all motion-safe:duration-500 motion-safe:hover:-translate-y-1 hover:shadow-[0_30px_80px_-20px_rgba(var(--glow),0.35)] ${p.span ?? ''}`}
             >
-              {/* Decorative background image — softly visible, intensifies on hover */}
+              {/* Background image — `tileImageAlt` decides whether to mark it
+                  decorative (alt="") or descriptive based on whether the
+                  tile already exposes a visible <h3> title. Here it does,
+                  so the helper returns "" and SR users aren't told the
+                  same thing twice. */}
               <img
                 src={p.image}
-                alt={p.imageAlt}
+                alt={tileImageAlt({ tileLabel: p.title, fallback: p.imageAlt })}
                 loading="lazy"
                 decoding="async"
                 className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-40 motion-safe:transition-opacity motion-safe:duration-700 motion-safe:group-hover:scale-105 motion-safe:transition-transform pointer-events-none"

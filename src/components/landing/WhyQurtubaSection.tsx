@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Wand2, ShieldCheck, Languages, Lock, Users, Activity, ArrowUpRight } from 'lucide-react';
 import BlurImage from './BlurImage';
+import { tileImageAlt } from './tileImageAlt';
 import {
   accents,
   border,
@@ -103,15 +104,22 @@ export default function WhyQurtubaSection() {
               className={`group relative isolate overflow-hidden ${radius.tile} ${border.base} bg-card shadow-sm ${shadow.hover} ${motion.transition} ${motion.liftOnHover} ${motion.enter} ${f.size} ${f.height}`}
             >
               {/* Background image with blur-up placeholder.
-                  Alt text mirrors the visible feature title so screen-reader
-                  users still get a meaningful label; BlurImage already sets
-                  loading="lazy" + decoding="async" on the full-res asset. */}
+                  Alt is computed by `tileImageAlt`: because the tile renders
+                  a visible <h3> title (`f.title`), the helper marks the
+                  image as decorative (alt="") so screen readers don't
+                  announce the same meaning twice. BlurImage already sets
+                  loading="lazy" + decoding="async". */}
               <BlurImage
                 src={f.image}
                 blurSrc={f.blur}
-                alt={t('whyQurtuba.image_alt', {
-                  title: f.title,
-                  defaultValue: `Illustration: ${f.title}`,
+                alt={tileImageAlt({
+                  tileLabel: f.title,
+                  fallback: f.title,
+                  format: (title) =>
+                    t('whyQurtuba.image_alt', {
+                      title,
+                      defaultValue: `Illustration: ${title}`,
+                    }),
                 })}
                 width={1024}
                 height={768}
