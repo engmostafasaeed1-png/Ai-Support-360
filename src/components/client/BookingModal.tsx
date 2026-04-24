@@ -148,7 +148,8 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
   };
 
   const reset = () => {
-    setStep(1);
+    setStep(0);
+    setBookingMode('scheduled');
     setSelectedDate(undefined);
     setSelectedTime('');
     setSessionType('video');
