@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { encryptCredential } from '@/lib/credentialsCrypto';
 
 export interface EnvironmentCredential {
   id: string;
@@ -10,11 +11,18 @@ export interface EnvironmentCredential {
   port: number;
   domain: string | null;
   username: string;
-  password_encrypted: string;
+  /** Base64 AES-GCM ciphertext (iv || cipher). Decrypt via decryptCredential(). */
+  password_ciphertext: string | null;
   entered_by: string;
   created_at: string;
   updated_at: string;
 }
+
+// Safe columns to select from the client. The legacy `password_encrypted`
+// column has been REVOKEd from authenticated/anon, so we never request it
+// here. Decryption happens on-demand via the credentials-decrypt function.
+const SELECT_COLS =
+  'id, environment_id, credential_label, hostname, port, domain, username, password_ciphertext, entered_by, created_at, updated_at';
 
 export function useEnvironmentCredentials(environmentId?: string) {
   return useQuery({
@@ -22,24 +30,44 @@ export function useEnvironmentCredentials(environmentId?: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('environment_credentials')
-        .select('*')
+        .select(SELECT_COLS)
         .eq('environment_id', environmentId!)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []) as EnvironmentCredential[];
+      return (data || []) as unknown as EnvironmentCredential[];
     },
     enabled: !!environmentId,
   });
 }
 
+interface CreateCredentialInput {
+  environment_id: string;
+  credential_label: string;
+  hostname: string | null;
+  port: number;
+  domain: string | null;
+  username: string;
+  /** Plaintext password — will be encrypted client-side before insert. */
+  password: string;
+  entered_by: string;
+}
+
 export function useCreateCredential() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (cred: Omit<EnvironmentCredential, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (input: CreateCredentialInput) => {
+      const password_ciphertext = await encryptCredential(input.password);
+      const { password: _omit, ...rest } = input;
       const { data, error } = await supabase
         .from('environment_credentials')
-        .insert(cred as any)
-        .select()
+        .insert({
+          ...rest,
+          password_ciphertext,
+          // Legacy NOT NULL column — keep populated with a placeholder until the
+          // schema can drop it. Direct read is REVOKEd from clients.
+          password_encrypted: 'ENCRYPTED',
+        } as any)
+        .select(SELECT_COLS)
         .single();
       if (error) throw error;
       return data;
@@ -52,13 +80,29 @@ export function useCreateCredential() {
   });
 }
 
+interface UpdateCredentialInput {
+  id: string;
+  environment_id: string;
+  credential_label?: string;
+  hostname?: string | null;
+  port?: number;
+  domain?: string | null;
+  username?: string;
+  /** Optional new plaintext password. Omit to leave existing ciphertext. */
+  password?: string;
+}
+
 export function useUpdateCredential() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, environment_id, ...updates }: Partial<EnvironmentCredential> & { id: string; environment_id: string }) => {
+    mutationFn: async ({ id, environment_id, password, ...updates }: UpdateCredentialInput) => {
+      const patch: Record<string, unknown> = { ...updates };
+      if (password) {
+        patch.password_ciphertext = await encryptCredential(password);
+      }
       const { error } = await supabase
         .from('environment_credentials')
-        .update(updates as any)
+        .update(patch as any)
         .eq('id', id);
       if (error) throw error;
       return environment_id;
