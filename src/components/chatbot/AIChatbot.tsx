@@ -183,9 +183,12 @@ export default function AIChatbot() {
     <>
       {/* Floating button with pulse */}
       {!isOpen && (
-        <div className="fixed bottom-20 end-4 sm:bottom-6 sm:end-6 z-50 flex items-end gap-2">
+        <div
+          style={fab.style}
+          className="fixed bottom-20 end-4 sm:bottom-6 sm:end-6 z-50 flex items-end gap-2 select-none"
+        >
           {/* Speech bubble */}
-          {showPulse && (
+          {showPulse && !fab.isDragging && (
             <div
               className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-2xl rounded-br-md px-4 py-2.5 shadow-xl max-w-[200px] cursor-pointer animate-fade-in"
               onClick={() => { setIsOpen(true); setShowPulse(false); }}
@@ -195,12 +198,17 @@ export default function AIChatbot() {
             </div>
           )}
           <button
-            onClick={() => { setIsOpen(true); setShowPulse(false); }}
-            aria-label="Open AI support chat"
-            className="relative w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center group"
+            onPointerDown={fab.onPointerDown}
+            onClick={(e) => {
+              if (fab.isDragging) { e.preventDefault(); e.stopPropagation(); return; }
+              setIsOpen(true); setShowPulse(false);
+            }}
+            aria-label="Open AI support chat (drag to move)"
+            title="Open AI support chat — drag to move"
+            className="relative w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center group touch-none"
           >
-            <Sparkles className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-            {showPulse && (
+            <Sparkles className="w-6 h-6 group-hover:rotate-12 transition-transform pointer-events-none" />
+            {showPulse && !fab.isDragging && (
               <>
                 <span className="absolute inset-0 rounded-full border-2 border-primary/40 animate-ping pointer-events-none" />
                 <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-destructive border-2 border-background animate-bounce" />
