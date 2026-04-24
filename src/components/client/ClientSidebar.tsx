@@ -28,6 +28,8 @@ import sidebarBanner from '@/assets/sidebar-banner.png';
 import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 import TileTooltip from '@/components/sidebar/TileTooltip';
 import { getTileMeta } from '@/components/sidebar/tileMeta';
+import SidebarTileSkeleton from '@/components/sidebar/SidebarTileSkeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Per-tile color tints for visual variety (uses semantic HSL tokens via tailwind utilities)
 const tileTints: Record<string, string> = {
@@ -182,7 +184,7 @@ export default function ClientSidebar() {
   const logout = useLogout();
   const { isGuest } = useGuestMode();
   const { tenant } = useTenant();
-  const { hiddenScreens, toggleScreen, resetAll, isVisible } = useScreenPreferences(allScreens);
+  const { hiddenScreens, toggleScreen, resetAll, isVisible, loading: prefsLoading } = useScreenPreferences(allScreens);
 
   const tier = tenant?.subscription_tier || 'basic';
   const TierIcon = tierIcons[tier] || Wand2;
@@ -237,7 +239,20 @@ export default function ClientSidebar() {
 
         {/* Navigation Groups - Modern Tile Grid */}
         <div className="flex-1 overflow-y-auto py-3 space-y-4">
-          {navGroups.map((group) => {
+          {prefsLoading ? (
+            <div className="space-y-4">
+              {[10, 6].map((tilesInGroup, gi) => (
+                <div key={gi} className="space-y-2">
+                  {!collapsed && (
+                    <div className="px-4 mb-1.5">
+                      <Skeleton className="h-2.5 w-20 rounded-full bg-sidebar-accent/40" />
+                    </div>
+                  )}
+                  <SidebarTileSkeleton count={tilesInGroup} collapsed={collapsed} />
+                </div>
+              ))}
+            </div>
+          ) : navGroups.map((group) => {
             const visibleItems = group.items.filter(item => isVisible(item.key));
             if (visibleItems.length === 0) return null;
             return (

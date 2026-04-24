@@ -21,6 +21,7 @@ import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 import logo from '@/assets/logo.png';
 import TileTooltip from '@/components/sidebar/TileTooltip';
 import { getTileMeta } from '@/components/sidebar/tileMeta';
+import SidebarTileSkeleton from '@/components/sidebar/SidebarTileSkeleton';
 
 const tileTints: Record<string, string> = {
   dashboard: 'from-blue-500/25 to-blue-500/5 text-blue-500',
@@ -93,7 +94,7 @@ export default function ConsultantSidebar() {
   const { isGuest } = useGuestMode();
   const [onboardingDone, setOnboardingDone] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const { hiddenScreens, toggleScreen, resetAll, isVisible } = useScreenPreferences(allScreens);
+  const { hiddenScreens, toggleScreen, resetAll, isVisible, loading: prefsLoading } = useScreenPreferences(allScreens);
 
   useEffect(() => {
     if (isGuest) return;
@@ -142,7 +143,9 @@ export default function ConsultantSidebar() {
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            {collapsed ? (
+            {prefsLoading ? (
+              <SidebarTileSkeleton count={12} collapsed={collapsed} />
+            ) : collapsed ? (
               <SidebarMenu className="space-y-1 px-2">
                 {visibleItems.map((item) => {
                   const isActive = item.path === bestMatchPath;
