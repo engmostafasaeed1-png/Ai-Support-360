@@ -432,8 +432,14 @@ export default function InvoicesPage() {
           {filtered.map((inv: any) => {
             const sc = statusConfig[inv.status] || statusConfig.pending;
             const StatusIcon = sc.icon;
+            const dueInfo = getDueDateInfo(inv);
+            const cardCls = dueInfo?.overdue
+              ? 'rounded-2xl border-red-300 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/10 hover:border-red-400 hover:shadow-premium transition-all cursor-pointer'
+              : dueInfo?.dueSoon
+              ? 'rounded-2xl border-amber-300/70 dark:border-amber-900/50 hover:border-amber-400 hover:shadow-premium transition-all cursor-pointer'
+              : 'rounded-2xl border-border/50 hover:border-primary/30 hover:shadow-premium transition-all cursor-pointer';
             return (
-              <Card key={inv.id} className="rounded-2xl border-border/50 hover:border-primary/30 hover:shadow-premium transition-all cursor-pointer" onClick={() => openEdit(inv)}>
+              <Card key={inv.id} className={cardCls} onClick={() => openEdit(inv)}>
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
