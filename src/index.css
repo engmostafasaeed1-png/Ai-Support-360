@@ -364,3 +364,46 @@ textarea:focus-visible {
   );
   pointer-events: none;
 }
+
+/* ==========================================================================
+   Mobile parity & safety rules
+   - Prevent horizontal page overflow that breaks features on small screens
+   - Make wide tables horizontally scrollable instead of overflowing
+   - Ensure dialogs/sheets respect viewport width
+   - Reserve space for the fixed mobile bottom nav so content isn't hidden
+   ========================================================================== */
+@media (max-width: 767px) {
+  html, body, #root {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Any direct content area should never force a horizontal scroll */
+  main {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* Wrap raw <table> elements in their own scroll context */
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Dialog / sheet content should fit the viewport */
+  [role="dialog"] {
+    max-width: calc(100vw - 1rem);
+  }
+
+  /* Reserve safe area for the mobile bottom nav (h-16 = 4rem) */
+  main, [data-main-content] {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+  }
+
+  /* Minimum tap target for interactive elements */
+  button, a[role="button"], [role="tab"] {
+    min-height: 40px;
+  }
+}
