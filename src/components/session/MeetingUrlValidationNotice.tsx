@@ -33,7 +33,7 @@ export default function MeetingUrlValidationNotice({
           issues: result.issues,
           sessionId,
         },
-        'warning'
+        'warn'
       );
     }
   }, [result.ok, result.provider, result.issues, url, sessionId]);
