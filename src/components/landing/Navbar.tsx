@@ -109,34 +109,60 @@ export default function Navbar() {
         </button>
       </div>
 
-      {mobileOpen && (
-        <div className="md:hidden border-t border-border/30 bg-background/95 backdrop-blur-xl p-4 space-y-3 animate-fade-in shadow-xl">
-          {navItems.map((item) => (
+      {/* Backdrop */}
+      <div
+        onClick={() => setMobileOpen(false)}
+        aria-hidden="true"
+        className={`md:hidden fixed inset-0 top-full bg-foreground/30 backdrop-blur-sm transition-opacity duration-300 ${mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+      />
+
+      {/* Slide-down panel — absolute so navbar height never shifts */}
+      <div
+        id="mobile-menu"
+        role="menu"
+        aria-hidden={!mobileOpen}
+        className={`md:hidden absolute left-0 right-0 top-full origin-top border-t border-border/30 bg-background/95 backdrop-blur-xl shadow-2xl will-change-transform transition-[opacity,transform] duration-300 ease-out ${
+          mobileOpen
+            ? 'opacity-100 translate-y-0 pointer-events-auto'
+            : 'opacity-0 -translate-y-3 pointer-events-none'
+        }`}
+      >
+        <div className="p-4 space-y-1.5">
+          {navItems.map((item, i) => (
             <a
               key={item.href}
               href={item.href}
-              className="block text-sm font-medium text-muted-foreground hover:text-foreground px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-all"
+              role="menuitem"
+              tabIndex={mobileOpen ? 0 : -1}
+              style={{ transitionDelay: mobileOpen ? `${60 + i * 35}ms` : '0ms' }}
+              className={`block text-sm font-medium text-muted-foreground hover:text-foreground px-3 py-3 rounded-xl hover:bg-muted/60 transition-all duration-300 ${
+                mobileOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
+              }`}
               onClick={() => setMobileOpen(false)}
             >
               {item.label}
             </a>
           ))}
-          <div className="flex items-center gap-2 pt-3 border-t border-border/50">
-            <button onClick={toggleLanguage} className="flex items-center gap-1.5 text-sm text-muted-foreground px-3 py-2 rounded-xl hover:bg-muted/50">
+          <div className="flex items-center gap-2 pt-3 mt-2 border-t border-border/50">
+            <button
+              onClick={toggleLanguage}
+              tabIndex={mobileOpen ? 0 : -1}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground px-3 py-2 rounded-xl hover:bg-muted/60 transition-colors"
+            >
               <Globe className="w-4 h-4" />
               {t('nav.language')}
             </button>
           </div>
-          <div className="flex gap-2">
-            <Link to="/login" className="flex-1">
+          <div className="flex gap-2 pt-1">
+            <Link to="/login" className="flex-1" tabIndex={mobileOpen ? 0 : -1}>
               <Button variant="outline" size="sm" className="w-full rounded-xl">{t('nav.login')}</Button>
             </Link>
-            <Link to="/signup" className="flex-1">
+            <Link to="/signup" className="flex-1" tabIndex={mobileOpen ? 0 : -1}>
               <Button size="sm" className="w-full gradient-primary border-0 shadow-lg rounded-xl">{t('nav.signup')}</Button>
             </Link>
           </div>
         </div>
-      )}
+      </div>
     </nav>
   );
 }
