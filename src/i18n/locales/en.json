@@ -166,81 +166,6 @@
     "rights": "All rights reserved."
   },
   "sidebar": {
-    "client_portal": "Client Portal",
-    "admin_panel": "Admin Panel",
-    "consultant_portal": "Consultant Portal",
-    "menu": "Menu",
-    "management": "Governance",
-    "dashboard": "Command Center",
-    "console": "Admin Console",
-    "new_request": "New Ticket",
-    "tickets": "Support Desk",
-    "consultants": "Expert Hub",
-    "chat": "Messenger",
-    "sessions": "Live Sessions",
-    "video_sessions": "Video Connect",
-    "payments": "Payments",
-    "invoices": "Invoice Manager",
-    "knowledge": "Knowledge Vault",
-    "pm_tickets": "Project Tracker",
-    "solution_architecture": "Solution Studio",
-    "satisfaction": "Satisfaction",
-    "notifications": "Notifications",
-    "settings": "Settings",
-    "cases": "Case Manager",
-    "calendar": "Scheduler",
-    "earnings": "Revenue Hub",
-    "reviews": "Ratings & Reviews",
-    "profile": "My Profile",
-    "verification": "Identity Check",
-    "users": "User Directory",
-    "ticket_board": "Kanban Board",
-    "approvals": "Approval Queue",
-    "analytics": "Analytics Lab",
-    "logout": "Sign Out",
-    "more": "More",
-    "integrations": "Integrations",
-    "onboarding": "Quick Start",
-    "onboarding_complete": "Quick Start",
-    "completed": "Complete",
-    "environments": "Cloud Envs",
-    "remote_access": "Remote Connect",
-    "environment_logs": "Audit Trail",
-    "nda_management": "NDA Vault",
-    "company_profile": "Organization",
-    "referrals": "Referral Program",
-    "requests": "Inbound Requests",
-    "proposals": "My Proposals",
-    "open_tickets": "Ticket Market",
-    "work_diary": "Time Tracker",
-    "milestones": "Milestone Map",
-    "tasks": "Task Board",
-    "plan": "Plan",
-    "landing_editor": "Page Builder",
-    "projects": "Project Hub",
-    "contracts": "NDA Agreements",
-    "business_processes": "Process Library",
-    "support": "Help & Support",
-    "overview": "Overview",
-    "work": "Workspace",
-    "finance": "Billing & Finance",
-    "tools": "Toolkit",
-    "account": "My Account",
-    "activity_log": "Activity Feed",
-    "team_members": "Team Members",
-    "reports": "Reports Studio",
-    "sla": "SLA Monitor",
-    "vmware_settings": "VM Config",
-    "vmware_pricing": "VM Pricing",
-    "vmware_console": "VM Console",
-    "interview_training": "AI Coach",
-    "interviews": "Interview Lab",
-    "servicenow": "ITSM",
-    "change_management": "Change Control",
-    "problem_management": "Problem Tracker",
-    "service_catalog": "Service Catalog",
-    "major_incidents": "Incident Center",
-    "playbooks": "Runbooks",
     "super_admin": "Super Admin"
   },
   "client_dashboard": {
@@ -732,13 +657,14 @@
     "back_dashboard": "Back to Dashboard"
   },
   "common": {
+    "dismiss": "Dismiss",
+    "close": "Close",
     "search": "Search",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
     "view": "View",
-    "close": "Close",
     "loading": "Loading...",
     "per_hour": "/hr",
     "sessions": "sessions",
@@ -1173,7 +1099,214 @@
     "templates": "Email Templates",
     "branding": "Branding"
   },
-  "sidebar": {
-    "super_admin": "Super Admin"
+  "troubleshoot": {
+    "help_link": "Open {{provider}} help center",
+    "provider_label": {
+      "meet": "Google Meet",
+      "jitsi": "Jitsi Meet",
+      "zoom": "Zoom",
+      "teams": "Microsoft Teams",
+      "unknown": "Meeting"
+    },
+    "meet": {
+      "framed": {
+        "headline": "Google Meet refuses to load inside another page.",
+        "cause": "Google Meet sets X-Frame-Options: SAMEORIGIN and frame-ancestors 'self', so browsers block it from rendering inside any embedded frame (you will see ERR_BLOCKED_BY_RESPONSE).",
+        "step": {
+          "0": "Open this app in a real browser tab (not an embedded view), then click Join again.",
+          "1": "When the Google Meet tab opens, sign in with the Google account that received the invite.",
+          "2": "If you are on a managed device, your admin may need to allow meet.google.com in Chrome's site settings."
+        }
+      },
+      "load_failed": {
+        "headline": "Google Meet could not be opened.",
+        "cause": "The meeting URL was rejected, the Google account has no access, or a corporate proxy/firewall is blocking meet.google.com.",
+        "step": {
+          "0": "Verify you are signed into the Google account that received the invite (check the avatar at meet.google.com).",
+          "1": "Try opening the link in an incognito window to rule out an unrelated logged-in account.",
+          "2": "Disable VPN, ad-blockers, and strict tracking-protection extensions for meet.google.com.",
+          "3": "On corporate networks, ask IT to allow meet.google.com, *.gstatic.com and *.googleusercontent.com.",
+          "4": "As a fallback, ask the organizer to share an alternative provider link (Jitsi/Zoom)."
+        }
+      },
+      "popup_blocked": {
+        "headline": "The Google Meet tab was blocked by your popup blocker.",
+        "cause": "Browsers require an explicit allow-list for popups on this site.",
+        "step": {
+          "0": "Click the popup-blocked icon in the address bar.",
+          "1": "Choose \"Always allow popups and redirects from this site\".",
+          "2": "Click Join again."
+        }
+      },
+      "invalid_url": {
+        "headline": "The Google Meet link is not valid.",
+        "cause": "The URL is missing or does not point to meet.google.com/<code>.",
+        "step": {
+          "0": "Ask the organizer to resend the meeting link from Google Calendar.",
+          "1": "A valid Meet link looks like https://meet.google.com/abc-defg-hij."
+        }
+      }
+    },
+    "teams": {
+      "framed": {
+        "headline": "Microsoft Teams refuses to load inside another page.",
+        "cause": "Teams blocks framing via X-Frame-Options. Embedded views show \"Refused to display in a frame\" and ERR_BLOCKED_BY_RESPONSE.",
+        "step": {
+          "0": "Open this app in a real browser tab, then click Join again.",
+          "1": "If prompted, choose \"Continue on this browser\" or open in the Teams desktop app.",
+          "2": "Sign in with the work/school account that received the invite."
+        }
+      },
+      "load_failed": {
+        "headline": "Microsoft Teams could not be opened.",
+        "cause": "The link expired, the account has no access, or your tenant blocks anonymous join.",
+        "step": {
+          "0": "Click \"Continue on this browser\" instead of \"Open Teams app\" if the desktop client is unresponsive.",
+          "1": "Sign in with the email address the invite was sent to.",
+          "2": "If your organization disables anonymous join, ask the organizer to add you explicitly.",
+          "3": "Clear cookies for *.teams.microsoft.com and try again."
+        }
+      },
+      "popup_blocked": {
+        "headline": "The Teams tab was blocked by your popup blocker.",
+        "cause": "Browsers require explicit popup permission for this site.",
+        "step": {
+          "0": "Allow popups for this site in the address bar.",
+          "1": "Click Join again."
+        }
+      },
+      "invalid_url": {
+        "headline": "The Microsoft Teams link is not valid.",
+        "cause": "The URL is missing or does not point to teams.microsoft.com.",
+        "step": {
+          "0": "Ask the organizer to resend the meeting link from Outlook or Teams."
+        }
+      }
+    },
+    "zoom": {
+      "framed": {
+        "headline": "Zoom may not launch correctly from an embedded view.",
+        "cause": "Zoom's join page redirects to the desktop client via a custom protocol; some browsers refuse to launch external protocols from inside an iframe.",
+        "step": {
+          "0": "Open this app in a real browser tab, then click Join again.",
+          "1": "If the Zoom client does not open, click \"Launch Meeting\" or \"Join from your browser\".",
+          "2": "Allow the Zoom protocol prompt (\"Open zoommtg://…\") if your browser asks."
+        }
+      },
+      "load_failed": {
+        "headline": "Zoom could not be opened.",
+        "cause": "The Zoom desktop client is not installed, blocked, or the meeting requires registration.",
+        "step": {
+          "0": "Install the Zoom client from zoom.us/download or click \"Join from your browser\".",
+          "1": "If a passcode is required, copy it from the invite.",
+          "2": "On corporate networks, ask IT to allow *.zoom.us and *.zoomgov.com.",
+          "3": "Try the join link in incognito to rule out a stale Zoom session."
+        }
+      },
+      "popup_blocked": {
+        "headline": "The Zoom tab was blocked by your popup blocker.",
+        "cause": "Browsers require explicit popup permission for this site.",
+        "step": {
+          "0": "Allow popups for this site in the address bar, then click Join again."
+        }
+      },
+      "invalid_url": {
+        "headline": "The Zoom link is not valid.",
+        "cause": "The URL is missing or does not point to zoom.us/j/<id>.",
+        "step": {
+          "0": "Ask the organizer to resend the Zoom meeting link."
+        }
+      }
+    },
+    "jitsi": {
+      "framed": {
+        "headline": "Jitsi can run embedded, but camera/mic permissions are limited.",
+        "cause": "Jitsi itself allows framing, however the parent page must grant camera/microphone via Permissions-Policy. Embedded views often miss that.",
+        "step": {
+          "0": "Open this app in a real browser tab — then Jitsi gets full camera/microphone access.",
+          "1": "If you must stay in the embedded view, click the lock icon in the address bar and allow Camera and Microphone for this site."
+        }
+      },
+      "load_failed": {
+        "headline": "Jitsi could not be opened.",
+        "cause": "The public meet.jit.si server is rate-limited or unreachable, or your network blocks WebRTC.",
+        "step": {
+          "0": "Refresh the page and try again — the public server occasionally throttles new rooms.",
+          "1": "Disable VPNs and aggressive privacy extensions, then retry.",
+          "2": "If WebRTC is blocked on your network (common on corporate VPNs), join from a different network or hotspot."
+        }
+      },
+      "popup_blocked": {
+        "headline": "The Jitsi tab was blocked by your popup blocker.",
+        "cause": "Browsers require explicit popup permission for this site.",
+        "step": {
+          "0": "Allow popups for this site, then click Join again."
+        }
+      },
+      "invalid_url": {
+        "headline": "The Jitsi link is not valid.",
+        "cause": "The URL is missing or does not start with https://meet.jit.si/.",
+        "step": {
+          "0": "Ask the organizer to resend the meeting link."
+        }
+      }
+    },
+    "unknown": {
+      "framed": {
+        "headline": "This meeting may not load inside an embedded view.",
+        "cause": "Many video providers send X-Frame-Options or frame-ancestors headers that block framed loading.",
+        "step": {
+          "0": "Open this app in a real browser tab, then click Join again."
+        }
+      },
+      "load_failed": {
+        "headline": "The meeting could not be opened.",
+        "cause": "The link may be expired, the provider may be down, or your network may be blocking it.",
+        "step": {
+          "0": "Verify the link is correct and not expired.",
+          "1": "Try a different network (e.g. mobile hotspot) to rule out firewall blocking.",
+          "2": "Ask the organizer for an alternative provider link."
+        }
+      },
+      "popup_blocked": {
+        "headline": "The meeting tab was blocked by your popup blocker.",
+        "cause": "Browsers require explicit popup permission for this site.",
+        "step": {
+          "0": "Allow popups for this site in the address bar, then retry."
+        }
+      },
+      "invalid_url": {
+        "headline": "The meeting link is not valid.",
+        "cause": "The URL is missing or malformed.",
+        "step": {
+          "0": "Ask the organizer to resend the meeting link."
+        }
+      }
+    }
+  },
+  "framed_notice": {
+    "title": "Open in a top-level tab to join the meeting",
+    "desc": "This view is running inside an embedded frame. Some video providers (e.g. Google Meet, Microsoft Teams) refuse to load from framed pages for security reasons. Open the app in a new browser tab to start or join the meeting.",
+    "open_new_tab": "Open in a new tab"
+  },
+  "meeting_url": {
+    "invalid_title": "The meeting link looks invalid",
+    "expired_title": "This meeting link may be expired",
+    "summary_default": "We could not verify this meeting URL.",
+    "summary": {
+      "empty": "No meeting link provided.",
+      "not_a_url": "The meeting link is not a valid URL.",
+      "insecure_scheme": "The meeting link must use https://.",
+      "unknown_domain": "We don't recognise this meeting provider's domain.",
+      "placeholder": "The link looks like a placeholder rather than a real meeting URL.",
+      "expired_hint": "The meeting link appears to be expired.",
+      "meet_bad_path": "The Google Meet link path looks malformed.",
+      "zoom_bad_path": "The Zoom link path looks malformed.",
+      "teams_bad_path": "The Microsoft Teams link path looks malformed.",
+      "jitsi_bad_path": "The Jitsi link path looks malformed."
+    }
+  },
+  "open_new_tab": {
+    "cta": "Open {{provider}} in a new tab"
   }
 }
