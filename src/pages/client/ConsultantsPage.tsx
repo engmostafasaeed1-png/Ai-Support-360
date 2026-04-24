@@ -479,6 +479,7 @@ export default function ConsultantsPage() {
                       })}
                       {/* Verification Status Badge */}
                       <VerificationBadge status={c.verification_status as any} />
+                      <TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} />
 
                     </div>
 
