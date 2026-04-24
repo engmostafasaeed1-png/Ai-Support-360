@@ -30,6 +30,7 @@ import MediaPermissionsBanner from '@/components/session/MediaPermissionsBanner'
 import FramedAppNotice from '@/components/session/FramedAppNotice';
 import PreJoinChecklist from '@/components/session/PreJoinChecklist';
 import MeetingPermissionsNote from '@/components/session/MeetingPermissionsNote';
+import ShareAudioGuideNote from '@/components/session/ShareAudioGuideNote';
 import MeetingUrlValidationNotice from '@/components/session/MeetingUrlValidationNotice';
 
 const typeIcons = {
@@ -162,6 +163,7 @@ export default function SessionDetailPage() {
           <MeetingUrlValidationNotice url={meetingUrl} sessionId={sessionId} />
           <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
           <MeetingPermissionsNote dismissKey={`perm-note-dismissed:${sessionId}`} />
+          <ShareAudioGuideNote dismissKey={`share-audio-note-dismissed:${sessionId}`} />
           <PreJoinChecklist url={meetingUrl} sessionId={sessionId} />
         </>
       )}
