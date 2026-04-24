@@ -400,6 +400,7 @@ export default function ConsultantsPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
                     <p className="text-[11px] text-muted-foreground truncate">{c.specialty}</p>
+                    <TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} className="mt-1" />
                   </div>
                   <div className="text-end shrink-0">
                     <p className="text-sm font-bold text-foreground">${c.rate}</p>
