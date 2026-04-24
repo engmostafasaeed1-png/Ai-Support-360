@@ -61,19 +61,54 @@ export default function ConsultantApprovalsPage() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status, reason }: { id: string; status: string; reason?: string }) => {
       const { error } = await supabase
         .from('consultants')
         .update({ verification_status: status as any })
         .eq('id', id);
       if (error) throw error;
+
+      // Attach the reviewer's reason to the audit row the trigger just created.
+      if (reason && reason.trim()) {
+        const { data: latest } = await supabase
+          .from('consultant_verification_audit')
+          .select('id')
+          .eq('consultant_id', id)
+          .eq('new_status', status)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (latest?.id) {
+          await supabase
+            .from('consultant_verification_audit')
+            .update({ reason: reason.trim() })
+            .eq('id', latest.id);
+        }
+      }
     },
-    onSuccess: (_, { status }) => {
+    onSuccess: (_, { id, status }) => {
       queryClient.invalidateQueries({ queryKey: ['pending-consultants'] });
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['consultant-verification-audit', id] });
       toast.success(status === 'verified' ? 'Consultant approved!' : 'Consultant rejected.');
     },
   });
+
+  const openDecision = (id: string, name: string, status: string) => {
+    setDecisionTarget({ id, name, status });
+    setDecisionReason('');
+  };
+
+  const submitDecision = async () => {
+    if (!decisionTarget) return;
+    await updateStatus.mutateAsync({
+      id: decisionTarget.id,
+      status: decisionTarget.status,
+      reason: decisionReason,
+    });
+    setDecisionTarget(null);
+    setDecisionReason('');
+  };
 
   const list = consultants || [];
 
