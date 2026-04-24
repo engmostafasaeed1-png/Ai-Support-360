@@ -211,6 +211,10 @@ export default function ConsultantApprovalsPage() {
 
                       <InterviewHistory consultantId={c.id} />
 
+                      <div className="mt-4 pt-4 border-t border-border/50">
+                        <ConsultantVerificationAuditLog consultantId={c.id} />
+                      </div>
+
                       <div className="flex items-center gap-3 justify-end flex-wrap mt-4">
                         <span className="text-xs text-muted-foreground me-auto">{t('approvals_page.applied')}: {c.appliedAt}</span>
                         <Button variant="outline" size="sm" onClick={() => setReinterviewTarget({ id: c.id, name: c.name })}>
