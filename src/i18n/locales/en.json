@@ -87,7 +87,8 @@
     "feature5_title": "Real-Time Collaboration",
     "feature5_desc": "HD video calls, screen sharing, AI transcription, and session recordings.",
     "feature6_title": "SLA Guaranteed",
-    "feature6_desc": "Defined SLA commitments with real-time tracking, alerts, and escalation paths."
+    "feature6_desc": "Defined SLA commitments with real-time tracking, alerts, and escalation paths.",
+    "image_alt": "Illustration representing {{title}}"
   },
   "industries": {
     "title": "Industries We Serve",
