@@ -28,6 +28,7 @@ import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfac
 import MeetingLinkButton from '@/components/session/MeetingLinkButton';
 import MediaPermissionsBanner from '@/components/session/MediaPermissionsBanner';
 import FramedAppNotice from '@/components/session/FramedAppNotice';
+import PreJoinChecklist from '@/components/session/PreJoinChecklist';
 
 const typeIcons = {
   video: Video,
@@ -144,6 +145,13 @@ export default function SessionDetailPage() {
         <>
           <FramedAppNotice dismissKey={`framed-notice-dismissed:${sessionId}`} />
           <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
+          <PreJoinChecklist
+            url={
+              (session as any).meeting_url ||
+              `https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`
+            }
+            sessionId={sessionId}
+          />
         </>
       )}
 
