@@ -307,13 +307,73 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
           <>
             {/* Step indicators */}
             <div className="flex items-center gap-2 mb-2">
-              {[1, 2, 3].map(s => (
+              {(bookingMode === 'instant' ? [0, 2, 3] : [0, 1, 2, 3]).map(s => (
                 <div key={s} className={cn(
                   'h-1.5 flex-1 rounded-full transition-colors',
                   s <= step ? 'bg-primary' : 'bg-muted'
                 )} />
               ))}
             </div>
+
+            {/* Step 0: Choose mode (Instant vs Scheduled) */}
+            {step === 0 && (
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-foreground">How would you like to consult?</p>
+                <div className="grid gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setBookingMode('instant')}
+                    className={cn(
+                      'flex items-start gap-3 p-4 rounded-xl border text-start transition-all',
+                      bookingMode === 'instant'
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                        : 'border-border/50 hover:border-primary/40'
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <Zap className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-foreground">Instant consultation</span>
+                        <Badge variant="secondary" className="text-[10px]">Now</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Start a session right away — perfect for urgent issues.
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBookingMode('scheduled')}
+                    className={cn(
+                      'flex items-start gap-3 p-4 rounded-xl border text-start transition-all',
+                      bookingMode === 'scheduled'
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                        : 'border-border/50 hover:border-primary/40'
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                      <CalendarClock className="w-5 h-5 text-accent" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="text-sm font-semibold text-foreground">Schedule for later</span>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Pick a date and time that works best for you.
+                      </p>
+                    </div>
+                  </button>
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                    onClick={() => setStep(bookingMode === 'instant' ? 2 : 1)}
+                    className="gradient-primary border-0"
+                  >
+                    {t('booking.next')}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Step 1: Date */}
             {step === 1 && (
