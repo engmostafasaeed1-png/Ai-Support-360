@@ -14,10 +14,39 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+const SIDEBAR_STORAGE_KEY_DESKTOP = "sidebar:state:desktop";
+const SIDEBAR_STORAGE_KEY_MOBILE = "sidebar:state:mobile";
+const SIDEBAR_SHEET_SESSION_KEY = "sidebar:sheet:open";
 const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
+
+// Read the persisted open state for the current form factor (desktop vs mobile).
+// Returns undefined when nothing has been persisted yet so callers can fall back
+// to the component's defaultOpen prop.
+function readPersistedOpen(isMobile: boolean): boolean | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const key = isMobile ? SIDEBAR_STORAGE_KEY_MOBILE : SIDEBAR_STORAGE_KEY_DESKTOP;
+    const raw = window.localStorage.getItem(key);
+    if (raw === "true") return true;
+    if (raw === "false") return false;
+  } catch {
+    /* localStorage unavailable (private mode, etc.) */
+  }
+  return undefined;
+}
+
+function writePersistedOpen(isMobile: boolean, value: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    const key = isMobile ? SIDEBAR_STORAGE_KEY_MOBILE : SIDEBAR_STORAGE_KEY_DESKTOP;
+    window.localStorage.setItem(key, String(value));
+  } catch {
+    /* ignore */
+  }
+}
 
 type SidebarContext = {
   state: "expanded" | "collapsed";
