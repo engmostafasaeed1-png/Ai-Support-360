@@ -28,6 +28,7 @@ import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfac
 import MeetingLinkButton, { detectProvider } from '@/components/session/MeetingLinkButton';
 import MediaPermissionsBanner from '@/components/session/MediaPermissionsBanner';
 import FramedAppNotice from '@/components/session/FramedAppNotice';
+import TroubleshootingLanguageSwitcher from '@/components/session/TroubleshootingLanguageSwitcher';
 import PreJoinChecklist from '@/components/session/PreJoinChecklist';
 import MeetingPermissionsNote from '@/components/session/MeetingPermissionsNote';
 import ShareAudioGuideNote from '@/components/session/ShareAudioGuideNote';
@@ -154,6 +155,7 @@ export default function SessionDetailPage() {
 
       {session.session_type === 'video' && status !== 'completed' && status !== 'cancelled' && (
         <>
+          <TroubleshootingLanguageSwitcher sessionId={sessionId} />
           <FramedAppNotice
             dismissKey={`framed-notice-dismissed:${sessionId}`}
             meetingUrl={meetingUrl}
