@@ -37,7 +37,7 @@ export default function Navbar() {
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-white/95 backdrop-blur-xl border-b border-border/60 shadow-md' : 'bg-gradient-to-b from-black/40 via-black/20 to-transparent backdrop-blur-md'}`}>
-      <div className="container mx-auto flex items-center justify-between h-16 sm:h-20 md:h-24 px-3 sm:px-4 gap-2">
+      <div className={`container mx-auto flex items-center justify-between ${isXs ? 'h-14' : 'h-16'} sm:h-20 md:h-24 px-2 sm:px-4 gap-1.5 sm:gap-2`}>
         <Link
           to="/"
           aria-label="AI SAP Support Now — go to home"
@@ -49,12 +49,14 @@ export default function Navbar() {
             alt="AI SAP Support Now logo"
             width={96}
             height={96}
-            className={`w-9 h-9 sm:w-14 sm:h-14 md:w-20 md:h-20 rounded-xl sm:rounded-2xl object-contain shrink-0 group-hover:scale-105 group-active:scale-95 transition-all duration-500 ${scrolled ? 'drop-shadow-md' : 'bg-white/95 p-1 ring-1 ring-white/40 shadow-xl drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]'}`}
+            className={`${isXs ? 'w-8 h-8' : 'w-9 h-9'} sm:w-14 sm:h-14 md:w-20 md:h-20 rounded-xl sm:rounded-2xl object-contain shrink-0 group-hover:scale-105 group-active:scale-95 transition-all duration-500 ${scrolled ? 'drop-shadow-md' : 'bg-white/95 p-1 ring-1 ring-white/40 shadow-xl drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]'}`}
           />
-          <span className={`font-black text-[13px] leading-tight sm:text-lg md:text-2xl tracking-tight transition-colors duration-500 truncate ${scrolled ? 'text-foreground group-hover:text-primary' : 'text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] group-hover:text-white/90'}`}>
-            <span className="sm:hidden">AI SAP Support</span>
-            <span className="hidden sm:inline">AI SAP Support Now</span>
-          </span>
+          {!isXs && (
+            <span className={`font-black text-[13px] leading-tight sm:text-lg md:text-2xl tracking-tight transition-colors duration-500 truncate ${scrolled ? 'text-foreground group-hover:text-primary' : 'text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] group-hover:text-white/90'}`}>
+              <span className="sm:hidden">AI SAP Support</span>
+              <span className="hidden sm:inline">AI SAP Support Now</span>
+            </span>
+          )}
         </Link>
 
         <div className="hidden md:flex items-center gap-0.5">
