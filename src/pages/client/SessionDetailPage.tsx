@@ -25,7 +25,7 @@ import SessionFeedbackDialog from '@/components/session/SessionFeedbackDialog';
 import SessionSurveyDialog from '@/components/session/SessionSurveyDialog';
 import MeetingMinutesCard from '@/components/session/MeetingMinutesCard';
 import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfactionDialog';
-import MeetingLinkButton from '@/components/session/MeetingLinkButton';
+import MeetingLinkButton, { detectProvider } from '@/components/session/MeetingLinkButton';
 import MediaPermissionsBanner from '@/components/session/MediaPermissionsBanner';
 import FramedAppNotice from '@/components/session/FramedAppNotice';
 import PreJoinChecklist from '@/components/session/PreJoinChecklist';
