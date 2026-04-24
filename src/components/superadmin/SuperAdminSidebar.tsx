@@ -51,15 +51,15 @@ export default function SuperAdminSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-e border-border/50">
       <SidebarContent className="bg-sidebar text-sidebar-foreground">
-        <div className="p-3 flex items-center gap-2.5 border-b border-sidebar-border/30">
-          <Link to="/super-admin" className="flex items-center gap-2.5 group">
-            <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
-              <img src={logo} alt="AI SAP Support Now" width={48} height={48} className="w-full h-full object-contain" />
+        <div className={`bg-white border-b border-slate-200 shadow-sm ${collapsed ? 'p-3' : 'px-4 py-3'} flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
+          <Link to="/super-admin" className="group flex items-center gap-3 min-w-0">
+            <div className={`${collapsed ? 'w-10 h-10' : 'w-12 h-12'} rounded-xl overflow-hidden shrink-0 bg-white ring-1 ring-slate-200 shadow-sm group-hover:shadow-md transition-shadow flex items-center justify-center`}>
+              <img src={logo} alt="AI SAP Support Now" width={collapsed ? 40 : 48} height={collapsed ? 40 : 48} className="w-full h-full object-contain p-0.5" />
             </div>
             {!collapsed && (
-              <div className="min-w-0">
-                <span className="font-bold text-sm text-sidebar-foreground block leading-tight">AI SAP Support Now</span>
-                <span className="text-[10px] text-sidebar-foreground/40 leading-tight">{t('super_admin.title', 'Super Admin')}</span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[13px] font-bold text-slate-900 leading-tight truncate">AI SAP Support Now</span>
+                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">{String(t('super_admin.title', { defaultValue: 'Super Admin' }))}</span>
               </div>
             )}
           </Link>
