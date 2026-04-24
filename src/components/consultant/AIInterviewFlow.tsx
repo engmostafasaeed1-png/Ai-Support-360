@@ -188,6 +188,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const [interimTranscript, setInterimTranscript] = useState('');
   const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('male');
+  const [interviewerTone, setInterviewerTone] = useState<'friendly' | 'formal' | 'strict'>('friendly');
   const avatarImg = voiceGender === 'male' ? aiMaleAvatar : aiFemaleAvatar;
   const [speechRate, setSpeechRate] = useState(1.0);
   const [interviewLang, setInterviewLang] = useState<'en' | 'fr' | 'ar' | 'es' | 'de' | 'ar-SA'>('en');
@@ -463,7 +464,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-        body: JSON.stringify({ interview_id: interviewId, messages: chatHistory, lang: interviewLang, voice_gender: voiceGender }),
+        body: JSON.stringify({ interview_id: interviewId, messages: chatHistory, lang: interviewLang, voice_gender: voiceGender, tone: interviewerTone }),
       });
       if (!resp.ok || !resp.body) {
         if (resp.status === 429) { setError('Rate limited — please try again in a moment.'); setIsStreaming(false); setIsSpeaking(false); return; }
@@ -579,7 +580,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         fetch(CHAT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-          body: JSON.stringify({ interview_id: interviewId, messages, action: 'evaluate', voice_gender: voiceGender }),
+          body: JSON.stringify({ interview_id: interviewId, messages, action: 'evaluate', voice_gender: voiceGender, tone: interviewerTone }),
         }),
         analyzeBodyLanguage(),
       ]);
@@ -853,6 +854,22 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             >
               ♂ Ezz
             </button>
+          </div>
+
+          {/* Tone selector */}
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-[11px] uppercase tracking-wide text-white/40">Interviewer tone</span>
+            <div className="flex items-center gap-2">
+              {(['friendly', 'formal', 'strict'] as const).map((tone) => (
+                <button
+                  key={tone}
+                  onClick={() => setInterviewerTone(tone)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border capitalize transition-colors ${interviewerTone === tone ? 'bg-primary/20 text-primary border-primary/40' : 'bg-white/5 text-white/50 border-white/10'}`}
+                >
+                  {tone === 'friendly' ? '😊 Friendly' : tone === 'formal' ? '🎩 Formal' : '🧐 Strict'}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Disclaimer */}
