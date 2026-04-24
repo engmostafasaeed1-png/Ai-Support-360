@@ -52,9 +52,13 @@ export default function Navbar() {
             className={`${isXs ? 'w-8 h-8' : 'w-9 h-9'} sm:w-14 sm:h-14 md:w-20 md:h-20 rounded-xl sm:rounded-2xl object-contain shrink-0 group-hover:scale-105 group-active:scale-95 transition-all duration-500 ${scrolled ? 'drop-shadow-md' : 'bg-white/95 p-1 ring-1 ring-white/40 shadow-xl drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]'}`}
           />
           {!isXs && (
-            <span className={`font-black text-[13px] leading-tight sm:text-lg md:text-2xl tracking-tight transition-colors duration-500 truncate ${scrolled ? 'text-foreground group-hover:text-primary' : 'text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] group-hover:text-white/90'}`}>
-              <span className="sm:hidden">AI SAP Support</span>
-              <span className="hidden sm:inline">AI SAP Support Now</span>
+            <span className={`font-black leading-tight tracking-tight transition-colors duration-500 whitespace-nowrap ${scrolled ? 'text-foreground group-hover:text-primary' : 'text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] group-hover:text-white/90'}`}>
+              {/* ≤640px: ultra-short initials */}
+              <span className="inline sm:hidden text-sm">SAP Support</span>
+              {/* 640–1023px: short brand */}
+              <span className="hidden sm:inline lg:hidden text-lg md:text-xl">AI SAP Support</span>
+              {/* ≥1024px: full brand */}
+              <span className="hidden lg:inline text-2xl">AI SAP Support Now</span>
             </span>
           )}
         </Link>
