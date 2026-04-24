@@ -1,3 +1,5 @@
+import { captureException } from '@/lib/sentry';
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 interface LogEntry {
@@ -23,5 +25,7 @@ export const logger = {
       ? { errorMessage: error.message, stack: error.stack, ...context }
       : context;
     logEntry('error', message, errorContext);
+    // Forward to Sentry when configured. No-op otherwise.
+    captureException(error ?? new Error(message), { message, ...errorContext });
   },
 };
