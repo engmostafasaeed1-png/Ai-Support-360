@@ -290,9 +290,18 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Decrypt API key from the new ciphertext column; fall back to the legacy
+    // plaintext column for records written before encryption was enabled.
+    let apiKey = "";
+    if ((integration as any).api_key_ciphertext) {
+      apiKey = await decryptCiphertext((integration as any).api_key_ciphertext);
+    } else if ((integration as any).api_key_encrypted) {
+      apiKey = (integration as any).api_key_encrypted;
+    }
+
     const config = {
       platform_url: integration.platform_url,
-      api_key: integration.api_key_encrypted, // In production, decrypt this
+      api_key: apiKey,
       ...((integration.settings as Record<string, string>) || {}),
     };
 
