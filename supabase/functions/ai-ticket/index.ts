@@ -146,7 +146,7 @@ serve(async (req) => {
       );
 
       if (!response.ok) {
-        const errResp = handleAiError(response.status);
+        const errResp = handleAiError(req, response.status);
         if (errResp) return errResp;
         throw new Error(`AI gateway error: ${response.status}`);
       }
@@ -183,7 +183,7 @@ serve(async (req) => {
       );
 
       if (!response.ok) {
-        const errResp = handleAiError(response.status);
+        const errResp = handleAiError(req, response.status);
         if (errResp) return errResp;
         throw new Error(`AI gateway error: ${response.status}`);
       }
@@ -220,7 +220,7 @@ serve(async (req) => {
       );
 
       if (!response.ok) {
-        const errResp = handleAiError(response.status);
+        const errResp = handleAiError(req, response.status);
         if (errResp) return errResp;
         throw new Error(`AI gateway error: ${response.status}`);
       }
@@ -493,7 +493,7 @@ Rank the top consultants for this ticket. Be specific about why each matches.`,
       );
 
       if (!rankResponse.ok) {
-        const errResp = handleAiError(rankResponse.status);
+        const errResp = handleAiError(req, rankResponse.status);
         if (errResp) return errResp;
         throw new Error(`AI gateway error: ${rankResponse.status}`);
       }
