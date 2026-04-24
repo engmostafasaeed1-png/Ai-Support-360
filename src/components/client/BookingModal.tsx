@@ -268,12 +268,21 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
             </div>
             <div className="p-3 rounded-xl bg-muted/30 border border-border/30 text-sm space-y-1.5 text-start">
               <div className="flex justify-between">
+                <span className="text-muted-foreground">Mode</span>
+                <Badge variant={bookingMode === 'instant' ? 'default' : 'secondary'} className="text-[10px] gap-1">
+                  {bookingMode === 'instant' ? <Zap className="w-3 h-3" /> : <CalendarClock className="w-3 h-3" />}
+                  {bookingMode === 'instant' ? 'Instant' : 'Scheduled'}
+                </Badge>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-muted-foreground">Date</span>
-                <span className="font-medium">{selectedDate && format(selectedDate, 'EEEE, MMM d, yyyy')}</span>
+                <span className="font-medium">
+                  {bookingMode === 'instant' ? 'Today' : (selectedDate && format(selectedDate, 'EEEE, MMM d, yyyy'))}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Time</span>
-                <span className="font-medium">{selectedTime}</span>
+                <span className="font-medium">{bookingMode === 'instant' ? 'Starting now' : selectedTime}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Duration</span>
