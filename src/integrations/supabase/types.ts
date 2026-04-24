@@ -942,6 +942,44 @@ export type Database = {
           },
         ]
       }
+      consultant_verification_audit: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          id: string
+          new_status: Database["public"]["Enums"]["verification_status"]
+          old_status: Database["public"]["Enums"]["verification_status"] | null
+          reason: string | null
+          reviewer_id: string | null
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          id?: string
+          new_status: Database["public"]["Enums"]["verification_status"]
+          old_status?: Database["public"]["Enums"]["verification_status"] | null
+          reason?: string | null
+          reviewer_id?: string | null
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          id?: string
+          new_status?: Database["public"]["Enums"]["verification_status"]
+          old_status?: Database["public"]["Enums"]["verification_status"] | null
+          reason?: string | null
+          reviewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_verification_audit_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultant_work_history: {
         Row: {
           company_name: string
