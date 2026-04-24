@@ -154,9 +154,16 @@ export default function MeetingLinkButton({
     }
   };
 
+  const reasonToTroubleshoot = (reason: string): TroubleshootReason => {
+    if (reason === 'popup_blocked') return 'popup_blocked';
+    if (reason === 'invalid_url' || reason === 'no_link') return 'invalid_url';
+    return 'load_failed';
+  };
+
   const triggerFallback = useCallback(
     (failed: MeetingProvider, message: string, reason: string, extra?: Record<string, unknown>) => {
       setFailedProvider(failed);
+      setFailedReason(reasonToTroubleshoot(reason));
       setFallbackOpen(true);
       toast.error(message);
       logProviderEvent('fallback_shown', { provider: failed, reason, ...extra }, 'warn');
