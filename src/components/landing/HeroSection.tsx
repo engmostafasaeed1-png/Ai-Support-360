@@ -148,6 +148,7 @@ export default function HeroSection() {
                   src={introCollab}
                   alt="SAP consulting team collaborating with AI dashboards"
                   loading="lazy"
+                  decoding="async"
                   width={1280}
                   height={896}
                   sizes="(max-width: 768px) 100vw, 60vw"
@@ -189,6 +190,7 @@ export default function HeroSection() {
                   src={introAiPortal}
                   alt="AI-powered SAP support portal"
                   loading="lazy"
+                  decoding="async"
                   width={1024}
                   height={1024}
                   sizes="(max-width: 768px) 50vw, 35vw"
@@ -211,6 +213,7 @@ export default function HeroSection() {
                   src={introConsultant}
                   alt="Certified SAP consultant on call"
                   loading="lazy"
+                  decoding="async"
                   width={1024}
                   height={1280}
                   sizes="(max-width: 768px) 50vw, 35vw"
