@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { logProviderEvent } from '@/lib/diagnostics';
 
 type Status = 'idle' | 'requesting' | 'ready' | 'error';
 
