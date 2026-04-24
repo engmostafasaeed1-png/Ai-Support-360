@@ -99,19 +99,39 @@ export default function ValueDifferentiationSection() {
           {valuePillars.map((p, i) => (
             <div
               key={i}
-              className={`group relative rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl overflow-hidden hover:border-primary/40 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/5 ${p.span ?? ''}`}
+              style={{ ['--glow' as string]: accents[p.accent].glow }}
+              className={`group relative ${radius.tile} border border-border/40 bg-card/40 backdrop-blur-xl overflow-hidden hover:border-primary/40 motion-safe:transition-all motion-safe:duration-500 motion-safe:hover:-translate-y-1 hover:shadow-[0_30px_80px_-20px_rgba(var(--glow),0.35)] ${p.span ?? ''}`}
             >
-              {/* Gradient glow */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${p.accent} opacity-60 group-hover:opacity-100 transition-opacity duration-500`} />
-              {/* Noise / shine */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent" />
+              {/* Accent radial glow tied to the icon's gradient */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 opacity-50 group-hover:opacity-100 motion-safe:transition-opacity motion-safe:duration-500"
+                style={{
+                  background:
+                    'radial-gradient(circle at 20% 0%, rgba(var(--glow),0.18), transparent 55%)',
+                }}
+              />
+              {/* Subtle top-edge sheen */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
 
               <div className="relative h-full p-7 flex flex-col justify-between">
                 <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-background/80 border border-border/50 backdrop-blur-sm flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
-                    <p.Icon className="w-6 h-6 text-primary" strokeWidth={2} />
+                  {/* Shared iconPlate — same gradient + motion as the rest of the landing */}
+                  <div className={iconPlate(p.accent, p.featured ? 'md' : 'sm')}>
+                    <p.Icon
+                      size={p.featured ? 28 : 20}
+                      strokeWidth={1.75}
+                      absoluteStrokeWidth
+                      className="text-white"
+                      aria-hidden="true"
+                    />
                   </div>
-                  <ArrowUpRight className="w-5 h-5 text-muted-foreground/40 group-hover:text-primary group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-300" />
+                  <span
+                    className={`inline-flex items-center justify-center w-9 h-9 ${radius.pill} bg-background/60 border border-border/50 text-muted-foreground/60 group-hover:text-primary group-hover:border-primary/40 group-hover:bg-primary/5 motion-safe:transition-all motion-safe:duration-300 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5 ${shadow.soft}`}
+                    aria-hidden="true"
+                  >
+                    <ArrowUpRight size={16} strokeWidth={2} absoluteStrokeWidth />
+                  </span>
                 </div>
 
                 <div>
