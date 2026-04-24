@@ -58,6 +58,7 @@ export default function SessionDetailPage() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [showSurvey, setShowSurvey] = useState(false);
   const [showCsat, setShowCsat] = useState(false);
+  const [showRate, setShowRate] = useState(false);
 
   const handleCancel = async () => {
     setIsCancelling(true);
