@@ -1,6 +1,14 @@
 import { useTranslation } from 'react-i18next';
 import { Wand2, ShieldCheck, Languages, Lock, Users, Activity, ArrowUpRight } from 'lucide-react';
 import BlurImage from './BlurImage';
+import {
+  accents,
+  border,
+  motion,
+  radius,
+  shadow,
+  type AccentName,
+} from './tokens';
 import aiMatching from '@/assets/why/ai-matching.jpg';
 import aiMatchingBlur from '@/assets/why/blur/ai-matching-blur.jpg';
 import verifiedExperts from '@/assets/why/verified-experts.jpg';
@@ -18,29 +26,29 @@ type Feature = {
   Icon: typeof Wand2;
   image: string;
   blur: string;
-  accent: string; // tailwind gradient classes
   /**
-   * Responsive grid spans. Each tile defines spans per breakpoint so
-   * the layout stays balanced (and never crops images) at every width.
-   * - mobile (default): 1 col, auto height
-   * - md (2 cols): hero tile spans both columns
-   * - lg (4 cols): bento layout
+   * Accent name from the shared design tokens. The same `AccentName`
+   * value is reused by HowItWorksSection so a feature here visually
+   * pairs with the matching step (e.g. `sky` → step 01 / AI matching).
    */
+  accent: AccentName;
+  /** Responsive grid spans per breakpoint. */
   size: string;
   /** Min-height per breakpoint to prevent overlap when images load. */
   height: string;
   tag: string;
 };
 
-// Unified Lucide outline set — same family, same stroke weight, same size
-// (set on the icon below) so every tile reads as one coherent system.
+// Feature accents reuse `AccentName` from `./tokens.ts` — the same
+// palette powers HowItWorksSection's step icons. Edit `tokens.ts` to
+// retint everything in lockstep.
 const features: Feature[] = [
-  { Icon: Wand2,       image: aiMatching,      blur: aiMatchingBlur,      accent: 'from-cyan-500/80 to-blue-600/80',     size: 'md:col-span-2 lg:col-span-2 lg:row-span-2', height: 'min-h-[320px] md:min-h-[360px] lg:min-h-0',          tag: '01' },
-  { Icon: ShieldCheck, image: verifiedExperts, blur: verifiedExpertsBlur, accent: 'from-emerald-500/80 to-teal-600/80',  size: 'md:col-span-1 lg:col-span-1 lg:row-span-1', height: 'min-h-[260px] lg:min-h-0',                            tag: '02' },
-  { Icon: Languages,   image: bilingual,       blur: bilingualBlur,       accent: 'from-amber-500/80 to-orange-600/80',  size: 'md:col-span-1 lg:col-span-1 lg:row-span-1', height: 'min-h-[260px] lg:min-h-0',                            tag: '03' },
-  { Icon: Lock,        image: security,        blur: securityBlur,        accent: 'from-indigo-500/80 to-purple-600/80', size: 'md:col-span-2 lg:col-span-1 lg:row-span-2', height: 'min-h-[280px] md:min-h-[320px] lg:min-h-0',          tag: '04' },
-  { Icon: Users,       image: collaboration,   blur: collaborationBlur,   accent: 'from-rose-500/80 to-pink-600/80',     size: 'md:col-span-1 lg:col-span-1 lg:row-span-1', height: 'min-h-[260px] lg:min-h-0',                            tag: '05' },
-  { Icon: Activity,    image: sla,             blur: slaBlur,             accent: 'from-sky-500/80 to-cyan-600/80',      size: 'md:col-span-1 lg:col-span-1 lg:row-span-1', height: 'min-h-[260px] lg:min-h-0',                            tag: '06' },
+  { Icon: Wand2,       image: aiMatching,      blur: aiMatchingBlur,      accent: 'sky',     size: 'md:col-span-2 lg:col-span-2 lg:row-span-2', height: 'min-h-[320px] md:min-h-[360px] lg:min-h-0', tag: '01' },
+  { Icon: ShieldCheck, image: verifiedExperts, blur: verifiedExpertsBlur, accent: 'emerald', size: 'md:col-span-1 lg:col-span-1 lg:row-span-1', height: 'min-h-[260px] lg:min-h-0',                  tag: '02' },
+  { Icon: Languages,   image: bilingual,       blur: bilingualBlur,       accent: 'amber',   size: 'md:col-span-1 lg:col-span-1 lg:row-span-1', height: 'min-h-[260px] lg:min-h-0',                  tag: '03' },
+  { Icon: Lock,        image: security,        blur: securityBlur,        accent: 'violet',  size: 'md:col-span-2 lg:col-span-1 lg:row-span-2', height: 'min-h-[280px] md:min-h-[320px] lg:min-h-0', tag: '04' },
+  { Icon: Users,       image: collaboration,   blur: collaborationBlur,   accent: 'rose',    size: 'md:col-span-1 lg:col-span-1 lg:row-span-1', height: 'min-h-[260px] lg:min-h-0',                  tag: '05' },
+  { Icon: Activity,    image: sla,             blur: slaBlur,             accent: 'cyan',    size: 'md:col-span-1 lg:col-span-1 lg:row-span-1', height: 'min-h-[260px] lg:min-h-0',                  tag: '06' },
 ];
 
 export default function WhyQurtubaSection() {
@@ -63,8 +71,8 @@ export default function WhyQurtubaSection() {
       <div className="container mx-auto px-4 relative">
         {/* Header */}
         <div className="text-center mb-14 md:mb-20 max-w-3xl mx-auto motion-safe:animate-fade-in-up">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-foreground/5 border border-border/60 text-foreground/80 text-xs font-bold tracking-[0.2em] uppercase mb-5 backdrop-blur-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary motion-safe:animate-pulse-soft" />
+          <span className={`inline-flex items-center gap-2 px-4 py-1.5 ${radius.pill} bg-foreground/5 ${border.base} text-foreground/80 text-xs font-bold tracking-[0.2em] uppercase mb-5 backdrop-blur-sm`}>
+            <span className={`w-1.5 h-1.5 ${radius.pill} bg-primary motion-safe:animate-pulse-soft`} />
             Why Choose Us
           </span>
           <h2 className="text-4xl md:text-6xl font-black text-foreground tracking-tight leading-[1.05]">
@@ -92,7 +100,7 @@ export default function WhyQurtubaSection() {
               // Stagger only applies when motion is allowed; reduced-motion users
               // get an instant, fully-visible card with no transform/opacity dance.
               style={{ animationDelay: `${i * 80}ms` }}
-              className={`group relative isolate overflow-hidden rounded-3xl border border-border/40 bg-card shadow-sm hover:shadow-2xl motion-safe:transition-all motion-safe:duration-700 motion-safe:hover:-translate-y-1 motion-safe:animate-fade-in-up ${f.size} ${f.height}`}
+              className={`group relative isolate overflow-hidden ${radius.tile} ${border.base} bg-card shadow-sm ${shadow.hover} ${motion.transition} ${motion.liftOnHover} ${motion.enter} ${f.size} ${f.height}`}
             >
               {/* Background image with blur-up placeholder */}
               <BlurImage
@@ -104,8 +112,14 @@ export default function WhyQurtubaSection() {
                 className="absolute inset-0 w-full h-full object-cover motion-safe:transition-transform motion-safe:duration-[1200ms] motion-safe:ease-out motion-safe:group-hover:scale-110"
               />
 
-              {/* Gradient color overlay */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${f.accent} mix-blend-multiply opacity-90 motion-safe:transition-opacity motion-safe:duration-500 motion-safe:group-hover:opacity-80 pointer-events-none`} />
+              {/*
+                Gradient color overlay using the shared accent palette
+                (with `/80` opacity blended via `mix-blend-multiply` so
+                the photo still shows through).
+              */}
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${accents[f.accent].gradient} mix-blend-multiply opacity-90 motion-safe:transition-opacity motion-safe:duration-500 motion-safe:group-hover:opacity-80 pointer-events-none`}
+              />
 
               {/* Bottom dark gradient for text legibility */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/10 pointer-events-none" />
@@ -118,12 +132,12 @@ export default function WhyQurtubaSection() {
               <div className="relative z-10 h-full flex flex-col p-5 sm:p-6 md:p-7">
                 {/* Top row: icon + tag/arrow */}
                 <div className="flex items-start justify-between gap-3">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 shrink-0 rounded-2xl bg-white/15 backdrop-blur-xl border border-white/25 flex items-center justify-center shadow-xl motion-safe:transition-all motion-safe:duration-500 motion-safe:group-hover:scale-110 group-hover:bg-white/25">
+                  <div className={`w-11 h-11 sm:w-12 sm:h-12 shrink-0 ${radius.icon} bg-white/15 backdrop-blur-xl border border-white/25 flex items-center justify-center shadow-xl motion-safe:transition-all motion-safe:duration-500 motion-safe:group-hover:scale-110 group-hover:bg-white/25`}>
                     <f.Icon size={22} strokeWidth={1.75} absoluteStrokeWidth className="text-white sm:[&]:w-6 sm:[&]:h-6" aria-hidden="true" />
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-white/70">{f.tag}</span>
-                    <div className="w-8 h-8 rounded-full bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover:bg-white/25 motion-safe:transition-colors">
+                    <div className={`w-8 h-8 ${radius.pill} bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover:bg-white/25 motion-safe:transition-colors`}>
                       <ArrowUpRight className="w-4 h-4 text-white motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:rotate-45" />
                     </div>
                   </div>
@@ -144,7 +158,7 @@ export default function WhyQurtubaSection() {
               </div>
 
               {/* Hover ring */}
-              <div className="absolute inset-0 rounded-3xl ring-1 ring-inset ring-white/0 group-hover:ring-white/30 motion-safe:transition-all motion-safe:duration-500 pointer-events-none" />
+              <div className={`absolute inset-0 ${radius.tile} ring-1 ring-inset ring-white/0 group-hover:ring-white/30 motion-safe:transition-all motion-safe:duration-500 pointer-events-none`} />
             </article>
           ))}
         </div>
