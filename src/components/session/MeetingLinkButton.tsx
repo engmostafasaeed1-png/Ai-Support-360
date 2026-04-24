@@ -229,7 +229,8 @@ export default function MeetingLinkButton({
         'unknown',
         t('session_detail.no_meeting_link_fallback', {
           defaultValue: 'No meeting link available. Choose an alternative below.',
-        })
+        }),
+        'no_link'
       );
       return;
     }
