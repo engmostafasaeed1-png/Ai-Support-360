@@ -27,9 +27,52 @@ import logo from '@/assets/logo.png';
 import sidebarBanner from '@/assets/sidebar-banner.png';
 import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 
+// Per-tile color tints for visual variety (uses semantic HSL tokens via tailwind utilities)
+const tileTints: Record<string, string> = {
+  dashboard: 'from-blue-500/25 to-blue-500/5 text-blue-500',
+  new_request: 'from-amber-500/25 to-amber-500/5 text-amber-500',
+  tickets: 'from-rose-500/25 to-rose-500/5 text-rose-500',
+  consultants: 'from-violet-500/25 to-violet-500/5 text-violet-500',
+  sessions: 'from-cyan-500/25 to-cyan-500/5 text-cyan-500',
+  video_sessions: 'from-pink-500/25 to-pink-500/5 text-pink-500',
+  projects: 'from-indigo-500/25 to-indigo-500/5 text-indigo-500',
+  milestones: 'from-orange-500/25 to-orange-500/5 text-orange-500',
+  tasks: 'from-emerald-500/25 to-emerald-500/5 text-emerald-500',
+  contracts: 'from-slate-500/25 to-slate-500/5 text-slate-500',
+  business_processes: 'from-teal-500/25 to-teal-500/5 text-teal-500',
+  chat: 'from-sky-500/25 to-sky-500/5 text-sky-500',
+  change_management: 'from-purple-500/25 to-purple-500/5 text-purple-500',
+  major_incidents: 'from-red-500/25 to-red-500/5 text-red-500',
+  playbooks: 'from-yellow-500/25 to-yellow-500/5 text-yellow-600',
+  payments: 'from-green-500/25 to-green-500/5 text-green-500',
+  invoices: 'from-lime-500/25 to-lime-500/5 text-lime-600',
+  integrations: 'from-fuchsia-500/25 to-fuchsia-500/5 text-fuchsia-500',
+  remote_access: 'from-blue-500/25 to-blue-500/5 text-blue-500',
+  vmware_settings: 'from-zinc-500/25 to-zinc-500/5 text-zinc-500',
+  vmware_pricing: 'from-emerald-500/25 to-emerald-500/5 text-emerald-500',
+  vmware_console: 'from-indigo-500/25 to-indigo-500/5 text-indigo-500',
+  knowledge: 'from-amber-500/25 to-amber-500/5 text-amber-500',
+  pm_tickets: 'from-rose-500/25 to-rose-500/5 text-rose-500',
+  solution_architecture: 'from-violet-500/25 to-violet-500/5 text-violet-500',
+  satisfaction: 'from-yellow-500/25 to-yellow-500/5 text-yellow-500',
+  referrals: 'from-pink-500/25 to-pink-500/5 text-pink-500',
+  team_members: 'from-cyan-500/25 to-cyan-500/5 text-cyan-500',
+  reports: 'from-indigo-500/25 to-indigo-500/5 text-indigo-500',
+  sla: 'from-emerald-500/25 to-emerald-500/5 text-emerald-500',
+  activity_log: 'from-orange-500/25 to-orange-500/5 text-orange-500',
+  company_profile: 'from-blue-500/25 to-blue-500/5 text-blue-500',
+  notifications: 'from-amber-500/25 to-amber-500/5 text-amber-500',
+  settings: 'from-slate-500/25 to-slate-500/5 text-slate-500',
+  support: 'from-teal-500/25 to-teal-500/5 text-teal-500',
+};
+
+const titleize = (s: string) =>
+  s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
 const navGroups = [
   {
     labelKey: 'sidebar.overview',
+    fallback: 'Overview',
     items: [
       { key: 'dashboard', icon: Gauge, path: '/client', required: true },
       { key: 'new_request', icon: Zap, path: '/client/new-request', accent: true },
@@ -37,6 +80,7 @@ const navGroups = [
   },
   {
     labelKey: 'sidebar.work',
+    fallback: 'Work',
     items: [
       { key: 'tickets', icon: Headset, path: '/client/tickets' },
       { key: 'consultants', icon: Search, path: '/client/consultants' },
@@ -52,6 +96,7 @@ const navGroups = [
   },
   {
     labelKey: 'sidebar.servicenow',
+    fallback: 'Service Management',
     items: [
       { key: 'change_management', icon: GitPullRequestArrow, path: '/client/changes' },
       { key: 'major_incidents', icon: AlertOctagon, path: '/client/major-incidents' },
@@ -60,6 +105,7 @@ const navGroups = [
   },
   {
     labelKey: 'sidebar.finance',
+    fallback: 'Finance',
     items: [
       { key: 'payments', icon: Wallet, path: '/client/payments' },
       { key: 'invoices', icon: Receipt, path: '/client/invoices' },
@@ -67,6 +113,7 @@ const navGroups = [
   },
   {
     labelKey: 'sidebar.tools',
+    fallback: 'Tools',
     items: [
       { key: 'integrations', icon: Blocks, path: '/client/integrations' },
       { key: 'remote_access', icon: MonitorSmartphone, path: '/client/remote-access' },
@@ -82,6 +129,7 @@ const navGroups = [
   },
   {
     labelKey: 'sidebar.management',
+    fallback: 'Management',
     items: [
       { key: 'team_members', icon: UserCog, path: '/client/team' },
       { key: 'reports', icon: PieChart, path: '/client/reports' },
@@ -91,6 +139,7 @@ const navGroups = [
   },
   {
     labelKey: 'sidebar.account',
+    fallback: 'Account',
     items: [
       { key: 'company_profile', icon: Building, path: '/client/company' },
       { key: 'notifications', icon: BellRing, path: '/client/notifications' },
@@ -175,7 +224,7 @@ export default function ClientSidebar() {
               <SidebarGroup key={group.labelKey}>
                 {!collapsed && (
                   <SidebarGroupLabel className="px-4 text-[10px] uppercase tracking-wider font-semibold text-sidebar-foreground/40 mb-1.5">
-                    {t(group.labelKey)}
+                    {String(t(group.labelKey, { defaultValue: group.fallback }))}
                   </SidebarGroupLabel>
                 )}
                 <SidebarGroupContent>
@@ -183,20 +232,22 @@ export default function ClientSidebar() {
                     <SidebarMenu>
                       {visibleItems.map((item) => {
                         const isActive = location.pathname === item.path;
+                        const label = String(t(`sidebar.${item.key}`, { defaultValue: (item as any).label || titleize(item.key) }));
+                        const tint = tileTints[item.key] || 'from-primary/20 to-primary/5 text-primary';
                         return (
                           <SidebarMenuItem key={item.key}>
-                            <SidebarMenuButton asChild tooltip={t(`sidebar.${item.key}`)}>
+                            <SidebarMenuButton asChild tooltip={label}>
                               <NavLink
                                 to={item.path}
                                 end
                                 className={`group/item relative flex items-center justify-center rounded-xl mx-1.5 my-0.5 h-10 transition-all duration-200 ${
                                   isActive
-                                    ? 'bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg shadow-primary/30'
+                                    ? `bg-gradient-to-br ${tint} shadow-lg`
                                     : 'hover:bg-sidebar-accent/60 text-sidebar-foreground/70 hover:text-sidebar-foreground'
                                 }`}
                                 activeClassName=""
                               >
-                                <item.icon className="w-4 h-4 shrink-0" />
+                                <item.icon className={`w-4 h-4 shrink-0 ${isActive ? '' : ''}`} />
                               </NavLink>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
@@ -208,34 +259,37 @@ export default function ClientSidebar() {
                       {visibleItems.map((item) => {
                         const isActive = location.pathname === item.path;
                         const isAccent = (item as any).accent;
+                        const label = String(t(`sidebar.${item.key}`, { defaultValue: (item as any).label || titleize(item.key) }));
+                        const tint = tileTints[item.key] || 'from-primary/20 to-primary/5 text-primary';
                         return (
                           <NavLink
                             key={item.key}
                             to={item.path}
                             end
-                            className={`group/tile relative flex flex-col items-center justify-center gap-1.5 rounded-2xl px-2 py-3 text-center transition-all duration-200 overflow-hidden border ${
+                            className={`group/tile relative flex flex-col items-center justify-center gap-2 rounded-2xl px-2 py-3.5 text-center transition-all duration-200 overflow-hidden border ${
                               isActive
-                                ? 'bg-gradient-to-br from-primary to-primary/60 text-primary-foreground border-primary/40 shadow-lg shadow-primary/30 scale-[1.02]'
+                                ? 'bg-gradient-to-br from-primary via-primary/85 to-primary/60 text-primary-foreground border-primary/50 shadow-xl shadow-primary/40 scale-[1.03]'
                                 : isAccent
-                                ? 'bg-gradient-to-br from-primary/15 to-primary/5 text-primary border-primary/30 hover:from-primary/25 hover:to-primary/10 hover:shadow-md'
-                                : 'bg-sidebar-accent/20 hover:bg-sidebar-accent/50 text-sidebar-foreground/80 hover:text-sidebar-foreground border-sidebar-border/30 hover:border-sidebar-border/60 hover:shadow-md hover:-translate-y-0.5'
+                                ? 'bg-gradient-to-br from-primary/20 to-primary/5 text-primary border-primary/40 hover:from-primary/30 hover:to-primary/10 hover:shadow-lg hover:-translate-y-0.5'
+                                : 'bg-sidebar-accent/15 hover:bg-sidebar-accent/40 text-sidebar-foreground/90 hover:text-sidebar-foreground border-sidebar-border/30 hover:border-sidebar-border/70 hover:shadow-md hover:-translate-y-0.5'
                             }`}
                             activeClassName=""
                           >
                             {isActive && (
-                              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 pointer-events-none" />
+                              <>
+                                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/15 to-white/0 pointer-events-none" />
+                                <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full bg-white/20 blur-2xl pointer-events-none" />
+                              </>
                             )}
-                            <div className={`flex items-center justify-center w-8 h-8 rounded-xl shrink-0 transition-all ${
+                            <div className={`flex items-center justify-center w-11 h-11 rounded-2xl shrink-0 transition-all ${
                               isActive
-                                ? 'bg-white/25 backdrop-blur-sm'
-                                : isAccent
-                                ? 'bg-primary/20'
-                                : 'bg-sidebar-background/60 group-hover/tile:bg-sidebar-background/90 shadow-sm'
+                                ? 'bg-white/25 backdrop-blur-sm shadow-inner'
+                                : `bg-gradient-to-br ${tint} group-hover/tile:scale-110 shadow-sm`
                             }`}>
-                              <item.icon className={`w-4 h-4 ${isActive ? 'text-primary-foreground' : isAccent ? 'text-primary' : 'text-sidebar-foreground/70 group-hover/tile:text-sidebar-foreground'}`} />
+                              <item.icon className={`w-5 h-5 ${isActive ? 'text-primary-foreground drop-shadow' : ''}`} strokeWidth={2.2} />
                             </div>
-                            <span className="text-[10.5px] font-medium leading-tight line-clamp-2">
-                              {t(`sidebar.${item.key}`)}
+                            <span className={`text-[11px] font-semibold leading-tight line-clamp-2 ${isActive ? 'text-primary-foreground' : 'text-sidebar-foreground/85 group-hover/tile:text-sidebar-foreground'}`}>
+                              {label}
                             </span>
                           </NavLink>
                         );
