@@ -185,6 +185,13 @@ export default function PreflightTestDialog({
     setError(null);
     setStatus('requesting');
     stopStream();
+    setRecording(false);
+    setRecordSeconds(0);
+    setRecordConfirmed(false);
+    setRecordingUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
 
     if (typeof window === 'undefined' || !window.isSecureContext) {
       setError({ code: 'TypeError', message: 'Insecure context' });
