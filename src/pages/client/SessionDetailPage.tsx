@@ -26,6 +26,7 @@ import SessionSurveyDialog from '@/components/session/SessionSurveyDialog';
 import MeetingMinutesCard from '@/components/session/MeetingMinutesCard';
 import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfactionDialog';
 import MeetingLinkButton from '@/components/session/MeetingLinkButton';
+import MediaPermissionsBanner from '@/components/session/MediaPermissionsBanner';
 
 const typeIcons = {
   video: Video,
@@ -137,6 +138,10 @@ export default function SessionDetailPage() {
       <Button variant="ghost" size="sm" onClick={() => navigate('/client/sessions')} className="gap-1">
         <ChevronLeft className="w-4 h-4" /> {t('session_detail.back')}
       </Button>
+
+      {session.session_type === 'video' && status !== 'completed' && status !== 'cancelled' && (
+        <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
+      )}
 
       {/* Header card */}
       <Card className="rounded-2xl border-border/50">
