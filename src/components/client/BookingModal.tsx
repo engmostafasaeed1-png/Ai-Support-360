@@ -228,7 +228,7 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
           await supabase.from('notifications').insert({
             user_id: consultant.user_id,
             title: 'New Session Booking',
-            body: `A client booked a ${sessionType.replace('_', ' ')} session for ${dateLabel} at ${selectedTime}.`,
+            body: `A client booked an ${modeLabel.toLowerCase()} ${sessionType.replace('_', ' ')} session ${bookingMode === 'instant' ? 'starting now' : `for ${dateLabel} at ${timeLabel}`}.`,
             type: 'booking',
             link: '/consultant/calendar',
           });
