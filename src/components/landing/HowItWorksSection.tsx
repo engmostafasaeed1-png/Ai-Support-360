@@ -161,13 +161,25 @@ export default function HowItWorksSection() {
               <AccordionItem
                 key={i}
                 value={`step-${i + 1}`}
-                className={`group ${radius.icon} ${border.base} ${surface.card} px-5 md:px-6 motion-safe:transition-all motion-safe:duration-300 data-[state=open]:bg-card data-[state=open]:${border.active} data-[state=open]:shadow-2xl`}
+                className={[
+                  'group',
+                  radius.tile,
+                  border.base,
+                  surface.card,
+                  'px-5 md:px-6',
+                  motion.transition,
+                  border.hover,
+                  // Open state — uses the same primary-tinted border + lifted shadow as hover on tiles
+                  'data-[state=open]:bg-card',
+                  'data-[state=open]:border-primary/40',
+                  'data-[state=open]:shadow-2xl',
+                ].join(' ')}
               >
                 <AccordionTrigger className="text-left hover:no-underline py-5 [&>svg]:text-muted-foreground [&[data-state=open]>svg]:text-primary motion-safe:transition-colors">
                   <span className="flex items-center gap-4 min-w-0">
                     {/* Mini step badge — same accent gradient as the matching card */}
                     <span
-                      className={`shrink-0 w-9 h-9 ${radius.iconSm} bg-gradient-to-br ${accents[s.accent].gradient} flex items-center justify-center ${shadow.soft}`}
+                      className={`shrink-0 w-9 h-9 ${radius.icon} bg-gradient-to-br ${accents[s.accent].gradient} flex items-center justify-center ${shadow.rest}`}
                       aria-hidden="true"
                     >
                       <s.Icon size={16} strokeWidth={2} absoluteStrokeWidth className="text-white" />
