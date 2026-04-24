@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import {
   FileText, Download, Search, Calendar, User, DollarSign, Ticket,
   ArrowRight, CheckCircle2, Clock, XCircle, AlertCircle, ReceiptText,
-  CreditCard, Eye, Printer, Plus, Pencil,
+  CreditCard, Eye, Printer, Plus, Pencil, ArrowUpDown,
 } from 'lucide-react';
 import { generateInvoicePdf as buildInvoicePdf } from '@/lib/invoicePdf';
 import { Video, MessageSquare, Monitor, PlayCircle } from 'lucide-react';
@@ -52,6 +52,7 @@ export default function InvoicesPage() {
   const { data: payments, isLoading } = useClientPayments();
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'amount_desc' | 'amount_asc'>('newest');
   const [selected, setSelected] = useState<any>(null);
   const [pdfPreview, setPdfPreview] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -147,16 +148,27 @@ export default function InvoicesPage() {
   };
 
   const all = payments || [];
-  const filtered = all.filter((p: any) => {
-    const s = search.toLowerCase();
-    const matchSearch = !s ||
-      p.invoice?.toLowerCase().includes(s) ||
-      p.consultant?.toLowerCase().includes(s) ||
-      p.ticket_title?.toLowerCase().includes(s) ||
-      p.description?.toLowerCase().includes(s);
-    const matchTab = matchesTab(p.status, tab);
-    return matchSearch && matchTab;
-  });
+  const getDate = (p: any) => new Date(p.created_at || p.date || 0).getTime();
+  const filtered = all
+    .filter((p: any) => {
+      const s = search.toLowerCase();
+      const matchSearch = !s ||
+        p.invoice?.toLowerCase().includes(s) ||
+        p.consultant?.toLowerCase().includes(s) ||
+        p.ticket_title?.toLowerCase().includes(s) ||
+        p.description?.toLowerCase().includes(s);
+      const matchTab = matchesTab(p.status, tab);
+      return matchSearch && matchTab;
+    })
+    .sort((a: any, b: any) => {
+      switch (sortBy) {
+        case 'oldest': return getDate(a) - getDate(b);
+        case 'amount_desc': return Number(b.amount || 0) - Number(a.amount || 0);
+        case 'amount_asc': return Number(a.amount || 0) - Number(b.amount || 0);
+        case 'newest':
+        default: return getDate(b) - getDate(a);
+      }
+    });
 
   const counts = {
     all: all.length,
@@ -189,21 +201,35 @@ export default function InvoicesPage() {
         </Button>
       </div>
 
-      {/* Search + Filter */}
+      {/* Search + Filter + Sort */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="relative max-w-sm w-full">
           <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Search invoices, tickets, consultants..." value={search} onChange={e => setSearch(e.target.value)} className="ps-9 rounded-xl" />
         </div>
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="h-9 flex-wrap">
-            <TabsTrigger value="all" className="text-xs">All ({counts.all})</TabsTrigger>
-            <TabsTrigger value="paid" className="text-xs">Paid ({counts.paid})</TabsTrigger>
-            <TabsTrigger value="unpaid" className="text-xs">Unpaid ({counts.unpaid})</TabsTrigger>
-            <TabsTrigger value="processing" className="text-xs">Processing ({counts.processing})</TabsTrigger>
-            <TabsTrigger value="failed" className="text-xs">Failed ({counts.failed})</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+          <Tabs value={tab} onValueChange={setTab}>
+            <TabsList className="h-9 flex-wrap">
+              <TabsTrigger value="all" className="text-xs">All ({counts.all})</TabsTrigger>
+              <TabsTrigger value="paid" className="text-xs">Paid ({counts.paid})</TabsTrigger>
+              <TabsTrigger value="unpaid" className="text-xs">Unpaid ({counts.unpaid})</TabsTrigger>
+              <TabsTrigger value="processing" className="text-xs">Processing ({counts.processing})</TabsTrigger>
+              <TabsTrigger value="failed" className="text-xs">Failed ({counts.failed})</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+            <SelectTrigger className="h-9 w-[180px] rounded-xl text-xs">
+              <ArrowUpDown className="w-3.5 h-3.5 me-1.5 text-muted-foreground" />
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="oldest">Oldest first</SelectItem>
+              <SelectItem value="amount_desc">Highest amount</SelectItem>
+              <SelectItem value="amount_asc">Lowest amount</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Invoice List */}
