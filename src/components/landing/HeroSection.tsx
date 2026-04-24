@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Users, CheckCircle, Clock, Eye, Zap, ShieldCheck, Bot, Activity } from 'lucide-react';
+import { ArrowRight, Sparkles, Users, CheckCircle, Clock, Eye, Zap, ShieldCheck, Bot, Activity, LogIn, Rocket } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import GuestExploreModal from '@/components/guest/GuestExploreModal';
 import VideoBackground from '@/components/VideoBackground';
@@ -49,28 +49,83 @@ export default function HeroSection() {
             {t('hero.subtitle')}
           </p>
 
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-            <Link to="/signup">
-              <Button size="lg" className="bg-white text-primary hover:bg-white/90 text-sm sm:text-base px-6 sm:px-10 h-12 sm:h-14 shadow-2xl hover:shadow-[0_20px_40px_rgba(255,255,255,0.2)] transition-all hover:scale-105 duration-300 rounded-2xl font-semibold w-full sm:w-auto">
-                {t('hero.cta_support')}
-                <ArrowRight className="w-5 h-5 ms-2" />
-              </Button>
-            </Link>
-            <Link to="/signup?role=consultant">
-              <Button size="lg" variant="outline" className="text-sm sm:text-base px-6 sm:px-10 h-12 sm:h-14 border-2 border-white/25 text-primary-foreground hover:bg-white/10 backdrop-blur-sm rounded-2xl font-semibold w-full sm:w-auto">
+          {/* CTA Tiles */}
+          <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-2xl mx-auto">
+              {/* Get Started tile (primary) */}
+              <Link to="/signup" className="group relative block">
+                <div className="absolute -inset-0.5 bg-gradient-to-br from-accent via-primary to-accent rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="relative h-full rounded-2xl bg-gradient-to-br from-white to-white/95 p-5 sm:p-6 text-left shadow-2xl overflow-hidden transition-transform duration-300 group-hover:-translate-y-1">
+                  {/* Decorative glow */}
+                  <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-accent/20 blur-3xl group-hover:bg-accent/40 transition-colors duration-500" />
+                  <div className="relative flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[10px] font-bold uppercase tracking-wider mb-2">
+                        <Sparkles className="w-3 h-3" />
+                        Free
+                      </div>
+                      <h3 className="text-primary text-lg sm:text-xl font-bold leading-tight">
+                        {t('hero.cta_support')}
+                      </h3>
+                      <p className="text-primary/60 text-xs sm:text-sm mt-1 leading-snug">
+                        Launch in under 2 minutes
+                      </p>
+                    </div>
+                    <div className="shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                      <Rocket className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+                    </div>
+                  </div>
+                  <div className="relative mt-4 flex items-center gap-1.5 text-primary text-xs sm:text-sm font-semibold">
+                    Get started
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </div>
+                </div>
+              </Link>
+
+              {/* Login tile (glass) */}
+              <Link to="/login" className="group relative block">
+                <div className="absolute -inset-0.5 bg-gradient-to-br from-white/30 via-white/10 to-white/30 rounded-2xl blur opacity-40 group-hover:opacity-80 transition-opacity duration-500" />
+                <div className="relative h-full rounded-2xl bg-white/8 backdrop-blur-xl border border-white/20 p-5 sm:p-6 text-left overflow-hidden transition-all duration-300 group-hover:-translate-y-1 group-hover:bg-white/12 group-hover:border-white/30">
+                  <div className="absolute -top-10 -left-10 w-32 h-32 rounded-full bg-white/10 blur-3xl group-hover:bg-white/20 transition-colors duration-500" />
+                  <div className="relative flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-primary-foreground/80 text-[10px] font-bold uppercase tracking-wider mb-2">
+                        <ShieldCheck className="w-3 h-3" />
+                        Secure
+                      </div>
+                      <h3 className="text-primary-foreground text-lg sm:text-xl font-bold leading-tight">
+                        Sign in
+                      </h3>
+                      <p className="text-primary-foreground/60 text-xs sm:text-sm mt-1 leading-snug">
+                        Welcome back to your portal
+                      </p>
+                    </div>
+                    <div className="shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300">
+                      <LogIn className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+                    </div>
+                  </div>
+                  <div className="relative mt-4 flex items-center gap-1.5 text-primary-foreground text-xs sm:text-sm font-semibold">
+                    Continue
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </div>
+                </div>
+              </Link>
+            </div>
+
+            {/* Secondary actions */}
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm">
+              <Link to="/signup?role=consultant" className="text-primary-foreground/70 hover:text-primary-foreground underline-offset-4 hover:underline transition-colors">
                 {t('hero.cta_consultant')}
-              </Button>
-            </Link>
-            <Button
-              size="lg"
-              variant="ghost"
-              className="text-base text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10 rounded-2xl"
-              onClick={() => setExploreOpen(true)}
-            >
-              <Eye className="w-4 h-4 me-2" />
-              {t('guest.explore_btn')}
-            </Button>
+              </Link>
+              <span className="text-primary-foreground/30">•</span>
+              <button
+                onClick={() => setExploreOpen(true)}
+                className="inline-flex items-center gap-1.5 text-primary-foreground/70 hover:text-primary-foreground transition-colors"
+              >
+                <Eye className="w-4 h-4" />
+                {t('guest.explore_btn')}
+              </button>
+            </div>
           </div>
           <GuestExploreModal open={exploreOpen} onOpenChange={setExploreOpen} />
         </div>
