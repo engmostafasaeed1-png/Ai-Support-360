@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ExternalLink, Frame, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ProviderTroubleshootingPanel from './ProviderTroubleshootingPanel';
+import OpenInNewTabButton from './OpenInNewTabButton';
 import { detectProvider, type MeetingProvider } from './MeetingLinkButton';
 
 /**
@@ -117,13 +118,24 @@ export default function FramedAppNotice({
         )}
 
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            onClick={() => window.open(target, '_blank', 'noopener,noreferrer')}
-          >
-            <ExternalLink className="w-4 h-4 mr-1.5" aria-hidden="true" />
-            {t('framed_notice.open_new_tab', { defaultValue: 'Open in a new tab' })}
-          </Button>
+          {meetingUrl ? (
+            <OpenInNewTabButton
+              url={meetingUrl}
+              sessionId={sessionId}
+              provider={provider ?? detectProvider(meetingUrl)}
+              reason="framed"
+              size="sm"
+              variant="default"
+            />
+          ) : (
+            <Button
+              size="sm"
+              onClick={() => window.open(target, '_blank', 'noopener,noreferrer')}
+            >
+              <ExternalLink className="w-4 h-4 mr-1.5" aria-hidden="true" />
+              {t('framed_notice.open_new_tab', { defaultValue: 'Open in a new tab' })}
+            </Button>
+          )}
           <Button size="sm" variant="ghost" onClick={handleDismiss}>
             {t('common.dismiss', { defaultValue: 'Dismiss' })}
           </Button>
