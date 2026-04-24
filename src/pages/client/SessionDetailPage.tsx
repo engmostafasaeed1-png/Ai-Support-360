@@ -139,6 +139,29 @@ export default function SessionDetailPage() {
     enabled: !!sessionId,
   });
 
+  // Aggregate consultant performance: avg score + recent feedback
+  const consultantId = (session as any)?.consultant_id as string | undefined;
+  const { data: consultantRatings } = useQuery({
+    queryKey: ['consultant-ratings-summary', consultantId],
+    enabled: !!consultantId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ratings')
+        .select('id, score, comment, is_anonymous, created_at')
+        .eq('consultant_id', consultantId!)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      const rows = data || [];
+      const total = rows.length;
+      const avg = total
+        ? rows.reduce((sum, r) => sum + (r.score || 0), 0) / total
+        : 0;
+      const recent = rows.filter((r) => (r.comment || '').trim().length > 0).slice(0, 3);
+      return { avg, total, recent };
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -215,6 +238,24 @@ export default function SessionDetailPage() {
                   <User className="w-4 h-4 text-muted-foreground" />
                   {(session as any).consultant_name}
                 </p>
+                {consultantRatings && consultantRatings.total > 0 ? (
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    <div className="inline-flex items-center gap-1 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200/70 dark:border-yellow-900/40 px-2 py-1">
+                      <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                      <span className="text-xs font-semibold text-foreground">
+                        {consultantRatings.avg.toFixed(1)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">/ 5</span>
+                    </div>
+                    <span className="text-[11px] text-muted-foreground">
+                      {consultantRatings.total} {consultantRatings.total === 1 ? 'rating' : 'ratings'}
+                    </span>
+                  </div>
+                ) : consultantRatings && consultantRatings.total === 0 ? (
+                  <p className="mt-2 text-[11px] text-muted-foreground italic">
+                    No ratings yet for this consultant.
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -279,6 +320,49 @@ export default function SessionDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Recent feedback for the consultant */}
+      {consultantRatings && consultantRatings.recent.length > 0 && (
+        <Card className="rounded-2xl border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+              Recent feedback for {(session as any).consultant_name}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {consultantRatings.recent.map((r) => (
+              <div key={r.id} className="rounded-xl border border-border/50 p-3 bg-muted/20">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((v) => (
+                      <Star
+                        key={v}
+                        className={`w-3.5 h-3.5 ${
+                          v <= (r.score || 0)
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-muted-foreground/30'
+                        }`}
+                      />
+                    ))}
+                    <span className="ms-1.5 text-[11px] text-muted-foreground">
+                      {r.is_anonymous ? 'Anonymous' : 'Verified client'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">
+                    {format(new Date(r.created_at), 'MMM d, yyyy')}
+                  </span>
+                </div>
+                {r.comment && (
+                  <p className="text-xs text-foreground mt-2 leading-relaxed line-clamp-3">
+                    "{r.comment}"
+                  </p>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Rate consultant CTA — visible after a completed session */}
       {status === 'completed' && session.consultant_id && (
