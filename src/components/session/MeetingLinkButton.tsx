@@ -56,6 +56,8 @@ interface MeetingLinkButtonProps {
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
   joinLabel?: string;
+  /** Show the camera/mic preflight test before opening the meeting URL. Default true. */
+  requirePreflight?: boolean;
 }
 
 /**
