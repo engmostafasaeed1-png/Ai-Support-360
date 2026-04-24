@@ -352,6 +352,7 @@ const App = () => (
           </Suspense>
           </ErrorBoundary>
         </TenantProvider>
+        </CurrencyProvider>
         </GuestModeProvider>
       </BrowserRouter>
     </TooltipProvider>
