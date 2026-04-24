@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Sparkles, BadgeCheck, Languages, ShieldHalf, Radio, Gauge, ArrowUpRight } from 'lucide-react';
+import { Wand2, ShieldCheck, Languages, Lock, Users, Activity, ArrowUpRight } from 'lucide-react';
 import BlurImage from './BlurImage';
 import aiMatching from '@/assets/why/ai-matching.jpg';
 import aiMatchingBlur from '@/assets/why/blur/ai-matching-blur.jpg';
@@ -15,7 +15,7 @@ import sla from '@/assets/why/sla.jpg';
 import slaBlur from '@/assets/why/blur/sla-blur.jpg';
 
 type Feature = {
-  Icon: typeof Sparkles;
+  Icon: typeof Wand2;
   image: string;
   blur: string;
   accent: string; // tailwind gradient classes
@@ -23,13 +23,15 @@ type Feature = {
   tag: string;
 };
 
+// Unified Lucide outline set — same family, same stroke weight, same size
+// (set on the icon below) so every tile reads as one coherent system.
 const features: Feature[] = [
-  { Icon: Sparkles,    image: aiMatching,      blur: aiMatchingBlur,      accent: 'from-cyan-500/80 to-blue-600/80',     size: 'lg:col-span-2 lg:row-span-2', tag: '01' },
-  { Icon: BadgeCheck,  image: verifiedExperts, blur: verifiedExpertsBlur, accent: 'from-emerald-500/80 to-teal-600/80',  size: 'lg:col-span-1 lg:row-span-1', tag: '02' },
+  { Icon: Wand2,       image: aiMatching,      blur: aiMatchingBlur,      accent: 'from-cyan-500/80 to-blue-600/80',     size: 'lg:col-span-2 lg:row-span-2', tag: '01' },
+  { Icon: ShieldCheck, image: verifiedExperts, blur: verifiedExpertsBlur, accent: 'from-emerald-500/80 to-teal-600/80',  size: 'lg:col-span-1 lg:row-span-1', tag: '02' },
   { Icon: Languages,   image: bilingual,       blur: bilingualBlur,       accent: 'from-amber-500/80 to-orange-600/80',  size: 'lg:col-span-1 lg:row-span-1', tag: '03' },
-  { Icon: ShieldHalf,  image: security,        blur: securityBlur,        accent: 'from-indigo-500/80 to-purple-600/80', size: 'lg:col-span-1 lg:row-span-2', tag: '04' },
-  { Icon: Radio,       image: collaboration,   blur: collaborationBlur,   accent: 'from-rose-500/80 to-pink-600/80',     size: 'lg:col-span-1 lg:row-span-1', tag: '05' },
-  { Icon: Gauge,       image: sla,             blur: slaBlur,             accent: 'from-sky-500/80 to-cyan-600/80',      size: 'lg:col-span-1 lg:row-span-1', tag: '06' },
+  { Icon: Lock,        image: security,        blur: securityBlur,        accent: 'from-indigo-500/80 to-purple-600/80', size: 'lg:col-span-1 lg:row-span-2', tag: '04' },
+  { Icon: Users,       image: collaboration,   blur: collaborationBlur,   accent: 'from-rose-500/80 to-pink-600/80',     size: 'lg:col-span-1 lg:row-span-1', tag: '05' },
+  { Icon: Activity,    image: sla,             blur: slaBlur,             accent: 'from-sky-500/80 to-cyan-600/80',      size: 'lg:col-span-1 lg:row-span-1', tag: '06' },
 ];
 
 export default function WhyQurtubaSection() {
