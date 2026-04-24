@@ -7,7 +7,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { logProviderEvent } from '@/lib/diagnostics';
+import { useTranslateTroubleshooting } from './TranslateTroubleshootingContext';
 
 interface TroubleshootingLanguageSwitcherProps {
   /** Forwarded to diagnostics for language-change tracking. */
@@ -33,6 +36,7 @@ export default function TroubleshootingLanguageSwitcher({
 }: TroubleshootingLanguageSwitcherProps) {
   const { t, i18n } = useTranslation();
   const current = i18n.language?.startsWith('ar') ? 'ar' : 'en';
+  const { enabled: translateEnabled, setEnabled } = useTranslateTroubleshooting();
 
   const handleChange = (next: string) => {
     if (next === current) return;
@@ -49,19 +53,56 @@ export default function TroubleshootingLanguageSwitcher({
     });
   };
 
+  const handleToggle = (next: boolean) => {
+    setEnabled(next);
+    logProviderEvent('preflight_open', {
+      stage: 'translate_toggle',
+      sessionId,
+      enabled: next,
+      language: current,
+    });
+  };
+
   return (
     <div
-      className={`flex flex-wrap items-center justify-end gap-2 ${className ?? ''}`}
+      className={`flex flex-wrap items-center justify-end gap-3 ${className ?? ''}`}
       role="group"
       aria-label={t('troubleshoot_lang.label', {
         defaultValue: 'Troubleshooting language',
       })}
     >
+      <div className="inline-flex items-center gap-2">
+        <Switch
+          id="troubleshoot-translate-toggle"
+          checked={translateEnabled}
+          onCheckedChange={handleToggle}
+          aria-label={t('troubleshoot_lang.toggle_aria', {
+            defaultValue: 'Translate troubleshooting messages',
+          })}
+        />
+        <Label
+          htmlFor="troubleshoot-translate-toggle"
+          className="text-xs text-muted-foreground cursor-pointer"
+        >
+          {translateEnabled
+            ? t('troubleshoot_lang.toggle_on', {
+                defaultValue: 'Translate messages',
+              })
+            : t('troubleshoot_lang.toggle_off', {
+                defaultValue: 'Original (English)',
+              })}
+        </Label>
+      </div>
+
       <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
         <Languages className="w-3.5 h-3.5" aria-hidden="true" />
         {t('troubleshoot_lang.label', { defaultValue: 'Troubleshooting language' })}
       </span>
-      <Select value={current} onValueChange={handleChange}>
+      <Select
+        value={current}
+        onValueChange={handleChange}
+        disabled={!translateEnabled}
+      >
         <SelectTrigger className="h-8 w-[140px] text-xs">
           <SelectValue />
         </SelectTrigger>

@@ -6,6 +6,7 @@ import {
   type TroubleshootReason,
 } from './providerTroubleshooting';
 import type { MeetingProvider } from './MeetingLinkButton';
+import { useTranslateTroubleshooting } from './TranslateTroubleshootingContext';
 
 interface ProviderTroubleshootingPanelProps {
   provider: MeetingProvider;
@@ -24,7 +25,10 @@ export default function ProviderTroubleshootingPanel({
   variant = 'compact',
 }: ProviderTroubleshootingPanelProps) {
   const { t } = useTranslation();
+  const { enabled: translateEnabled } = useTranslateTroubleshooting();
   const guide = getProviderTroubleshooting(provider, reason);
+  const tr = (key: string, fallback: string) =>
+    translateEnabled ? t(key, { defaultValue: fallback }) : fallback;
 
   const Wrapper: React.ElementType = variant === 'card' ? 'section' : 'div';
 
@@ -40,19 +44,17 @@ export default function ProviderTroubleshootingPanel({
         <LifeBuoy className="w-4 h-4 mt-0.5 text-amber-600 shrink-0" aria-hidden="true" />
         <div className="flex-1 space-y-1">
           <p className="font-medium text-foreground">
-            {t(`troubleshoot.${provider}.${reason}.headline`, {
-              defaultValue: guide.headline,
-            })}
+            {tr(`troubleshoot.${provider}.${reason}.headline`, guide.headline)}
           </p>
           <p className="text-xs text-muted-foreground">
-            {t(`troubleshoot.${provider}.${reason}.cause`, { defaultValue: guide.cause })}
+            {tr(`troubleshoot.${provider}.${reason}.cause`, guide.cause)}
           </p>
         </div>
       </div>
       <ol className="list-decimal pl-5 space-y-1 text-sm text-foreground/90">
         {guide.steps.map((step, i) => (
           <li key={i}>
-            {t(`troubleshoot.${provider}.${reason}.step.${i}`, { defaultValue: step })}
+            {tr(`troubleshoot.${provider}.${reason}.step.${i}`, step)}
           </li>
         ))}
       </ol>
@@ -65,10 +67,14 @@ export default function ProviderTroubleshootingPanel({
         >
           <a href={guide.helpUrl} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-            {t('troubleshoot.help_link', {
-              defaultValue: `Open ${guide.label} help center`,
-              provider: t(`troubleshoot.provider_label.${provider}`, { defaultValue: guide.label }),
-            })}
+            {translateEnabled
+              ? t('troubleshoot.help_link', {
+                  defaultValue: `Open ${guide.label} help center`,
+                  provider: t(`troubleshoot.provider_label.${provider}`, {
+                    defaultValue: guide.label,
+                  }),
+                })
+              : `Open ${guide.label} help center`}
           </a>
         </Button>
       )}
