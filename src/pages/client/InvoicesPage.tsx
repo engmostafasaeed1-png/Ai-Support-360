@@ -330,6 +330,19 @@ export default function InvoicesPage() {
                         <Button variant="ghost" size="icon" title="Download PDF" onClick={e => { e.stopPropagation(); generateInvoicePdf(inv, false); }}>
                           <Download className="w-4 h-4" />
                         </Button>
+                        {failedDownloads[inv.id] && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1 text-xs border-red-300 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30"
+                            title="Retry generating the PDF"
+                            onClick={e => { e.stopPropagation(); generateInvoicePdf(inv, false); }}
+                            disabled={retryingId === inv.id}
+                          >
+                            <RefreshCw className={`w-3.5 h-3.5 ${retryingId === inv.id ? 'animate-spin' : ''}`} />
+                            Retry
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
