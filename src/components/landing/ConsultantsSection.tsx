@@ -1,86 +1,111 @@
 import { useTranslation } from 'react-i18next';
 import { Star, BadgeCheck, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import SectionHeader from './SectionHeader';
 
 const mockConsultants = [
-  { name: 'Ahmed Al-Rashid', role: 'SAP S/4HANA Finance Expert', rating: 4.9, reviews: 127, rate: 150, avatar: 'AR', badges: ['verified', 'top_rated'], available: true },
-  { name: 'Sarah Johnson', role: 'SAP BTP & Integration Architect', rating: 4.8, reviews: 98, rate: 175, avatar: 'SJ', badges: ['verified', 'fast_responder'], available: true },
-  { name: 'Mohammed Al-Farsi', role: 'SAP MM/SD Functional Lead', rating: 4.9, reviews: 215, rate: 130, avatar: 'MF', badges: ['verified', 'top_rated'], available: false },
-  { name: 'Dr. Fatima Hassan', role: 'SAP SuccessFactors & HCM', rating: 5.0, reviews: 87, rate: 200, avatar: 'FH', badges: ['verified', 'top_rated', 'fast_responder'], available: true },
+  { name: 'Ahmed Al-Rashid',  role: 'SAP S/4HANA Finance Expert',     rating: 4.9, reviews: 127, rate: 150, avatar: 'AR', accent: 'from-cyan-500 to-blue-600',     badges: ['verified', 'top_rated'], available: true },
+  { name: 'Sarah Johnson',    role: 'SAP BTP & Integration Architect',rating: 4.8, reviews:  98, rate: 175, avatar: 'SJ', accent: 'from-violet-500 to-purple-600', badges: ['verified', 'fast_responder'], available: true },
+  { name: 'Mohammed Al-Farsi',role: 'SAP MM/SD Functional Lead',      rating: 4.9, reviews: 215, rate: 130, avatar: 'MF', accent: 'from-amber-500 to-orange-600',  badges: ['verified', 'top_rated'], available: false },
+  { name: 'Dr. Fatima Hassan',role: 'SAP SuccessFactors & HCM',       rating: 5.0, reviews:  87, rate: 200, avatar: 'FH', accent: 'from-emerald-500 to-teal-600',  badges: ['verified', 'top_rated', 'fast_responder'], available: true },
 ];
 
-const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
-  verified: { icon: BadgeCheck, color: 'text-accent' },
-  top_rated: { icon: Star, color: 'text-yellow-500' },
-  fast_responder: { icon: Zap, color: 'text-green-500' },
+const badgeConfig: Record<string, { Icon: typeof Star; color: string }> = {
+  verified:       { Icon: BadgeCheck, color: 'text-sky-500' },
+  top_rated:      { Icon: Star,       color: 'text-amber-500' },
+  fast_responder: { Icon: Zap,        color: 'text-emerald-500' },
 };
 
 export default function ConsultantsSection() {
   const { t } = useTranslation();
 
   return (
-    <section id="consultants" className="py-28 bg-muted/30 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,hsl(var(--accent)/0.05),transparent_60%)]" />
+    <section id="consultants" className="relative py-24 md:py-32 bg-muted/30 overflow-hidden">
+      {/* Background mesh */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-accent/10 rounded-full blur-[140px] motion-safe:animate-mesh-shift" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[140px] motion-safe:animate-mesh-shift-alt" />
+      </div>
+
       <div className="container mx-auto px-4 relative">
-        <div className="text-center mb-16">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/5 text-primary text-xs font-bold tracking-widest uppercase mb-4">
-            Experts
-          </span>
-          <h2 className="text-3xl md:text-5xl font-black text-foreground tracking-tight">{t('consultants.title')}</h2>
-          <p className="text-muted-foreground mt-4 max-w-xl mx-auto text-base md:text-lg">{t('consultants.subtitle')}</p>
-        </div>
+        <SectionHeader
+          eyebrow="Experts"
+          title={
+            <>
+              {t('consultants.title').split(' ').slice(0, -1).join(' ')}{' '}
+              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                {t('consultants.title').split(' ').slice(-1)}
+              </span>
+            </>
+          }
+          subtitle={t('consultants.subtitle')}
+        />
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
           {mockConsultants.map((c, i) => (
-            <div key={i} className="rounded-3xl bg-card border border-border/40 p-6 hover:shadow-xl hover:border-primary/15 transition-all duration-500 flex flex-col group">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-base shadow-lg group-hover:scale-105 transition-transform">
-                  {c.avatar}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-foreground text-sm truncate">{c.name}</h4>
-                  <p className="text-xs text-muted-foreground truncate">{c.role}</p>
-                </div>
-              </div>
+            <article
+              key={i}
+              style={{ animationDelay: `${i * 80}ms` }}
+              className="group relative rounded-3xl bg-card/80 backdrop-blur-sm border border-border/60 p-6 motion-safe:transition-all motion-safe:duration-500 hover:border-primary/40 hover:bg-card hover:-translate-y-1 hover:shadow-2xl flex flex-col motion-safe:animate-fade-in-up"
+            >
+              {/* Hover sheen */}
+              <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 motion-safe:transition-opacity motion-safe:duration-500 pointer-events-none bg-gradient-to-br from-primary/[0.04] via-transparent to-accent/[0.04]" />
 
-              <div className="flex items-center gap-1.5 mb-4">
-                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                <span className="text-sm font-bold text-foreground">{c.rating}</span>
-                <span className="text-xs text-muted-foreground">({c.reviews})</span>
-              </div>
+              <div className="relative">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${c.accent} flex items-center justify-center text-white font-bold text-base shadow-lg motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-110 motion-safe:group-hover:-rotate-3`}>
+                    {c.avatar}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-foreground text-sm truncate">{c.name}</h4>
+                    <p className="text-xs text-muted-foreground truncate">{c.role}</p>
+                  </div>
+                </div>
 
-              <div className="flex flex-wrap gap-1.5 mb-5">
-                {c.badges.map((badge) => {
-                  const config = badgeConfig[badge];
-                  if (!config) return null;
-                  const BadgeIcon = config.icon;
-                  return (
-                    <span key={badge} className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-muted/70 font-medium">
-                      <BadgeIcon className={`w-3 h-3 ${config.color}`} />
-                      {t(`consultants.${badge}`)}
+                <div className="flex items-center gap-1.5 mb-4">
+                  <Star size={16} className="text-amber-400 fill-amber-400" aria-hidden="true" />
+                  <span className="text-sm font-bold text-foreground">{c.rating}</span>
+                  <span className="text-xs text-muted-foreground">({c.reviews})</span>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 mb-5">
+                  {c.badges.map((badge) => {
+                    const config = badgeConfig[badge];
+                    if (!config) return null;
+                    const { Icon, color } = config;
+                    return (
+                      <span key={badge} className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-muted/70 border border-border/40 font-medium">
+                        <Icon size={12} strokeWidth={2} className={color} aria-hidden="true" />
+                        {t(`consultants.${badge}`)}
+                      </span>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-auto flex items-center justify-between pt-4 border-t border-border/40">
+                  <div>
+                    <span className="text-xl font-black text-foreground">${c.rate}</span>
+                    <span className="text-xs text-muted-foreground ms-1">{t('consultants.per_hour')}</span>
+                  </div>
+                  {c.available && (
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+                      <span className="relative flex w-2 h-2">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60 motion-safe:animate-ping" />
+                        <span className="relative inline-flex w-2 h-2 rounded-full bg-emerald-500" />
+                      </span>
+                      {t('consultants.available')}
                     </span>
-                  );
-                })}
-              </div>
-
-              <div className="mt-auto flex items-center justify-between pt-4 border-t border-border/30">
-                <div>
-                  <span className="text-xl font-black text-foreground">${c.rate}</span>
-                  <span className="text-xs text-muted-foreground">{t('consultants.per_hour')}</span>
+                  )}
                 </div>
-                {c.available && (
-                  <span className="text-xs text-green-600 font-semibold flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    {t('consultants.available')}
-                  </span>
-                )}
               </div>
-            </div>
+            </article>
           ))}
         </div>
 
         <div className="text-center mt-12">
-          <Button variant="outline" size="lg" className="rounded-2xl px-8 h-12 font-semibold">{t('consultants.view_all')}</Button>
+          <Button variant="outline" size="lg" className="rounded-2xl px-8 h-12 font-semibold">
+            {t('consultants.view_all')}
+          </Button>
         </div>
       </div>
     </section>
