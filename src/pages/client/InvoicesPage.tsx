@@ -148,16 +148,27 @@ export default function InvoicesPage() {
   };
 
   const all = payments || [];
-  const filtered = all.filter((p: any) => {
-    const s = search.toLowerCase();
-    const matchSearch = !s ||
-      p.invoice?.toLowerCase().includes(s) ||
-      p.consultant?.toLowerCase().includes(s) ||
-      p.ticket_title?.toLowerCase().includes(s) ||
-      p.description?.toLowerCase().includes(s);
-    const matchTab = matchesTab(p.status, tab);
-    return matchSearch && matchTab;
-  });
+  const getDate = (p: any) => new Date(p.created_at || p.date || 0).getTime();
+  const filtered = all
+    .filter((p: any) => {
+      const s = search.toLowerCase();
+      const matchSearch = !s ||
+        p.invoice?.toLowerCase().includes(s) ||
+        p.consultant?.toLowerCase().includes(s) ||
+        p.ticket_title?.toLowerCase().includes(s) ||
+        p.description?.toLowerCase().includes(s);
+      const matchTab = matchesTab(p.status, tab);
+      return matchSearch && matchTab;
+    })
+    .sort((a: any, b: any) => {
+      switch (sortBy) {
+        case 'oldest': return getDate(a) - getDate(b);
+        case 'amount_desc': return Number(b.amount || 0) - Number(a.amount || 0);
+        case 'amount_asc': return Number(a.amount || 0) - Number(b.amount || 0);
+        case 'newest':
+        default: return getDate(b) - getDate(a);
+      }
+    });
 
   const counts = {
     all: all.length,
