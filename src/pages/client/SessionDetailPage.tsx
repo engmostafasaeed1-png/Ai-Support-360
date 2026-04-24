@@ -212,21 +212,11 @@ export default function SessionDetailPage() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-                <Button
-                  className="gradient-primary border-0 gap-1.5"
-                  size="lg"
-                  onClick={() => {
-                    const url = (session as any).meeting_url;
-                    if (url) {
-                      window.open(url, '_blank');
-                    } else {
-                      // Fallback: generate Jitsi link from session ID
-                      window.open(`https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`, '_blank');
-                    }
-                  }}
-                >
-                  <Play className="w-4 h-4" /> {t('session_detail.join_session')}
-                </Button>
+                <MeetingLinkButton
+                  url={(session as any).meeting_url}
+                  fallbackUrl={`https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`}
+                />
+
               </div>
             )}
             </div>
