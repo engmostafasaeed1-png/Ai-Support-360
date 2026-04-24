@@ -84,3 +84,38 @@ export default function TestimonialsSection() {
     </section>
   );
 }
+
+/**
+ * Client company logo with a graceful initials fallback if the image
+ * fails to decode. Uses the same gradient accent as the testimonial card.
+ */
+function ClientLogo({ item }: { item: Testimonial }) {
+  const [failed, setFailed] = useState(false);
+  const initials = item.name.split(' ').map((n) => n[0]).join('').slice(0, 2);
+
+  return (
+    <div
+      className={`relative w-11 h-11 rounded-2xl shrink-0 overflow-hidden border border-border/40 bg-card flex items-center justify-center shadow-lg motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-110`}
+    >
+      {!failed ? (
+        <img
+          src={item.logo}
+          alt={`${item.company} logo`}
+          loading="lazy"
+          decoding="async"
+          width={88}
+          height={88}
+          onError={() => setFailed(true)}
+          className="w-full h-full object-contain p-1.5"
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${item.accent} text-white text-xs font-bold`}
+        >
+          {initials}
+        </span>
+      )}
+    </div>
+  );
+}
