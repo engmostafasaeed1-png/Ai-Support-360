@@ -8,6 +8,7 @@ const BodySchema = z.object({
   action: z.string().optional(),
   lang: z.string().max(10).optional(),
   voice_gender: z.enum(["male", "female"]).optional(),
+  tone: z.enum(["friendly", "formal", "strict"]).optional(),
 });
 
 const corsHeaders = {
@@ -49,9 +50,16 @@ serve(async (req) => {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const { interview_id, messages, action, lang, voice_gender } = parsed.data;
+    const { interview_id, messages, action, lang, voice_gender, tone } = parsed.data;
     const interviewerName = voice_gender === "female" ? "Mariam" : "Ezz";
     const interviewerPronoun = voice_gender === "female" ? "her" : "his";
+    const interviewerTone = tone || "friendly";
+    const toneDescriptors: Record<string, string> = {
+      friendly: "warm, friendly, and encouraging — like a supportive senior colleague. Use casual professional language, light positive reinforcement (e.g. 'Great point', 'Nice'), and make the consultant feel comfortable. Smile through your words.",
+      formal: "polished, formal, and professional — like a corporate enterprise interviewer. Use precise business language, neutral phrasing, and structured questions. Avoid slang or casual remarks. Maintain composed courtesy.",
+      strict: "strict, demanding, and rigorous — like a tough senior architect challenging a candidate. Be direct, probe hard, ask precise follow-ups, push back politely on vague answers, and demand specifics, numbers, and concrete examples. Stay professional but do not offer praise easily.",
+    };
+    const toneInstruction = toneDescriptors[interviewerTone];
     
     const langNames: Record<string, string> = {
       en: "English", fr: "French", ar: "Arabic", "ar-SA": "Saudi Arabic", es: "Spanish", de: "German"
@@ -236,7 +244,10 @@ Return ONLY valid JSON.`;
       }
     }
 
-    const systemPrompt = `You are ${interviewerName}, a friendly, professional SAP technical interviewer from "AI SAP Support Now", conducting a video-call interview with ${consultantName}.
+    const systemPrompt = `You are ${interviewerName}, a professional SAP technical interviewer from "AI SAP Support Now", conducting a video-call interview with ${consultantName}.
+
+INTERVIEWER TONE (${interviewerTone.toUpperCase()}): ${toneInstruction}
+You MUST maintain this tone consistently across the entire interview — in greetings, follow-ups, transitions, and closing.
 
 Consultant's skills: ${moduleList || "General SAP"}
 Certifications: ${certList || "None listed"}
@@ -245,18 +256,18 @@ INTERVIEW GUIDELINES:
 - Have a natural, conversational interview — NOT a rigid Q&A
 - Your VERY FIRST message MUST be exactly this greeting (translated into ${interviewLang} if not English), then ask them to introduce themselves:
   "Hello, I am ${interviewerName} from AI SAP Support Now. Welcome ${consultantName} — could you please introduce yourself?"
+  (Adapt the warmth/formality of the wording to match the ${interviewerTone} tone described above, but keep the same meaning.)
 - Never use placeholders like "[Your Name]" — you ARE ${interviewerName}.
 - Ask follow-up questions based on their responses
 - Dive deeper into their areas of expertise
 - Cover technical knowledge, real-world scenarios, problem-solving, and communication skills
-- Be encouraging but thorough — probe for depth
 - Keep responses concise (2-4 sentences typically), like a real conversation
 - After about 8-12 exchanges, naturally wrap up the interview
 - Mix technical SAP questions with situational/behavioral ones
 - Reference their specific modules and experience when asking questions
 ${customQuestionsBlock}${trainingInstructionsBlock}${difficultyBlock}
 
-You are speaking via video call as ${interviewerName} (${voice_gender === "female" ? "a female" : "a male"} interviewer), so be personable and natural. Always refer to yourself as ${interviewerName}.
+You are speaking via video call as ${interviewerName} (${voice_gender === "female" ? "a female" : "a male"} interviewer), so be personable and natural while staying true to the ${interviewerTone} tone. Always refer to yourself as ${interviewerName}.
 
 CRITICAL LANGUAGE INSTRUCTION: You MUST conduct this entire interview in ${interviewLang}. All your questions, responses, greetings, and follow-ups must be in ${interviewLang}. Do not switch to any other language unless the consultant does so first.`;
 
