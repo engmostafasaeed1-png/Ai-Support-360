@@ -372,6 +372,8 @@ export default function InvoicesPage() {
 
                 <PaymentStatusTimeline payment={selected} />
 
+                <InvoiceDisputeSection payment={selected} />
+
                 <div className="flex gap-2 pt-2">
                   <Button className="flex-1 gap-1.5" variant="outline" size="sm" onClick={() => setEditing(true)}>
                     <Pencil className="w-4 h-4" /> Edit
