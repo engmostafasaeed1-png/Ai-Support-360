@@ -191,6 +191,8 @@ export default function ClientSidebar() {
   const tier = tenant?.subscription_tier || 'basic';
   const TierIcon = tierIcons[tier] || Wand2;
   const [profileOpen, setProfileOpen] = useState(false);
+  const { density } = useTileDensity();
+  const dens = mobileTileDensityClasses[density];
 
   // Determine the best-matching nav item for the current URL so that
   // deep sub-routes (e.g. /client/tickets/123) keep the parent tile active.
