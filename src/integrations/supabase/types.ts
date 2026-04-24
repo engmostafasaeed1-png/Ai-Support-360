@@ -1798,6 +1798,45 @@ export type Database = {
           },
         ]
       }
+      meeting_join_events: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          metadata: Json
+          provider: string
+          reason: string | null
+          session_id: string | null
+          url_host: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: string
+          metadata?: Json
+          provider?: string
+          reason?: string | null
+          session_id?: string | null
+          url_host?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          metadata?: Json
+          provider?: string
+          reason?: string | null
+          session_id?: string | null
+          url_host?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string | null
