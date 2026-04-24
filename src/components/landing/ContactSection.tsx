@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
-import { Send, CheckCircle } from 'lucide-react';
+import { Send, CheckCircle2 } from 'lucide-react';
+import SectionHeader from './SectionHeader';
 
 export default function ContactSection() {
   const { t } = useTranslation();
@@ -15,39 +16,60 @@ export default function ContactSection() {
   };
 
   return (
-    <section className="py-28 bg-muted/30 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,hsl(var(--primary)/0.04),transparent_60%)]" />
+    <section className="relative py-24 md:py-32 bg-muted/30 overflow-hidden">
+      {/* Background mesh */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[140px] motion-safe:animate-mesh-shift" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-accent/10 rounded-full blur-[140px] motion-safe:animate-mesh-shift-alt" />
+      </div>
+
       <div className="container mx-auto px-4 relative">
         <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-12">
-            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/5 text-primary text-xs font-bold tracking-widest uppercase mb-4">
-              Contact
-            </span>
-            <h2 className="text-3xl md:text-5xl font-black text-foreground tracking-tight">{t('contact.title')}</h2>
-            <p className="text-muted-foreground mt-4 text-base md:text-lg">{t('contact.subtitle')}</p>
-          </div>
+          <SectionHeader
+            eyebrow="Contact"
+            title={
+              <>
+                {t('contact.title').split(' ').slice(0, -1).join(' ')}{' '}
+                <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                  {t('contact.title').split(' ').slice(-1)}
+                </span>
+              </>
+            }
+            subtitle={t('contact.subtitle')}
+          />
 
           {submitted ? (
-            <div className="text-center p-12 rounded-3xl bg-card border border-primary/15 shadow-xl">
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-5">
-                <CheckCircle className="w-10 h-10 text-primary" />
+            <div className="text-center p-12 rounded-3xl bg-card/80 backdrop-blur-sm border border-primary/30 shadow-2xl motion-safe:animate-fade-in-up">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto mb-5 shadow-lg">
+                <CheckCircle2 size={40} strokeWidth={1.75} className="text-white" aria-hidden="true" />
               </div>
               <p className="text-xl font-bold text-foreground">{t('contact.success')}</p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-5 p-8 md:p-10 rounded-3xl bg-card border border-border/40 shadow-xl">
+            <form
+              onSubmit={handleSubmit}
+              className="relative space-y-5 p-8 md:p-10 rounded-3xl bg-card/80 backdrop-blur-sm border border-border/60 shadow-2xl motion-safe:animate-fade-in-up"
+              style={{ animationDelay: '120ms' }}
+            >
+              {/* Subtle gradient ring */}
+              <div className="absolute -inset-px rounded-3xl bg-gradient-to-br from-primary/15 via-transparent to-accent/15 -z-10 blur-xl opacity-50 pointer-events-none" />
+
               <div className="grid md:grid-cols-2 gap-4">
-                <Input placeholder={t('contact.name')} required className="rounded-xl h-12 bg-muted/30 border-border/40" />
-                <Input type="email" placeholder={t('contact.email')} required className="rounded-xl h-12 bg-muted/30 border-border/40" />
+                <Input placeholder={t('contact.name')} required className="rounded-xl h-12 bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
+                <Input type="email" placeholder={t('contact.email')} required className="rounded-xl h-12 bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
               </div>
               <div className="grid md:grid-cols-2 gap-4">
-                <Input placeholder={t('contact.company')} className="rounded-xl h-12 bg-muted/30 border-border/40" />
-                <Input placeholder={t('contact.phone')} className="rounded-xl h-12 bg-muted/30 border-border/40" />
+                <Input placeholder={t('contact.company')} className="rounded-xl h-12 bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
+                <Input placeholder={t('contact.phone')} className="rounded-xl h-12 bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
               </div>
-              <Textarea placeholder={t('contact.message')} rows={4} className="rounded-xl bg-muted/30 border-border/40" />
-              <Button type="submit" size="lg" className="w-full gradient-primary border-0 h-14 rounded-2xl font-semibold text-base shadow-lg">
+              <Textarea placeholder={t('contact.message')} rows={4} className="rounded-xl bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-95 border-0 h-14 rounded-2xl font-semibold text-base shadow-lg motion-safe:transition-opacity"
+              >
                 {t('contact.submit')}
-                <Send className="w-4 h-4 ms-2" />
+                <Send size={16} className="ms-2" aria-hidden="true" />
               </Button>
             </form>
           )}
