@@ -135,35 +135,44 @@ export default function MeetingLinkButton({
   };
 
   const triggerFallback = useCallback(
-    (failed: MeetingProvider, message: string) => {
+    (failed: MeetingProvider, message: string, reason: string, extra?: Record<string, unknown>) => {
       setFailedProvider(failed);
       setFallbackOpen(true);
       toast.error(message);
+      logProviderEvent('fallback_shown', { provider: failed, reason, ...extra }, 'warn');
     },
     []
   );
 
   const openUrl = useCallback(
     (u: string, providerHint: MeetingProvider) => {
+      logProviderEvent('open_attempt', { provider: providerHint, url: u });
       if (!isValidUrl(u)) {
+        logProviderEvent('invalid_url', { provider: providerHint, url: u }, 'error');
         triggerFallback(
           providerHint,
           t('session_detail.invalid_meeting_link', {
             defaultValue: 'Meeting link is invalid. Choose an alternative below.',
-          })
+          }),
+          'invalid_url',
+          { url: u }
         );
         return;
       }
       const opened = window.open(u, '_blank', 'noopener,noreferrer');
       if (!opened) {
+        logProviderEvent('popup_blocked', { provider: providerHint, url: u }, 'error');
         triggerFallback(
           providerHint,
           t('session_detail.popup_blocked_fallback', {
             defaultValue: 'Popup was blocked. Try an alternative video option.',
-          })
+          }),
+          'popup_blocked',
+          { url: u }
         );
         return;
       }
+      logProviderEvent('opened', { provider: providerHint, url: u });
       // Watch the popup briefly. If it closes within 3s, treat as a load failure.
       // We can't access cross-origin properties, but `closed` is allowed.
       const start = Date.now();
@@ -175,13 +184,20 @@ export default function MeetingLinkButton({
             watcherRef.current = null;
             const elapsed = Date.now() - start;
             if (elapsed < 3000) {
+              logProviderEvent(
+                'fast_close',
+                { provider: providerHint, url: u, elapsedMs: elapsed },
+                'error'
+              );
               triggerFallback(
                 providerHint,
                 t('session_detail.provider_failed_fallback', {
                   defaultValue:
                     '{{provider}} did not open correctly. Try an alternative video option.',
                   provider: PROVIDER_LABELS[providerHint],
-                })
+                }),
+                'fast_close',
+                { url: u, elapsedMs: elapsed }
               );
             }
           } else if (Date.now() - start > 5000) {
