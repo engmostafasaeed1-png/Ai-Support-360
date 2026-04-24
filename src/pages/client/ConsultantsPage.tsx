@@ -20,6 +20,7 @@ import ConsultantMap from '@/components/client/ConsultantMap';
 import BookingModal from '@/components/client/BookingModal';
 import { sapModules } from '@/data/clientMockData';
 import VerificationBadge from '@/components/consultant/VerificationBadge';
+import { TrustBadge } from '@/components/consultant/TrustBadge';
 
 const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
   verified: { icon: BadgeCheck, color: 'text-accent' },
