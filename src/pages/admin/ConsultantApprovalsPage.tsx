@@ -6,12 +6,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
 import { Check, X, ChevronDown, ChevronUp, Award, Globe, DollarSign, Brain, Users, RotateCcw } from 'lucide-react';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { pendingConsultants } from '@/data/adminMockData';
 import { toast } from 'sonner';
 import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
 import InterviewHistory from '@/components/consultant/InterviewHistory';
+import ConsultantVerificationAuditLog from '@/components/admin/ConsultantVerificationAuditLog';
 
 export default function ConsultantApprovalsPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
