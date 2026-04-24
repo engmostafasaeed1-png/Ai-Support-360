@@ -1,5 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { FileText, Brain, MessageSquare, Star, ArrowRight } from 'lucide-react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 type Step = {
   Icon: typeof FileText;
@@ -113,6 +119,58 @@ export default function HowItWorksSection() {
               </li>
             ))}
           </ol>
+        </div>
+
+        {/*
+          Step-by-step FAQ — one question per step in the journey above.
+          Mirrors the same accent palette so each accordion item visually
+          ties back to its matching step card.
+        */}
+        <div
+          className="mt-20 md:mt-24 max-w-3xl mx-auto motion-safe:animate-fade-in-up"
+          style={{ animationDelay: '320ms' }}
+        >
+          <div className="text-center mb-8 md:mb-10">
+            <h3 className="text-2xl md:text-3xl font-black text-foreground tracking-tight">
+              {t('howItWorks.faq_title')}
+            </h3>
+            <p className="text-muted-foreground mt-3 text-sm md:text-base leading-relaxed">
+              {t('howItWorks.faq_subtitle')}
+            </p>
+          </div>
+
+          <Accordion type="single" collapsible className="space-y-3">
+            {items.map((s, i) => (
+              <AccordionItem
+                key={i}
+                value={`step-${i + 1}`}
+                className="group rounded-2xl border border-border/60 bg-card/70 backdrop-blur-sm px-5 md:px-6 motion-safe:transition-all motion-safe:duration-300 data-[state=open]:bg-card data-[state=open]:border-primary/40 data-[state=open]:shadow-2xl"
+              >
+                <AccordionTrigger className="text-left hover:no-underline py-5 [&>svg]:text-muted-foreground [&[data-state=open]>svg]:text-primary motion-safe:transition-colors">
+                  <span className="flex items-center gap-4 min-w-0">
+                    {/* Mini step badge — same accent gradient as the matching card */}
+                    <span
+                      className={`shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br ${s.accent} flex items-center justify-center shadow-md`}
+                      aria-hidden="true"
+                    >
+                      <s.Icon size={16} strokeWidth={2} absoluteStrokeWidth className="text-white" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[10px] font-mono font-bold tracking-[0.2em] text-muted-foreground/80 mb-0.5">
+                        STEP 0{i + 1}
+                      </span>
+                      <span className="block font-bold text-foreground text-sm md:text-base leading-snug">
+                        {t(`howItWorks.faq_step${i + 1}_q`)}
+                      </span>
+                    </span>
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground leading-relaxed pb-5 ps-[3.25rem] text-sm md:text-base">
+                  {t(`howItWorks.faq_step${i + 1}_a`)}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       </div>
     </section>
