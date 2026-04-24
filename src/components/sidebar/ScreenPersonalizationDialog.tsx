@@ -30,6 +30,12 @@ export default function ScreenPersonalizationDialog({ screens, hiddenScreens, on
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const { density, setDensity } = useTileDensity();
+
+  const densityOptions: { value: TileDensity; label: string; hint: string; Icon: LucideIcon }[] = [
+    { value: 'comfortable', label: t('sidebar.density_comfortable', 'Comfortable'), hint: t('sidebar.density_comfortable_hint', 'Bigger labels, easier to tap'), Icon: Rows2 },
+    { value: 'compact', label: t('sidebar.density_compact', 'Compact'), hint: t('sidebar.density_compact_hint', 'Fit more tiles on screen'), Icon: Rows3 },
+  ];
 
   const groups = [...new Set(screens.map(s => s.group || 'General'))];
   const filtered = screens.filter(s =>
