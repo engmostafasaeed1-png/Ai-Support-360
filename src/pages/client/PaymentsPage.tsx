@@ -11,6 +11,7 @@ import { Download, CreditCard, DollarSign, FileText, Clock, Search, ArrowRight, 
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { generateInvoicePdf } from '@/lib/invoicePdf';
+import { generateReceiptPdf } from '@/lib/receiptPdf';
 import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
