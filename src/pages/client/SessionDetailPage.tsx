@@ -26,6 +26,7 @@ import SessionSurveyDialog from '@/components/session/SessionSurveyDialog';
 import MeetingMinutesCard from '@/components/session/MeetingMinutesCard';
 import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfactionDialog';
 import MeetingLinkButton from '@/components/session/MeetingLinkButton';
+import MediaPermissionsBanner from '@/components/session/MediaPermissionsBanner';
 
 const typeIcons = {
   video: Video,
