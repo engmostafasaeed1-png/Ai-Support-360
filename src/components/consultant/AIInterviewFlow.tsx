@@ -463,7 +463,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-        body: JSON.stringify({ interview_id: interviewId, messages: chatHistory, lang: interviewLang }),
+        body: JSON.stringify({ interview_id: interviewId, messages: chatHistory, lang: interviewLang, voice_gender: voiceGender }),
       });
       if (!resp.ok || !resp.body) {
         if (resp.status === 429) { setError('Rate limited — please try again in a moment.'); setIsStreaming(false); setIsSpeaking(false); return; }
@@ -579,7 +579,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         fetch(CHAT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-          body: JSON.stringify({ interview_id: interviewId, messages, action: 'evaluate' }),
+          body: JSON.stringify({ interview_id: interviewId, messages, action: 'evaluate', voice_gender: voiceGender }),
         }),
         analyzeBodyLanguage(),
       ]);
