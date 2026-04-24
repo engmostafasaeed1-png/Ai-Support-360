@@ -285,7 +285,7 @@ export default function MeetingLinkButton({
                   className="justify-between gap-2"
                   onClick={() => {
                     setFallbackOpen(false);
-                    openUrl(alt.url, alt.provider);
+                    startOpen(alt.url, alt.provider);
                   }}
                 >
                   <span className="flex items-center gap-2">
