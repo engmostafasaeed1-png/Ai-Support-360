@@ -1,6 +1,7 @@
 import React, { Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { logger } from '@/lib/logger';
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -173,8 +174,9 @@ const queryClient = new QueryClient({
 });
 
 const PageLoader = () => (
-  <div className="min-h-[50vh] flex items-center justify-center">
-    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+  <div className="min-h-[50vh] flex items-center justify-center" role="status" aria-live="polite" aria-label="Loading page">
+    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" aria-hidden="true" />
+    <span className="sr-only">Loading…</span>
   </div>
 );
 
@@ -196,6 +198,7 @@ const RealtimeStatusSync = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />}
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -225,7 +228,7 @@ const App = () => (
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/consultant" element={<ProtectedRoute requiredRole="consultant"><ConsultantLayout /></ProtectedRoute>}>
+            <Route path="/consultant" element={<ProtectedRoute requiredRole="consultant"><ErrorBoundary><ConsultantLayout /></ErrorBoundary></ProtectedRoute>}>
               <Route index element={<ConsultantDashboard />} />
               <Route path="cases" element={<CasesPage />} />
               <Route path="cases/:caseId" element={<CaseDetailPage />} />
@@ -253,7 +256,7 @@ const App = () => (
               <Route path="satisfaction" element={<SatisfactionPage />} />
             </Route>
             <Route path="/client/companies" element={<ProtectedRoute requiredRole="client"><CompanySelectorPage /></ProtectedRoute>} />
-            <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
+            <Route path="/client" element={<ProtectedRoute requiredRole="client"><ErrorBoundary><ClientLayout /></ErrorBoundary></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
               <Route path="timeline" element={<TimelinePage />} />
               <Route path="new-request" element={<NewRequestPage />} />
@@ -298,7 +301,7 @@ const App = () => (
               <Route path="business-processes" element={<BusinessProcessesPage />} />
               <Route path="satisfaction" element={<SatisfactionPage />} />
             </Route>
-            <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
+            <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><ErrorBoundary><AdminLayout /></ErrorBoundary></ProtectedRoute>}>
               <Route index element={<AdminConsolePage />} />
               <Route path="console" element={<AdminConsolePage />}>
                 <Route index element={<OverviewSection />} />
@@ -342,7 +345,7 @@ const App = () => (
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="oncall" element={<OnCallSchedulePage />} />
             </Route>
-            <Route path="/super-admin" element={<ProtectedRoute requiredRole="super-admin"><SuperAdminLayout /></ProtectedRoute>}>
+            <Route path="/super-admin" element={<ProtectedRoute requiredRole="super-admin"><ErrorBoundary><SuperAdminLayout /></ErrorBoundary></ProtectedRoute>}>
               <Route index element={<SuperAdminOverview />} />
               <Route path="executive" element={<ExecutiveDashboardPage />} />
               <Route path="roles" element={<RolesAuthPage />} />

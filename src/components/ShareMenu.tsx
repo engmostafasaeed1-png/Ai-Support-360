@@ -75,7 +75,7 @@ const ShareMenu = ({ title, text, url, variant = "outline", size = "default", cl
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant={variant} size={size} className={className}>
+        <Button variant={variant} size={size} className={className} aria-label={`Share ${title}`}>
           <Share2 className="w-4 h-4" />
           {size !== "icon" && <span className="ml-1.5">Share</span>}
         </Button>

@@ -4,7 +4,9 @@ import App from "./App.tsx";
 import "./i18n/config";
 import "./index.css";
 import { installCspViolationLogger } from "./lib/diagnostics";
+import { initSentry } from "./lib/sentry";
 
+initSentry();
 installCspViolationLogger();
 
 createRoot(document.getElementById("root")!).render(
@@ -12,3 +14,4 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </ErrorBoundary>
 );
+

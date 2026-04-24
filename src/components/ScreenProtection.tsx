@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ShieldCheck, Lock } from 'lucide-react';
-import { useDevToolsDetection } from '@/hooks/useDevToolsDetection';
+import { ShieldCheck } from 'lucide-react';
 
 const PUBLIC_PATHS = ['/', '/login', '/signup', '/forgot-password', '/reset-password', '/pricing'];
 
@@ -17,7 +16,6 @@ const isEditableTarget = (target: EventTarget | null): boolean => {
 const ScreenProtection = () => {
   const location = useLocation();
   const isProtected = !PUBLIC_PATHS.some(p => location.pathname === p);
-  const devToolsOpen = useDevToolsDetection();
 
   useEffect(() => {
     if (!isProtected) return;
@@ -69,19 +67,6 @@ const ScreenProtection = () => {
 
   return (
     <>
-      {devToolsOpen && (
-        <div className="fixed inset-0 z-[99999] bg-background/95 backdrop-blur-md flex items-center justify-center">
-          <div className="text-center space-y-4 max-w-md px-6">
-            <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
-              <Lock className="w-8 h-8 text-destructive" />
-            </div>
-            <h2 className="text-xl font-bold text-foreground">Access Restricted</h2>
-            <p className="text-muted-foreground text-sm">
-              Developer tools are not permitted on this platform. Please close DevTools to continue.
-            </p>
-          </div>
-        </div>
-      )}
       <div className="fixed bottom-0 left-0 right-0 z-[99998] pointer-events-none flex justify-center pb-2 opacity-30">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm rounded-full px-3 py-1">
           <ShieldCheck className="w-3 h-3" />
