@@ -7,6 +7,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GuestModeProvider } from "./contexts/GuestModeContext.tsx";
+import { CurrencyProvider } from "./contexts/CurrencyContext.tsx";
 import { TenantProvider } from "./contexts/TenantContext.tsx";
 import GuestBanner from "./components/guest/GuestBanner.tsx";
 import AIChatbot from "./components/chatbot/AIChatbot.tsx";
