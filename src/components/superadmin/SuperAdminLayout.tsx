@@ -4,7 +4,7 @@ import SuperAdminSidebar from './SuperAdminSidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import PageTransition from '@/components/PageTransition';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
-import { LayoutDashboard, ShieldCheck, BarChart3, Settings2, Users } from 'lucide-react';
+import { LayoutDashboard, ShieldCheck, BarChart3, Settings2, Users, PieChart, Workflow, FileText, Activity } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 import { Crown } from 'lucide-react';
@@ -21,7 +21,11 @@ const bottomNavItems = [
 ];
 
 const moreNavItems = [
+  { key: 'executive', icon: PieChart, path: '/super-admin/executive', labelKey: 'super_admin.executive_dashboard' },
   { key: 'config', icon: Settings2, path: '/super-admin/config', labelKey: 'super_admin.config' },
+  { key: 'workflows', icon: Workflow, path: '/super-admin/workflows', labelKey: 'super_admin.workflows' },
+  { key: 'audit', icon: FileText, path: '/super-admin/audit', labelKey: 'super_admin.audit_logs' },
+  { key: 'system', icon: Activity, path: '/super-admin/system', labelKey: 'super_admin.system_health' },
 ];
 
 export default function SuperAdminLayout() {
