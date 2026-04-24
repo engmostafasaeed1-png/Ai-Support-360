@@ -59,6 +59,13 @@ interface MeetingLinkButtonProps {
   joinLabel?: string;
   /** Show the camera/mic preflight test before opening the meeting URL. Default true. */
   requirePreflight?: boolean;
+  /**
+   * When set, the join button routes through `/join/:sessionId?to=...` — a
+   * dedicated handoff route that guarantees the meeting opens in a top-level
+   * browser tab (escapes any wrapping iframe). Recommended for any context
+   * where the app may be embedded.
+   */
+  sessionId?: string;
 }
 
 /**
@@ -83,6 +90,7 @@ export default function MeetingLinkButton({
   className = 'gradient-primary border-0 gap-1.5',
   joinLabel,
   requirePreflight = true,
+  sessionId,
 }: MeetingLinkButtonProps) {
   const { t } = useTranslation();
   const [fallbackOpen, setFallbackOpen] = useState(false);
@@ -90,6 +98,15 @@ export default function MeetingLinkButton({
   const [preflightOpen, setPreflightOpen] = useState(false);
   const pendingOpenRef = useRef<{ url: string; provider: MeetingProvider } | null>(null);
   const watcherRef = useRef<number | null>(null);
+
+  const buildHandoffUrl = useCallback(
+    (u: string) => {
+      if (!sessionId) return u;
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return `${origin}/join/${encodeURIComponent(sessionId)}?to=${encodeURIComponent(u)}`;
+    },
+    [sessionId]
+  );
 
   const target = url || fallbackUrl || '';
   const provider = detectProvider(target);
@@ -159,7 +176,8 @@ export default function MeetingLinkButton({
         );
         return;
       }
-      const opened = window.open(u, '_blank', 'noopener,noreferrer');
+      const handoffUrl = buildHandoffUrl(u);
+      const opened = window.open(handoffUrl, '_blank', 'noopener,noreferrer');
       if (!opened) {
         logProviderEvent('popup_blocked', { provider: providerHint, url: u }, 'error');
         triggerFallback(
@@ -211,7 +229,7 @@ export default function MeetingLinkButton({
         }
       }, 500);
     },
-    [t, triggerFallback]
+    [t, triggerFallback, buildHandoffUrl]
   );
 
   const startOpen = (u: string, p: MeetingProvider) => {

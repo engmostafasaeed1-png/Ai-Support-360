@@ -38,6 +38,7 @@ import { NotificationsSection, LocalizationSection, AppearanceSection, StorageSe
 // Lazy page imports
 const Index = React.lazy(() => import("./pages/Index.tsx"));
 const NotFound = React.lazy(() => import("./pages/NotFound.tsx"));
+const MeetingHandoffPage = React.lazy(() => import("./pages/MeetingHandoffPage.tsx"));
 const PricingPage = React.lazy(() => import("./pages/PricingPage.tsx"));
 const LoginPage = React.lazy(() => import("./pages/auth/LoginPage.tsx"));
 const SignupPage = React.lazy(() => import("./pages/auth/SignupPage.tsx"));
@@ -205,6 +206,7 @@ const App = () => (
           <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/join/:sessionId" element={<MeetingHandoffPage />} />
             <Route path="/index" element={<Navigate to="/" replace />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/login" element={<LoginPage />} />
