@@ -198,7 +198,7 @@ export default function HowItWorksSection() {
                     </span>
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground leading-relaxed pb-5 ps-[3.25rem] text-sm md:text-base">
+                <AccordionContent className="text-muted-foreground leading-relaxed pb-5 ps-[3.75rem] text-sm md:text-base">
                   {t(`howItWorks.faq_step${i + 1}_a`)}
                 </AccordionContent>
               </AccordionItem>
