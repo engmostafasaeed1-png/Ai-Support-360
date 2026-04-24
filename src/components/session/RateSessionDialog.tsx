@@ -94,6 +94,9 @@ export default function RateSessionDialog({
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState('');
   const [anonymous, setAnonymous] = useState(false);
+  const [communicationScore, setCommunicationScore] = useState(0);
+  const [technicalScore, setTechnicalScore] = useState(0);
+  const [responsivenessScore, setResponsivenessScore] = useState(0);
 
   useEffect(() => {
     if (!open) {
@@ -101,6 +104,9 @@ export default function RateSessionDialog({
       setHover(0);
       setComment('');
       setAnonymous(false);
+      setCommunicationScore(0);
+      setTechnicalScore(0);
+      setResponsivenessScore(0);
     }
   }, [open]);
 
