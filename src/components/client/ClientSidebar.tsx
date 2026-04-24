@@ -255,19 +255,21 @@ export default function ClientSidebar() {
                         const tint = tileTints[item.key] || 'from-primary/20 to-primary/5 text-primary';
                         return (
                           <SidebarMenuItem key={item.key}>
-                            <SidebarMenuButton asChild tooltip={label}>
-                              <NavLink
-                                to={item.path}
-                                end
-                                className={`group/item relative flex items-center justify-center rounded-xl mx-1.5 my-0.5 h-10 transition-all duration-200 ${
-                                  isActive
-                                    ? `bg-gradient-to-br ${tint} shadow-lg`
-                                    : 'hover:bg-sidebar-accent/60 text-sidebar-foreground/70 hover:text-sidebar-foreground'
-                                }`}
-                                activeClassName=""
-                              >
-                                <item.icon className={`w-4 h-4 shrink-0 ${isActive ? '' : ''}`} />
-                              </NavLink>
+                            <SidebarMenuButton asChild>
+                              <TileTooltip scope="client" itemKey={item.key} label={label} isActive={isActive} side="right">
+                                <NavLink
+                                  to={item.path}
+                                  end
+                                  className={`group/item relative flex items-center justify-center rounded-xl mx-1.5 my-0.5 h-10 transition-all duration-200 ${
+                                    isActive
+                                      ? `bg-gradient-to-br ${tint} shadow-lg`
+                                      : 'hover:bg-sidebar-accent/60 text-sidebar-foreground/70 hover:text-sidebar-foreground'
+                                  }`}
+                                  activeClassName=""
+                                >
+                                  <item.icon className={`w-4 h-4 shrink-0 ${isActive ? '' : ''}`} />
+                                </NavLink>
+                              </TileTooltip>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         );
