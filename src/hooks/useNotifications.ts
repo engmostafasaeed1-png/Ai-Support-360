@@ -42,6 +42,33 @@ export function useNotifications() {
     setUnreadCount(0);
   }, []);
 
+  const markManyAsRead = useCallback(async (ids: string[]) => {
+    if (!ids.length) return;
+    // Only count the ones currently unread so the badge stays accurate
+    const targetSet = new Set(ids);
+    let unreadDelta = 0;
+    setNotifications(prev => {
+      const next = prev.map(n => {
+        if (targetSet.has(n.id) && !n.is_read) {
+          unreadDelta++;
+          return { ...n, is_read: true };
+        }
+        return n;
+      });
+      return next;
+    });
+    setUnreadCount(prev => Math.max(0, prev - unreadDelta));
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .in('id', ids);
+    if (error) {
+      // Roll back optimistic update on failure
+      await fetchNotifications();
+      throw error;
+    }
+  }, [fetchNotifications]);
+
   const deleteNotification = useCallback(async (id: string) => {
     const notif = notifications.find(n => n.id === id);
     await supabase.from('notifications').delete().eq('id', id);
@@ -77,5 +104,5 @@ export function useNotifications() {
     return () => { supabase.removeChannel(channel); };
   }, [fetchNotifications]);
 
-  return { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, refetch: fetchNotifications };
+  return { notifications, unreadCount, loading, markAsRead, markAllAsRead, markManyAsRead, deleteNotification, refetch: fetchNotifications };
 }
