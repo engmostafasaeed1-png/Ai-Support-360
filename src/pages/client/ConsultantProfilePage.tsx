@@ -16,7 +16,7 @@ import {
 import InterviewTranscript from '@/components/consultant/InterviewTranscript';
 import ShareMenu from '@/components/ShareMenu';
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import BookingModal from '@/components/client/BookingModal';
