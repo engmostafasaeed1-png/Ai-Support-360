@@ -7,9 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useClientPayments } from '@/hooks/useClientPayments';
-import { Download, CreditCard, DollarSign, FileText, Clock, Search, ArrowRight, Ticket, AlertCircle, CheckCircle2, XCircle, ReceiptText, Calendar, User, Tag } from 'lucide-react';
+import { Download, CreditCard, DollarSign, FileText, Clock, Search, ArrowRight, Ticket, AlertCircle, CheckCircle2, XCircle, ReceiptText, Calendar, User, Tag, Video, MessageSquare, Monitor, PlayCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { generateInvoicePdf } from '@/lib/invoicePdf';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   completed: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
@@ -144,6 +145,22 @@ export default function PaymentsPage() {
                             )}
                           </div>
                         )}
+                        {payment.session_id && (
+                          <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                            <SessionTypeIcon type={payment.session_type} className="w-3 h-3 text-blue-600" />
+                            <span className="text-xs text-blue-600 font-medium capitalize">
+                              {(payment.session_type || 'session').toString().replace(/_/g, ' ')} session
+                            </span>
+                            {payment.session_status && (
+                              <Badge variant="outline" className="text-[9px] capitalize">{payment.session_status}</Badge>
+                            )}
+                            {payment.session_scheduled_at && (
+                              <span className="text-[10px] text-muted-foreground">
+                                · {format(new Date(payment.session_scheduled_at), 'MMM d, h:mm a')}
+                              </span>
+                            )}
+                          </div>
+                        )}
                         {payment.description && (
                           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{payment.description}</p>
                         )}
@@ -156,7 +173,7 @@ export default function PaymentsPage() {
                           <p className="text-[10px] text-muted-foreground">VAT: {formatCurrency(Number(payment.vat), payment.currency)}</p>
                         )}
                       </div>
-                      <Button variant="ghost" size="icon" title="Download Invoice" className="shrink-0" onClick={e => { e.stopPropagation(); }}>
+                      <Button variant="ghost" size="icon" title="Download Invoice" className="shrink-0" onClick={e => { e.stopPropagation(); generateInvoicePdf(payment); }}>
                         <Download className="w-4 h-4" />
                       </Button>
                     </div>
@@ -213,6 +230,32 @@ export default function PaymentsPage() {
                 </div>
               )}
 
+              {/* Linked Session */}
+              {selectedPayment.session_id && (
+                <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 p-3">
+                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase mb-1 flex items-center gap-1">
+                    <SessionTypeIcon type={selectedPayment.session_type} className="w-3 h-3" /> Linked Session
+                  </p>
+                  <p className="text-sm font-medium text-foreground capitalize">
+                    {(selectedPayment.session_type || 'session').toString().replace(/_/g, ' ')} session
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-1 text-[11px] text-muted-foreground">
+                    {selectedPayment.session_status && (
+                      <Badge variant="outline" className="text-[10px] capitalize">{selectedPayment.session_status}</Badge>
+                    )}
+                    {selectedPayment.session_scheduled_at && (
+                      <span>{format(new Date(selectedPayment.session_scheduled_at), 'MMM d, yyyy h:mm a')}</span>
+                    )}
+                    {selectedPayment.session_duration_minutes ? (
+                      <span>· {selectedPayment.session_duration_minutes} min</span>
+                    ) : null}
+                  </div>
+                  <Link to={`/client/sessions/${selectedPayment.session_id}`} className="inline-flex items-center gap-1 text-xs text-blue-700 dark:text-blue-400 mt-2 hover:underline">
+                    View Session <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              )}
+
               {/* Linked Ticket */}
               {selectedPayment.ticket_id && (
                 <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
@@ -232,7 +275,7 @@ export default function PaymentsPage() {
 
               {/* Actions */}
               <div className="flex gap-2 pt-2">
-                <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm">
+                <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={() => generateInvoicePdf(selectedPayment)}>
                   <Download className="w-4 h-4" /> Download Invoice
                 </Button>
               </div>
@@ -254,4 +297,9 @@ function DetailRow({ label, value, icon: Icon }: { label: string; value: string;
       </div>
     </div>
   );
+}
+
+function SessionTypeIcon({ type, className }: { type?: string | null; className?: string }) {
+  const Icon = type === 'chat' ? MessageSquare : type === 'screen_share' ? Monitor : type === 'video' ? Video : PlayCircle;
+  return <Icon className={className} />;
 }
