@@ -5225,6 +5225,104 @@ export type Database = {
           },
         ]
       }
+      vmware_settings_safe: {
+        Row: {
+          auto_shutdown_hours: number | null
+          availability_zone: string | null
+          cloud_api_endpoint: string | null
+          cloud_region: string | null
+          cloud_vendor: string | null
+          cluster: string | null
+          created_at: string | null
+          datacenter: string | null
+          datastore: string | null
+          default_cpu: number | null
+          default_disk_gb: number | null
+          default_os_template: string | null
+          default_ram_gb: number | null
+          environment_id: string | null
+          hypervisor_type: string | null
+          id: string | null
+          instance_type: string | null
+          network_vlan: string | null
+          notes: string | null
+          resource_pool: string | null
+          security_group: string | null
+          snapshot_enabled: boolean | null
+          storage_type: string | null
+          subnet_id: string | null
+          updated_at: string | null
+          vcenter_url: string | null
+          vcenter_username: string | null
+        }
+        Insert: {
+          auto_shutdown_hours?: number | null
+          availability_zone?: string | null
+          cloud_api_endpoint?: string | null
+          cloud_region?: string | null
+          cloud_vendor?: string | null
+          cluster?: string | null
+          created_at?: string | null
+          datacenter?: string | null
+          datastore?: string | null
+          default_cpu?: number | null
+          default_disk_gb?: number | null
+          default_os_template?: string | null
+          default_ram_gb?: number | null
+          environment_id?: string | null
+          hypervisor_type?: string | null
+          id?: string | null
+          instance_type?: string | null
+          network_vlan?: string | null
+          notes?: string | null
+          resource_pool?: string | null
+          security_group?: string | null
+          snapshot_enabled?: boolean | null
+          storage_type?: string | null
+          subnet_id?: string | null
+          updated_at?: string | null
+          vcenter_url?: string | null
+          vcenter_username?: string | null
+        }
+        Update: {
+          auto_shutdown_hours?: number | null
+          availability_zone?: string | null
+          cloud_api_endpoint?: string | null
+          cloud_region?: string | null
+          cloud_vendor?: string | null
+          cluster?: string | null
+          created_at?: string | null
+          datacenter?: string | null
+          datastore?: string | null
+          default_cpu?: number | null
+          default_disk_gb?: number | null
+          default_os_template?: string | null
+          default_ram_gb?: number | null
+          environment_id?: string | null
+          hypervisor_type?: string | null
+          id?: string | null
+          instance_type?: string | null
+          network_vlan?: string | null
+          notes?: string | null
+          resource_pool?: string | null
+          security_group?: string | null
+          snapshot_enabled?: boolean | null
+          storage_type?: string | null
+          subnet_id?: string | null
+          updated_at?: string | null
+          vcenter_url?: string | null
+          vcenter_username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vmware_settings_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: true
+            referencedRelation: "remote_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_integration_credentials: {
