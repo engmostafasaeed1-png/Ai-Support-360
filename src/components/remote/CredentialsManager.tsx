@@ -18,6 +18,8 @@ import {
   useEnvironmentCredentials, useCreateCredential, useUpdateCredential, useDeleteCredential,
   type EnvironmentCredential,
 } from '@/hooks/useEnvironmentCredentials';
+import { decryptCredential } from '@/lib/credentialsCrypto';
+import { toast } from 'sonner';
 
 interface CredentialsManagerProps {
   environmentId: string;
