@@ -84,17 +84,45 @@ function getSessionTypeConfig(type?: string | null) {
   };
 }
 
-const matchesTab = (status: string, tab: string) => {
+const matchesTab = (inv: any, tab: string) => {
+  const status = inv.status;
   if (tab === 'all') return true;
   if (tab === 'paid') return status === 'completed' || status === 'paid';
   if (tab === 'unpaid') return status === 'pending' || status === 'unpaid';
   if (tab === 'processing') return status === 'processing';
   if (tab === 'failed') return status === 'failed';
+  if (tab === 'overdue') {
+    const info = getDueDateInfo(inv);
+    return !!(info && info.overdue);
+  }
   return true;
 };
 
 const fmt = (amount: number, currency: string = 'USD') =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+
+const isPaidStatus = (s?: string) => s === 'completed' || s === 'paid' || s === 'refunded';
+
+function getDueDateInfo(inv: any) {
+  if (!inv?.due_date) return null;
+  const due = new Date(inv.due_date);
+  if (isNaN(due.getTime())) return null;
+  const now = new Date();
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const diffDays = Math.round((startOfDay(due) - startOfDay(now)) / 86400000);
+  const paid = isPaidStatus(inv.status);
+  const overdue = !paid && diffDays < 0;
+  const dueSoon = !paid && diffDays >= 0 && diffDays <= 3;
+  let label = format(due, 'MMM d, yyyy');
+  let relative = '';
+  if (paid) relative = '';
+  else if (diffDays === 0) relative = 'Due today';
+  else if (diffDays === 1) relative = 'Due tomorrow';
+  else if (diffDays > 1) relative = `Due in ${diffDays} days`;
+  else if (diffDays === -1) relative = '1 day overdue';
+  else relative = `${Math.abs(diffDays)} days overdue`;
+  return { due, label, relative, diffDays, overdue, dueSoon, paid };
+}
 
 const PAYMENT_METHOD_OPTIONS: { value: string; label: string; icon: any; match: RegExp }[] = [
   { value: 'card', label: 'Card', icon: CreditCard, match: /(card|visa|master|amex|stripe|debit|credit)/i },
@@ -229,7 +257,7 @@ export default function InvoicesPage() {
         p.consultant?.toLowerCase().includes(s) ||
         p.ticket_title?.toLowerCase().includes(s) ||
         p.description?.toLowerCase().includes(s);
-      const matchTab = matchesTab(p.status, tab);
+      const matchTab = matchesTab(p, tab);
       const matchMethod = paymentMethodFilter === 'all' || classifyPaymentMethod(p.payment_method) === paymentMethodFilter;
       return matchSearch && matchTab && matchMethod;
     })
@@ -249,6 +277,10 @@ export default function InvoicesPage() {
     unpaid: all.filter((p: any) => p.status === 'pending' || p.status === 'unpaid').length,
     processing: all.filter((p: any) => p.status === 'processing').length,
     failed: all.filter((p: any) => p.status === 'failed').length,
+    overdue: all.filter((p: any) => {
+      const info = getDueDateInfo(p);
+      return !!(info && info.overdue);
+    }).length,
   };
 
   const [failedDownloads, setFailedDownloads] = useState<Record<string, boolean>>({});
@@ -308,6 +340,12 @@ export default function InvoicesPage() {
               <TabsTrigger value="unpaid" className="text-xs">Unpaid ({counts.unpaid})</TabsTrigger>
               <TabsTrigger value="processing" className="text-xs">Processing ({counts.processing})</TabsTrigger>
               <TabsTrigger value="failed" className="text-xs">Failed ({counts.failed})</TabsTrigger>
+              <TabsTrigger
+                value="overdue"
+                className="text-xs data-[state=active]:bg-red-100 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-900/30 dark:data-[state=active]:text-red-400"
+              >
+                Overdue ({counts.overdue})
+              </TabsTrigger>
             </TabsList>
           </Tabs>
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
@@ -394,8 +432,14 @@ export default function InvoicesPage() {
           {filtered.map((inv: any) => {
             const sc = statusConfig[inv.status] || statusConfig.pending;
             const StatusIcon = sc.icon;
+            const dueInfo = getDueDateInfo(inv);
+            const cardCls = dueInfo?.overdue
+              ? 'rounded-2xl border-red-300 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/10 hover:border-red-400 hover:shadow-premium transition-all cursor-pointer'
+              : dueInfo?.dueSoon
+              ? 'rounded-2xl border-amber-300/70 dark:border-amber-900/50 hover:border-amber-400 hover:shadow-premium transition-all cursor-pointer'
+              : 'rounded-2xl border-border/50 hover:border-primary/30 hover:shadow-premium transition-all cursor-pointer';
             return (
-              <Card key={inv.id} className="rounded-2xl border-border/50 hover:border-primary/30 hover:shadow-premium transition-all cursor-pointer" onClick={() => openEdit(inv)}>
+              <Card key={inv.id} className={cardCls} onClick={() => openEdit(inv)}>
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -408,6 +452,28 @@ export default function InvoicesPage() {
                           <Badge variant="secondary" className={`text-[10px] gap-1 ${sc.color}`}>
                             <StatusIcon className="w-3 h-3" /> {sc.label}
                           </Badge>
+                          {dueInfo && (
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] gap-1 ${
+                                dueInfo.overdue
+                                  ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-900/60'
+                                  : dueInfo.paid
+                                  ? 'bg-muted text-muted-foreground'
+                                  : dueInfo.dueSoon
+                                  ? 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-900/60'
+                                  : 'bg-muted/40 text-muted-foreground'
+                              }`}
+                              title={`Due ${dueInfo.label}`}
+                            >
+                              {dueInfo.overdue ? <AlertCircle className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
+                              {dueInfo.paid
+                                ? `Due ${dueInfo.label}`
+                                : dueInfo.overdue
+                                ? `Overdue · ${dueInfo.label}`
+                                : `${dueInfo.relative} · ${dueInfo.label}`}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           <span className="inline-flex items-center gap-1"><User className="w-3 h-3" /> {inv.consultant}</span>
