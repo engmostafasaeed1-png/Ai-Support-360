@@ -89,6 +89,21 @@ export default function NotificationsPage() {
     }
   };
 
+  const handleRetry = async (id: string) => {
+    setBusy(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)('retry_failed_notification', { _id: id });
+      if (error) throw error;
+      const status = (data as any)?.delivery_status;
+      if (status === 'delivered') toast.success('Notification re-delivered');
+      else toast.error('Retry failed — please try again');
+    } catch (e: any) {
+      toast.error(e?.message || 'Retry failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
