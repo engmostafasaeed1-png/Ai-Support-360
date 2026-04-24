@@ -7,7 +7,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { logProviderEvent } from '@/lib/diagnostics';
+import { useTranslateTroubleshooting } from './TranslateTroubleshootingContext';
 
 interface TroubleshootingLanguageSwitcherProps {
   /** Forwarded to diagnostics for language-change tracking. */
