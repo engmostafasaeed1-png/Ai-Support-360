@@ -240,10 +240,11 @@ export default function SessionDetailPage() {
                   </AlertDialogContent>
                 </AlertDialog>
                 <MeetingLinkButton
-                  url={(session as any).meeting_url}
-                  fallbackUrl={`https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`}
+                  url={savedMeetingUrl ?? ''}
+                  fallbackUrl={jitsiFallbackUrl}
                   fallbackRoomId={sessionId?.slice(0, 8)}
                   sessionId={sessionId}
+                  provider={meetingProvider}
                 />
 
               </div>
