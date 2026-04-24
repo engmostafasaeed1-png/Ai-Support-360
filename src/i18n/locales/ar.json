@@ -933,14 +933,14 @@
     "resend_error": "فشل في إعادة الإرسال. يرجى المحاولة مرة أخرى."
   },
   "chatbot": {
-    "title": "قرطبة AI",
+    "title": "AI SAP Support Now",
     "subtitle": "مساعد دعم SAP",
     "history_title": "سجل المحادثات",
     "no_history": "لا توجد محادثات سابقة",
     "how_can_i_help": "كيف يمكنني مساعدتك في SAP؟",
     "description": "دعم SAP يعني المساعدة في وحدات SAP ERP (FI، CO، MM، SD، HR، Basis، إلخ) — الإعدادات، الأخطاء، النقل، الأداء، والتذاكر. صِف مشكلتك وسأقوم بفرزها أو البحث في قاعدة المعرفة أو فتح تذكرة لك.",
     "placeholder": "صِف مشكلتك في SAP...",
-    "powered_by": "مدعوم من قرطبة AI · قد تكون الإجابات غير دقيقة",
+    "powered_by": "مدعوم من AI SAP Support Now · قد تكون الإجابات غير دقيقة",
     "create_ticket": "إنشاء تذكرة",
     "prompt_fi": "ترحيل SAP FI الخاص بي يفشل",
     "prompt_mm": "أمر شراء MM عالق",
