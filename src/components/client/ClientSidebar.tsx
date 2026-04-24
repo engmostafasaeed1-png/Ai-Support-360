@@ -27,9 +27,52 @@ import logo from '@/assets/logo.png';
 import sidebarBanner from '@/assets/sidebar-banner.png';
 import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 
+// Per-tile color tints for visual variety (uses semantic HSL tokens via tailwind utilities)
+const tileTints: Record<string, string> = {
+  dashboard: 'from-blue-500/25 to-blue-500/5 text-blue-500',
+  new_request: 'from-amber-500/25 to-amber-500/5 text-amber-500',
+  tickets: 'from-rose-500/25 to-rose-500/5 text-rose-500',
+  consultants: 'from-violet-500/25 to-violet-500/5 text-violet-500',
+  sessions: 'from-cyan-500/25 to-cyan-500/5 text-cyan-500',
+  video_sessions: 'from-pink-500/25 to-pink-500/5 text-pink-500',
+  projects: 'from-indigo-500/25 to-indigo-500/5 text-indigo-500',
+  milestones: 'from-orange-500/25 to-orange-500/5 text-orange-500',
+  tasks: 'from-emerald-500/25 to-emerald-500/5 text-emerald-500',
+  contracts: 'from-slate-500/25 to-slate-500/5 text-slate-500',
+  business_processes: 'from-teal-500/25 to-teal-500/5 text-teal-500',
+  chat: 'from-sky-500/25 to-sky-500/5 text-sky-500',
+  change_management: 'from-purple-500/25 to-purple-500/5 text-purple-500',
+  major_incidents: 'from-red-500/25 to-red-500/5 text-red-500',
+  playbooks: 'from-yellow-500/25 to-yellow-500/5 text-yellow-600',
+  payments: 'from-green-500/25 to-green-500/5 text-green-500',
+  invoices: 'from-lime-500/25 to-lime-500/5 text-lime-600',
+  integrations: 'from-fuchsia-500/25 to-fuchsia-500/5 text-fuchsia-500',
+  remote_access: 'from-blue-500/25 to-blue-500/5 text-blue-500',
+  vmware_settings: 'from-zinc-500/25 to-zinc-500/5 text-zinc-500',
+  vmware_pricing: 'from-emerald-500/25 to-emerald-500/5 text-emerald-500',
+  vmware_console: 'from-indigo-500/25 to-indigo-500/5 text-indigo-500',
+  knowledge: 'from-amber-500/25 to-amber-500/5 text-amber-500',
+  pm_tickets: 'from-rose-500/25 to-rose-500/5 text-rose-500',
+  solution_architecture: 'from-violet-500/25 to-violet-500/5 text-violet-500',
+  satisfaction: 'from-yellow-500/25 to-yellow-500/5 text-yellow-500',
+  referrals: 'from-pink-500/25 to-pink-500/5 text-pink-500',
+  team_members: 'from-cyan-500/25 to-cyan-500/5 text-cyan-500',
+  reports: 'from-indigo-500/25 to-indigo-500/5 text-indigo-500',
+  sla: 'from-emerald-500/25 to-emerald-500/5 text-emerald-500',
+  activity_log: 'from-orange-500/25 to-orange-500/5 text-orange-500',
+  company_profile: 'from-blue-500/25 to-blue-500/5 text-blue-500',
+  notifications: 'from-amber-500/25 to-amber-500/5 text-amber-500',
+  settings: 'from-slate-500/25 to-slate-500/5 text-slate-500',
+  support: 'from-teal-500/25 to-teal-500/5 text-teal-500',
+};
+
+const titleize = (s: string) =>
+  s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
 const navGroups = [
   {
     labelKey: 'sidebar.overview',
+    fallback: 'Overview',
     items: [
       { key: 'dashboard', icon: Gauge, path: '/client', required: true },
       { key: 'new_request', icon: Zap, path: '/client/new-request', accent: true },
@@ -37,6 +80,7 @@ const navGroups = [
   },
   {
     labelKey: 'sidebar.work',
+    fallback: 'Work',
     items: [
       { key: 'tickets', icon: Headset, path: '/client/tickets' },
       { key: 'consultants', icon: Search, path: '/client/consultants' },
@@ -52,6 +96,7 @@ const navGroups = [
   },
   {
     labelKey: 'sidebar.servicenow',
+    fallback: 'Service Management',
     items: [
       { key: 'change_management', icon: GitPullRequestArrow, path: '/client/changes' },
       { key: 'major_incidents', icon: AlertOctagon, path: '/client/major-incidents' },
@@ -60,6 +105,7 @@ const navGroups = [
   },
   {
     labelKey: 'sidebar.finance',
+    fallback: 'Finance',
     items: [
       { key: 'payments', icon: Wallet, path: '/client/payments' },
       { key: 'invoices', icon: Receipt, path: '/client/invoices' },
@@ -67,6 +113,7 @@ const navGroups = [
   },
   {
     labelKey: 'sidebar.tools',
+    fallback: 'Tools',
     items: [
       { key: 'integrations', icon: Blocks, path: '/client/integrations' },
       { key: 'remote_access', icon: MonitorSmartphone, path: '/client/remote-access' },
@@ -82,6 +129,7 @@ const navGroups = [
   },
   {
     labelKey: 'sidebar.management',
+    fallback: 'Management',
     items: [
       { key: 'team_members', icon: UserCog, path: '/client/team' },
       { key: 'reports', icon: PieChart, path: '/client/reports' },
@@ -91,6 +139,7 @@ const navGroups = [
   },
   {
     labelKey: 'sidebar.account',
+    fallback: 'Account',
     items: [
       { key: 'company_profile', icon: Building, path: '/client/company' },
       { key: 'notifications', icon: BellRing, path: '/client/notifications' },
