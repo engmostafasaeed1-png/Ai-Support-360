@@ -197,6 +197,15 @@ export default function MeetingLinkButton({
     [t, triggerFallback]
   );
 
+  const startOpen = (u: string, p: MeetingProvider) => {
+    if (requirePreflight) {
+      pendingOpenRef.current = { url: u, provider: p };
+      setPreflightOpen(true);
+    } else {
+      openUrl(u, p);
+    }
+  };
+
   const handleOpen = () => {
     if (!target) {
       triggerFallback(
@@ -207,7 +216,13 @@ export default function MeetingLinkButton({
       );
       return;
     }
-    openUrl(target, provider);
+    startOpen(target, provider);
+  };
+
+  const handlePreflightProceed = () => {
+    const pending = pendingOpenRef.current;
+    pendingOpenRef.current = null;
+    if (pending) openUrl(pending.url, pending.provider);
   };
 
   const fallbackList = buildAlternatives(target);
