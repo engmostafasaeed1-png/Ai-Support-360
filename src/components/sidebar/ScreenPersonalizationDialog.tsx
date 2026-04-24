@@ -92,6 +92,55 @@ export default function ScreenPersonalizationDialog({ screens, hiddenScreens, on
           </div>
         </div>
 
+        {/* Tile density (mobile-focused but applies anywhere the row tile shows) */}
+        <div className="px-4 py-3 border-b border-border/30">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              {t('sidebar.density_title', 'Tile density (mobile)')}
+            </p>
+            <span className="text-[10px] text-muted-foreground/70">
+              {t('sidebar.density_subtitle', 'Choose your reading comfort')}
+            </span>
+          </div>
+          <div
+            role="radiogroup"
+            aria-label={t('sidebar.density_title', 'Tile density (mobile)')}
+            className="grid grid-cols-2 gap-2"
+          >
+            {densityOptions.map(({ value, label, hint, Icon }) => {
+              const active = density === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setDensity(value)}
+                  className={`flex items-start gap-2.5 rounded-xl border p-2.5 text-start transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                    active
+                      ? 'border-primary bg-primary/10 shadow-sm'
+                      : 'border-border/60 bg-background hover:bg-muted/40'
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                    active ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-xs font-semibold ${active ? 'text-primary' : 'text-foreground'}`}>
+                      {label}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                      {hint}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <ScrollArea className="max-h-[400px]">
           <div className="p-4 space-y-5">
             {groups.map(group => {
