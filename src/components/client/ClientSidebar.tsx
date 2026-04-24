@@ -249,7 +249,7 @@ export default function ClientSidebar() {
                   {collapsed ? (
                     <SidebarMenu>
                       {visibleItems.map((item) => {
-                        const isActive = location.pathname === item.path;
+                        const isActive = item.path === bestMatchPath;
                         const label = String(t(`sidebar.${item.key}`, { defaultValue: (item as any).label || titleize(item.key) }));
                         const tint = tileTints[item.key] || 'from-primary/20 to-primary/5 text-primary';
                         return (
