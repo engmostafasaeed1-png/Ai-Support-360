@@ -187,6 +187,13 @@ const RTLSync = () => {
   return null;
 };
 
+// Mounted inside QueryClientProvider so the hook can access the client.
+import { useRealtimeStatusSync } from '@/hooks/useRealtimeStatusSync';
+const RealtimeStatusSync = () => {
+  useRealtimeStatusSync();
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -197,6 +204,7 @@ const App = () => (
         <CurrencyProvider>
         <TenantProvider>
           <RTLSync />
+          <RealtimeStatusSync />
           <a href="#main-content" className="skip-to-main">Skip to main content</a>
           <ScrollToTop />
           <ScreenProtection />
