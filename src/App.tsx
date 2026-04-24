@@ -1,6 +1,7 @@
 import React, { Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { logger } from '@/lib/logger';
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -173,8 +174,9 @@ const queryClient = new QueryClient({
 });
 
 const PageLoader = () => (
-  <div className="min-h-[50vh] flex items-center justify-center">
-    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+  <div className="min-h-[50vh] flex items-center justify-center" role="status" aria-live="polite" aria-label="Loading page">
+    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" aria-hidden="true" />
+    <span className="sr-only">Loading…</span>
   </div>
 );
 
@@ -196,6 +198,7 @@ const RealtimeStatusSync = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />}
     <TooltipProvider>
       <Toaster />
       <Sonner />
