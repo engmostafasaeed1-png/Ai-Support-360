@@ -12,6 +12,9 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { generateInvoicePdf } from '@/lib/invoicePdf';
 import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
+import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
+import { CurrencySelector } from '@/components/currency/CurrencySelector';
+import { useCurrency, formatMoney } from '@/contexts/CurrencyContext';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   completed: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
@@ -28,10 +31,22 @@ export default function PaymentsPage() {
   const [tab, setTab] = useState('all');
 
   const allPayments = payments || [];
-  const total = allPayments.reduce((a, p) => a + Number(p.amount), 0);
-  const pending = allPayments.filter((p) => p.status === 'pending').reduce((a, p) => a + Number(p.amount), 0);
-  const paid = allPayments.filter((p) => p.status === 'completed' || p.status === 'paid').reduce((a, p) => a + Number(p.amount), 0);
-  const totalVat = allPayments.reduce((a, p) => a + Number(p.vat || 0), 0);
+  const { preferred, convert, isLoading: ratesLoading } = useCurrency();
+  const sumConverted = (filterFn: (p: any) => boolean, field: 'amount' | 'vat' = 'amount') => {
+    let total = 0;
+    let allConverted = true;
+    for (const p of allPayments) {
+      if (!filterFn(p)) continue;
+      const v = Number((p as any)[field] || 0);
+      const c = convert(v, p.currency || 'USD');
+      if (c === null) { allConverted = false; continue; }
+      total += c;
+    }
+    return { total, allConverted };
+  };
+  const paidSum = sumConverted((p) => p.status === 'completed' || p.status === 'paid');
+  const pendingSum = sumConverted((p) => p.status === 'pending');
+  const vatSum = sumConverted(() => true, 'vat');
 
   const filtered = allPayments.filter(p => {
     const matchSearch = !search || 
@@ -61,18 +76,18 @@ export default function PaymentsPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Spent', value: formatCurrency(paid), icon: DollarSign, color: 'bg-accent/10 text-accent' },
-          { label: 'Pending', value: formatCurrency(pending), icon: Clock, color: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' },
-          { label: 'Total VAT', value: formatCurrency(totalVat), icon: FileText, color: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' },
-          { label: 'Transactions', value: allPayments.length.toString(), icon: CreditCard, color: 'bg-primary/10 text-primary' },
+          { label: 'Total Spent', value: formatMoney(paidSum.total, preferred), icon: DollarSign, color: 'bg-accent/10 text-accent', approx: !paidSum.allConverted },
+          { label: 'Pending', value: formatMoney(pendingSum.total, preferred), icon: Clock, color: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400', approx: !pendingSum.allConverted },
+          { label: 'Total VAT', value: formatMoney(vatSum.total, preferred), icon: FileText, color: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400', approx: !vatSum.allConverted },
+          { label: 'Transactions', value: allPayments.length.toString(), icon: CreditCard, color: 'bg-primary/10 text-primary', approx: false },
         ].map((k, i) => (
           <Card key={i} className="rounded-2xl border-border/50">
             <CardContent className="p-5">
               <div className={`w-10 h-10 rounded-xl ${k.color} flex items-center justify-center mb-3`}>
                 <k.icon className="w-5 h-5" />
               </div>
-              {isLoading ? <Skeleton className="h-7 w-20" /> : (
-                <div className="text-xl font-bold text-foreground">{k.value}</div>
+              {isLoading || ratesLoading ? <Skeleton className="h-7 w-20" /> : (
+                <div className="text-xl font-bold text-foreground">{k.approx ? '≈ ' : ''}{k.value}</div>
               )}
               <div className="text-xs text-muted-foreground mt-1">{k.label}</div>
             </CardContent>
@@ -86,13 +101,16 @@ export default function PaymentsPage() {
           <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Search by invoice, consultant, ticket..." value={search} onChange={e => setSearch(e.target.value)} className="ps-9 rounded-xl" />
         </div>
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="h-9">
-            <TabsTrigger value="all" className="text-xs">All ({allPayments.length})</TabsTrigger>
-            <TabsTrigger value="paid" className="text-xs">Paid</TabsTrigger>
-            <TabsTrigger value="pending" className="text-xs">Pending</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+          <Tabs value={tab} onValueChange={setTab}>
+            <TabsList className="h-9">
+              <TabsTrigger value="all" className="text-xs">All ({allPayments.length})</TabsTrigger>
+              <TabsTrigger value="paid" className="text-xs">Paid</TabsTrigger>
+              <TabsTrigger value="pending" className="text-xs">Pending</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <CurrencySelector />
+        </div>
       </div>
 
       {/* Payment List */}
@@ -169,9 +187,9 @@ export default function PaymentsPage() {
                     </div>
                     <div className="flex items-center gap-3 justify-between sm:justify-end shrink-0">
                       <div className="text-start sm:text-end">
-                        <p className="text-sm font-bold text-foreground">{formatCurrency(Number(payment.amount), payment.currency)}</p>
+                        <ConvertedAmount amount={Number(payment.amount)} currency={payment.currency} className="items-end text-sm font-bold text-foreground" />
                         {Number(payment.vat) > 0 && (
-                          <p className="text-[10px] text-muted-foreground">VAT: {formatCurrency(Number(payment.vat), payment.currency)}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">VAT: {formatCurrency(Number(payment.vat), payment.currency)}</p>
                         )}
                       </div>
                       <Button variant="ghost" size="icon" title="Download Invoice" className="shrink-0" onClick={e => { e.stopPropagation(); generateInvoicePdf(payment); }}>
@@ -204,9 +222,7 @@ export default function PaymentsPage() {
                   const Icon = sc.icon;
                   return <Badge className={`gap-1 ${sc.color}`}><Icon className="w-3.5 h-3.5" /> {sc.label}</Badge>;
                 })()}
-                <span className="text-lg font-bold text-foreground ml-auto">
-                  {formatCurrency(Number(selectedPayment.amount), selectedPayment.currency)}
-                </span>
+                <ConvertedAmount amount={Number(selectedPayment.amount)} currency={selectedPayment.currency} className="ml-auto items-end text-lg font-bold text-foreground" />
               </div>
 
               {/* Details Grid */}

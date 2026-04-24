@@ -25,6 +25,8 @@ import {
 import { generateInvoicePdf as buildInvoicePdf } from '@/lib/invoicePdf';
 import { Video, MessageSquare, Monitor, PlayCircle } from 'lucide-react';
 import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
+import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
+import { CurrencySelector } from '@/components/currency/CurrencySelector';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   completed: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
@@ -230,6 +232,7 @@ export default function InvoicesPage() {
               <SelectItem value="amount_asc">Lowest amount</SelectItem>
             </SelectContent>
           </Select>
+          <CurrencySelector />
         </div>
       </div>
 
@@ -294,8 +297,10 @@ export default function InvoicesPage() {
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-end">
-                        <p className="text-sm font-bold text-foreground">{fmt(Number(inv.amount), inv.currency)}</p>
-                        {Number(inv.vat) > 0 && <p className="text-[10px] text-muted-foreground">VAT: {fmt(Number(inv.vat), inv.currency)}</p>}
+                        <ConvertedAmount amount={Number(inv.amount)} currency={inv.currency} className="items-end text-sm font-bold text-foreground" />
+                        {Number(inv.vat) > 0 && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5">VAT: {fmt(Number(inv.vat), inv.currency)}</p>
+                        )}
                       </div>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" title="Preview PDF" onClick={e => { e.stopPropagation(); generateInvoicePdf(inv, true); }}>
@@ -329,7 +334,7 @@ export default function InvoicesPage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Badge className={`gap-1 ${sc.color}`}><Icon className="w-3.5 h-3.5" /> {sc.label}</Badge>
-                  <span className="text-lg font-bold text-foreground ml-auto">{fmt(Number(selected.amount), selected.currency)}</span>
+                  <ConvertedAmount amount={Number(selected.amount)} currency={selected.currency} className="ml-auto items-end text-lg font-bold text-foreground" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
