@@ -182,12 +182,32 @@ export default function InvoicesPage() {
     failed: all.filter((p: any) => p.status === 'failed').length,
   };
 
-  const generateInvoicePdf = (inv: any, preview = false) => {
-    if (preview) {
-      const url = buildInvoicePdf(inv, { preview: true });
-      if (typeof url === 'string') setPdfPreview(url);
-    } else {
-      buildInvoicePdf(inv);
+  const [failedDownloads, setFailedDownloads] = useState<Record<string, boolean>>({});
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+
+  const generateInvoicePdf = async (inv: any, preview = false) => {
+    setRetryingId(inv.id);
+    try {
+      if (preview) {
+        const url = buildInvoicePdf(inv, { preview: true });
+        if (typeof url !== 'string') throw new Error('Preview URL not produced');
+        setPdfPreview(url);
+      } else {
+        buildInvoicePdf(inv);
+      }
+      setFailedDownloads(prev => {
+        if (!prev[inv.id]) return prev;
+        const { [inv.id]: _, ...rest } = prev;
+        return rest;
+      });
+    } catch (err: any) {
+      setFailedDownloads(prev => ({ ...prev, [inv.id]: true }));
+      toast.error('Could not generate invoice PDF', {
+        description: err?.message || 'Something went wrong. Please retry.',
+        action: { label: 'Retry', onClick: () => generateInvoicePdf(inv, preview) },
+      });
+    } finally {
+      setRetryingId(null);
     }
   };
 
