@@ -1066,6 +1066,7 @@ function RecommendationCard({ rec, rank, navigate }: { rec: ConsultantRecommenda
             {rec.verification_status === 'verified' && (
               <BadgeCheck className="w-3.5 h-3.5 text-accent shrink-0" />
             )}
+            <TrustBadge badge={rec.ai_interview_badge} credits={rec.credibility_credits} />
           </div>
 
           {/* Match Score */}
