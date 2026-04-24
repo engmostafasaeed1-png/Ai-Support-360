@@ -227,14 +227,32 @@ export default function NotificationsPage() {
                   <Icon className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className={cn('text-sm', !n.is_read && 'font-semibold')}>{n.title}</p>
                     {!n.is_read && (
                       <Badge className="text-[9px] px-1.5 py-0">{t('notifications.new')}</Badge>
                     )}
+                    {(n as any).delivery_status === 'failed' && (
+                      <Badge variant="destructive" className="text-[9px] px-1.5 py-0 gap-1">
+                        <AlertTriangle className="w-2.5 h-2.5" /> Failed
+                      </Badge>
+                    )}
+                    {(n as any).delivery_status === 'pending' && (
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0">Pending</Badge>
+                    )}
+                    {((n as any).retry_count ?? 0) > 0 && (
+                      <span className="text-[9px] text-muted-foreground">
+                        {(n as any).retry_count} {((n as any).retry_count === 1) ? 'retry' : 'retries'}
+                      </span>
+                    )}
                   </div>
                   {n.body && (
                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.body}</p>
+                  )}
+                  {(n as any).delivery_status === 'failed' && (n as any).delivery_error && (
+                    <p className="text-[10px] text-destructive/80 mt-1 line-clamp-1" title={(n as any).delivery_error}>
+                      Error: {(n as any).delivery_error}
+                    </p>
                   )}
                   <p className="text-[10px] text-muted-foreground/60 mt-1">
                     {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale })}
