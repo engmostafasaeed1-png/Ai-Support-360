@@ -194,6 +194,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [interviewLang, setInterviewLang] = useState<'en' | 'fr' | 'ar' | 'es' | 'de' | 'ar-SA'>('en');
   const [conversationMode, setConversationMode] = useState(true);
   const [capturedFrames, setCapturedFrames] = useState(0);
+  const [interviewStarted, setInterviewStarted] = useState(false);
+  const [startedAt, setStartedAt] = useState<Date | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -503,7 +505,13 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
           } catch { buffer = line + '\n' + buffer; break; }
         }
       }
-      if (assistantText) speakText(assistantText);
+      if (assistantText) {
+        if (!interviewStarted) {
+          setInterviewStarted(true);
+          setStartedAt(new Date());
+        }
+        speakText(assistantText);
+      }
     } catch (err: any) {
       console.error('Stream error:', err);
       setError(err.message || 'Connection failed');
