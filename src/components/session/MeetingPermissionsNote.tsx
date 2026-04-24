@@ -334,7 +334,7 @@ function PermPill({
   icon: Icon,
   label,
 }: {
-  icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
 }) {
   return (
