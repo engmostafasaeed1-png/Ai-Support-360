@@ -1,0 +1,144 @@
+import { logger } from './logger';
+
+/**
+ * Buffered diagnostic log for CSP violations and meeting provider load errors.
+ * Stored in sessionStorage so it survives a tab reload but not across sessions.
+ * Use `getDiagnosticsBuffer()` to retrieve entries when filing a bug report.
+ */
+const BUFFER_KEY = '__diag_buffer_v1';
+const MAX_ENTRIES = 100;
+
+export interface DiagnosticEntry {
+  ts: string;
+  category: 'csp' | 'provider' | 'media';
+  level: 'info' | 'warn' | 'error';
+  message: string;
+  data?: Record<string, unknown>;
+}
+
+function readBuffer(): DiagnosticEntry[] {
+  try {
+    if (typeof sessionStorage === 'undefined') return [];
+    const raw = sessionStorage.getItem(BUFFER_KEY);
+    return raw ? (JSON.parse(raw) as DiagnosticEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeBuffer(entries: DiagnosticEntry[]) {
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    sessionStorage.setItem(BUFFER_KEY, JSON.stringify(entries.slice(-MAX_ENTRIES)));
+  } catch {
+    /* quota or disabled — ignore */
+  }
+}
+
+export function recordDiagnostic(entry: Omit<DiagnosticEntry, 'ts'>) {
+  const full: DiagnosticEntry = { ...entry, ts: new Date().toISOString() };
+  const buf = readBuffer();
+  buf.push(full);
+  writeBuffer(buf);
+
+  const tag = `[diag:${entry.category}]`;
+  const payload = { ...entry.data };
+  if (entry.level === 'error') logger.error(`${tag} ${entry.message}`, undefined, payload);
+  else if (entry.level === 'warn') logger.warn(`${tag} ${entry.message}`, payload);
+  else logger.info(`${tag} ${entry.message}`, payload);
+}
+
+export function getDiagnosticsBuffer(): DiagnosticEntry[] {
+  return readBuffer();
+}
+
+export function clearDiagnosticsBuffer() {
+  try {
+    sessionStorage.removeItem(BUFFER_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+let cspListenerAttached = false;
+
+/**
+ * Install a global listener for CSP violations and unhandled fetch/script errors
+ * that commonly stem from CSP / X-Frame-Options blocks for embedded providers.
+ *
+ * Safe to call multiple times — only attaches once.
+ */
+export function installCspViolationLogger() {
+  if (typeof document === 'undefined' || cspListenerAttached) return;
+  cspListenerAttached = true;
+
+  document.addEventListener('securitypolicyviolation', (e) => {
+    const evt = e as SecurityPolicyViolationEvent;
+    recordDiagnostic({
+      category: 'csp',
+      level: 'error',
+      message: `CSP violation: ${evt.violatedDirective} blocked ${evt.blockedURI || '<inline>'}`,
+      data: {
+        blockedURI: evt.blockedURI,
+        violatedDirective: evt.violatedDirective,
+        effectiveDirective: evt.effectiveDirective,
+        originalPolicy: evt.originalPolicy?.slice(0, 500),
+        documentURI: evt.documentURI,
+        sourceFile: evt.sourceFile,
+        lineNumber: evt.lineNumber,
+        columnNumber: evt.columnNumber,
+        statusCode: evt.statusCode,
+        sample: evt.sample,
+        disposition: evt.disposition,
+        referrer: evt.referrer,
+      },
+    });
+  });
+
+  // Iframe load errors (e.g., X-Frame-Options denial for Meet).
+  window.addEventListener(
+    'error',
+    (e) => {
+      const target = e.target as Element | null;
+      if (target && target.tagName === 'IFRAME') {
+        const src = (target as HTMLIFrameElement).src;
+        if (/meet\.google\.com|teams\.(microsoft|live)\.com|zoom\.us/i.test(src || '')) {
+          recordDiagnostic({
+            category: 'provider',
+            level: 'error',
+            message: `Iframe failed to load for provider URL`,
+            data: { src, tag: 'iframe', userAgent: navigator.userAgent },
+          });
+        }
+      }
+    },
+    true // capture phase: iframe error events don't bubble
+  );
+}
+
+/**
+ * Log a meeting-provider lifecycle event (open attempt, blocked popup, fast-close, success).
+ * Keeps a uniform shape so we can grep the diagnostics buffer.
+ */
+export function logProviderEvent(
+  event:
+    | 'open_attempt'
+    | 'opened'
+    | 'popup_blocked'
+    | 'invalid_url'
+    | 'fast_close'
+    | 'fallback_shown'
+    | 'fallback_selected'
+    | 'preflight_open'
+    | 'preflight_proceed'
+    | 'preflight_error',
+  data: Record<string, unknown>,
+  level: DiagnosticEntry['level'] = 'info'
+) {
+  recordDiagnostic({
+    category: event.startsWith('preflight') ? 'media' : 'provider',
+    level,
+    message: `provider:${event}`,
+    data: { ...data, userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined },
+  });
+}

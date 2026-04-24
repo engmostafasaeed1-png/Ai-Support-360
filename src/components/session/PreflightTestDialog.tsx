@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { logProviderEvent } from '@/lib/diagnostics';
 
 type Status = 'idle' | 'requesting' | 'ready' | 'error';
 
@@ -221,13 +222,25 @@ export default function PreflightTestDialog({
       }
 
       setStatus('ready');
-    } catch (err) {
-      setError(mapError(err));
+      logProviderEvent('preflight_open', {
+        hasVideo: videoTracks.length > 0,
+        hasAudio: audioTracks.length > 0,
+        cameraCount: cameras.length,
+        micCount: mics.length,
+      });
+    } catch (err: any) {
+      const mapped = mapError(err);
+      setError(mapped);
       setStatus('error');
+      logProviderEvent(
+        'preflight_error',
+        { code: mapped.code, message: mapped.message, name: err?.name },
+        'error'
+      );
       // Even on partial failure (e.g. only mic blocked), refresh device list.
       refreshDevices();
     }
-  }, [cameraId, micId, refreshDevices, stopStream]);
+  }, [cameraId, micId, refreshDevices, stopStream, cameras.length, mics.length]);
 
   // Auto-start when opened.
   useEffect(() => {
@@ -248,6 +261,7 @@ export default function PreflightTestDialog({
   }, [startTest]);
 
   const handleProceed = () => {
+    logProviderEvent('preflight_proceed', { hasVideo, hasAudio });
     stopStream();
     onOpenChange(false);
     onProceed();
