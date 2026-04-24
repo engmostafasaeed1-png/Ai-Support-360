@@ -177,12 +177,16 @@ export default function HowItWorksSection() {
               >
                 <AccordionTrigger className="text-left hover:no-underline py-5 [&>svg]:text-muted-foreground [&[data-state=open]>svg]:text-primary motion-safe:transition-colors">
                   <span className="flex items-center gap-4 min-w-0">
-                    {/* Mini step badge — same accent gradient as the matching card */}
+                    {/* Mini step badge — reuses the canonical iconPlate token
+                        (same gradient, radius, shadow, and motion as the step
+                        card above) so the FAQ row aligns visually with its
+                        matching tile. */}
                     <span
-                      className={`shrink-0 w-9 h-9 ${radius.icon} bg-gradient-to-br ${accents[s.accent].gradient} flex items-center justify-center ${shadow.rest}`}
+                      style={{ ['--glow' as string]: accents[s.accent].glow }}
+                      className={`shrink-0 ${iconPlate(s.accent, 'sm')} group-hover:shadow-[0_0_40px_-12px_rgba(var(--glow),0.55)] group-data-[state=open]:shadow-[0_0_40px_-12px_rgba(var(--glow),0.55)]`}
                       aria-hidden="true"
                     >
-                      <s.Icon size={16} strokeWidth={2} absoluteStrokeWidth className="text-white" />
+                      <s.Icon size={20} strokeWidth={1.75} absoluteStrokeWidth className="text-white" />
                     </span>
                     <span className="min-w-0">
                       <span className="block text-[10px] font-mono font-bold tracking-[0.2em] text-muted-foreground/80 mb-0.5">
