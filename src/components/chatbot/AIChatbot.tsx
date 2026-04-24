@@ -223,7 +223,7 @@ export default function AIChatbot() {
             <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.06] via-primary/[0.03] to-transparent" />
             {showHistory ? (
               <>
-                <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={() => setShowHistory(false)}>
+                <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={() => setShowHistory(false)} aria-label="Back to chat">
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
                 <h3 className="relative text-sm font-semibold text-foreground flex-1">{t('chatbot.history_title')}</h3>
@@ -245,17 +245,17 @@ export default function AIChatbot() {
             )}
             <div className="relative flex items-center gap-1">
               {!showHistory && userId && (
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowHistory(true)} title="Chat history">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowHistory(true)} title="Chat history" aria-label="Show chat history">
                   <History className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
               )}
               {!showHistory && messages.length > 0 && (
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={newChat} title="New chat">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={newChat} title="New chat" aria-label="Start a new chat">
                   <Plus className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
               )}
               {!showHistory && messages.length > 0 && (
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={clearChat} title="Clear chat">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={clearChat} title="Clear chat" aria-label="Clear current chat">
                   <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
                 </Button>
               )}
@@ -311,7 +311,7 @@ export default function AIChatbot() {
                           onBlur={() => { renameConversation(conv.id, editTitle); setEditingId(null); }}
                           onKeyDown={(e) => { if (e.key === 'Escape') setEditingId(null); }}
                         />
-                        <Button type="submit" variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                        <Button type="submit" variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Save title">
                           <Check className="w-3 h-3 text-primary" />
                         </Button>
                       </form>
@@ -322,12 +322,12 @@ export default function AIChatbot() {
                       </button>
                     )}
                     {editingId !== conv.id && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"
+                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Rename conversation"
                         onClick={(e) => { e.stopPropagation(); setEditingId(conv.id); setEditTitle(conv.title); }}>
                         <Pencil className="w-3 h-3 text-muted-foreground" />
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"
+                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Delete conversation"
                       onClick={(e) => { e.stopPropagation(); deleteConversation(conv.id); }}>
                       <Trash2 className="w-3 h-3 text-muted-foreground" />
                     </Button>
