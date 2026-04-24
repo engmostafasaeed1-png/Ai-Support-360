@@ -137,6 +137,14 @@ export default function SessionDetailPage() {
   const TypeIcon = typeIcons[session.session_type as keyof typeof typeIcons] || Video;
   const status = session.status || 'scheduled';
 
+  // Resolve the meeting URL once and auto-detect the provider so every
+  // sub-component (framed notice, validation, checklist, fallback dialog)
+  // shows consistent provider-specific troubleshooting copy.
+  const savedMeetingUrl = (session as any).meeting_url as string | null | undefined;
+  const jitsiFallbackUrl = `https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`;
+  const meetingUrl = savedMeetingUrl || jitsiFallbackUrl;
+  const meetingProvider = detectProvider(meetingUrl);
+
   return (
     <div className="space-y-6">
       <Button variant="ghost" size="sm" onClick={() => navigate('/client/sessions')} className="gap-1">
@@ -147,27 +155,13 @@ export default function SessionDetailPage() {
         <>
           <FramedAppNotice
             dismissKey={`framed-notice-dismissed:${sessionId}`}
-            meetingUrl={
-              (session as any).meeting_url ||
-              `https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`
-            }
+            meetingUrl={meetingUrl}
+            provider={meetingProvider}
           />
-          <MeetingUrlValidationNotice
-            url={
-              (session as any).meeting_url ||
-              `https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`
-            }
-            sessionId={sessionId}
-          />
+          <MeetingUrlValidationNotice url={meetingUrl} sessionId={sessionId} />
           <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
           <MeetingPermissionsNote dismissKey={`perm-note-dismissed:${sessionId}`} />
-          <PreJoinChecklist
-            url={
-              (session as any).meeting_url ||
-              `https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`
-            }
-            sessionId={sessionId}
-          />
+          <PreJoinChecklist url={meetingUrl} sessionId={sessionId} />
         </>
       )}
 
