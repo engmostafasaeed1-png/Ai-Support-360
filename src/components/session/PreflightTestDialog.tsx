@@ -261,6 +261,7 @@ export default function PreflightTestDialog({
   }, [startTest]);
 
   const handleProceed = () => {
+    logProviderEvent('preflight_proceed', { hasVideo, hasAudio });
     stopStream();
     onOpenChange(false);
     onProceed();
