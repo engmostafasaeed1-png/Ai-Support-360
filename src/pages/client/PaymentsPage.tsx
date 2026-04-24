@@ -11,6 +11,7 @@ import { Download, CreditCard, DollarSign, FileText, Clock, Search, ArrowRight, 
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { generateInvoicePdf } from '@/lib/invoicePdf';
+import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   completed: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
