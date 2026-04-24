@@ -218,12 +218,18 @@ export default function ClientSidebar() {
     <>
     <Sidebar collapsible="icon" className="border-e border-border/30">
       <SidebarContent className="bg-sidebar text-sidebar-foreground flex flex-col">
-        {/* Logo */}
-        <div className="p-3 flex items-center justify-center border-b border-sidebar-border/30">
-          <Link to="/" className="group">
-            <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
-              <img src={logo} alt="Logo" width={40} height={40} className="w-full h-full object-contain" />
+        {/* Logo banner */}
+        <div className={`bg-white border-b border-slate-200 shadow-sm ${collapsed ? 'p-3' : 'px-4 py-3'} flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
+          <Link to="/" className="group flex items-center gap-3 min-w-0">
+            <div className={`${collapsed ? 'w-10 h-10' : 'w-12 h-12'} rounded-xl overflow-hidden shrink-0 bg-white ring-1 ring-slate-200 shadow-sm group-hover:shadow-md transition-shadow flex items-center justify-center`}>
+              <img src={logo} alt="AI SAP Support Now" width={collapsed ? 40 : 48} height={collapsed ? 40 : 48} className="w-full h-full object-contain p-0.5" />
             </div>
+            {!collapsed && (
+              <div className="flex flex-col min-w-0">
+                <span className="text-[13px] font-bold text-slate-900 leading-tight truncate">AI SAP Support Now</span>
+                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Client Portal</span>
+              </div>
+            )}
           </Link>
         </div>
 
