@@ -81,10 +81,13 @@ export default function MeetingLinkButton({
   size = 'lg',
   className = 'gradient-primary border-0 gap-1.5',
   joinLabel,
+  requirePreflight = true,
 }: MeetingLinkButtonProps) {
   const { t } = useTranslation();
   const [fallbackOpen, setFallbackOpen] = useState(false);
   const [failedProvider, setFailedProvider] = useState<MeetingProvider>('unknown');
+  const [preflightOpen, setPreflightOpen] = useState(false);
+  const pendingOpenRef = useRef<{ url: string; provider: MeetingProvider } | null>(null);
   const watcherRef = useRef<number | null>(null);
 
   const target = url || fallbackUrl || '';
