@@ -90,6 +90,7 @@ export default function MeetingLinkButton({
   className = 'gradient-primary border-0 gap-1.5',
   joinLabel,
   requirePreflight = true,
+  sessionId,
 }: MeetingLinkButtonProps) {
   const { t } = useTranslation();
   const [fallbackOpen, setFallbackOpen] = useState(false);
@@ -97,6 +98,15 @@ export default function MeetingLinkButton({
   const [preflightOpen, setPreflightOpen] = useState(false);
   const pendingOpenRef = useRef<{ url: string; provider: MeetingProvider } | null>(null);
   const watcherRef = useRef<number | null>(null);
+
+  const buildHandoffUrl = useCallback(
+    (u: string) => {
+      if (!sessionId) return u;
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return `${origin}/join/${encodeURIComponent(sessionId)}?to=${encodeURIComponent(u)}`;
+    },
+    [sessionId]
+  );
 
   const target = url || fallbackUrl || '';
   const provider = detectProvider(target);
