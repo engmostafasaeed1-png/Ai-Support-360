@@ -457,9 +457,12 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     setIsSpeaking(true);
     lastSpokenRef.current = '';
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) { setError('Please sign in again.'); setIsStreaming(false); setIsSpeaking(false); return; }
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
         body: JSON.stringify({ interview_id: interviewId, messages: chatHistory, lang: interviewLang }),
       });
       if (!resp.ok || !resp.body) {
@@ -539,9 +542,12 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const analyzeBodyLanguage = async (): Promise<BodyLanguageResult | null> => {
     if (framesRef.current.length === 0) return null;
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) return null;
       const resp = await fetch(BODY_LANG_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
         body: JSON.stringify({ frames: framesRef.current }),
       });
       if (!resp.ok) return null;
@@ -565,11 +571,14 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     captureFrame();
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) throw new Error('Please sign in again.');
       // Run both evaluations in parallel
       const [evalResp, blResult] = await Promise.all([
         fetch(CHAT_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
           body: JSON.stringify({ interview_id: interviewId, messages, action: 'evaluate' }),
         }),
         analyzeBodyLanguage(),
