@@ -25,6 +25,9 @@ import {
   CheckCircle2,
   Loader2,
   RefreshCw,
+  Circle,
+  Square,
+  Play,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
