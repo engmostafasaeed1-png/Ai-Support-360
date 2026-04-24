@@ -452,6 +452,28 @@ export default function InvoicesPage() {
                           <Badge variant="secondary" className={`text-[10px] gap-1 ${sc.color}`}>
                             <StatusIcon className="w-3 h-3" /> {sc.label}
                           </Badge>
+                          {dueInfo && (
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] gap-1 ${
+                                dueInfo.overdue
+                                  ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-900/60'
+                                  : dueInfo.paid
+                                  ? 'bg-muted text-muted-foreground'
+                                  : dueInfo.dueSoon
+                                  ? 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-900/60'
+                                  : 'bg-muted/40 text-muted-foreground'
+                              }`}
+                              title={`Due ${dueInfo.label}`}
+                            >
+                              {dueInfo.overdue ? <AlertCircle className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
+                              {dueInfo.paid
+                                ? `Due ${dueInfo.label}`
+                                : dueInfo.overdue
+                                ? `Overdue · ${dueInfo.label}`
+                                : `${dueInfo.relative} · ${dueInfo.label}`}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           <span className="inline-flex items-center gap-1"><User className="w-3 h-3" /> {inv.consultant}</span>
