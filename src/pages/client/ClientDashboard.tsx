@@ -29,6 +29,7 @@ import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { Sparkline } from '@/components/ui/sparkline';
 import { StatusDot } from '@/components/ui/status-dot';
 import AIInsightsButton from '@/components/ai/AIInsightsButton';
+import { TrustBadge } from '@/components/consultant/TrustBadge';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
