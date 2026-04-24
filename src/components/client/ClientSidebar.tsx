@@ -182,7 +182,7 @@ export default function ClientSidebar() {
   const logout = useLogout();
   const { isGuest } = useGuestMode();
   const { tenant } = useTenant();
-  const { hiddenScreens, toggleScreen, resetAll, isVisible } = useScreenPreferences(allScreens);
+  const { hiddenScreens, toggleScreen, resetAll, isVisible, loading: prefsLoading } = useScreenPreferences(allScreens);
 
   const tier = tenant?.subscription_tier || 'basic';
   const TierIcon = tierIcons[tier] || Wand2;
