@@ -29,13 +29,23 @@ export function useChat({ sessionId, userId }: UseChatOptions) {
 
   // Load existing messages
   useEffect(() => {
+    let cancelled = false;
     const loadMessages = async () => {
       setIsLoading(true);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('messages')
         .select('*')
         .eq('session_id', sessionId)
         .order('created_at', { ascending: true });
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error('Failed to load messages:', error);
+        toast.error('Could not load chat history. Please refresh.');
+        setIsLoading(false);
+        return;
+      }
 
       if (data) {
         setMessages(data as unknown as ChatMessage[]);
@@ -44,6 +54,7 @@ export function useChat({ sessionId, userId }: UseChatOptions) {
     };
 
     loadMessages();
+    return () => { cancelled = true; };
   }, [sessionId]);
 
   // Subscribe to realtime messages + presence
