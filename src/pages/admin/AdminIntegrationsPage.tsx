@@ -27,9 +27,11 @@ export default function AdminIntegrationsPage() {
   const { data: integrations = [], isLoading: loadingIntegrations } = useQuery({
     queryKey: ['admin-integrations'],
     queryFn: async () => {
+      // Excludes secret columns (api_key_encrypted, webhook_secret) which
+      // have been REVOKEd from authenticated clients for security.
       const { data, error } = await supabase
         .from('integrations')
-        .select('*')
+        .select('id, client_id, platform, platform_url, external_project_id, sync_enabled, last_synced_at, status, settings, created_at, updated_at, tenant_id')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
