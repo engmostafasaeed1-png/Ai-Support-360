@@ -442,6 +442,15 @@ export default function SessionDetailPage() {
 
       <SessionFeedbackDialog sessionId={sessionId || null} open={showFeedback} onOpenChange={setShowFeedback} />
       <SessionSurveyDialog sessionId={sessionId || null} open={showSurvey} onOpenChange={setShowSurvey} />
+      {sessionId && session.consultant_id && (
+        <RateSessionDialog
+          sessionId={sessionId}
+          consultantId={session.consultant_id}
+          consultantName={(session as any).consultant_name}
+          open={showRate}
+          onOpenChange={setShowRate}
+        />
+      )}
       {showCsat && session?.consultants && (
         <RequestSatisfactionDialog
           open={showCsat}
