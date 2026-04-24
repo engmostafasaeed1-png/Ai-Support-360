@@ -81,6 +81,7 @@ const navGroups = [
     fallback: 'Overview',
     items: [
       { key: 'dashboard', icon: Gauge, path: '/client', required: true },
+      { key: 'timeline', icon: Activity, path: '/client/timeline' },
       { key: 'new_request', icon: Zap, path: '/client/new-request', accent: true },
     ],
   },
