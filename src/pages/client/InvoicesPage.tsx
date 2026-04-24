@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import {
   FileText, Download, Search, Calendar, User, DollarSign, Ticket,
   ArrowRight, CheckCircle2, Clock, XCircle, AlertCircle, ReceiptText,
-  CreditCard, Eye, Printer, Plus, Pencil, ArrowUpDown, RefreshCw,
+  CreditCard, Eye, Printer, Plus, Pencil, ArrowUpDown, RefreshCw, PanelRightOpen,
 } from 'lucide-react';
 import { generateInvoicePdf as buildInvoicePdf } from '@/lib/invoicePdf';
 import { Video, MessageSquare, Monitor, PlayCircle, Phone, HelpCircle } from 'lucide-react';
