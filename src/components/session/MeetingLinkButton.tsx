@@ -11,6 +11,7 @@ import {
 import { ExternalLink, Play, Video, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import PreflightTestDialog from './PreflightTestDialog';
 
 export type MeetingProvider = 'meet' | 'jitsi' | 'zoom' | 'teams' | 'unknown';
 
@@ -55,6 +56,8 @@ interface MeetingLinkButtonProps {
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
   joinLabel?: string;
+  /** Show the camera/mic preflight test before opening the meeting URL. Default true. */
+  requirePreflight?: boolean;
 }
 
 /**
@@ -78,10 +81,13 @@ export default function MeetingLinkButton({
   size = 'lg',
   className = 'gradient-primary border-0 gap-1.5',
   joinLabel,
+  requirePreflight = true,
 }: MeetingLinkButtonProps) {
   const { t } = useTranslation();
   const [fallbackOpen, setFallbackOpen] = useState(false);
   const [failedProvider, setFailedProvider] = useState<MeetingProvider>('unknown');
+  const [preflightOpen, setPreflightOpen] = useState(false);
+  const pendingOpenRef = useRef<{ url: string; provider: MeetingProvider } | null>(null);
   const watcherRef = useRef<number | null>(null);
 
   const target = url || fallbackUrl || '';
@@ -191,6 +197,15 @@ export default function MeetingLinkButton({
     [t, triggerFallback]
   );
 
+  const startOpen = (u: string, p: MeetingProvider) => {
+    if (requirePreflight) {
+      pendingOpenRef.current = { url: u, provider: p };
+      setPreflightOpen(true);
+    } else {
+      openUrl(u, p);
+    }
+  };
+
   const handleOpen = () => {
     if (!target) {
       triggerFallback(
@@ -201,7 +216,13 @@ export default function MeetingLinkButton({
       );
       return;
     }
-    openUrl(target, provider);
+    startOpen(target, provider);
+  };
+
+  const handlePreflightProceed = () => {
+    const pending = pendingOpenRef.current;
+    pendingOpenRef.current = null;
+    if (pending) openUrl(pending.url, pending.provider);
   };
 
   const fallbackList = buildAlternatives(target);
@@ -264,7 +285,7 @@ export default function MeetingLinkButton({
                   className="justify-between gap-2"
                   onClick={() => {
                     setFallbackOpen(false);
-                    openUrl(alt.url, alt.provider);
+                    startOpen(alt.url, alt.provider);
                   }}
                 >
                   <span className="flex items-center gap-2">
@@ -284,6 +305,16 @@ export default function MeetingLinkButton({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PreflightTestDialog
+        open={preflightOpen}
+        onOpenChange={(o) => {
+          setPreflightOpen(o);
+          if (!o) pendingOpenRef.current = null;
+        }}
+        onProceed={handlePreflightProceed}
+        joinLabel={joinLabel ?? t('session_detail.join_session')}
+      />
     </>
   );
 }
