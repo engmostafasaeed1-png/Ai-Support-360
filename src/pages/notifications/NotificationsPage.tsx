@@ -3,7 +3,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
-import { Bell, Check, CheckCheck, Trash2, MessageSquare, Ticket, CreditCard, UserCheck, Info, X } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, MessageSquare, Ticket, CreditCard, UserCheck, Info, X, AlertTriangle, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const typeIcons: Record<string, typeof Bell> = {
   message: MessageSquare,
@@ -83,6 +84,21 @@ export default function NotificationsPage() {
       exitSelectMode();
     } catch (e: any) {
       toast.error(e?.message || 'Failed to mark notifications as read');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleRetry = async (id: string) => {
+    setBusy(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)('retry_failed_notification', { _id: id });
+      if (error) throw error;
+      const status = (data as any)?.delivery_status;
+      if (status === 'delivered') toast.success('Notification re-delivered');
+      else toast.error('Retry failed — please try again');
+    } catch (e: any) {
+      toast.error(e?.message || 'Retry failed');
     } finally {
       setBusy(false);
     }
@@ -211,14 +227,32 @@ export default function NotificationsPage() {
                   <Icon className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className={cn('text-sm', !n.is_read && 'font-semibold')}>{n.title}</p>
                     {!n.is_read && (
                       <Badge className="text-[9px] px-1.5 py-0">{t('notifications.new')}</Badge>
                     )}
+                    {(n as any).delivery_status === 'failed' && (
+                      <Badge variant="destructive" className="text-[9px] px-1.5 py-0 gap-1">
+                        <AlertTriangle className="w-2.5 h-2.5" /> Failed
+                      </Badge>
+                    )}
+                    {(n as any).delivery_status === 'pending' && (
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0">Pending</Badge>
+                    )}
+                    {((n as any).retry_count ?? 0) > 0 && (
+                      <span className="text-[9px] text-muted-foreground">
+                        {(n as any).retry_count} {((n as any).retry_count === 1) ? 'retry' : 'retries'}
+                      </span>
+                    )}
                   </div>
                   {n.body && (
                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.body}</p>
+                  )}
+                  {(n as any).delivery_status === 'failed' && (n as any).delivery_error && (
+                    <p className="text-[10px] text-destructive/80 mt-1 line-clamp-1" title={(n as any).delivery_error}>
+                      Error: {(n as any).delivery_error}
+                    </p>
                   )}
                   <p className="text-[10px] text-muted-foreground/60 mt-1">
                     {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale })}
@@ -226,6 +260,21 @@ export default function NotificationsPage() {
                 </div>
                 {!selectMode && (
                   <div className="flex items-center gap-1 shrink-0">
+                    {(n as any).delivery_status === 'failed' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        title="Retry delivery"
+                        disabled={busy}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRetry(n.id);
+                        }}
+                      >
+                        <RotateCw className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                     {!n.is_read && (
                       <Button
                         variant="ghost"
