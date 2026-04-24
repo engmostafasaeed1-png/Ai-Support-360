@@ -228,7 +228,7 @@ async function execTool(
     const { data: playbooks } = await pq;
 
     // Trim long content so we don't blow the model context
-    const trimmedArticles = (articles ?? []).map(a => ({
+    const trimmedArticles = (articles ?? []).map((a: { content?: string | null; [k: string]: unknown }) => ({
       ...a,
       content: typeof a.content === "string" && a.content.length > 800
         ? a.content.slice(0, 800) + "…"
