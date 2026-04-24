@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useQuery } from '@tanstack/react-query';
 import { useRealtimeConsultants, type ConsultantLive } from '@/hooks/useRealtimeConsultants';
 import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
+import { TrustBadge } from '@/components/consultant/TrustBadge';
 import VoiceInput from '@/components/ui/voice-input';
 
 const ticketSchema = z.object({
@@ -75,6 +76,8 @@ interface ConsultantRecommendation {
   languages: string[];
   verification_status: string;
   top_skills: string[];
+  credibility_credits?: number;
+  ai_interview_badge?: string | null;
 }
 
 interface AiMatchConsultants {
@@ -976,6 +979,7 @@ export default function NewRequestPage() {
                                 )}
                               </div>
                               <p className="text-xs text-muted-foreground">{c.specialty} · {c.city}</p>
+                              <TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} className="mt-1" />
                             </div>
                             <div className="text-end shrink-0">
                               <div className="flex items-center gap-1">
@@ -1062,6 +1066,7 @@ function RecommendationCard({ rec, rank, navigate }: { rec: ConsultantRecommenda
             {rec.verification_status === 'verified' && (
               <BadgeCheck className="w-3.5 h-3.5 text-accent shrink-0" />
             )}
+            <TrustBadge badge={rec.ai_interview_badge} credits={rec.credibility_credits} />
           </div>
 
           {/* Match Score */}

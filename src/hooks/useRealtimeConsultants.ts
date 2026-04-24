@@ -23,6 +23,8 @@ export interface ConsultantLive {
   languages: string[];
   response_time_minutes: number;
   verification_status: string;
+  credibility_credits?: number;
+  ai_interview_badge?: string | null;
 }
 
 export function useRealtimeConsultants() {
@@ -47,7 +49,7 @@ export function useRealtimeConsultants() {
       // Fetch all consultants with their skills
       const { data: consultantRows, error } = await supabase
         .from('consultants')
-        .select('id, user_id, bio, hourly_rate, currency, timezone, languages, industries, verification_status, rating, total_reviews, response_time_minutes, availability_status, location, credly_username')
+        .select('id, user_id, bio, hourly_rate, currency, timezone, languages, industries, verification_status, rating, total_reviews, response_time_minutes, availability_status, location, credly_username, credibility_credits, ai_interview_badge')
         .order('rating', { ascending: false });
 
       if (error) throw error;
@@ -110,15 +112,19 @@ export function useRealtimeConsultants() {
           languages: c.languages || ['en'],
           response_time_minutes: c.response_time_minutes || 0,
           verification_status: c.verification_status || 'pending',
+          credibility_credits: (c as any).credibility_credits || 0,
+          ai_interview_badge: (c as any).ai_interview_badge || null,
         };
       });
     },
     enabled: !isGuest,
-    placeholderData: isGuest ? mockRecommendedConsultants.map(c => ({
+    placeholderData: isGuest ? mockRecommendedConsultants.map((c, i) => ({
       ...c,
       languages: ['en'],
       response_time_minutes: 15,
       verification_status: 'verified',
+      credibility_credits: [250, 175, 100, 75, 50, 0][i % 6],
+      ai_interview_badge: ['Gold', 'Silver', 'Bronze', 'Verified', 'Verified', null][i % 6],
     })) : undefined,
   });
 

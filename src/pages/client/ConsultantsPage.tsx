@@ -20,6 +20,7 @@ import ConsultantMap from '@/components/client/ConsultantMap';
 import BookingModal from '@/components/client/BookingModal';
 import { sapModules } from '@/data/clientMockData';
 import VerificationBadge from '@/components/consultant/VerificationBadge';
+import { TrustBadge } from '@/components/consultant/TrustBadge';
 
 const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
   verified: { icon: BadgeCheck, color: 'text-accent' },
@@ -399,6 +400,7 @@ export default function ConsultantsPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
                     <p className="text-[11px] text-muted-foreground truncate">{c.specialty}</p>
+                    <TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} className="mt-1" />
                   </div>
                   <div className="text-end shrink-0">
                     <p className="text-sm font-bold text-foreground">${c.rate}</p>
@@ -478,6 +480,7 @@ export default function ConsultantsPage() {
                       })}
                       {/* Verification Status Badge */}
                       <VerificationBadge status={c.verification_status as any} />
+                      <TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} />
 
                     </div>
 

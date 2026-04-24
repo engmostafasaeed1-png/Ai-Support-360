@@ -29,6 +29,7 @@ import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { Sparkline } from '@/components/ui/sparkline';
 import { StatusDot } from '@/components/ui/status-dot';
 import AIInsightsButton from '@/components/ai/AIInsightsButton';
+import { TrustBadge } from '@/components/consultant/TrustBadge';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -91,6 +92,7 @@ export default function ClientDashboard() {
     realtimeConsultants.length > 0 ? realtimeConsultants.slice(0, 6).map(c => ({
       ...c, avatar: c.name.split(' ').map(w => w[0]).join('').slice(0, 2),
       reviews: c.reviews || 0, badges: c.badges || [], credly_username: c.credly_username,
+      credibility_credits: c.credibility_credits, ai_interview_badge: c.ai_interview_badge,
     })) : mockRecommendedConsultants
   ), [realtimeConsultants, isGuest]);
 
@@ -499,6 +501,7 @@ export default function ClientDashboard() {
                     );
                   })}
                 </div>
+                <TrustBadge badge={(c as any).ai_interview_badge} credits={(c as any).credibility_credits} className="mb-2" />
 
                 <div className="mt-auto flex items-center justify-between pt-2 border-t border-border/30">
                   <div>
