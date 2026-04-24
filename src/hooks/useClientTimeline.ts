@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface TimelineTicket {
   id: string;
   title: string;
-  status: string;
+  status: string | null;
   urgency: string | null;
   sap_module: string;
   created_at: string;
