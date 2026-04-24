@@ -121,7 +121,8 @@ export default function VMwareSettingsForm({
       setHypervisorType((settings as any).hypervisor_type || 'esxi');
       setVcenterUrl(settings.vcenter_url || '');
       setVcenterUsername(settings.vcenter_username || '');
-      setVcenterPassword(settings.vcenter_password_encrypted || '');
+      // Password is stored encrypted; user must re-enter to change it.
+      setVcenterPassword('');
       setDatacenter(settings.datacenter || '');
       setCluster(settings.cluster || '');
       setResourcePool(settings.resource_pool || '');
