@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Star, ThumbsUp } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Star, ThumbsUp, CheckCircle2, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 interface Props {
   sessionId: string;
@@ -54,14 +56,48 @@ export default function RateSessionDialog({
     }
   }, [open]);
 
+  // Look up an existing rating from the current user for this session
+  const existing = useQuery({
+    queryKey: ['session-rating', sessionId],
+    enabled: open && !!sessionId,
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('ratings')
+        .select('id, score, comment, is_anonymous, created_at')
+        .eq('session_id', sessionId)
+        .eq('client_id', user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const submit = useMutation({
     mutationFn: async () => {
+      // Defensive guard: prevent a second rating for the same session
+      if (existing.data) {
+        throw new Error('You have already rated this session.');
+      }
+
       const parsed = ratingSchema.safeParse({ score, comment, is_anonymous: anonymous });
       if (!parsed.success) {
         throw new Error(parsed.error.errors[0]?.message || 'Invalid input');
       }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+
+      // Re-check inside the transaction window to avoid races
+      const { data: dup } = await supabase
+        .from('ratings')
+        .select('id')
+        .eq('session_id', sessionId)
+        .eq('client_id', user.id)
+        .maybeSingle();
+      if (dup) {
+        throw new Error('A rating for this session already exists.');
+      }
 
       const { error } = await supabase.from('ratings').insert({
         session_id: sessionId,
@@ -71,17 +107,28 @@ export default function RateSessionDialog({
         comment: parsed.data.comment || null,
         is_anonymous: parsed.data.is_anonymous,
       });
-      if (error) throw error;
+      if (error) {
+        // Handle unique constraint violations gracefully
+        if ((error as any).code === '23505') {
+          throw new Error('You have already rated this session.');
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       toast.success('Thanks for your feedback!');
       queryClient.invalidateQueries({ queryKey: ['session-rating', sessionId] });
       onOpenChange(false);
     },
-    onError: (e: any) => toast.error(e.message || 'Failed to submit rating'),
+    onError: (e: any) => {
+      toast.error(e.message || 'Failed to submit rating');
+      // Refresh in case the rating exists server-side
+      queryClient.invalidateQueries({ queryKey: ['session-rating', sessionId] });
+    },
   });
 
   const display = hover || score;
+  const alreadyRated = !!existing.data;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -89,80 +136,134 @@ export default function RateSessionDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ThumbsUp className="w-5 h-5 text-primary" />
-            Rate your session
+            {alreadyRated ? 'Your session rating' : 'Rate your session'}
           </DialogTitle>
           <DialogDescription>
-            How was your experience{consultantName ? ` with ${consultantName}` : ''}? Your feedback
-            helps consultants improve.
+            {alreadyRated
+              ? `You've already submitted a rating${consultantName ? ` for ${consultantName}` : ''}. Each session can only be rated once.`
+              : `How was your experience${consultantName ? ` with ${consultantName}` : ''}? Your feedback helps consultants improve.`}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 py-2">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Overall rating</Label>
-            <div className="flex items-center gap-1.5">
-              {[1, 2, 3, 4, 5].map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  aria-label={`${v} star${v > 1 ? 's' : ''}`}
-                  onMouseEnter={() => setHover(v)}
-                  onMouseLeave={() => setHover(0)}
-                  onClick={() => setScore(v)}
-                  className="p-1 rounded-md hover:bg-muted transition-colors"
-                >
+        {existing.isLoading ? (
+          <div className="space-y-3 py-4">
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        ) : alreadyRated ? (
+          <div className="space-y-4 py-2">
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+                <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+                  Submitted {existing.data?.created_at ? format(new Date(existing.data.created_at), 'MMM d, yyyy · h:mm a') : ''}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {[1, 2, 3, 4, 5].map((v) => (
                   <Star
-                    className={`w-7 h-7 transition-colors ${
-                      v <= display
+                    key={v}
+                    className={`w-6 h-6 ${
+                      v <= (existing.data?.score || 0)
                         ? 'fill-yellow-400 text-yellow-400'
-                        : 'text-muted-foreground/40'
+                        : 'text-muted-foreground/30'
                     }`}
                   />
-                </button>
-              ))}
-              {display > 0 && (
-                <span className="ms-2 text-sm font-medium text-muted-foreground">
-                  {SCORE_LABELS[display]}
+                ))}
+                <span className="ms-2 text-sm font-medium text-foreground">
+                  {SCORE_LABELS[existing.data?.score || 0]}
                 </span>
+              </div>
+
+              {existing.data?.comment ? (
+                <div>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase mb-1">Your feedback</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{existing.data.comment}</p>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">No written feedback provided.</p>
+              )}
+
+              {existing.data?.is_anonymous && (
+                <p className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> Submitted anonymously
+                </p>
               )}
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="rating-comment" className="text-sm font-medium">
-              Detailed feedback <span className="text-muted-foreground font-normal">(optional)</span>
-            </Label>
-            <Textarea
-              id="rating-comment"
-              placeholder="What went well? What could be improved?"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              maxLength={1000}
-              className="min-h-[100px]"
-            />
-            <p className="text-[11px] text-muted-foreground text-end">{comment.length}/1000</p>
-          </div>
-
-          <div className="flex items-center justify-between rounded-xl border border-border/50 p-3">
-            <div>
-              <Label htmlFor="rating-anon" className="text-sm font-medium">Submit anonymously</Label>
-              <p className="text-xs text-muted-foreground">Your name won't be shown publicly.</p>
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
             </div>
-            <Switch id="rating-anon" checked={anonymous} onCheckedChange={setAnonymous} />
           </div>
+        ) : (
+          <div className="space-y-5 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Overall rating</Label>
+              <div className="flex items-center gap-1.5">
+                {[1, 2, 3, 4, 5].map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    aria-label={`${v} star${v > 1 ? 's' : ''}`}
+                    onMouseEnter={() => setHover(v)}
+                    onMouseLeave={() => setHover(0)}
+                    onClick={() => setScore(v)}
+                    className="p-1 rounded-md hover:bg-muted transition-colors"
+                  >
+                    <Star
+                      className={`w-7 h-7 transition-colors ${
+                        v <= display
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-muted-foreground/40'
+                      }`}
+                    />
+                  </button>
+                ))}
+                {display > 0 && (
+                  <span className="ms-2 text-sm font-medium text-muted-foreground">
+                    {SCORE_LABELS[display]}
+                  </span>
+                )}
+              </div>
+            </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submit.isPending}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => submit.mutate()}
-              disabled={submit.isPending || score === 0}
-            >
-              {submit.isPending ? 'Submitting...' : 'Submit Rating'}
-            </Button>
+            <div className="space-y-2">
+              <Label htmlFor="rating-comment" className="text-sm font-medium">
+                Detailed feedback <span className="text-muted-foreground font-normal">(optional)</span>
+              </Label>
+              <Textarea
+                id="rating-comment"
+                placeholder="What went well? What could be improved?"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                maxLength={1000}
+                className="min-h-[100px]"
+              />
+              <p className="text-[11px] text-muted-foreground text-end">{comment.length}/1000</p>
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl border border-border/50 p-3">
+              <div>
+                <Label htmlFor="rating-anon" className="text-sm font-medium">Submit anonymously</Label>
+                <p className="text-xs text-muted-foreground">Your name won't be shown publicly.</p>
+              </div>
+              <Switch id="rating-anon" checked={anonymous} onCheckedChange={setAnonymous} />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submit.isPending}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => submit.mutate()}
+                disabled={submit.isPending || score === 0}
+              >
+                {submit.isPending ? 'Submitting...' : 'Submit Rating'}
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
