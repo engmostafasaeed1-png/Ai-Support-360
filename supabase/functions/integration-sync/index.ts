@@ -198,6 +198,28 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Require authenticated user
+    const authHeader = req.headers.get("Authorization") || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+    const token = authHeader.slice(7);
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+    const { data: userData, error: authError } = await supabaseAuth.auth.getUser(token);
+    if (authError || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+    const authUserId = userData.user.id;
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body: SyncRequest = await req.json();
 
@@ -218,6 +240,21 @@ Deno.serve(async (req) => {
     if (intError || !integration) {
       return new Response(JSON.stringify({ error: "Integration not found" }), {
         status: 404,
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+
+    // Verify the authenticated user owns this integration (or is an admin)
+    const { data: isAdmin } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", authUserId)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (integration.client_id !== authUserId && !isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
         headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
