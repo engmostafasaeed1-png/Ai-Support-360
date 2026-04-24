@@ -157,6 +157,7 @@ export default function SessionDetailPage() {
             dismissKey={`framed-notice-dismissed:${sessionId}`}
             meetingUrl={meetingUrl}
             provider={meetingProvider}
+            sessionId={sessionId}
           />
           <MeetingUrlValidationNotice url={meetingUrl} sessionId={sessionId} />
           <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
