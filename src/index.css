@@ -402,33 +402,29 @@ textarea:focus-visible {
     padding-bottom: calc(4rem + env(safe-area-inset-bottom));
   }
 
-  /* Minimum tap target for interactive elements.
-     Use an invisible ::after overlay so we expand the *hit area* to 40px
-     without changing the visual size of dense icon buttons (h-6/h-7 etc).
-     Skipped inside tables, lists with many siblings, and shadcn input groups
-     where buttons intentionally match input height. */
-  button, a[role="button"], [role="tab"], a.btn {
-    position: relative;
+  /* Minimum tap target on mobile.
+     iOS HIG = 44px, Material = 48px. We use 40px as a balance for our dense UI.
+     We only enforce this on standalone interactive elements; buttons inside
+     tables, action toolbars (groups of >=2 small buttons), and form input
+     groups keep their dense sizing because expanding them would break layout
+     or cause overlapping hit areas. */
+  button:not(.dense),
+  a[role="button"]:not(.dense),
+  [role="tab"] {
+    min-height: 40px;
+    min-width: 40px;
   }
-  button::after,
-  a[role="button"]::after,
-  [role="tab"]::after {
-    content: "";
-    position: absolute;
-    inset: 50% 50%;
-    width: 40px;
-    height: 40px;
-    transform: translate(-50%, -50%);
-    pointer-events: auto;
-    /* Only extend hit area, never visible */
-    background: transparent;
-  }
-  /* Don't expand hit areas inside dense surfaces where they would overlap */
-  td button::after, th button::after,
-  [role="row"] button::after,
-  [role="combobox"] button::after,
-  [data-radix-popper-content-wrapper] button::after,
-  .no-tap-expand button::after {
-    display: none;
+  /* Exempt dense surfaces where compact sizing is intentional */
+  td button, th button, tr button,
+  [role="row"] button,
+  [role="combobox"] button,
+  [data-radix-popper-content-wrapper] button,
+  .flex.gap-1 > button, .flex.gap-0 > button,
+  .no-tap-expand button,
+  /* shadcn input/sidebar trigger groups */
+  .relative > button.absolute,
+  [data-sidebar] button {
+    min-height: 0;
+    min-width: 0;
   }
 }
