@@ -7,9 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useClientPayments } from '@/hooks/useClientPayments';
-import { Download, CreditCard, DollarSign, FileText, Clock, Search, ArrowRight, Ticket, AlertCircle, CheckCircle2, XCircle, ReceiptText, Calendar, User, Tag } from 'lucide-react';
+import { Download, CreditCard, DollarSign, FileText, Clock, Search, ArrowRight, Ticket, AlertCircle, CheckCircle2, XCircle, ReceiptText, Calendar, User, Tag, Video, MessageSquare, Monitor, PlayCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { generateInvoicePdf } from '@/lib/invoicePdf';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   completed: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
@@ -144,6 +145,22 @@ export default function PaymentsPage() {
                             )}
                           </div>
                         )}
+                        {payment.session_id && (
+                          <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                            <SessionTypeIcon type={payment.session_type} className="w-3 h-3 text-blue-600" />
+                            <span className="text-xs text-blue-600 font-medium capitalize">
+                              {(payment.session_type || 'session').toString().replace(/_/g, ' ')} session
+                            </span>
+                            {payment.session_status && (
+                              <Badge variant="outline" className="text-[9px] capitalize">{payment.session_status}</Badge>
+                            )}
+                            {payment.session_scheduled_at && (
+                              <span className="text-[10px] text-muted-foreground">
+                                · {format(new Date(payment.session_scheduled_at), 'MMM d, h:mm a')}
+                              </span>
+                            )}
+                          </div>
+                        )}
                         {payment.description && (
                           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{payment.description}</p>
                         )}
@@ -156,7 +173,7 @@ export default function PaymentsPage() {
                           <p className="text-[10px] text-muted-foreground">VAT: {formatCurrency(Number(payment.vat), payment.currency)}</p>
                         )}
                       </div>
-                      <Button variant="ghost" size="icon" title="Download Invoice" className="shrink-0" onClick={e => { e.stopPropagation(); }}>
+                      <Button variant="ghost" size="icon" title="Download Invoice" className="shrink-0" onClick={e => { e.stopPropagation(); generateInvoicePdf(payment); }}>
                         <Download className="w-4 h-4" />
                       </Button>
                     </div>
