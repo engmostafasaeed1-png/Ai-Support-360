@@ -5,7 +5,7 @@ import {
   Database, ShoppingCart, Coins, Factory, Layers,
   LayoutGrid, CloudCog, UsersRound, PackageSearch, BarChart3, Braces,
   ShieldCheck, Container, Route, Cable, ArrowLeftRight, LifeBuoy, Compass, Wrench,
-  Fuel, Landmark, ShoppingBag, HeartPulse, Building2, RadioTower, TruckElectric,
+  Fuel, Landmark, ShoppingBag, HeartPulse, Building2, RadioTower, Truck,
   ServerCog, Sparkles, ArrowUpRight,
 } from 'lucide-react';
 
@@ -56,7 +56,7 @@ const industries: { key: string; icon: any; desc: string; count: string; tone: T
   { key: 'manufacturing', icon: Factory,         desc: 'explore.ind_manufacturing_desc', count: 'explore.ind_manufacturing_count', tone: 'orange' },
   { key: 'government',    icon: Building2,       desc: 'explore.ind_government_desc',    count: 'explore.ind_government_count',    tone: 'indigo' },
   { key: 'telecom',       icon: RadioTower,      desc: 'explore.ind_telecom_desc',       count: 'explore.ind_telecom_count',       tone: 'violet' },
-  { key: 'logistics',     icon: TruckElectric,   desc: 'explore.ind_logistics_desc',     count: 'explore.ind_logistics_count',     tone: 'lime' },
+  { key: 'logistics',     icon: Truck,           desc: 'explore.ind_logistics_desc',     count: 'explore.ind_logistics_count',     tone: 'lime' },
 ];
 
 export default function ExploreServicesSection() {
