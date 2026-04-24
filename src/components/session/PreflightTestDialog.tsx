@@ -555,6 +555,104 @@ export default function PreflightTestDialog({
             />
           </div>
 
+          {/* One-click recording preview */}
+          {status === 'ready' && (hasVideo || hasAudio) && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+              <div className="flex items-start justify-between gap-3">
+                <div className="text-sm">
+                  <p className="font-medium text-foreground">
+                    {t('preflight.record_title', {
+                      defaultValue: 'Record a {{seconds}}-second preview',
+                      seconds: RECORD_DURATION,
+                    })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t('preflight.record_desc', {
+                      defaultValue:
+                        'Confirms your selected camera and microphone actually capture before you join.',
+                    })}
+                  </p>
+                </div>
+                {!recording && !recordingUrl && (
+                  <Button size="sm" onClick={startRecording}>
+                    <Circle className="w-3.5 h-3.5 mr-1.5 fill-current text-destructive" aria-hidden="true" />
+                    {t('preflight.record_cta', { defaultValue: 'Record preview' })}
+                  </Button>
+                )}
+                {recording && (
+                  <Button size="sm" variant="secondary" onClick={stopRecording}>
+                    <Square className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                    {t('preflight.stop_cta', {
+                      defaultValue: 'Stop ({{remaining}}s)',
+                      remaining: Math.max(0, RECORD_DURATION - recordSeconds),
+                    })}
+                  </Button>
+                )}
+              </div>
+
+              {recording && (
+                <div
+                  className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={RECORD_DURATION}
+                  aria-valuenow={recordSeconds}
+                >
+                  <div
+                    className="h-full bg-destructive transition-[width] duration-300"
+                    style={{ width: `${(recordSeconds / RECORD_DURATION) * 100}%` }}
+                  />
+                </div>
+              )}
+
+              {recordingUrl && !recording && (
+                <div className="space-y-2">
+                  <video
+                    ref={playbackRef}
+                    src={recordingUrl}
+                    controls
+                    playsInline
+                    className="w-full rounded-md bg-background"
+                    aria-label={t('preflight.playback', { defaultValue: 'Recorded preview playback' })}
+                  />
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+                      <Play className="w-3.5 h-3.5" aria-hidden="true" />
+                      {t('preflight.record_playback_hint', {
+                        defaultValue: 'Play back to confirm video and audio are working.',
+                      })}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="ghost" onClick={startRecording}>
+                        <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                        {t('preflight.record_again', { defaultValue: 'Record again' })}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={recordConfirmed ? 'secondary' : 'default'}
+                        onClick={() => {
+                          setRecordConfirmed(true);
+                          logProviderEvent('preflight_proceed', {
+                            stage: 'record_confirmed',
+                            cameraId,
+                            micId,
+                          });
+                        }}
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                        {recordConfirmed
+                          ? t('preflight.record_confirmed', { defaultValue: 'Devices confirmed' })
+                          : t('preflight.record_confirm', {
+                              defaultValue: 'Confirm devices look & sound right',
+                            })}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {renderError()}
         </div>
 
