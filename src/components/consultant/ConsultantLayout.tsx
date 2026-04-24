@@ -8,7 +8,7 @@ import { Outlet } from 'react-router-dom';
 import {
   Search, LayoutDashboard, Briefcase, Calendar, MessageSquare,
   CreditCard, Star, User, ShieldCheck, BookOpen, Bell, Settings, Settings2, Brain, Server, Building2,
-  Handshake, FileText, Gavel, Clock, ClipboardList, BarChart3, Gift, Zap, Plus,
+  Handshake, FileText, Gavel, Clock, ClipboardList, BarChart3, Gift, Zap, Plus, Sparkles,
 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Input } from '@/components/ui/input';
@@ -39,6 +39,7 @@ const moreNavItems = [
   { key: 'earnings', icon: CreditCard, path: '/consultant/earnings', labelKey: 'sidebar.earnings' },
   { key: 'reviews', icon: Star, path: '/consultant/reviews', labelKey: 'sidebar.reviews' },
   { key: 'interviews', icon: Brain, path: '/consultant/interviews', labelKey: 'sidebar.interviews' },
+  { key: 'credits', icon: Sparkles, path: '/consultant/credits', labelKey: 'sidebar.credits' },
   { key: 'profile', icon: User, path: '/consultant/profile', labelKey: 'sidebar.profile' },
   { key: 'onboarding', icon: ClipboardList, path: '/consultant/onboarding', labelKey: 'sidebar.onboarding' },
   { key: 'verification', icon: ShieldCheck, path: '/consultant/verification', labelKey: 'sidebar.verification' },

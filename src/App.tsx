@@ -68,6 +68,7 @@ const ConsultantSettingsPage = React.lazy(() => import("./pages/consultant/Setti
 const ConsultantKnowledgePage = React.lazy(() => import("./pages/consultant/KnowledgePage.tsx"));
 const ConsultantReportsPage = React.lazy(() => import("./pages/consultant/ReportsPage.tsx"));
 const ConsultantBusinessProcessesPage = React.lazy(() => import("./pages/consultant/BusinessProcessesPage.tsx"));
+const CreditsRulesPage = React.lazy(() => import("./pages/consultant/CreditsRulesPage.tsx"));
 
 // Client pages
 const ClientDashboard = React.lazy(() => import("./pages/client/ClientDashboard.tsx"));
@@ -238,6 +239,7 @@ const App = () => (
               <Route path="earnings" element={<EarningsPage />} />
               <Route path="verification" element={<VerificationPage />} />
               <Route path="interviews" element={<InterviewsPage />} />
+              <Route path="credits" element={<CreditsRulesPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="chat" element={<ConsultantChatPage />} />
               <Route path="chat/:sessionId" element={<ChatSessionPage role="consultant" />} />
