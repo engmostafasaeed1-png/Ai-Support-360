@@ -230,7 +230,8 @@ export default function InvoicesPage() {
         p.ticket_title?.toLowerCase().includes(s) ||
         p.description?.toLowerCase().includes(s);
       const matchTab = matchesTab(p.status, tab);
-      return matchSearch && matchTab;
+      const matchMethod = paymentMethodFilter === 'all' || classifyPaymentMethod(p.payment_method) === paymentMethodFilter;
+      return matchSearch && matchTab && matchMethod;
     })
     .sort((a: any, b: any) => {
       switch (sortBy) {
