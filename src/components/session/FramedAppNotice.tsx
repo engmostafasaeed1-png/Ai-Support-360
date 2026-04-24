@@ -87,6 +87,17 @@ export default function FramedAppNotice({
               'This view is running inside an embedded frame. Google Meet (and some other video providers) refuse to load from framed pages for security reasons. Open the app in a new browser tab to start or join a meeting.',
           })}
         </p>
+
+        {(meetingUrl || provider) && (
+          <div className="mt-3">
+            <ProviderTroubleshootingPanel
+              provider={provider ?? detectProvider(meetingUrl)}
+              reason="framed"
+              variant="card"
+            />
+          </div>
+        )}
+
         <div className="mt-3 flex flex-wrap gap-2">
           <Button
             size="sm"
