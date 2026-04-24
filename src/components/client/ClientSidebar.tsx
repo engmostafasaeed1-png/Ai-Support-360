@@ -275,7 +275,7 @@ export default function ClientSidebar() {
                   ) : (
                     <div className="grid grid-cols-2 gap-2 px-3">
                       {visibleItems.map((item) => {
-                        const isActive = location.pathname === item.path;
+                        const isActive = item.path === bestMatchPath;
                         const isAccent = (item as any).accent;
                         const label = String(t(`sidebar.${item.key}`, { defaultValue: (item as any).label || titleize(item.key) }));
                         const tint = tileTints[item.key] || 'from-primary/20 to-primary/5 text-primary';
