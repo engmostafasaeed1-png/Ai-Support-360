@@ -322,6 +322,7 @@ const App = () => (
               <Route path="environments" element={<EnvironmentsPage />} />
               <Route path="vmware-settings" element={<AdminVMwareSettingsPage />} />
               <Route path="environment-logs" element={<EnvironmentLogsPage />} />
+              <Route path="meeting-join-events" element={<MeetingJoinEventsExportPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="nda-management" element={<NDAManagementPage />} />
               <Route path="landing-editor" element={<LandingEditorPage />} />
