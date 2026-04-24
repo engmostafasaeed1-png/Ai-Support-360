@@ -213,7 +213,7 @@ export default function AIChatbot() {
           role="dialog"
           aria-label="AI Support Chat"
           aria-modal="true"
-      className="fixed bottom-0 end-0 sm:bottom-6 sm:end-6 z-50 w-full sm:w-[380px] h-[100dvh] sm:h-[560px] sm:rounded-2xl bg-background border border-border/60 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-200"
+      className="fixed bottom-20 end-3 sm:bottom-6 sm:end-6 z-50 w-[calc(100vw-1.5rem)] sm:w-[380px] max-w-[400px] h-[min(75dvh,560px)] sm:h-[560px] rounded-2xl bg-background border border-border/60 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-200"
           onMouseMove={resetChatIdle}
           onClick={resetChatIdle}
           onKeyDown={(e) => { if (e.key === 'Escape') setIsOpen(false); }}
