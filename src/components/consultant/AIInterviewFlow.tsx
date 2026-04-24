@@ -194,6 +194,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [interviewLang, setInterviewLang] = useState<'en' | 'fr' | 'ar' | 'es' | 'de' | 'ar-SA'>('en');
   const [conversationMode, setConversationMode] = useState(true);
   const [capturedFrames, setCapturedFrames] = useState(0);
+  const [interviewStarted, setInterviewStarted] = useState(false);
+  const [startedAt, setStartedAt] = useState<Date | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -503,7 +505,13 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
           } catch { buffer = line + '\n' + buffer; break; }
         }
       }
-      if (assistantText) speakText(assistantText);
+      if (assistantText) {
+        if (!interviewStarted) {
+          setInterviewStarted(true);
+          setStartedAt(new Date());
+        }
+        speakText(assistantText);
+      }
     } catch (err: any) {
       console.error('Stream error:', err);
       setError(err.message || 'Connection failed');
@@ -951,6 +959,27 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             <span className="text-xs text-white/60 font-mono">{formatTime(elapsedTime)}</span>
             <span className="text-xs text-white/40">{userMessageCount} exchanges</span>
           </div>
+        </div>
+
+        {/* Interview status banner */}
+        <div
+          role="status"
+          aria-live="polite"
+          className={`px-4 py-2 flex items-center gap-2 text-xs border-b border-white/10 transition-colors ${
+            interviewStarted
+              ? 'bg-green-500/10 text-green-300'
+              : 'bg-amber-500/10 text-amber-300'
+          }`}
+        >
+          <span className={`w-2 h-2 rounded-full ${interviewStarted ? 'bg-green-400 animate-pulse' : 'bg-amber-400 animate-pulse'}`} />
+          {interviewStarted ? (
+            <span>
+              ✅ Interview started with <strong>{voiceGender === 'female' ? 'Mariam' : 'Ezz'}</strong> · tone: <strong className="capitalize">{interviewerTone}</strong>
+              {startedAt && <span className="text-white/40 ms-2">at {startedAt.toLocaleTimeString()}</span>}
+            </span>
+          ) : (
+            <span>⏳ Waiting for {voiceGender === 'female' ? 'Mariam' : 'Ezz'} to greet you…</span>
+          )}
         </div>
 
         {/* Main area */}

@@ -207,12 +207,28 @@ Return ONLY valid JSON.`;
       });
     }
 
-    // Update status to in_progress
+    // Update status to in_progress + record greeting event on first turn
+    const isFirstTurn = !messages || messages.length === 0;
     if (interview.status === "pending") {
       await supabase.from("interview_sessions").update({
         status: "in_progress",
         started_at: new Date().toISOString(),
       }).eq("id", interview_id);
+    }
+    if (isFirstTurn) {
+      await supabase.from("audit_logs").insert({
+        user_id: authUser.id,
+        action: "ai_interview_greeting_sent",
+        entity_type: "interview_session",
+        entity_id: interview_id,
+        metadata: {
+          interviewer_name: interviewerName,
+          voice_gender: voice_gender || "male",
+          tone: interviewerTone,
+          language: interviewLang,
+          consultant_name: consultantName,
+        },
+      });
     }
 
     // Fetch admin training configs for relevant modules
