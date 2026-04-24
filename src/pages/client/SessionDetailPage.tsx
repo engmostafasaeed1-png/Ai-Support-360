@@ -23,6 +23,7 @@ import ShareMenu from '@/components/ShareMenu';
 import AnalyzeSessionButton from '@/components/session/AnalyzeSessionButton';
 import SessionFeedbackDialog from '@/components/session/SessionFeedbackDialog';
 import SessionSurveyDialog from '@/components/session/SessionSurveyDialog';
+import RateSessionDialog from '@/components/session/RateSessionDialog';
 import MeetingMinutesCard from '@/components/session/MeetingMinutesCard';
 import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfactionDialog';
 import MeetingLinkButton, { detectProvider } from '@/components/session/MeetingLinkButton';
@@ -57,6 +58,7 @@ export default function SessionDetailPage() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [showSurvey, setShowSurvey] = useState(false);
   const [showCsat, setShowCsat] = useState(false);
+  const [showRate, setShowRate] = useState(false);
 
   const handleCancel = async () => {
     setIsCancelling(true);
@@ -115,6 +117,24 @@ export default function SessionDetailPage() {
 
       if (error) throw error;
       return data || [];
+    },
+    enabled: !!sessionId,
+  });
+
+  // Existing rating for this session (so we can show submitted state)
+  const { data: existingRating } = useQuery({
+    queryKey: ['session-rating', sessionId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('ratings')
+        .select('id, score, comment, is_anonymous, created_at')
+        .eq('session_id', sessionId!)
+        .eq('client_id', user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
     },
     enabled: !!sessionId,
   });
@@ -260,6 +280,64 @@ export default function SessionDetailPage() {
         </CardContent>
       </Card>
 
+      {/* Rate consultant CTA — visible after a completed session */}
+      {status === 'completed' && session.consultant_id && (
+        <Card className="rounded-2xl border-border/50 bg-gradient-to-br from-primary/5 to-accent/5">
+          <CardContent className="p-5">
+            {existingRating ? (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Thanks for your feedback!</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      {[1, 2, 3, 4, 5].map((v) => (
+                        <Star
+                          key={v}
+                          className={`w-4 h-4 ${
+                            v <= existingRating.score
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-muted-foreground/30'
+                          }`}
+                        />
+                      ))}
+                      <span className="ms-1 text-xs text-muted-foreground">
+                        {existingRating.score}/5
+                      </span>
+                    </div>
+                    {existingRating.comment && (
+                      <p className="text-xs text-muted-foreground mt-1.5 italic line-clamp-2">
+                        "{existingRating.comment}"
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Star className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Rate this session</p>
+                    <p className="text-xs text-muted-foreground">
+                      Share your experience with {(session as any).consultant_name || 'your consultant'} —
+                      it only takes a minute.
+                    </p>
+                  </div>
+                </div>
+                <Button onClick={() => setShowRate(true)} className="gap-1.5 shrink-0">
+                  <Star className="w-4 h-4" /> Rate &amp; Review
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Details grid */}
       <div className="grid sm:grid-cols-2 gap-4">
         <Card className="rounded-2xl border-border/50">
@@ -364,6 +442,15 @@ export default function SessionDetailPage() {
 
       <SessionFeedbackDialog sessionId={sessionId || null} open={showFeedback} onOpenChange={setShowFeedback} />
       <SessionSurveyDialog sessionId={sessionId || null} open={showSurvey} onOpenChange={setShowSurvey} />
+      {sessionId && session.consultant_id && (
+        <RateSessionDialog
+          sessionId={sessionId}
+          consultantId={session.consultant_id}
+          consultantName={(session as any).consultant_name}
+          open={showRate}
+          onOpenChange={setShowRate}
+        />
+      )}
       {showCsat && session?.consultants && (
         <RequestSatisfactionDialog
           open={showCsat}
