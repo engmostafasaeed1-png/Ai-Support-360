@@ -3,6 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ProviderTroubleshootingPanel from './ProviderTroubleshootingPanel';
+import OpenInNewTabButton from './OpenInNewTabButton';
 import { validateMeetingUrl } from '@/lib/meetingUrlValidation';
 import { logProviderEvent } from '@/lib/diagnostics';
 
@@ -64,6 +65,18 @@ export default function MeetingUrlValidationNotice({
           reason="invalid_url"
           variant="card"
         />
+        {url ? (
+          <div className="flex flex-wrap gap-2">
+            <OpenInNewTabButton
+              url={url}
+              sessionId={sessionId}
+              provider={result.provider}
+              reason="invalid_url"
+              size="sm"
+              variant="outline"
+            />
+          </div>
+        ) : null}
       </AlertDescription>
     </Alert>
   );
