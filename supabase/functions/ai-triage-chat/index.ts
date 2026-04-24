@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const ALLOWED_ORIGINS = [
   'https://smartsapsupport.qurtubatalks.com',
@@ -115,14 +116,31 @@ serve(async (req) => {
         { status: 413, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
     }
 
-    const { messages, model } = JSON.parse(bodyText);
+    let parsedBody: unknown;
+    try {
+      parsedBody = JSON.parse(bodyText);
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }),
+        { status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
+    }
 
-    if (!Array.isArray(messages) || messages.length === 0) {
+    const BodySchema = z.object({
+      messages: z.array(z.object({
+        role: z.enum(["system", "user", "assistant"]),
+        content: z.string().min(1).max(8000),
+      })).min(1).max(50),
+      model: z.string().max(100).optional(),
+      conversationId: z.string().uuid().optional(),
+    });
+
+    const parsed = BodySchema.safeParse(parsedBody);
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: "Messages array is required" }),
+        JSON.stringify({ error: "Invalid request", details: parsed.error.flatten().fieldErrors }),
         { status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
       );
     }
+    const { messages, model } = parsed.data;
 
     const selectedModel = model && VALID_MODELS.includes(model) ? model : DEFAULT_MODEL;
 

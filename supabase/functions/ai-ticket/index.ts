@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const ALLOWED_ORIGINS = [
   'https://smartsapsupport.qurtubatalks.com',
@@ -111,7 +112,33 @@ serve(async (req) => {
         { status: 413, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
     }
 
-    const { action, title, description, sap_module, urgency, preferred_language, model } = JSON.parse(bodyText);
+    let parsedBody: unknown;
+    try {
+      parsedBody = JSON.parse(bodyText);
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }),
+        { status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
+    }
+
+    const BodySchema = z.object({
+      action: z.enum(["categorize", "summarize", "match", "match_consultants"]),
+      title: z.string().min(1).max(500).optional(),
+      description: z.string().min(1).max(8000).optional(),
+      sap_module: z.string().max(100).optional(),
+      urgency: z.enum(["low", "medium", "high", "critical"]).optional(),
+      preferred_language: z.string().max(20).optional(),
+      model: z.string().max(100).optional(),
+      ticket_id: z.string().uuid().optional(),
+    }).passthrough();
+
+    const parsed = BodySchema.safeParse(parsedBody);
+    if (!parsed.success) {
+      return new Response(
+        JSON.stringify({ error: "Invalid request", details: parsed.error.flatten().fieldErrors }),
+        { status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      );
+    }
+    const { action, title, description, sap_module, urgency, preferred_language, model } = parsed.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
