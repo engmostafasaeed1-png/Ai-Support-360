@@ -139,6 +139,29 @@ export default function SessionDetailPage() {
     enabled: !!sessionId,
   });
 
+  // Aggregate consultant performance: avg score + recent feedback
+  const consultantId = (session as any)?.consultant_id as string | undefined;
+  const { data: consultantRatings } = useQuery({
+    queryKey: ['consultant-ratings-summary', consultantId],
+    enabled: !!consultantId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ratings')
+        .select('id, score, comment, is_anonymous, created_at')
+        .eq('consultant_id', consultantId!)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      const rows = data || [];
+      const total = rows.length;
+      const avg = total
+        ? rows.reduce((sum, r) => sum + (r.score || 0), 0) / total
+        : 0;
+      const recent = rows.filter((r) => (r.comment || '').trim().length > 0).slice(0, 3);
+      return { avg, total, recent };
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-6">
