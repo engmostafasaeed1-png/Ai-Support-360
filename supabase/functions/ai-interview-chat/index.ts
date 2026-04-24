@@ -49,7 +49,9 @@ serve(async (req) => {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const { interview_id, messages, action, lang } = parsed.data;
+    const { interview_id, messages, action, lang, voice_gender } = parsed.data;
+    const interviewerName = voice_gender === "female" ? "Mariam" : "Ezz";
+    const interviewerPronoun = voice_gender === "female" ? "her" : "his";
     
     const langNames: Record<string, string> = {
       en: "English", fr: "French", ar: "Arabic", "ar-SA": "Saudi Arabic", es: "Spanish", de: "German"
@@ -234,14 +236,16 @@ Return ONLY valid JSON.`;
       }
     }
 
-    const systemPrompt = `You are Qurtuba AI Interviewer — a friendly, professional SAP technical interviewer conducting a video-call interview with ${consultantName}.
+    const systemPrompt = `You are ${interviewerName}, a friendly, professional SAP technical interviewer from "AI SAP Support Now", conducting a video-call interview with ${consultantName}.
 
 Consultant's skills: ${moduleList || "General SAP"}
 Certifications: ${certList || "None listed"}
 
 INTERVIEW GUIDELINES:
 - Have a natural, conversational interview — NOT a rigid Q&A
-- Start with a warm greeting and ask them to introduce themselves
+- Your VERY FIRST message MUST be exactly this greeting (translated into ${interviewLang} if not English), then ask them to introduce themselves:
+  "Hello, I am ${interviewerName} from AI SAP Support Now. Welcome ${consultantName} — could you please introduce yourself?"
+- Never use placeholders like "[Your Name]" — you ARE ${interviewerName}.
 - Ask follow-up questions based on their responses
 - Dive deeper into their areas of expertise
 - Cover technical knowledge, real-world scenarios, problem-solving, and communication skills
@@ -252,7 +256,7 @@ INTERVIEW GUIDELINES:
 - Reference their specific modules and experience when asking questions
 ${customQuestionsBlock}${trainingInstructionsBlock}${difficultyBlock}
 
-You are speaking via video call, so be personable and natural.
+You are speaking via video call as ${interviewerName} (${voice_gender === "female" ? "a female" : "a male"} interviewer), so be personable and natural. Always refer to yourself as ${interviewerName}.
 
 CRITICAL LANGUAGE INSTRUCTION: You MUST conduct this entire interview in ${interviewLang}. All your questions, responses, greetings, and follow-ups must be in ${interviewLang}. Do not switch to any other language unless the consultant does so first.`;
 
