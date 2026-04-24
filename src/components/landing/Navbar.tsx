@@ -69,7 +69,7 @@ export default function Navbar() {
             {t('nav.language')}
           </button>
           <Link to="/login">
-            <Button variant="ghost" size="sm" className="rounded-xl font-semibold">
+            <Button variant={scrolled ? 'ghost' : 'outline'} size="sm" className={`rounded-xl font-semibold ${scrolled ? '' : 'bg-white/10 border-white/40 text-white hover:bg-white/20 hover:text-white backdrop-blur-md'}`}>
               {t('nav.login')}
             </Button>
           </Link>
@@ -80,11 +80,11 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
+        <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
           {mobileOpen ? (
-            <X className="w-5 h-5 text-foreground" />
+            <X className={`w-5 h-5 ${scrolled ? 'text-foreground' : 'text-white drop-shadow-md'}`} />
           ) : (
-            <Menu className="w-5 h-5 text-foreground" />
+            <Menu className={`w-5 h-5 ${scrolled ? 'text-foreground' : 'text-white drop-shadow-md'}`} />
           )}
         </button>
       </div>
