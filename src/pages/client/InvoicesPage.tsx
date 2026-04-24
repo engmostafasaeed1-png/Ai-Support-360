@@ -96,6 +96,29 @@ const matchesTab = (status: string, tab: string) => {
 const fmt = (amount: number, currency: string = 'USD') =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
 
+const isPaidStatus = (s?: string) => s === 'completed' || s === 'paid' || s === 'refunded';
+
+function getDueDateInfo(inv: any) {
+  if (!inv?.due_date) return null;
+  const due = new Date(inv.due_date);
+  if (isNaN(due.getTime())) return null;
+  const now = new Date();
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const diffDays = Math.round((startOfDay(due) - startOfDay(now)) / 86400000);
+  const paid = isPaidStatus(inv.status);
+  const overdue = !paid && diffDays < 0;
+  const dueSoon = !paid && diffDays >= 0 && diffDays <= 3;
+  let label = format(due, 'MMM d, yyyy');
+  let relative = '';
+  if (paid) relative = '';
+  else if (diffDays === 0) relative = 'Due today';
+  else if (diffDays === 1) relative = 'Due tomorrow';
+  else if (diffDays > 1) relative = `Due in ${diffDays} days`;
+  else if (diffDays === -1) relative = '1 day overdue';
+  else relative = `${Math.abs(diffDays)} days overdue`;
+  return { due, label, relative, diffDays, overdue, dueSoon, paid };
+}
+
 const PAYMENT_METHOD_OPTIONS: { value: string; label: string; icon: any; match: RegExp }[] = [
   { value: 'card', label: 'Card', icon: CreditCard, match: /(card|visa|master|amex|stripe|debit|credit)/i },
   { value: 'bank_transfer', label: 'Bank Transfer', icon: Landmark, match: /(bank|transfer|wire|ach|sepa|iban)/i },
