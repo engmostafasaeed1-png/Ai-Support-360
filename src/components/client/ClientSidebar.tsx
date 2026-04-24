@@ -28,6 +28,8 @@ import sidebarBanner from '@/assets/sidebar-banner.png';
 import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 import TileTooltip from '@/components/sidebar/TileTooltip';
 import { getTileMeta } from '@/components/sidebar/tileMeta';
+import SidebarTileSkeleton from '@/components/sidebar/SidebarTileSkeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Per-tile color tints for visual variety (uses semantic HSL tokens via tailwind utilities)
 const tileTints: Record<string, string> = {
