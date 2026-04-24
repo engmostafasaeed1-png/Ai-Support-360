@@ -137,6 +137,7 @@ export default function SessionDetailPage() {
       return data;
     },
     enabled: !!sessionId,
+  });
 
   if (isLoading) {
     return (
