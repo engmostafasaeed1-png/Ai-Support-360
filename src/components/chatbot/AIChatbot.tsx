@@ -11,6 +11,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
+import { useDraggableFab } from '@/hooks/useDraggableFab';
 
 const AUTO_OPEN_DELAY = 4000;
 const AUTO_OPEN_DONE_KEY = "qt-chat-auto-opened";
