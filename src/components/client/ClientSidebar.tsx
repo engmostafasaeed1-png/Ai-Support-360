@@ -311,7 +311,7 @@ export default function ClientSidebar() {
                               end
                               aria-label={`${label}. ${getTileMeta('client', item.key, label).description}`}
                               aria-current={isActive ? 'page' : undefined}
-                              className={`group/tile relative flex flex-row sm:flex-col items-center sm:items-center justify-start sm:justify-center gap-3 sm:gap-2 rounded-2xl px-3 sm:px-2 py-2.5 sm:py-3.5 text-start sm:text-center transition-all duration-200 overflow-hidden border min-h-[52px] sm:min-h-0 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar ${
+                              className={`group/tile relative flex flex-row sm:flex-col items-center sm:items-center justify-start sm:justify-center ${dens.row} sm:gap-2 rounded-2xl sm:px-2 sm:py-3.5 sm:min-h-0 text-start sm:text-center transition-all duration-200 overflow-hidden border outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar ${
                                 isActive
                                   ? 'bg-gradient-to-br from-primary via-primary/85 to-primary/60 text-primary-foreground border-primary/50 shadow-xl shadow-primary/40 sm:scale-[1.03]'
                                   : isAccent
