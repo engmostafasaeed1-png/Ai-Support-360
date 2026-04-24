@@ -699,6 +699,13 @@ export default function InvoicesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Payment Details Drawer */}
+      <PaymentDetailsDrawer
+        payment={drawerPayment}
+        open={!!drawerPayment}
+        onOpenChange={(o) => { if (!o) setDrawerPayment(null); }}
+      />
     </div>
   );
 }
