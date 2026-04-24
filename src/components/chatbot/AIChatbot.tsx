@@ -65,6 +65,7 @@ export default function AIChatbot() {
   const location = useLocation();
   const { t } = useTranslation();
   const isPublicPage = ['/', '/login', '/signup', '/forgot-password', '/reset-password', '/pricing'].includes(location.pathname);
+  const fab = useDraggableFab({ storageKey: 'fab-pos-ai-chat', size: 56 });
 
   // Reset inactivity timer
   const resetChatIdle = useCallback(() => {
