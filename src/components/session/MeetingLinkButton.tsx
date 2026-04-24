@@ -229,7 +229,7 @@ export default function MeetingLinkButton({
         }
       }, 500);
     },
-    [t, triggerFallback]
+    [t, triggerFallback, buildHandoffUrl]
   );
 
   const startOpen = (u: string, p: MeetingProvider) => {
