@@ -173,9 +173,7 @@ export default function ConsultantSidebar() {
             ) : (
               <div className="grid grid-cols-2 gap-2 px-3">
                 {visibleItems.map((item) => {
-                  const isActive = item.path === '/consultant'
-                    ? location.pathname === '/consultant'
-                    : location.pathname.startsWith(item.path);
+                  const isActive = item.path === bestMatchPath;
                   const isOnboardingDone = item.key === 'onboarding' && onboardingDone;
                   const label = isOnboardingDone
                     ? String(t('sidebar.onboarding_complete', { defaultValue: 'Onboarding' }))
