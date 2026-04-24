@@ -130,16 +130,16 @@ ${cv_text.substring(0, 15000)}`;
     const aiData = await aiResp.json();
     const rawContent = aiData.choices?.[0]?.message?.content || "{}";
 
-    let parsed;
+    let aiParsed;
     try {
       const cleaned = rawContent.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-      parsed = JSON.parse(cleaned);
+      aiParsed = JSON.parse(cleaned);
     } catch {
       console.error("Failed to parse AI response:", rawContent);
       throw new Error("Failed to parse CV data");
     }
 
-    return new Response(JSON.stringify({ profile: parsed }), {
+    return new Response(JSON.stringify({ profile: aiParsed }), {
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   } catch (e) {

@@ -50,20 +50,13 @@ serve(async (req) => {
       });
     }
 
-    const { linkedin_url } = await req.json();
-    if (!linkedin_url || typeof linkedin_url !== "string") {
-      return new Response(JSON.stringify({ error: "linkedin_url is required" }), {
+    const parsed = BodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
         status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
-
-    // Validate LinkedIn URL format
-    const urlPattern = /^https?:\/\/(www\.)?linkedin\.com\/in\/.+/i;
-    if (!urlPattern.test(linkedin_url)) {
-      return new Response(JSON.stringify({ error: "Invalid LinkedIn profile URL. Expected format: https://linkedin.com/in/username" }), {
-        status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
+    const { linkedin_url } = parsed.data;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");

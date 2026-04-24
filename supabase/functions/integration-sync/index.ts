@@ -1,4 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const SyncRequestSchema = z.object({
+  integration_id: z.string().uuid(),
+  action: z.enum(["sync_tickets", "push_update", "webhook_inbound"]),
+  payload: z.unknown().optional(),
+});
 
 const ALLOWED_ORIGINS = [
   'https://smartsapsupport.qurtubatalks.com',
