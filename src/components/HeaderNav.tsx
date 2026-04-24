@@ -81,7 +81,7 @@ export default function HeaderNav({ role }: HeaderNavProps) {
   const items = navMap[role] || [];
 
   return (
-    <ScrollArea className="w-full">
+    <ScrollArea className="hidden md:block w-full">
       <nav aria-label="Main navigation" className="flex items-center gap-0.5 px-1 py-1">
         {items.map((item) => (
           <NavLink
