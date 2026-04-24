@@ -11,10 +11,22 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Verify caller has a valid token (anon key or user JWT)
+    // Verify authenticated user via JWT
     const authHeader = req.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!
+    );
+    const { data: { user: authUser }, error: authError } = await supabaseAuth.auth.getUser(token);
+    if (authError || !authUser) {
+      return new Response(JSON.stringify({ error: 'Invalid or expired session' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -29,19 +41,7 @@ serve(async (req) => {
     const interviewLang = langNames[lang] || "English";
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Get interview + consultant info
-    const { data: interview, error: intErr } = await supabase
-      .from("interview_sessions")
-      .select("consultant_id, interview_type, status")
-      .eq("id", interview_id)
-      .single();
-    if (intErr || !interview) throw new Error("Interview not found");
+    if (!LOVABLE_API_KEY) throw
 
     // Get consultant skills for context
     const { data: skills } = await supabase
