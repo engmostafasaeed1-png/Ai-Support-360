@@ -145,6 +145,13 @@ export default function SessionDetailPage() {
         <>
           <FramedAppNotice dismissKey={`framed-notice-dismissed:${sessionId}`} />
           <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
+          <PreJoinChecklist
+            url={
+              (session as any).meeting_url ||
+              `https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`
+            }
+            sessionId={sessionId}
+          />
         </>
       )}
 
