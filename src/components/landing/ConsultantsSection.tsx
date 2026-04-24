@@ -1,13 +1,34 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Star, BadgeCheck, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SectionHeader from './SectionHeader';
+import c01 from '@/assets/consultants/c01-gulf.jpg';
+import c02 from '@/assets/consultants/c09-nordic.jpg';
+import c07 from '@/assets/consultants/c07-pakistani.jpg';
+import c08 from '@/assets/consultants/c08-moroccan.jpg';
 
-const mockConsultants = [
-  { name: 'Ahmed Al-Rashid',  role: 'SAP S/4HANA Finance Expert',     rating: 4.9, reviews: 127, rate: 150, avatar: 'AR', accent: 'from-cyan-500 to-blue-600',     badges: ['verified', 'top_rated'], available: true },
-  { name: 'Sarah Johnson',    role: 'SAP BTP & Integration Architect',rating: 4.8, reviews:  98, rate: 175, avatar: 'SJ', accent: 'from-violet-500 to-purple-600', badges: ['verified', 'fast_responder'], available: true },
-  { name: 'Mohammed Al-Farsi',role: 'SAP MM/SD Functional Lead',      rating: 4.9, reviews: 215, rate: 130, avatar: 'MF', accent: 'from-amber-500 to-orange-600',  badges: ['verified', 'top_rated'], available: false },
-  { name: 'Dr. Fatima Hassan',role: 'SAP SuccessFactors & HCM',       rating: 5.0, reviews:  87, rate: 200, avatar: 'FH', accent: 'from-emerald-500 to-teal-600',  badges: ['verified', 'top_rated', 'fast_responder'], available: true },
+type Consultant = {
+  name: string;
+  role: string;
+  rating: number;
+  reviews: number;
+  rate: number;
+  /** Initials shown as fallback if the photo fails to load. */
+  avatar: string;
+  /** Real portrait photo for the consultant. */
+  photo: string;
+  /** Gradient used for the ring + initials fallback tint. */
+  accent: string;
+  badges: string[];
+  available: boolean;
+};
+
+const mockConsultants: Consultant[] = [
+  { name: 'Ahmed Al-Rashid',  role: 'SAP S/4HANA Finance Expert',     rating: 4.9, reviews: 127, rate: 150, avatar: 'AR', photo: c01, accent: 'from-cyan-500 to-blue-600',     badges: ['verified', 'top_rated'], available: true },
+  { name: 'Sarah Johnson',    role: 'SAP BTP & Integration Architect',rating: 4.8, reviews:  98, rate: 175, avatar: 'SJ', photo: c02, accent: 'from-violet-500 to-purple-600', badges: ['verified', 'fast_responder'], available: true },
+  { name: 'Mohammed Al-Farsi',role: 'SAP MM/SD Functional Lead',      rating: 4.9, reviews: 215, rate: 130, avatar: 'MF', photo: c07, accent: 'from-amber-500 to-orange-600',  badges: ['verified', 'top_rated'], available: false },
+  { name: 'Dr. Fatima Hassan',role: 'SAP SuccessFactors & HCM',       rating: 5.0, reviews:  87, rate: 200, avatar: 'FH', photo: c08, accent: 'from-emerald-500 to-teal-600',  badges: ['verified', 'top_rated', 'fast_responder'], available: true },
 ];
 
 const badgeConfig: Record<string, { Icon: typeof Star; color: string }> = {
