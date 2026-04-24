@@ -1,27 +1,35 @@
 import { useTranslation } from 'react-i18next';
 import { Sparkles, BadgeCheck, Languages, ShieldHalf, Radio, Gauge, ArrowUpRight } from 'lucide-react';
+import BlurImage from './BlurImage';
 import aiMatching from '@/assets/why/ai-matching.jpg';
+import aiMatchingBlur from '@/assets/why/blur/ai-matching-blur.jpg';
 import verifiedExperts from '@/assets/why/verified-experts.jpg';
+import verifiedExpertsBlur from '@/assets/why/blur/verified-experts-blur.jpg';
 import bilingual from '@/assets/why/bilingual.jpg';
+import bilingualBlur from '@/assets/why/blur/bilingual-blur.jpg';
 import security from '@/assets/why/security.jpg';
+import securityBlur from '@/assets/why/blur/security-blur.jpg';
 import collaboration from '@/assets/why/collaboration.jpg';
+import collaborationBlur from '@/assets/why/blur/collaboration-blur.jpg';
 import sla from '@/assets/why/sla.jpg';
+import slaBlur from '@/assets/why/blur/sla-blur.jpg';
 
 type Feature = {
   Icon: typeof Sparkles;
   image: string;
+  blur: string;
   accent: string; // tailwind gradient classes
   size: string;   // grid span classes
   tag: string;
 };
 
 const features: Feature[] = [
-  { Icon: Sparkles,    image: aiMatching,       accent: 'from-cyan-500/80 to-blue-600/80',     size: 'lg:col-span-2 lg:row-span-2', tag: '01' },
-  { Icon: BadgeCheck,  image: verifiedExperts,  accent: 'from-emerald-500/80 to-teal-600/80',  size: 'lg:col-span-1 lg:row-span-1', tag: '02' },
-  { Icon: Languages,   image: bilingual,        accent: 'from-amber-500/80 to-orange-600/80',  size: 'lg:col-span-1 lg:row-span-1', tag: '03' },
-  { Icon: ShieldHalf,  image: security,         accent: 'from-indigo-500/80 to-purple-600/80', size: 'lg:col-span-1 lg:row-span-2', tag: '04' },
-  { Icon: Radio,       image: collaboration,    accent: 'from-rose-500/80 to-pink-600/80',     size: 'lg:col-span-1 lg:row-span-1', tag: '05' },
-  { Icon: Gauge,       image: sla,              accent: 'from-sky-500/80 to-cyan-600/80',      size: 'lg:col-span-1 lg:row-span-1', tag: '06' },
+  { Icon: Sparkles,    image: aiMatching,      blur: aiMatchingBlur,      accent: 'from-cyan-500/80 to-blue-600/80',     size: 'lg:col-span-2 lg:row-span-2', tag: '01' },
+  { Icon: BadgeCheck,  image: verifiedExperts, blur: verifiedExpertsBlur, accent: 'from-emerald-500/80 to-teal-600/80',  size: 'lg:col-span-1 lg:row-span-1', tag: '02' },
+  { Icon: Languages,   image: bilingual,       blur: bilingualBlur,       accent: 'from-amber-500/80 to-orange-600/80',  size: 'lg:col-span-1 lg:row-span-1', tag: '03' },
+  { Icon: ShieldHalf,  image: security,        blur: securityBlur,        accent: 'from-indigo-500/80 to-purple-600/80', size: 'lg:col-span-1 lg:row-span-2', tag: '04' },
+  { Icon: Radio,       image: collaboration,   blur: collaborationBlur,   accent: 'from-rose-500/80 to-pink-600/80',     size: 'lg:col-span-1 lg:row-span-1', tag: '05' },
+  { Icon: Gauge,       image: sla,             blur: slaBlur,             accent: 'from-sky-500/80 to-cyan-600/80',      size: 'lg:col-span-1 lg:row-span-1', tag: '06' },
 ];
 
 export default function WhyQurtubaSection() {
@@ -68,13 +76,13 @@ export default function WhyQurtubaSection() {
               style={{ animationDelay: `${i * 80}ms` }}
               className={`group relative overflow-hidden rounded-3xl border border-border/40 bg-card shadow-sm hover:shadow-2xl transition-all duration-700 hover:-translate-y-1 animate-fade-in-up ${f.size}`}
             >
-              {/* Background image */}
-              <img
+              {/* Background image with blur-up placeholder */}
+              <BlurImage
                 src={f.image}
+                blurSrc={f.blur}
                 alt=""
                 width={1024}
                 height={768}
-                loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-110"
               />
 
