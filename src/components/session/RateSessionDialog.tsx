@@ -20,10 +20,21 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+const optionalScore = z
+  .number()
+  .int()
+  .min(1)
+  .max(5)
+  .optional()
+  .or(z.literal(0).transform(() => undefined));
+
 const ratingSchema = z.object({
   score: z.number().int().min(1, 'Please select a star rating').max(5),
   comment: z.string().trim().max(1000, 'Feedback must be under 1000 characters').optional(),
   is_anonymous: z.boolean(),
+  communication_score: optionalScore,
+  technical_expertise_score: optionalScore,
+  responsiveness_score: optionalScore,
 });
 
 const SCORE_LABELS: Record<number, string> = {
@@ -33,6 +44,43 @@ const SCORE_LABELS: Record<number, string> = {
   4: 'Very Good',
   5: 'Excellent',
 };
+
+type CategoryKey = 'communication' | 'technical' | 'responsiveness';
+
+const CATEGORIES: { key: CategoryKey; label: string; description: string; icon: any }[] = [
+  { key: 'communication', label: 'Communication', description: 'Clarity, listening, language', icon: MessageCircle },
+  { key: 'technical', label: 'Technical Expertise', description: 'SAP knowledge & problem solving', icon: Wrench },
+  { key: 'responsiveness', label: 'Responsiveness', description: 'Punctuality and follow-through', icon: Zap },
+];
+
+function CategoryStars({
+  value,
+  onChange,
+  ariaLabel,
+}: { value: number; onChange: (v: number) => void; ariaLabel: string }) {
+  const [hoverV, setHoverV] = useState(0);
+  const display = hoverV || value;
+  return (
+    <div className="flex items-center gap-0.5" onMouseLeave={() => setHoverV(0)}>
+      {[1, 2, 3, 4, 5].map((v) => (
+        <button
+          key={v}
+          type="button"
+          aria-label={`${ariaLabel}: ${v} star${v > 1 ? 's' : ''}`}
+          onMouseEnter={() => setHoverV(v)}
+          onClick={() => onChange(v === value ? 0 : v)}
+          className="p-0.5 rounded hover:bg-muted transition-colors"
+        >
+          <Star
+            className={`w-4 h-4 transition-colors ${
+              v <= display ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/40'
+            }`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function RateSessionDialog({
   sessionId,
