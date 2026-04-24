@@ -76,47 +76,49 @@ export default function HeroSection() {
         </div>
 
         {/* Modern image showcase */}
-        <div className="relative mt-14 sm:mt-20 max-w-6xl mx-auto animate-fade-in" style={{ animationDelay: '0.5s' }}>
-          {/* Animated mesh backdrop */}
-          <div aria-hidden className="pointer-events-none absolute -inset-8 sm:-inset-16 -z-10 overflow-hidden">
-            <div className="absolute top-0 left-1/4 w-[55%] h-[70%] rounded-full bg-[radial-gradient(circle_at_center,hsl(var(--accent)/0.55),transparent_60%)] blur-3xl animate-mesh-shift" />
-            <div className="absolute bottom-0 right-1/4 w-[55%] h-[70%] rounded-full bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.55),transparent_60%)] blur-3xl animate-mesh-shift-alt" style={{ animationDelay: '-4s' }} />
-            <div className="absolute top-1/3 right-0 w-[40%] h-[55%] rounded-full bg-[radial-gradient(circle_at_center,hsl(200_90%_60%/0.35),transparent_60%)] blur-3xl animate-mesh-shift" style={{ animationDelay: '-8s' }} />
+        <div className="relative mt-10 sm:mt-16 md:mt-20 max-w-6xl mx-auto animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          {/* Animated mesh backdrop — softer on mobile */}
+          <div aria-hidden className="pointer-events-none absolute -inset-4 sm:-inset-10 md:-inset-16 -z-10 overflow-hidden">
+            <div className="absolute top-0 left-1/4 w-[60%] sm:w-[55%] h-[60%] sm:h-[70%] rounded-full bg-[radial-gradient(circle_at_center,hsl(var(--accent)/0.45),transparent_60%)] blur-2xl sm:blur-3xl animate-mesh-shift" />
+            <div className="absolute bottom-0 right-1/4 w-[60%] sm:w-[55%] h-[60%] sm:h-[70%] rounded-full bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.45),transparent_60%)] blur-2xl sm:blur-3xl animate-mesh-shift-alt" style={{ animationDelay: '-4s' }} />
+            <div className="hidden sm:block absolute top-1/3 right-0 w-[40%] h-[55%] rounded-full bg-[radial-gradient(circle_at_center,hsl(200_90%_60%/0.35),transparent_60%)] blur-3xl animate-mesh-shift" style={{ animationDelay: '-8s' }} />
           </div>
 
-          <div className="grid grid-cols-12 gap-3 sm:gap-4">
+          <div className="grid grid-cols-12 gap-2.5 sm:gap-3 md:gap-4">
             {/* Main collab image */}
             <div className="col-span-12 md:col-span-7 relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-accent/40 via-primary/30 to-accent/40 rounded-3xl blur-xl opacity-60 group-hover:opacity-90 transition-opacity duration-500" />
-              <div className="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl aspect-[16/10]">
+              <div className="absolute -inset-1 bg-gradient-to-r from-accent/40 via-primary/30 to-accent/40 rounded-2xl sm:rounded-3xl blur-lg sm:blur-xl opacity-50 sm:opacity-60 group-hover:opacity-90 transition-opacity duration-500" />
+              <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 shadow-xl sm:shadow-2xl aspect-[3/2] sm:aspect-[16/10]">
                 <img
                   src={introCollab}
                   alt="SAP consulting team collaborating with AI dashboards"
                   loading="lazy"
                   width={1280}
                   height={896}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 60vw"
+                  className="absolute inset-0 w-full h-full object-cover object-[center_35%] sm:object-center transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 sm:via-transparent to-transparent" />
                 {/* Light sweep */}
                 <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
                   <div className="absolute -inset-y-8 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent blur-xl animate-light-sweep" />
                 </div>
                 {/* Floating live badge */}
-                <div className="absolute top-4 left-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white text-xs font-medium">
-                  <span className="relative flex h-2 w-2">
+                <div className="absolute top-2.5 left-2.5 sm:top-4 sm:left-4 inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white text-[10px] sm:text-xs font-medium">
+                  <span className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 sm:h-2 sm:w-2 bg-emerald-400" />
                   </span>
-                  Live expert collaboration
+                  <span className="hidden xs:inline">Live expert collaboration</span>
+                  <span className="xs:hidden">Live</span>
                 </div>
                 {/* Bottom caption */}
-                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-                  <div>
-                    <p className="text-white/70 text-[11px] uppercase tracking-widest font-semibold">SAP S/4HANA</p>
-                    <p className="text-white text-base sm:text-lg font-semibold leading-tight">Real consultants. Real outcomes.</p>
+                <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:bottom-4 sm:left-4 sm:right-4 flex items-end justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-white/70 text-[9px] sm:text-[11px] uppercase tracking-widest font-semibold">SAP S/4HANA</p>
+                    <p className="text-white text-sm sm:text-base md:text-lg font-semibold leading-tight truncate">Real consultants. Real outcomes.</p>
                   </div>
-                  <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 backdrop-blur-md border border-white/15">
+                  <div className="hidden sm:flex shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 backdrop-blur-md border border-white/15">
                     <Activity className="w-3.5 h-3.5 text-accent" />
                     <span className="text-white text-[11px] font-medium">98% SLA</span>
                   </div>
@@ -124,47 +126,49 @@ export default function HeroSection() {
               </div>
             </div>
 
-            {/* Right column — stacked */}
-            <div className="col-span-12 md:col-span-5 grid grid-cols-2 md:grid-cols-1 gap-3 sm:gap-4">
+            {/* Right column — side-by-side on mobile, stacked on desktop */}
+            <div className="col-span-12 md:col-span-5 grid grid-cols-2 md:grid-cols-1 gap-2.5 sm:gap-3 md:gap-4">
               {/* AI portal */}
-              <div className="relative group rounded-3xl overflow-hidden border border-white/15 shadow-xl aspect-[4/3] md:aspect-auto md:flex-1">
+              <div className="relative group rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 shadow-lg sm:shadow-xl aspect-square sm:aspect-[4/3] md:aspect-auto md:flex-1 md:min-h-[180px]">
                 <img
                   src={introAiPortal}
                   alt="AI-powered SAP support portal"
                   loading="lazy"
                   width={1024}
                   height={1024}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  sizes="(max-width: 768px) 50vw, 35vw"
+                  className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-tr from-primary/70 via-primary/20 to-transparent" />
-                <div className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-[10px] font-semibold">
-                  <Bot className="w-3 h-3 text-accent" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/80 via-primary/30 to-transparent" />
+                <div className="absolute top-2 right-2 sm:top-3 sm:right-3 inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-[9px] sm:text-[10px] font-semibold">
+                  <Bot className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-accent" />
                   AI Triage
                 </div>
-                <div className="absolute bottom-3 left-3 right-3">
-                  <p className="text-white text-sm font-semibold leading-tight">Smart ticket routing</p>
-                  <p className="text-white/70 text-[11px]">Resolved 3× faster with AI</p>
+                <div className="absolute bottom-2 left-2 right-2 sm:bottom-3 sm:left-3 sm:right-3">
+                  <p className="text-white text-xs sm:text-sm font-semibold leading-tight">Smart ticket routing</p>
+                  <p className="hidden sm:block text-white/70 text-[11px]">Resolved 3× faster with AI</p>
                 </div>
               </div>
 
               {/* Consultant portrait */}
-              <div className="relative group rounded-3xl overflow-hidden border border-white/15 shadow-xl aspect-[4/3] md:aspect-auto md:flex-1">
+              <div className="relative group rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 shadow-lg sm:shadow-xl aspect-square sm:aspect-[4/3] md:aspect-auto md:flex-1 md:min-h-[180px]">
                 <img
                   src={introConsultant}
                   alt="Certified SAP consultant on call"
                   loading="lazy"
                   width={1024}
                   height={1280}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  sizes="(max-width: 768px) 50vw, 35vw"
+                  className="absolute inset-0 w-full h-full object-cover object-[center_25%] sm:object-[center_30%] transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 backdrop-blur-md border border-emerald-400/40 text-emerald-100 text-[10px] font-semibold">
-                  <ShieldCheck className="w-3 h-3" />
-                  Vetted expert
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                <div className="absolute top-2 left-2 sm:top-3 sm:left-3 inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-500/25 backdrop-blur-md border border-emerald-400/40 text-emerald-100 text-[9px] sm:text-[10px] font-semibold">
+                  <ShieldCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  Vetted
                 </div>
-                <div className="absolute bottom-3 left-3 right-3">
-                  <p className="text-white text-sm font-semibold leading-tight">On-demand SAP talent</p>
-                  <p className="text-white/70 text-[11px]">500+ certified consultants</p>
+                <div className="absolute bottom-2 left-2 right-2 sm:bottom-3 sm:left-3 sm:right-3">
+                  <p className="text-white text-xs sm:text-sm font-semibold leading-tight">On-demand SAP talent</p>
+                  <p className="hidden sm:block text-white/70 text-[11px]">500+ certified consultants</p>
                 </div>
               </div>
             </div>
