@@ -69,6 +69,7 @@ const ConsultantBusinessProcessesPage = React.lazy(() => import("./pages/consult
 
 // Client pages
 const ClientDashboard = React.lazy(() => import("./pages/client/ClientDashboard.tsx"));
+const TimelinePage = React.lazy(() => import("./pages/client/TimelinePage.tsx"));
 const NewRequestPage = React.lazy(() => import("./pages/client/NewRequestPage.tsx"));
 const TicketsPage = React.lazy(() => import("./pages/client/TicketsPage.tsx"));
 const TicketDetailPage = React.lazy(() => import("./pages/client/TicketDetailPage.tsx"));
@@ -244,6 +245,7 @@ const App = () => (
             <Route path="/client/companies" element={<ProtectedRoute requiredRole="client"><CompanySelectorPage /></ProtectedRoute>} />
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ClientLayout /></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
+              <Route path="timeline" element={<TimelinePage />} />
               <Route path="new-request" element={<NewRequestPage />} />
               <Route path="tickets" element={<TicketsPage />} />
               <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
