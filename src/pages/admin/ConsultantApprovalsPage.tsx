@@ -22,6 +22,8 @@ import ConsultantVerificationAuditLog from '@/components/admin/ConsultantVerific
 export default function ConsultantApprovalsPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [reinterviewTarget, setReinterviewTarget] = useState<{ id: string; name: string } | null>(null);
+  const [decisionTarget, setDecisionTarget] = useState<{ id: string; name: string; status: string } | null>(null);
+  const [decisionReason, setDecisionReason] = useState('');
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
   const queryClient = useQueryClient();
