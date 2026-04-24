@@ -504,8 +504,12 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
                 )}
 
                 <div className="flex justify-between">
-                  <Button variant="ghost" onClick={() => setStep(1)}>{t('booking.back')}</Button>
-                  <Button disabled={!selectedTime} onClick={() => setStep(3)} className="gradient-primary border-0">
+                  <Button variant="ghost" onClick={() => setStep(bookingMode === 'instant' ? 0 : 1)}>{t('booking.back')}</Button>
+                  <Button
+                    disabled={bookingMode === 'scheduled' && !selectedTime}
+                    onClick={() => setStep(3)}
+                    className="gradient-primary border-0"
+                  >
                     {t('booking.next')}
                   </Button>
                 </div>
