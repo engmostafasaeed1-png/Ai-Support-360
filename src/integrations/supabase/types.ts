@@ -1553,6 +1553,54 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_disputes: {
+        Row: {
+          client_id: string
+          consultant_id: string | null
+          created_at: string
+          description: string
+          evidence_urls: Json
+          id: string
+          payment_id: string
+          reason_category: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          consultant_id?: string | null
+          created_at?: string
+          description: string
+          evidence_urls?: Json
+          id?: string
+          payment_id: string
+          reason_category: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          consultant_id?: string | null
+          created_at?: string
+          description?: string
+          evidence_urls?: Json
+          id?: string
+          payment_id?: string
+          reason_category?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       knowledge_articles: {
         Row: {
           author_id: string
