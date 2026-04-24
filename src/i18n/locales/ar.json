@@ -166,7 +166,8 @@
     "rights": "جميع الحقوق محفوظة."
   },
   "sidebar": {
-    "super_admin": "المشرف العام"
+    "super_admin": "المشرف العام",
+    "credits": "قواعد النقاط"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",
