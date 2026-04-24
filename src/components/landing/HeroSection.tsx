@@ -76,7 +76,14 @@ export default function HeroSection() {
         </div>
 
         {/* Modern image showcase */}
-        <div className="mt-14 sm:mt-20 max-w-6xl mx-auto animate-fade-in" style={{ animationDelay: '0.5s' }}>
+        <div className="relative mt-14 sm:mt-20 max-w-6xl mx-auto animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          {/* Animated mesh backdrop */}
+          <div aria-hidden className="pointer-events-none absolute -inset-8 sm:-inset-16 -z-10 overflow-hidden">
+            <div className="absolute top-0 left-1/4 w-[55%] h-[70%] rounded-full bg-[radial-gradient(circle_at_center,hsl(var(--accent)/0.55),transparent_60%)] blur-3xl animate-mesh-shift" />
+            <div className="absolute bottom-0 right-1/4 w-[55%] h-[70%] rounded-full bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.55),transparent_60%)] blur-3xl animate-mesh-shift-alt" style={{ animationDelay: '-4s' }} />
+            <div className="absolute top-1/3 right-0 w-[40%] h-[55%] rounded-full bg-[radial-gradient(circle_at_center,hsl(200_90%_60%/0.35),transparent_60%)] blur-3xl animate-mesh-shift" style={{ animationDelay: '-8s' }} />
+          </div>
+
           <div className="grid grid-cols-12 gap-3 sm:gap-4">
             {/* Main collab image */}
             <div className="col-span-12 md:col-span-7 relative group">
@@ -91,6 +98,10 @@ export default function HeroSection() {
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                {/* Light sweep */}
+                <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+                  <div className="absolute -inset-y-8 -left-1/3 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent blur-xl animate-light-sweep" />
+                </div>
                 {/* Floating live badge */}
                 <div className="absolute top-4 left-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white text-xs font-medium">
                   <span className="relative flex h-2 w-2">
