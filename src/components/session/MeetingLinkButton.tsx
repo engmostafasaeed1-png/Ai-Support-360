@@ -68,6 +68,12 @@ interface MeetingLinkButtonProps {
    * where the app may be embedded.
    */
   sessionId?: string;
+  /**
+   * Optional explicit provider. When omitted, the provider is auto-detected
+   * from `url` / `fallbackUrl`. Pass this when the caller has already detected
+   * the provider so troubleshooting copy stays consistent across components.
+   */
+  provider?: MeetingProvider;
 }
 
 /**
@@ -93,6 +99,7 @@ export default function MeetingLinkButton({
   joinLabel,
   requirePreflight = true,
   sessionId,
+  provider: providerProp,
 }: MeetingLinkButtonProps) {
   const { t } = useTranslation();
   const [fallbackOpen, setFallbackOpen] = useState(false);
@@ -112,7 +119,10 @@ export default function MeetingLinkButton({
   );
 
   const target = url || fallbackUrl || '';
-  const provider = detectProvider(target);
+  // Prefer the explicit provider prop; fall back to auto-detection from the URL.
+  const detected = detectProvider(target);
+  const provider: MeetingProvider =
+    providerProp && providerProp !== 'unknown' ? providerProp : detected;
   const isMeet = provider === 'meet';
 
   // Derive the always-available Jitsi fallback.
