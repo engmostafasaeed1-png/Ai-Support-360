@@ -85,6 +85,23 @@ export default function ConsultantProfilePage() {
     enabled: !!id,
   });
 
+  // Realtime: refresh badge when an admin changes the verification status
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`consultant-verification-${id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'consultants', filter: `id=eq.${id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['consultant-verification', id] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id, queryClient]);
+
   const verificationStatus: VerificationStatus =
     (liveConsultant?.verification_status as VerificationStatus) ||
     (consultant?.badges?.includes('verified') ? 'verified' : 'pending');
