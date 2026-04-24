@@ -95,6 +95,7 @@ export default function MeetingLinkButton({
   const { t } = useTranslation();
   const [fallbackOpen, setFallbackOpen] = useState(false);
   const [failedProvider, setFailedProvider] = useState<MeetingProvider>('unknown');
+  const [failedReason, setFailedReason] = useState<TroubleshootReason>('load_failed');
   const [preflightOpen, setPreflightOpen] = useState(false);
   const pendingOpenRef = useRef<{ url: string; provider: MeetingProvider } | null>(null);
   const watcherRef = useRef<number | null>(null);
