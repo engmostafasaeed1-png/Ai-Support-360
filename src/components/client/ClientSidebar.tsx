@@ -166,48 +166,82 @@ export default function ClientSidebar() {
           </div>
         )}
 
-        {/* Navigation Groups */}
-        <div className="flex-1 overflow-y-auto py-2 space-y-1">
+        {/* Navigation Groups - Modern Tile Grid */}
+        <div className="flex-1 overflow-y-auto py-3 space-y-4">
           {navGroups.map((group) => {
             const visibleItems = group.items.filter(item => isVisible(item.key));
             if (visibleItems.length === 0) return null;
             return (
               <SidebarGroup key={group.labelKey}>
+                {!collapsed && (
+                  <SidebarGroupLabel className="px-4 text-[10px] uppercase tracking-wider font-semibold text-sidebar-foreground/40 mb-1.5">
+                    {t(group.labelKey)}
+                  </SidebarGroupLabel>
+                )}
                 <SidebarGroupContent>
-                  <SidebarMenu>
-                    {visibleItems.map((item) => {
-                      const isActive = location.pathname === item.path;
-                      const isAccent = (item as any).accent;
-                      return (
-                        <SidebarMenuItem key={item.key}>
-                          <SidebarMenuButton asChild>
-                            <NavLink
-                              to={item.path}
-                              end
-                              className={`group/item relative rounded-lg mx-1 transition-all duration-150 ${
-                                isActive
-                                  ? 'bg-primary/10 text-primary font-semibold shadow-sm'
-                                  : isAccent
-                                  ? 'text-primary hover:bg-primary/5'
-                                  : 'hover:bg-sidebar-accent/50 text-sidebar-foreground/70 hover:text-sidebar-foreground'
-                              }`}
-                              activeClassName="bg-primary/10 text-primary font-semibold"
-                            >
-                              {isActive && (
-                                <div className="absolute inset-y-1 start-0 w-[3px] rounded-full bg-primary" />
-                              )}
-                              <item.icon className={`w-4 h-4 me-2.5 shrink-0 transition-colors ${
-                                isActive ? 'text-primary' : isAccent ? 'text-primary' : 'text-sidebar-foreground/50 group-hover/item:text-sidebar-foreground/70'
-                              }`} />
-                              {!collapsed && (
-                                <span className="text-[13px]">{t(`sidebar.${item.key}`)}</span>
-                              )}
-                            </NavLink>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      );
-                    })}
-                  </SidebarMenu>
+                  {collapsed ? (
+                    <SidebarMenu>
+                      {visibleItems.map((item) => {
+                        const isActive = location.pathname === item.path;
+                        return (
+                          <SidebarMenuItem key={item.key}>
+                            <SidebarMenuButton asChild tooltip={t(`sidebar.${item.key}`)}>
+                              <NavLink
+                                to={item.path}
+                                end
+                                className={`group/item relative flex items-center justify-center rounded-xl mx-1.5 my-0.5 h-10 transition-all duration-200 ${
+                                  isActive
+                                    ? 'bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg shadow-primary/30'
+                                    : 'hover:bg-sidebar-accent/60 text-sidebar-foreground/70 hover:text-sidebar-foreground'
+                                }`}
+                                activeClassName=""
+                              >
+                                <item.icon className="w-4 h-4 shrink-0" />
+                              </NavLink>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </SidebarMenu>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 px-3">
+                      {visibleItems.map((item) => {
+                        const isActive = location.pathname === item.path;
+                        const isAccent = (item as any).accent;
+                        return (
+                          <NavLink
+                            key={item.key}
+                            to={item.path}
+                            end
+                            className={`group/tile relative flex flex-col items-center justify-center gap-1.5 rounded-2xl px-2 py-3 text-center transition-all duration-200 overflow-hidden border ${
+                              isActive
+                                ? 'bg-gradient-to-br from-primary to-primary/60 text-primary-foreground border-primary/40 shadow-lg shadow-primary/30 scale-[1.02]'
+                                : isAccent
+                                ? 'bg-gradient-to-br from-primary/15 to-primary/5 text-primary border-primary/30 hover:from-primary/25 hover:to-primary/10 hover:shadow-md'
+                                : 'bg-sidebar-accent/20 hover:bg-sidebar-accent/50 text-sidebar-foreground/80 hover:text-sidebar-foreground border-sidebar-border/30 hover:border-sidebar-border/60 hover:shadow-md hover:-translate-y-0.5'
+                            }`}
+                            activeClassName=""
+                          >
+                            {isActive && (
+                              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 pointer-events-none" />
+                            )}
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-xl shrink-0 transition-all ${
+                              isActive
+                                ? 'bg-white/25 backdrop-blur-sm'
+                                : isAccent
+                                ? 'bg-primary/20'
+                                : 'bg-sidebar-background/60 group-hover/tile:bg-sidebar-background/90 shadow-sm'
+                            }`}>
+                              <item.icon className={`w-4 h-4 ${isActive ? 'text-primary-foreground' : isAccent ? 'text-primary' : 'text-sidebar-foreground/70 group-hover/tile:text-sidebar-foreground'}`} />
+                            </div>
+                            <span className="text-[10.5px] font-medium leading-tight line-clamp-2">
+                              {t(`sidebar.${item.key}`)}
+                            </span>
+                          </NavLink>
+                        );
+                      })}
+                    </div>
+                  )}
                 </SidebarGroupContent>
               </SidebarGroup>
             );
