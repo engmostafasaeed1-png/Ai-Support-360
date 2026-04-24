@@ -23,7 +23,7 @@ import {
   CreditCard, Eye, Printer, Plus, Pencil, ArrowUpDown, RefreshCw,
 } from 'lucide-react';
 import { generateInvoicePdf as buildInvoicePdf } from '@/lib/invoicePdf';
-import { Video, MessageSquare, Monitor, PlayCircle } from 'lucide-react';
+import { Video, MessageSquare, Monitor, PlayCircle, Phone, HelpCircle } from 'lucide-react';
 import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
 import { InvoiceDisputeSection } from '@/components/invoice/InvoiceDisputeSection';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
@@ -38,6 +38,49 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
   failed: { label: 'Failed', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: XCircle },
   refunded: { label: 'Refunded', color: 'bg-muted text-muted-foreground', icon: AlertCircle },
 };
+
+const SESSION_TYPE_CONFIG: Record<string, { label: string; icon: any; className: string }> = {
+  video: {
+    label: 'Video Call',
+    icon: Video,
+    className: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-900/50',
+  },
+  chat: {
+    label: 'Chat',
+    icon: MessageSquare,
+    className: 'bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-900/50',
+  },
+  screen_share: {
+    label: 'Screen Share',
+    icon: Monitor,
+    className: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-900/50',
+  },
+  voice: {
+    label: 'Voice Call',
+    icon: Phone,
+    className: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-900/50',
+  },
+  recorded: {
+    label: 'Recorded Session',
+    icon: PlayCircle,
+    className: 'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-900/50',
+  },
+};
+
+const NO_SESSION_CONFIG = {
+  label: 'No Session',
+  icon: HelpCircle,
+  className: 'bg-muted text-muted-foreground border-border',
+};
+
+function getSessionTypeConfig(type?: string | null) {
+  if (!type) return NO_SESSION_CONFIG;
+  return SESSION_TYPE_CONFIG[type] || {
+    label: type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+    icon: PlayCircle,
+    className: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+  };
+}
 
 const matchesTab = (status: string, tab: string) => {
   if (tab === 'all') return true;
@@ -297,25 +340,59 @@ export default function InvoicesPage() {
                             {inv.ticket_sap_module && <Badge variant="outline" className="text-[9px]">{inv.ticket_sap_module}</Badge>}
                           </div>
                         )}
+                        {inv.session_id && (() => {
+                          const cfg = getSessionTypeConfig(inv.session_type);
+                          const Icon = cfg.icon;
+                          return (
+                            <div className="mt-1 flex items-center gap-1.5 flex-wrap md:hidden">
+                              <Badge variant="outline" className={`text-[10px] gap-1 ${cfg.className}`}>
+                                <Icon className="w-3 h-3" /> {cfg.label}
+                              </Badge>
+                              {inv.session_status && (
+                                <Badge variant="outline" className="text-[9px] capitalize">{inv.session_status}</Badge>
+                              )}
+                              {inv.session_scheduled_at && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  {format(new Date(inv.session_scheduled_at), 'MMM d, h:mm a')}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                         {inv.session_id && (
-                          <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                            <SessionTypeIcon type={inv.session_type} className="w-3 h-3 text-blue-600" />
-                            <span className="text-xs text-blue-600 font-medium capitalize">
-                              {(inv.session_type || 'session').toString().replace(/_/g, ' ')} session
-                            </span>
+                          <div className="mt-1 hidden md:flex items-center gap-1.5 flex-wrap">
                             {inv.session_status && (
                               <Badge variant="outline" className="text-[9px] capitalize">{inv.session_status}</Badge>
                             )}
                             {inv.session_scheduled_at && (
                               <span className="text-[10px] text-muted-foreground">
-                                · {format(new Date(inv.session_scheduled_at), 'MMM d, h:mm a')}
+                                {format(new Date(inv.session_scheduled_at), 'MMM d, h:mm a')}
                               </span>
                             )}
+                            {inv.session_duration_minutes ? (
+                              <span className="text-[10px] text-muted-foreground">· {inv.session_duration_minutes} min</span>
+                            ) : null}
                           </div>
                         )}
                         {inv.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{inv.description}</p>}
                       </div>
                     </div>
+                    {(() => {
+                      const cfg = getSessionTypeConfig(inv.session_id ? inv.session_type : null);
+                      const Icon = cfg.icon;
+                      return (
+                        <div
+                          className="hidden md:flex flex-col items-center justify-center min-w-[110px] px-3 py-2 rounded-xl border bg-background/40 shrink-0"
+                          title={cfg.label}
+                        >
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${cfg.className}`}>
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-1.5">Session</span>
+                          <span className="text-xs font-medium text-foreground leading-tight text-center">{cfg.label}</span>
+                        </div>
+                      );
+                    })()}
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-end">
                         <ConvertedAmount amount={Number(inv.amount)} currency={inv.currency} className="items-end text-sm font-bold text-foreground" />
