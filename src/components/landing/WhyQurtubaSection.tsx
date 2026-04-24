@@ -45,17 +45,17 @@ export default function WhyQurtubaSection() {
 
   return (
     <section className="py-20 md:py-32 bg-background relative overflow-hidden">
-      {/* Decorative mesh background */}
+      {/* Decorative mesh background — animation only when motion is allowed */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] animate-mesh-shift" />
-        <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-accent/10 rounded-full blur-[140px] animate-mesh-shift-alt" />
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] motion-safe:animate-mesh-shift" />
+        <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-accent/10 rounded-full blur-[140px] motion-safe:animate-mesh-shift-alt" />
       </div>
 
       <div className="container mx-auto px-4 relative">
         {/* Header */}
-        <div className="text-center mb-14 md:mb-20 max-w-3xl mx-auto animate-fade-in-up">
+        <div className="text-center mb-14 md:mb-20 max-w-3xl mx-auto motion-safe:animate-fade-in-up">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-foreground/5 border border-border/60 text-foreground/80 text-xs font-bold tracking-[0.2em] uppercase mb-5 backdrop-blur-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse-soft" />
+            <span className="w-1.5 h-1.5 rounded-full bg-primary motion-safe:animate-pulse-soft" />
             Why Choose Us
           </span>
           <h2 className="text-4xl md:text-6xl font-black text-foreground tracking-tight leading-[1.05]">
@@ -75,8 +75,10 @@ export default function WhyQurtubaSection() {
           {items.map((f, i) => (
             <article
               key={i}
+              // Stagger only applies when motion is allowed; reduced-motion users
+              // get an instant, fully-visible card with no transform/opacity dance.
               style={{ animationDelay: `${i * 80}ms` }}
-              className={`group relative overflow-hidden rounded-3xl border border-border/40 bg-card shadow-sm hover:shadow-2xl transition-all duration-700 hover:-translate-y-1 animate-fade-in-up ${f.size}`}
+              className={`group relative overflow-hidden rounded-3xl border border-border/40 bg-card shadow-sm hover:shadow-2xl motion-safe:transition-all motion-safe:duration-700 motion-safe:hover:-translate-y-1 motion-safe:animate-fade-in-up ${f.size}`}
             >
               {/* Background image with blur-up placeholder */}
               <BlurImage
@@ -85,11 +87,11 @@ export default function WhyQurtubaSection() {
                 alt=""
                 width={1024}
                 height={768}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-110"
+                className="absolute inset-0 w-full h-full object-cover motion-safe:transition-transform motion-safe:duration-[1200ms] motion-safe:ease-out motion-safe:group-hover:scale-110"
               />
 
               {/* Gradient color overlay */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${f.accent} mix-blend-multiply opacity-90 transition-opacity duration-500 group-hover:opacity-80`} />
+              <div className={`absolute inset-0 bg-gradient-to-br ${f.accent} mix-blend-multiply opacity-90 motion-safe:transition-opacity motion-safe:duration-500 motion-safe:group-hover:opacity-80`} />
 
               {/* Bottom dark gradient for text legibility */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
@@ -97,14 +99,14 @@ export default function WhyQurtubaSection() {
               {/* Top index tag */}
               <div className="absolute top-5 right-5 z-10 flex items-center gap-2">
                 <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-white/70">{f.tag}</span>
-                <div className="w-8 h-8 rounded-full bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover:bg-white/25 transition-colors">
-                  <ArrowUpRight className="w-4 h-4 text-white group-hover:rotate-45 transition-transform duration-500" />
+                <div className="w-8 h-8 rounded-full bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover:bg-white/25 motion-safe:transition-colors">
+                  <ArrowUpRight className="w-4 h-4 text-white motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:rotate-45" />
                 </div>
               </div>
 
               {/* Icon */}
               <div className="absolute top-5 left-5 z-10">
-                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-xl border border-white/25 flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:bg-white/25 transition-all duration-500">
+                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-xl border border-white/25 flex items-center justify-center shadow-xl motion-safe:transition-all motion-safe:duration-500 motion-safe:group-hover:scale-110 group-hover:bg-white/25">
                   <f.Icon size={24} strokeWidth={1.75} absoluteStrokeWidth className="text-white" aria-hidden="true" />
                 </div>
               </div>
@@ -114,13 +116,13 @@ export default function WhyQurtubaSection() {
                 <h3 className="text-xl md:text-2xl font-bold text-white mb-2 leading-tight tracking-tight">
                   {f.title}
                 </h3>
-                <p className="text-sm text-white/85 leading-relaxed line-clamp-3 group-hover:text-white transition-colors">
+                <p className="text-sm text-white/85 leading-relaxed line-clamp-3 group-hover:text-white motion-safe:transition-colors">
                   {f.desc}
                 </p>
               </div>
 
               {/* Hover ring */}
-              <div className="absolute inset-0 rounded-3xl ring-1 ring-inset ring-white/0 group-hover:ring-white/30 transition-all duration-500 pointer-events-none" />
+              <div className="absolute inset-0 rounded-3xl ring-1 ring-inset ring-white/0 group-hover:ring-white/30 motion-safe:transition-all motion-safe:duration-500 pointer-events-none" />
             </article>
           ))}
         </div>

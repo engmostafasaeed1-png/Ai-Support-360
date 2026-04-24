@@ -34,6 +34,14 @@ export default function BlurImage({
     if (imgRef.current?.complete) setLoaded(true);
   }, []);
 
+  // Respect users who prefer reduced motion: skip the crossfade entirely.
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const transition = prefersReducedMotion
+    ? undefined
+    : { transitionDuration: `${fadeMs}ms` };
+
   return (
     <>
       {/* Blurred low-res placeholder */}
@@ -43,10 +51,10 @@ export default function BlurImage({
         aria-hidden="true"
         width={width}
         height={height}
-        className={`${className} scale-110 blur-xl transition-opacity ease-out ${
+        className={`${className} scale-110 blur-xl motion-safe:transition-opacity motion-safe:ease-out ${
           loaded ? 'opacity-0' : 'opacity-100'
         }`}
-        style={{ transitionDuration: `${fadeMs}ms` }}
+        style={transition}
       />
       {/* Full-res image */}
       <img
@@ -58,10 +66,10 @@ export default function BlurImage({
         loading="lazy"
         decoding="async"
         onLoad={() => setLoaded(true)}
-        className={`${className} transition-opacity ease-out ${
+        className={`${className} motion-safe:transition-opacity motion-safe:ease-out ${
           loaded ? 'opacity-100' : 'opacity-0'
         }`}
-        style={{ transitionDuration: `${fadeMs}ms` }}
+        style={transition}
       />
     </>
   );
