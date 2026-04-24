@@ -154,6 +154,7 @@ export default function SessionDetailPage() {
 
       {session.session_type === 'video' && status !== 'completed' && status !== 'cancelled' && (
         <>
+          <TroubleshootingLanguageSwitcher sessionId={sessionId} />
           <FramedAppNotice
             dismissKey={`framed-notice-dismissed:${sessionId}`}
             meetingUrl={meetingUrl}
