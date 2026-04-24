@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Wand2, ShieldCheck, Languages, Lock, Users, Activity, ArrowUpRight } from 'lucide-react';
 import BlurImage from './BlurImage';
+import { tileImageAlt } from './tileImageAlt';
 import {
   accents,
   border,
