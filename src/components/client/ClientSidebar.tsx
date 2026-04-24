@@ -30,6 +30,8 @@ import TileTooltip from '@/components/sidebar/TileTooltip';
 import { getTileMeta } from '@/components/sidebar/tileMeta';
 import SidebarTileSkeleton from '@/components/sidebar/SidebarTileSkeleton';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTileDensity } from '@/hooks/useTileDensity';
+import { mobileTileDensityClasses } from '@/components/sidebar/tileDensityClasses';
 
 // Per-tile color tints for visual variety (uses semantic HSL tokens via tailwind utilities)
 const tileTints: Record<string, string> = {
