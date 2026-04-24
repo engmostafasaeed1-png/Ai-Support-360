@@ -403,6 +403,9 @@ export default function InvoicesPage() {
                         )}
                       </div>
                       <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" title="View details" onClick={e => { e.stopPropagation(); setDrawerPayment(inv); }}>
+                          <PanelRightOpen className="w-4 h-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" title="Preview PDF" onClick={e => { e.stopPropagation(); generateInvoicePdf(inv, true); }}>
                           <Eye className="w-4 h-4" />
                         </Button>
