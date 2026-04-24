@@ -149,23 +149,25 @@ export default function ConsultantSidebar() {
                   const tint = tileTints[item.key] || 'from-primary/20 to-primary/5 text-primary';
                   return (
                     <SidebarMenuItem key={item.key}>
-                      <SidebarMenuButton asChild tooltip={label}>
-                        <NavLink
-                          to={item.path}
-                          end={item.path === '/consultant'}
-                          className={`flex items-center justify-center rounded-xl h-10 transition-all duration-200 ${
-                            isActive
-                              ? `bg-gradient-to-br ${tint} shadow-lg`
-                              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
-                          }`}
-                          activeClassName=""
-                        >
-                          {item.key === 'onboarding' && onboardingDone ? (
-                            <CheckCircle2 className="w-4 h-4 text-green-400" />
-                          ) : (
-                            <item.icon className="w-4 h-4" />
-                          )}
-                        </NavLink>
+                      <SidebarMenuButton asChild>
+                        <TileTooltip scope="consultant" itemKey={item.key} label={label} isActive={isActive} side="right">
+                          <NavLink
+                            to={item.path}
+                            end={item.path === '/consultant'}
+                            className={`flex items-center justify-center rounded-xl h-10 transition-all duration-200 ${
+                              isActive
+                                ? `bg-gradient-to-br ${tint} shadow-lg`
+                                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
+                            }`}
+                            activeClassName=""
+                          >
+                            {item.key === 'onboarding' && onboardingDone ? (
+                              <CheckCircle2 className="w-4 h-4 text-green-400" />
+                            ) : (
+                              <item.icon className="w-4 h-4" />
+                            )}
+                          </NavLink>
+                        </TileTooltip>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
