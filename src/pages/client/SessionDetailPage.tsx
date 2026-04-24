@@ -147,18 +147,27 @@ export default function SessionDetailPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ratings')
-        .select('id, score, comment, is_anonymous, created_at')
+        .select('id, score, comment, is_anonymous, created_at, communication_score, technical_expertise_score, responsiveness_score')
         .eq('consultant_id', consultantId!)
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
-      const rows = data || [];
+      const rows = (data || []) as any[];
       const total = rows.length;
       const avg = total
         ? rows.reduce((sum, r) => sum + (r.score || 0), 0) / total
         : 0;
+      const avgOf = (key: string) => {
+        const vals = rows.map((r) => r[key]).filter((v) => typeof v === 'number' && v > 0);
+        return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+      };
+      const breakdown = {
+        communication: avgOf('communication_score'),
+        technical: avgOf('technical_expertise_score'),
+        responsiveness: avgOf('responsiveness_score'),
+      };
       const recent = rows.filter((r) => (r.comment || '').trim().length > 0).slice(0, 3);
-      return { avg, total, recent };
+      return { avg, total, recent, breakdown };
     },
   });
 
