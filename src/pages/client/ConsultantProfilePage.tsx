@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import BookingModal from '@/components/client/BookingModal';
 import WriteReviewDialog from '@/components/client/WriteReviewDialog';
+import VerificationBadge, { type VerificationStatus } from '@/components/consultant/VerificationBadge';
 
 export default function ConsultantProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -68,6 +69,25 @@ export default function ConsultantProfilePage() {
 
   const consultant = mockRecommendedConsultants.find(c => c.id === id);
   const detail = mockConsultantDetailData;
+
+  // Try to fetch real verification_status; fall back to mock badge
+  const { data: liveConsultant } = useQuery({
+    queryKey: ['consultant-verification', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data } = await supabase
+        .from('consultants')
+        .select('id, verification_status')
+        .eq('id', id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const verificationStatus: VerificationStatus =
+    (liveConsultant?.verification_status as VerificationStatus) ||
+    (consultant?.badges?.includes('verified') ? 'verified' : 'pending');
 
   // Fetch Credly badges if consultant has a credly_username
   useEffect(() => {
@@ -127,7 +147,10 @@ export default function ConsultantProfilePage() {
             <div className="flex-1 pt-2">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">{consultant.name}</h1>
+                  <h1 className="text-2xl font-bold text-foreground flex items-center gap-2 flex-wrap">
+                    {consultant.name}
+                    <VerificationBadge status={verificationStatus} size="md" />
+                  </h1>
                   <p className="text-muted-foreground">{consultant.specialty}</p>
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
                     <div className="flex items-center gap-1 text-sm">
