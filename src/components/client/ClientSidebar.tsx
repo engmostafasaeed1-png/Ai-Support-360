@@ -224,7 +224,7 @@ export default function ClientSidebar() {
               <SidebarGroup key={group.labelKey}>
                 {!collapsed && (
                   <SidebarGroupLabel className="px-4 text-[10px] uppercase tracking-wider font-semibold text-sidebar-foreground/40 mb-1.5">
-                    {t(group.labelKey, group.fallback)}
+                    {String(t(group.labelKey, { defaultValue: group.fallback }))}
                   </SidebarGroupLabel>
                 )}
                 <SidebarGroupContent>
