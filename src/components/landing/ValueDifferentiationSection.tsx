@@ -1,11 +1,22 @@
 import { Check, X, Sparkles, Bot, ShieldCheck, Zap, BrainCircuit, FileSearch, ArrowUpRight } from 'lucide-react';
+import { accents, iconPlate, radius, shadow, type AccentName } from './tokens';
 
-const valuePillars = [
+type Pillar = {
+  Icon: typeof BrainCircuit;
+  title: string;
+  desc: string;
+  /** Accent identity from shared tokens — drives gradient + glow color. */
+  accent: AccentName;
+  span?: string;
+  featured?: boolean;
+};
+
+const valuePillars: Pillar[] = [
   {
     Icon: BrainCircuit,
     title: 'AI-native triage',
     desc: 'Every ticket is parsed, classified, and pre-solved by AI tuned for SAP — before a human even reads it.',
-    accent: 'from-primary/30 via-primary/10 to-transparent',
+    accent: 'violet',
     span: 'md:col-span-2 md:row-span-2',
     featured: true,
   },
@@ -13,32 +24,32 @@ const valuePillars = [
     Icon: Zap,
     title: 'On-demand experts',
     desc: 'Match with vetted SAP specialists in minutes, not weeks.',
-    accent: 'from-accent/25 to-transparent',
+    accent: 'amber',
   },
   {
     Icon: Sparkles,
     title: 'Pay per outcome',
     desc: 'No seats, no licenses. Resolution-based pricing.',
-    accent: 'from-primary/20 to-transparent',
+    accent: 'rose',
   },
   {
     Icon: ShieldCheck,
     title: 'Governance built-in',
     desc: 'NDAs, RBAC, audit trails, screen protection — native, not bolted on.',
-    accent: 'from-accent/20 to-transparent',
+    accent: 'emerald',
     span: 'md:col-span-2',
   },
   {
     Icon: FileSearch,
     title: 'Knowledge that compounds',
     desc: 'Every resolved case becomes searchable IP for your team.',
-    accent: 'from-primary/20 to-transparent',
+    accent: 'sky',
   },
   {
     Icon: Bot,
     title: 'SAP-specific by design',
     desc: 'Tuned for S/4HANA, ECC, BTP & every module — not generic IT.',
-    accent: 'from-accent/25 to-transparent',
+    accent: 'cyan',
   },
 ];
 
