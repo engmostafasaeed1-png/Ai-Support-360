@@ -81,9 +81,12 @@ export default function InterviewStep({ onInterviewComplete, consultantId }: Pro
     <div className="space-y-5">
       <Card className="p-6 text-center space-y-4">
         <Brain className="w-12 h-12 text-primary mx-auto" />
-        <h3 className="text-lg font-semibold">AI Skills Assessment</h3>
+        <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
+          AI Skills Assessment
+          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">Optional</span>
+        </h3>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Take a quick AI-powered interview to verify your SAP skills. The assessment consists of 6 tailored questions based on your expertise. It typically takes 15-20 minutes.
+          Take a quick AI-powered interview to verify your SAP skills. <strong>Optional</strong> — but you'll earn a verified badge (Bronze → Gold) and up to <strong>150 credibility credits</strong> shown on your profile to clients.
         </p>
 
         <div className="grid grid-cols-3 gap-3 text-center max-w-sm mx-auto">
