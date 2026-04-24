@@ -305,6 +305,16 @@ export default function MeetingLinkButton({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PreflightTestDialog
+        open={preflightOpen}
+        onOpenChange={(o) => {
+          setPreflightOpen(o);
+          if (!o) pendingOpenRef.current = null;
+        }}
+        onProceed={handlePreflightProceed}
+        joinLabel={joinLabel ?? t('session_detail.join_session')}
+      />
     </>
   );
 }
