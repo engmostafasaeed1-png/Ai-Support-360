@@ -29,6 +29,7 @@ import MeetingLinkButton, { detectProvider } from '@/components/session/MeetingL
 import MediaPermissionsBanner from '@/components/session/MediaPermissionsBanner';
 import FramedAppNotice from '@/components/session/FramedAppNotice';
 import TroubleshootingLanguageSwitcher from '@/components/session/TroubleshootingLanguageSwitcher';
+import { TranslateTroubleshootingProvider } from '@/components/session/TranslateTroubleshootingContext';
 import PreJoinChecklist from '@/components/session/PreJoinChecklist';
 import MeetingPermissionsNote from '@/components/session/MeetingPermissionsNote';
 import ShareAudioGuideNote from '@/components/session/ShareAudioGuideNote';
