@@ -340,8 +340,27 @@ export default function InvoicesPage() {
                             {inv.ticket_sap_module && <Badge variant="outline" className="text-[9px]">{inv.ticket_sap_module}</Badge>}
                           </div>
                         )}
+                        {inv.session_id && (() => {
+                          const cfg = getSessionTypeConfig(inv.session_type);
+                          const Icon = cfg.icon;
+                          return (
+                            <div className="mt-1 flex items-center gap-1.5 flex-wrap md:hidden">
+                              <Badge variant="outline" className={`text-[10px] gap-1 ${cfg.className}`}>
+                                <Icon className="w-3 h-3" /> {cfg.label}
+                              </Badge>
+                              {inv.session_status && (
+                                <Badge variant="outline" className="text-[9px] capitalize">{inv.session_status}</Badge>
+                              )}
+                              {inv.session_scheduled_at && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  {format(new Date(inv.session_scheduled_at), 'MMM d, h:mm a')}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                         {inv.session_id && (
-                          <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                          <div className="mt-1 hidden md:flex items-center gap-1.5 flex-wrap">
                             {inv.session_status && (
                               <Badge variant="outline" className="text-[9px] capitalize">{inv.session_status}</Badge>
                             )}
