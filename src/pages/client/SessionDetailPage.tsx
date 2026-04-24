@@ -259,6 +259,22 @@ export default function SessionDetailPage() {
                     <span className="text-[11px] text-muted-foreground">
                       {consultantRatings.total} {consultantRatings.total === 1 ? 'rating' : 'ratings'}
                     </span>
+                    {(['communication', 'technical', 'responsiveness'] as const).map((k) => {
+                      const v = consultantRatings.breakdown?.[k];
+                      if (typeof v !== 'number') return null;
+                      const label = k === 'communication' ? 'Comm' : k === 'technical' ? 'Tech' : 'Resp';
+                      return (
+                        <span
+                          key={k}
+                          className="inline-flex items-center gap-1 rounded-md bg-muted/50 border border-border/50 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                          title={`${k.charAt(0).toUpperCase() + k.slice(1)} avg`}
+                        >
+                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                          <span className="font-semibold text-foreground">{v.toFixed(1)}</span>
+                          <span className="uppercase tracking-wide">{label}</span>
+                        </span>
+                      );
+                    })}
                   </div>
                 ) : consultantRatings && consultantRatings.total === 0 ? (
                   <p className="mt-2 text-[11px] text-muted-foreground italic">
