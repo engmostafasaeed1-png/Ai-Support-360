@@ -108,14 +108,18 @@ export default function Navbar() {
         <button
           className={`md:hidden inline-flex items-center justify-center -mr-1.5 h-11 w-11 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors active:scale-95 ${scrolled ? 'hover:bg-muted/60 active:bg-muted' : 'hover:bg-white/15 active:bg-white/20'}`}
           onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle menu"
+          aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileOpen}
+          aria-controls="mobile-menu"
         >
-          {mobileOpen ? (
-            <X className={`w-6 h-6 ${scrolled ? 'text-foreground' : 'text-white drop-shadow-md'}`} />
-          ) : (
-            <Menu className={`w-6 h-6 ${scrolled ? 'text-foreground' : 'text-white drop-shadow-md'}`} />
-          )}
+          <span className="relative w-6 h-6 inline-flex items-center justify-center">
+            <Menu
+              className={`absolute w-6 h-6 transition-all duration-300 ${scrolled ? 'text-foreground' : 'text-white drop-shadow-md'} ${mobileOpen ? 'opacity-0 -rotate-90 scale-75' : 'opacity-100 rotate-0 scale-100'}`}
+            />
+            <X
+              className={`absolute w-6 h-6 transition-all duration-300 ${scrolled ? 'text-foreground' : 'text-white drop-shadow-md'} ${mobileOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-90 scale-75'}`}
+            />
+          </span>
         </button>
       </div>
 
