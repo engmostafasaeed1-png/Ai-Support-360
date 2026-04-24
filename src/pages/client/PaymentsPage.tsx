@@ -7,10 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useClientPayments } from '@/hooks/useClientPayments';
-import { Download, CreditCard, DollarSign, FileText, Clock, Search, ArrowRight, Ticket, AlertCircle, CheckCircle2, XCircle, ReceiptText, Calendar, User, Tag, Video, MessageSquare, Monitor, PlayCircle } from 'lucide-react';
+import { Download, CreditCard, DollarSign, FileText, Clock, Search, ArrowRight, Ticket, AlertCircle, CheckCircle2, XCircle, ReceiptText, Calendar, User, Tag, Video, MessageSquare, Monitor, PlayCircle, Receipt } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { generateInvoicePdf } from '@/lib/invoicePdf';
+import { generateReceiptPdf } from '@/lib/receiptPdf';
 import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
@@ -195,6 +196,11 @@ export default function PaymentsPage() {
                       <Button variant="ghost" size="icon" title="Download Invoice" className="shrink-0" onClick={e => { e.stopPropagation(); generateInvoicePdf(payment); }}>
                         <Download className="w-4 h-4" />
                       </Button>
+                      {(payment.status === 'completed' || payment.status === 'paid') && (
+                        <Button variant="ghost" size="icon" title="Download Receipt" className="shrink-0 text-green-600 hover:text-green-700" onClick={e => { e.stopPropagation(); generateReceiptPdf({ ...payment, paid_at: payment.paid_at || payment.updated_at || payment.date, transaction_id: payment.transaction_id || payment.id }); }}>
+                          <Receipt className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 );
@@ -293,10 +299,24 @@ export default function PaymentsPage() {
               <PaymentStatusTimeline payment={selectedPayment} />
 
               {/* Actions */}
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
                 <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={() => generateInvoicePdf(selectedPayment)}>
                   <Download className="w-4 h-4" /> Download Invoice
                 </Button>
+                {(selectedPayment.status === 'completed' || selectedPayment.status === 'paid') && (
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-1.5 border-green-500/40 text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/30"
+                    size="sm"
+                    onClick={() => generateReceiptPdf({
+                      ...selectedPayment,
+                      paid_at: selectedPayment.paid_at || selectedPayment.updated_at || selectedPayment.date,
+                      transaction_id: selectedPayment.transaction_id || selectedPayment.id,
+                    })}
+                  >
+                    <Receipt className="w-4 h-4" /> Download Receipt
+                  </Button>
+                )}
               </div>
             </div>
           )}
