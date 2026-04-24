@@ -20,6 +20,34 @@ import ScreenPersonalizationDialog from '@/components/sidebar/ScreenPersonalizat
 import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 import logo from '@/assets/logo.png';
 
+const tileTints: Record<string, string> = {
+  dashboard: 'from-blue-500/25 to-blue-500/5 text-blue-500',
+  onboarding: 'from-amber-500/25 to-amber-500/5 text-amber-500',
+  cases: 'from-rose-500/25 to-rose-500/5 text-rose-500',
+  requests: 'from-violet-500/25 to-violet-500/5 text-violet-500',
+  proposals: 'from-cyan-500/25 to-cyan-500/5 text-cyan-500',
+  open_tickets: 'from-orange-500/25 to-orange-500/5 text-orange-500',
+  work_diary: 'from-indigo-500/25 to-indigo-500/5 text-indigo-500',
+  calendar: 'from-pink-500/25 to-pink-500/5 text-pink-500',
+  earnings: 'from-green-500/25 to-green-500/5 text-green-500',
+  chat: 'from-sky-500/25 to-sky-500/5 text-sky-500',
+  reviews: 'from-yellow-500/25 to-yellow-500/5 text-yellow-500',
+  profile: 'from-purple-500/25 to-purple-500/5 text-purple-500',
+  interviews: 'from-fuchsia-500/25 to-fuchsia-500/5 text-fuchsia-500',
+  verification: 'from-emerald-500/25 to-emerald-500/5 text-emerald-500',
+  remote_access: 'from-blue-500/25 to-blue-500/5 text-blue-500',
+  knowledge: 'from-amber-500/25 to-amber-500/5 text-amber-500',
+  business_processes: 'from-teal-500/25 to-teal-500/5 text-teal-500',
+  satisfaction: 'from-yellow-500/25 to-yellow-500/5 text-yellow-500',
+  reports: 'from-indigo-500/25 to-indigo-500/5 text-indigo-500',
+  referrals: 'from-pink-500/25 to-pink-500/5 text-pink-500',
+  notifications: 'from-amber-500/25 to-amber-500/5 text-amber-500',
+  settings: 'from-slate-500/25 to-slate-500/5 text-slate-500',
+};
+
+const titleize = (s: string) =>
+  s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
 const menuItems = [
   { key: 'dashboard', icon: Gauge, path: '/consultant', required: true },
   { key: 'onboarding', icon: Rocket, path: '/consultant/onboarding' },
