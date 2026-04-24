@@ -522,3 +522,8 @@ function DetailRow({ label, value, icon: Icon }: { label: string; value: string;
     </div>
   );
 }
+
+function SessionTypeIcon({ type, className }: { type?: string | null; className?: string }) {
+  const Icon = type === "chat" ? MessageSquare : type === "screen_share" ? Monitor : type === "video" ? Video : PlayCircle;
+  return <Icon className={className} />;
+}
