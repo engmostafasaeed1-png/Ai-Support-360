@@ -1,0 +1,6 @@
+-- ============================================================
+-- 1) Realtime channel authorization
+--    Enforce that only authenticated users can subscribe via Realtime.
+--    Without RLS on realtime.messages, any authenticated client can
+--    subscribe to any topic. We add a baseline policy that requires
+--    the authenticated role; broadcast pay

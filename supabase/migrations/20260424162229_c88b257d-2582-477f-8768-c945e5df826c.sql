@@ -1,0 +1,1 @@
+ALTER TABLE public.environment_credentials ADD COLUMN IF NOT EXISTS password_ciphertext text; ALTER TABLE public.vmware_settings ADD COLUMN IF NOT EXISTS vcenter_password_ciphertext text; ALTER TABLE public.vmware_settings ADD COLUMN IF NOT EXISTS cloud_api_key_ciphertext text; ALTER TABLE public.integrations ADD COLUMN IF NOT EXISTS api_key_ciphertext text;

@@ -1171,6 +1171,7 @@ export type Database = {
           environment_id: string
           hostname: string | null
           id: string
+          password_ciphertext: string | null
           password_encrypted: string
           port: number | null
           updated_at: string
@@ -1184,6 +1185,7 @@ export type Database = {
           environment_id: string
           hostname?: string | null
           id?: string
+          password_ciphertext?: string | null
           password_encrypted: string
           port?: number | null
           updated_at?: string
@@ -1197,6 +1199,7 @@ export type Database = {
           environment_id?: string
           hostname?: string | null
           id?: string
+          password_ciphertext?: string | null
           password_encrypted?: string
           port?: number | null
           updated_at?: string
@@ -1313,6 +1316,7 @@ export type Database = {
       }
       integrations: {
         Row: {
+          api_key_ciphertext: string | null
           api_key_encrypted: string
           client_id: string
           created_at: string
@@ -1329,6 +1333,7 @@ export type Database = {
           webhook_secret: string | null
         }
         Insert: {
+          api_key_ciphertext?: string | null
           api_key_encrypted: string
           client_id: string
           created_at?: string
@@ -1345,6 +1350,7 @@ export type Database = {
           webhook_secret?: string | null
         }
         Update: {
+          api_key_ciphertext?: string | null
           api_key_encrypted?: string
           client_id?: string
           created_at?: string
@@ -4640,6 +4646,7 @@ export type Database = {
           availability_zone: string | null
           cloud_account_id: string | null
           cloud_api_endpoint: string | null
+          cloud_api_key_ciphertext: string | null
           cloud_api_key_encrypted: string | null
           cloud_project_id: string | null
           cloud_region: string | null
@@ -4665,6 +4672,7 @@ export type Database = {
           storage_type: string | null
           subnet_id: string | null
           updated_at: string
+          vcenter_password_ciphertext: string | null
           vcenter_password_encrypted: string | null
           vcenter_url: string | null
           vcenter_username: string | null
@@ -4677,6 +4685,7 @@ export type Database = {
           availability_zone?: string | null
           cloud_account_id?: string | null
           cloud_api_endpoint?: string | null
+          cloud_api_key_ciphertext?: string | null
           cloud_api_key_encrypted?: string | null
           cloud_project_id?: string | null
           cloud_region?: string | null
@@ -4702,6 +4711,7 @@ export type Database = {
           storage_type?: string | null
           subnet_id?: string | null
           updated_at?: string
+          vcenter_password_ciphertext?: string | null
           vcenter_password_encrypted?: string | null
           vcenter_url?: string | null
           vcenter_username?: string | null
@@ -4714,6 +4724,7 @@ export type Database = {
           availability_zone?: string | null
           cloud_account_id?: string | null
           cloud_api_endpoint?: string | null
+          cloud_api_key_ciphertext?: string | null
           cloud_api_key_encrypted?: string | null
           cloud_project_id?: string | null
           cloud_region?: string | null
@@ -4739,6 +4750,7 @@ export type Database = {
           storage_type?: string | null
           subnet_id?: string | null
           updated_at?: string
+          vcenter_password_ciphertext?: string | null
           vcenter_password_encrypted?: string | null
           vcenter_url?: string | null
           vcenter_username?: string | null

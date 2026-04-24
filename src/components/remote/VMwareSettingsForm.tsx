@@ -121,7 +121,8 @@ export default function VMwareSettingsForm({
       setHypervisorType((settings as any).hypervisor_type || 'esxi');
       setVcenterUrl(settings.vcenter_url || '');
       setVcenterUsername(settings.vcenter_username || '');
-      setVcenterPassword(settings.vcenter_password_encrypted || '');
+      // Password is stored encrypted; user must re-enter to change it.
+      setVcenterPassword('');
       setDatacenter(settings.datacenter || '');
       setCluster(settings.cluster || '');
       setResourcePool(settings.resource_pool || '');
@@ -129,7 +130,8 @@ export default function VMwareSettingsForm({
       setCloudRegion((settings as any).cloud_region || '');
       setCloudAccountId((settings as any).cloud_account_id || '');
       setCloudProjectId((settings as any).cloud_project_id || '');
-      setCloudApiKey((settings as any).cloud_api_key_encrypted || '');
+      // API key is stored encrypted; user must re-enter to change it.
+      setCloudApiKey('');
       setCloudApiEndpoint((settings as any).cloud_api_endpoint || '');
       setInstanceType((settings as any).instance_type || '');
       setAvailabilityZone((settings as any).availability_zone || '');
@@ -182,7 +184,8 @@ export default function VMwareSettingsForm({
       hypervisor_type: hypervisorType,
       vcenter_url: vcenterUrl || null,
       vcenter_username: vcenterUsername || null,
-      vcenter_password_encrypted: vcenterPassword || null,
+      // Plaintext — encrypted client-side by useSaveVMwareSettings before insert.
+      ...(vcenterPassword ? { vcenter_password: vcenterPassword } : {}),
       datacenter: datacenter || null,
       cluster: cluster || null,
       resource_pool: resourcePool || null,
@@ -190,7 +193,7 @@ export default function VMwareSettingsForm({
       cloud_region: cloudRegion || null,
       cloud_account_id: cloudAccountId || null,
       cloud_project_id: cloudProjectId || null,
-      cloud_api_key_encrypted: cloudApiKey || null,
+      ...(cloudApiKey ? { cloud_api_key: cloudApiKey } : {}),
       cloud_api_endpoint: cloudApiEndpoint || null,
       instance_type: instanceType || null,
       availability_zone: availabilityZone || null,

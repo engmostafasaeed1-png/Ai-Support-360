@@ -1,0 +1,1 @@
+REVOKE SELECT (password_encrypted) ON public.environment_credentials FROM authenticated, anon; REVOKE SELECT (vcenter_password_encrypted, cloud_api_key_encrypted) ON public.vmware_settings FROM authenticated, anon; REVOKE SELECT (api_key_encrypted, webhook_secret) ON public.integrations FROM authenticated, anon;
