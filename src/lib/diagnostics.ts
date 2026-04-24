@@ -1,4 +1,62 @@
 import { logger } from './logger';
+import { supabase } from '@/integrations/supabase/client';
+
+/** Provider-related events worth tracking in analytics over time. */
+const TRACKED_EVENTS = new Set([
+  'open_attempt',
+  'opened',
+  'popup_blocked',
+  'invalid_url',
+  'fast_close',
+  'fallback_shown',
+  'fallback_selected',
+  'framed',
+  'load_failed',
+]);
+
+function safeHost(url: unknown): string | null {
+  if (typeof url !== 'string' || !url) return null;
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+}
+
+async function persistProviderEvent(
+  event: string,
+  data: Record<string, unknown>,
+  level: 'info' | 'warn' | 'error'
+) {
+  if (!TRACKED_EVENTS.has(event)) return;
+  try {
+    const { data: auth } = await supabase.auth.getUser();
+    const userId = auth?.user?.id;
+    if (!userId) return; // Anonymous — skip persistence; buffer still has it.
+
+    const reason = (data.reason as string | undefined) ?? event;
+    const provider = (data.provider as string | undefined) ?? 'unknown';
+    const sessionId = (data.sessionId as string | undefined) ?? null;
+    const url = data.url ?? data.src ?? null;
+
+    // Strip noisy / large fields from metadata.
+    const { provider: _p, sessionId: _s, url: _u, src: _src, userAgent: _ua, ...rest } = data;
+
+    await supabase.from('meeting_join_events').insert({
+      user_id: userId,
+      session_id: sessionId,
+      provider,
+      event,
+      reason,
+      url_host: safeHost(url),
+      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+      metadata: { ...rest, level },
+    });
+  } catch {
+    /* never let analytics break the user's flow */
+  }
+}
+
 
 /**
  * Buffered diagnostic log for CSP violations and meeting provider load errors.
@@ -129,6 +187,8 @@ export function logProviderEvent(
     | 'fast_close'
     | 'fallback_shown'
     | 'fallback_selected'
+    | 'framed'
+    | 'load_failed'
     | 'preflight_open'
     | 'preflight_proceed'
     | 'preflight_error',
@@ -141,4 +201,6 @@ export function logProviderEvent(
     message: `provider:${event}`,
     data: { ...data, userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined },
   });
+  // Fire-and-forget: persist tracked events to Supabase for analytics.
+  void persistProviderEvent(event, data, level);
 }
