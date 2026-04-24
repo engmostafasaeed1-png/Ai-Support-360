@@ -1,0 +1,4 @@
+-- ============================================================
+-- 1) Realtime channel authorization
+-- Add RLS policies on realtime.messages so only authenticated users
+-- can subscribe / receive bro
