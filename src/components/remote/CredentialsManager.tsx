@@ -70,12 +70,13 @@ export default function CredentialsManager({ environmentId, canEdit = true }: Cr
     setPort(String(cred.port));
     setDomain(cred.domain || '');
     setUsername(cred.username);
-    setPassword(cred.password_encrypted);
+    // Leave password blank — user must re-enter to change it.
+    setPassword('');
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
-    if (!username || !password) return;
+    if (!username) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -88,9 +89,11 @@ export default function CredentialsManager({ environmentId, canEdit = true }: Cr
         port: parseInt(port) || 3389,
         domain: domain || null,
         username,
-        password_encrypted: password,
+        // Only send password if user typed a new one.
+        ...(password ? { password } : {}),
       });
     } else {
+      if (!password) return;
       createCred.mutate({
         environment_id: environmentId,
         credential_label: label || 'Default',
@@ -98,7 +101,7 @@ export default function CredentialsManager({ environmentId, canEdit = true }: Cr
         port: parseInt(port) || 3389,
         domain: domain || null,
         username,
-        password_encrypted: password,
+        password,
         entered_by: user.id,
       });
     }
@@ -106,8 +109,26 @@ export default function CredentialsManager({ environmentId, canEdit = true }: Cr
     resetForm();
   };
 
-  const togglePassword = (id: string) => {
-    setShowPasswords(prev => ({ ...prev, [id]: !prev[id] }));
+  const togglePassword = async (cred: EnvironmentCredential) => {
+    const id = cred.id;
+    const willShow = !showPasswords[id];
+    setShowPasswords(prev => ({ ...prev, [id]: willShow }));
+    if (willShow && !revealedPasswords[id] && cred.password_ciphertext) {
+      setRevealing(prev => ({ ...prev, [id]: true }));
+      try {
+        const plain = await decryptCredential(
+          'environment_credentials',
+          'password_ciphertext',
+          id,
+        );
+        setRevealedPasswords(prev => ({ ...prev, [id]: plain }));
+      } catch (e: any) {
+        toast.error('Failed to reveal password', { description: e.message });
+        setShowPasswords(prev => ({ ...prev, [id]: false }));
+      } finally {
+        setRevealing(prev => ({ ...prev, [id]: false }));
+      }
+    }
   };
 
   if (isLoading) return <Skeleton className="h-16 rounded-xl" />;
