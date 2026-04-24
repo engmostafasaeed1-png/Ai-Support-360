@@ -155,7 +155,9 @@ export default function ConsultantSidebar() {
                           <NavLink
                             to={item.path}
                             end={item.path === '/consultant'}
-                            className={`flex items-center justify-center rounded-xl h-10 transition-all duration-200 ${
+                            aria-label={`${label}. ${getTileMeta('consultant', item.key, label).description}`}
+                            aria-current={isActive ? 'page' : undefined}
+                            className={`flex items-center justify-center rounded-xl h-10 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar ${
                               isActive
                                 ? `bg-gradient-to-br ${tint} shadow-lg`
                                 : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
@@ -163,9 +165,9 @@ export default function ConsultantSidebar() {
                             activeClassName=""
                           >
                             {item.key === 'onboarding' && onboardingDone ? (
-                              <CheckCircle2 className="w-4 h-4 text-green-400" />
+                              <CheckCircle2 aria-hidden="true" focusable="false" className="w-4 h-4 text-green-400" />
                             ) : (
-                              <item.icon className="w-4 h-4" />
+                              <item.icon aria-hidden="true" focusable="false" className="w-4 h-4" />
                             )}
                           </NavLink>
                         </TileTooltip>
