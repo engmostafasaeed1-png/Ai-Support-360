@@ -118,6 +118,21 @@ export default {
           from: { transform: "rotate(0deg)" },
           to: { transform: "rotate(360deg)" },
         },
+        "mesh-shift": {
+          "0%, 100%": { transform: "translate3d(0,0,0) scale(1)", opacity: "0.55" },
+          "33%": { transform: "translate3d(3%,-2%,0) scale(1.08)", opacity: "0.75" },
+          "66%": { transform: "translate3d(-2%,3%,0) scale(1.04)", opacity: "0.65" },
+        },
+        "mesh-shift-alt": {
+          "0%, 100%": { transform: "translate3d(0,0,0) scale(1.05)", opacity: "0.5" },
+          "50%": { transform: "translate3d(-4%,2%,0) scale(1.12)", opacity: "0.8" },
+        },
+        "light-sweep": {
+          "0%": { transform: "translateX(-120%) skewX(-20deg)", opacity: "0" },
+          "20%": { opacity: "0.6" },
+          "60%": { opacity: "0.4" },
+          "100%": { transform: "translateX(220%) skewX(-20deg)", opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -131,6 +146,9 @@ export default {
         float: "float 3s ease-in-out infinite",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
         "spin-slow": "spin-slow 8s linear infinite",
+        "mesh-shift": "mesh-shift 14s ease-in-out infinite",
+        "mesh-shift-alt": "mesh-shift-alt 18s ease-in-out infinite",
+        "light-sweep": "light-sweep 6s ease-in-out infinite",
       },
     },
   },
