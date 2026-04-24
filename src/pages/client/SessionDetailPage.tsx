@@ -215,6 +215,7 @@ export default function SessionDetailPage() {
                 <MeetingLinkButton
                   url={(session as any).meeting_url}
                   fallbackUrl={`https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`}
+                  fallbackRoomId={sessionId?.slice(0, 8)}
                 />
 
               </div>
