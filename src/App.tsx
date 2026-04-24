@@ -68,6 +68,7 @@ const ConsultantSettingsPage = React.lazy(() => import("./pages/consultant/Setti
 const ConsultantKnowledgePage = React.lazy(() => import("./pages/consultant/KnowledgePage.tsx"));
 const ConsultantReportsPage = React.lazy(() => import("./pages/consultant/ReportsPage.tsx"));
 const ConsultantBusinessProcessesPage = React.lazy(() => import("./pages/consultant/BusinessProcessesPage.tsx"));
+const CreditsRulesPage = React.lazy(() => import("./pages/consultant/CreditsRulesPage.tsx"));
 
 // Client pages
 const ClientDashboard = React.lazy(() => import("./pages/client/ClientDashboard.tsx"));
