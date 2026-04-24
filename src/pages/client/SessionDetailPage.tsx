@@ -155,7 +155,7 @@ export default function SessionDetailPage() {
       </Button>
 
       {session.session_type === 'video' && status !== 'completed' && status !== 'cancelled' && (
-        <>
+        <TranslateTroubleshootingProvider>
           <TroubleshootingLanguageSwitcher sessionId={sessionId} />
           <FramedAppNotice
             dismissKey={`framed-notice-dismissed:${sessionId}`}
@@ -168,7 +168,7 @@ export default function SessionDetailPage() {
           <MeetingPermissionsNote dismissKey={`perm-note-dismissed:${sessionId}`} />
           <ShareAudioGuideNote dismissKey={`share-audio-note-dismissed:${sessionId}`} />
           <PreJoinChecklist url={meetingUrl} sessionId={sessionId} />
-        </>
+        </TranslateTroubleshootingProvider>
       )}
 
       {/* Header card */}
