@@ -322,6 +322,61 @@ export default function InvoicesPage() {
               <SelectItem value="amount_asc">Lowest amount</SelectItem>
             </SelectContent>
           </Select>
+          {(() => {
+            // Compute counts per method from full list
+            const methodCounts: Record<string, number> = { all: all.length };
+            for (const p of all) {
+              const k = classifyPaymentMethod(p.payment_method);
+              methodCounts[k] = (methodCounts[k] || 0) + 1;
+            }
+            const ActiveIcon = paymentMethodFilter === 'all'
+              ? CreditCard
+              : getPaymentMethodMeta(paymentMethodFilter).icon;
+            return (
+              <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+                <SelectTrigger className="h-9 w-[180px] rounded-xl text-xs">
+                  <ActiveIcon className="w-3.5 h-3.5 me-1.5 text-muted-foreground" />
+                  <SelectValue placeholder="Payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    <span className="inline-flex items-center gap-2">
+                      <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
+                      All methods ({methodCounts.all || 0})
+                    </span>
+                  </SelectItem>
+                  {PAYMENT_METHOD_OPTIONS.map(opt => {
+                    const Icon = opt.icon;
+                    const c = methodCounts[opt.value] || 0;
+                    return (
+                      <SelectItem key={opt.value} value={opt.value} disabled={c === 0}>
+                        <span className="inline-flex items-center gap-2">
+                          <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                          {opt.label} ({c})
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                  {(methodCounts.other || 0) > 0 && (
+                    <SelectItem value="other">
+                      <span className="inline-flex items-center gap-2">
+                        <HelpIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                        Other ({methodCounts.other})
+                      </span>
+                    </SelectItem>
+                  )}
+                  {(methodCounts.unspecified || 0) > 0 && (
+                    <SelectItem value="unspecified">
+                      <span className="inline-flex items-center gap-2">
+                        <HelpIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                        Unspecified ({methodCounts.unspecified})
+                      </span>
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            );
+          })()}
           <CurrencySelector />
         </div>
       </div>
