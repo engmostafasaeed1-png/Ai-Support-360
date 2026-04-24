@@ -238,6 +238,24 @@ export default function SessionDetailPage() {
                   <User className="w-4 h-4 text-muted-foreground" />
                   {(session as any).consultant_name}
                 </p>
+                {consultantRatings && consultantRatings.total > 0 ? (
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    <div className="inline-flex items-center gap-1 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200/70 dark:border-yellow-900/40 px-2 py-1">
+                      <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                      <span className="text-xs font-semibold text-foreground">
+                        {consultantRatings.avg.toFixed(1)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">/ 5</span>
+                    </div>
+                    <span className="text-[11px] text-muted-foreground">
+                      {consultantRatings.total} {consultantRatings.total === 1 ? 'rating' : 'ratings'}
+                    </span>
+                  </div>
+                ) : consultantRatings && consultantRatings.total === 0 ? (
+                  <p className="mt-2 text-[11px] text-muted-foreground italic">
+                    No ratings yet for this consultant.
+                  </p>
+                ) : null}
               </div>
             </div>
 
