@@ -112,6 +112,8 @@ export function useRealtimeConsultants() {
           languages: c.languages || ['en'],
           response_time_minutes: c.response_time_minutes || 0,
           verification_status: c.verification_status || 'pending',
+          credibility_credits: (c as any).credibility_credits || 0,
+          ai_interview_badge: (c as any).ai_interview_badge || null,
         };
       });
     },
