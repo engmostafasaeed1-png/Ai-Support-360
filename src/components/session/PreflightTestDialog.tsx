@@ -112,10 +112,14 @@ export default function PreflightTestDialog({
 }: PreflightDialogProps) {
   const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const playbackRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+  const recordTimerRef = useRef<number | null>(null);
 
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<MediaError | null>(null);
@@ -126,6 +130,11 @@ export default function PreflightTestDialog({
   const [level, setLevel] = useState(0);
   const [hasVideo, setHasVideo] = useState(false);
   const [hasAudio, setHasAudio] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
+  const [recordConfirmed, setRecordConfirmed] = useState(false);
+  const RECORD_DURATION = 4; // seconds
 
   const stopStream = useCallback(() => {
     if (rafRef.current) {
