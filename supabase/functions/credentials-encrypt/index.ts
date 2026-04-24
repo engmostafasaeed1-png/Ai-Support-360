@@ -2,6 +2,9 @@
 // Returns base64(iv || ciphertext) for storage in *_ciphertext columns.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const BodySchema = z.object({ plaintext: z.string().min(1).max(100_000) });
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -53,13 +56,13 @@ serve(async (req) => {
       });
     }
 
-    const { plaintext } = await req.json();
-    if (typeof plaintext !== "string" || plaintext.length === 0) {
-      return new Response(JSON.stringify({ error: "plaintext required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const parsed = BodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const { plaintext } = parsed.data;
 
     const key = await getKey();
     const iv = crypto.getRandomValues(new Uint8Array(12));

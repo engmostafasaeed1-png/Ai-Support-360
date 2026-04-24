@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const BodySchema = z.object({ session_id: z.string().uuid() });
 
 const ALLOWED_ORIGINS = [
   'https://smartsapsupport.qurtubatalks.com',
@@ -74,8 +77,17 @@ serve(async (req) => {
         { status: 413, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
     }
 
-    const { session_id } = JSON.parse(bodyText);
-    if (!session_id) throw new Error("session_id is required");
+    let bodyJson: unknown;
+    try { bodyJson = JSON.parse(bodyText); } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON" }),
+        { status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
+    }
+    const parsed = BodySchema.safeParse(bodyJson);
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }),
+        { status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
+    }
+    const { session_id } = parsed.data;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");

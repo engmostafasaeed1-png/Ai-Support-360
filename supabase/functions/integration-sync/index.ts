@@ -244,14 +244,14 @@ Deno.serve(async (req) => {
     const authUserId = userData.user.id;
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const body: SyncRequest = await req.json();
-
-    if (!body.integration_id || !body.action) {
-      return new Response(JSON.stringify({ error: "integration_id and action are required" }), {
+    const parsedBody = SyncRequestSchema.safeParse(await req.json());
+    if (!parsedBody.success) {
+      return new Response(JSON.stringify({ error: parsedBody.error.flatten().fieldErrors }), {
         status: 400,
         headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
+    const body = parsedBody.data as SyncRequest;
 
     // Fetch integration config
     const { data: integration, error: intError } = await supabase

@@ -1,5 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const BodySchema = z.object({
+  linkedin_url: z.string().url().regex(/^https?:\/\/(www\.)?linkedin\.com\/in\/.+/i, "Invalid LinkedIn URL"),
+});
 
 const ALLOWED_ORIGINS = [
   'https://smartsapsupport.qurtubatalks.com',
