@@ -166,7 +166,8 @@
     "rights": "All rights reserved."
   },
   "sidebar": {
-    "super_admin": "Super Admin"
+    "super_admin": "Super Admin",
+    "credits": "Credits Rules"
   },
   "client_dashboard": {
     "title": "Welcome back",
