@@ -22,6 +22,7 @@ import EmailVerificationBanner from '@/components/onboarding/EmailVerificationBa
 import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { Sparkline } from '@/components/ui/sparkline';
 import AIInsightsButton from '@/components/ai/AIInsightsButton';
+import AvailabilityToggle from '@/components/consultant/AvailabilityToggle';
 
 const sessionTypeIcons: Record<string, typeof Video> = {
   video: Video,
@@ -182,10 +183,7 @@ export default function ConsultantDashboard() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <AIInsightsButton role="consultant" metrics={{ rating: profile.rating, totalReviews: profile.total_reviews, hourlyRate: profile.hourly_rate, activeCases: mockCases.filter(c => c.status === 'in_progress').length, totalEarnings: mockEarnings.total }} />
-          <span className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400 font-medium">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            {t('consultant_dashboard.available')}
-          </span>
+          <AvailabilityToggle />
           <Link to="/consultant/calendar">
             <Button size="sm" className="gradient-primary border-0 shadow-premium hover:shadow-glow transition-all">
               <Calendar className="w-4 h-4 me-1" /> {t('consultant_dashboard.manage_availability')}
