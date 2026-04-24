@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { generateInvoicePdf as buildInvoicePdf } from '@/lib/invoicePdf';
 import { Video, MessageSquare, Monitor, PlayCircle } from 'lucide-react';
+import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   completed: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
@@ -362,6 +363,8 @@ export default function InvoicesPage() {
                     </Link>
                   </div>
                 )}
+
+                <PaymentStatusTimeline payment={selected} />
 
                 <div className="flex gap-2 pt-2">
                   <Button className="flex-1 gap-1.5" variant="outline" size="sm" onClick={() => setEditing(true)}>
