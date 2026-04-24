@@ -130,3 +130,41 @@ export default function ConsultantsSection() {
     </section>
   );
 }
+
+/**
+ * Avatar with a real consultant portrait, gradient accent ring, and
+ * graceful initials fallback. Falls back automatically if the image
+ * fails to decode (e.g. asset missing or network error in the future).
+ */
+function ConsultantAvatar({ c }: { c: Consultant }) {
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <div
+      className={`relative w-14 h-14 rounded-2xl p-[2px] bg-gradient-to-br ${c.accent} shadow-lg motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-110 motion-safe:group-hover:-rotate-3`}
+    >
+      <div className="relative w-full h-full rounded-[inherit] overflow-hidden bg-card flex items-center justify-center">
+        {!failed ? (
+          <img
+            src={c.photo}
+            alt={`Portrait of ${c.name}, ${c.role}`}
+            loading="lazy"
+            decoding="async"
+            width={112}
+            height={112}
+            onError={() => setFailed(true)}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          // Fallback — gradient tile with the consultant's initials.
+          <span
+            aria-hidden="true"
+            className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${c.accent} text-white font-bold text-base`}
+          >
+            {c.avatar}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
