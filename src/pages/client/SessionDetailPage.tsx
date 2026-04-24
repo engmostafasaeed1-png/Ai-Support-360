@@ -143,7 +143,13 @@ export default function SessionDetailPage() {
 
       {session.session_type === 'video' && status !== 'completed' && status !== 'cancelled' && (
         <>
-          <FramedAppNotice dismissKey={`framed-notice-dismissed:${sessionId}`} />
+          <FramedAppNotice
+            dismissKey={`framed-notice-dismissed:${sessionId}`}
+            meetingUrl={
+              (session as any).meeting_url ||
+              `https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`
+            }
+          />
           <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
           <PreJoinChecklist
             url={
