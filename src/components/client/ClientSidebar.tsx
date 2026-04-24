@@ -333,7 +333,7 @@ export default function ClientSidebar() {
                               }`}>
                                 <item.icon aria-hidden="true" focusable="false" className={`w-5 h-5 ${isActive ? 'text-primary-foreground drop-shadow' : ''}`} strokeWidth={2.2} />
                               </div>
-                              <span className={`flex-1 sm:flex-none text-[13px] sm:text-[11px] font-semibold leading-tight whitespace-normal break-words sm:line-clamp-2 ${isActive ? 'text-primary-foreground' : 'text-sidebar-foreground/85 group-hover/tile:text-sidebar-foreground'}`}>
+                              <span className={`flex-1 sm:flex-none ${dens.label} sm:text-[11px] font-semibold leading-tight whitespace-normal break-words sm:line-clamp-2 ${isActive ? 'text-primary-foreground' : 'text-sidebar-foreground/85 group-hover/tile:text-sidebar-foreground'}`}>
                                 {label}
                               </span>
                             </NavLink>
