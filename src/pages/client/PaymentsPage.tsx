@@ -230,6 +230,32 @@ export default function PaymentsPage() {
                 </div>
               )}
 
+              {/* Linked Session */}
+              {selectedPayment.session_id && (
+                <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 p-3">
+                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase mb-1 flex items-center gap-1">
+                    <SessionTypeIcon type={selectedPayment.session_type} className="w-3 h-3" /> Linked Session
+                  </p>
+                  <p className="text-sm font-medium text-foreground capitalize">
+                    {(selectedPayment.session_type || 'session').toString().replace(/_/g, ' ')} session
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-1 text-[11px] text-muted-foreground">
+                    {selectedPayment.session_status && (
+                      <Badge variant="outline" className="text-[10px] capitalize">{selectedPayment.session_status}</Badge>
+                    )}
+                    {selectedPayment.session_scheduled_at && (
+                      <span>{format(new Date(selectedPayment.session_scheduled_at), 'MMM d, yyyy h:mm a')}</span>
+                    )}
+                    {selectedPayment.session_duration_minutes ? (
+                      <span>· {selectedPayment.session_duration_minutes} min</span>
+                    ) : null}
+                  </div>
+                  <Link to={`/client/sessions/${selectedPayment.session_id}`} className="inline-flex items-center gap-1 text-xs text-blue-700 dark:text-blue-400 mt-2 hover:underline">
+                    View Session <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              )}
+
               {/* Linked Ticket */}
               {selectedPayment.ticket_id && (
                 <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
@@ -249,7 +275,7 @@ export default function PaymentsPage() {
 
               {/* Actions */}
               <div className="flex gap-2 pt-2">
-                <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm">
+                <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={() => generateInvoicePdf(selectedPayment)}>
                   <Download className="w-4 h-4" /> Download Invoice
                 </Button>
               </div>
@@ -271,4 +297,9 @@ function DetailRow({ label, value, icon: Icon }: { label: string; value: string;
       </div>
     </div>
   );
+}
+
+function SessionTypeIcon({ type, className }: { type?: string | null; className?: string }) {
+  const Icon = type === 'chat' ? MessageSquare : type === 'screen_share' ? Monitor : type === 'video' ? Video : PlayCircle;
+  return <Icon className={className} />;
 }
