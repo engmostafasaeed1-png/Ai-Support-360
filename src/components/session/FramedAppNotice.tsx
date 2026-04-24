@@ -58,8 +58,23 @@ export default function FramedAppNotice({
   });
 
   useEffect(() => {
-    setFramed(isInIframe());
-  }, []);
+    const f = isInIframe();
+    setFramed(f);
+    if (f) {
+      // Fire-and-forget import to avoid pulling diagnostics into the SSR critical path.
+      import('@/lib/diagnostics').then(({ logProviderEvent }) => {
+        logProviderEvent(
+          'framed',
+          {
+            provider: provider ?? detectProvider(meetingUrl),
+            url: meetingUrl,
+            referrer: typeof document !== 'undefined' ? document.referrer : undefined,
+          },
+          'warn'
+        );
+      });
+    }
+  }, [meetingUrl, provider]);
 
   if (!framed || dismissed) return null;
 
