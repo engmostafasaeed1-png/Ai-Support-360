@@ -286,6 +286,12 @@ export default function PreflightTestDialog({
       stopStream();
       setStatus('idle');
       setError(null);
+      setRecordingUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      setRecordConfirmed(false);
+      setRecordSeconds(0);
     }
     return () => stopStream();
     // eslint-disable-next-line react-hooks/exhaustive-deps
