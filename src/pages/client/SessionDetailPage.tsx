@@ -23,6 +23,7 @@ import ShareMenu from '@/components/ShareMenu';
 import AnalyzeSessionButton from '@/components/session/AnalyzeSessionButton';
 import SessionFeedbackDialog from '@/components/session/SessionFeedbackDialog';
 import SessionSurveyDialog from '@/components/session/SessionSurveyDialog';
+import RateSessionDialog from '@/components/session/RateSessionDialog';
 import MeetingMinutesCard from '@/components/session/MeetingMinutesCard';
 import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfactionDialog';
 import MeetingLinkButton, { detectProvider } from '@/components/session/MeetingLinkButton';
