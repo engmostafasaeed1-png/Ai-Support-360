@@ -22,7 +22,8 @@ import {
   ArrowRight, CheckCircle2, Clock, XCircle, AlertCircle, ReceiptText,
   CreditCard, Eye, Printer, Plus, Pencil,
 } from 'lucide-react';
-import jsPDF from 'jspdf';
+import { generateInvoicePdf as buildInvoicePdf } from '@/lib/invoicePdf';
+import { Video, MessageSquare, Monitor, PlayCircle } from 'lucide-react';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   completed: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
@@ -149,125 +150,11 @@ export default function InvoicesPage() {
   });
 
   const generateInvoicePdf = (inv: any, preview = false) => {
-    const doc = new jsPDF();
-    const w = doc.internal.pageSize.getWidth();
-
-    // Header
-    doc.setFontSize(24);
-    doc.setFont('helvetica', 'bold');
-    doc.text('INVOICE', 20, 30);
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100);
-    doc.text(inv.invoice || 'N/A', 20, 38);
-    doc.text(`Date: ${inv.date || 'N/A'}`, 20, 44);
-    if (inv.due_date) doc.text(`Due: ${format(new Date(inv.due_date), 'MMM d, yyyy')}`, 20, 50);
-
-    // Status badge
-    const sc = statusConfig[inv.status] || statusConfig.pending;
-    doc.setTextColor(0);
-    doc.setFontSize(11);
-    doc.text(`Status: ${sc.label}`, w - 60, 30);
-
-    // Line
-    doc.setDrawColor(200);
-    doc.line(20, 56, w - 20, 56);
-
-    // Consultant
-    doc.setFontSize(10);
-    doc.setTextColor(80);
-    doc.text('Consultant', 20, 66);
-    doc.setTextColor(0);
-    doc.setFont('helvetica', 'bold');
-    doc.text(inv.consultant || 'N/A', 20, 72);
-
-    // Payment Method
-    if (inv.payment_method) {
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(80);
-      doc.text('Payment Method', w / 2, 66);
-      doc.setTextColor(0);
-      doc.setFont('helvetica', 'bold');
-      doc.text(inv.payment_method, w / 2, 72);
-    }
-
-    // Linked Ticket
-    let yPos = 86;
-    if (inv.ticket_title) {
-      doc.setDrawColor(200);
-      doc.setFillColor(245, 247, 250);
-      doc.roundedRect(20, yPos - 6, w - 40, 24, 3, 3, 'F');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(80);
-      doc.text('Linked Ticket', 26, yPos);
-      doc.setTextColor(0);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.text(inv.ticket_title, 26, yPos + 7);
-      if (inv.ticket_sap_module) {
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(100);
-        doc.text(`Module: ${inv.ticket_sap_module}  |  Urgency: ${inv.ticket_urgency || 'N/A'}`, 26, yPos + 14);
-      }
-      yPos += 32;
-    }
-
-    // Description
-    if (inv.description) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(80);
-      doc.text('Description', 20, yPos);
-      doc.setTextColor(0);
-      doc.setFontSize(10);
-      const lines = doc.splitTextToSize(inv.description, w - 40);
-      doc.text(lines, 20, yPos + 7);
-      yPos += 7 + lines.length * 5 + 8;
-    }
-
-    // Amount Table
-    doc.setDrawColor(200);
-    doc.line(20, yPos, w - 20, yPos);
-    yPos += 10;
-
-    const tableData = [
-      ['Subtotal', fmt(Number(inv.amount) - Number(inv.vat || 0), inv.currency)],
-      ['VAT', fmt(Number(inv.vat || 0), inv.currency)],
-    ];
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    tableData.forEach(([label, val]) => {
-      doc.setTextColor(80);
-      doc.text(label, 20, yPos);
-      doc.setTextColor(0);
-      doc.text(val, w - 20, yPos, { align: 'right' });
-      yPos += 8;
-    });
-
-    doc.setDrawColor(200);
-    doc.line(20, yPos, w - 20, yPos);
-    yPos += 10;
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('Total', 20, yPos);
-    doc.text(fmt(Number(inv.amount), inv.currency), w - 20, yPos, { align: 'right' });
-
-    // Footer
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(150);
-    doc.text('This is a system-generated invoice.', 20, 280);
-
     if (preview) {
-      const blobUrl = doc.output('bloburl') as unknown as string;
-      setPdfPreview(blobUrl);
+      const url = buildInvoicePdf(inv, { preview: true });
+      if (typeof url === 'string') setPdfPreview(url);
     } else {
-      doc.save(`${inv.invoice || 'invoice'}.pdf`);
+      buildInvoicePdf(inv);
     }
   };
 
