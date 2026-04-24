@@ -89,50 +89,86 @@ export default function ConsultantSidebar() {
         </div>
 
         <SidebarGroup>
+          {!collapsed && (
+            <SidebarGroupLabel className="px-4 text-[10px] uppercase tracking-wider font-semibold text-sidebar-foreground/40 mb-1.5">
+              {t('sidebar.navigation', 'Navigation')}
+            </SidebarGroupLabel>
+          )}
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1 px-2">
-              {visibleItems.map((item) => {
-                const isActive = item.path === '/consultant'
-                  ? location.pathname === '/consultant'
-                  : location.pathname.startsWith(item.path);
-                return (
-                  <SidebarMenuItem key={item.key}>
-                    <SidebarMenuButton asChild className="h-auto p-0">
-                      <NavLink
-                        to={item.path}
-                        end={item.path === '/consultant'}
-                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                          isActive
-                            ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-sidebar-primary/20'
-                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground hover:shadow-sm'
-                        }`}
-                        activeClassName=""
-                      >
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 transition-colors ${
-                          isActive
-                            ? 'bg-white/20'
-                            : 'bg-sidebar-accent/40'
-                        }`}>
+            {collapsed ? (
+              <SidebarMenu className="space-y-1 px-2">
+                {visibleItems.map((item) => {
+                  const isActive = item.path === '/consultant'
+                    ? location.pathname === '/consultant'
+                    : location.pathname.startsWith(item.path);
+                  return (
+                    <SidebarMenuItem key={item.key}>
+                      <SidebarMenuButton asChild tooltip={t(`sidebar.${item.key}`)}>
+                        <NavLink
+                          to={item.path}
+                          end={item.path === '/consultant'}
+                          className={`flex items-center justify-center rounded-xl h-10 transition-all duration-200 ${
+                            isActive
+                              ? 'bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg shadow-primary/30'
+                              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
+                          }`}
+                          activeClassName=""
+                        >
                           {item.key === 'onboarding' && onboardingDone ? (
-                            <CheckCircle2 className="w-4.5 h-4.5 text-green-400" />
+                            <CheckCircle2 className="w-4 h-4 text-green-400" />
                           ) : (
-                            <item.icon className="w-4.5 h-4.5" />
+                            <item.icon className="w-4 h-4" />
                           )}
-                        </div>
-                        {!collapsed && (
-                          <span className="flex items-center gap-2 truncate">
-                            {item.key === 'onboarding' && onboardingDone ? t('sidebar.onboarding_complete', 'Onboarding') : t(`sidebar.${item.key}`)}
-                            {item.key === 'onboarding' && onboardingDone && (
-                              <span className="text-[10px] font-semibold bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-full">{t('sidebar.completed', 'Done')}</span>
-                            )}
-                          </span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 px-3">
+                {visibleItems.map((item) => {
+                  const isActive = item.path === '/consultant'
+                    ? location.pathname === '/consultant'
+                    : location.pathname.startsWith(item.path);
+                  const isOnboardingDone = item.key === 'onboarding' && onboardingDone;
+                  return (
+                    <NavLink
+                      key={item.key}
+                      to={item.path}
+                      end={item.path === '/consultant'}
+                      className={`group/tile relative flex flex-col items-center justify-center gap-1.5 rounded-2xl px-2 py-3 text-center transition-all duration-200 overflow-hidden border ${
+                        isActive
+                          ? 'bg-gradient-to-br from-primary to-primary/60 text-primary-foreground border-primary/40 shadow-lg shadow-primary/30 scale-[1.02]'
+                          : 'bg-sidebar-accent/20 hover:bg-sidebar-accent/50 text-sidebar-foreground/80 hover:text-sidebar-foreground border-sidebar-border/30 hover:border-sidebar-border/60 hover:shadow-md hover:-translate-y-0.5'
+                      }`}
+                      activeClassName=""
+                    >
+                      {isActive && (
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 pointer-events-none" />
+                      )}
+                      <div className={`flex items-center justify-center w-8 h-8 rounded-xl shrink-0 transition-all ${
+                        isActive
+                          ? 'bg-white/25 backdrop-blur-sm'
+                          : 'bg-sidebar-background/60 group-hover/tile:bg-sidebar-background/90 shadow-sm'
+                      }`}>
+                        {isOnboardingDone ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <item.icon className={`w-4 h-4 ${isActive ? 'text-primary-foreground' : 'text-sidebar-foreground/70 group-hover/tile:text-sidebar-foreground'}`} />
                         )}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+                      </div>
+                      <span className="text-[10.5px] font-medium leading-tight line-clamp-2">
+                        {isOnboardingDone ? t('sidebar.onboarding_complete', 'Onboarding') : t(`sidebar.${item.key}`)}
+                      </span>
+                      {isOnboardingDone && (
+                        <span className="absolute top-1 end-1 text-[8px] font-bold bg-green-500 text-white px-1 py-0.5 rounded-full">✓</span>
+                      )}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            )}
           </SidebarGroupContent>
         </SidebarGroup>
 
