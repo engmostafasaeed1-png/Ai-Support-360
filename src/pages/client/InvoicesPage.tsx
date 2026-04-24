@@ -52,6 +52,7 @@ export default function InvoicesPage() {
   const { data: payments, isLoading } = useClientPayments();
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'amount_desc' | 'amount_asc'>('newest');
   const [selected, setSelected] = useState<any>(null);
   const [pdfPreview, setPdfPreview] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
