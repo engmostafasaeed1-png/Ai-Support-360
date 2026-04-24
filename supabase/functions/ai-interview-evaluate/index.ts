@@ -153,15 +153,16 @@ Return ONLY valid JSON.`;
     // Update each answer with score and feedback
     for (let i = 0; i < answers.length; i++) {
       const evalAnswer = evaluation.answers?.[i];
-      if (evalAnswer && answers[i].id) {
+      const ans = answers[i] as { id?: string; answer?: string };
+      if (evalAnswer && ans?.id) {
         await supabase
           .from("interview_answers")
           .update({
-            answer_transcript: answers[i].answer,
+            answer_transcript: ans.answer,
             score: evalAnswer.score,
             ai_feedback: evalAnswer.feedback,
           })
-          .eq("id", answers[i].id);
+          .eq("id", ans.id);
       }
     }
 

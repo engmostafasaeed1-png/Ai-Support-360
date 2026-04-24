@@ -51,7 +51,7 @@ serve(async (req) => {
     const langNames: Record<string, string> = {
       en: "English", fr: "French", ar: "Arabic", "ar-SA": "Saudi Arabic", es: "Spanish", de: "German"
     };
-    const interviewLang = langNames[lang] || "English";
+    const interviewLang = (lang && langNames[lang]) || "English";
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");

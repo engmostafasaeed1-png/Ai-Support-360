@@ -57,7 +57,7 @@ serve(async (req) => {
         "You are an AI advisor for a SAP consultant. Analyze their dashboard metrics and provide 3-5 concise, actionable insights about their performance, earnings optimization, and case management. Use bullet points. Keep it under 300 words.",
     };
 
-    const systemPrompt = systemPrompts[role] || systemPrompts.client;
+    const systemPrompt = (role && systemPrompts[role]) || systemPrompts.client;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
