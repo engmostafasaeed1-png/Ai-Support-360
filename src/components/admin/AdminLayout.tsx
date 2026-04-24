@@ -4,7 +4,7 @@ import AdminSidebar from './AdminSidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import PageTransition from '@/components/PageTransition';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
-import { Search, LayoutDashboard, Users, Kanban, UserCheck, BarChart3, Settings, Plug, Shield, Server, ClipboardList, Settings2, FileSignature, PanelTop, Brain, Bell } from 'lucide-react';
+import { Search, LayoutDashboard, Users, Kanban, UserCheck, BarChart3, Settings, Plug, Shield, Server, ClipboardList, Settings2, FileSignature, PanelTop, Brain, Bell, Download } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
