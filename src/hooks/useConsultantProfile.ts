@@ -48,6 +48,9 @@ export function useConsultantProfile() {
         availability_status: consultant.availability_status || 'offline',
         ai_skills_score: Number(consultant.ai_skills_score) || 0,
         credly_username: consultant.credly_username,
+        credibility_credits: (consultant as any).credibility_credits || 0,
+        ai_interview_badge: (consultant as any).ai_interview_badge || null,
+        ai_interview_completed_at: (consultant as any).ai_interview_completed_at || null,
       };
     },
     enabled: !isGuest,
