@@ -13,6 +13,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import PreflightTestDialog from './PreflightTestDialog';
 import { logProviderEvent } from '@/lib/diagnostics';
+import ProviderTroubleshootingPanel from './ProviderTroubleshootingPanel';
+import type { TroubleshootReason } from './providerTroubleshooting';
 
 export type MeetingProvider = 'meet' | 'jitsi' | 'zoom' | 'teams' | 'unknown';
 
@@ -95,6 +97,7 @@ export default function MeetingLinkButton({
   const { t } = useTranslation();
   const [fallbackOpen, setFallbackOpen] = useState(false);
   const [failedProvider, setFailedProvider] = useState<MeetingProvider>('unknown');
+  const [failedReason, setFailedReason] = useState<TroubleshootReason>('load_failed');
   const [preflightOpen, setPreflightOpen] = useState(false);
   const pendingOpenRef = useRef<{ url: string; provider: MeetingProvider } | null>(null);
   const watcherRef = useRef<number | null>(null);
@@ -151,9 +154,16 @@ export default function MeetingLinkButton({
     }
   };
 
+  const reasonToTroubleshoot = (reason: string): TroubleshootReason => {
+    if (reason === 'popup_blocked') return 'popup_blocked';
+    if (reason === 'invalid_url' || reason === 'no_link') return 'invalid_url';
+    return 'load_failed';
+  };
+
   const triggerFallback = useCallback(
     (failed: MeetingProvider, message: string, reason: string, extra?: Record<string, unknown>) => {
       setFailedProvider(failed);
+      setFailedReason(reasonToTroubleshoot(reason));
       setFallbackOpen(true);
       toast.error(message);
       logProviderEvent('fallback_shown', { provider: failed, reason, ...extra }, 'warn');
@@ -305,6 +315,12 @@ export default function MeetingLinkButton({
               })}
             </DialogDescription>
           </DialogHeader>
+
+          <ProviderTroubleshootingPanel
+            provider={failedProvider}
+            reason={failedReason}
+            variant="card"
+          />
 
           <div className="grid gap-2 py-2">
             {fallbackList.length === 0 ? (

@@ -3,6 +3,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Frame, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import ProviderTroubleshootingPanel from './ProviderTroubleshootingPanel';
+import { detectProvider, type MeetingProvider } from './MeetingLinkButton';
 
 /**
  * Returns true when the current document is rendered inside an iframe.
@@ -23,6 +25,13 @@ interface FramedAppNoticeProps {
   dismissKey?: string;
   /** Optional URL to open the app in a top-level tab. Defaults to current href. */
   topLevelUrl?: string;
+  /**
+   * Optional meeting URL — when provided, the notice shows provider-specific
+   * troubleshooting steps for the framed scenario (e.g. Meet's X-Frame-Options).
+   */
+  meetingUrl?: string;
+  /** Explicit provider override; auto-detected from `meetingUrl` when omitted. */
+  provider?: MeetingProvider;
 }
 
 /**
@@ -34,6 +43,8 @@ interface FramedAppNoticeProps {
 export default function FramedAppNotice({
   dismissKey = 'framed-app-notice-dismissed',
   topLevelUrl,
+  meetingUrl,
+  provider,
 }: FramedAppNoticeProps) {
   const { t } = useTranslation();
   const [framed, setFramed] = useState(false);
@@ -76,6 +87,17 @@ export default function FramedAppNotice({
               'This view is running inside an embedded frame. Google Meet (and some other video providers) refuse to load from framed pages for security reasons. Open the app in a new browser tab to start or join a meeting.',
           })}
         </p>
+
+        {(meetingUrl || provider) && (
+          <div className="mt-3">
+            <ProviderTroubleshootingPanel
+              provider={provider ?? detectProvider(meetingUrl)}
+              reason="framed"
+              variant="card"
+            />
+          </div>
+        )}
+
         <div className="mt-3 flex flex-wrap gap-2">
           <Button
             size="sm"
