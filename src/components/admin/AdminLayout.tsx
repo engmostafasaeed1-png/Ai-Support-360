@@ -26,6 +26,7 @@ const moreNavItems = [
   { key: 'integrations', icon: Plug, path: '/admin/integrations', labelKey: 'sidebar.integrations' },
   { key: 'environments', icon: Server, path: '/admin/environments', labelKey: 'sidebar.environments' },
   { key: 'environment_logs', icon: ClipboardList, path: '/admin/environment-logs', labelKey: 'sidebar.environment_logs' },
+  { key: 'meeting_join_export', icon: Download, path: '/admin/meeting-join-events', labelKey: 'sidebar.meeting_join_export' },
   { key: 'vmware_settings', icon: Settings2, path: '/admin/vmware-settings', labelKey: 'sidebar.vmware_settings' },
   { key: 'nda_management', icon: FileSignature, path: '/admin/nda-management', labelKey: 'sidebar.nda_management' },
   { key: 'landing_editor', icon: PanelTop, path: '/admin/landing-editor', labelKey: 'sidebar.landing_editor' },
