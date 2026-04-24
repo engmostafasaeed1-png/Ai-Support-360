@@ -163,6 +163,7 @@ export default function SessionDetailPage() {
           <MeetingUrlValidationNotice url={meetingUrl} sessionId={sessionId} />
           <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
           <MeetingPermissionsNote dismissKey={`perm-note-dismissed:${sessionId}`} />
+          <ShareAudioGuideNote dismissKey={`share-audio-note-dismissed:${sessionId}`} />
           <PreJoinChecklist url={meetingUrl} sessionId={sessionId} />
         </>
       )}
