@@ -93,7 +93,7 @@ export default function ConsultantSidebar() {
   const { isGuest } = useGuestMode();
   const [onboardingDone, setOnboardingDone] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const { hiddenScreens, toggleScreen, resetAll, isVisible } = useScreenPreferences(allScreens);
+  const { hiddenScreens, toggleScreen, resetAll, isVisible, loading: prefsLoading } = useScreenPreferences(allScreens);
 
   useEffect(() => {
     if (isGuest) return;
