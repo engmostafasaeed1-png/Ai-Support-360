@@ -143,9 +143,7 @@ export default function ConsultantSidebar() {
             {collapsed ? (
               <SidebarMenu className="space-y-1 px-2">
                 {visibleItems.map((item) => {
-                  const isActive = item.path === '/consultant'
-                    ? location.pathname === '/consultant'
-                    : location.pathname.startsWith(item.path);
+                  const isActive = item.path === bestMatchPath;
                   const label = String(t(`sidebar.${item.key}`, { defaultValue: titleize(item.key) }));
                   const tint = tileTints[item.key] || 'from-primary/20 to-primary/5 text-primary';
                   return (
