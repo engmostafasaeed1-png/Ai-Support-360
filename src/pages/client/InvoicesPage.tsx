@@ -154,11 +154,17 @@ export default function InvoicesPage() {
       p.consultant?.toLowerCase().includes(s) ||
       p.ticket_title?.toLowerCase().includes(s) ||
       p.description?.toLowerCase().includes(s);
-    const matchTab = tab === 'all' ||
-      (tab === 'paid' && (p.status === 'completed' || p.status === 'paid')) ||
-      (tab === 'pending' && p.status === 'pending');
+    const matchTab = matchesTab(p.status, tab);
     return matchSearch && matchTab;
   });
+
+  const counts = {
+    all: all.length,
+    paid: all.filter((p: any) => p.status === 'completed' || p.status === 'paid').length,
+    unpaid: all.filter((p: any) => p.status === 'pending' || p.status === 'unpaid').length,
+    processing: all.filter((p: any) => p.status === 'processing').length,
+    failed: all.filter((p: any) => p.status === 'failed').length,
+  };
 
   const generateInvoicePdf = (inv: any, preview = false) => {
     if (preview) {
