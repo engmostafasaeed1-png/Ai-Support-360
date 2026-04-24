@@ -152,6 +152,13 @@ export default function SessionDetailPage() {
               `https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`
             }
           />
+          <MeetingUrlValidationNotice
+            url={
+              (session as any).meeting_url ||
+              `https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`
+            }
+            sessionId={sessionId}
+          />
           <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
           <MeetingPermissionsNote dismissKey={`perm-note-dismissed:${sessionId}`} />
           <PreJoinChecklist
