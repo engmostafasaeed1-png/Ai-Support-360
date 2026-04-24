@@ -403,7 +403,8 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
                     {timeSlotsForDate.length} time slot{timeSlotsForDate.length !== 1 ? 's' : ''} available on {format(selectedDate, 'MMM d')}
                   </p>
                 )}
-                <div className="flex justify-end">
+                <div className="flex justify-between">
+                  <Button variant="ghost" onClick={() => setStep(0)}>{t('booking.back')}</Button>
                   <Button disabled={!selectedDate} onClick={() => setStep(2)} className="gradient-primary border-0">
                     {t('booking.next')}
                   </Button>
