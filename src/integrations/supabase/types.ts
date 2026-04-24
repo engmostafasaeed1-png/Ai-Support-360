@@ -5125,6 +5125,53 @@ export type Database = {
           },
         ]
       }
+      environment_credentials_safe: {
+        Row: {
+          created_at: string | null
+          credential_label: string | null
+          domain: string | null
+          entered_by: string | null
+          environment_id: string | null
+          hostname: string | null
+          id: string | null
+          port: number | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credential_label?: string | null
+          domain?: string | null
+          entered_by?: string | null
+          environment_id?: string | null
+          hostname?: string | null
+          id?: string | null
+          port?: number | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credential_label?: string | null
+          domain?: string | null
+          entered_by?: string | null
+          environment_id?: string | null
+          hostname?: string | null
+          id?: string | null
+          port?: number | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "environment_credentials_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "remote_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integrations_safe: {
         Row: {
           client_id: string | null
