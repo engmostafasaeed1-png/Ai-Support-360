@@ -119,7 +119,7 @@ export default function RateSessionDialog({
       if (!user) return null;
       const { data, error } = await supabase
         .from('ratings')
-        .select('id, score, comment, is_anonymous, created_at')
+        .select('id, score, comment, is_anonymous, created_at, communication_score, technical_expertise_score, responsiveness_score')
         .eq('session_id', sessionId)
         .eq('client_id', user.id)
         .maybeSingle();
