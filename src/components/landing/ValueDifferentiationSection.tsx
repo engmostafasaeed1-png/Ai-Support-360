@@ -123,13 +123,26 @@ export default function ValueDifferentiationSection() {
               style={{ ['--glow' as string]: accents[p.accent].glow }}
               className={`group relative ${radius.tile} border border-border/40 bg-card/40 backdrop-blur-xl overflow-hidden hover:border-primary/40 motion-safe:transition-all motion-safe:duration-500 motion-safe:hover:-translate-y-1 hover:shadow-[0_30px_80px_-20px_rgba(var(--glow),0.35)] ${p.span ?? ''}`}
             >
+              {/* Decorative background image — softly visible, intensifies on hover */}
+              <img
+                src={p.image}
+                alt={p.imageAlt}
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-40 motion-safe:transition-opacity motion-safe:duration-700 motion-safe:group-hover:scale-105 motion-safe:transition-transform pointer-events-none"
+              />
+              {/* Readability scrim over the image */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-gradient-to-t from-card via-card/85 to-card/40"
+              />
               {/* Accent radial glow tied to the icon's gradient */}
               <div
                 aria-hidden="true"
-                className="absolute inset-0 opacity-50 group-hover:opacity-100 motion-safe:transition-opacity motion-safe:duration-500"
+                className="absolute inset-0 opacity-60 group-hover:opacity-100 motion-safe:transition-opacity motion-safe:duration-500"
                 style={{
                   background:
-                    'radial-gradient(circle at 20% 0%, rgba(var(--glow),0.18), transparent 55%)',
+                    'radial-gradient(circle at 20% 0%, rgba(var(--glow),0.22), transparent 55%)',
                 }}
               />
               {/* Subtle top-edge sheen */}
