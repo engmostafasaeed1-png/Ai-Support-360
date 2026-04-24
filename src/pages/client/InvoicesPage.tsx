@@ -358,6 +358,22 @@ export default function InvoicesPage() {
                         {inv.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{inv.description}</p>}
                       </div>
                     </div>
+                    {(() => {
+                      const cfg = getSessionTypeConfig(inv.session_id ? inv.session_type : null);
+                      const Icon = cfg.icon;
+                      return (
+                        <div
+                          className="hidden md:flex flex-col items-center justify-center min-w-[110px] px-3 py-2 rounded-xl border bg-background/40 shrink-0"
+                          title={cfg.label}
+                        >
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${cfg.className}`}>
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-1.5">Session</span>
+                          <span className="text-xs font-medium text-foreground leading-tight text-center">{cfg.label}</span>
+                        </div>
+                      );
+                    })()}
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-end">
                         <ConvertedAmount amount={Number(inv.amount)} currency={inv.currency} className="items-end text-sm font-bold text-foreground" />
