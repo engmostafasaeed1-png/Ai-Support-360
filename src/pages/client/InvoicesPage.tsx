@@ -25,6 +25,7 @@ import {
 import { generateInvoicePdf as buildInvoicePdf } from '@/lib/invoicePdf';
 import { Video, MessageSquare, Monitor, PlayCircle } from 'lucide-react';
 import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
+import { InvoiceDisputeSection } from '@/components/invoice/InvoiceDisputeSection';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
 
@@ -370,6 +371,8 @@ export default function InvoicesPage() {
                 )}
 
                 <PaymentStatusTimeline payment={selected} />
+
+                <InvoiceDisputeSection payment={selected} />
 
                 <div className="flex gap-2 pt-2">
                   <Button className="flex-1 gap-1.5" variant="outline" size="sm" onClick={() => setEditing(true)}>
