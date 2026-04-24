@@ -20,7 +20,7 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 380px)');
+    const mq = window.matchMedia('(max-width: 339px)');
     const update = () => setIsXs(mq.matches);
     update();
     mq.addEventListener('change', update);
