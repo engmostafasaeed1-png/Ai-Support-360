@@ -13,6 +13,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import PreflightTestDialog from './PreflightTestDialog';
 import { logProviderEvent } from '@/lib/diagnostics';
+import ProviderTroubleshootingPanel from './ProviderTroubleshootingPanel';
+import type { TroubleshootReason } from './providerTroubleshooting';
 
 export type MeetingProvider = 'meet' | 'jitsi' | 'zoom' | 'teams' | 'unknown';
 
