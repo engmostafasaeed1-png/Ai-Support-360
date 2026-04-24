@@ -25,9 +25,13 @@ interface Props {
 export default function InterviewStep({ onInterviewComplete, consultantId }: Props) {
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
+  const { data: profile } = useConsultantProfile();
   const [interviewId, setInterviewId] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
   const [completed, setCompleted] = useState(false);
+
+  const currentBadge = profile?.ai_interview_badge ?? null;
+  const currentCredits = profile?.credibility_credits ?? 0;
 
   const startInterview = async () => {
     if (isGuest) {
