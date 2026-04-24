@@ -183,41 +183,42 @@ export default function ConsultantSidebar() {
                     : String(t(`sidebar.${item.key}`, { defaultValue: titleize(item.key) }));
                   const tint = tileTints[item.key] || 'from-primary/20 to-primary/5 text-primary';
                   return (
-                    <NavLink
-                      key={item.key}
-                      to={item.path}
-                      end={item.path === '/consultant'}
-                      className={`group/tile relative flex flex-col items-center justify-center gap-2 rounded-2xl px-2 py-3.5 text-center transition-all duration-200 overflow-hidden border ${
-                        isActive
-                          ? 'bg-gradient-to-br from-primary via-primary/85 to-primary/60 text-primary-foreground border-primary/50 shadow-xl shadow-primary/40 scale-[1.03]'
-                          : 'bg-sidebar-accent/15 hover:bg-sidebar-accent/40 text-sidebar-foreground/90 hover:text-sidebar-foreground border-sidebar-border/30 hover:border-sidebar-border/70 hover:shadow-md hover:-translate-y-0.5'
-                      }`}
-                      activeClassName=""
-                    >
-                      {isActive && (
-                        <>
-                          <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/15 to-white/0 pointer-events-none" />
-                          <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full bg-white/20 blur-2xl pointer-events-none" />
-                        </>
-                      )}
-                      <div className={`flex items-center justify-center w-11 h-11 rounded-2xl shrink-0 transition-all ${
-                        isActive
-                          ? 'bg-white/25 backdrop-blur-sm shadow-inner'
-                          : `bg-gradient-to-br ${tint} group-hover/tile:scale-110 shadow-sm`
-                      }`}>
-                        {isOnboardingDone ? (
-                          <CheckCircle2 className="w-5 h-5 text-green-500" strokeWidth={2.2} />
-                        ) : (
-                          <item.icon className={`w-5 h-5 ${isActive ? 'text-primary-foreground drop-shadow' : ''}`} strokeWidth={2.2} />
+                    <TileTooltip key={item.key} scope="consultant" itemKey={item.key} label={label} isActive={isActive} side="right">
+                      <NavLink
+                        to={item.path}
+                        end={item.path === '/consultant'}
+                        className={`group/tile relative flex flex-col items-center justify-center gap-2 rounded-2xl px-2 py-3.5 text-center transition-all duration-200 overflow-hidden border ${
+                          isActive
+                            ? 'bg-gradient-to-br from-primary via-primary/85 to-primary/60 text-primary-foreground border-primary/50 shadow-xl shadow-primary/40 scale-[1.03]'
+                            : 'bg-sidebar-accent/15 hover:bg-sidebar-accent/40 text-sidebar-foreground/90 hover:text-sidebar-foreground border-sidebar-border/30 hover:border-sidebar-border/70 hover:shadow-md hover:-translate-y-0.5'
+                        }`}
+                        activeClassName=""
+                      >
+                        {isActive && (
+                          <>
+                            <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/15 to-white/0 pointer-events-none" />
+                            <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full bg-white/20 blur-2xl pointer-events-none" />
+                          </>
                         )}
-                      </div>
-                      <span className={`text-[11px] font-semibold leading-tight line-clamp-2 ${isActive ? 'text-primary-foreground' : 'text-sidebar-foreground/85 group-hover/tile:text-sidebar-foreground'}`}>
-                        {label}
-                      </span>
-                      {isOnboardingDone && (
-                        <span className="absolute top-1 end-1 text-[8px] font-bold bg-green-500 text-white px-1 py-0.5 rounded-full">✓</span>
-                      )}
-                    </NavLink>
+                        <div className={`flex items-center justify-center w-11 h-11 rounded-2xl shrink-0 transition-all ${
+                          isActive
+                            ? 'bg-white/25 backdrop-blur-sm shadow-inner'
+                            : `bg-gradient-to-br ${tint} group-hover/tile:scale-110 shadow-sm`
+                        }`}>
+                          {isOnboardingDone ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-500" strokeWidth={2.2} />
+                          ) : (
+                            <item.icon className={`w-5 h-5 ${isActive ? 'text-primary-foreground drop-shadow' : ''}`} strokeWidth={2.2} />
+                          )}
+                        </div>
+                        <span className={`text-[11px] font-semibold leading-tight line-clamp-2 ${isActive ? 'text-primary-foreground' : 'text-sidebar-foreground/85 group-hover/tile:text-sidebar-foreground'}`}>
+                          {label}
+                        </span>
+                        {isOnboardingDone && (
+                          <span className="absolute top-1 end-1 text-[8px] font-bold bg-green-500 text-white px-1 py-0.5 rounded-full">✓</span>
+                        )}
+                      </NavLink>
+                    </TileTooltip>
                   );
                 })}
               </div>
