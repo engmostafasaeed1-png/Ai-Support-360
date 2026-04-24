@@ -227,6 +227,22 @@ export default function InvoicesPage() {
                             {inv.ticket_sap_module && <Badge variant="outline" className="text-[9px]">{inv.ticket_sap_module}</Badge>}
                           </div>
                         )}
+                        {inv.session_id && (
+                          <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                            <SessionTypeIcon type={inv.session_type} className="w-3 h-3 text-blue-600" />
+                            <span className="text-xs text-blue-600 font-medium capitalize">
+                              {(inv.session_type || 'session').toString().replace(/_/g, ' ')} session
+                            </span>
+                            {inv.session_status && (
+                              <Badge variant="outline" className="text-[9px] capitalize">{inv.session_status}</Badge>
+                            )}
+                            {inv.session_scheduled_at && (
+                              <span className="text-[10px] text-muted-foreground">
+                                · {format(new Date(inv.session_scheduled_at), 'MMM d, h:mm a')}
+                              </span>
+                            )}
+                          </div>
+                        )}
                         {inv.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{inv.description}</p>}
                       </div>
                     </div>
