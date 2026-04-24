@@ -9,7 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Video, MessageSquare, Monitor, Clock, Loader2, CalendarDays, CheckCircle2 } from 'lucide-react';
+import { Video, MessageSquare, Monitor, Clock, Loader2, CalendarDays, CheckCircle2, Zap, CalendarClock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
