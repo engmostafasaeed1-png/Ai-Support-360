@@ -113,7 +113,9 @@ export default function OpenInNewTabButton({
       <ExternalLink className="w-4 h-4 mr-1.5" aria-hidden="true" />
       {t('open_new_tab.cta', {
         defaultValue: `Open ${PROVIDER_LABEL[provider]} in a new tab`,
-        provider: PROVIDER_LABEL[provider],
+        provider: t(`troubleshoot.provider_label.${provider}`, {
+          defaultValue: PROVIDER_LABEL[provider],
+        }),
       })}
     </Button>
   );
