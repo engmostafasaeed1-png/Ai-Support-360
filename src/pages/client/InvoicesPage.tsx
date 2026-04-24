@@ -20,12 +20,13 @@ import { toast } from 'sonner';
 import {
   FileText, Download, Search, Calendar, User, DollarSign, Ticket,
   ArrowRight, CheckCircle2, Clock, XCircle, AlertCircle, ReceiptText,
-  CreditCard, Eye, Printer, Plus, Pencil, ArrowUpDown, RefreshCw,
+  CreditCard, Eye, Printer, Plus, Pencil, ArrowUpDown, RefreshCw, PanelRightOpen,
 } from 'lucide-react';
 import { generateInvoicePdf as buildInvoicePdf } from '@/lib/invoicePdf';
 import { Video, MessageSquare, Monitor, PlayCircle, Phone, HelpCircle } from 'lucide-react';
 import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
 import { InvoiceDisputeSection } from '@/components/invoice/InvoiceDisputeSection';
+import { PaymentDetailsDrawer } from '@/components/invoice/PaymentDetailsDrawer';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
 
@@ -101,6 +102,7 @@ export default function InvoicesPage() {
   const [tab, setTab] = useState('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'amount_desc' | 'amount_asc'>('newest');
   const [selected, setSelected] = useState<any>(null);
+  const [drawerPayment, setDrawerPayment] = useState<any>(null);
   const [pdfPreview, setPdfPreview] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ ticket_id: '', amount: '', currency: 'USD', vat: '', description: '', due_date: '' });
@@ -401,6 +403,9 @@ export default function InvoicesPage() {
                         )}
                       </div>
                       <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" title="View details" onClick={e => { e.stopPropagation(); setDrawerPayment(inv); }}>
+                          <PanelRightOpen className="w-4 h-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" title="Preview PDF" onClick={e => { e.stopPropagation(); generateInvoicePdf(inv, true); }}>
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -694,6 +699,13 @@ export default function InvoicesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Payment Details Drawer */}
+      <PaymentDetailsDrawer
+        payment={drawerPayment}
+        open={!!drawerPayment}
+        onOpenChange={(o) => { if (!o) setDrawerPayment(null); }}
+      />
     </div>
   );
 }
