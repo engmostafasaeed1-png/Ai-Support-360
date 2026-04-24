@@ -340,6 +340,12 @@ export default function InvoicesPage() {
               <TabsTrigger value="unpaid" className="text-xs">Unpaid ({counts.unpaid})</TabsTrigger>
               <TabsTrigger value="processing" className="text-xs">Processing ({counts.processing})</TabsTrigger>
               <TabsTrigger value="failed" className="text-xs">Failed ({counts.failed})</TabsTrigger>
+              <TabsTrigger
+                value="overdue"
+                className="text-xs data-[state=active]:bg-red-100 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-900/30 dark:data-[state=active]:text-red-400"
+              >
+                Overdue ({counts.overdue})
+              </TabsTrigger>
             </TabsList>
           </Tabs>
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
