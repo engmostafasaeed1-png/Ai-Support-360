@@ -26,6 +26,7 @@ import { generateInvoicePdf as buildInvoicePdf } from '@/lib/invoicePdf';
 import { Video, MessageSquare, Monitor, PlayCircle, Phone, HelpCircle } from 'lucide-react';
 import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
 import { InvoiceDisputeSection } from '@/components/invoice/InvoiceDisputeSection';
+import { PaymentDetailsDrawer } from '@/components/invoice/PaymentDetailsDrawer';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
 
