@@ -29,6 +29,7 @@ import MeetingLinkButton from '@/components/session/MeetingLinkButton';
 import MediaPermissionsBanner from '@/components/session/MediaPermissionsBanner';
 import FramedAppNotice from '@/components/session/FramedAppNotice';
 import PreJoinChecklist from '@/components/session/PreJoinChecklist';
+import MeetingPermissionsNote from '@/components/session/MeetingPermissionsNote';
 
 const typeIcons = {
   video: Video,
@@ -151,6 +152,7 @@ export default function SessionDetailPage() {
             }
           />
           <MediaPermissionsBanner dismissKey={`media-perms-dismissed:${sessionId}`} />
+          <MeetingPermissionsNote dismissKey={`perm-note-dismissed:${sessionId}`} />
           <PreJoinChecklist
             url={
               (session as any).meeting_url ||
