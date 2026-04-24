@@ -102,6 +102,7 @@ export default function InvoicesPage() {
   const [tab, setTab] = useState('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'amount_desc' | 'amount_asc'>('newest');
   const [selected, setSelected] = useState<any>(null);
+  const [drawerPayment, setDrawerPayment] = useState<any>(null);
   const [pdfPreview, setPdfPreview] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ ticket_id: '', amount: '', currency: 'USD', vat: '', description: '', due_date: '' });
