@@ -135,7 +135,14 @@ export default function RateSessionDialog({
         throw new Error('You have already rated this session.');
       }
 
-      const parsed = ratingSchema.safeParse({ score, comment, is_anonymous: anonymous });
+      const parsed = ratingSchema.safeParse({
+        score,
+        comment,
+        is_anonymous: anonymous,
+        communication_score: communicationScore || undefined,
+        technical_expertise_score: technicalScore || undefined,
+        responsiveness_score: responsivenessScore || undefined,
+      });
       if (!parsed.success) {
         throw new Error(parsed.error.errors[0]?.message || 'Invalid input');
       }
@@ -153,13 +160,16 @@ export default function RateSessionDialog({
         throw new Error('A rating for this session already exists.');
       }
 
-      const { error } = await supabase.from('ratings').insert({
+      const { error } = await (supabase.from('ratings') as any).insert({
         session_id: sessionId,
         client_id: user.id,
         consultant_id: consultantId,
         score: parsed.data.score,
         comment: parsed.data.comment || null,
         is_anonymous: parsed.data.is_anonymous,
+        communication_score: parsed.data.communication_score ?? null,
+        technical_expertise_score: parsed.data.technical_expertise_score ?? null,
+        responsiveness_score: parsed.data.responsiveness_score ?? null,
       });
       if (error) {
         // Handle unique constraint violations gracefully
