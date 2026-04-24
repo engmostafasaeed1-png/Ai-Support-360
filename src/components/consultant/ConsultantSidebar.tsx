@@ -25,30 +25,33 @@ import SidebarTileSkeleton from '@/components/sidebar/SidebarTileSkeleton';
 import { useTileDensity } from '@/hooks/useTileDensity';
 import { mobileTileDensityClasses } from '@/components/sidebar/tileDensityClasses';
 
-const tileTints: Record<string, string> = {
-  dashboard: 'from-blue-500/25 to-blue-500/5 text-blue-500',
-  onboarding: 'from-amber-500/25 to-amber-500/5 text-amber-500',
-  cases: 'from-rose-500/25 to-rose-500/5 text-rose-500',
-  requests: 'from-violet-500/25 to-violet-500/5 text-violet-500',
-  proposals: 'from-cyan-500/25 to-cyan-500/5 text-cyan-500',
-  open_tickets: 'from-orange-500/25 to-orange-500/5 text-orange-500',
-  work_diary: 'from-indigo-500/25 to-indigo-500/5 text-indigo-500',
-  calendar: 'from-pink-500/25 to-pink-500/5 text-pink-500',
-  earnings: 'from-green-500/25 to-green-500/5 text-green-500',
-  chat: 'from-sky-500/25 to-sky-500/5 text-sky-500',
-  reviews: 'from-yellow-500/25 to-yellow-500/5 text-yellow-500',
-  profile: 'from-purple-500/25 to-purple-500/5 text-purple-500',
-  interviews: 'from-fuchsia-500/25 to-fuchsia-500/5 text-fuchsia-500',
-  verification: 'from-emerald-500/25 to-emerald-500/5 text-emerald-500',
-  remote_access: 'from-blue-500/25 to-blue-500/5 text-blue-500',
-  knowledge: 'from-amber-500/25 to-amber-500/5 text-amber-500',
-  business_processes: 'from-teal-500/25 to-teal-500/5 text-teal-500',
-  satisfaction: 'from-yellow-500/25 to-yellow-500/5 text-yellow-500',
-  reports: 'from-indigo-500/25 to-indigo-500/5 text-indigo-500',
-  referrals: 'from-pink-500/25 to-pink-500/5 text-pink-500',
-  notifications: 'from-amber-500/25 to-amber-500/5 text-amber-500',
-  settings: 'from-slate-500/25 to-slate-500/5 text-slate-500',
+// Modern infographic tints — vibrant gradient fill + matching solid + glow color
+const tileTints: Record<string, { grad: string; solid: string; glow: string; ring: string }> = {
+  dashboard:          { grad: 'from-sky-400 via-blue-500 to-indigo-600',        solid: 'text-sky-300',       glow: 'shadow-sky-500/40',       ring: 'ring-sky-400/30' },
+  onboarding:         { grad: 'from-amber-300 via-orange-400 to-rose-500',      solid: 'text-amber-200',     glow: 'shadow-amber-500/40',     ring: 'ring-amber-400/30' },
+  cases:              { grad: 'from-rose-400 via-pink-500 to-fuchsia-600',      solid: 'text-rose-200',      glow: 'shadow-rose-500/40',      ring: 'ring-rose-400/30' },
+  requests:           { grad: 'from-violet-400 via-purple-500 to-indigo-600',   solid: 'text-violet-200',    glow: 'shadow-violet-500/40',    ring: 'ring-violet-400/30' },
+  proposals:          { grad: 'from-cyan-300 via-teal-400 to-emerald-500',      solid: 'text-cyan-200',      glow: 'shadow-cyan-500/40',      ring: 'ring-cyan-400/30' },
+  open_tickets:       { grad: 'from-orange-300 via-amber-500 to-red-500',       solid: 'text-orange-200',    glow: 'shadow-orange-500/40',    ring: 'ring-orange-400/30' },
+  work_diary:         { grad: 'from-indigo-400 via-blue-500 to-cyan-500',       solid: 'text-indigo-200',    glow: 'shadow-indigo-500/40',    ring: 'ring-indigo-400/30' },
+  calendar:           { grad: 'from-pink-400 via-rose-500 to-red-500',          solid: 'text-pink-200',      glow: 'shadow-pink-500/40',      ring: 'ring-pink-400/30' },
+  earnings:           { grad: 'from-emerald-300 via-green-500 to-teal-600',     solid: 'text-emerald-200',   glow: 'shadow-emerald-500/40',   ring: 'ring-emerald-400/30' },
+  chat:               { grad: 'from-sky-300 via-cyan-500 to-blue-600',          solid: 'text-sky-200',       glow: 'shadow-sky-500/40',       ring: 'ring-sky-400/30' },
+  reviews:            { grad: 'from-yellow-300 via-amber-500 to-orange-500',    solid: 'text-yellow-200',    glow: 'shadow-yellow-500/40',    ring: 'ring-yellow-400/30' },
+  profile:            { grad: 'from-purple-400 via-fuchsia-500 to-pink-500',    solid: 'text-purple-200',    glow: 'shadow-purple-500/40',    ring: 'ring-purple-400/30' },
+  interviews:         { grad: 'from-fuchsia-400 via-purple-500 to-violet-600',  solid: 'text-fuchsia-200',   glow: 'shadow-fuchsia-500/40',   ring: 'ring-fuchsia-400/30' },
+  verification:       { grad: 'from-emerald-300 via-teal-500 to-cyan-600',      solid: 'text-emerald-200',   glow: 'shadow-emerald-500/40',   ring: 'ring-emerald-400/30' },
+  remote_access:      { grad: 'from-blue-400 via-indigo-500 to-violet-600',     solid: 'text-blue-200',      glow: 'shadow-blue-500/40',      ring: 'ring-blue-400/30' },
+  knowledge:          { grad: 'from-amber-300 via-orange-500 to-pink-500',      solid: 'text-amber-200',     glow: 'shadow-amber-500/40',     ring: 'ring-amber-400/30' },
+  business_processes: { grad: 'from-teal-300 via-emerald-500 to-green-600',     solid: 'text-teal-200',      glow: 'shadow-teal-500/40',      ring: 'ring-teal-400/30' },
+  satisfaction:       { grad: 'from-yellow-300 via-lime-400 to-green-500',      solid: 'text-yellow-200',    glow: 'shadow-lime-500/40',      ring: 'ring-lime-400/30' },
+  reports:            { grad: 'from-indigo-300 via-violet-500 to-purple-600',   solid: 'text-indigo-200',    glow: 'shadow-indigo-500/40',    ring: 'ring-indigo-400/30' },
+  referrals:          { grad: 'from-pink-300 via-rose-500 to-fuchsia-600',      solid: 'text-pink-200',      glow: 'shadow-pink-500/40',      ring: 'ring-pink-400/30' },
+  notifications:      { grad: 'from-amber-300 via-yellow-500 to-orange-500',    solid: 'text-amber-200',     glow: 'shadow-amber-500/40',     ring: 'ring-amber-400/30' },
+  settings:           { grad: 'from-slate-300 via-gray-400 to-zinc-500',        solid: 'text-slate-200',     glow: 'shadow-slate-500/30',     ring: 'ring-slate-400/30' },
 };
+
+const defaultTint = { grad: 'from-primary via-primary/80 to-primary/60', solid: 'text-primary', glow: 'shadow-primary/30', ring: 'ring-primary/30' };
 
 const titleize = (s: string) =>
   s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
