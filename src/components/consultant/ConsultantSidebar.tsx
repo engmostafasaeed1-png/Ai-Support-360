@@ -108,6 +108,8 @@ export default function ConsultantSidebar() {
   }, [isGuest]);
 
   const visibleItems = menuItems.filter(item => isVisible(item.key));
+  const { density } = useTileDensity();
+  const dens = mobileTileDensityClasses[density];
 
   // Best longest-prefix match so deep sub-routes keep the parent tile active.
   const bestMatchPath = (() => {
