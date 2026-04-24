@@ -2,11 +2,20 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Brain, Play, SkipForward, CheckCircle } from 'lucide-react';
+import { Brain, Play, SkipForward, CheckCircle, Medal, ShieldCheck, Sparkles, Star } from 'lucide-react';
 import AIInterviewFlow from '@/components/consultant/AIInterviewFlow';
+import { TrustBadge } from '@/components/consultant/TrustBadge';
+import { useConsultantProfile } from '@/hooks/useConsultantProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { toast } from 'sonner';
+
+const TIERS = [
+  { name: 'Gold',     range: 'Score 85+',  credits: 150, icon: Medal,       cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 ring-amber-300/60' },
+  { name: 'Silver',   range: 'Score 70–84', credits: 100, icon: Medal,       cls: 'bg-slate-200 text-slate-800 dark:bg-slate-700/40 dark:text-slate-200 ring-slate-300/60' },
+  { name: 'Bronze',   range: 'Score 50–69', credits: 75,  icon: Medal,       cls: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 ring-orange-300/60' },
+  { name: 'Verified', range: 'Any score',  credits: 50,  icon: ShieldCheck, cls: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 ring-emerald-300/60' },
+] as const;
 
 interface Props {
   onInterviewComplete: () => void;
