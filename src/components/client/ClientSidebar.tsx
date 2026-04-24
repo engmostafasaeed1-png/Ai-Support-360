@@ -186,6 +186,24 @@ export default function ClientSidebar() {
   const TierIcon = tierIcons[tier] || Wand2;
   const [profileOpen, setProfileOpen] = useState(false);
 
+  // Determine the best-matching nav item for the current URL so that
+  // deep sub-routes (e.g. /client/tickets/123) keep the parent tile active.
+  const allNavPaths = navGroups.flatMap(g => g.items.map(i => i.path));
+  const bestMatchPath = (() => {
+    const path = location.pathname;
+    let best = '';
+    for (const p of allNavPaths) {
+      if (p === '/client') {
+        if (path === '/client' && best === '') best = p;
+        continue;
+      }
+      if (path === p || path.startsWith(p + '/')) {
+        if (p.length > best.length) best = p;
+      }
+    }
+    return best;
+  })();
+
   return (
     <>
     <Sidebar collapsible="icon" className="border-e border-border/30">
