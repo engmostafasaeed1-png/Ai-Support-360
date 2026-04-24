@@ -212,7 +212,7 @@ export default function ConsultantSidebar() {
                             <div className="absolute -top-6 -right-6 w-16 h-16 rounded-full bg-white/20 blur-2xl pointer-events-none" />
                           </>
                         )}
-                        <div aria-hidden="true" className={`flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-2xl shrink-0 transition-all ${
+                        <div aria-hidden="true" className={`flex items-center justify-center ${dens.iconBox} sm:w-11 sm:h-11 rounded-2xl shrink-0 transition-all ${
                           isActive
                             ? 'bg-white/25 backdrop-blur-sm shadow-inner'
                             : `bg-gradient-to-br ${tint} group-hover/tile:scale-110 shadow-sm`
