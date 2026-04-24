@@ -240,6 +240,43 @@ export default function RateSessionDialog({
                 </span>
               </div>
 
+              {(() => {
+                const items = [
+                  { key: 'communication', label: 'Communication', icon: MessageCircle, value: (existing.data as any)?.communication_score },
+                  { key: 'technical', label: 'Technical Expertise', icon: Wrench, value: (existing.data as any)?.technical_expertise_score },
+                  { key: 'responsiveness', label: 'Responsiveness', icon: Zap, value: (existing.data as any)?.responsiveness_score },
+                ].filter((it) => typeof it.value === 'number' && it.value > 0);
+                if (items.length === 0) return null;
+                return (
+                  <div className="rounded-lg border border-border/40 bg-background/60 p-3 space-y-2">
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Detailed scores</p>
+                    {items.map((it) => {
+                      const Icon = it.icon;
+                      return (
+                        <div key={it.key} className="flex items-center justify-between gap-3">
+                          <span className="inline-flex items-center gap-1.5 text-xs text-foreground">
+                            <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                            {it.label}
+                          </span>
+                          <div className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map((v) => (
+                              <Star
+                                key={v}
+                                className={`w-3.5 h-3.5 ${
+                                  v <= (it.value as number)
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-muted-foreground/30'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
               {existing.data?.comment ? (
                 <div>
                   <p className="text-[11px] font-semibold text-muted-foreground uppercase mb-1">Your feedback</p>
