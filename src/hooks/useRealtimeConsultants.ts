@@ -23,6 +23,8 @@ export interface ConsultantLive {
   languages: string[];
   response_time_minutes: number;
   verification_status: string;
+  credibility_credits?: number;
+  ai_interview_badge?: string | null;
 }
 
 export function useRealtimeConsultants() {
