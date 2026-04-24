@@ -196,6 +196,11 @@ export default function PaymentsPage() {
                       <Button variant="ghost" size="icon" title="Download Invoice" className="shrink-0" onClick={e => { e.stopPropagation(); generateInvoicePdf(payment); }}>
                         <Download className="w-4 h-4" />
                       </Button>
+                      {(payment.status === 'completed' || payment.status === 'paid') && (
+                        <Button variant="ghost" size="icon" title="Download Receipt" className="shrink-0 text-green-600 hover:text-green-700" onClick={e => { e.stopPropagation(); generateReceiptPdf({ ...payment, paid_at: payment.paid_at || payment.updated_at || payment.date, transaction_id: payment.transaction_id || payment.id }); }}>
+                          <Receipt className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 );
