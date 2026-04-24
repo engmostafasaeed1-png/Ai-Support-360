@@ -117,7 +117,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const ciphertextB64 = (row as Record<string, string | null>)[body.field];
+    const ciphertextB64 = (row as unknown as Record<string, string | null>)[body.field];
     if (!ciphertextB64) {
       return new Response(JSON.stringify({ plaintext: "" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
