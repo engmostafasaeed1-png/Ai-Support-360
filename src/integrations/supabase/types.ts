@@ -2872,32 +2872,41 @@ export type Database = {
         Row: {
           client_id: string
           comment: string | null
+          communication_score: number | null
           consultant_id: string
           created_at: string
           id: string
           is_anonymous: boolean
+          responsiveness_score: number | null
           score: number
           session_id: string
+          technical_expertise_score: number | null
         }
         Insert: {
           client_id: string
           comment?: string | null
+          communication_score?: number | null
           consultant_id: string
           created_at?: string
           id?: string
           is_anonymous?: boolean
+          responsiveness_score?: number | null
           score: number
           session_id: string
+          technical_expertise_score?: number | null
         }
         Update: {
           client_id?: string
           comment?: string | null
+          communication_score?: number | null
           consultant_id?: string
           created_at?: string
           id?: string
           is_anonymous?: boolean
+          responsiveness_score?: number | null
           score?: number
           session_id?: string
+          technical_expertise_score?: number | null
         }
         Relationships: [
           {
