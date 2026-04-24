@@ -7,6 +7,7 @@ const BodySchema = z.object({
   messages: z.array(z.object({ role: z.string(), content: z.string() })).optional(),
   action: z.string().optional(),
   lang: z.string().max(10).optional(),
+  voice_gender: z.enum(["male", "female"]).optional(),
 });
 
 const corsHeaders = {
