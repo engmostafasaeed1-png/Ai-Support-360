@@ -933,14 +933,14 @@
     "resend_error": "Failed to resend. Please try again."
   },
   "chatbot": {
-    "title": "Qurtuba AI",
+    "title": "AI SAP Support Now",
     "subtitle": "SAP Support Assistant",
     "history_title": "Chat History",
     "no_history": "No previous chats",
     "how_can_i_help": "How can I help with SAP?",
     "description": "SAP support means help with SAP ERP modules (FI, CO, MM, SD, HR, Basis, etc.) — configuration, errors, transports, performance, and tickets. Describe your issue and I'll triage it, search the knowledge base, or open a ticket for you.",
     "placeholder": "Describe your SAP issue...",
-    "powered_by": "Powered by Qurtuba AI · Responses may be inaccurate",
+    "powered_by": "Powered by AI SAP Support Now · Responses may be inaccurate",
     "create_ticket": "Create Ticket",
     "prompt_fi": "My SAP FI posting is failing",
     "prompt_mm": "MM purchase order stuck",
