@@ -41,7 +41,7 @@ export default function ProviderTroubleshootingPanel({
         <div className="flex-1 space-y-1">
           <p className="font-medium text-foreground">
             {t(`troubleshoot.${provider}.${reason}.headline`, {
-              defaultValue: `${guide.label}: ${guide.headline}`,
+              defaultValue: guide.headline,
             })}
           </p>
           <p className="text-xs text-muted-foreground">
@@ -66,7 +66,8 @@ export default function ProviderTroubleshootingPanel({
           <a href={guide.helpUrl} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
             {t('troubleshoot.help_link', {
-              defaultValue: `${guide.label} help center`,
+              defaultValue: `Open ${guide.label} help center`,
+              provider: t(`troubleshoot.provider_label.${provider}`, { defaultValue: guide.label }),
             })}
           </a>
         </Button>
