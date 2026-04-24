@@ -102,11 +102,17 @@ export default function WhyQurtubaSection() {
               style={{ animationDelay: `${i * 80}ms` }}
               className={`group relative isolate overflow-hidden ${radius.tile} ${border.base} bg-card shadow-sm ${shadow.hover} ${motion.transition} ${motion.liftOnHover} ${motion.enter} ${f.size} ${f.height}`}
             >
-              {/* Background image with blur-up placeholder */}
+              {/* Background image with blur-up placeholder.
+                  Alt text mirrors the visible feature title so screen-reader
+                  users still get a meaningful label; BlurImage already sets
+                  loading="lazy" + decoding="async" on the full-res asset. */}
               <BlurImage
                 src={f.image}
                 blurSrc={f.blur}
-                alt=""
+                alt={t('whyQurtuba.image_alt', {
+                  title: f.title,
+                  defaultValue: `Illustration: ${f.title}`,
+                })}
                 width={1024}
                 height={768}
                 className="absolute inset-0 w-full h-full object-cover motion-safe:transition-transform motion-safe:duration-[1200ms] motion-safe:ease-out motion-safe:group-hover:scale-110"
