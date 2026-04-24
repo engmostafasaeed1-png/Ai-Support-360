@@ -329,6 +329,36 @@ export default function RateSessionDialog({
               </div>
             </div>
 
+            <div className="space-y-2.5 rounded-xl border border-border/50 p-3">
+              <div>
+                <Label className="text-sm font-medium">Detailed scores <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <p className="text-[11px] text-muted-foreground">Help the consultant know what to keep doing — and what to improve.</p>
+              </div>
+              {CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                const value =
+                  cat.key === 'communication' ? communicationScore :
+                  cat.key === 'technical' ? technicalScore :
+                  responsivenessScore;
+                const setter =
+                  cat.key === 'communication' ? setCommunicationScore :
+                  cat.key === 'technical' ? setTechnicalScore :
+                  setResponsivenessScore;
+                return (
+                  <div key={cat.key} className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground inline-flex items-center gap-1.5">
+                        <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                        {cat.label}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">{cat.description}</p>
+                    </div>
+                    <CategoryStars value={value} onChange={setter} ariaLabel={cat.label} />
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="rating-comment" className="text-sm font-medium">
                 Detailed feedback <span className="text-muted-foreground font-normal">(optional)</span>
