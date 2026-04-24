@@ -2089,9 +2089,13 @@ export type Database = {
         Row: {
           body: string | null
           created_at: string
+          delivery_error: string | null
+          delivery_status: string
           id: string
           is_read: boolean | null
+          last_attempt_at: string
           link: string | null
+          retry_count: number
           tenant_id: string | null
           title: string
           type: string | null
@@ -2100,9 +2104,13 @@ export type Database = {
         Insert: {
           body?: string | null
           created_at?: string
+          delivery_error?: string | null
+          delivery_status?: string
           id?: string
           is_read?: boolean | null
+          last_attempt_at?: string
           link?: string | null
+          retry_count?: number
           tenant_id?: string | null
           title: string
           type?: string | null
@@ -2111,9 +2119,13 @@ export type Database = {
         Update: {
           body?: string | null
           created_at?: string
+          delivery_error?: string | null
+          delivery_status?: string
           id?: string
           is_read?: boolean | null
+          last_attempt_at?: string
           link?: string | null
+          retry_count?: number
           tenant_id?: string | null
           title?: string
           type?: string | null
@@ -5210,6 +5222,40 @@ export type Database = {
       is_tenant_member: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
+      }
+      retry_failed_notification: {
+        Args: { _id: string }
+        Returns: {
+          body: string | null
+          created_at: string
+          delivery_error: string | null
+          delivery_status: string
+          id: string
+          is_read: boolean | null
+          last_attempt_at: string
+          link: string | null
+          retry_count: number
+          tenant_id: string | null
+          title: string
+          type: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "notifications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      safe_insert_notification: {
+        Args: {
+          _body: string
+          _link: string
+          _title: string
+          _type: string
+          _user_id: string
+        }
+        Returns: string
       }
     }
     Enums: {
