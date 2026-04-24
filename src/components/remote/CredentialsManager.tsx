@@ -213,9 +213,11 @@ export default function CredentialsManager({ environmentId, canEdit = true }: Cr
                 <div className="flex items-center gap-1">
                   <span className="text-muted-foreground">Password:</span>{' '}
                   <span className="text-foreground font-mono">
-                    {showPasswords[cred.id] ? cred.password_encrypted : '••••••••'}
+                    {showPasswords[cred.id]
+                      ? (revealing[cred.id] ? '…' : (revealedPasswords[cred.id] ?? '••••••••'))
+                      : '••••••••'}
                   </span>
-                  <button onClick={() => togglePassword(cred.id)} className="text-muted-foreground hover:text-foreground">
+                  <button onClick={() => togglePassword(cred)} className="text-muted-foreground hover:text-foreground">
                     {showPasswords[cred.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                   </button>
                 </div>
