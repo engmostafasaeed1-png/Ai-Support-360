@@ -257,7 +257,7 @@ export default function InvoicesPage() {
         p.consultant?.toLowerCase().includes(s) ||
         p.ticket_title?.toLowerCase().includes(s) ||
         p.description?.toLowerCase().includes(s);
-      const matchTab = matchesTab(p.status, tab);
+      const matchTab = matchesTab(p, tab);
       const matchMethod = paymentMethodFilter === 'all' || classifyPaymentMethod(p.payment_method) === paymentMethodFilter;
       return matchSearch && matchTab && matchMethod;
     })
