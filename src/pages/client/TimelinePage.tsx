@@ -130,7 +130,7 @@ export default function TimelinePage() {
     const list = tickets || [];
     return list.filter(t => {
       if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
-      if (filter === 'active') return t.status !== 'resolved' && t.status !== 'closed' && t.status !== 'cancelled';
+      if (filter === 'active') return t.status && t.status !== 'resolved' && t.status && t.status !== 'closed' && t.status && t.status !== 'cancelled';
       if (filter === 'resolved') return t.status === 'resolved' || t.status === 'closed';
       if (filter === 'live') return t.sessions.some(s => s.status === 'in_progress' || s.status === 'live');
       return true;
@@ -141,7 +141,7 @@ export default function TimelinePage() {
     const list = tickets || [];
     return {
       total: list.length,
-      active: list.filter(t => !['resolved', 'closed', 'cancelled'].includes(t.status)).length,
+      active: list.filter(t => !t.status || !["resolved","closed","cancelled"].includes(t.status)).length,
       live: list.filter(t => t.sessions.some(s => s.status === 'in_progress' || s.status === 'live')).length,
       resolved: list.filter(t => ['resolved', 'closed'].includes(t.status)).length,
     };
