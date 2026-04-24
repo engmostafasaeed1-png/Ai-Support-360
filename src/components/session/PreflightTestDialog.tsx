@@ -296,8 +296,127 @@ export default function PreflightTestDialog({
     startTest();
   }, [startTest]);
 
+  const startRecording = useCallback(() => {
+    if (!streamRef.current) return;
+    if (typeof MediaRecorder === 'undefined') {
+      toast.error(
+        t('preflight.record_unsupported', {
+          defaultValue: 'Recording is not supported in this browser.',
+        }),
+      );
+      return;
+    }
+    setRecordConfirmed(false);
+    setRecordSeconds(0);
+    if (recordingUrl) {
+      URL.revokeObjectURL(recordingUrl);
+      setRecordingUrl(null);
+    }
+    chunksRef.current = [];
+
+    const mimeCandidates = [
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm',
+      'video/mp4',
+    ];
+    const mimeType =
+      mimeCandidates.find((m) => {
+        try {
+          return MediaRecorder.isTypeSupported(m);
+        } catch {
+          return false;
+        }
+      }) || '';
+
+    let recorder: MediaRecorder;
+    try {
+      recorder = mimeType
+        ? new MediaRecorder(streamRef.current, { mimeType })
+        : new MediaRecorder(streamRef.current);
+    } catch (err: any) {
+      logProviderEvent(
+        'preflight_error',
+        { stage: 'record_init', message: err?.message },
+        'error',
+      );
+      toast.error(
+        t('preflight.record_failed', {
+          defaultValue: 'Could not start recording on this device.',
+        }),
+      );
+      return;
+    }
+    recorderRef.current = recorder;
+
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+    };
+    recorder.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: mimeType || 'video/webm' });
+      chunksRef.current = [];
+      if (blob.size === 0) {
+        setRecording(false);
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      setRecordingUrl(url);
+      setRecording(false);
+      logProviderEvent('preflight_proceed', {
+        stage: 'record_complete',
+        hasVideo,
+        hasAudio,
+        sizeKb: Math.round(blob.size / 1024),
+        mimeType: mimeType || 'video/webm',
+      });
+    };
+
+    setRecording(true);
+    logProviderEvent('preflight_open', { stage: 'record_start', hasVideo, hasAudio });
+    recorder.start();
+
+    recordTimerRef.current = window.setInterval(() => {
+      setRecordSeconds((s) => {
+        const next = s + 1;
+        if (next >= RECORD_DURATION) {
+          if (recordTimerRef.current) {
+            window.clearInterval(recordTimerRef.current);
+            recordTimerRef.current = null;
+          }
+          try {
+            recorder.stop();
+          } catch {
+            /* ignore */
+          }
+        }
+        return next;
+      });
+    }, 1000);
+  }, [hasAudio, hasVideo, recordingUrl, t]);
+
+  const stopRecording = useCallback(() => {
+    if (recordTimerRef.current) {
+      window.clearInterval(recordTimerRef.current);
+      recordTimerRef.current = null;
+    }
+    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+      try {
+        recorderRef.current.stop();
+      } catch {
+        /* ignore */
+      }
+    }
+    setRecording(false);
+  }, []);
+
   const handleProceed = () => {
-    logProviderEvent('preflight_proceed', { hasVideo, hasAudio });
+    logProviderEvent('preflight_proceed', {
+      hasVideo,
+      hasAudio,
+      recordConfirmed,
+      cameraId,
+      micId,
+    });
     stopStream();
     onOpenChange(false);
     onProceed();
