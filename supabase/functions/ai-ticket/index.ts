@@ -63,7 +63,7 @@ function aiRequest(apiKey: string, systemPrompt: string, userPrompt: string, too
   });
 }
 
-function handleAiError(status: number) {
+function handleAiError(req: Request, status: number) {
   if (status === 429) return new Response(JSON.stringify({ error: "Rate limited" }), { status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
   if (status === 402) return new Response(JSON.stringify({ error: "Credits exhausted" }), { status: 402, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
   return null;
