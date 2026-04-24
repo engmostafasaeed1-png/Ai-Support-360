@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Star, ThumbsUp, CheckCircle2, Lock } from 'lucide-react';
+import { Star, ThumbsUp, CheckCircle2, Lock, MessageCircle, Wrench, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
