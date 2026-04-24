@@ -143,7 +143,9 @@ export default function ConsultantSidebar() {
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            {collapsed ? (
+            {prefsLoading ? (
+              <SidebarTileSkeleton count={12} collapsed={collapsed} />
+            ) : collapsed ? (
               <SidebarMenu className="space-y-1 px-2">
                 {visibleItems.map((item) => {
                   const isActive = item.path === bestMatchPath;
