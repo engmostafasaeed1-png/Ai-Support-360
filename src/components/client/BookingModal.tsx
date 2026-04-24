@@ -522,16 +522,29 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
                 <p className="text-sm font-medium text-foreground">{t('booking.review')}</p>
                 <div className="p-4 rounded-xl bg-muted/30 border border-border/30 space-y-3 text-sm">
                   <div className="flex justify-between">
+                    <span className="text-muted-foreground">Mode</span>
+                    <Badge variant={bookingMode === 'instant' ? 'default' : 'secondary'} className="text-[10px] gap-1 capitalize">
+                      {bookingMode === 'instant' ? <Zap className="w-3 h-3" /> : <CalendarClock className="w-3 h-3" />}
+                      {bookingMode}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('booking.consultant')}</span>
                     <span className="font-medium text-foreground">{consultantName}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('booking.date')}</span>
-                    <span className="font-medium text-foreground">{selectedDate && format(selectedDate, 'EEEE, MMM d, yyyy')}</span>
+                    <span className="font-medium text-foreground">
+                      {bookingMode === 'instant'
+                        ? format(new Date(), 'EEEE, MMM d, yyyy')
+                        : (selectedDate && format(selectedDate, 'EEEE, MMM d, yyyy'))}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('booking.time')}</span>
-                    <span className="font-medium text-foreground">{selectedTime}</span>
+                    <span className="font-medium text-foreground">
+                      {bookingMode === 'instant' ? 'Starting now' : selectedTime}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('booking.type')}</span>
