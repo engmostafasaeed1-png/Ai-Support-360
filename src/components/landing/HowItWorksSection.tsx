@@ -5,15 +5,15 @@ type Step = {
   Icon: typeof FileText;
   /** Tailwind gradient stops for the icon tile (matches the Why Choose Us palette). */
   accent: string;
-  /** Soft glow color (uses HSL with alpha) shown behind the icon on hover. */
+  /** RGB triplet used for the soft glow shadow on hover. */
   glow: string;
 };
 
 const steps: Step[] = [
-  { Icon: FileText,      accent: 'from-cyan-500 to-blue-600',      glow: 'shadow-[0_0_60px_-15px_rgba(59,130,246,0.55)]' },
-  { Icon: Brain,         accent: 'from-violet-500 to-purple-600',  glow: 'shadow-[0_0_60px_-15px_rgba(139,92,246,0.55)]' },
-  { Icon: MessageSquare, accent: 'from-amber-500 to-orange-600',   glow: 'shadow-[0_0_60px_-15px_rgba(245,158,11,0.55)]' },
-  { Icon: Star,          accent: 'from-emerald-500 to-teal-600',   glow: 'shadow-[0_0_60px_-15px_rgba(16,185,129,0.55)]' },
+  { Icon: FileText,      accent: 'from-cyan-500 to-blue-600',     glow: '59, 130, 246'  },
+  { Icon: Brain,         accent: 'from-violet-500 to-purple-600', glow: '139, 92, 246'  },
+  { Icon: MessageSquare, accent: 'from-amber-500 to-orange-600',  glow: '245, 158, 11'  },
+  { Icon: Star,          accent: 'from-emerald-500 to-teal-600',  glow: '16, 185, 129'  },
 ];
 
 export default function HowItWorksSection() {
@@ -85,7 +85,8 @@ export default function HowItWorksSection() {
                   {/* Icon tile */}
                   <div className="relative inline-flex">
                     <div
-                      className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${s.accent} flex items-center justify-center shadow-lg motion-safe:transition-all motion-safe:duration-500 motion-safe:group-hover:-rotate-6 motion-safe:group-hover:scale-105 group-hover:${s.glow}`}
+                      style={{ ['--glow' as string]: s.glow }}
+                      className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${s.accent} flex items-center justify-center shadow-lg motion-safe:transition-all motion-safe:duration-500 motion-safe:group-hover:-rotate-6 motion-safe:group-hover:scale-105 group-hover:shadow-[0_0_60px_-15px_rgba(var(--glow),0.55)]`}
                     >
                       <s.Icon size={28} strokeWidth={1.75} absoluteStrokeWidth className="text-white" aria-hidden="true" />
                     </div>
