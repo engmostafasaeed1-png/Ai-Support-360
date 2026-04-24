@@ -160,7 +160,8 @@ const TOOLS = [
 async function execTool(
   name: string,
   args: Record<string, unknown>,
-  sbUser: ReturnType<typeof createClient>,
+  // deno-lint-ignore no-explicit-any
+  sbUser: any,
   authUserId: string,
 ): Promise<unknown> {
   const limit = Math.min(Math.max(Number(args.limit) || 10, 1), 20);
