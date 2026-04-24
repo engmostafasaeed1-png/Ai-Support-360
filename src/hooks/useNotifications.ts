@@ -104,5 +104,5 @@ export function useNotifications() {
     return () => { supabase.removeChannel(channel); };
   }, [fetchNotifications]);
 
-  return { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, refetch: fetchNotifications };
+  return { notifications, unreadCount, loading, markAsRead, markAllAsRead, markManyAsRead, deleteNotification, refetch: fetchNotifications };
 }
