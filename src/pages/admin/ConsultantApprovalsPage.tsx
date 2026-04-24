@@ -220,10 +220,10 @@ export default function ConsultantApprovalsPage() {
                         <Button variant="outline" size="sm" onClick={() => setReinterviewTarget({ id: c.id, name: c.name })}>
                           <RotateCcw className="w-3.5 h-3.5 me-1" /> {t('interview.reinterview', 'Re-Interview')}
                         </Button>
-                        <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => updateStatus.mutate({ id: c.id, status: 'rejected' })} disabled={updateStatus.isPending}>
+                        <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => openDecision(c.id, c.name, 'rejected')} disabled={updateStatus.isPending}>
                           <X className="w-3.5 h-3.5 me-1" /> {t('approvals_page.reject')}
                         </Button>
-                        <Button size="sm" className="gradient-primary border-0" onClick={() => updateStatus.mutate({ id: c.id, status: 'verified' })} disabled={updateStatus.isPending}>
+                        <Button size="sm" className="gradient-primary border-0" onClick={() => openDecision(c.id, c.name, 'verified')} disabled={updateStatus.isPending}>
                           <Check className="w-3.5 h-3.5 me-1" /> {t('approvals_page.approve')}
                         </Button>
                       </div>
