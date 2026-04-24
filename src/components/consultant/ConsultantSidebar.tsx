@@ -104,6 +104,23 @@ export default function ConsultantSidebar() {
 
   const visibleItems = menuItems.filter(item => isVisible(item.key));
 
+  // Best longest-prefix match so deep sub-routes keep the parent tile active.
+  const bestMatchPath = (() => {
+    const path = location.pathname;
+    let best = '';
+    for (const item of visibleItems) {
+      const p = item.path;
+      if (p === '/consultant') {
+        if (path === '/consultant' && best === '') best = p;
+        continue;
+      }
+      if (path === p || path.startsWith(p + '/')) {
+        if (p.length > best.length) best = p;
+      }
+    }
+    return best;
+  })();
+
   return (
     <>
     <Sidebar collapsible="icon" className="border-e border-border/50">
