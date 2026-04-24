@@ -277,6 +277,10 @@ export default function InvoicesPage() {
     unpaid: all.filter((p: any) => p.status === 'pending' || p.status === 'unpaid').length,
     processing: all.filter((p: any) => p.status === 'processing').length,
     failed: all.filter((p: any) => p.status === 'failed').length,
+    overdue: all.filter((p: any) => {
+      const info = getDueDateInfo(p);
+      return !!(info && info.overdue);
+    }).length,
   };
 
   const [failedDownloads, setFailedDownloads] = useState<Record<string, boolean>>({});
