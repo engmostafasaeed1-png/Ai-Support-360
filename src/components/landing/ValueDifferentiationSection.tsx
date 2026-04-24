@@ -188,13 +188,13 @@ export default function ValueDifferentiationSection() {
                 {/* Us */}
                 <div className="flex justify-center">
                   {row.us ? (
-                    <div className="relative w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center ring-1 ring-primary/30">
-                      <div className="absolute inset-0 rounded-full bg-primary/20 blur-md" />
-                      <Check className="relative w-5 h-5 text-primary" strokeWidth={3} />
+                    <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-110 motion-safe:group-hover:-rotate-6">
+                      <div aria-hidden="true" className="absolute inset-0 rounded-2xl bg-primary/40 blur-lg -z-10" />
+                      <Check size={18} strokeWidth={3} absoluteStrokeWidth className="relative text-primary-foreground" aria-label="Included" />
                     </div>
                   ) : (
-                    <div className="w-9 h-9 rounded-full bg-muted/50 flex items-center justify-center ring-1 ring-border/40">
-                      <X className="w-5 h-5 text-muted-foreground/60" strokeWidth={2.5} />
+                    <div className="w-10 h-10 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/50">
+                      <X size={18} strokeWidth={2.25} absoluteStrokeWidth aria-label="Not included" />
                     </div>
                   )}
                 </div>
@@ -202,15 +202,15 @@ export default function ValueDifferentiationSection() {
                 {/* Them */}
                 <div className="flex justify-center min-w-[90px]">
                   {row.them === true ? (
-                    <div className="w-9 h-9 rounded-full bg-muted/40 flex items-center justify-center ring-1 ring-border/30">
-                      <Check className="w-5 h-5 text-muted-foreground/60" strokeWidth={2.5} />
+                    <div className="w-10 h-10 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/55">
+                      <Check size={18} strokeWidth={2.5} absoluteStrokeWidth aria-label="Included" />
                     </div>
                   ) : row.them === false ? (
-                    <div className="w-9 h-9 rounded-full bg-muted/40 flex items-center justify-center ring-1 ring-border/30">
-                      <X className="w-5 h-5 text-muted-foreground/60" strokeWidth={2.5} />
+                    <div className="w-10 h-10 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/45">
+                      <X size={18} strokeWidth={2.25} absoluteStrokeWidth aria-label="Not included" />
                     </div>
                   ) : (
-                    <span className="text-xs font-medium text-muted-foreground/70 italic px-3 py-1 rounded-full bg-muted/40 border border-border/30">
+                    <span className="text-xs font-medium text-muted-foreground/70 italic px-3 py-1 rounded-full bg-muted/40 border border-border/40">
                       {row.them}
                     </span>
                   )}
