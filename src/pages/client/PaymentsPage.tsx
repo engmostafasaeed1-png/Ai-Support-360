@@ -31,10 +31,22 @@ export default function PaymentsPage() {
   const [tab, setTab] = useState('all');
 
   const allPayments = payments || [];
-  const total = allPayments.reduce((a, p) => a + Number(p.amount), 0);
-  const pending = allPayments.filter((p) => p.status === 'pending').reduce((a, p) => a + Number(p.amount), 0);
-  const paid = allPayments.filter((p) => p.status === 'completed' || p.status === 'paid').reduce((a, p) => a + Number(p.amount), 0);
-  const totalVat = allPayments.reduce((a, p) => a + Number(p.vat || 0), 0);
+  const { preferred, convert, isLoading: ratesLoading } = useCurrency();
+  const sumConverted = (filterFn: (p: any) => boolean, field: 'amount' | 'vat' = 'amount') => {
+    let total = 0;
+    let allConverted = true;
+    for (const p of allPayments) {
+      if (!filterFn(p)) continue;
+      const v = Number((p as any)[field] || 0);
+      const c = convert(v, p.currency || 'USD');
+      if (c === null) { allConverted = false; continue; }
+      total += c;
+    }
+    return { total, allConverted };
+  };
+  const paidSum = sumConverted((p) => p.status === 'completed' || p.status === 'paid');
+  const pendingSum = sumConverted((p) => p.status === 'pending');
+  const vatSum = sumConverted(() => true, 'vat');
 
   const filtered = allPayments.filter(p => {
     const matchSearch = !search || 
