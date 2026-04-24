@@ -27,6 +27,7 @@ import MeetingMinutesCard from '@/components/session/MeetingMinutesCard';
 import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfactionDialog';
 import MeetingLinkButton from '@/components/session/MeetingLinkButton';
 import MediaPermissionsBanner from '@/components/session/MediaPermissionsBanner';
+import FramedAppNotice from '@/components/session/FramedAppNotice';
 
 const typeIcons = {
   video: Video,
