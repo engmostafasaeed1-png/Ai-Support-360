@@ -42,7 +42,7 @@ export default function Navbar() {
           to="/"
           aria-label="AI SAP Support Now — go to home"
           title="Go to home"
-          className="flex items-center gap-1.5 sm:gap-2.5 md:gap-3 group rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background py-1 cursor-pointer min-w-0 shrink"
+          className="flex items-center gap-1.5 sm:gap-2.5 md:gap-3 group rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background -ml-1.5 px-1.5 py-1.5 sm:py-1 min-h-[44px] cursor-pointer min-w-0 shrink active:bg-foreground/5"
         >
           <img
             src={logo}
