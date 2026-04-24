@@ -11,10 +11,22 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Verify caller has a valid token (anon key or user JWT)
+    // Verify authenticated user via JWT
     const authHeader = req.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!
+    );
+    const { data: { user: authUser }, error: authError } = await supabaseAuth.auth.getUser(token);
+    if (authError || !authUser) {
+      return new Response(JSON.stringify({ error: 'Invalid or expired session' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -42,6 +54,19 @@ serve(async (req) => {
       .eq("id", interview_id)
       .single();
     if (intErr || !interview) throw new Error("Interview not found");
+
+    // --- Ownership check: caller must be the consultant or an admin ---
+    const { data: consultantRow } = await supabase
+      .from("consultants")
+      .select("user_id")
+      .eq("id", interview.consultant_id)
+      .single();
+    const isAdmin = (await supabase.rpc("has_role", { _user_id: authUser.id, _role: "admin" })).data === true;
+    if (consultantRow?.user_id !== authUser.id && !isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Get consultant skills for context
     const { data: skills } = await supabase

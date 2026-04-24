@@ -55,6 +55,29 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // --- Ownership check: caller must be the consultant or an admin ---
+    const { data: session } = await supabase
+      .from("interview_sessions")
+      .select("consultant_id")
+      .eq("id", interview_id)
+      .single();
+    if (!session) {
+      return new Response(JSON.stringify({ error: "Interview not found" }), {
+        status: 404, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+    const { data: consultant } = await supabase
+      .from("consultants")
+      .select("user_id")
+      .eq("id", session.consultant_id)
+      .single();
+    const isAdmin = (await supabase.rpc("has_role", { _user_id: authUser.id, _role: "admin" })).data === true;
+    if (consultant?.user_id !== authUser.id && !isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+
     // Build evaluation prompt
     const qaText = answers.map((a: any, i: number) =>
       `Q${i + 1} [${a.category}]: ${a.question}\nAnswer: ${a.answer || "(no answer)"}`

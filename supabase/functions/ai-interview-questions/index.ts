@@ -63,6 +63,19 @@ serve(async (req) => {
       .single();
     if (intErr || !interview) throw new Error("Interview not found");
 
+    // --- Ownership check: caller must be the consultant, requested_by user, or admin ---
+    const { data: consultantRow } = await supabase
+      .from("consultants")
+      .select("user_id")
+      .eq("id", interview.consultant_id)
+      .single();
+    const isAdmin = (await supabase.rpc("has_role", { _user_id: authUser.id, _role: "admin" })).data === true;
+    if (consultantRow?.user_id !== authUser.id && !isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+
     // Get consultant skills
     const { data: skills } = await supabase
       .from("consultant_skills")
