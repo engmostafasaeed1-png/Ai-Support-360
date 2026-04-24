@@ -96,6 +96,27 @@ const matchesTab = (status: string, tab: string) => {
 const fmt = (amount: number, currency: string = 'USD') =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
 
+const PAYMENT_METHOD_OPTIONS: { value: string; label: string; icon: any; match: RegExp }[] = [
+  { value: 'card', label: 'Card', icon: CreditCard, match: /(card|visa|master|amex|stripe|debit|credit)/i },
+  { value: 'bank_transfer', label: 'Bank Transfer', icon: Landmark, match: /(bank|transfer|wire|ach|sepa|iban)/i },
+  { value: 'wallet', label: 'Wallet', icon: Wallet, match: /(wallet|paypal|apple\s*pay|google\s*pay|stc|mada\s*pay)/i },
+  { value: 'cash', label: 'Cash', icon: Banknote, match: /cash/i },
+  { value: 'crypto', label: 'Crypto', icon: Bitcoin, match: /(crypto|bitcoin|btc|eth|usdt|usdc)/i },
+];
+
+function classifyPaymentMethod(method?: string | null): string {
+  if (!method) return 'unspecified';
+  const found = PAYMENT_METHOD_OPTIONS.find(opt => opt.match.test(method));
+  return found ? found.value : 'other';
+}
+
+function getPaymentMethodMeta(value: string) {
+  const opt = PAYMENT_METHOD_OPTIONS.find(o => o.value === value);
+  if (opt) return { label: opt.label, icon: opt.icon };
+  if (value === 'unspecified') return { label: 'Unspecified', icon: HelpIcon };
+  return { label: 'Other', icon: HelpIcon };
+}
+
 export default function InvoicesPage() {
   const { t } = useTranslation();
   const { data: payments, isLoading } = useClientPayments();
