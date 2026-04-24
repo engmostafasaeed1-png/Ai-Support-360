@@ -6,8 +6,9 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Settings2, Search, RotateCcw, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { Settings2, Search, RotateCcw, Eye, EyeOff, Sparkles, Rows3, Rows2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useTileDensity, type TileDensity } from '@/hooks/useTileDensity';
 
 interface ScreenItem {
   key: string;
