@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Users, CheckCircle, Clock, Eye, Zap } from 'lucide-react';
+import { ArrowRight, Sparkles, Users, CheckCircle, Clock, Eye, Zap, ShieldCheck, Bot, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import GuestExploreModal from '@/components/guest/GuestExploreModal';
 import VideoBackground from '@/components/VideoBackground';
 import heroBgAsset from '@/assets/videos/hero-bg.mp4.asset.json';
+import introCollab from '@/assets/intro-collab.jpg';
+import introAiPortal from '@/assets/intro-ai-portal.jpg';
+import introConsultant from '@/assets/intro-consultant.jpg';
 
 export default function HeroSection() {
   const { t } = useTranslation();
@@ -72,13 +75,98 @@ export default function HeroSection() {
           <GuestExploreModal open={exploreOpen} onOpenChange={setExploreOpen} />
         </div>
 
+        {/* Modern image showcase */}
+        <div className="mt-14 sm:mt-20 max-w-6xl mx-auto animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          <div className="grid grid-cols-12 gap-3 sm:gap-4">
+            {/* Main collab image */}
+            <div className="col-span-12 md:col-span-7 relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-accent/40 via-primary/30 to-accent/40 rounded-3xl blur-xl opacity-60 group-hover:opacity-90 transition-opacity duration-500" />
+              <div className="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl aspect-[16/10]">
+                <img
+                  src={introCollab}
+                  alt="SAP consulting team collaborating with AI dashboards"
+                  loading="lazy"
+                  width={1280}
+                  height={896}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                {/* Floating live badge */}
+                <div className="absolute top-4 left-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white text-xs font-medium">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                  </span>
+                  Live expert collaboration
+                </div>
+                {/* Bottom caption */}
+                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+                  <div>
+                    <p className="text-white/70 text-[11px] uppercase tracking-widest font-semibold">SAP S/4HANA</p>
+                    <p className="text-white text-base sm:text-lg font-semibold leading-tight">Real consultants. Real outcomes.</p>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 backdrop-blur-md border border-white/15">
+                    <Activity className="w-3.5 h-3.5 text-accent" />
+                    <span className="text-white text-[11px] font-medium">98% SLA</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right column — stacked */}
+            <div className="col-span-12 md:col-span-5 grid grid-cols-2 md:grid-cols-1 gap-3 sm:gap-4">
+              {/* AI portal */}
+              <div className="relative group rounded-3xl overflow-hidden border border-white/15 shadow-xl aspect-[4/3] md:aspect-auto md:flex-1">
+                <img
+                  src={introAiPortal}
+                  alt="AI-powered SAP support portal"
+                  loading="lazy"
+                  width={1024}
+                  height={1024}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/70 via-primary/20 to-transparent" />
+                <div className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-[10px] font-semibold">
+                  <Bot className="w-3 h-3 text-accent" />
+                  AI Triage
+                </div>
+                <div className="absolute bottom-3 left-3 right-3">
+                  <p className="text-white text-sm font-semibold leading-tight">Smart ticket routing</p>
+                  <p className="text-white/70 text-[11px]">Resolved 3× faster with AI</p>
+                </div>
+              </div>
+
+              {/* Consultant portrait */}
+              <div className="relative group rounded-3xl overflow-hidden border border-white/15 shadow-xl aspect-[4/3] md:aspect-auto md:flex-1">
+                <img
+                  src={introConsultant}
+                  alt="Certified SAP consultant on call"
+                  loading="lazy"
+                  width={1024}
+                  height={1280}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 backdrop-blur-md border border-emerald-400/40 text-emerald-100 text-[10px] font-semibold">
+                  <ShieldCheck className="w-3 h-3" />
+                  Vetted expert
+                </div>
+                <div className="absolute bottom-3 left-3 right-3">
+                  <p className="text-white text-sm font-semibold leading-tight">On-demand SAP talent</p>
+                  <p className="text-white/70 text-[11px]">500+ certified consultants</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mt-12 sm:mt-24 max-w-4xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mt-12 sm:mt-16 max-w-4xl mx-auto">
           {stats.map((stat, i) => (
             <div
               key={i}
               className="text-center p-4 sm:p-6 md:p-7 rounded-2xl sm:rounded-3xl bg-white/8 backdrop-blur-xl border border-white/10 animate-fade-in hover:bg-white/12 transition-all duration-500 hover:scale-[1.03] group hover:border-white/20"
-              style={{ animationDelay: `${0.4 + i * 0.1}s` }}
+              style={{ animationDelay: `${0.6 + i * 0.1}s` }}
             >
               <stat.icon className="w-5 h-5 text-accent mx-auto mb-3 group-hover:scale-110 transition-transform" />
               <div className="text-2xl sm:text-3xl md:text-4xl font-black text-primary-foreground tracking-tight">{stat.value}</div>
