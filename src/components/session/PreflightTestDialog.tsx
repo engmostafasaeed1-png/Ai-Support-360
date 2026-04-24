@@ -25,6 +25,9 @@ import {
   CheckCircle2,
   Loader2,
   RefreshCw,
+  Circle,
+  Square,
+  Play,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -109,10 +112,14 @@ export default function PreflightTestDialog({
 }: PreflightDialogProps) {
   const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const playbackRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+  const recordTimerRef = useRef<number | null>(null);
 
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<MediaError | null>(null);
@@ -123,8 +130,30 @@ export default function PreflightTestDialog({
   const [level, setLevel] = useState(0);
   const [hasVideo, setHasVideo] = useState(false);
   const [hasAudio, setHasAudio] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
+  const [recordConfirmed, setRecordConfirmed] = useState(false);
+  const RECORD_DURATION = 4; // seconds
+
+  const cleanupRecording = useCallback(() => {
+    if (recordTimerRef.current) {
+      window.clearInterval(recordTimerRef.current);
+      recordTimerRef.current = null;
+    }
+    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+      try {
+        recorderRef.current.stop();
+      } catch {
+        /* ignore */
+      }
+    }
+    recorderRef.current = null;
+    chunksRef.current = [];
+  }, []);
 
   const stopStream = useCallback(() => {
+    cleanupRecording();
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
@@ -140,7 +169,7 @@ export default function PreflightTestDialog({
     }
     if (videoRef.current) videoRef.current.srcObject = null;
     setLevel(0);
-  }, []);
+  }, [cleanupRecording]);
 
   const refreshDevices = useCallback(async () => {
     try {
@@ -156,6 +185,13 @@ export default function PreflightTestDialog({
     setError(null);
     setStatus('requesting');
     stopStream();
+    setRecording(false);
+    setRecordSeconds(0);
+    setRecordConfirmed(false);
+    setRecordingUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
 
     if (typeof window === 'undefined' || !window.isSecureContext) {
       setError({ code: 'TypeError', message: 'Insecure context' });
@@ -250,6 +286,12 @@ export default function PreflightTestDialog({
       stopStream();
       setStatus('idle');
       setError(null);
+      setRecordingUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      setRecordConfirmed(false);
+      setRecordSeconds(0);
     }
     return () => stopStream();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -260,8 +302,127 @@ export default function PreflightTestDialog({
     startTest();
   }, [startTest]);
 
+  const startRecording = useCallback(() => {
+    if (!streamRef.current) return;
+    if (typeof MediaRecorder === 'undefined') {
+      toast.error(
+        t('preflight.record_unsupported', {
+          defaultValue: 'Recording is not supported in this browser.',
+        }),
+      );
+      return;
+    }
+    setRecordConfirmed(false);
+    setRecordSeconds(0);
+    if (recordingUrl) {
+      URL.revokeObjectURL(recordingUrl);
+      setRecordingUrl(null);
+    }
+    chunksRef.current = [];
+
+    const mimeCandidates = [
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm',
+      'video/mp4',
+    ];
+    const mimeType =
+      mimeCandidates.find((m) => {
+        try {
+          return MediaRecorder.isTypeSupported(m);
+        } catch {
+          return false;
+        }
+      }) || '';
+
+    let recorder: MediaRecorder;
+    try {
+      recorder = mimeType
+        ? new MediaRecorder(streamRef.current, { mimeType })
+        : new MediaRecorder(streamRef.current);
+    } catch (err: any) {
+      logProviderEvent(
+        'preflight_error',
+        { stage: 'record_init', message: err?.message },
+        'error',
+      );
+      toast.error(
+        t('preflight.record_failed', {
+          defaultValue: 'Could not start recording on this device.',
+        }),
+      );
+      return;
+    }
+    recorderRef.current = recorder;
+
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+    };
+    recorder.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: mimeType || 'video/webm' });
+      chunksRef.current = [];
+      if (blob.size === 0) {
+        setRecording(false);
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      setRecordingUrl(url);
+      setRecording(false);
+      logProviderEvent('preflight_proceed', {
+        stage: 'record_complete',
+        hasVideo,
+        hasAudio,
+        sizeKb: Math.round(blob.size / 1024),
+        mimeType: mimeType || 'video/webm',
+      });
+    };
+
+    setRecording(true);
+    logProviderEvent('preflight_open', { stage: 'record_start', hasVideo, hasAudio });
+    recorder.start();
+
+    recordTimerRef.current = window.setInterval(() => {
+      setRecordSeconds((s) => {
+        const next = s + 1;
+        if (next >= RECORD_DURATION) {
+          if (recordTimerRef.current) {
+            window.clearInterval(recordTimerRef.current);
+            recordTimerRef.current = null;
+          }
+          try {
+            recorder.stop();
+          } catch {
+            /* ignore */
+          }
+        }
+        return next;
+      });
+    }, 1000);
+  }, [hasAudio, hasVideo, recordingUrl, t]);
+
+  const stopRecording = useCallback(() => {
+    if (recordTimerRef.current) {
+      window.clearInterval(recordTimerRef.current);
+      recordTimerRef.current = null;
+    }
+    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+      try {
+        recorderRef.current.stop();
+      } catch {
+        /* ignore */
+      }
+    }
+    setRecording(false);
+  }, []);
+
   const handleProceed = () => {
-    logProviderEvent('preflight_proceed', { hasVideo, hasAudio });
+    logProviderEvent('preflight_proceed', {
+      hasVideo,
+      hasAudio,
+      recordConfirmed,
+      cameraId,
+      micId,
+    });
     stopStream();
     onOpenChange(false);
     onProceed();
@@ -399,6 +560,104 @@ export default function PreflightTestDialog({
               empty={t('preflight.no_mic', { defaultValue: 'No microphone' })}
             />
           </div>
+
+          {/* One-click recording preview */}
+          {status === 'ready' && (hasVideo || hasAudio) && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+              <div className="flex items-start justify-between gap-3">
+                <div className="text-sm">
+                  <p className="font-medium text-foreground">
+                    {t('preflight.record_title', {
+                      defaultValue: 'Record a {{seconds}}-second preview',
+                      seconds: RECORD_DURATION,
+                    })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t('preflight.record_desc', {
+                      defaultValue:
+                        'Confirms your selected camera and microphone actually capture before you join.',
+                    })}
+                  </p>
+                </div>
+                {!recording && !recordingUrl && (
+                  <Button size="sm" onClick={startRecording}>
+                    <Circle className="w-3.5 h-3.5 mr-1.5 fill-current text-destructive" aria-hidden="true" />
+                    {t('preflight.record_cta', { defaultValue: 'Record preview' })}
+                  </Button>
+                )}
+                {recording && (
+                  <Button size="sm" variant="secondary" onClick={stopRecording}>
+                    <Square className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                    {t('preflight.stop_cta', {
+                      defaultValue: 'Stop ({{remaining}}s)',
+                      remaining: Math.max(0, RECORD_DURATION - recordSeconds),
+                    })}
+                  </Button>
+                )}
+              </div>
+
+              {recording && (
+                <div
+                  className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={RECORD_DURATION}
+                  aria-valuenow={recordSeconds}
+                >
+                  <div
+                    className="h-full bg-destructive transition-[width] duration-300"
+                    style={{ width: `${(recordSeconds / RECORD_DURATION) * 100}%` }}
+                  />
+                </div>
+              )}
+
+              {recordingUrl && !recording && (
+                <div className="space-y-2">
+                  <video
+                    ref={playbackRef}
+                    src={recordingUrl}
+                    controls
+                    playsInline
+                    className="w-full rounded-md bg-background"
+                    aria-label={t('preflight.playback', { defaultValue: 'Recorded preview playback' })}
+                  />
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+                      <Play className="w-3.5 h-3.5" aria-hidden="true" />
+                      {t('preflight.record_playback_hint', {
+                        defaultValue: 'Play back to confirm video and audio are working.',
+                      })}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="ghost" onClick={startRecording}>
+                        <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                        {t('preflight.record_again', { defaultValue: 'Record again' })}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={recordConfirmed ? 'secondary' : 'default'}
+                        onClick={() => {
+                          setRecordConfirmed(true);
+                          logProviderEvent('preflight_proceed', {
+                            stage: 'record_confirmed',
+                            cameraId,
+                            micId,
+                          });
+                        }}
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                        {recordConfirmed
+                          ? t('preflight.record_confirmed', { defaultValue: 'Devices confirmed' })
+                          : t('preflight.record_confirm', {
+                              defaultValue: 'Confirm devices look & sound right',
+                            })}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {renderError()}
         </div>
