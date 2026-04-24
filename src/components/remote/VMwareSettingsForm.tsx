@@ -184,7 +184,8 @@ export default function VMwareSettingsForm({
       hypervisor_type: hypervisorType,
       vcenter_url: vcenterUrl || null,
       vcenter_username: vcenterUsername || null,
-      vcenter_password_encrypted: vcenterPassword || null,
+      // Plaintext — encrypted client-side by useSaveVMwareSettings before insert.
+      ...(vcenterPassword ? { vcenter_password: vcenterPassword } : {}),
       datacenter: datacenter || null,
       cluster: cluster || null,
       resource_pool: resourcePool || null,
@@ -192,7 +193,7 @@ export default function VMwareSettingsForm({
       cloud_region: cloudRegion || null,
       cloud_account_id: cloudAccountId || null,
       cloud_project_id: cloudProjectId || null,
-      cloud_api_key_encrypted: cloudApiKey || null,
+      ...(cloudApiKey ? { cloud_api_key: cloudApiKey } : {}),
       cloud_api_endpoint: cloudApiEndpoint || null,
       instance_type: instanceType || null,
       availability_zone: availabilityZone || null,
