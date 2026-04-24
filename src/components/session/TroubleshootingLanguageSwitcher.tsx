@@ -47,6 +47,55 @@ export default function TroubleshootingLanguageSwitcher({
   const current = i18n.language?.startsWith('ar') ? 'ar' : 'en';
   const { enabled: translateEnabled, setEnabled } = useTranslateTroubleshooting();
 
+  const [userId, setUserId] = useState<string | null>(null);
+  const restoredRef = useRef(false);
+
+  // Resolve current user id (so we can scope the saved language per user+session).
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (active) setUserId(data.user?.id ?? null);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  // Restore the saved language for this user+session (falls back to last-used global pref).
+  useEffect(() => {
+    if (restoredRef.current) return;
+    if (typeof window === 'undefined') return;
+    try {
+      const scoped = window.localStorage.getItem(buildScopedKey(userId, sessionId));
+      const fallback = window.localStorage.getItem(GLOBAL_PREF_KEY);
+      const saved = isSupportedLang(scoped) ? scoped : isSupportedLang(fallback) ? fallback : null;
+      if (saved && saved !== current) {
+        i18n.changeLanguage(saved);
+        if (typeof document !== 'undefined') {
+          document.documentElement.dir = saved === 'ar' ? 'rtl' : 'ltr';
+          document.documentElement.lang = saved;
+        }
+      }
+    } catch {
+      /* ignore storage errors */
+    }
+    restoredRef.current = true;
+  }, [userId, sessionId, current, i18n]);
+
+  const persistLanguage = (next: string) => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(buildScopedKey(userId, sessionId), next);
+      window.localStorage.setItem(GLOBAL_PREF_KEY, next);
+    } catch {
+      /* ignore quota / privacy errors */
+    }
+  };
+
   const handleChange = (next: string) => {
     if (next === current) return;
     i18n.changeLanguage(next);
@@ -54,11 +103,13 @@ export default function TroubleshootingLanguageSwitcher({
       document.documentElement.dir = next === 'ar' ? 'rtl' : 'ltr';
       document.documentElement.lang = next;
     }
+    persistLanguage(next);
     logProviderEvent('preflight_open', {
       stage: 'language_switch',
       sessionId,
       from: current,
       to: next,
+      persisted: true,
     });
   };
 
