@@ -316,6 +316,12 @@ export default function MeetingLinkButton({
             </DialogDescription>
           </DialogHeader>
 
+          <ProviderTroubleshootingPanel
+            provider={failedProvider}
+            reason={failedReason}
+            variant="card"
+          />
+
           <div className="grid gap-2 py-2">
             {fallbackList.length === 0 ? (
               <p className="text-sm text-muted-foreground">
