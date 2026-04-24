@@ -143,7 +143,7 @@ export default function TimelinePage() {
       total: list.length,
       active: list.filter(t => !t.status || !["resolved","closed","cancelled"].includes(t.status)).length,
       live: list.filter(t => t.sessions.some(s => s.status === 'in_progress' || s.status === 'live')).length,
-      resolved: list.filter(t => ['resolved', 'closed'].includes(t.status)).length,
+      resolved: list.filter(t => t.status === 'resolved' || t.status === 'closed').length,
     };
   }, [tickets]);
 
@@ -263,8 +263,8 @@ function TicketTimelineCard({ ticket }: { ticket: TimelineTicket }) {
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <Badge variant="secondary" className={`text-[10px] capitalize ${statusColors[ticket.status] || 'bg-muted'}`}>
-                {ticket.status.replace(/_/g, ' ')}
+              <Badge variant="secondary" className={`text-[10px] capitalize ${statusColors[ticket.status || ''] || 'bg-muted'}`}>
+                {(ticket.status || 'new').replace(/_/g, ' ')}
               </Badge>
               {ticket.urgency && (
                 <Badge variant="secondary" className={`text-[10px] capitalize ${urgencyColors[ticket.urgency]}`}>
