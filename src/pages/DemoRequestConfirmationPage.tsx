@@ -217,25 +217,11 @@ function ConfirmationCard({ data, token, onChanged }: { data: DemoRequest; token
 
       {/* Proposed slots (when rescheduling) */}
       {data.status === 'rescheduling' && data.proposed_slots && data.proposed_slots.length > 0 && (
-        <div className="px-7 md:px-10 py-6 border-b border-border/40 bg-amber-500/5">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
-            Your proposed slots
-          </div>
-          <ul className="space-y-2">
-            {data.proposed_slots.map((s, i) => (
-              <li key={i} className="flex items-center gap-2 text-sm text-foreground">
-                <CalendarClock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span className="font-medium">
-                  {new Date(s.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                </span>
-                <span className="text-muted-foreground">· {s.time}</span>
-              </li>
-            ))}
-          </ul>
-          {data.reschedule_reason && (
-            <p className="text-xs text-muted-foreground mt-3 italic">"{data.reschedule_reason}"</p>
-          )}
-        </div>
+        <ProposedSlotsTimeline
+          slots={data.proposed_slots}
+          timezone={data.timezone}
+          reason={data.reschedule_reason}
+        />
       )}
 
       {/* Details */}
