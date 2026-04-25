@@ -88,6 +88,10 @@ export default function ClientTestimonialsManager() {
     const { data, error } = await supabase
       .from('client_testimonials')
       .select('*')
+      // Mirror the public landing-page sort: featured first, then by
+      // manual display_order. Reordering in the admin UI updates
+      // display_order within each "bucket" (featured / not featured).
+      .order('is_featured', { ascending: false })
       .order('display_order', { ascending: true });
     if (error) toast.error('Failed to load testimonials', { description: error.message });
     setItems((data as Testimonial[]) || []);
