@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Users, CheckCircle, Clock, Eye, Zap, ShieldCheck, Bot, Activity, LogIn, Rocket } from 'lucide-react';
+import { ArrowRight, Sparkles, Users, CheckCircle, Clock, Eye, Zap, ShieldCheck, Bot, Activity, LogIn, Rocket, CalendarPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import GuestExploreModal from '@/components/guest/GuestExploreModal';
+import { useDemoWizard } from './DemoRequestWizard';
 import VideoBackground from '@/components/VideoBackground';
 import heroBgAsset from '@/assets/videos/hero-bg.mp4.asset.json';
 import introCollab from '@/assets/intro-collab.jpg';
