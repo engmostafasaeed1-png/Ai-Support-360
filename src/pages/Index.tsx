@@ -48,6 +48,7 @@ const Index = () => {
       </ScrollFadeIn>
       <Footer />
     </div>
+    </DemoWizardProvider>
   );
 };
 
