@@ -73,6 +73,23 @@ export default function ContactSection() {
                 {t('contact.submit')}
                 <Send size={16} className="ms-2" aria-hidden="true" />
               </Button>
+
+              <div className="relative flex items-center gap-3 pt-1">
+                <div className="flex-1 h-px bg-border/50" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">or</span>
+                <div className="flex-1 h-px bg-border/50" />
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={() => demoWizard.open()}
+                className="w-full h-12 rounded-2xl font-semibold border-primary/30 hover:border-primary/60 hover:bg-primary/5"
+              >
+                <CalendarPlus size={16} className="me-2" aria-hidden="true" />
+                Request a tailored demo
+              </Button>
             </form>
           )}
         </div>
