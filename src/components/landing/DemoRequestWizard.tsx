@@ -6,8 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   ArrowLeft, ArrowRight, Check, Sparkles, BrainCircuit, LineChart, Layers,
-  Calendar as CalendarIcon, Clock, Send, Loader2, type LucideIcon,
+  Calendar as CalendarIcon, Clock, Send, Loader2, Globe, Video, Phone, Users,
+  type LucideIcon,
 } from 'lucide-react';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
