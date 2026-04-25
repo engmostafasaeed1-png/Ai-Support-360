@@ -6,8 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   ArrowLeft, ArrowRight, Check, Sparkles, BrainCircuit, LineChart, Layers,
-  Calendar as CalendarIcon, Clock, Send, Loader2, type LucideIcon,
+  Calendar as CalendarIcon, Clock, Send, Loader2, Globe, Video, Phone, Users,
+  type LucideIcon,
 } from 'lucide-react';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -85,6 +89,47 @@ const TIME_SLOTS = [
   '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
 ] as const;
 
+/**
+ * Curated timezone list — covers the regions where most SAP teams sit.
+ * We default to the visitor's detected zone and let them override.
+ */
+const TIMEZONES: { value: string; label: string }[] = [
+  { value: 'Europe/London', label: 'London (GMT/BST)' },
+  { value: 'Europe/Berlin', label: 'Berlin · Paris · Madrid (CET)' },
+  { value: 'Europe/Athens', label: 'Athens · Helsinki (EET)' },
+  { value: 'Europe/Istanbul', label: 'Istanbul (TRT)' },
+  { value: 'Asia/Dubai', label: 'Dubai · Abu Dhabi (GST)' },
+  { value: 'Asia/Riyadh', label: 'Riyadh · Doha (AST)' },
+  { value: 'Asia/Karachi', label: 'Karachi (PKT)' },
+  { value: 'Asia/Kolkata', label: 'Mumbai · Bangalore (IST)' },
+  { value: 'Asia/Singapore', label: 'Singapore · Kuala Lumpur (SGT)' },
+  { value: 'Asia/Tokyo', label: 'Tokyo · Seoul (JST/KST)' },
+  { value: 'Australia/Sydney', label: 'Sydney · Melbourne (AEST)' },
+  { value: 'America/Sao_Paulo', label: 'São Paulo (BRT)' },
+  { value: 'America/New_York', label: 'New York · Toronto (ET)' },
+  { value: 'America/Chicago', label: 'Chicago · Mexico City (CT)' },
+  { value: 'America/Denver', label: 'Denver (MT)' },
+  { value: 'America/Los_Angeles', label: 'Los Angeles · Vancouver (PT)' },
+];
+
+const MEETING_FORMATS = [
+  { id: 'video', label: 'Video call', sub: 'Google Meet or Zoom link', Icon: Video },
+  { id: 'phone', label: 'Phone call', sub: 'We\u2019ll dial you', Icon: Phone },
+  { id: 'in-person', label: 'In person', sub: 'For local teams only', Icon: Users },
+] as const;
+
+type MeetingFormat = (typeof MEETING_FORMATS)[number]['id'];
+
+function detectTimezone(): string {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz && TIMEZONES.some((t) => t.value === tz)) return tz;
+    return tz || 'Europe/Berlin';
+  } catch {
+    return 'Europe/Berlin';
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Context — lets any CTA open the wizard with one hook                       */
 /* -------------------------------------------------------------------------- */
@@ -158,6 +203,8 @@ function DemoRequestWizard({
   // scheduling preference (or skip and let us follow up).
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [slot, setSlot] = useState<string | null>(null);
+  const [timezone, setTimezone] = useState<string>(() => detectTimezone());
+  const [meetingFormat, setMeetingFormat] = useState<MeetingFormat>('video');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
@@ -172,6 +219,8 @@ function DemoRequestWizard({
     setTime(null);
     setDate(undefined);
     setSlot(null);
+    setTimezone(detectTimezone());
+    setMeetingFormat('video');
     setName('');
     setEmail('');
     setCompany('');
@@ -205,6 +254,8 @@ function DemoRequestWizard({
         scheduling_preference: time,
         scheduled_date: date ? format(date, 'yyyy-MM-dd') : null,
         scheduled_slot: slot,
+        timezone,
+        meeting_format: meetingFormat,
         full_name: name.trim(),
         email: email.trim(),
         company: company.trim() || null,
@@ -280,7 +331,10 @@ function DemoRequestWizard({
         {/* Body */}
         <div className="px-6 md:px-8 py-6 max-h-[60vh] overflow-y-auto">
           {submitted ? (
-            <SuccessPanel selectedType={selectedType} time={time} email={email} date={date} slot={slot} />
+            <SuccessPanel
+              selectedType={selectedType} time={time} email={email}
+              date={date} slot={slot} timezone={timezone} meetingFormat={meetingFormat}
+            />
           ) : step === 0 ? (
             <DemoTypeStep value={type} onChange={setType} />
           ) : step === 1 ? (
@@ -288,6 +342,8 @@ function DemoRequestWizard({
               value={time} onChange={setTime}
               date={date} onDateChange={setDate}
               slot={slot} onSlotChange={setSlot}
+              timezone={timezone} onTimezoneChange={setTimezone}
+              meetingFormat={meetingFormat} onMeetingFormatChange={setMeetingFormat}
             />
           ) : (
             <DetailsStep
@@ -434,6 +490,7 @@ function DemoTypeStep({
 
 function ScheduleStep({
   value, onChange, date, onDateChange, slot, onSlotChange,
+  timezone, onTimezoneChange, meetingFormat, onMeetingFormatChange,
 }: {
   value: TimePref | null;
   onChange: (v: TimePref) => void;
@@ -441,6 +498,10 @@ function ScheduleStep({
   onDateChange: (d: Date | undefined) => void;
   slot: string | null;
   onSlotChange: (s: string | null) => void;
+  timezone: string;
+  onTimezoneChange: (tz: string) => void;
+  meetingFormat: MeetingFormat;
+  onMeetingFormatChange: (f: MeetingFormat) => void;
 }) {
   // Block weekends and any day before today; cap at 60 days out so
   // the picker stays focused on actually-bookable dates.
@@ -580,6 +641,57 @@ function ScheduleStep({
           </div>
         </div>
       </div>
+
+      {/* Timezone + meeting format. Both are required so we can prep
+          the right link / dial-in before the call. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="dw-tz" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1.5">
+            <Globe className="w-3.5 h-3.5" /> Your timezone
+          </Label>
+          <Select value={timezone} onValueChange={onTimezoneChange}>
+            <SelectTrigger id="dw-tz" className="rounded-xl h-11 bg-background/60">
+              <SelectValue placeholder="Pick your timezone" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              {TIMEZONES.map((tz) => (
+                <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Preferred format
+          </Label>
+          <div className="grid grid-cols-3 gap-2">
+            {MEETING_FORMATS.map((f) => {
+              const selected = meetingFormat === f.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => onMeetingFormatChange(f.id)}
+                  className={cn(
+                    'flex flex-col items-center justify-center gap-1 rounded-xl border h-[70px] px-2 transition-all text-center',
+                    selected
+                      ? 'border-primary/60 bg-primary/10 ring-2 ring-primary/30 shadow-md'
+                      : 'border-border/40 bg-background hover:border-primary/30 hover:bg-primary/5',
+                  )}
+                  aria-pressed={selected}
+                  title={f.sub}
+                >
+                  <f.Icon className={cn('w-4 h-4', selected ? 'text-primary' : 'text-muted-foreground')} strokeWidth={1.75} />
+                  <span className={cn('text-[11px] font-semibold leading-none', selected ? 'text-foreground' : 'text-muted-foreground')}>
+                    {f.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -656,13 +768,15 @@ function DetailsStep({
 }
 
 function SuccessPanel({
-  selectedType, time, email, date, slot,
+  selectedType, time, email, date, slot, timezone, meetingFormat,
 }: {
   selectedType: DemoType | null;
   time: TimePref | null;
   email: string;
   date: Date | undefined;
   slot: string | null;
+  timezone: string;
+  meetingFormat: MeetingFormat;
 }) {
   const timeLabel = timePrefs.find((p) => p.id === time)?.label ?? '—';
   // Prefer the exact slot when present — it's more reassuring than a
@@ -670,13 +784,15 @@ function SuccessPanel({
   const scheduleLine = date && slot
     ? `${format(date, 'EEE, MMM d')} at ${slot}`
     : timeLabel;
+  const tzLabel = TIMEZONES.find((t) => t.value === timezone)?.label ?? timezone;
+  const fmt = MEETING_FORMATS.find((f) => f.id === meetingFormat);
   return (
     <div className="text-center py-4">
       <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-2xl shadow-primary/30 mb-5">
         <Check className="w-8 h-8 text-primary-foreground" strokeWidth={3} />
       </div>
       <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-        We\u2019ll send a confirmation to <span className="text-foreground font-semibold">{email}</span> shortly.
+        We&rsquo;ll send a confirmation to <span className="text-foreground font-semibold">{email}</span> shortly.
       </p>
       <div className="mt-5 inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2 rounded-full border border-border/50 bg-muted/30 text-xs">
         {selectedType && (
@@ -688,6 +804,16 @@ function SuccessPanel({
         )}
         <CalendarIcon className="w-3.5 h-3.5 text-primary" />
         <span className="text-foreground">{scheduleLine}</span>
+      </div>
+      <div className="mt-2 inline-flex flex-wrap items-center justify-center gap-3 text-[11px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <Globe className="w-3 h-3" /> {tzLabel}
+        </span>
+        {fmt && (
+          <span className="inline-flex items-center gap-1.5">
+            <fmt.Icon className="w-3 h-3" /> {fmt.label}
+          </span>
+        )}
       </div>
     </div>
   );

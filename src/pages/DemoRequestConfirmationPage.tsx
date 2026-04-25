@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
   ArrowLeft, Calendar, Check, Clock, Loader2, Mail, Phone, Sparkles, AlertCircle,
+  Globe, Video, Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +21,8 @@ type DemoRequest = {
   scheduling_preference: 'asap' | 'this-week' | 'next-week' | 'flexible';
   scheduled_date: string | null;
   scheduled_slot: string | null;
+  timezone: string | null;
+  meeting_format: 'video' | 'phone' | 'in-person' | null;
   full_name: string;
   email: string;
   company: string | null;
@@ -197,6 +200,16 @@ function ConfirmationCard({ data }: { data: DemoRequest }) {
             icon={Calendar}
             label="Booked slot"
             value={`${new Date(data.scheduled_date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}${data.scheduled_slot ? ` · ${data.scheduled_slot}` : ''}`}
+          />
+        )}
+        {data.timezone && (
+          <DetailRow icon={Globe} label="Timezone" value={data.timezone} />
+        )}
+        {data.meeting_format && (
+          <DetailRow
+            icon={data.meeting_format === 'video' ? Video : data.meeting_format === 'phone' ? Phone : Users}
+            label="Meeting format"
+            value={data.meeting_format === 'video' ? 'Video call' : data.meeting_format === 'phone' ? 'Phone call' : 'In person'}
           />
         )}
         <DetailRow icon={Mail} label="Email" value={data.email} />
