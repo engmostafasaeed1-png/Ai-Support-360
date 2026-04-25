@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Save, Layout, Type, Star, HelpCircle, Phone, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Save, Layout, Type, Star, HelpCircle, Phone, Eye, EyeOff, Quote } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import ClientTestimonialsManager from '@/components/admin/ClientTestimonialsManager';
 
 interface SectionConfig {
   key: string;
@@ -201,7 +202,19 @@ export default function LandingEditorPage() {
               </TabsTrigger>
             );
           })}
+          <TabsTrigger value="testimonials" className="gap-1.5 text-xs rounded-lg">
+            <Quote className="w-3.5 h-3.5" />
+            Testimonials
+          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="testimonials">
+          <Card className="rounded-2xl">
+            <CardContent className="pt-6">
+              <ClientTestimonialsManager />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {SECTIONS.map(sec => {
           const sectionData = sections[sec.key];
