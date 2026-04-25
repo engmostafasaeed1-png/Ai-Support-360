@@ -301,6 +301,20 @@ function DemoRequestWizard({
     if (!type || !time) return;
     setSubmitting(true);
 
+    const submitProps = {
+      source,
+      demo_type: type,
+      scheduling_preference: time,
+      has_exact_slot: !!(date && slot),
+      timezone,
+      meeting_format: meetingFormat,
+      has_company: !!company.trim(),
+      has_notes: !!notes.trim(),
+    };
+    demoFunnel.submitAttempt(submitProps);
+    // The final step is "complete" once we attempt the submit.
+    demoFunnel.wizardStepComplete(STEPS.length - 1, STEPS[STEPS.length - 1], {});
+
     // Pull the current user (if any) so admins can later see who logged in
     // as well as the email on the row. Anon users still get inserted.
     const { data: userRes } = await supabase.auth.getUser();
@@ -327,6 +341,7 @@ function DemoRequestWizard({
     setSubmitting(false);
 
     if (error || !data?.request_token) {
+      demoFunnel.submitError(error?.message ?? 'unknown');
       toast({
         variant: 'destructive',
         title: 'Couldn\u2019t submit request',
@@ -336,6 +351,7 @@ function DemoRequestWizard({
     }
 
     setSubmitted(true);
+    demoFunnel.submitSuccess({ ...submitProps, request_token: data.request_token });
     toast({
       title: 'Demo request received',
       description: 'We\u2019ll be in touch within one business hour.',
