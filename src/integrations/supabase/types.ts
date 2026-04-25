@@ -5493,6 +5493,38 @@ export type Database = {
       }
     }
     Functions: {
+      admin_confirm_reschedule_slot: {
+        Args: { _note?: string; _request_id: string; _slot_index?: number }
+        Returns: {
+          company: string | null
+          created_at: string
+          demo_type: string
+          email: string
+          full_name: string
+          id: string
+          meeting_format: string | null
+          notes: string | null
+          proposed_slots: Json | null
+          request_token: string
+          reschedule_reason: string | null
+          reschedule_requested_at: string | null
+          scheduled_date: string | null
+          scheduled_slot: string | null
+          scheduling_preference: string
+          source: string | null
+          status: string
+          status_note: string | null
+          timezone: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "demo_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_demo_request_by_token: {
         Args: { _token: string }
         Returns: {
