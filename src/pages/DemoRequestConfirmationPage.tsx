@@ -319,6 +319,14 @@ function RescheduleForm({
   const [submitting, setSubmitting] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
+  const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const slotErrors = slots.map((s) => {
+    if (!s.date || !s.time) return null;
+    const dt = new Date(`${s.date}T${s.time}`);
+    if (isNaN(dt.getTime())) return 'Invalid date/time';
+    if (dt.getTime() <= Date.now()) return 'Time is in the past';
+    return null;
+  });
 
   const addSlot = () => {
     if (slots.length >= 5) return;
