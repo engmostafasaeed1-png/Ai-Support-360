@@ -75,15 +75,113 @@ const valuePillars: Pillar[] = [
   },
 ];
 
-const comparison = [
-  { feature: 'AI root-cause analysis on every ticket', us: true, them: false },
-  { feature: 'On-demand vetted SAP specialists', us: true, them: false },
-  { feature: 'Outcome-based pricing', us: true, them: false },
-  { feature: 'SAP-native taxonomy & module routing', us: true, them: 'Generic' },
-  { feature: 'Built-in NDA, audit & screen protection', us: true, them: 'Add-on' },
-  { feature: 'Compounding knowledge base from your cases', us: true, them: false },
-  { feature: 'Multi-tenant isolation by design', us: true, them: 'Varies' },
-  { feature: 'Annual license lock-in', us: false, them: true },
+/**
+ * Side-by-side comparison rows. Each row carries:
+ *  - `feature`: short capability name (left column)
+ *  - `category`: groups rows visually so the table reads like a story
+ *     (Speed → Expertise → Pricing → Governance), not a flat checklist
+ *  - `usDetail` / `themDetail`: the concrete "how", shown under the
+ *     icon. This is the difference between "we have AI triage" and
+ *     "we parse the ticket, route to the right module, and suggest a
+ *     resolution before a human reads it" — the second is what wins.
+ *  - `usValue` / `themValue`: optional headline number / label rendered
+ *     in place of the check mark (e.g. "< 10 min" vs "2–5 days") so the
+ *     comparison shows magnitude, not just presence/absence.
+ */
+type CompareCategory = 'Speed' | 'Expertise' | 'Pricing' | 'Governance' | 'Knowledge';
+
+type CompareCellValue = boolean | string;
+
+type CompareRow = {
+  category: CompareCategory;
+  feature: string;
+  us: CompareCellValue;
+  them: CompareCellValue;
+  usDetail?: string;
+  themDetail?: string;
+  usValue?: string;
+  themValue?: string;
+};
+
+const comparison: CompareRow[] = [
+  {
+    category: 'Speed',
+    feature: 'Time to first response',
+    us: true, them: true,
+    usValue: '< 10 min',  themValue: '4–24 hr',
+    usDetail: 'AI triage replies with classification + suggested fix the moment you submit.',
+    themDetail: 'Tier-1 reads the ticket during business hours, then re-queues it.',
+  },
+  {
+    category: 'Speed',
+    feature: 'AI root-cause analysis on every ticket',
+    us: true, them: false,
+    usDetail: 'Module-aware LLM correlates logs, dumps and past resolutions before routing.',
+    themDetail: 'Manual triage by a generalist agent.',
+  },
+  {
+    category: 'Expertise',
+    feature: 'On-demand vetted SAP specialists',
+    us: true, them: false,
+    usValue: 'Minutes',  themValue: 'Weeks',
+    usDetail: 'Vetted bench of S/4HANA, FI/CO, MM, BTP and Basis experts on standby.',
+    themDetail: 'Statement of work, contractor sourcing, then onboarding.',
+  },
+  {
+    category: 'Expertise',
+    feature: 'SAP-native taxonomy & module routing',
+    us: true, them: 'Generic',
+    usDetail: 'Routing keys mirror SAP component hierarchy (FI-AA-MD, MM-PUR-RFQ…).',
+    themDetail: 'Free-text categories like "ERP Issue" or "Other".',
+  },
+  {
+    category: 'Pricing',
+    feature: 'Outcome-based pricing',
+    us: true, them: false,
+    usValue: 'Pay per fix',  themValue: 'Per seat / yr',
+    usDetail: 'Charged when a resolution is accepted — never for licenses or queue time.',
+    themDetail: 'Fixed annual seats regardless of usage or outcome.',
+  },
+  {
+    category: 'Pricing',
+    feature: 'Annual license lock-in',
+    us: false, them: true,
+    usDetail: 'Cancel any time — your data and knowledge base export with you.',
+    themDetail: '12–36 month commitments with auto-renewal clauses.',
+  },
+  {
+    category: 'Governance',
+    feature: 'Built-in NDA, audit & screen protection',
+    us: true, them: 'Add-on',
+    usDetail: 'NDAs are signed before consultant access; full audit log per session; watermarking on screens.',
+    themDetail: 'Compliance modules sold separately or require third-party tools.',
+  },
+  {
+    category: 'Governance',
+    feature: 'Multi-tenant isolation by design',
+    us: true, them: 'Varies',
+    usDetail: 'Row-level security enforced in the database — not just the UI.',
+    themDetail: 'Often app-layer filtering; depends on vendor and plan.',
+  },
+  {
+    category: 'Knowledge',
+    feature: 'Compounding knowledge base from your cases',
+    us: true, them: false,
+    usDetail: 'Every resolved case is auto-summarised and indexed for search and reuse.',
+    themDetail: 'Tickets close and the resolution disappears into the archive.',
+  },
+];
+
+/**
+ * Headline metrics shown above the table — they make the table's
+ * specifics land emotionally before the reader scans the rows. Numbers
+ * are conservative claims framed against typical helpdesk benchmarks.
+ */
+const metrics: { Icon: typeof Clock; label: string; value: string; sub: string; accent: AccentName }[] = [
+  { Icon: Clock,        label: 'Median first response',  value: '< 10 min', sub: 'vs 4–24 hr industry norm', accent: 'violet' },
+  { Icon: TrendingDown, label: 'Resolution time saved',  value: '−68%',      sub: 'vs traditional helpdesks', accent: 'amber'  },
+  { Icon: Layers,       label: 'SAP modules covered',    value: '40+',       sub: 'S/4HANA, ECC, BTP, Basis', accent: 'sky'    },
+  { Icon: Activity,     label: 'Issues auto-classified', value: '92%',       sub: 'before human review',      accent: 'emerald'},
 ];
 
 export default function ValueDifferentiationSection() {
