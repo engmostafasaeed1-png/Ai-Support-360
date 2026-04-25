@@ -58,7 +58,10 @@ export default function TestimonialsSection() {
           quote: d.quote,
           rating: d.rating,
           accent: d.accent,
-          logo: d.logo_url,
+          // Cache-bust the public-bucket URL so replacing a logo in
+          // the admin UI invalidates the browser/CDN cache immediately,
+          // rather than waiting for the default expiry.
+          logo: withCacheBust(d.logo_url, d.updated_at),
         }))
       );
     })();
