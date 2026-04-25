@@ -1208,6 +1208,8 @@ export type Database = {
           id: string
           notes: string | null
           request_token: string
+          scheduled_date: string | null
+          scheduled_slot: string | null
           scheduling_preference: string
           source: string | null
           status: string
@@ -1224,6 +1226,8 @@ export type Database = {
           id?: string
           notes?: string | null
           request_token?: string
+          scheduled_date?: string | null
+          scheduled_slot?: string | null
           scheduling_preference: string
           source?: string | null
           status?: string
@@ -1240,6 +1244,8 @@ export type Database = {
           id?: string
           notes?: string | null
           request_token?: string
+          scheduled_date?: string | null
+          scheduled_slot?: string | null
           scheduling_preference?: string
           source?: string | null
           status?: string
