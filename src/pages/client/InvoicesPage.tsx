@@ -113,7 +113,7 @@ function getDueDateInfo(inv: any) {
   const paid = isPaidStatus(inv.status);
   const overdue = !paid && diffDays < 0;
   const dueSoon = !paid && diffDays >= 0 && diffDays <= 3;
-  let label = format(due, 'MMM d, yyyy');
+  const label = format(due, 'MMM d, yyyy');
   let relative = '';
   if (paid) relative = '';
   else if (diffDays === 0) relative = 'Due today';

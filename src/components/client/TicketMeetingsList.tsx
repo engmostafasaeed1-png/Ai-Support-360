@@ -57,7 +57,7 @@ export default function TicketMeetingsList({ ticketId, onSchedule }: TicketMeeti
 
       // Get AI analysis for completed sessions
       const completedIds = (data || []).filter((s: any) => s.status === 'completed').map((s: any) => s.id);
-      let analysisMap: Record<string, any> = {};
+      const analysisMap: Record<string, any> = {};
       if (completedIds.length > 0) {
         const { data: analyses } = await supabase
           .from('session_feedback')

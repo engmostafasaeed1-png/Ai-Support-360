@@ -96,7 +96,7 @@ export default function MediaPermissionsBanner({
     refresh();
 
     // Listen for permission changes when supported.
-    let cleanups: Array<() => void> = [];
+    const cleanups: Array<() => void> = [];
     (async () => {
       if (!('permissions' in navigator)) return;
       for (const name of ['camera', 'microphone'] as const) {

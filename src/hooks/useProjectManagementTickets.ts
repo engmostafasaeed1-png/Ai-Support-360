@@ -62,7 +62,7 @@ export function useProjectManagementTickets() {
 
       // Resolve consultant names
       const consultantIds = [...new Set((data || []).map(t => t.consultant_id).filter(Boolean))];
-      let consultantMap: Record<string, string> = {};
+      const consultantMap: Record<string, string> = {};
       if (consultantIds.length > 0) {
         const { data: consultants } = await supabase
           .from('consultants')

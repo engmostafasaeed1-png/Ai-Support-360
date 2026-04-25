@@ -55,7 +55,7 @@ export function track(event: string, properties: AnalyticsProps = {}): void {
       });
     } catch (err) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
+         
         console.warn('[analytics] failed to record', event, err);
       }
     }
