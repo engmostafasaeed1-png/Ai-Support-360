@@ -134,8 +134,10 @@ function detectTimezone(): string {
 /*  Context — lets any CTA open the wizard with one hook                       */
 /* -------------------------------------------------------------------------- */
 
+type OpenOptions = { source?: string };
+
 type Ctx = {
-  open: (initial?: DemoType['id']) => void;
+  open: (initial?: DemoType['id'], opts?: OpenOptions) => void;
 };
 
 const DemoWizardContext = createContext<Ctx | null>(null);
@@ -159,12 +161,19 @@ export function useDemoWizard(): Ctx {
 export function DemoWizardProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [initialType, setInitialType] = useState<DemoType['id'] | undefined>(undefined);
+  const [source, setSource] = useState<string>('unknown');
 
   const value = useMemo<Ctx>(
     () => ({
-      open: (initial) => {
+      open: (initial, opts) => {
+        const src = opts?.source ?? 'unknown';
         setInitialType(initial);
+        setSource(src);
         setOpen(true);
+        // Fire the open event immediately so we capture intent even if
+        // the user closes the dialog before any step renders.
+        demoFunnel.ctaClick(src, initial);
+        demoFunnel.wizardOpen(src, initial);
       },
     }),
     [],
@@ -173,7 +182,7 @@ export function DemoWizardProvider({ children }: { children: ReactNode }) {
   return (
     <DemoWizardContext.Provider value={value}>
       {children}
-      <DemoRequestWizard open={open} onOpenChange={setOpen} initialType={initialType} />
+      <DemoRequestWizard open={open} onOpenChange={setOpen} initialType={initialType} source={source} />
     </DemoWizardContext.Provider>
   );
 }
