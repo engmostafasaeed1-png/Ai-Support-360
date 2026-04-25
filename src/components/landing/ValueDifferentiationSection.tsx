@@ -1,4 +1,5 @@
-import { Check, X, Sparkles, Bot, ShieldCheck, Zap, BrainCircuit, FileSearch, ArrowUpRight, Clock, TrendingDown, Layers, Activity } from 'lucide-react';
+import { Check, X, Sparkles, Bot, ShieldCheck, Zap, BrainCircuit, FileSearch, ArrowUpRight, Clock, TrendingDown, Layers, Activity, Info } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { accents, iconPlate, radius, shadow, type AccentName } from './tokens';
 import { tileImageAlt } from './tileImageAlt';
 import aiTriageImg from '@/assets/value/ai-triage.jpg';
