@@ -320,15 +320,22 @@ export default function ClientTestimonialsManager() {
                   <div className="min-w-0">
                     <CardTitle className="text-base truncate">{item.name || 'Untitled'}</CardTitle>
                     <CardDescription className="truncate">{item.company}</CardDescription>
+                    {item.status === 'draft' && item.rejected_reason && (
+                      <p className="mt-1 text-[11px] text-destructive">
+                        Sent back: {item.rejected_reason}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <StatusBadge status={item.status} />
                   <Badge variant={item.is_active ? 'default' : 'outline'} className="text-[10px]">
-                    {item.is_active ? 'Live' : 'Hidden'}
+                    {item.is_active ? 'Visible' : 'Hidden'}
                   </Badge>
                   <Switch
                     checked={item.is_active}
                     onCheckedChange={(v) => patchItem(item.id, { is_active: v })}
+                    aria-label="Toggle visibility"
                   />
                 </div>
               </CardHeader>
@@ -388,7 +395,16 @@ export default function ClientTestimonialsManager() {
                     {item.logo_url ? 'Replace logo' : 'Upload logo'}
                   </Button>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    <ModerationActions
+                      item={item}
+                      isSuperAdmin={isSuperAdmin}
+                      onSubmit={() => submitForReview(item)}
+                      onApprove={() => approveAndPublish(item)}
+                      onReject={(reason) => reject(item, reason)}
+                      onUnpublish={() => unpublish(item)}
+                    />
+
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="sm" className="text-destructive gap-1.5">
