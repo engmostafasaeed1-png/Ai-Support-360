@@ -8,21 +8,21 @@ export default function Footer() {
     platform: [
       { label: t('nav.services'), href: '#categories' },
       { label: t('nav.consultants'), href: '#consultants' },
-      { label: t('nav.pricing'), href: '#pricing' },
+      { label: t('nav.pricing'), href: '/pricing' },
       { label: t('nav.knowledge'), href: '#faq' },
     ],
     company: [
-      { label: t('footer.about'), href: '#' },
-      { label: t('footer.careers'), href: '#' },
-      { label: t('footer.blog'), href: '#' },
+      { label: t('footer.about'), href: '#about' },
+      { label: t('footer.careers'), href: '#contact' },
+      { label: t('footer.blog'), href: '#faq' },
     ],
     support: [
-      { label: t('footer.help'), href: '#' },
-      { label: t('footer.contact'), href: '#' },
+      { label: t('footer.help'), href: '#how-it-works' },
+      { label: t('footer.contact'), href: '#contact' },
     ],
     legal: [
-      { label: t('footer.privacy'), href: '#' },
-      { label: t('footer.terms'), href: '#' },
+      { label: t('footer.privacy'), href: '#contact' },
+      { label: t('footer.terms'), href: '#contact' },
     ],
   };
 
