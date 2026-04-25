@@ -202,6 +202,16 @@ function ConfirmationCard({ data }: { data: DemoRequest }) {
             value={`${new Date(data.scheduled_date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}${data.scheduled_slot ? ` · ${data.scheduled_slot}` : ''}`}
           />
         )}
+        {data.timezone && (
+          <DetailRow icon={Globe} label="Timezone" value={data.timezone} />
+        )}
+        {data.meeting_format && (
+          <DetailRow
+            icon={data.meeting_format === 'video' ? Video : data.meeting_format === 'phone' ? Phone : Users}
+            label="Meeting format"
+            value={data.meeting_format === 'video' ? 'Video call' : data.meeting_format === 'phone' ? 'Phone call' : 'In person'}
+          />
+        )}
         <DetailRow icon={Mail} label="Email" value={data.email} />
         {data.company && <DetailRow icon={Phone} label="Company" value={data.company} />}
         <DetailRow icon={Clock} label="Submitted" value={created.toLocaleString()} />
