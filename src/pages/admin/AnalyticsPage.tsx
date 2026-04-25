@@ -23,6 +23,13 @@ import {
 import { TrendingUp, TrendingDown, Activity, DollarSign, Clock, CheckCircle2, Download, FileText } from 'lucide-react';
 import { DateRangePicker } from '@/components/reports/DateRangePicker';
 import { exportToCSV, exportToPDF } from '@/components/reports/exportUtils';
+import {
+  AnalyticsConfigPanel,
+  useAnalyticsConfig,
+  KPI_LABELS,
+  type KpiKey,
+  type RangeKey,
+} from '@/components/admin/AnalyticsConfigPanel';
 
 
 
@@ -45,6 +52,19 @@ export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
   const [dateFrom, setDateFrom] = useState(() => subDays(new Date(), 30));
   const [dateTo, setDateTo] = useState(() => new Date());
+
+  const panelConfig = useAnalyticsConfig();
+
+  // Ensure timeRange is always one of the enabled ranges
+  useEffect(() => {
+    if (!panelConfig.ranges.includes(timeRange)) {
+      const fallback = panelConfig.ranges[0];
+      const days = fallback === '7d' ? 7 : fallback === '30d' ? 30 : 90;
+      setTimeRange(fallback);
+      setDateFrom(subDays(new Date(), days));
+      setDateTo(new Date());
+    }
+  }, [panelConfig.ranges, timeRange]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-analytics', timeRange],
