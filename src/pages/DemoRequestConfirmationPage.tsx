@@ -374,6 +374,11 @@ function RescheduleForm({
         <p className="text-xs text-muted-foreground mt-1">
           Add up to 5 options that work for you. We\u2019ll lock in one and confirm via email.
         </p>
+        <p className="text-[11px] text-muted-foreground/80 mt-1.5 flex items-center gap-1.5">
+          <Globe className="w-3 h-3" />
+          Times are interpreted in your local timezone
+          <span className="font-mono text-foreground/70">({browserTz})</span>
+        </p>
       </div>
 
       <div className="space-y-3">
