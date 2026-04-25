@@ -1,7 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Outlet } from 'react-router-dom';
 import SuperAdminSidebar from './SuperAdminSidebar';
-import MobileBottomNav from '@/components/MobileBottomNav';
 import PageTransition from '@/components/PageTransition';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { LayoutDashboard, ShieldCheck, BarChart3, Settings2, Users, PieChart, Workflow, FileText, Activity } from 'lucide-react';
@@ -59,13 +58,12 @@ export default function SuperAdminLayout() {
           <FixedSubHeader>
             <HeaderNav role="super-admin" />
           </FixedSubHeader>
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6 mt-14 md:mt-24">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-6 mt-14 md:mt-24">
             <PageTransition>
               <Outlet />
             </PageTransition>
           </main>
         </div>
-        <MobileBottomNav items={bottomNavItems} moreItems={moreNavItems} />
       </div>
     </SidebarProvider>
   );
