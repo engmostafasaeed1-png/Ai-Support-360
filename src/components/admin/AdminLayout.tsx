@@ -1,7 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
-import MobileBottomNav from '@/components/MobileBottomNav';
 import PageTransition from '@/components/PageTransition';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Search, LayoutDashboard, Users, Kanban, UserCheck, BarChart3, Settings, Plug, Shield, Server, ClipboardList, Settings2, FileSignature, PanelTop, Brain, Bell, Download } from 'lucide-react';
@@ -72,13 +71,12 @@ export default function AdminLayout() {
           <FixedSubHeader>
             <HeaderNav role="admin" />
           </FixedSubHeader>
-          <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 pb-20 md:pb-6 mt-14 md:mt-24">
+          <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 pb-6 mt-14 md:mt-24">
             <PageTransition>
               <Outlet />
             </PageTransition>
           </main>
         </div>
-        <MobileBottomNav items={bottomNavItems} moreItems={moreNavItems} />
       </div>
     </SidebarProvider>
   );

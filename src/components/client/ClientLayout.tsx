@@ -1,6 +1,5 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import ClientSidebar from '@/components/client/ClientSidebar';
-import MobileBottomNav from '@/components/MobileBottomNav';
 import PageTransition from '@/components/PageTransition';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Outlet } from 'react-router-dom';
@@ -132,14 +131,13 @@ export default function ClientLayout() {
           <FixedSubHeader>
             <HeaderNav role="client" />
           </FixedSubHeader>
-          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-20 md:pb-6 mt-14 md:mt-24 protected-content" style={{ marginLeft: `${portalMargin}%`, marginRight: `${portalMargin}%` }}>
+          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-6 mt-14 md:mt-24 protected-content" style={{ marginLeft: `${portalMargin}%`, marginRight: `${portalMargin}%` }}>
             <SecurityAlert />
             <PageTransition>
               <Outlet />
             </PageTransition>
           </main>
         </div>
-        <MobileBottomNav items={bottomNavItems} moreItems={moreNavItems} />
       </div>
     </SidebarProvider>
   );

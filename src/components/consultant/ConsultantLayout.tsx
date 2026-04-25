@@ -1,6 +1,5 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import ConsultantSidebar from '@/components/consultant/ConsultantSidebar';
-import MobileBottomNav from '@/components/MobileBottomNav';
 import PageTransition from '@/components/PageTransition';
 import MatchRequestPopup from '@/components/consultant/MatchRequestPopup';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
@@ -145,14 +144,13 @@ export default function ConsultantLayout() {
           <FixedSubHeader>
             <HeaderNav role="consultant" />
           </FixedSubHeader>
-          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-20 md:pb-6 mt-14 md:mt-24 protected-content">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-6 mt-14 md:mt-24 protected-content">
             <SecurityAlert />
             <PageTransition>
               <Outlet />
             </PageTransition>
           </main>
         </div>
-        <MobileBottomNav items={bottomNavItems} moreItems={moreNavItems} />
         <MatchRequestPopup />
       </div>
     </SidebarProvider>
