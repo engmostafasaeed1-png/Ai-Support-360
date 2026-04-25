@@ -1,4 +1,5 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { demoFunnel } from '@/lib/analytics';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -134,8 +135,10 @@ function detectTimezone(): string {
 /*  Context — lets any CTA open the wizard with one hook                       */
 /* -------------------------------------------------------------------------- */
 
+type OpenOptions = { source?: string };
+
 type Ctx = {
-  open: (initial?: DemoType['id']) => void;
+  open: (initial?: DemoType['id'], opts?: OpenOptions) => void;
 };
 
 const DemoWizardContext = createContext<Ctx | null>(null);
@@ -159,12 +162,19 @@ export function useDemoWizard(): Ctx {
 export function DemoWizardProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [initialType, setInitialType] = useState<DemoType['id'] | undefined>(undefined);
+  const [source, setSource] = useState<string>('unknown');
 
   const value = useMemo<Ctx>(
     () => ({
-      open: (initial) => {
+      open: (initial, opts) => {
+        const src = opts?.source ?? 'unknown';
         setInitialType(initial);
+        setSource(src);
         setOpen(true);
+        // Fire the open event immediately so we capture intent even if
+        // the user closes the dialog before any step renders.
+        demoFunnel.ctaClick(src, initial);
+        demoFunnel.wizardOpen(src, initial);
       },
     }),
     [],
@@ -173,7 +183,7 @@ export function DemoWizardProvider({ children }: { children: ReactNode }) {
   return (
     <DemoWizardContext.Provider value={value}>
       {children}
-      <DemoRequestWizard open={open} onOpenChange={setOpen} initialType={initialType} />
+      <DemoRequestWizard open={open} onOpenChange={setOpen} initialType={initialType} source={source} />
     </DemoWizardContext.Provider>
   );
 }
@@ -185,11 +195,12 @@ export function DemoWizardProvider({ children }: { children: ReactNode }) {
 const STEPS = ['Demo type', 'Schedule', 'Your details'] as const;
 
 function DemoRequestWizard({
-  open, onOpenChange, initialType,
+  open, onOpenChange, initialType, source,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   initialType?: DemoType['id'];
+  source: string;
 }) {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -227,6 +238,30 @@ function DemoRequestWizard({
     setNotes('');
   };
 
+  // Track step views — fires once per open + step change. We also use
+  // these refs to know whether the user abandoned (closed before submit).
+  const lastViewedStep = useRef<number>(-1);
+  const submittedRef = useRef(false);
+  useEffect(() => { submittedRef.current = submitted; }, [submitted]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (lastViewedStep.current !== step) {
+      lastViewedStep.current = step;
+      demoFunnel.wizardStepView(step, STEPS[step]);
+    }
+  }, [open, step]);
+
+  // Detect abandon: dialog closes before a successful submit.
+  useEffect(() => {
+    if (open) return;
+    if (lastViewedStep.current >= 0 && !submittedRef.current) {
+      const at = lastViewedStep.current;
+      demoFunnel.wizardAbandon(at, STEPS[at]);
+    }
+    lastViewedStep.current = -1;
+  }, [open]);
+
   const canNext =
     (step === 0 && !!type) ||
     // On the schedule step a preference is enough, but if the visitor
@@ -235,12 +270,50 @@ function DemoRequestWizard({
     (step === 1 && !!time && (!date || !!slot) && (!slot || !!date)) ||
     (step === 2 && name.trim().length > 1 && /\S+@\S+\.\S+/.test(email));
 
-  const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
-  const back = () => setStep((s) => Math.max(s - 1, 0));
+  const next = () => {
+    setStep((s) => {
+      const target = Math.min(s + 1, STEPS.length - 1);
+      if (target !== s) {
+        // Snapshot what was completed on the step we're leaving so
+        // funnel analysis can group by selection.
+        const stepProps =
+          s === 0 ? { demo_type: type } :
+          s === 1 ? {
+            scheduling_preference: time,
+            has_exact_slot: !!(date && slot),
+            timezone,
+            meeting_format: meetingFormat,
+          } :
+          {};
+        demoFunnel.wizardStepComplete(s, STEPS[s], stepProps);
+      }
+      return target;
+    });
+  };
+  const back = () => {
+    setStep((s) => {
+      if (s > 0) demoFunnel.wizardBack(s);
+      return Math.max(s - 1, 0);
+    });
+  };
 
   const submit = async () => {
     if (!type || !time) return;
     setSubmitting(true);
+
+    const submitProps = {
+      source,
+      demo_type: type,
+      scheduling_preference: time,
+      has_exact_slot: !!(date && slot),
+      timezone,
+      meeting_format: meetingFormat,
+      has_company: !!company.trim(),
+      has_notes: !!notes.trim(),
+    };
+    demoFunnel.submitAttempt(submitProps);
+    // The final step is "complete" once we attempt the submit.
+    demoFunnel.wizardStepComplete(STEPS.length - 1, STEPS[STEPS.length - 1], {});
 
     // Pull the current user (if any) so admins can later see who logged in
     // as well as the email on the row. Anon users still get inserted.
@@ -268,6 +341,7 @@ function DemoRequestWizard({
     setSubmitting(false);
 
     if (error || !data?.request_token) {
+      demoFunnel.submitError(error?.message ?? 'unknown');
       toast({
         variant: 'destructive',
         title: 'Couldn\u2019t submit request',
@@ -277,6 +351,7 @@ function DemoRequestWizard({
     }
 
     setSubmitted(true);
+    demoFunnel.submitSuccess({ ...submitProps, request_token: data.request_token });
     toast({
       title: 'Demo request received',
       description: 'We\u2019ll be in touch within one business hour.',

@@ -121,7 +121,7 @@ export default function HeroSection() {
               </Link>
               <span className="text-primary-foreground/30">•</span>
               <button
-                onClick={() => demoWizard.open('live')}
+                onClick={() => demoWizard.open('live', { source: 'hero' })}
                 className="inline-flex items-center gap-1.5 text-primary-foreground/90 hover:text-primary-foreground transition-colors font-semibold"
               >
                 <CalendarPlus className="w-4 h-4" />
