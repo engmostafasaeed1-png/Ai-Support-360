@@ -270,7 +270,14 @@ function ConfirmationCard({ data, token, onChanged }: { data: DemoRequest; token
           {!showReschedule ? (
             <Button
               variant="outline"
-              onClick={() => setShowReschedule(true)}
+              onClick={() => {
+                demoFunnel.rescheduleOpen({
+                  request_id: data.id,
+                  status: data.status,
+                  is_update: data.status === 'rescheduling',
+                });
+                setShowReschedule(true);
+              }}
               className="rounded-xl gap-2"
             >
               <RefreshCw className="w-4 h-4" />
@@ -279,9 +286,14 @@ function ConfirmationCard({ data, token, onChanged }: { data: DemoRequest; token
           ) : (
             <RescheduleForm
               token={token}
+              requestId={data.id}
+              isUpdate={data.status === 'rescheduling'}
               initialReason={data.reschedule_reason ?? ''}
               initialSlots={data.proposed_slots ?? []}
-              onCancel={() => setShowReschedule(false)}
+              onCancel={() => {
+                demoFunnel.rescheduleCancel({ request_id: data.id });
+                setShowReschedule(false);
+              }}
               onSuccess={async () => {
                 setShowReschedule(false);
                 await onChanged();
