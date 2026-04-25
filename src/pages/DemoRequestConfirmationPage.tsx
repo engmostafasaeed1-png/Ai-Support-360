@@ -480,3 +480,116 @@ function DetailRow({ icon: Icon, label, value }: { icon: typeof Sparkles; label:
     </div>
   );
 }
+
+function ProposedSlotsTimeline({
+  slots,
+  timezone,
+  reason,
+}: {
+  slots: ProposedSlot[];
+  timezone: string | null;
+  reason: string | null;
+}) {
+  const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const displayTz = timezone || browserTz;
+  const now = Date.now();
+
+  // Decorate, sort earliest-first, mark earliest valid as "preferred"
+  const decorated = slots.map((s, originalIndex) => {
+    const dt = s.date && s.time ? new Date(`${s.date}T${s.time}`) : null;
+    const ts = dt && !isNaN(dt.getTime()) ? dt.getTime() : null;
+    const isPast = ts !== null && ts <= now;
+    return { ...s, originalIndex, dt, ts, isPast };
+  });
+  const sorted = [...decorated].sort((a, b) => {
+    if (a.ts === null) return 1;
+    if (b.ts === null) return -1;
+    return a.ts - b.ts;
+  });
+  const preferredOriginalIndex = sorted.find((s) => s.ts !== null && !s.isPast)?.originalIndex ?? null;
+  const validCount = decorated.filter((s) => s.ts !== null && !s.isPast).length;
+
+  return (
+    <div className="px-7 md:px-10 py-6 border-b border-border/40 bg-amber-500/5">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            Your proposed slots
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5">
+            <Globe className="w-3 h-3" />
+            Shown in <span className="font-mono text-foreground/80">{displayTz}</span>
+            {!timezone && <span className="opacity-70">· detected from your device</span>}
+          </p>
+        </div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-500/15 border border-amber-500/30 rounded-full px-2.5 py-1">
+          {validCount} of {slots.length} still valid
+        </div>
+      </div>
+
+      <ol className="relative space-y-2.5 ps-5 before:absolute before:start-1.5 before:top-2 before:bottom-2 before:w-px before:bg-amber-500/30">
+        {sorted.map((s) => {
+          const isPreferred = s.originalIndex === preferredOriginalIndex;
+          return (
+            <li key={s.originalIndex} className="relative">
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'absolute -start-[1.05rem] top-3 w-2.5 h-2.5 rounded-full ring-2 ring-background',
+                  s.isPast
+                    ? 'bg-muted border border-destructive/40'
+                    : isPreferred
+                    ? 'bg-primary'
+                    : 'bg-amber-500'
+                )}
+              />
+              <div
+                className={cn(
+                  'flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border px-3.5 py-2.5 text-sm transition-colors',
+                  s.isPast
+                    ? 'border-destructive/30 bg-destructive/5 text-muted-foreground line-through'
+                    : isPreferred
+                    ? 'border-primary/40 bg-primary/5 text-foreground'
+                    : 'border-border/50 bg-background/60 text-foreground'
+                )}
+              >
+                <CalendarClock className={cn('w-4 h-4 shrink-0', s.isPast ? 'text-destructive/70' : isPreferred ? 'text-primary' : 'text-amber-600 dark:text-amber-400')} />
+                <span className="font-semibold">
+                  {s.dt
+                    ? s.dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+                    : s.date}
+                </span>
+                <span className="text-muted-foreground">·</span>
+                <span className="font-mono text-[13px]">{s.time}</span>
+                {isPreferred && (
+                  <span className="ms-auto text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/30 rounded-full px-2 py-0.5">
+                    Earliest
+                  </span>
+                )}
+                {s.isPast && (
+                  <span className="ms-auto text-[10px] font-bold uppercase tracking-wider text-destructive bg-destructive/10 border border-destructive/30 rounded-full px-2 py-0.5 no-underline">
+                    Past — please update
+                  </span>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+
+      {validCount === 0 && (
+        <p className="mt-3 text-xs text-destructive flex items-center gap-1.5">
+          <AlertCircle className="w-3.5 h-3.5" />
+          All proposed slots are in the past. Use "Update proposed slots" below to send new options.
+        </p>
+      )}
+
+      {reason && (
+        <p className="text-xs text-muted-foreground mt-4 italic border-l-2 border-amber-500/40 ps-3">
+          "{reason}"
+        </p>
+      )}
+    </div>
+  );
+}
+
