@@ -21,7 +21,7 @@ export default function Footer() {
       { label: t('footer.blog'), href: '#faq' },
     ],
     support: [
-      { label: 'Request a demo', href: '#', onClick: () => demoWizard.open() },
+      { label: 'Request a demo', href: '#', onClick: () => demoWizard.open(undefined, { source: 'footer' }) },
       { label: t('footer.help'), href: '#how-it-works' },
       { label: t('footer.contact'), href: '#contact' },
     ],
