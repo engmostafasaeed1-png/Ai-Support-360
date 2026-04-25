@@ -145,6 +145,7 @@ export default function ClientTestimonialsManager() {
         accent: 'from-cyan-500 to-blue-600',
         display_order: (items.at(-1)?.display_order ?? 0) + 1,
         is_active: false,
+        is_featured: false,
         status: 'draft',
       })
       .select()
