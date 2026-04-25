@@ -1,4 +1,5 @@
-import { Check, X, Sparkles, Bot, ShieldCheck, Zap, BrainCircuit, FileSearch, ArrowUpRight, Clock, TrendingDown, Layers, Activity } from 'lucide-react';
+import { Check, X, Sparkles, Bot, ShieldCheck, Zap, BrainCircuit, FileSearch, ArrowUpRight, Clock, TrendingDown, Layers, Activity, Info } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { accents, iconPlate, radius, shadow, type AccentName } from './tokens';
 import { tileImageAlt } from './tileImageAlt';
 import aiTriageImg from '@/assets/value/ai-triage.jpg';
@@ -370,18 +371,21 @@ export default function ValueDifferentiationSection() {
                     }`}
                   >
                     {/* Capability + the "how" sentence underneath */}
-                    <div className="space-y-1.5">
-                      <div className="text-sm md:text-base text-foreground/90 font-semibold leading-snug">
-                        {row.feature}
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex items-start gap-2">
+                        <div className="text-sm md:text-base text-foreground/90 font-semibold leading-snug flex-1">
+                          {row.feature}
+                        </div>
+                        <LearnMorePopover row={row} />
                       </div>
                       {row.usDetail && (
-                        <div className="text-[11px] md:text-xs text-muted-foreground leading-relaxed">
+                        <div className="hidden md:block text-[11px] md:text-xs text-muted-foreground leading-relaxed">
                           <span className="text-primary/80 font-semibold">Us: </span>
                           {row.usDetail}
                         </div>
                       )}
                       {row.themDetail && (
-                        <div className="text-[11px] md:text-xs text-muted-foreground/70 leading-relaxed">
+                        <div className="hidden md:block text-[11px] md:text-xs text-muted-foreground/70 leading-relaxed">
                           <span className="font-semibold text-muted-foreground">Them: </span>
                           {row.themDetail}
                         </div>
@@ -465,5 +469,57 @@ function CompareCell({ value, variant }: { value: CompareCellValue; variant: 'us
     <span className="text-xs font-medium text-muted-foreground/80 italic px-3 py-1 rounded-full bg-muted/40 border border-border/40 whitespace-nowrap">
       {value}
     </span>
+  );
+}
+
+/**
+ * Per-row "Learn more" popover. Works on tap (mobile) and click/keyboard
+ * (desktop) via Radix Popover. Visible on every breakpoint so mobile —
+ * where the inline us/them sentences are hidden to preserve layout — can
+ * still surface the same delivery details on demand.
+ */
+function LearnMorePopover({ row }: { row: CompareRow }) {
+  if (!row.usDetail && !row.themDetail) return null;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Learn more about ${row.feature}`}
+          className="shrink-0 inline-flex items-center gap-1 text-[10px] md:text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 hover:text-primary px-2 py-1 rounded-full border border-border/40 hover:border-primary/40 bg-background/40 hover:bg-primary/5 transition-colors"
+        >
+          <Info size={11} strokeWidth={2.25} aria-hidden="true" />
+          <span className="hidden sm:inline">Learn more</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        side="top"
+        align="end"
+        sideOffset={8}
+        className="w-[min(20rem,calc(100vw-2rem))] p-4 space-y-3 border-border/50 bg-card/95 backdrop-blur-xl"
+      >
+        <div className="text-xs font-bold uppercase tracking-wider text-foreground/90">
+          {row.feature}
+        </div>
+        {row.usDetail && (
+          <div className="text-xs leading-relaxed text-muted-foreground">
+            <span className="text-primary font-semibold">Us: </span>
+            {row.usDetail}
+            {row.usValue && (
+              <span className="ml-1 inline-block text-primary font-bold">({row.usValue})</span>
+            )}
+          </div>
+        )}
+        {row.themDetail && (
+          <div className="text-xs leading-relaxed text-muted-foreground/80">
+            <span className="font-semibold text-muted-foreground">Them: </span>
+            {row.themDetail}
+            {row.themValue && (
+              <span className="ml-1 inline-block text-muted-foreground font-medium">({row.themValue})</span>
+            )}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
