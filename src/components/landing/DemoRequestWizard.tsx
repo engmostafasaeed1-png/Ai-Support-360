@@ -490,6 +490,7 @@ function DemoTypeStep({
 
 function ScheduleStep({
   value, onChange, date, onDateChange, slot, onSlotChange,
+  timezone, onTimezoneChange, meetingFormat, onMeetingFormatChange,
 }: {
   value: TimePref | null;
   onChange: (v: TimePref) => void;
@@ -497,6 +498,10 @@ function ScheduleStep({
   onDateChange: (d: Date | undefined) => void;
   slot: string | null;
   onSlotChange: (s: string | null) => void;
+  timezone: string;
+  onTimezoneChange: (tz: string) => void;
+  meetingFormat: MeetingFormat;
+  onMeetingFormatChange: (f: MeetingFormat) => void;
 }) {
   // Block weekends and any day before today; cap at 60 days out so
   // the picker stays focused on actually-bookable dates.
