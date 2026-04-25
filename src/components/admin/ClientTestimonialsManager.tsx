@@ -368,3 +368,25 @@ function LogoPreview({ url, accent, name }: { url: string | null; accent: string
     </div>
   );
 }
+
+/**
+ * Map the structured `code` returned by the validate-client-logo edge
+ * function to a short, human-friendly toast title. Keep titles to a
+ * single line — the full server message is shown in the description.
+ */
+function humanizeLogoErrorTitle(code: string): string {
+  switch (code) {
+    case 'unauthenticated':  return 'Please sign in again';
+    case 'forbidden':        return 'Admin role required';
+    case 'missing_fields':   return 'Missing upload data';
+    case 'bad_mime':         return 'Wrong file type';
+    case 'file_too_large':   return 'File too large';
+    case 'unreadable_png':   return 'Invalid PNG file';
+    case 'wrong_dimensions': return 'Wrong dimensions';
+    case 'not_square':       return 'Logo is not square';
+    case 'not_transparent':  return 'Background is not transparent';
+    case 'upload_failed':    return 'Could not save the logo';
+    case 'db_update_failed': return 'Saved file but failed to link it';
+    default:                 return 'Logo validation failed';
+  }
+}
