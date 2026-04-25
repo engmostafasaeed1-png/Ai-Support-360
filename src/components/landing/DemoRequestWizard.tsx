@@ -67,8 +67,8 @@ const demoTypes: DemoType[] = [
 
 const timePrefs = [
   { id: 'asap', label: 'As soon as possible', sub: 'We respond within 1 business hour', Icon: Clock },
-  { id: 'this-week', label: 'This week', sub: 'Pick a slot Mon–Fri', Icon: Calendar },
-  { id: 'next-week', label: 'Next week', sub: 'Better for planning teams', Icon: Calendar },
+  { id: 'this-week', label: 'This week', sub: 'Pick a slot Mon–Fri', Icon: CalendarIcon },
+  { id: 'next-week', label: 'Next week', sub: 'Better for planning teams', Icon: CalendarIcon },
   { id: 'flexible', label: 'I\u2019m flexible', sub: 'Send me your soonest openings', Icon: Sparkles },
 ] as const;
 
