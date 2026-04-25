@@ -355,7 +355,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const speakText = useCallback((text: string) => {
     if (!ttsEnabled || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const cleanText = text.replace(/[#*_`~\[\]()>]/g, '').replace(/\n+/g, '. ').replace(/\s+/g, ' ').trim();
+    const cleanText = text.replace(/[#*_`~[\]()>]/g, '').replace(/\n+/g, '. ').replace(/\s+/g, ' ').trim();
     if (!cleanText || cleanText === lastSpokenRef.current) return;
     lastSpokenRef.current = cleanText;
 
