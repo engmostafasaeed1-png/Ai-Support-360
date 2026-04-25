@@ -41,6 +41,7 @@ type Testimonial = {
   logo_url: string | null;
   display_order: number;
   is_active: boolean;
+  is_featured: boolean;
   status: TestimonialStatus;
   rejected_reason: string | null;
   submitted_at: string | null;
