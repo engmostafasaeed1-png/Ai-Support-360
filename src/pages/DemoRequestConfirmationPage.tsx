@@ -317,9 +317,11 @@ function ConfirmationCard({ data, token, onChanged }: { data: DemoRequest; token
 }
 
 function RescheduleForm({
-  token, initialReason, initialSlots, onCancel, onSuccess,
+  token, requestId, isUpdate, initialReason, initialSlots, onCancel, onSuccess,
 }: {
   token: string;
+  requestId: string;
+  isUpdate: boolean;
   initialReason: string;
   initialSlots: ProposedSlot[];
   onCancel: () => void;
@@ -354,14 +356,25 @@ function RescheduleForm({
 
   const handleSubmit = async () => {
     const valid = slots.filter((s) => s.date && s.time);
+    const baseProps = {
+      request_id: requestId,
+      is_update: isUpdate,
+      slot_count: valid.length,
+      total_slot_rows: slots.length,
+      has_reason: reason.trim().length > 0,
+      timezone: browserTz,
+    };
     if (valid.length === 0) {
+      demoFunnel.rescheduleSubmitError('no_valid_slots', baseProps);
       toast.error('Add at least one date and time');
       return;
     }
     if (slotErrors.some((e) => e !== null)) {
+      demoFunnel.rescheduleSubmitError('past_or_invalid_slots', baseProps);
       toast.error('Please fix the highlighted slots before submitting');
       return;
     }
+    demoFunnel.rescheduleSubmitAttempt(baseProps);
     setSubmitting(true);
     const { error } = await supabase.rpc('request_demo_reschedule', {
       _token: token,
@@ -370,9 +383,11 @@ function RescheduleForm({
     });
     setSubmitting(false);
     if (error) {
+      demoFunnel.rescheduleSubmitError(error.message || 'rpc_error', baseProps);
       toast.error(error.message || 'Could not submit reschedule request');
       return;
     }
+    demoFunnel.rescheduleSubmitSuccess(baseProps);
     toast.success('Reschedule request sent — we\u2019ll confirm shortly.');
     await onSuccess();
   };
