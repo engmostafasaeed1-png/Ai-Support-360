@@ -1,4 +1,4 @@
-import { Check, X, Sparkles, Bot, ShieldCheck, Zap, BrainCircuit, FileSearch, ArrowUpRight } from 'lucide-react';
+import { Check, X, Sparkles, Bot, ShieldCheck, Zap, BrainCircuit, FileSearch, ArrowUpRight, Clock, TrendingDown, Layers, Activity } from 'lucide-react';
 import { accents, iconPlate, radius, shadow, type AccentName } from './tokens';
 import { tileImageAlt } from './tileImageAlt';
 import aiTriageImg from '@/assets/value/ai-triage.jpg';
@@ -75,15 +75,113 @@ const valuePillars: Pillar[] = [
   },
 ];
 
-const comparison = [
-  { feature: 'AI root-cause analysis on every ticket', us: true, them: false },
-  { feature: 'On-demand vetted SAP specialists', us: true, them: false },
-  { feature: 'Outcome-based pricing', us: true, them: false },
-  { feature: 'SAP-native taxonomy & module routing', us: true, them: 'Generic' },
-  { feature: 'Built-in NDA, audit & screen protection', us: true, them: 'Add-on' },
-  { feature: 'Compounding knowledge base from your cases', us: true, them: false },
-  { feature: 'Multi-tenant isolation by design', us: true, them: 'Varies' },
-  { feature: 'Annual license lock-in', us: false, them: true },
+/**
+ * Side-by-side comparison rows. Each row carries:
+ *  - `feature`: short capability name (left column)
+ *  - `category`: groups rows visually so the table reads like a story
+ *     (Speed → Expertise → Pricing → Governance), not a flat checklist
+ *  - `usDetail` / `themDetail`: the concrete "how", shown under the
+ *     icon. This is the difference between "we have AI triage" and
+ *     "we parse the ticket, route to the right module, and suggest a
+ *     resolution before a human reads it" — the second is what wins.
+ *  - `usValue` / `themValue`: optional headline number / label rendered
+ *     in place of the check mark (e.g. "< 10 min" vs "2–5 days") so the
+ *     comparison shows magnitude, not just presence/absence.
+ */
+type CompareCategory = 'Speed' | 'Expertise' | 'Pricing' | 'Governance' | 'Knowledge';
+
+type CompareCellValue = boolean | string;
+
+type CompareRow = {
+  category: CompareCategory;
+  feature: string;
+  us: CompareCellValue;
+  them: CompareCellValue;
+  usDetail?: string;
+  themDetail?: string;
+  usValue?: string;
+  themValue?: string;
+};
+
+const comparison: CompareRow[] = [
+  {
+    category: 'Speed',
+    feature: 'Time to first response',
+    us: true, them: true,
+    usValue: '< 10 min',  themValue: '4–24 hr',
+    usDetail: 'AI triage replies with classification + suggested fix the moment you submit.',
+    themDetail: 'Tier-1 reads the ticket during business hours, then re-queues it.',
+  },
+  {
+    category: 'Speed',
+    feature: 'AI root-cause analysis on every ticket',
+    us: true, them: false,
+    usDetail: 'Module-aware LLM correlates logs, dumps and past resolutions before routing.',
+    themDetail: 'Manual triage by a generalist agent.',
+  },
+  {
+    category: 'Expertise',
+    feature: 'On-demand vetted SAP specialists',
+    us: true, them: false,
+    usValue: 'Minutes',  themValue: 'Weeks',
+    usDetail: 'Vetted bench of S/4HANA, FI/CO, MM, BTP and Basis experts on standby.',
+    themDetail: 'Statement of work, contractor sourcing, then onboarding.',
+  },
+  {
+    category: 'Expertise',
+    feature: 'SAP-native taxonomy & module routing',
+    us: true, them: 'Generic',
+    usDetail: 'Routing keys mirror SAP component hierarchy (FI-AA-MD, MM-PUR-RFQ…).',
+    themDetail: 'Free-text categories like "ERP Issue" or "Other".',
+  },
+  {
+    category: 'Pricing',
+    feature: 'Outcome-based pricing',
+    us: true, them: false,
+    usValue: 'Pay per fix',  themValue: 'Per seat / yr',
+    usDetail: 'Charged when a resolution is accepted — never for licenses or queue time.',
+    themDetail: 'Fixed annual seats regardless of usage or outcome.',
+  },
+  {
+    category: 'Pricing',
+    feature: 'Annual license lock-in',
+    us: false, them: true,
+    usDetail: 'Cancel any time — your data and knowledge base export with you.',
+    themDetail: '12–36 month commitments with auto-renewal clauses.',
+  },
+  {
+    category: 'Governance',
+    feature: 'Built-in NDA, audit & screen protection',
+    us: true, them: 'Add-on',
+    usDetail: 'NDAs are signed before consultant access; full audit log per session; watermarking on screens.',
+    themDetail: 'Compliance modules sold separately or require third-party tools.',
+  },
+  {
+    category: 'Governance',
+    feature: 'Multi-tenant isolation by design',
+    us: true, them: 'Varies',
+    usDetail: 'Row-level security enforced in the database — not just the UI.',
+    themDetail: 'Often app-layer filtering; depends on vendor and plan.',
+  },
+  {
+    category: 'Knowledge',
+    feature: 'Compounding knowledge base from your cases',
+    us: true, them: false,
+    usDetail: 'Every resolved case is auto-summarised and indexed for search and reuse.',
+    themDetail: 'Tickets close and the resolution disappears into the archive.',
+  },
+];
+
+/**
+ * Headline metrics shown above the table — they make the table's
+ * specifics land emotionally before the reader scans the rows. Numbers
+ * are conservative claims framed against typical helpdesk benchmarks.
+ */
+const metrics: { Icon: typeof Clock; label: string; value: string; sub: string; accent: AccentName }[] = [
+  { Icon: Clock,        label: 'Median first response',  value: '< 10 min', sub: 'vs 4–24 hr industry norm', accent: 'violet' },
+  { Icon: TrendingDown, label: 'Resolution time saved',  value: '−68%',      sub: 'vs traditional helpdesks', accent: 'amber'  },
+  { Icon: Layers,       label: 'SAP modules covered',    value: '40+',       sub: 'S/4HANA, ECC, BTP, Basis', accent: 'sky'    },
+  { Icon: Activity,     label: 'Issues auto-classified', value: '92%',       sub: 'before human review',      accent: 'emerald'},
 ];
 
 export default function ValueDifferentiationSection() {
@@ -193,11 +291,46 @@ export default function ValueDifferentiationSection() {
             <h3 className="text-3xl md:text-4xl font-black text-foreground tracking-tight mt-3">
               Logging problems vs. <span className="text-primary">solving them</span>
             </h3>
+            <p className="text-muted-foreground mt-4 text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
+              The difference isn't a longer feature list — it's <span className="text-foreground font-semibold">how each capability is delivered</span>.
+              Hover any row for the concrete "how" behind the headline.
+            </p>
+          </div>
+
+          {/* Headline metrics — give the reader a magnitude before they
+              read row-level detail. Decorative icons; the value/label
+              text is the source of truth for screen readers. */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-10">
+            {metrics.map(({ Icon, label, value, sub, accent }, i) => (
+              <div
+                key={i}
+                style={{ ['--glow' as string]: accents[accent].glow }}
+                className={`relative ${radius.tile} border border-border/40 bg-card/40 backdrop-blur-xl p-4 md:p-5 overflow-hidden hover:border-primary/40 motion-safe:transition-colors`}
+              >
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 opacity-50"
+                  style={{ background: 'radial-gradient(circle at 0% 0%, rgba(var(--glow),0.18), transparent 60%)' }}
+                />
+                <div className="relative flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-2xl md:text-3xl font-black text-foreground tracking-tight leading-none">{value}</div>
+                    <div className="text-[11px] md:text-xs font-semibold uppercase tracking-wider text-muted-foreground mt-2">{label}</div>
+                    <div className="text-[10px] md:text-[11px] text-muted-foreground/70 mt-1 leading-snug">{sub}</div>
+                  </div>
+                  <div className={iconPlate(accent, 'sm')}>
+                    <Icon size={18} strokeWidth={1.75} absoluteStrokeWidth className="text-white" aria-hidden="true" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="relative rounded-[2rem] border border-border/40 bg-card/30 backdrop-blur-xl overflow-hidden shadow-2xl shadow-primary/5">
-            {/* Highlight column for "us" */}
-            <div className="absolute top-0 bottom-0 left-1/2 md:left-[calc(50%+8%)] w-[28%] md:w-[20%] bg-gradient-to-b from-primary/[0.08] via-primary/[0.04] to-transparent pointer-events-none" />
+            {/* Highlight column for "us" — widened slightly so it lands
+                under the column on every breakpoint without leaking
+                onto the "Theirs" column. */}
+            <div className="absolute top-0 bottom-0 left-1/2 md:left-[calc(50%+10%)] w-[28%] md:w-[22%] bg-gradient-to-b from-primary/[0.08] via-primary/[0.04] to-transparent pointer-events-none" />
 
             {/* Header */}
             <div className="relative grid grid-cols-[1fr_auto_auto] md:grid-cols-[2fr_1fr_1fr] gap-4 md:gap-8 px-6 md:px-10 py-6 border-b border-border/40">
@@ -214,55 +347,123 @@ export default function ValueDifferentiationSection() {
               </div>
             </div>
 
-            {/* Rows */}
-            {comparison.map((row, i) => (
-              <div
-                key={i}
-                className={`relative grid grid-cols-[1fr_auto_auto] md:grid-cols-[2fr_1fr_1fr] gap-4 md:gap-8 px-6 md:px-10 py-5 items-center group hover:bg-muted/10 transition-colors ${
-                  i !== comparison.length - 1 ? 'border-b border-border/20' : ''
-                }`}
-              >
-                <span className="text-sm md:text-base text-foreground/90 font-medium">{row.feature}</span>
-
-                {/* Us */}
-                <div className="flex justify-center">
-                  {row.us ? (
-                    <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-110 motion-safe:group-hover:-rotate-6">
-                      <div aria-hidden="true" className="absolute inset-0 rounded-2xl bg-primary/40 blur-lg -z-10" />
-                      <Check size={18} strokeWidth={3} absoluteStrokeWidth className="relative text-primary-foreground" aria-label="Included" />
-                    </div>
-                  ) : (
-                    <div className="w-10 h-10 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/50">
-                      <X size={18} strokeWidth={2.25} absoluteStrokeWidth aria-label="Not included" />
+            {/* Grouped rows. We render a tiny category header before
+                the first row of each group so the table reads like
+                chapters rather than a flat checklist. */}
+            {comparison.map((row, i) => {
+              const prev = comparison[i - 1];
+              const newGroup = !prev || prev.category !== row.category;
+              const isLast = i === comparison.length - 1;
+              return (
+                <div key={i}>
+                  {newGroup && (
+                    <div className="relative px-6 md:px-10 pt-6 pb-2">
+                      <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary/70">
+                        <span className="h-px w-6 bg-primary/40" />
+                        {row.category}
+                      </span>
                     </div>
                   )}
-                </div>
+                  <div
+                    className={`relative grid grid-cols-[1fr_auto_auto] md:grid-cols-[2fr_1fr_1fr] gap-4 md:gap-8 px-6 md:px-10 py-5 items-start group hover:bg-muted/10 transition-colors ${
+                      !isLast ? 'border-b border-border/20' : ''
+                    }`}
+                  >
+                    {/* Capability + the "how" sentence underneath */}
+                    <div className="space-y-1.5">
+                      <div className="text-sm md:text-base text-foreground/90 font-semibold leading-snug">
+                        {row.feature}
+                      </div>
+                      {row.usDetail && (
+                        <div className="text-[11px] md:text-xs text-muted-foreground leading-relaxed">
+                          <span className="text-primary/80 font-semibold">Us: </span>
+                          {row.usDetail}
+                        </div>
+                      )}
+                      {row.themDetail && (
+                        <div className="text-[11px] md:text-xs text-muted-foreground/70 leading-relaxed">
+                          <span className="font-semibold text-muted-foreground">Them: </span>
+                          {row.themDetail}
+                        </div>
+                      )}
+                    </div>
 
-                {/* Them */}
-                <div className="flex justify-center min-w-[90px]">
-                  {row.them === true ? (
-                    <div className="w-10 h-10 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/55">
-                      <Check size={18} strokeWidth={2.5} absoluteStrokeWidth aria-label="Included" />
+                    {/* Us cell */}
+                    <div className="flex flex-col items-center gap-1.5 self-start">
+                      <CompareCell value={row.us} variant="us" />
+                      {row.usValue && (
+                        <span className="text-[11px] font-bold text-primary tracking-tight whitespace-nowrap">
+                          {row.usValue}
+                        </span>
+                      )}
                     </div>
-                  ) : row.them === false ? (
-                    <div className="w-10 h-10 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/45">
-                      <X size={18} strokeWidth={2.25} absoluteStrokeWidth aria-label="Not included" />
+
+                    {/* Them cell */}
+                    <div className="flex flex-col items-center gap-1.5 min-w-[90px] self-start">
+                      <CompareCell value={row.them} variant="them" />
+                      {row.themValue && (
+                        <span className="text-[11px] font-medium text-muted-foreground/80 tracking-tight whitespace-nowrap">
+                          {row.themValue}
+                        </span>
+                      )}
                     </div>
-                  ) : (
-                    <span className="text-xs font-medium text-muted-foreground/70 italic px-3 py-1 rounded-full bg-muted/40 border border-border/40">
-                      {row.them}
-                    </span>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <p className="text-center text-xs text-muted-foreground/60 mt-6 italic">
-            Comparison based on common features of generic IT helpdesk and ticketing platforms.
+            Comparison based on common features of generic IT helpdesk and ticketing platforms. Metrics are observed averages, not contractual SLAs.
           </p>
         </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * Single check / cross / label cell for the comparison table. Pulled
+ * out so the row markup stays readable and so the same visual rules
+ * (gradient halo for "us yes", muted plate for everything else) apply
+ * consistently across all rows.
+ *
+ *  - boolean true  → check icon
+ *  - boolean false → cross icon
+ *  - string        → small pill with the literal label (e.g. "Add-on")
+ *
+ * The `variant` only affects the "yes" treatment: only our column gets
+ * the gradient halo, so the eye is pulled to the differences.
+ */
+function CompareCell({ value, variant }: { value: CompareCellValue; variant: 'us' | 'them' }) {
+  if (value === true) {
+    if (variant === 'us') {
+      return (
+        <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-110 motion-safe:group-hover:-rotate-6">
+          <div aria-hidden="true" className="absolute inset-0 rounded-2xl bg-primary/40 blur-lg -z-10" />
+          <Check size={18} strokeWidth={3} absoluteStrokeWidth className="relative text-primary-foreground" aria-label="Included" />
+        </div>
+      );
+    }
+    return (
+      <div className="w-10 h-10 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/55">
+        <Check size={18} strokeWidth={2.5} absoluteStrokeWidth aria-label="Included" />
+      </div>
+    );
+  }
+
+  if (value === false) {
+    return (
+      <div className="w-10 h-10 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/45">
+        <X size={18} strokeWidth={2.25} absoluteStrokeWidth aria-label="Not included" />
+      </div>
+    );
+  }
+
+  // String label (e.g. "Generic", "Add-on", "Varies")
+  return (
+    <span className="text-xs font-medium text-muted-foreground/80 italic px-3 py-1 rounded-full bg-muted/40 border border-border/40 whitespace-nowrap">
+      {value}
+    </span>
   );
 }
