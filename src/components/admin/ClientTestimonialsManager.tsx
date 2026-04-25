@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import LogoCropDialog from './LogoCropDialog';
+import { withCacheBust } from '@/lib/cacheBust';
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -46,6 +47,7 @@ type Testimonial = {
   rejected_reason: string | null;
   submitted_at: string | null;
   published_at: string | null;
+  updated_at: string;
 };
 
 const ACCENT_PRESETS = [
@@ -380,6 +382,8 @@ export default function ClientTestimonialsManager() {
         </Button>
       </div>
 
+      <LastPublishedBanner items={items} />
+
       <input
         ref={fileInputRef}
         type="file"
@@ -507,7 +511,7 @@ function SortableTestimonialRow({
           >
             <GripVertical className="w-4 h-4" />
           </button>
-          <LogoPreview url={item.logo_url} accent={item.accent} name={item.name} />
+          <LogoPreview url={withCacheBust(item.logo_url, item.updated_at)} accent={item.accent} name={item.name} />
           <div className="min-w-0">
             <CardTitle className="text-base truncate flex items-center gap-1.5">
               {item.name || 'Untitled'}
@@ -816,4 +820,69 @@ function ModerationActions({
   }
 
   return null;
+}
+
+/**
+ * Compact banner showing when the public testimonials section last
+ * changed. We can't ask Lovable for the exact "site publish" time, but
+ * the section is fully data-driven — visitors see a row the moment its
+ * `updated_at` changes and `status='published'`. So the latest
+ * `updated_at` across published rows is the most accurate "as of"
+ * timestamp we can show, and it answers the actual admin question:
+ * "When will my edits be live?".
+ *
+ * The component also explains the cache-busting behaviour so admins
+ * know logo replacements show up immediately, not after a CDN expiry.
+ */
+function LastPublishedBanner({ items }: { items: Testimonial[] }) {
+  const published = items.filter((i) => i.status === 'published' && i.is_active);
+
+  if (published.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+        Nothing is published yet — the public landing section is using its built-in fallback testimonials.
+      </div>
+    );
+  }
+
+  const latest = published.reduce((acc, it) =>
+    Date.parse(it.updated_at) > Date.parse(acc.updated_at) ? it : acc
+  , published[0]);
+
+  const when = new Date(latest.updated_at);
+  const abs = when.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  const rel = formatRelative(when);
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-xs flex flex-wrap items-center justify-between gap-2">
+      <div className="text-muted-foreground">
+        <span className="font-medium text-foreground">Public section last updated </span>
+        <time dateTime={when.toISOString()} title={abs}>{rel}</time>
+        <span className="text-muted-foreground/80"> · {abs}</span>
+      </div>
+      <span className="text-[10px] text-muted-foreground italic">
+        Logo & quote edits appear immediately — images use cache-busted URLs.
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Tiny relative-time helper. We avoid pulling in date-fns just for
+ * this — the resolution we need is "minutes / hours / days ago".
+ */
+function formatRelative(d: Date): string {
+  const diffMs = Date.now() - d.getTime();
+  const sec = Math.round(diffMs / 1000);
+  if (sec < 45)            return 'just now';
+  const min = Math.round(sec / 60);
+  if (min < 60)            return `${min} min ago`;
+  const hr = Math.round(min / 60);
+  if (hr < 24)             return `${hr} hr ago`;
+  const day = Math.round(hr / 24);
+  if (day < 30)            return `${day} day${day === 1 ? '' : 's'} ago`;
+  const mo = Math.round(day / 30);
+  if (mo < 12)             return `${mo} mo ago`;
+  const yr = Math.round(mo / 12);
+  return `${yr} yr ago`;
 }

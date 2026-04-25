@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Star, Quote } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 import { supabase } from '@/integrations/supabase/client';
+import { withCacheBust } from '@/lib/cacheBust';
 import logoSaudiPetro from '@/assets/clients/saudi-petrochemical.png';
 import logoRiyadhBank from '@/assets/clients/riyadh-bank.png';
 import logoGccRetail from '@/assets/clients/gcc-retail.png';
@@ -38,7 +39,7 @@ export default function TestimonialsSection() {
     (async () => {
       const { data, error } = await supabase
         .from('client_testimonials')
-        .select('id,name,role,company,quote,rating,accent,logo_url,display_order,is_active,is_featured')
+        .select('id,name,role,company,quote,rating,accent,logo_url,display_order,is_active,is_featured,updated_at')
         .eq('is_active', true)
         // Featured testimonials are pinned to the front; everything else
         // falls back to the manual display_order set in the admin UI.
@@ -57,7 +58,10 @@ export default function TestimonialsSection() {
           quote: d.quote,
           rating: d.rating,
           accent: d.accent,
-          logo: d.logo_url,
+          // Cache-bust the public-bucket URL so replacing a logo in
+          // the admin UI invalidates the browser/CDN cache immediately,
+          // rather than waiting for the default expiry.
+          logo: withCacheBust(d.logo_url, d.updated_at),
         }))
       );
     })();
