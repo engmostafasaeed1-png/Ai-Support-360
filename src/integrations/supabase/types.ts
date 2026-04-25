@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics_events: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          path: string | null
+          properties: Json
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: string
+          path?: string | null
+          properties?: Json
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          path?: string | null
+          properties?: Json
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       attachments: {
         Row: {
           created_at: string
