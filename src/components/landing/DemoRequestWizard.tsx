@@ -89,6 +89,47 @@ const TIME_SLOTS = [
   '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
 ] as const;
 
+/**
+ * Curated timezone list — covers the regions where most SAP teams sit.
+ * We default to the visitor's detected zone and let them override.
+ */
+const TIMEZONES: { value: string; label: string }[] = [
+  { value: 'Europe/London', label: 'London (GMT/BST)' },
+  { value: 'Europe/Berlin', label: 'Berlin · Paris · Madrid (CET)' },
+  { value: 'Europe/Athens', label: 'Athens · Helsinki (EET)' },
+  { value: 'Europe/Istanbul', label: 'Istanbul (TRT)' },
+  { value: 'Asia/Dubai', label: 'Dubai · Abu Dhabi (GST)' },
+  { value: 'Asia/Riyadh', label: 'Riyadh · Doha (AST)' },
+  { value: 'Asia/Karachi', label: 'Karachi (PKT)' },
+  { value: 'Asia/Kolkata', label: 'Mumbai · Bangalore (IST)' },
+  { value: 'Asia/Singapore', label: 'Singapore · Kuala Lumpur (SGT)' },
+  { value: 'Asia/Tokyo', label: 'Tokyo · Seoul (JST/KST)' },
+  { value: 'Australia/Sydney', label: 'Sydney · Melbourne (AEST)' },
+  { value: 'America/Sao_Paulo', label: 'São Paulo (BRT)' },
+  { value: 'America/New_York', label: 'New York · Toronto (ET)' },
+  { value: 'America/Chicago', label: 'Chicago · Mexico City (CT)' },
+  { value: 'America/Denver', label: 'Denver (MT)' },
+  { value: 'America/Los_Angeles', label: 'Los Angeles · Vancouver (PT)' },
+];
+
+const MEETING_FORMATS = [
+  { id: 'video', label: 'Video call', sub: 'Google Meet or Zoom link', Icon: Video },
+  { id: 'phone', label: 'Phone call', sub: 'We\u2019ll dial you', Icon: Phone },
+  { id: 'in-person', label: 'In person', sub: 'For local teams only', Icon: Users },
+] as const;
+
+type MeetingFormat = (typeof MEETING_FORMATS)[number]['id'];
+
+function detectTimezone(): string {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz && TIMEZONES.some((t) => t.value === tz)) return tz;
+    return tz || 'Europe/Berlin';
+  } catch {
+    return 'Europe/Berlin';
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Context — lets any CTA open the wizard with one hook                       */
 /* -------------------------------------------------------------------------- */
