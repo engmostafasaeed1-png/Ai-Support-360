@@ -44,6 +44,7 @@ const NotFound = React.lazy(() => import("./pages/NotFound.tsx"));
 const MeetingHandoffPage = React.lazy(() => import("./pages/MeetingHandoffPage.tsx"));
 const PricingPage = React.lazy(() => import("./pages/PricingPage.tsx"));
 const DemoRequestConfirmationPage = React.lazy(() => import("./pages/DemoRequestConfirmationPage.tsx"));
+const UnsubscribePage = React.lazy(() => import("./pages/UnsubscribePage.tsx"));
 const LoginPage = React.lazy(() => import("./pages/auth/LoginPage.tsx"));
 const SignupPage = React.lazy(() => import("./pages/auth/SignupPage.tsx"));
 const ForgotPasswordPage = React.lazy(() => import("./pages/auth/ForgotPasswordPage.tsx"));
@@ -229,6 +230,7 @@ const App = () => (
             <Route path="/index" element={<Navigate to="/" replace />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/demo/confirmation/:token" element={<DemoRequestConfirmationPage />} />
+            <Route path="/unsubscribe" element={<UnsubscribePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
