@@ -203,6 +203,8 @@ function DemoRequestWizard({
   // scheduling preference (or skip and let us follow up).
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [slot, setSlot] = useState<string | null>(null);
+  const [timezone, setTimezone] = useState<string>(() => detectTimezone());
+  const [meetingFormat, setMeetingFormat] = useState<MeetingFormat>('video');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
@@ -217,6 +219,8 @@ function DemoRequestWizard({
     setTime(null);
     setDate(undefined);
     setSlot(null);
+    setTimezone(detectTimezone());
+    setMeetingFormat('video');
     setName('');
     setEmail('');
     setCompany('');
