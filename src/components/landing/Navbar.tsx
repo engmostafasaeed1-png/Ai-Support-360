@@ -11,20 +11,11 @@ export default function Navbar() {
   const { toggleLanguage, currentLang } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [isXs, setIsXs] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 339px)');
-    const update = () => setIsXs(mq.matches);
-    update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
   }, []);
 
   // Close mobile menu on Esc
