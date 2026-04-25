@@ -355,7 +355,7 @@ function RescheduleForm({
     const { error } = await supabase.rpc('request_demo_reschedule', {
       _token: token,
       _proposed_slots: valid as unknown as never,
-      _reason: reason.trim() || null,
+      _reason: reason.trim() || undefined,
     });
     setSubmitting(false);
     if (error) {
