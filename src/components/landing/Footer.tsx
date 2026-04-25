@@ -54,7 +54,11 @@ export default function Footer() {
               <ul className="space-y-3">
                 {items.map((item, i) => (
                   <li key={i}>
-                    <a href={item.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <a
+                      href={item.href}
+                      onClick={item.onClick ? (e) => { e.preventDefault(); item.onClick!(); } : undefined}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
                       {item.label}
                     </a>
                   </li>
