@@ -11,20 +11,11 @@ export default function Navbar() {
   const { toggleLanguage, currentLang } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [isXs, setIsXs] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 339px)');
-    const update = () => setIsXs(mq.matches);
-    update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
   }, []);
 
   // Close mobile menu on Esc
@@ -46,31 +37,37 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-white/95 backdrop-blur-xl border-b border-border/60 shadow-md' : 'bg-gradient-to-b from-black/40 via-black/20 to-transparent backdrop-blur-md'}`}>
-      <div className={`container mx-auto flex items-center justify-between ${isXs ? 'h-14' : 'h-16'} sm:h-20 md:h-24 px-2 sm:px-4 gap-1.5 sm:gap-2`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-white/95 backdrop-blur-xl border-b border-border/60 shadow-md' : 'bg-gradient-to-b from-black/60 via-black/30 to-transparent backdrop-blur-md'}`}>
+      <div className={`container mx-auto flex items-center justify-between h-16 sm:h-20 md:h-24 px-3 sm:px-4 gap-2`}>
         <Link
           to="/"
           aria-label="AI SAP Support Now — go to home"
           title="Go to home"
-          className="flex items-center gap-1.5 sm:gap-2.5 md:gap-3 group rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background -ml-1.5 px-1.5 py-1.5 sm:py-1 min-h-[44px] cursor-pointer min-w-0 shrink active:bg-foreground/5"
+          className="flex items-center gap-2 sm:gap-3 group rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background -ml-1 px-1 py-1 min-h-[44px] cursor-pointer min-w-0 shrink active:bg-foreground/5"
         >
-          <img
-            src={logo}
-            alt="AI SAP Support Now logo"
-            width={96}
-            height={96}
-            className={`${isXs ? 'w-8 h-8' : 'w-9 h-9'} sm:w-14 sm:h-14 md:w-20 md:h-20 rounded-xl sm:rounded-2xl object-contain shrink-0 group-hover:scale-105 group-active:scale-95 transition-all duration-500 ${scrolled ? 'drop-shadow-md' : 'bg-white/95 p-1 ring-1 ring-white/40 shadow-xl drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]'}`}
-          />
-          {!isXs && (
-            <span className={`font-black leading-tight tracking-tight transition-colors duration-500 whitespace-nowrap ${scrolled ? 'text-foreground group-hover:text-primary' : 'text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] group-hover:text-white/90'}`}>
-              {/* ≤640px: ultra-short initials */}
-              <span className="inline sm:hidden text-sm">SAP Support</span>
-              {/* 640–1023px: short brand */}
-              <span className="hidden sm:inline lg:hidden text-lg md:text-xl">AI SAP Support</span>
-              {/* ≥1024px: full brand */}
-              <span className="hidden lg:inline text-2xl">AI SAP Support Now</span>
-            </span>
-          )}
+          <span
+            className={`inline-flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl bg-white p-1 sm:p-1.5 transition-all duration-500 group-hover:scale-105 group-active:scale-95 ${
+              scrolled
+                ? 'ring-1 ring-border/60 shadow-md'
+                : 'ring-2 ring-white/70 shadow-xl drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)]'
+            }`}
+          >
+            <img
+              src={logo}
+              alt="AI SAP Support Now logo"
+              width={96}
+              height={96}
+              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg sm:rounded-xl object-contain"
+            />
+          </span>
+          <span className={`font-black leading-tight tracking-tight transition-colors duration-500 whitespace-nowrap ${scrolled ? 'text-foreground group-hover:text-primary' : 'text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] group-hover:text-white/90'}`}>
+            {/* ≤640px: short brand */}
+            <span className="inline sm:hidden text-sm">AI SAP Support</span>
+            {/* 640–1023px: short brand */}
+            <span className="hidden sm:inline lg:hidden text-lg md:text-xl">AI SAP Support</span>
+            {/* ≥1024px: full brand */}
+            <span className="hidden lg:inline text-2xl">AI SAP Support Now</span>
+          </span>
         </Link>
 
         <div className="hidden md:flex items-center gap-0.5">

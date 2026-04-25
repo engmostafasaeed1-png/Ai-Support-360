@@ -38,8 +38,16 @@ export default function Footer() {
         <div className="grid md:grid-cols-5 gap-10">
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-5">
-              <img src={logo} alt="AI SAP Support Now" className="w-11 h-11 rounded-xl object-contain shadow-sm" />
-              <span className="font-black text-lg text-foreground tracking-tight">AI SAP Support Now</span>
+              <span className="inline-flex items-center justify-center bg-white rounded-2xl p-1.5 ring-1 ring-border/60 shadow-md shrink-0">
+                <img
+                  src={logo}
+                  alt="AI SAP Support Now"
+                  width={56}
+                  height={56}
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-contain"
+                />
+              </span>
+              <span className="font-black text-lg sm:text-xl text-foreground tracking-tight">AI SAP Support Now</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
               {t('footer.description')}
