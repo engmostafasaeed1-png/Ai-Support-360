@@ -36,6 +36,7 @@ import SubscriptionsSection from "./components/admin/console/sections/Subscripti
 import { SecuritySettingsSection, AuthenticationSection, DataAccessSection, AuditLogSection } from "./components/admin/console/sections/SecuritySections.tsx";
 import { TicketManagementSection, ConsultantApprovalsSection, NDAManagementSection, MatchRequestsSection, ProjectsMilestonesSection } from "./components/admin/console/sections/OperationsSections.tsx";
 import { NotificationsSection, LocalizationSection, AppearanceSection, StorageSection, EmailSection, IntegrationsSection as AdminIntSection, EnvironmentsSection, LandingEditorSection, PlatformSettingsSection, MaintenanceSection } from "./components/admin/console/sections/SystemSections.tsx";
+import { AnalyticsConsoleSection, VMwareSettingsConsoleSection, EnvironmentLogsConsoleSection, MeetingEventsConsoleSection, InterviewTrainingConsoleSection, OnCallScheduleConsoleSection } from "./components/admin/console/sections/AdditionalSections.tsx";
 
 // Lazy page imports
 const Index = React.lazy(() => import("./pages/Index.tsx"));
@@ -333,6 +334,12 @@ const App = () => (
                 <Route path="landing" element={<LandingEditorSection />} />
                 <Route path="settings" element={<PlatformSettingsSection />} />
                 <Route path="maintenance" element={<MaintenanceSection />} />
+                <Route path="analytics" element={<AnalyticsConsoleSection />} />
+                <Route path="vmware" element={<VMwareSettingsConsoleSection />} />
+                <Route path="environment-logs" element={<EnvironmentLogsConsoleSection />} />
+                <Route path="meeting-events" element={<MeetingEventsConsoleSection />} />
+                <Route path="interview-training" element={<InterviewTrainingConsoleSection />} />
+                <Route path="oncall" element={<OnCallScheduleConsoleSection />} />
               </Route>
               <Route path="users" element={<UsersPage />} />
               <Route path="tickets" element={<TicketKanbanPage />} />
