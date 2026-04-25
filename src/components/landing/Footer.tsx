@@ -4,8 +4,11 @@ import { useDemoWizard } from './DemoRequestWizard';
 
 export default function Footer() {
   const { t } = useTranslation();
+  const demoWizard = useDemoWizard();
 
-  const links = {
+  type FooterLink = { label: string; href: string; onClick?: () => void };
+
+  const links: Record<string, FooterLink[]> = {
     platform: [
       { label: t('nav.services'), href: '#categories' },
       { label: t('nav.consultants'), href: '#consultants' },
@@ -18,6 +21,7 @@ export default function Footer() {
       { label: t('footer.blog'), href: '#faq' },
     ],
     support: [
+      { label: 'Request a demo', href: '#', onClick: () => demoWizard.open() },
       { label: t('footer.help'), href: '#how-it-works' },
       { label: t('footer.contact'), href: '#contact' },
     ],
