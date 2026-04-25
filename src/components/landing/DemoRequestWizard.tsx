@@ -195,11 +195,12 @@ export function DemoWizardProvider({ children }: { children: ReactNode }) {
 const STEPS = ['Demo type', 'Schedule', 'Your details'] as const;
 
 function DemoRequestWizard({
-  open, onOpenChange, initialType,
+  open, onOpenChange, initialType, source,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   initialType?: DemoType['id'];
+  source: string;
 }) {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -237,6 +238,30 @@ function DemoRequestWizard({
     setNotes('');
   };
 
+  // Track step views — fires once per open + step change. We also use
+  // these refs to know whether the user abandoned (closed before submit).
+  const lastViewedStep = useRef<number>(-1);
+  const submittedRef = useRef(false);
+  useEffect(() => { submittedRef.current = submitted; }, [submitted]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (lastViewedStep.current !== step) {
+      lastViewedStep.current = step;
+      demoFunnel.wizardStepView(step, STEPS[step]);
+    }
+  }, [open, step]);
+
+  // Detect abandon: dialog closes before a successful submit.
+  useEffect(() => {
+    if (open) return;
+    if (lastViewedStep.current >= 0 && !submittedRef.current) {
+      const at = lastViewedStep.current;
+      demoFunnel.wizardAbandon(at, STEPS[at]);
+    }
+    lastViewedStep.current = -1;
+  }, [open]);
+
   const canNext =
     (step === 0 && !!type) ||
     // On the schedule step a preference is enough, but if the visitor
@@ -245,8 +270,32 @@ function DemoRequestWizard({
     (step === 1 && !!time && (!date || !!slot) && (!slot || !!date)) ||
     (step === 2 && name.trim().length > 1 && /\S+@\S+\.\S+/.test(email));
 
-  const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
-  const back = () => setStep((s) => Math.max(s - 1, 0));
+  const next = () => {
+    setStep((s) => {
+      const target = Math.min(s + 1, STEPS.length - 1);
+      if (target !== s) {
+        // Snapshot what was completed on the step we're leaving so
+        // funnel analysis can group by selection.
+        const stepProps =
+          s === 0 ? { demo_type: type } :
+          s === 1 ? {
+            scheduling_preference: time,
+            has_exact_slot: !!(date && slot),
+            timezone,
+            meeting_format: meetingFormat,
+          } :
+          {};
+        demoFunnel.wizardStepComplete(s, STEPS[s], stepProps);
+      }
+      return target;
+    });
+  };
+  const back = () => {
+    setStep((s) => {
+      if (s > 0) demoFunnel.wizardBack(s);
+      return Math.max(s - 1, 0);
+    });
+  };
 
   const submit = async () => {
     if (!type || !time) return;
