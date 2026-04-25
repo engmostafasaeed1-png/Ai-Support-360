@@ -641,6 +641,57 @@ function ScheduleStep({
           </div>
         </div>
       </div>
+
+      {/* Timezone + meeting format. Both are required so we can prep
+          the right link / dial-in before the call. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="dw-tz" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1.5">
+            <Globe className="w-3.5 h-3.5" /> Your timezone
+          </Label>
+          <Select value={timezone} onValueChange={onTimezoneChange}>
+            <SelectTrigger id="dw-tz" className="rounded-xl h-11 bg-background/60">
+              <SelectValue placeholder="Pick your timezone" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              {TIMEZONES.map((tz) => (
+                <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Preferred format
+          </Label>
+          <div className="grid grid-cols-3 gap-2">
+            {MEETING_FORMATS.map((f) => {
+              const selected = meetingFormat === f.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => onMeetingFormatChange(f.id)}
+                  className={cn(
+                    'flex flex-col items-center justify-center gap-1 rounded-xl border h-[70px] px-2 transition-all text-center',
+                    selected
+                      ? 'border-primary/60 bg-primary/10 ring-2 ring-primary/30 shadow-md'
+                      : 'border-border/40 bg-background hover:border-primary/30 hover:bg-primary/5',
+                  )}
+                  aria-pressed={selected}
+                  title={f.sub}
+                >
+                  <f.Icon className={cn('w-4 h-4', selected ? 'text-primary' : 'text-muted-foreground')} strokeWidth={1.75} />
+                  <span className={cn('text-[11px] font-semibold leading-none', selected ? 'text-foreground' : 'text-muted-foreground')}>
+                    {f.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
