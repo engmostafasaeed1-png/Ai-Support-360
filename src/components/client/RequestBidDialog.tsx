@@ -29,7 +29,7 @@ function useVerifiedConsultants(sapModule?: string) {
   return useQuery({
     queryKey: ['verified-consultants', sapModule],
     queryFn: async () => {
-      let query = supabase
+      const query = supabase
         .from('consultants')
         .select('id, hourly_rate, rating, total_reviews, city, country, user_id, verification_status')
         .eq('verification_status', 'verified')

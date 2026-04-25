@@ -20,7 +20,7 @@ export function useClientPayments() {
 
       // Fetch consultant names separately
       const consultantIds = [...new Set((data || []).map((p: any) => p.consultant_id).filter(Boolean))];
-      let consultantMap: Record<string, string> = {};
+      const consultantMap: Record<string, string> = {};
       if (consultantIds.length > 0) {
         const { data: consultants } = await supabase
           .from('consultants')
@@ -40,7 +40,7 @@ export function useClientPayments() {
 
       // Fetch ticket titles for linked payments
       const ticketIds = [...new Set((data || []).map((p: any) => p.ticket_id).filter(Boolean))];
-      let ticketMap: Record<string, { title: string; sap_module: string; urgency: string }> = {};
+      const ticketMap: Record<string, { title: string; sap_module: string; urgency: string }> = {};
       if (ticketIds.length > 0) {
         const { data: tickets } = await supabase
           .from('tickets')
@@ -53,7 +53,7 @@ export function useClientPayments() {
 
       // Fetch session info for linked payments
       const sessionIds = [...new Set((data || []).map((p: any) => p.session_id).filter(Boolean))];
-      let sessionMap: Record<string, { session_type: string; status: string; scheduled_at: string | null; duration_minutes: number | null }> = {};
+      const sessionMap: Record<string, { session_type: string; status: string; scheduled_at: string | null; duration_minutes: number | null }> = {};
       if (sessionIds.length > 0) {
         const { data: sessions } = await supabase
           .from('sessions')

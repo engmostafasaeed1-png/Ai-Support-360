@@ -77,7 +77,7 @@ export default function ConsultantsPage() {
   const credlyCount = consultants.filter(c => !!c.credly_username).length;
 
   const filtered = useMemo(() => {
-    let result = consultants.filter((c) => {
+    const result = consultants.filter((c) => {
       const matchesSearch =
         c.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
         c.specialty.toLowerCase().includes(debouncedSearch.toLowerCase());

@@ -150,7 +150,7 @@ export function useDemoWizard(): Ctx {
     return {
       open: () => {
         if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
+           
           console.warn('useDemoWizard called outside <DemoWizardProvider>');
         }
       },

@@ -871,7 +871,7 @@ export default function NewRequestPage() {
           )}
 
           {/* AI Recommended Consultants */}
-          {(aiLoading === 'match_consultants' || aiRecommendations || true) && (
+          {(aiLoading === 'match_consultants' || aiRecommendations) && (
             <Card className="rounded-2xl border-accent/20 bg-gradient-to-br from-accent/5 to-primary/5">
               <CardHeader className="pb-2 flex-row items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">

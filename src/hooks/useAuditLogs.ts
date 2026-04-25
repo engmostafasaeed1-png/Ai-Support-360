@@ -28,7 +28,7 @@ async function fetchAuditLogs(search: string, actionFilter: string) {
 
   // Fetch profile emails for user_ids
   const userIds = [...new Set((data || []).map(l => l.user_id).filter(Boolean))] as string[];
-  let profileMap: Record<string, string> = {};
+  const profileMap: Record<string, string> = {};
 
   if (userIds.length > 0) {
     const { data: profiles } = await supabase
