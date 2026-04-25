@@ -656,9 +656,20 @@ function DetailsStep({
 }
 
 function SuccessPanel({
-  selectedType, time, email,
-}: { selectedType: DemoType | null; time: TimePref | null; email: string }) {
+  selectedType, time, email, date, slot,
+}: {
+  selectedType: DemoType | null;
+  time: TimePref | null;
+  email: string;
+  date: Date | undefined;
+  slot: string | null;
+}) {
   const timeLabel = timePrefs.find((p) => p.id === time)?.label ?? '—';
+  // Prefer the exact slot when present — it's more reassuring than a
+  // vague "this week".
+  const scheduleLine = date && slot
+    ? `${format(date, 'EEE, MMM d')} at ${slot}`
+    : timeLabel;
   return (
     <div className="text-center py-4">
       <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-2xl shadow-primary/30 mb-5">
@@ -676,7 +687,7 @@ function SuccessPanel({
           </>
         )}
         <CalendarIcon className="w-3.5 h-3.5 text-primary" />
-        <span className="text-foreground">{timeLabel}</span>
+        <span className="text-foreground">{scheduleLine}</span>
       </div>
     </div>
   );
