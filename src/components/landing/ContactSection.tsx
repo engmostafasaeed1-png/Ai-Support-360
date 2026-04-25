@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
-import { Send, CheckCircle2 } from 'lucide-react';
+import { Send, CheckCircle2, CalendarPlus } from 'lucide-react';
 import SectionHeader from './SectionHeader';
+import { useDemoWizard } from './DemoRequestWizard';
 
 export default function ContactSection() {
   const { t } = useTranslation();
