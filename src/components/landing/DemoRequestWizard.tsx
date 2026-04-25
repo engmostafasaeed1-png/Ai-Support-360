@@ -254,6 +254,8 @@ function DemoRequestWizard({
         scheduling_preference: time,
         scheduled_date: date ? format(date, 'yyyy-MM-dd') : null,
         scheduled_slot: slot,
+        timezone,
+        meeting_format: meetingFormat,
         full_name: name.trim(),
         email: email.trim(),
         company: company.trim() || null,
