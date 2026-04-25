@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Star, Quote } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 import { supabase } from '@/integrations/supabase/client';
+import { withCacheBust } from '@/lib/cacheBust';
 import logoSaudiPetro from '@/assets/clients/saudi-petrochemical.png';
 import logoRiyadhBank from '@/assets/clients/riyadh-bank.png';
 import logoGccRetail from '@/assets/clients/gcc-retail.png';
