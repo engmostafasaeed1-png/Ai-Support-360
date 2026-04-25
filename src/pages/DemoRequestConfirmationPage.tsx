@@ -2,9 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 import {
   ArrowLeft, Calendar, Check, Clock, Loader2, Mail, Phone, Sparkles, AlertCircle,
-  Globe, Video, Users,
+  Globe, Video, Users, CalendarClock, Plus, X, RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +18,8 @@ import { cn } from '@/lib/utils';
  * `get_demo_request_by_token` SECURITY DEFINER function. Anyone with
  * the link can view, but the token is single-row scoped.
  */
+
+type ProposedSlot = { date: string; time: string };
 
 type DemoRequest = {
   id: string;
@@ -27,8 +33,11 @@ type DemoRequest = {
   email: string;
   company: string | null;
   notes: string | null;
-  status: 'received' | 'contacted' | 'scheduled' | 'completed' | 'cancelled';
+  status: 'received' | 'contacted' | 'scheduled' | 'rescheduling' | 'completed' | 'cancelled';
   status_note: string | null;
+  proposed_slots: ProposedSlot[] | null;
+  reschedule_reason: string | null;
+  reschedule_requested_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -49,12 +58,13 @@ const scheduleLabel: Record<DemoRequest['scheduling_preference'], string> = {
 
 const statusOrder: DemoRequest['status'][] = ['received', 'contacted', 'scheduled', 'completed'];
 
-const statusMeta: Record<DemoRequest['status'], { label: string; description: string; tone: 'progress' | 'done' | 'cancelled' }> = {
-  received:  { label: 'Request received',          description: 'Our team will reach out within one business hour.', tone: 'progress' },
-  contacted: { label: 'A specialist is in touch',  description: 'Check your inbox — we\u2019re coordinating a time.', tone: 'progress' },
-  scheduled: { label: 'Demo scheduled',            description: 'A calendar invite has been sent to your email.',     tone: 'progress' },
-  completed: { label: 'Demo completed',            description: 'Thanks for your time — we\u2019ll follow up shortly.', tone: 'done' },
-  cancelled: { label: 'Demo cancelled',            description: 'This request was cancelled. Submit a new one anytime.', tone: 'cancelled' },
+const statusMeta: Record<DemoRequest['status'], { label: string; description: string; tone: 'progress' | 'done' | 'cancelled' | 'attention' }> = {
+  received:     { label: 'Request received',         description: 'Our team will reach out within one business hour.', tone: 'progress' },
+  contacted:    { label: 'A specialist is in touch', description: 'Check your inbox — we\u2019re coordinating a time.', tone: 'progress' },
+  scheduled:    { label: 'Demo scheduled',           description: 'A calendar invite has been sent to your email.',     tone: 'progress' },
+  rescheduling: { label: 'Rescheduling requested',   description: 'Your proposed slots are with our team — we\u2019ll confirm shortly.', tone: 'attention' },
+  completed:    { label: 'Demo completed',           description: 'Thanks for your time — we\u2019ll follow up shortly.', tone: 'done' },
+  cancelled:    { label: 'Demo cancelled',           description: 'This request was cancelled. Submit a new one anytime.', tone: 'cancelled' },
 };
 
 export default function DemoRequestConfirmationPage() {
@@ -63,23 +73,27 @@ export default function DemoRequestConfirmationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const refetch = async () => {
+    if (!token) return;
+    const { data, error } = await supabase.rpc('get_demo_request_by_token', { _token: token });
+    if (error) { setError(error.message); return; }
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+      setError('We couldn\u2019t find a demo request for this link.');
+      return;
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    setData(row as unknown as DemoRequest);
+  };
+
   useEffect(() => {
     let active = true;
     (async () => {
       if (!token) { setError('Missing request token.'); setLoading(false); return; }
-      const { data, error } = await supabase.rpc('get_demo_request_by_token', { _token: token });
-      if (!active) return;
-      if (error) {
-        setError(error.message);
-      } else if (!data || (Array.isArray(data) && data.length === 0)) {
-        setError('We couldn\u2019t find a demo request for this link.');
-      } else {
-        const row = Array.isArray(data) ? data[0] : data;
-        setData(row as DemoRequest);
-      }
-      setLoading(false);
+      await refetch();
+      if (active) setLoading(false);
     })();
     return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   return (
@@ -116,7 +130,7 @@ export default function DemoRequestConfirmationPage() {
               </div>
             </div>
           ) : (
-            <ConfirmationCard data={data} />
+            <ConfirmationCard data={data} token={token!} onChanged={refetch} />
           )}
         </div>
       </div>
@@ -124,10 +138,12 @@ export default function DemoRequestConfirmationPage() {
   );
 }
 
-function ConfirmationCard({ data }: { data: DemoRequest }) {
+function ConfirmationCard({ data, token, onChanged }: { data: DemoRequest; token: string; onChanged: () => Promise<void> }) {
   const meta = statusMeta[data.status];
   const created = new Date(data.created_at);
   const updated = new Date(data.updated_at);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const canReschedule = ['received', 'contacted', 'scheduled', 'rescheduling'].includes(data.status);
 
   return (
     <div className="rounded-3xl border border-border/50 bg-card/80 backdrop-blur-xl shadow-2xl shadow-primary/5 overflow-hidden">
@@ -158,6 +174,14 @@ function ConfirmationCard({ data }: { data: DemoRequest }) {
             <span className="font-semibold">Cancelled</span>
             {data.status_note && <p className="text-xs text-muted-foreground mt-1">{data.status_note}</p>}
           </div>
+        ) : data.status === 'rescheduling' ? (
+          <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-foreground">
+            <div className="flex items-center gap-2 font-semibold">
+              <CalendarClock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              Rescheduling — awaiting confirmation
+            </div>
+            {data.status_note && <p className="text-xs text-muted-foreground mt-1.5">{data.status_note}</p>}
+          </div>
         ) : (
           <ol className="flex items-center gap-2">
             {statusOrder.map((s, i) => {
@@ -186,10 +210,33 @@ function ConfirmationCard({ data }: { data: DemoRequest }) {
             })}
           </ol>
         )}
-        {data.status_note && data.status !== 'cancelled' && (
+        {data.status_note && data.status !== 'cancelled' && data.status !== 'rescheduling' && (
           <p className="text-xs text-muted-foreground mt-4 italic">Note from our team: {data.status_note}</p>
         )}
       </div>
+
+      {/* Proposed slots (when rescheduling) */}
+      {data.status === 'rescheduling' && data.proposed_slots && data.proposed_slots.length > 0 && (
+        <div className="px-7 md:px-10 py-6 border-b border-border/40 bg-amber-500/5">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
+            Your proposed slots
+          </div>
+          <ul className="space-y-2">
+            {data.proposed_slots.map((s, i) => (
+              <li key={i} className="flex items-center gap-2 text-sm text-foreground">
+                <CalendarClock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span className="font-medium">
+                  {new Date(s.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                </span>
+                <span className="text-muted-foreground">· {s.time}</span>
+              </li>
+            ))}
+          </ul>
+          {data.reschedule_reason && (
+            <p className="text-xs text-muted-foreground mt-3 italic">"{data.reschedule_reason}"</p>
+          )}
+        </div>
+      )}
 
       {/* Details */}
       <dl className="px-7 md:px-10 py-7 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
@@ -230,6 +277,33 @@ function ConfirmationCard({ data }: { data: DemoRequest }) {
         )}
       </dl>
 
+      {/* Reschedule panel */}
+      {canReschedule && (
+        <div className="px-7 md:px-10 pb-7">
+          {!showReschedule ? (
+            <Button
+              variant="outline"
+              onClick={() => setShowReschedule(true)}
+              className="rounded-xl gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              {data.status === 'rescheduling' ? 'Update proposed slots' : 'Request a reschedule'}
+            </Button>
+          ) : (
+            <RescheduleForm
+              token={token}
+              initialReason={data.reschedule_reason ?? ''}
+              initialSlots={data.proposed_slots ?? []}
+              onCancel={() => setShowReschedule(false)}
+              onSuccess={async () => {
+                setShowReschedule(false);
+                await onChanged();
+              }}
+            />
+          )}
+        </div>
+      )}
+
       {/* Footer actions */}
       <div className="px-7 md:px-10 py-5 border-t border-border/40 bg-muted/20 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
@@ -237,6 +311,143 @@ function ConfirmationCard({ data }: { data: DemoRequest }) {
         </p>
         <Button asChild variant="outline" className="rounded-xl">
           <Link to="/">Back to home</Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function RescheduleForm({
+  token, initialReason, initialSlots, onCancel, onSuccess,
+}: {
+  token: string;
+  initialReason: string;
+  initialSlots: ProposedSlot[];
+  onCancel: () => void;
+  onSuccess: () => Promise<void>;
+}) {
+  const [slots, setSlots] = useState<ProposedSlot[]>(
+    initialSlots.length > 0 ? initialSlots : [{ date: '', time: '' }]
+  );
+  const [reason, setReason] = useState(initialReason);
+  const [submitting, setSubmitting] = useState(false);
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const addSlot = () => {
+    if (slots.length >= 5) return;
+    setSlots([...slots, { date: '', time: '' }]);
+  };
+  const removeSlot = (i: number) => {
+    setSlots(slots.filter((_, idx) => idx !== i));
+  };
+  const updateSlot = (i: number, patch: Partial<ProposedSlot>) => {
+    setSlots(slots.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
+  };
+
+  const handleSubmit = async () => {
+    const valid = slots.filter(s => s.date && s.time);
+    if (valid.length === 0) {
+      toast.error('Add at least one date and time');
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.rpc('request_demo_reschedule', {
+      _token: token,
+      _proposed_slots: valid as unknown as never,
+      _reason: reason.trim() || null,
+    });
+    setSubmitting(false);
+    if (error) {
+      toast.error(error.message || 'Could not submit reschedule request');
+      return;
+    }
+    toast.success('Reschedule request sent — we\u2019ll confirm shortly.');
+    await onSuccess();
+  };
+
+  return (
+    <div className="rounded-2xl border border-border/50 bg-muted/20 p-5 md:p-6 space-y-5">
+      <div>
+        <h3 className="font-bold text-foreground flex items-center gap-2">
+          <CalendarClock className="w-4 h-4 text-primary" />
+          Propose new time slots
+        </h3>
+        <p className="text-xs text-muted-foreground mt-1">
+          Add up to 5 options that work for you. We\u2019ll lock in one and confirm via email.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {slots.map((slot, i) => (
+          <div key={i} className="flex items-end gap-2">
+            <div className="flex-1 grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor={`d-${i}`} className="text-[10px] uppercase tracking-wider text-muted-foreground">Date</Label>
+                <Input
+                  id={`d-${i}`}
+                  type="date"
+                  min={today}
+                  value={slot.date}
+                  onChange={(e) => updateSlot(i, { date: e.target.value })}
+                  className="rounded-lg"
+                />
+              </div>
+              <div>
+                <Label htmlFor={`t-${i}`} className="text-[10px] uppercase tracking-wider text-muted-foreground">Time</Label>
+                <Input
+                  id={`t-${i}`}
+                  type="time"
+                  value={slot.time}
+                  onChange={(e) => updateSlot(i, { time: e.target.value })}
+                  className="rounded-lg"
+                />
+              </div>
+            </div>
+            {slots.length > 1 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => removeSlot(i)}
+                className="shrink-0 text-muted-foreground hover:text-destructive"
+                aria-label="Remove slot"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {slots.length < 5 && (
+        <Button type="button" variant="ghost" size="sm" onClick={addSlot} className="gap-1.5">
+          <Plus className="w-3.5 h-3.5" /> Add another option
+        </Button>
+      )}
+
+      <div>
+        <Label htmlFor="reason" className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          Reason (optional)
+        </Label>
+        <Textarea
+          id="reason"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="e.g. Schedule conflict — these times work better."
+          maxLength={500}
+          rows={2}
+          className="rounded-lg resize-none"
+        />
+      </div>
+
+      <div className="flex flex-wrap gap-2 justify-end pt-1">
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
+          Cancel
+        </Button>
+        <Button type="button" onClick={handleSubmit} disabled={submitting} className="rounded-xl gap-2">
+          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          Submit reschedule
         </Button>
       </div>
     </div>
