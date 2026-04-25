@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Check, Sparkles } from 'lucide-react';
 import SectionHeader from './SectionHeader';
+import { useDemoWizard } from './DemoRequestWizard';
 
 const plans = [
   {
