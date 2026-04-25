@@ -461,7 +461,7 @@ function RescheduleForm({
         <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
           Cancel
         </Button>
-        <Button type="button" onClick={handleSubmit} disabled={submitting} className="rounded-xl gap-2">
+        <Button type="button" onClick={handleSubmit} disabled={submitting || slotErrors.some((e) => e !== null)} className="rounded-xl gap-2">
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
           Submit reschedule
         </Button>
