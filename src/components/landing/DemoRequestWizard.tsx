@@ -583,7 +583,6 @@ function ScheduleStep({
     </div>
   );
 }
-}
 
 function DetailsStep({
   name, setName, email, setEmail, company, setCompany, notes, setNotes,
