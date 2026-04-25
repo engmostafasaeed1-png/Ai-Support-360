@@ -87,11 +87,32 @@ export default function ClientTestimonialsManager() {
 
   async function saveItem(item: Testimonial) {
     setSavingId(item.id);
-    const { id, ...rest } = item;
-    const { error } = await supabase.from('client_testimonials').update(rest).eq('id', id);
+    // Strip moderation timestamps — those are owned by the trigger.
+    const { id, status, submitted_at, published_at, rejected_reason, ...rest } = item;
+    const { data, error } = await supabase
+      .from('client_testimonials')
+      .update(rest)
+      .eq('id', id)
+      .select()
+      .single();
     setSavingId(null);
-    if (error) toast.error('Save failed', { description: error.message });
-    else toast.success('Testimonial saved');
+    if (error) {
+      toast.error('Save failed', { description: error.message });
+      return;
+    }
+    // Re-sync from the server so we pick up any status flip the trigger
+    // applied (e.g. published → pending_review when an admin edits).
+    if (data) {
+      patchItem(id, data as Partial<Testimonial>);
+      const newStatus = (data as Testimonial).status;
+      if (newStatus === 'pending_review' && status === 'published') {
+        toast.info('Saved — sent back for review', {
+          description: 'Edits to a published testimonial require super-admin approval.',
+        });
+      } else {
+        toast.success('Testimonial saved');
+      }
+    }
   }
 
   async function createItem() {
@@ -107,6 +128,7 @@ export default function ClientTestimonialsManager() {
         accent: 'from-cyan-500 to-blue-600',
         display_order: (items.at(-1)?.display_order ?? 0) + 1,
         is_active: false,
+        status: 'draft',
       })
       .select()
       .single();
@@ -116,7 +138,7 @@ export default function ClientTestimonialsManager() {
       return;
     }
     setItems((prev) => [...prev, data as Testimonial]);
-    toast.success('Testimonial created');
+    toast.success('Testimonial created', { description: 'Saved as draft.' });
   }
 
   async function deleteItem(item: Testimonial) {
@@ -124,6 +146,43 @@ export default function ClientTestimonialsManager() {
     if (error) { toast.error('Delete failed', { description: error.message }); return; }
     setItems((prev) => prev.filter((i) => i.id !== item.id));
     toast.success('Deleted');
+  }
+
+  // ── Moderation actions ────────────────────────────────────────────────
+  async function setStatus(item: Testimonial, status: TestimonialStatus, extra: Partial<Testimonial> = {}) {
+    const { data, error } = await supabase
+      .from('client_testimonials')
+      .update({ status, ...extra })
+      .eq('id', item.id)
+      .select()
+      .single();
+    if (error) {
+      toast.error('Could not update status', { description: error.message });
+      return;
+    }
+    if (data) patchItem(item.id, data as Partial<Testimonial>);
+  }
+
+  async function submitForReview(item: Testimonial) {
+    await setStatus(item, 'pending_review');
+    toast.success('Submitted for review', {
+      description: 'A super admin will approve this before it goes live.',
+    });
+  }
+
+  async function approveAndPublish(item: Testimonial) {
+    await setStatus(item, 'published', { rejected_reason: null });
+    toast.success('Published', { description: 'This testimonial is now live.' });
+  }
+
+  async function unpublish(item: Testimonial) {
+    await setStatus(item, 'draft');
+    toast.success('Unpublished', { description: 'Hidden from the public landing page.' });
+  }
+
+  async function reject(item: Testimonial, reason: string) {
+    await setStatus(item, 'draft', { rejected_reason: reason || 'Sent back for changes.' });
+    toast.success('Sent back to draft', { description: 'The author will see your note.' });
   }
 
   function pickFileFor(id: string) {
