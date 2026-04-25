@@ -36,6 +36,7 @@ const plans = [
 
 export default function PricingSection() {
   const { t } = useTranslation();
+  const demoWizard = useDemoWizard();
 
   return (
     <section id="pricing" className="relative py-24 md:py-32 bg-muted/30 overflow-hidden">
