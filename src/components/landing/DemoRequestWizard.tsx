@@ -540,7 +540,7 @@ function SuccessPanel({
             <span className="text-muted-foreground/60">·</span>
           </>
         )}
-        <Calendar className="w-3.5 h-3.5 text-primary" />
+        <CalendarIcon className="w-3.5 h-3.5 text-primary" />
         <span className="text-foreground">{timeLabel}</span>
       </div>
     </div>
