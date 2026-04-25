@@ -371,18 +371,21 @@ export default function ValueDifferentiationSection() {
                     }`}
                   >
                     {/* Capability + the "how" sentence underneath */}
-                    <div className="space-y-1.5">
-                      <div className="text-sm md:text-base text-foreground/90 font-semibold leading-snug">
-                        {row.feature}
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex items-start gap-2">
+                        <div className="text-sm md:text-base text-foreground/90 font-semibold leading-snug flex-1">
+                          {row.feature}
+                        </div>
+                        <LearnMorePopover row={row} />
                       </div>
                       {row.usDetail && (
-                        <div className="text-[11px] md:text-xs text-muted-foreground leading-relaxed">
+                        <div className="hidden md:block text-[11px] md:text-xs text-muted-foreground leading-relaxed">
                           <span className="text-primary/80 font-semibold">Us: </span>
                           {row.usDetail}
                         </div>
                       )}
                       {row.themDetail && (
-                        <div className="text-[11px] md:text-xs text-muted-foreground/70 leading-relaxed">
+                        <div className="hidden md:block text-[11px] md:text-xs text-muted-foreground/70 leading-relaxed">
                           <span className="font-semibold text-muted-foreground">Them: </span>
                           {row.themDetail}
                         </div>
