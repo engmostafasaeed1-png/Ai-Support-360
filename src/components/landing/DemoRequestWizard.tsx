@@ -331,7 +331,10 @@ function DemoRequestWizard({
         {/* Body */}
         <div className="px-6 md:px-8 py-6 max-h-[60vh] overflow-y-auto">
           {submitted ? (
-            <SuccessPanel selectedType={selectedType} time={time} email={email} date={date} slot={slot} />
+            <SuccessPanel
+              selectedType={selectedType} time={time} email={email}
+              date={date} slot={slot} timezone={timezone} meetingFormat={meetingFormat}
+            />
           ) : step === 0 ? (
             <DemoTypeStep value={type} onChange={setType} />
           ) : step === 1 ? (
@@ -339,6 +342,8 @@ function DemoRequestWizard({
               value={time} onChange={setTime}
               date={date} onDateChange={setDate}
               slot={slot} onSlotChange={setSlot}
+              timezone={timezone} onTimezoneChange={setTimezone}
+              meetingFormat={meetingFormat} onMeetingFormatChange={setMeetingFormat}
             />
           ) : (
             <DetailsStep
