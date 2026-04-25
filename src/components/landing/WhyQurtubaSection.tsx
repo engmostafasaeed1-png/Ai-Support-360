@@ -62,7 +62,7 @@ export default function WhyQurtubaSection() {
   }));
 
   return (
-    <section className="py-20 md:py-32 bg-background relative overflow-hidden">
+    <section id="about" className="py-20 md:py-32 bg-background relative overflow-hidden">
       {/* Decorative mesh background — animation only when motion is allowed */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] motion-safe:animate-mesh-shift" />
