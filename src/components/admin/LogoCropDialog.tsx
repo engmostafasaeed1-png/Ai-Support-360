@@ -1,9 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Cropper, { type Area } from 'react-easy-crop';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type Props = {
   /** Object URL or data URL of the source image to crop. */
@@ -14,9 +15,17 @@ type Props = {
   onConfirm: (blob: Blob) => Promise<void> | void;
 };
 
+/** Server-side limit (mirrored from the validate-client-logo edge function). */
+const MAX_BYTES = 2 * 1024 * 1024; // 2 MiB
+
 /**
  * Square (1:1) image cropper used by the admin to prepare client logos
  * before upload. Outputs a 512×512 PNG with transparency preserved.
+ *
+ * Includes a live size indicator: after each crop change we re-encode
+ * the cropped PNG to measure its size, and disable the confirm button
+ * if it exceeds the 2 MB server-side limit. This avoids a round-trip
+ * just to be told the file is too big.
  */
 export default function LogoCropDialog({ imageSrc, open, onCancel, onConfirm }: Props) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -24,15 +33,64 @@ export default function LogoCropDialog({ imageSrc, open, onCancel, onConfirm }: 
   const [pixels, setPixels] = useState<Area | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // Live size measurement of the encoded PNG.
+  const [sizeBytes, setSizeBytes] = useState<number | null>(null);
+  const [measuring, setMeasuring] = useState(false);
+  // Cache the most recently encoded blob so confirm doesn't re-encode.
+  const lastBlobRef = useRef<Blob | null>(null);
+  const lastSigRef = useRef<string | null>(null);
+
+  // Reset transient state whenever a new image is loaded or dialog closes.
+  useEffect(() => {
+    if (!open) {
+      setSizeBytes(null);
+      setMeasuring(false);
+      lastBlobRef.current = null;
+      lastSigRef.current = null;
+      setPixels(null);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+    }
+  }, [open, imageSrc]);
+
   const handleCropComplete = useCallback((_: Area, areaPixels: Area) => {
     setPixels(areaPixels);
   }, []);
+
+  // Debounced re-encode after the user stops dragging/zooming.
+  useEffect(() => {
+    if (!open || !imageSrc || !pixels) return;
+    const sig = `${pixels.x}|${pixels.y}|${pixels.width}|${pixels.height}`;
+    if (sig === lastSigRef.current) return;
+
+    let cancelled = false;
+    setMeasuring(true);
+    const t = window.setTimeout(async () => {
+      try {
+        const blob = await cropToBlob(imageSrc, pixels);
+        if (cancelled) return;
+        lastBlobRef.current = blob;
+        lastSigRef.current = sig;
+        setSizeBytes(blob.size);
+      } catch {
+        if (!cancelled) setSizeBytes(null);
+      } finally {
+        if (!cancelled) setMeasuring(false);
+      }
+    }, 250);
+
+    return () => { cancelled = true; window.clearTimeout(t); };
+  }, [open, imageSrc, pixels]);
+
+  const overLimit = sizeBytes !== null && sizeBytes > MAX_BYTES;
+  const canConfirm = !!pixels && !busy && !measuring && !overLimit && sizeBytes !== null;
 
   const handleConfirm = async () => {
     if (!imageSrc || !pixels) return;
     setBusy(true);
     try {
-      const blob = await cropToBlob(imageSrc, pixels);
+      // Reuse the cached blob from the size check when possible.
+      const blob = lastBlobRef.current ?? (await cropToBlob(imageSrc, pixels));
       await onConfirm(blob);
     } finally {
       setBusy(false);
@@ -50,7 +108,7 @@ export default function LogoCropDialog({ imageSrc, open, onCancel, onConfirm }: 
         <DialogHeader>
           <DialogTitle>Crop logo</DialogTitle>
           <DialogDescription>
-            Adjust the square crop. The logo will be saved as a transparent 512×512 PNG.
+            Adjust the square crop. The logo will be saved as a transparent 512×512 PNG (max 2 MB).
           </DialogDescription>
         </DialogHeader>
 
@@ -82,18 +140,75 @@ export default function LogoCropDialog({ imageSrc, open, onCancel, onConfirm }: 
           />
         </div>
 
+        <SizeIndicator
+          bytes={sizeBytes}
+          measuring={measuring}
+          overLimit={overLimit}
+        />
+
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onCancel} disabled={busy}>
             Cancel
           </Button>
-          <Button onClick={handleConfirm} disabled={busy || !pixels}>
+          <Button onClick={handleConfirm} disabled={!canConfirm}>
             {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Save crop
+            {overLimit ? 'Too large' : 'Save crop'}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+}
+
+/**
+ * Inline indicator that shows the current encoded PNG size relative to
+ * the 2 MB cap. Turns destructive when the limit is exceeded.
+ */
+function SizeIndicator({
+  bytes, measuring, overLimit,
+}: { bytes: number | null; measuring: boolean; overLimit: boolean }) {
+  const pct = bytes ? Math.min(100, Math.round((bytes / MAX_BYTES) * 100)) : 0;
+
+  return (
+    <div className="space-y-1.5" aria-live="polite">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-muted-foreground flex items-center gap-1.5">
+          {measuring ? (
+            <><Loader2 className="w-3 h-3 animate-spin" /> Measuring file size…</>
+          ) : overLimit ? (
+            <><AlertTriangle className="w-3 h-3 text-destructive" /> Exceeds 2 MB limit</>
+          ) : bytes !== null ? (
+            <><CheckCircle2 className="w-3 h-3 text-emerald-500" /> Within 2 MB limit</>
+          ) : (
+            'File size'
+          )}
+        </span>
+        <span className={cn('font-mono tabular-nums', overLimit ? 'text-destructive font-semibold' : 'text-muted-foreground')}>
+          {bytes !== null ? `${formatBytes(bytes)} / 2.0 MB` : '—'}
+        </span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+        <div
+          className={cn(
+            'h-full rounded-full transition-all',
+            overLimit ? 'bg-destructive' : pct > 80 ? 'bg-amber-500' : 'bg-primary',
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {overLimit && (
+        <p className="text-[11px] text-destructive">
+          Try a tighter crop or a simpler logo. Photos with gradients re-encode larger than flat vector marks.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function formatBytes(b: number): string {
+  if (b < 1024) return `${b} B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+  return `${(b / (1024 * 1024)).toFixed(2)} MB`;
 }
 
 /**
