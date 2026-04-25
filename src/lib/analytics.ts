@@ -82,4 +82,16 @@ export const demoFunnel = {
     track('demo_request_submit_success', props),
   submitError: (message: string) =>
     track('demo_request_submit_error', { message }),
+  // Reschedule funnel — fired from the public confirmation page so we can
+  // measure: opens → submits → successes (i.e. reschedule conversion rate).
+  rescheduleOpen: (props: AnalyticsProps = {}) =>
+    track('demo_reschedule_open', props),
+  rescheduleSubmitAttempt: (props: AnalyticsProps = {}) =>
+    track('demo_reschedule_submit_attempt', props),
+  rescheduleSubmitSuccess: (props: AnalyticsProps = {}) =>
+    track('demo_reschedule_submit_success', props),
+  rescheduleSubmitError: (message: string, props: AnalyticsProps = {}) =>
+    track('demo_reschedule_submit_error', { message, ...props }),
+  rescheduleCancel: (props: AnalyticsProps = {}) =>
+    track('demo_reschedule_cancel', props),
 };
