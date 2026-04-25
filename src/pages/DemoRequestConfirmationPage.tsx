@@ -18,6 +18,8 @@ type DemoRequest = {
   id: string;
   demo_type: 'live' | 'ai-triage' | 'pricing-roi' | 'module-deep-dive';
   scheduling_preference: 'asap' | 'this-week' | 'next-week' | 'flexible';
+  scheduled_date: string | null;
+  scheduled_slot: string | null;
   full_name: string;
   email: string;
   company: string | null;
