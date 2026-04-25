@@ -14,6 +14,7 @@ import introConsultant from '@/assets/intro-consultant.jpg';
 export default function HeroSection() {
   const { t } = useTranslation();
   const [exploreOpen, setExploreOpen] = useState(false);
+  const demoWizard = useDemoWizard();
 
   const stats = [
     { value: '500+', label: t('hero.stat_consultants'), icon: Users },
