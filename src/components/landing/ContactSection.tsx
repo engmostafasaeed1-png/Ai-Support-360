@@ -84,7 +84,7 @@ export default function ContactSection() {
                 type="button"
                 variant="outline"
                 size="lg"
-                onClick={() => demoWizard.open()}
+                onClick={() => demoWizard.open(undefined, { source: 'contact-section' })}
                 className="w-full h-12 rounded-2xl font-semibold border-primary/30 hover:border-primary/60 hover:bg-primary/5"
               >
                 <CalendarPlus size={16} className="me-2" aria-hidden="true" />
