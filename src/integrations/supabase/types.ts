@@ -1238,7 +1238,10 @@ export type Database = {
           id: string
           meeting_format: string | null
           notes: string | null
+          proposed_slots: Json | null
           request_token: string
+          reschedule_reason: string | null
+          reschedule_requested_at: string | null
           scheduled_date: string | null
           scheduled_slot: string | null
           scheduling_preference: string
@@ -1258,7 +1261,10 @@ export type Database = {
           id?: string
           meeting_format?: string | null
           notes?: string | null
+          proposed_slots?: Json | null
           request_token?: string
+          reschedule_reason?: string | null
+          reschedule_requested_at?: string | null
           scheduled_date?: string | null
           scheduled_slot?: string | null
           scheduling_preference: string
@@ -1278,7 +1284,10 @@ export type Database = {
           id?: string
           meeting_format?: string | null
           notes?: string | null
+          proposed_slots?: Json | null
           request_token?: string
+          reschedule_reason?: string | null
+          reschedule_requested_at?: string | null
           scheduled_date?: string | null
           scheduled_slot?: string | null
           scheduling_preference?: string
@@ -5495,6 +5504,9 @@ export type Database = {
           id: string
           meeting_format: string
           notes: string
+          proposed_slots: Json
+          reschedule_reason: string
+          reschedule_requested_at: string
           scheduled_date: string
           scheduled_slot: string
           scheduling_preference: string
@@ -5555,6 +5567,38 @@ export type Database = {
       is_tenant_member: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
+      }
+      request_demo_reschedule: {
+        Args: { _proposed_slots: Json; _reason?: string; _token: string }
+        Returns: {
+          company: string | null
+          created_at: string
+          demo_type: string
+          email: string
+          full_name: string
+          id: string
+          meeting_format: string | null
+          notes: string | null
+          proposed_slots: Json | null
+          request_token: string
+          reschedule_reason: string | null
+          reschedule_requested_at: string | null
+          scheduled_date: string | null
+          scheduled_slot: string | null
+          scheduling_preference: string
+          source: string | null
+          status: string
+          status_note: string | null
+          timezone: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "demo_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       retry_failed_notification: {
         Args: { _id: string }
