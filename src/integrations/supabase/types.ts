@@ -5458,6 +5458,8 @@ export type Database = {
           full_name: string
           id: string
           notes: string
+          scheduled_date: string
+          scheduled_slot: string
           scheduling_preference: string
           status: string
           status_note: string
