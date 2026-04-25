@@ -471,3 +471,55 @@ function CompareCell({ value, variant }: { value: CompareCellValue; variant: 'us
     </span>
   );
 }
+
+/**
+ * Per-row "Learn more" popover. Works on tap (mobile) and click/keyboard
+ * (desktop) via Radix Popover. Visible on every breakpoint so mobile —
+ * where the inline us/them sentences are hidden to preserve layout — can
+ * still surface the same delivery details on demand.
+ */
+function LearnMorePopover({ row }: { row: CompareRow }) {
+  if (!row.usDetail && !row.themDetail) return null;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Learn more about ${row.feature}`}
+          className="shrink-0 inline-flex items-center gap-1 text-[10px] md:text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 hover:text-primary px-2 py-1 rounded-full border border-border/40 hover:border-primary/40 bg-background/40 hover:bg-primary/5 transition-colors"
+        >
+          <Info size={11} strokeWidth={2.25} aria-hidden="true" />
+          <span className="hidden sm:inline">Learn more</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        side="top"
+        align="end"
+        sideOffset={8}
+        className="w-[min(20rem,calc(100vw-2rem))] p-4 space-y-3 border-border/50 bg-card/95 backdrop-blur-xl"
+      >
+        <div className="text-xs font-bold uppercase tracking-wider text-foreground/90">
+          {row.feature}
+        </div>
+        {row.usDetail && (
+          <div className="text-xs leading-relaxed text-muted-foreground">
+            <span className="text-primary font-semibold">Us: </span>
+            {row.usDetail}
+            {row.usValue && (
+              <span className="ml-1 inline-block text-primary font-bold">({row.usValue})</span>
+            )}
+          </div>
+        )}
+        {row.themDetail && (
+          <div className="text-xs leading-relaxed text-muted-foreground/80">
+            <span className="font-semibold text-muted-foreground">Them: </span>
+            {row.themDetail}
+            {row.themValue && (
+              <span className="ml-1 inline-block text-muted-foreground font-medium">({row.themValue})</span>
+            )}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
