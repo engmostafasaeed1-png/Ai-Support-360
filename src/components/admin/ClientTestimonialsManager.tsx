@@ -70,6 +70,13 @@ export default function ClientTestimonialsManager() {
   // Role detection — drives which moderation actions are available.
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
+  // dnd-kit sensors — pointer for mouse/touch, keyboard for a11y so
+  // admins can reorder rows without a mouse.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
   useEffect(() => {
     fetchAll();
     (async () => {
