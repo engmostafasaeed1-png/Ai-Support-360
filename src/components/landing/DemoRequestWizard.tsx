@@ -6,12 +6,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   ArrowLeft, ArrowRight, Check, Sparkles, BrainCircuit, LineChart, Layers,
-  Calendar, Clock, Send, Loader2, type LucideIcon,
+  Calendar as CalendarIcon, Clock, Send, Loader2, type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
 import { accents, iconPlate, type AccentName } from './tokens';
 
 /* -------------------------------------------------------------------------- */
