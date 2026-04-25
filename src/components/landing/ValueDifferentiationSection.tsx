@@ -291,11 +291,46 @@ export default function ValueDifferentiationSection() {
             <h3 className="text-3xl md:text-4xl font-black text-foreground tracking-tight mt-3">
               Logging problems vs. <span className="text-primary">solving them</span>
             </h3>
+            <p className="text-muted-foreground mt-4 text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
+              The difference isn't a longer feature list — it's <span className="text-foreground font-semibold">how each capability is delivered</span>.
+              Hover any row for the concrete "how" behind the headline.
+            </p>
+          </div>
+
+          {/* Headline metrics — give the reader a magnitude before they
+              read row-level detail. Decorative icons; the value/label
+              text is the source of truth for screen readers. */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-10">
+            {metrics.map(({ Icon, label, value, sub, accent }, i) => (
+              <div
+                key={i}
+                style={{ ['--glow' as string]: accents[accent].glow }}
+                className={`relative ${radius.tile} border border-border/40 bg-card/40 backdrop-blur-xl p-4 md:p-5 overflow-hidden hover:border-primary/40 motion-safe:transition-colors`}
+              >
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 opacity-50"
+                  style={{ background: 'radial-gradient(circle at 0% 0%, rgba(var(--glow),0.18), transparent 60%)' }}
+                />
+                <div className="relative flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-2xl md:text-3xl font-black text-foreground tracking-tight leading-none">{value}</div>
+                    <div className="text-[11px] md:text-xs font-semibold uppercase tracking-wider text-muted-foreground mt-2">{label}</div>
+                    <div className="text-[10px] md:text-[11px] text-muted-foreground/70 mt-1 leading-snug">{sub}</div>
+                  </div>
+                  <div className={iconPlate(accent, 'sm')}>
+                    <Icon size={18} strokeWidth={1.75} absoluteStrokeWidth className="text-white" aria-hidden="true" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="relative rounded-[2rem] border border-border/40 bg-card/30 backdrop-blur-xl overflow-hidden shadow-2xl shadow-primary/5">
-            {/* Highlight column for "us" */}
-            <div className="absolute top-0 bottom-0 left-1/2 md:left-[calc(50%+8%)] w-[28%] md:w-[20%] bg-gradient-to-b from-primary/[0.08] via-primary/[0.04] to-transparent pointer-events-none" />
+            {/* Highlight column for "us" — widened slightly so it lands
+                under the column on every breakpoint without leaking
+                onto the "Theirs" column. */}
+            <div className="absolute top-0 bottom-0 left-1/2 md:left-[calc(50%+10%)] w-[28%] md:w-[22%] bg-gradient-to-b from-primary/[0.08] via-primary/[0.04] to-transparent pointer-events-none" />
 
             {/* Header */}
             <div className="relative grid grid-cols-[1fr_auto_auto] md:grid-cols-[2fr_1fr_1fr] gap-4 md:gap-8 px-6 md:px-10 py-6 border-b border-border/40">
@@ -312,52 +347,74 @@ export default function ValueDifferentiationSection() {
               </div>
             </div>
 
-            {/* Rows */}
-            {comparison.map((row, i) => (
-              <div
-                key={i}
-                className={`relative grid grid-cols-[1fr_auto_auto] md:grid-cols-[2fr_1fr_1fr] gap-4 md:gap-8 px-6 md:px-10 py-5 items-center group hover:bg-muted/10 transition-colors ${
-                  i !== comparison.length - 1 ? 'border-b border-border/20' : ''
-                }`}
-              >
-                <span className="text-sm md:text-base text-foreground/90 font-medium">{row.feature}</span>
-
-                {/* Us */}
-                <div className="flex justify-center">
-                  {row.us ? (
-                    <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-110 motion-safe:group-hover:-rotate-6">
-                      <div aria-hidden="true" className="absolute inset-0 rounded-2xl bg-primary/40 blur-lg -z-10" />
-                      <Check size={18} strokeWidth={3} absoluteStrokeWidth className="relative text-primary-foreground" aria-label="Included" />
-                    </div>
-                  ) : (
-                    <div className="w-10 h-10 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/50">
-                      <X size={18} strokeWidth={2.25} absoluteStrokeWidth aria-label="Not included" />
+            {/* Grouped rows. We render a tiny category header before
+                the first row of each group so the table reads like
+                chapters rather than a flat checklist. */}
+            {comparison.map((row, i) => {
+              const prev = comparison[i - 1];
+              const newGroup = !prev || prev.category !== row.category;
+              const isLast = i === comparison.length - 1;
+              return (
+                <div key={i}>
+                  {newGroup && (
+                    <div className="relative px-6 md:px-10 pt-6 pb-2">
+                      <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary/70">
+                        <span className="h-px w-6 bg-primary/40" />
+                        {row.category}
+                      </span>
                     </div>
                   )}
-                </div>
+                  <div
+                    className={`relative grid grid-cols-[1fr_auto_auto] md:grid-cols-[2fr_1fr_1fr] gap-4 md:gap-8 px-6 md:px-10 py-5 items-start group hover:bg-muted/10 transition-colors ${
+                      !isLast ? 'border-b border-border/20' : ''
+                    }`}
+                  >
+                    {/* Capability + the "how" sentence underneath */}
+                    <div className="space-y-1.5">
+                      <div className="text-sm md:text-base text-foreground/90 font-semibold leading-snug">
+                        {row.feature}
+                      </div>
+                      {row.usDetail && (
+                        <div className="text-[11px] md:text-xs text-muted-foreground leading-relaxed">
+                          <span className="text-primary/80 font-semibold">Us: </span>
+                          {row.usDetail}
+                        </div>
+                      )}
+                      {row.themDetail && (
+                        <div className="text-[11px] md:text-xs text-muted-foreground/70 leading-relaxed">
+                          <span className="font-semibold text-muted-foreground">Them: </span>
+                          {row.themDetail}
+                        </div>
+                      )}
+                    </div>
 
-                {/* Them */}
-                <div className="flex justify-center min-w-[90px]">
-                  {row.them === true ? (
-                    <div className="w-10 h-10 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/55">
-                      <Check size={18} strokeWidth={2.5} absoluteStrokeWidth aria-label="Included" />
+                    {/* Us cell */}
+                    <div className="flex flex-col items-center gap-1.5 self-start">
+                      <CompareCell value={row.us} variant="us" />
+                      {row.usValue && (
+                        <span className="text-[11px] font-bold text-primary tracking-tight whitespace-nowrap">
+                          {row.usValue}
+                        </span>
+                      )}
                     </div>
-                  ) : row.them === false ? (
-                    <div className="w-10 h-10 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/45">
-                      <X size={18} strokeWidth={2.25} absoluteStrokeWidth aria-label="Not included" />
+
+                    {/* Them cell */}
+                    <div className="flex flex-col items-center gap-1.5 min-w-[90px] self-start">
+                      <CompareCell value={row.them} variant="them" />
+                      {row.themValue && (
+                        <span className="text-[11px] font-medium text-muted-foreground/80 tracking-tight whitespace-nowrap">
+                          {row.themValue}
+                        </span>
+                      )}
                     </div>
-                  ) : (
-                    <span className="text-xs font-medium text-muted-foreground/70 italic px-3 py-1 rounded-full bg-muted/40 border border-border/40">
-                      {row.them}
-                    </span>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <p className="text-center text-xs text-muted-foreground/60 mt-6 italic">
-            Comparison based on common features of generic IT helpdesk and ticketing platforms.
+            Comparison based on common features of generic IT helpdesk and ticketing platforms. Metrics are observed averages, not contractual SLAs.
           </p>
         </div>
       </div>
