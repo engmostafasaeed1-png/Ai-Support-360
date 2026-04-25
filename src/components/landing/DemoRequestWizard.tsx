@@ -768,13 +768,15 @@ function DetailsStep({
 }
 
 function SuccessPanel({
-  selectedType, time, email, date, slot,
+  selectedType, time, email, date, slot, timezone, meetingFormat,
 }: {
   selectedType: DemoType | null;
   time: TimePref | null;
   email: string;
   date: Date | undefined;
   slot: string | null;
+  timezone: string;
+  meetingFormat: MeetingFormat;
 }) {
   const timeLabel = timePrefs.find((p) => p.id === time)?.label ?? '—';
   // Prefer the exact slot when present — it's more reassuring than a
@@ -782,13 +784,15 @@ function SuccessPanel({
   const scheduleLine = date && slot
     ? `${format(date, 'EEE, MMM d')} at ${slot}`
     : timeLabel;
+  const tzLabel = TIMEZONES.find((t) => t.value === timezone)?.label ?? timezone;
+  const fmt = MEETING_FORMATS.find((f) => f.id === meetingFormat);
   return (
     <div className="text-center py-4">
       <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-2xl shadow-primary/30 mb-5">
         <Check className="w-8 h-8 text-primary-foreground" strokeWidth={3} />
       </div>
       <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-        We\u2019ll send a confirmation to <span className="text-foreground font-semibold">{email}</span> shortly.
+        We&rsquo;ll send a confirmation to <span className="text-foreground font-semibold">{email}</span> shortly.
       </p>
       <div className="mt-5 inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2 rounded-full border border-border/50 bg-muted/30 text-xs">
         {selectedType && (
@@ -800,6 +804,16 @@ function SuccessPanel({
         )}
         <CalendarIcon className="w-3.5 h-3.5 text-primary" />
         <span className="text-foreground">{scheduleLine}</span>
+      </div>
+      <div className="mt-2 inline-flex flex-wrap items-center justify-center gap-3 text-[11px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <Globe className="w-3 h-3" /> {tzLabel}
+        </span>
+        {fmt && (
+          <span className="inline-flex items-center gap-1.5">
+            <fmt.Icon className="w-3 h-3" /> {fmt.label}
+          </span>
+        )}
       </div>
     </div>
   );
