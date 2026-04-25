@@ -217,25 +217,11 @@ function ConfirmationCard({ data, token, onChanged }: { data: DemoRequest; token
 
       {/* Proposed slots (when rescheduling) */}
       {data.status === 'rescheduling' && data.proposed_slots && data.proposed_slots.length > 0 && (
-        <div className="px-7 md:px-10 py-6 border-b border-border/40 bg-amber-500/5">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
-            Your proposed slots
-          </div>
-          <ul className="space-y-2">
-            {data.proposed_slots.map((s, i) => (
-              <li key={i} className="flex items-center gap-2 text-sm text-foreground">
-                <CalendarClock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span className="font-medium">
-                  {new Date(s.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                </span>
-                <span className="text-muted-foreground">· {s.time}</span>
-              </li>
-            ))}
-          </ul>
-          {data.reschedule_reason && (
-            <p className="text-xs text-muted-foreground mt-3 italic">"{data.reschedule_reason}"</p>
-          )}
-        </div>
+        <ProposedSlotsTimeline
+          slots={data.proposed_slots}
+          timezone={data.timezone}
+          reason={data.reschedule_reason}
+        />
       )}
 
       {/* Details */}
@@ -333,6 +319,14 @@ function RescheduleForm({
   const [submitting, setSubmitting] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
+  const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const slotErrors = slots.map((s) => {
+    if (!s.date || !s.time) return null;
+    const dt = new Date(`${s.date}T${s.time}`);
+    if (isNaN(dt.getTime())) return 'Invalid date/time';
+    if (dt.getTime() <= Date.now()) return 'Time is in the past';
+    return null;
+  });
 
   const addSlot = () => {
     if (slots.length >= 5) return;
@@ -346,9 +340,13 @@ function RescheduleForm({
   };
 
   const handleSubmit = async () => {
-    const valid = slots.filter(s => s.date && s.time);
+    const valid = slots.filter((s) => s.date && s.time);
     if (valid.length === 0) {
       toast.error('Add at least one date and time');
+      return;
+    }
+    if (slotErrors.some((e) => e !== null)) {
+      toast.error('Please fix the highlighted slots before submitting');
       return;
     }
     setSubmitting(true);
@@ -376,48 +374,66 @@ function RescheduleForm({
         <p className="text-xs text-muted-foreground mt-1">
           Add up to 5 options that work for you. We\u2019ll lock in one and confirm via email.
         </p>
+        <p className="text-[11px] text-muted-foreground/80 mt-1.5 flex items-center gap-1.5">
+          <Globe className="w-3 h-3" />
+          Times are interpreted in your local timezone
+          <span className="font-mono text-foreground/70">({browserTz})</span>
+        </p>
       </div>
 
       <div className="space-y-3">
-        {slots.map((slot, i) => (
-          <div key={i} className="flex items-end gap-2">
-            <div className="flex-1 grid grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor={`d-${i}`} className="text-[10px] uppercase tracking-wider text-muted-foreground">Date</Label>
-                <Input
-                  id={`d-${i}`}
-                  type="date"
-                  min={today}
-                  value={slot.date}
-                  onChange={(e) => updateSlot(i, { date: e.target.value })}
-                  className="rounded-lg"
-                />
+        {slots.map((slot, i) => {
+          const err = slotErrors[i];
+          const hasErr = Boolean(err);
+          return (
+            <div key={i} className="space-y-1">
+              <div className="flex items-end gap-2">
+                <div className="flex-1 grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor={`d-${i}`} className="text-[10px] uppercase tracking-wider text-muted-foreground">Date</Label>
+                    <Input
+                      id={`d-${i}`}
+                      type="date"
+                      min={today}
+                      value={slot.date}
+                      onChange={(e) => updateSlot(i, { date: e.target.value })}
+                      aria-invalid={hasErr}
+                      className={cn('rounded-lg', hasErr && 'border-destructive focus-visible:ring-destructive/40')}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`t-${i}`} className="text-[10px] uppercase tracking-wider text-muted-foreground">Time</Label>
+                    <Input
+                      id={`t-${i}`}
+                      type="time"
+                      value={slot.time}
+                      onChange={(e) => updateSlot(i, { time: e.target.value })}
+                      aria-invalid={hasErr}
+                      className={cn('rounded-lg', hasErr && 'border-destructive focus-visible:ring-destructive/40')}
+                    />
+                  </div>
+                </div>
+                {slots.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeSlot(i)}
+                    className="shrink-0 text-muted-foreground hover:text-destructive"
+                    aria-label="Remove slot"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
-              <div>
-                <Label htmlFor={`t-${i}`} className="text-[10px] uppercase tracking-wider text-muted-foreground">Time</Label>
-                <Input
-                  id={`t-${i}`}
-                  type="time"
-                  value={slot.time}
-                  onChange={(e) => updateSlot(i, { time: e.target.value })}
-                  className="rounded-lg"
-                />
-              </div>
+              {hasErr && (
+                <p className="text-[11px] text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> {err}
+                </p>
+              )}
             </div>
-            {slots.length > 1 && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => removeSlot(i)}
-                className="shrink-0 text-muted-foreground hover:text-destructive"
-                aria-label="Remove slot"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {slots.length < 5 && (
@@ -445,7 +461,7 @@ function RescheduleForm({
         <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
           Cancel
         </Button>
-        <Button type="button" onClick={handleSubmit} disabled={submitting} className="rounded-xl gap-2">
+        <Button type="button" onClick={handleSubmit} disabled={submitting || slotErrors.some((e) => e !== null)} className="rounded-xl gap-2">
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
           Submit reschedule
         </Button>
@@ -464,3 +480,116 @@ function DetailRow({ icon: Icon, label, value }: { icon: typeof Sparkles; label:
     </div>
   );
 }
+
+function ProposedSlotsTimeline({
+  slots,
+  timezone,
+  reason,
+}: {
+  slots: ProposedSlot[];
+  timezone: string | null;
+  reason: string | null;
+}) {
+  const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const displayTz = timezone || browserTz;
+  const now = Date.now();
+
+  // Decorate, sort earliest-first, mark earliest valid as "preferred"
+  const decorated = slots.map((s, originalIndex) => {
+    const dt = s.date && s.time ? new Date(`${s.date}T${s.time}`) : null;
+    const ts = dt && !isNaN(dt.getTime()) ? dt.getTime() : null;
+    const isPast = ts !== null && ts <= now;
+    return { ...s, originalIndex, dt, ts, isPast };
+  });
+  const sorted = [...decorated].sort((a, b) => {
+    if (a.ts === null) return 1;
+    if (b.ts === null) return -1;
+    return a.ts - b.ts;
+  });
+  const preferredOriginalIndex = sorted.find((s) => s.ts !== null && !s.isPast)?.originalIndex ?? null;
+  const validCount = decorated.filter((s) => s.ts !== null && !s.isPast).length;
+
+  return (
+    <div className="px-7 md:px-10 py-6 border-b border-border/40 bg-amber-500/5">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            Your proposed slots
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5">
+            <Globe className="w-3 h-3" />
+            Shown in <span className="font-mono text-foreground/80">{displayTz}</span>
+            {!timezone && <span className="opacity-70">· detected from your device</span>}
+          </p>
+        </div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-500/15 border border-amber-500/30 rounded-full px-2.5 py-1">
+          {validCount} of {slots.length} still valid
+        </div>
+      </div>
+
+      <ol className="relative space-y-2.5 ps-5 before:absolute before:start-1.5 before:top-2 before:bottom-2 before:w-px before:bg-amber-500/30">
+        {sorted.map((s) => {
+          const isPreferred = s.originalIndex === preferredOriginalIndex;
+          return (
+            <li key={s.originalIndex} className="relative">
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'absolute -start-[1.05rem] top-3 w-2.5 h-2.5 rounded-full ring-2 ring-background',
+                  s.isPast
+                    ? 'bg-muted border border-destructive/40'
+                    : isPreferred
+                    ? 'bg-primary'
+                    : 'bg-amber-500'
+                )}
+              />
+              <div
+                className={cn(
+                  'flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border px-3.5 py-2.5 text-sm transition-colors',
+                  s.isPast
+                    ? 'border-destructive/30 bg-destructive/5 text-muted-foreground line-through'
+                    : isPreferred
+                    ? 'border-primary/40 bg-primary/5 text-foreground'
+                    : 'border-border/50 bg-background/60 text-foreground'
+                )}
+              >
+                <CalendarClock className={cn('w-4 h-4 shrink-0', s.isPast ? 'text-destructive/70' : isPreferred ? 'text-primary' : 'text-amber-600 dark:text-amber-400')} />
+                <span className="font-semibold">
+                  {s.dt
+                    ? s.dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+                    : s.date}
+                </span>
+                <span className="text-muted-foreground">·</span>
+                <span className="font-mono text-[13px]">{s.time}</span>
+                {isPreferred && (
+                  <span className="ms-auto text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/30 rounded-full px-2 py-0.5">
+                    Earliest
+                  </span>
+                )}
+                {s.isPast && (
+                  <span className="ms-auto text-[10px] font-bold uppercase tracking-wider text-destructive bg-destructive/10 border border-destructive/30 rounded-full px-2 py-0.5 no-underline">
+                    Past — please update
+                  </span>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+
+      {validCount === 0 && (
+        <p className="mt-3 text-xs text-destructive flex items-center gap-1.5">
+          <AlertCircle className="w-3.5 h-3.5" />
+          All proposed slots are in the past. Use "Update proposed slots" below to send new options.
+        </p>
+      )}
+
+      {reason && (
+        <p className="text-xs text-muted-foreground mt-4 italic border-l-2 border-amber-500/40 ps-3">
+          "{reason}"
+        </p>
+      )}
+    </div>
+  );
+}
+
