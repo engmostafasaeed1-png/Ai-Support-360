@@ -287,6 +287,8 @@ function ConfirmationCard({ data, token, onChanged }: { data: DemoRequest; token
             <RescheduleForm
               token={token}
               requestId={data.id}
+              requestEmail={data.email}
+              requestName={data.full_name}
               isUpdate={data.status === 'rescheduling'}
               initialReason={data.reschedule_reason ?? ''}
               initialSlots={data.proposed_slots ?? []}
@@ -317,10 +319,12 @@ function ConfirmationCard({ data, token, onChanged }: { data: DemoRequest; token
 }
 
 function RescheduleForm({
-  token, requestId, isUpdate, initialReason, initialSlots, onCancel, onSuccess,
+  token, requestId, requestEmail, requestName, isUpdate, initialReason, initialSlots, onCancel, onSuccess,
 }: {
   token: string;
   requestId: string;
+  requestEmail: string;
+  requestName: string;
   isUpdate: boolean;
   initialReason: string;
   initialSlots: ProposedSlot[];
