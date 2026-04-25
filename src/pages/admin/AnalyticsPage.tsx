@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +23,13 @@ import {
 import { TrendingUp, TrendingDown, Activity, DollarSign, Clock, CheckCircle2, Download, FileText } from 'lucide-react';
 import { DateRangePicker } from '@/components/reports/DateRangePicker';
 import { exportToCSV, exportToPDF } from '@/components/reports/exportUtils';
+import {
+  AnalyticsConfigPanel,
+  useAnalyticsConfig,
+  KPI_LABELS,
+  type KpiKey,
+  type RangeKey,
+} from '@/components/admin/AnalyticsConfigPanel';
 
 
 
@@ -45,6 +52,19 @@ export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
   const [dateFrom, setDateFrom] = useState(() => subDays(new Date(), 30));
   const [dateTo, setDateTo] = useState(() => new Date());
+
+  const panelConfig = useAnalyticsConfig();
+
+  // Ensure timeRange is always one of the enabled ranges
+  useEffect(() => {
+    if (!panelConfig.ranges.includes(timeRange)) {
+      const fallback = panelConfig.ranges[0];
+      const days = fallback === '7d' ? 7 : fallback === '30d' ? 30 : 90;
+      setTimeRange(fallback);
+      setDateFrom(subDays(new Date(), days));
+      setDateTo(new Date());
+    }
+  }, [panelConfig.ranges, timeRange]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-analytics', timeRange],
@@ -299,17 +319,18 @@ export default function AnalyticsPage() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Tabs value={timeRange} onValueChange={(v) => {
-            const r = v as '7d' | '30d' | '90d';
+            const r = v as RangeKey;
             setTimeRange(r);
             setDateFrom(subDays(new Date(), r === '7d' ? 7 : r === '30d' ? 30 : 90));
             setDateTo(new Date());
           }}>
             <TabsList className="h-8">
-              <TabsTrigger value="7d" className="text-xs px-3 h-7">7D</TabsTrigger>
-              <TabsTrigger value="30d" className="text-xs px-3 h-7">30D</TabsTrigger>
-              <TabsTrigger value="90d" className="text-xs px-3 h-7">90D</TabsTrigger>
+              {panelConfig.ranges.includes('7d') && <TabsTrigger value="7d" className="text-xs px-3 h-7">7D</TabsTrigger>}
+              {panelConfig.ranges.includes('30d') && <TabsTrigger value="30d" className="text-xs px-3 h-7">30D</TabsTrigger>}
+              {panelConfig.ranges.includes('90d') && <TabsTrigger value="90d" className="text-xs px-3 h-7">90D</TabsTrigger>}
             </TabsList>
           </Tabs>
+          <AnalyticsConfigPanel />
           <DateRangePicker from={dateFrom} to={dateTo} onChange={(f, t) => { setDateFrom(f); setDateTo(t); }} />
           <Button variant="outline" size="sm" className="text-xs h-8 gap-1" onClick={() => {
             const rows = [
@@ -350,26 +371,28 @@ export default function AnalyticsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {[
-          { label: 'Total Tickets', value: d.totalTickets, icon: Activity, color: 'text-blue-500' },
-          { label: 'Resolved', value: d.totalResolved, icon: CheckCircle2, color: 'text-green-500' },
-          { label: 'Resolution Rate', value: d.totalTickets > 0 ? `${Math.round(d.totalResolved / d.totalTickets * 100)}%` : '0%', icon: TrendingUp, color: 'text-emerald-500' },
-          { label: 'Avg Resolution', value: `${d.avgResHours}h`, icon: Clock, color: 'text-amber-500' },
-          { label: 'Revenue', value: `$${(d.totalRevenue / 1000).toFixed(0)}k`, icon: DollarSign, color: 'text-violet-500' },
-          { label: 'Avg Session', value: `${d.avgSessionDuration}m`, icon: Activity, color: 'text-cyan-500' },
-        ].map((k, i) => (
-          <Card key={i} className="rounded-2xl border-border/50 hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <k.icon className={`w-4 h-4 ${k.color}`} />
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{k.label}</span>
-              </div>
-              {isLoading && !isGuest ? <Skeleton className="h-7 w-16" /> : (
-                <div className="text-xl font-bold text-foreground">{k.value}</div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+        {([
+          { key: 'totalTickets', value: d.totalTickets, icon: Activity, color: 'text-blue-500' },
+          { key: 'resolved', value: d.totalResolved, icon: CheckCircle2, color: 'text-green-500' },
+          { key: 'resolutionRate', value: d.totalTickets > 0 ? `${Math.round(d.totalResolved / d.totalTickets * 100)}%` : '0%', icon: TrendingUp, color: 'text-emerald-500' },
+          { key: 'avgResolution', value: `${d.avgResHours}h`, icon: Clock, color: 'text-amber-500' },
+          { key: 'revenue', value: `$${(d.totalRevenue / 1000).toFixed(0)}k`, icon: DollarSign, color: 'text-violet-500' },
+          { key: 'avgSession', value: `${d.avgSessionDuration}m`, icon: Activity, color: 'text-cyan-500' },
+        ] as Array<{ key: KpiKey; value: string | number; icon: typeof Activity; color: string }>)
+          .filter((k) => panelConfig.kpis.includes(k.key))
+          .map((k) => (
+            <Card key={k.key} className="rounded-2xl border-border/50 hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <k.icon className={`w-4 h-4 ${k.color}`} />
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{KPI_LABELS[k.key]}</span>
+                </div>
+                {isLoading && !isGuest ? <Skeleton className="h-7 w-16" /> : (
+                  <div className="text-xl font-bold text-foreground">{k.value}</div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
       </div>
 
       {/* Row 1: Ticket Trend + Revenue */}
