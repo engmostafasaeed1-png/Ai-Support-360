@@ -340,9 +340,13 @@ function RescheduleForm({
   };
 
   const handleSubmit = async () => {
-    const valid = slots.filter(s => s.date && s.time);
+    const valid = slots.filter((s) => s.date && s.time);
     if (valid.length === 0) {
       toast.error('Add at least one date and time');
+      return;
+    }
+    if (slotErrors.some((e) => e !== null)) {
+      toast.error('Please fix the highlighted slots before submitting');
       return;
     }
     setSubmitting(true);
