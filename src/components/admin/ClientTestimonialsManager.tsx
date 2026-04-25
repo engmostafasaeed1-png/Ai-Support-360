@@ -12,9 +12,21 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Plus, Save, Trash2, Upload, Quote, ImageIcon, Send, CheckCircle2, XCircle, EyeOff } from 'lucide-react';
+import {
+  Loader2, Plus, Save, Trash2, Upload, Quote, ImageIcon, Send,
+  CheckCircle2, XCircle, EyeOff, Star, GripVertical,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import LogoCropDialog from './LogoCropDialog';
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates,
+  useSortable, verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 type TestimonialStatus = 'draft' | 'pending_review' | 'published';
 
@@ -29,6 +41,7 @@ type Testimonial = {
   logo_url: string | null;
   display_order: number;
   is_active: boolean;
+  is_featured: boolean;
   status: TestimonialStatus;
   rejected_reason: string | null;
   submitted_at: string | null;
@@ -57,6 +70,13 @@ export default function ClientTestimonialsManager() {
   // Role detection — drives which moderation actions are available.
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
+  // dnd-kit sensors — pointer for mouse/touch, keyboard for a11y so
+  // admins can reorder rows without a mouse.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
   useEffect(() => {
     fetchAll();
     (async () => {
@@ -75,6 +95,10 @@ export default function ClientTestimonialsManager() {
     const { data, error } = await supabase
       .from('client_testimonials')
       .select('*')
+      // Mirror the public landing-page sort: featured first, then by
+      // manual display_order. Reordering in the admin UI updates
+      // display_order within each "bucket" (featured / not featured).
+      .order('is_featured', { ascending: false })
       .order('display_order', { ascending: true });
     if (error) toast.error('Failed to load testimonials', { description: error.message });
     setItems((data as Testimonial[]) || []);
@@ -128,6 +152,7 @@ export default function ClientTestimonialsManager() {
         accent: 'from-cyan-500 to-blue-600',
         display_order: (items.at(-1)?.display_order ?? 0) + 1,
         is_active: false,
+        is_featured: false,
         status: 'draft',
       })
       .select()
@@ -146,6 +171,72 @@ export default function ClientTestimonialsManager() {
     if (error) { toast.error('Delete failed', { description: error.message }); return; }
     setItems((prev) => prev.filter((i) => i.id !== item.id));
     toast.success('Deleted');
+  }
+
+  // ── Featured + reordering ─────────────────────────────────────────────
+  // Toggling featured is an immediate write so the bucket the row lives
+  // in (featured vs not) updates without needing a full Save click.
+  async function toggleFeatured(item: Testimonial, next: boolean) {
+    // Optimistic flip
+    patchItem(item.id, { is_featured: next });
+    const { error } = await supabase
+      .from('client_testimonials')
+      .update({ is_featured: next })
+      .eq('id', item.id);
+    if (error) {
+      patchItem(item.id, { is_featured: !next });
+      toast.error('Could not update featured flag', { description: error.message });
+      return;
+    }
+    toast.success(next ? 'Marked as featured' : 'Removed from featured');
+  }
+
+  // Persist a new visual order by writing a fresh display_order for
+  // every affected row. We renumber 1..N inside each bucket so the
+  // landing page sort (is_featured DESC, display_order ASC) matches
+  // exactly what the admin sees here.
+  async function persistOrder(next: Testimonial[]) {
+    const featured = next.filter((t) => t.is_featured);
+    const rest     = next.filter((t) => !t.is_featured);
+
+    const renumbered = [
+      ...featured.map((t, i) => ({ ...t, display_order: i + 1 })),
+      ...rest.map((t, i)     => ({ ...t, display_order: i + 1 })),
+    ];
+
+    setItems(renumbered);
+
+    // Batch the updates — one round-trip per row, but they're tiny.
+    const updates = await Promise.all(
+      renumbered.map((t) =>
+        supabase
+          .from('client_testimonials')
+          .update({ display_order: t.display_order })
+          .eq('id', t.id),
+      ),
+    );
+    const failed = updates.find((u) => u.error);
+    if (failed?.error) {
+      toast.error('Order saved partially', { description: failed.error.message });
+    }
+  }
+
+  function handleDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIndex = items.findIndex((t) => t.id === active.id);
+    const newIndex = items.findIndex((t) => t.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    // Prevent dragging across the featured / non-featured boundary —
+    // those buckets are independent and have their own ordering. The
+    // user should toggle Featured to move a row between them.
+    if (items[oldIndex].is_featured !== items[newIndex].is_featured) {
+      toast.info('Toggle “Featured” to move between sections');
+      return;
+    }
+
+    void persistOrder(arrayMove(items, oldIndex, newIndex));
   }
 
   // ── Moderation actions ────────────────────────────────────────────────
@@ -311,132 +402,251 @@ export default function ClientTestimonialsManager() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {items.map((item) => (
-            <Card key={item.id} className="rounded-2xl">
-              <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
-                <div className="flex items-center gap-4 min-w-0">
-                  <LogoPreview url={item.logo_url} accent={item.accent} name={item.name} />
-                  <div className="min-w-0">
-                    <CardTitle className="text-base truncate">{item.name || 'Untitled'}</CardTitle>
-                    <CardDescription className="truncate">{item.company}</CardDescription>
-                    {item.status === 'draft' && item.rejected_reason && (
-                      <p className="mt-1 text-[11px] text-destructive">
-                        Sent back: {item.rejected_reason}
-                      </p>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={items.map((i) => i.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="grid gap-4">
+              {items.map((item, idx) => {
+                // Render a small visual divider where the featured
+                // bucket ends, so the user understands why drags don't
+                // cross that line.
+                const prev = items[idx - 1];
+                const showDivider = prev && prev.is_featured && !item.is_featured;
+                return (
+                  <div key={item.id} className="contents">
+                    {showDivider && (
+                      <div className="flex items-center gap-3 px-1 pt-2">
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          Other testimonials
+                        </span>
+                        <div className="h-px flex-1 bg-border" />
+                      </div>
                     )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <StatusBadge status={item.status} />
-                  <Badge variant={item.is_active ? 'default' : 'outline'} className="text-[10px]">
-                    {item.is_active ? 'Visible' : 'Hidden'}
-                  </Badge>
-                  <Switch
-                    checked={item.is_active}
-                    onCheckedChange={(v) => patchItem(item.id, { is_active: v })}
-                    aria-label="Toggle visibility"
-                  />
-                </div>
-              </CardHeader>
-
-              <CardContent className="grid md:grid-cols-2 gap-4">
-                <Field label="Name">
-                  <Input value={item.name} onChange={(e) => patchItem(item.id, { name: e.target.value })} />
-                </Field>
-                <Field label="Role / title line">
-                  <Input value={item.role} onChange={(e) => patchItem(item.id, { role: e.target.value })} />
-                </Field>
-                <Field label="Company (used for logo alt text)">
-                  <Input value={item.company} onChange={(e) => patchItem(item.id, { company: e.target.value })} />
-                </Field>
-                <Field label="Display order">
-                  <Input
-                    type="number"
-                    value={item.display_order}
-                    onChange={(e) => patchItem(item.id, { display_order: Number(e.target.value) || 0 })}
-                  />
-                </Field>
-                <Field label="Quote" className="md:col-span-2">
-                  <Textarea
-                    rows={3}
-                    value={item.quote}
-                    onChange={(e) => patchItem(item.id, { quote: e.target.value })}
-                  />
-                </Field>
-                <Field label="Rating (1–5)">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={5}
-                    value={item.rating}
-                    onChange={(e) =>
-                      patchItem(item.id, {
-                        rating: Math.min(5, Math.max(1, Number(e.target.value) || 5)),
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="Accent gradient">
-                  <select
-                    value={item.accent}
-                    onChange={(e) => patchItem(item.id, { accent: e.target.value })}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    {ACCENT_PRESETS.map((p) => (
-                      <option key={p.value} value={p.value}>{p.label}</option>
-                    ))}
-                  </select>
-                </Field>
-
-                <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-3 pt-2">
-                  <Button variant="outline" onClick={() => pickFileFor(item.id)} className="gap-2">
-                    <Upload className="w-4 h-4" />
-                    {item.logo_url ? 'Replace logo' : 'Upload logo'}
-                  </Button>
-
-                  <div className="flex items-center gap-2 flex-wrap justify-end">
-                    <ModerationActions
+                    <SortableTestimonialRow
                       item={item}
+                      savingId={savingId}
                       isSuperAdmin={isSuperAdmin}
-                      onSubmit={() => submitForReview(item)}
+                      onPatch={(patch) => patchItem(item.id, patch)}
+                      onToggleFeatured={(v) => toggleFeatured(item, v)}
+                      onPickFile={() => pickFileFor(item.id)}
+                      onSave={() => saveItem(item)}
+                      onDelete={() => deleteItem(item)}
+                      onSubmitForReview={() => submitForReview(item)}
                       onApprove={() => approveAndPublish(item)}
                       onReject={(reason) => reject(item, reason)}
                       onUnpublish={() => unpublish(item)}
                     />
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-destructive gap-1.5">
-                          <Trash2 className="w-4 h-4" /> Delete
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete testimonial?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will remove the testimonial from the landing page. The uploaded logo file is kept in storage.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteItem(item)}>Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-
-                    <Button onClick={() => saveItem(item)} disabled={savingId === item.id} className="gap-2">
-                      {savingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                      Save
-                    </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                );
+              })}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
+  );
+}
+
+/**
+ * One sortable card. Owns the dnd-kit `useSortable` wiring so the
+ * parent list stays declarative. The drag handle is a dedicated button
+ * (rather than the whole card) to avoid hijacking text selection,
+ * input focus, and dialog clicks inside the editor.
+ */
+function SortableTestimonialRow({
+  item, savingId, isSuperAdmin,
+  onPatch, onToggleFeatured, onPickFile, onSave, onDelete,
+  onSubmitForReview, onApprove, onReject, onUnpublish,
+}: {
+  item: Testimonial;
+  savingId: string | null;
+  isSuperAdmin: boolean;
+  onPatch: (patch: Partial<Testimonial>) => void;
+  onToggleFeatured: (next: boolean) => void;
+  onPickFile: () => void;
+  onSave: () => void;
+  onDelete: () => void;
+  onSubmitForReview: () => void;
+  onApprove: () => void;
+  onReject: (reason: string) => void;
+  onUnpublish: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: item.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    // Lift the dragged row above its siblings + dim the rest visually.
+    zIndex: isDragging ? 20 : undefined,
+    opacity: isDragging ? 0.85 : 1,
+  };
+
+  return (
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={`rounded-2xl ${isDragging ? 'ring-2 ring-primary shadow-lg' : ''}`}
+    >
+      <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Drag handle — only this element listens for drag events. */}
+          <button
+            type="button"
+            className="flex h-9 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+            aria-label={`Reorder ${item.name || 'testimonial'}`}
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="w-4 h-4" />
+          </button>
+          <LogoPreview url={item.logo_url} accent={item.accent} name={item.name} />
+          <div className="min-w-0">
+            <CardTitle className="text-base truncate flex items-center gap-1.5">
+              {item.name || 'Untitled'}
+              {item.is_featured && (
+                <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" aria-label="Featured" />
+              )}
+            </CardTitle>
+            <CardDescription className="truncate">{item.company}</CardDescription>
+            {item.status === 'draft' && item.rejected_reason && (
+              <p className="mt-1 text-[11px] text-destructive">
+                Sent back: {item.rejected_reason}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <StatusBadge status={item.status} />
+          <Badge variant={item.is_active ? 'default' : 'outline'} className="text-[10px]">
+            {item.is_active ? 'Visible' : 'Hidden'}
+          </Badge>
+          <Switch
+            checked={item.is_active}
+            onCheckedChange={(v) => onPatch({ is_active: v })}
+            aria-label="Toggle visibility"
+          />
+        </div>
+      </CardHeader>
+
+      <CardContent className="grid md:grid-cols-2 gap-4">
+        <Field label="Name">
+          <Input value={item.name} onChange={(e) => onPatch({ name: e.target.value })} />
+        </Field>
+        <Field label="Role / title line">
+          <Input value={item.role} onChange={(e) => onPatch({ role: e.target.value })} />
+        </Field>
+        <Field label="Company (used for logo alt text)">
+          <Input value={item.company} onChange={(e) => onPatch({ company: e.target.value })} />
+        </Field>
+        <Field label="Display order (auto-managed by drag & drop)">
+          <Input
+            type="number"
+            value={item.display_order}
+            onChange={(e) => onPatch({ display_order: Number(e.target.value) || 0 })}
+          />
+        </Field>
+        <Field label="Quote" className="md:col-span-2">
+          <Textarea
+            rows={3}
+            value={item.quote}
+            onChange={(e) => onPatch({ quote: e.target.value })}
+          />
+        </Field>
+        <Field label="Rating (1–5)">
+          <Input
+            type="number"
+            min={1}
+            max={5}
+            value={item.rating}
+            onChange={(e) =>
+              onPatch({ rating: Math.min(5, Math.max(1, Number(e.target.value) || 5)) })
+            }
+          />
+        </Field>
+        <Field label="Accent gradient">
+          <select
+            value={item.accent}
+            onChange={(e) => onPatch({ accent: e.target.value })}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            {ACCENT_PRESETS.map((p) => (
+              <option key={p.value} value={p.value}>{p.label}</option>
+            ))}
+          </select>
+        </Field>
+
+        {/* Featured toggle — persists immediately so the row jumps to
+            the right bucket without waiting for Save. */}
+        <Field label="Featured" className="md:col-span-2">
+          <div className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Star className={`w-4 h-4 ${item.is_featured ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground'}`} />
+              <span>
+                {item.is_featured
+                  ? 'Pinned to the top of the landing page'
+                  : 'Shown after featured testimonials'}
+              </span>
+            </div>
+            <Switch
+              checked={item.is_featured}
+              onCheckedChange={onToggleFeatured}
+              aria-label="Toggle featured"
+            />
+          </div>
+        </Field>
+
+        <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-3 pt-2">
+          <Button variant="outline" onClick={onPickFile} className="gap-2">
+            <Upload className="w-4 h-4" />
+            {item.logo_url ? 'Replace logo' : 'Upload logo'}
+          </Button>
+
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <ModerationActions
+              item={item}
+              isSuperAdmin={isSuperAdmin}
+              onSubmit={onSubmitForReview}
+              onApprove={onApprove}
+              onReject={onReject}
+              onUnpublish={onUnpublish}
+            />
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-destructive gap-1.5">
+                  <Trash2 className="w-4 h-4" /> Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete testimonial?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will remove the testimonial from the landing page. The uploaded logo file is kept in storage.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <Button onClick={onSave} disabled={savingId === item.id} className="gap-2">
+              {savingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Save
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
