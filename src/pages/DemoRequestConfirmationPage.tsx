@@ -18,6 +18,8 @@ type DemoRequest = {
   id: string;
   demo_type: 'live' | 'ai-triage' | 'pricing-roi' | 'module-deep-dive';
   scheduling_preference: 'asap' | 'this-week' | 'next-week' | 'flexible';
+  scheduled_date: string | null;
+  scheduled_slot: string | null;
   full_name: string;
   email: string;
   company: string | null;
@@ -190,6 +192,13 @@ function ConfirmationCard({ data }: { data: DemoRequest }) {
       <dl className="px-7 md:px-10 py-7 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
         <DetailRow icon={Sparkles} label="Demo type" value={demoTypeLabel[data.demo_type]} />
         <DetailRow icon={Calendar} label="Schedule preference" value={scheduleLabel[data.scheduling_preference]} />
+        {data.scheduled_date && (
+          <DetailRow
+            icon={Calendar}
+            label="Booked slot"
+            value={`${new Date(data.scheduled_date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}${data.scheduled_slot ? ` · ${data.scheduled_slot}` : ''}`}
+          />
+        )}
         <DetailRow icon={Mail} label="Email" value={data.email} />
         {data.company && <DetailRow icon={Phone} label="Company" value={data.company} />}
         <DetailRow icon={Clock} label="Submitted" value={created.toLocaleString()} />

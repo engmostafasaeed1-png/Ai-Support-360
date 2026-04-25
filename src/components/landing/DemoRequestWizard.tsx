@@ -6,12 +6,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   ArrowLeft, ArrowRight, Check, Sparkles, BrainCircuit, LineChart, Layers,
-  Calendar, Clock, Send, Loader2, type LucideIcon,
+  Calendar as CalendarIcon, Clock, Send, Loader2, type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
 import { accents, iconPlate, type AccentName } from './tokens';
 
 /* -------------------------------------------------------------------------- */
@@ -64,12 +67,23 @@ const demoTypes: DemoType[] = [
 
 const timePrefs = [
   { id: 'asap', label: 'As soon as possible', sub: 'We respond within 1 business hour', Icon: Clock },
-  { id: 'this-week', label: 'This week', sub: 'Pick a slot Mon–Fri', Icon: Calendar },
-  { id: 'next-week', label: 'Next week', sub: 'Better for planning teams', Icon: Calendar },
+  { id: 'this-week', label: 'This week', sub: 'Pick a slot Mon–Fri', Icon: CalendarIcon },
+  { id: 'next-week', label: 'Next week', sub: 'Better for planning teams', Icon: CalendarIcon },
   { id: 'flexible', label: 'I\u2019m flexible', sub: 'Send me your soonest openings', Icon: Sparkles },
 ] as const;
 
 type TimePref = (typeof timePrefs)[number]['id'];
+
+/**
+ * Available slots are mocked client-side — in production these would
+ * come from a calendar integration. Each label is the local time we
+ * advertise to the visitor; we persist it as plain text alongside the
+ * chosen date so admins can see exactly what was promised.
+ */
+const TIME_SLOTS = [
+  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+] as const;
 
 /* -------------------------------------------------------------------------- */
 /*  Context — lets any CTA open the wizard with one hook                       */
@@ -140,6 +154,10 @@ function DemoRequestWizard({
 
   const [type, setType] = useState<DemoType['id'] | null>(initialType ?? null);
   const [time, setTime] = useState<TimePref | null>(null);
+  // Optional exact slot. Visitors can pick a date + slot for any
+  // scheduling preference (or skip and let us follow up).
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [slot, setSlot] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
@@ -152,6 +170,8 @@ function DemoRequestWizard({
     setSubmitted(false);
     setType(initialType ?? null);
     setTime(null);
+    setDate(undefined);
+    setSlot(null);
     setName('');
     setEmail('');
     setCompany('');
@@ -160,7 +180,10 @@ function DemoRequestWizard({
 
   const canNext =
     (step === 0 && !!type) ||
-    (step === 1 && !!time) ||
+    // On the schedule step a preference is enough, but if the visitor
+    // picks a date they must also pick a slot (and vice versa) so we
+    // never persist a half-chosen time.
+    (step === 1 && !!time && (!date || !!slot) && (!slot || !!date)) ||
     (step === 2 && name.trim().length > 1 && /\S+@\S+\.\S+/.test(email));
 
   const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
@@ -180,6 +203,8 @@ function DemoRequestWizard({
         user_id: userRes.user?.id ?? null,
         demo_type: type,
         scheduling_preference: time,
+        scheduled_date: date ? format(date, 'yyyy-MM-dd') : null,
+        scheduled_slot: slot,
         full_name: name.trim(),
         email: email.trim(),
         company: company.trim() || null,
@@ -255,11 +280,15 @@ function DemoRequestWizard({
         {/* Body */}
         <div className="px-6 md:px-8 py-6 max-h-[60vh] overflow-y-auto">
           {submitted ? (
-            <SuccessPanel selectedType={selectedType} time={time} email={email} />
+            <SuccessPanel selectedType={selectedType} time={time} email={email} date={date} slot={slot} />
           ) : step === 0 ? (
             <DemoTypeStep value={type} onChange={setType} />
           ) : step === 1 ? (
-            <ScheduleStep value={time} onChange={setTime} />
+            <ScheduleStep
+              value={time} onChange={setTime}
+              date={date} onDateChange={setDate}
+              slot={slot} onSlotChange={setSlot}
+            />
           ) : (
             <DetailsStep
               name={name} setName={setName}
@@ -404,44 +433,153 @@ function DemoTypeStep({
 }
 
 function ScheduleStep({
-  value, onChange,
-}: { value: TimePref | null; onChange: (v: TimePref) => void }) {
+  value, onChange, date, onDateChange, slot, onSlotChange,
+}: {
+  value: TimePref | null;
+  onChange: (v: TimePref) => void;
+  date: Date | undefined;
+  onDateChange: (d: Date | undefined) => void;
+  slot: string | null;
+  onSlotChange: (s: string | null) => void;
+}) {
+  // Block weekends and any day before today; cap at 60 days out so
+  // the picker stays focused on actually-bookable dates.
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const maxDate = new Date(today);
+  maxDate.setDate(maxDate.getDate() + 60);
+  const isDisabled = (d: Date) => {
+    const day = d.getDay();
+    return d < today || d > maxDate || day === 0 || day === 6;
+  };
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {timePrefs.map((t) => {
-        const selected = value === t.id;
-        return (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => onChange(t.id)}
-            className={cn(
-              'group relative text-start rounded-2xl border p-4 bg-card/60 hover:bg-card transition-all',
-              selected
-                ? 'border-primary/60 ring-2 ring-primary/30 shadow-lg'
-                : 'border-border/40 hover:border-primary/30',
-            )}
-            aria-pressed={selected}
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                <t.Icon className="w-4 h-4 text-primary" strokeWidth={1.75} aria-hidden="true" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <h4 className="font-bold text-sm text-foreground leading-tight">{t.label}</h4>
-                  {selected && (
-                    <span className="shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                      <Check className="w-3 h-3" strokeWidth={3} />
-                    </span>
-                  )}
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {timePrefs.map((t) => {
+          const selected = value === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => onChange(t.id)}
+              className={cn(
+                'group relative text-start rounded-2xl border p-4 bg-card/60 hover:bg-card transition-all',
+                selected
+                  ? 'border-primary/60 ring-2 ring-primary/30 shadow-lg'
+                  : 'border-border/40 hover:border-primary/30',
+              )}
+              aria-pressed={selected}
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <t.Icon className="w-4 h-4 text-primary" strokeWidth={1.75} aria-hidden="true" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{t.sub}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="font-bold text-sm text-foreground leading-tight">{t.label}</h4>
+                    {selected && (
+                      <span className="shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                        <Check className="w-3 h-3" strokeWidth={3} />
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{t.sub}</p>
+                </div>
               </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Optional exact-slot picker. Independent of the preference
+          chips above so a visitor can say "this week" + lock in a
+          specific Tue 2:30 PM. */}
+      <div className="rounded-2xl border border-border/40 bg-muted/20 p-4 md:p-5 space-y-4">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h4 className="font-bold text-sm text-foreground">Pick an exact slot</h4>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Optional — choose a date and we\u2019ll show available 30-min windows.
+            </p>
+          </div>
+          {(date || slot) && (
+            <button
+              type="button"
+              onClick={() => { onDateChange(undefined); onSlotChange(null); }}
+              className="text-[11px] font-semibold text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4 items-start">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(
+                  'w-full sm:w-[220px] justify-start rounded-xl h-11 font-normal',
+                  !date && 'text-muted-foreground',
+                )}
+              >
+                <CalendarIcon className="w-4 h-4 me-2" />
+                {date ? format(date, 'EEE, MMM d, yyyy') : 'Pick a date'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={(d) => {
+                  onDateChange(d ?? undefined);
+                  // Reset slot when changing date so we never persist a
+                  // slot that no longer matches the selected day.
+                  if (!d || (date && d.getTime() !== date.getTime())) onSlotChange(null);
+                }}
+                disabled={isDisabled}
+                initialFocus
+                className={cn('p-3 pointer-events-auto')}
+              />
+            </PopoverContent>
+          </Popover>
+
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+              {date ? 'Available slots' : 'Pick a date to see slots'}
             </div>
-          </button>
-        );
-      })}
+            <div
+              className={cn(
+                'grid grid-cols-3 sm:grid-cols-4 gap-2',
+                !date && 'opacity-50 pointer-events-none',
+              )}
+            >
+              {TIME_SLOTS.map((s) => {
+                const selected = slot === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={!date}
+                    onClick={() => onSlotChange(s)}
+                    className={cn(
+                      'h-9 rounded-lg text-xs font-semibold border transition-colors',
+                      selected
+                        ? 'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                        : 'border-border/50 bg-background hover:border-primary/40 hover:bg-primary/5 text-foreground',
+                    )}
+                    aria-pressed={selected}
+                  >
+                    {s}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -518,9 +656,20 @@ function DetailsStep({
 }
 
 function SuccessPanel({
-  selectedType, time, email,
-}: { selectedType: DemoType | null; time: TimePref | null; email: string }) {
+  selectedType, time, email, date, slot,
+}: {
+  selectedType: DemoType | null;
+  time: TimePref | null;
+  email: string;
+  date: Date | undefined;
+  slot: string | null;
+}) {
   const timeLabel = timePrefs.find((p) => p.id === time)?.label ?? '—';
+  // Prefer the exact slot when present — it's more reassuring than a
+  // vague "this week".
+  const scheduleLine = date && slot
+    ? `${format(date, 'EEE, MMM d')} at ${slot}`
+    : timeLabel;
   return (
     <div className="text-center py-4">
       <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-2xl shadow-primary/30 mb-5">
@@ -537,8 +686,8 @@ function SuccessPanel({
             <span className="text-muted-foreground/60">·</span>
           </>
         )}
-        <Calendar className="w-3.5 h-3.5 text-primary" />
-        <span className="text-foreground">{timeLabel}</span>
+        <CalendarIcon className="w-3.5 h-3.5 text-primary" />
+        <span className="text-foreground">{scheduleLine}</span>
       </div>
     </div>
   );
