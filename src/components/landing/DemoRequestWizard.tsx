@@ -433,46 +433,156 @@ function DemoTypeStep({
 }
 
 function ScheduleStep({
-  value, onChange,
-}: { value: TimePref | null; onChange: (v: TimePref) => void }) {
+  value, onChange, date, onDateChange, slot, onSlotChange,
+}: {
+  value: TimePref | null;
+  onChange: (v: TimePref) => void;
+  date: Date | undefined;
+  onDateChange: (d: Date | undefined) => void;
+  slot: string | null;
+  onSlotChange: (s: string | null) => void;
+}) {
+  // Block weekends and any day before today; cap at 60 days out so
+  // the picker stays focused on actually-bookable dates.
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const maxDate = new Date(today);
+  maxDate.setDate(maxDate.getDate() + 60);
+  const isDisabled = (d: Date) => {
+    const day = d.getDay();
+    return d < today || d > maxDate || day === 0 || day === 6;
+  };
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {timePrefs.map((t) => {
-        const selected = value === t.id;
-        return (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => onChange(t.id)}
-            className={cn(
-              'group relative text-start rounded-2xl border p-4 bg-card/60 hover:bg-card transition-all',
-              selected
-                ? 'border-primary/60 ring-2 ring-primary/30 shadow-lg'
-                : 'border-border/40 hover:border-primary/30',
-            )}
-            aria-pressed={selected}
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                <t.Icon className="w-4 h-4 text-primary" strokeWidth={1.75} aria-hidden="true" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <h4 className="font-bold text-sm text-foreground leading-tight">{t.label}</h4>
-                  {selected && (
-                    <span className="shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                      <Check className="w-3 h-3" strokeWidth={3} />
-                    </span>
-                  )}
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {timePrefs.map((t) => {
+          const selected = value === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => onChange(t.id)}
+              className={cn(
+                'group relative text-start rounded-2xl border p-4 bg-card/60 hover:bg-card transition-all',
+                selected
+                  ? 'border-primary/60 ring-2 ring-primary/30 shadow-lg'
+                  : 'border-border/40 hover:border-primary/30',
+              )}
+              aria-pressed={selected}
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <t.Icon className="w-4 h-4 text-primary" strokeWidth={1.75} aria-hidden="true" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{t.sub}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="font-bold text-sm text-foreground leading-tight">{t.label}</h4>
+                    {selected && (
+                      <span className="shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                        <Check className="w-3 h-3" strokeWidth={3} />
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{t.sub}</p>
+                </div>
               </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Optional exact-slot picker. Independent of the preference
+          chips above so a visitor can say "this week" + lock in a
+          specific Tue 2:30 PM. */}
+      <div className="rounded-2xl border border-border/40 bg-muted/20 p-4 md:p-5 space-y-4">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h4 className="font-bold text-sm text-foreground">Pick an exact slot</h4>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Optional — choose a date and we\u2019ll show available 30-min windows.
+            </p>
+          </div>
+          {(date || slot) && (
+            <button
+              type="button"
+              onClick={() => { onDateChange(undefined); onSlotChange(null); }}
+              className="text-[11px] font-semibold text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4 items-start">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(
+                  'w-full sm:w-[220px] justify-start rounded-xl h-11 font-normal',
+                  !date && 'text-muted-foreground',
+                )}
+              >
+                <CalendarIcon className="w-4 h-4 me-2" />
+                {date ? format(date, 'EEE, MMM d, yyyy') : 'Pick a date'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={(d) => {
+                  onDateChange(d ?? undefined);
+                  // Reset slot when changing date so we never persist a
+                  // slot that no longer matches the selected day.
+                  if (!d || (date && d.getTime() !== date.getTime())) onSlotChange(null);
+                }}
+                disabled={isDisabled}
+                initialFocus
+                className={cn('p-3 pointer-events-auto')}
+              />
+            </PopoverContent>
+          </Popover>
+
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+              {date ? 'Available slots' : 'Pick a date to see slots'}
             </div>
-          </button>
-        );
-      })}
+            <div
+              className={cn(
+                'grid grid-cols-3 sm:grid-cols-4 gap-2',
+                !date && 'opacity-50 pointer-events-none',
+              )}
+            >
+              {TIME_SLOTS.map((s) => {
+                const selected = slot === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={!date}
+                    onClick={() => onSlotChange(s)}
+                    className={cn(
+                      'h-9 rounded-lg text-xs font-semibold border transition-colors',
+                      selected
+                        ? 'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                        : 'border-border/50 bg-background hover:border-primary/40 hover:bg-primary/5 text-foreground',
+                    )}
+                    aria-pressed={selected}
+                  >
+                    {s}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
+}
 }
 
 function DetailsStep({
