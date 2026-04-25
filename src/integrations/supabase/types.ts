@@ -819,6 +819,51 @@ export type Database = {
         }
         Relationships: []
       }
+      client_testimonials: {
+        Row: {
+          accent: string
+          company: string
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          quote: string
+          rating: number
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          accent?: string
+          company: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          quote: string
+          rating?: number
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          accent?: string
+          company?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          quote?: string
+          rating?: number
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       consultant_education: {
         Row: {
           consultant_id: string
