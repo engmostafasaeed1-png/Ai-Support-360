@@ -829,9 +829,15 @@ export type Database = {
           is_active: boolean
           logo_url: string | null
           name: string
+          published_at: string | null
+          published_by: string | null
           quote: string
           rating: number
+          rejected_reason: string | null
           role: string
+          status: string
+          submitted_at: string | null
+          submitted_by: string | null
           updated_at: string
         }
         Insert: {
@@ -843,9 +849,15 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name: string
+          published_at?: string | null
+          published_by?: string | null
           quote: string
           rating?: number
+          rejected_reason?: string | null
           role: string
+          status?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
           updated_at?: string
         }
         Update: {
@@ -857,9 +869,15 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name?: string
+          published_at?: string | null
+          published_by?: string | null
           quote?: string
           rating?: number
+          rejected_reason?: string | null
           role?: string
+          status?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
           updated_at?: string
         }
         Relationships: []

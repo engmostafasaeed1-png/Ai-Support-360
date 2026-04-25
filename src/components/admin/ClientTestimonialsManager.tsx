@@ -12,9 +12,11 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Plus, Save, Trash2, Upload, Quote, ImageIcon } from 'lucide-react';
+import { Loader2, Plus, Save, Trash2, Upload, Quote, ImageIcon, Send, CheckCircle2, XCircle, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import LogoCropDialog from './LogoCropDialog';
+
+type TestimonialStatus = 'draft' | 'pending_review' | 'published';
 
 type Testimonial = {
   id: string;
@@ -27,6 +29,10 @@ type Testimonial = {
   logo_url: string | null;
   display_order: number;
   is_active: boolean;
+  status: TestimonialStatus;
+  rejected_reason: string | null;
+  submitted_at: string | null;
+  published_at: string | null;
 };
 
 const ACCENT_PRESETS = [
@@ -48,7 +54,21 @@ export default function ClientTestimonialsManager() {
   const [cropTargetId, setCropTargetId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  // Role detection — drives which moderation actions are available.
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    fetchAll();
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+      setIsSuperAdmin(!!data?.some((r: any) => r.role === 'super_admin'));
+    })();
+  }, []);
 
   async function fetchAll() {
     setLoading(true);
@@ -67,11 +87,32 @@ export default function ClientTestimonialsManager() {
 
   async function saveItem(item: Testimonial) {
     setSavingId(item.id);
-    const { id, ...rest } = item;
-    const { error } = await supabase.from('client_testimonials').update(rest).eq('id', id);
+    // Strip moderation timestamps — those are owned by the trigger.
+    const { id, status, submitted_at, published_at, rejected_reason, ...rest } = item;
+    const { data, error } = await supabase
+      .from('client_testimonials')
+      .update(rest)
+      .eq('id', id)
+      .select()
+      .single();
     setSavingId(null);
-    if (error) toast.error('Save failed', { description: error.message });
-    else toast.success('Testimonial saved');
+    if (error) {
+      toast.error('Save failed', { description: error.message });
+      return;
+    }
+    // Re-sync from the server so we pick up any status flip the trigger
+    // applied (e.g. published → pending_review when an admin edits).
+    if (data) {
+      patchItem(id, data as Partial<Testimonial>);
+      const newStatus = (data as Testimonial).status;
+      if (newStatus === 'pending_review' && status === 'published') {
+        toast.info('Saved — sent back for review', {
+          description: 'Edits to a published testimonial require super-admin approval.',
+        });
+      } else {
+        toast.success('Testimonial saved');
+      }
+    }
   }
 
   async function createItem() {
@@ -87,6 +128,7 @@ export default function ClientTestimonialsManager() {
         accent: 'from-cyan-500 to-blue-600',
         display_order: (items.at(-1)?.display_order ?? 0) + 1,
         is_active: false,
+        status: 'draft',
       })
       .select()
       .single();
@@ -96,7 +138,7 @@ export default function ClientTestimonialsManager() {
       return;
     }
     setItems((prev) => [...prev, data as Testimonial]);
-    toast.success('Testimonial created');
+    toast.success('Testimonial created', { description: 'Saved as draft.' });
   }
 
   async function deleteItem(item: Testimonial) {
@@ -104,6 +146,43 @@ export default function ClientTestimonialsManager() {
     if (error) { toast.error('Delete failed', { description: error.message }); return; }
     setItems((prev) => prev.filter((i) => i.id !== item.id));
     toast.success('Deleted');
+  }
+
+  // ── Moderation actions ────────────────────────────────────────────────
+  async function setStatus(item: Testimonial, status: TestimonialStatus, extra: Partial<Testimonial> = {}) {
+    const { data, error } = await supabase
+      .from('client_testimonials')
+      .update({ status, ...extra })
+      .eq('id', item.id)
+      .select()
+      .single();
+    if (error) {
+      toast.error('Could not update status', { description: error.message });
+      return;
+    }
+    if (data) patchItem(item.id, data as Partial<Testimonial>);
+  }
+
+  async function submitForReview(item: Testimonial) {
+    await setStatus(item, 'pending_review');
+    toast.success('Submitted for review', {
+      description: 'A super admin will approve this before it goes live.',
+    });
+  }
+
+  async function approveAndPublish(item: Testimonial) {
+    await setStatus(item, 'published', { rejected_reason: null });
+    toast.success('Published', { description: 'This testimonial is now live.' });
+  }
+
+  async function unpublish(item: Testimonial) {
+    await setStatus(item, 'draft');
+    toast.success('Unpublished', { description: 'Hidden from the public landing page.' });
+  }
+
+  async function reject(item: Testimonial, reason: string) {
+    await setStatus(item, 'draft', { rejected_reason: reason || 'Sent back for changes.' });
+    toast.success('Sent back to draft', { description: 'The author will see your note.' });
   }
 
   function pickFileFor(id: string) {
@@ -241,15 +320,22 @@ export default function ClientTestimonialsManager() {
                   <div className="min-w-0">
                     <CardTitle className="text-base truncate">{item.name || 'Untitled'}</CardTitle>
                     <CardDescription className="truncate">{item.company}</CardDescription>
+                    {item.status === 'draft' && item.rejected_reason && (
+                      <p className="mt-1 text-[11px] text-destructive">
+                        Sent back: {item.rejected_reason}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <StatusBadge status={item.status} />
                   <Badge variant={item.is_active ? 'default' : 'outline'} className="text-[10px]">
-                    {item.is_active ? 'Live' : 'Hidden'}
+                    {item.is_active ? 'Visible' : 'Hidden'}
                   </Badge>
                   <Switch
                     checked={item.is_active}
                     onCheckedChange={(v) => patchItem(item.id, { is_active: v })}
+                    aria-label="Toggle visibility"
                   />
                 </div>
               </CardHeader>
@@ -309,7 +395,16 @@ export default function ClientTestimonialsManager() {
                     {item.logo_url ? 'Replace logo' : 'Upload logo'}
                   </Button>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    <ModerationActions
+                      item={item}
+                      isSuperAdmin={isSuperAdmin}
+                      onSubmit={() => submitForReview(item)}
+                      onApprove={() => approveAndPublish(item)}
+                      onReject={(reason) => reject(item, reason)}
+                      onUnpublish={() => unpublish(item)}
+                    />
+
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="sm" className="text-destructive gap-1.5">
@@ -389,4 +484,126 @@ function humanizeLogoErrorTitle(code: string): string {
     case 'db_update_failed': return 'Saved file but failed to link it';
     default:                 return 'Logo validation failed';
   }
+}
+
+/**
+ * Compact status pill shown next to each testimonial card. Status flow:
+ *  - draft           → not visible to the public; admin is editing
+ *  - pending_review  → admin asked for super-admin approval
+ *  - published       → visible on the public landing page (if active)
+ */
+function StatusBadge({ status }: { status: TestimonialStatus }) {
+  const map = {
+    draft:          { label: 'Draft',        className: 'bg-muted text-muted-foreground border-transparent' },
+    pending_review: { label: 'Pending review', className: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30' },
+    published:      { label: 'Published',    className: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' },
+  } as const;
+  const s = map[status];
+  return (
+    <Badge variant="outline" className={`text-[10px] font-semibold ${s.className}`}>
+      {s.label}
+    </Badge>
+  );
+}
+
+/**
+ * Moderation buttons rendered per testimonial. The available actions
+ * depend on the row's status and the caller's role:
+ *
+ *   draft           → admin: Submit for review · super: Publish
+ *   pending_review  → super: Approve & Publish · Reject (with reason)
+ *   published       → super: Unpublish
+ *
+ * All transitions are also enforced server-side by the
+ * `guard_testimonial_publish` trigger, so the UI is purely a guard rail.
+ */
+function ModerationActions({
+  item, isSuperAdmin, onSubmit, onApprove, onReject, onUnpublish,
+}: {
+  item: Testimonial;
+  isSuperAdmin: boolean;
+  onSubmit: () => void | Promise<void>;
+  onApprove: () => void | Promise<void>;
+  onReject: (reason: string) => void | Promise<void>;
+  onUnpublish: () => void | Promise<void>;
+}) {
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [reason, setReason] = useState('');
+
+  // Draft → submit for review (admin) or publish directly (super).
+  if (item.status === 'draft') {
+    return (
+      <>
+        {!isSuperAdmin && (
+          <Button variant="secondary" size="sm" className="gap-1.5" onClick={onSubmit}>
+            <Send className="w-4 h-4" /> Submit for review
+          </Button>
+        )}
+        {isSuperAdmin && (
+          <Button variant="default" size="sm" className="gap-1.5" onClick={onApprove}>
+            <CheckCircle2 className="w-4 h-4" /> Publish
+          </Button>
+        )}
+      </>
+    );
+  }
+
+  // Pending → super-admin approves or rejects.
+  if (item.status === 'pending_review') {
+    if (!isSuperAdmin) {
+      return (
+        <span className="text-xs text-muted-foreground italic">
+          Awaiting super-admin approval
+        </span>
+      );
+    }
+    return (
+      <>
+        <Button variant="default" size="sm" className="gap-1.5" onClick={onApprove}>
+          <CheckCircle2 className="w-4 h-4" /> Approve &amp; Publish
+        </Button>
+        <AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <XCircle className="w-4 h-4" /> Reject
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Send back for changes?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Add a short note so the author knows what to fix. The testimonial returns to draft.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <Textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Replace the logo with a higher-resolution version."
+              rows={3}
+              className="text-sm"
+            />
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setReason('')}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => { await onReject(reason.trim()); setReason(''); }}
+              >
+                Send back
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
+    );
+  }
+
+  // Published → only super-admin can unpublish.
+  if (item.status === 'published' && isSuperAdmin) {
+    return (
+      <Button variant="outline" size="sm" className="gap-1.5" onClick={onUnpublish}>
+        <EyeOff className="w-4 h-4" /> Unpublish
+      </Button>
+    );
+  }
+
+  return null;
 }
