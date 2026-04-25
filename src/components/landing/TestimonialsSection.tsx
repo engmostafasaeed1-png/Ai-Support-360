@@ -1,31 +1,65 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Star, Quote } from 'lucide-react';
 import SectionHeader from './SectionHeader';
+import { supabase } from '@/integrations/supabase/client';
 import logoSaudiPetro from '@/assets/clients/saudi-petrochemical.png';
 import logoRiyadhBank from '@/assets/clients/riyadh-bank.png';
 import logoGccRetail from '@/assets/clients/gcc-retail.png';
 
 type Testimonial = {
+  id: string;
   name: string;
   role: string;
-  text: string;
+  company: string;
+  quote: string;
   rating: number;
   accent: string;
-  /** Client company name, used for the logo alt text. */
-  company: string;
-  /** Client company logo. */
-  logo: string;
+  logo: string | null;
 };
 
-const testimonials: Testimonial[] = [
-  { name: 'Khalid Al-Otaibi', role: 'CIO, Saudi Petrochemical Corp', company: 'Saudi Petrochemical Corp', logo: logoSaudiPetro,  text: 'The platform matched us with an S/4HANA expert in under 10 minutes. Our migration issue was resolved in a single session. Outstanding service.', rating: 5, accent: 'from-cyan-500 to-blue-600' },
-  { name: 'Noura Al-Saud',    role: 'IT Director, Riyadh National Bank', company: 'Riyadh National Bank',    logo: logoRiyadhBank,  text: 'The bilingual support is a game-changer for our team. Arabic consultants who understand Saudi banking regulations and SAP FI/CO deeply.', rating: 5, accent: 'from-violet-500 to-purple-600' },
-  { name: 'James Mitchell',   role: 'VP Technology, GCC Retail Group',   company: 'GCC Retail Group',        logo: logoGccRetail,   text: 'We moved our entire SAP support here. The AI matching, SLA tracking, and consultant quality are enterprise-grade. Highly recommended.', rating: 5, accent: 'from-emerald-500 to-teal-600' },
+/**
+ * Fallback used while the DB query is loading or if it returns no rows
+ * (e.g. RLS blocked, network error). Keeps the section non-empty for
+ * marketing visitors. The bundled images live in src/assets/clients.
+ */
+const FALLBACK: Testimonial[] = [
+  { id: 'f1', name: 'Khalid Al-Otaibi', role: 'CIO, Saudi Petrochemical Corp', company: 'Saudi Petrochemical Corp', quote: 'The platform matched us with an S/4HANA expert in under 10 minutes. Our migration issue was resolved in a single session. Outstanding service.', rating: 5, accent: 'from-cyan-500 to-blue-600',     logo: logoSaudiPetro },
+  { id: 'f2', name: 'Noura Al-Saud',    role: 'IT Director, Riyadh National Bank', company: 'Riyadh National Bank',    quote: 'The bilingual support is a game-changer for our team. Arabic consultants who understand Saudi banking regulations and SAP FI/CO deeply.', rating: 5, accent: 'from-violet-500 to-purple-600', logo: logoRiyadhBank },
+  { id: 'f3', name: 'James Mitchell',   role: 'VP Technology, GCC Retail Group',   company: 'GCC Retail Group',        quote: 'We moved our entire SAP support here. The AI matching, SLA tracking, and consultant quality are enterprise-grade. Highly recommended.', rating: 5, accent: 'from-emerald-500 to-teal-600',  logo: logoGccRetail },
 ];
 
 export default function TestimonialsSection() {
   const { t } = useTranslation();
+  const [items, setItems] = useState<Testimonial[]>(FALLBACK);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('client_testimonials')
+        .select('id,name,role,company,quote,rating,accent,logo_url,display_order,is_active')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      if (cancelled) return;
+      if (error || !data || data.length === 0) return;
+
+      setItems(
+        data.map((d: any) => ({
+          id: d.id,
+          name: d.name,
+          role: d.role,
+          company: d.company,
+          quote: d.quote,
+          rating: d.rating,
+          accent: d.accent,
+          logo: d.logo_url,
+        }))
+      );
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <section className="relative py-24 md:py-32 overflow-hidden bg-background">
@@ -49,9 +83,9 @@ export default function TestimonialsSection() {
         />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 max-w-6xl mx-auto">
-          {testimonials.map((item, i) => (
+          {items.map((item, i) => (
             <article
-              key={i}
+              key={item.id}
               style={{ animationDelay: `${i * 90}ms` }}
               className="group relative p-7 md:p-8 rounded-3xl bg-card/70 backdrop-blur-sm border border-border/60 motion-safe:transition-all motion-safe:duration-500 hover:border-primary/40 hover:-translate-y-1 hover:shadow-2xl motion-safe:animate-fade-in-up"
             >
@@ -67,7 +101,7 @@ export default function TestimonialsSection() {
                   ))}
                 </div>
                 <p className="text-sm md:text-base text-foreground/80 mb-6 leading-relaxed">
-                  &ldquo;{item.text}&rdquo;
+                  &ldquo;{item.quote}&rdquo;
                 </p>
                 <div className="flex items-center gap-3 pt-4 border-t border-border/40">
                   <ClientLogo item={item} />
@@ -92,14 +126,13 @@ export default function TestimonialsSection() {
 function ClientLogo({ item }: { item: Testimonial }) {
   const [failed, setFailed] = useState(false);
   const initials = item.name.split(' ').map((n) => n[0]).join('').slice(0, 2);
+  const showImage = !!item.logo && !failed;
 
   return (
-    <div
-      className={`relative w-11 h-11 rounded-2xl shrink-0 overflow-hidden border border-border/40 bg-card flex items-center justify-center shadow-lg motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-110`}
-    >
-      {!failed ? (
+    <div className="relative w-11 h-11 rounded-2xl shrink-0 overflow-hidden border border-border/40 bg-card flex items-center justify-center shadow-lg motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-110">
+      {showImage ? (
         <img
-          src={item.logo}
+          src={item.logo as string}
           alt={`${item.company} logo`}
           loading="lazy"
           decoding="async"
