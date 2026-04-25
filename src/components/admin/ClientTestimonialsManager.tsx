@@ -166,6 +166,72 @@ export default function ClientTestimonialsManager() {
     toast.success('Deleted');
   }
 
+  // ── Featured + reordering ─────────────────────────────────────────────
+  // Toggling featured is an immediate write so the bucket the row lives
+  // in (featured vs not) updates without needing a full Save click.
+  async function toggleFeatured(item: Testimonial, next: boolean) {
+    // Optimistic flip
+    patchItem(item.id, { is_featured: next });
+    const { error } = await supabase
+      .from('client_testimonials')
+      .update({ is_featured: next })
+      .eq('id', item.id);
+    if (error) {
+      patchItem(item.id, { is_featured: !next });
+      toast.error('Could not update featured flag', { description: error.message });
+      return;
+    }
+    toast.success(next ? 'Marked as featured' : 'Removed from featured');
+  }
+
+  // Persist a new visual order by writing a fresh display_order for
+  // every affected row. We renumber 1..N inside each bucket so the
+  // landing page sort (is_featured DESC, display_order ASC) matches
+  // exactly what the admin sees here.
+  async function persistOrder(next: Testimonial[]) {
+    const featured = next.filter((t) => t.is_featured);
+    const rest     = next.filter((t) => !t.is_featured);
+
+    const renumbered = [
+      ...featured.map((t, i) => ({ ...t, display_order: i + 1 })),
+      ...rest.map((t, i)     => ({ ...t, display_order: i + 1 })),
+    ];
+
+    setItems(renumbered);
+
+    // Batch the updates — one round-trip per row, but they're tiny.
+    const updates = await Promise.all(
+      renumbered.map((t) =>
+        supabase
+          .from('client_testimonials')
+          .update({ display_order: t.display_order })
+          .eq('id', t.id),
+      ),
+    );
+    const failed = updates.find((u) => u.error);
+    if (failed?.error) {
+      toast.error('Order saved partially', { description: failed.error.message });
+    }
+  }
+
+  function handleDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIndex = items.findIndex((t) => t.id === active.id);
+    const newIndex = items.findIndex((t) => t.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    // Prevent dragging across the featured / non-featured boundary —
+    // those buckets are independent and have their own ordering. The
+    // user should toggle Featured to move a row between them.
+    if (items[oldIndex].is_featured !== items[newIndex].is_featured) {
+      toast.info('Toggle “Featured” to move between sections');
+      return;
+    }
+
+    void persistOrder(arrayMove(items, oldIndex, newIndex));
+  }
+
   // ── Moderation actions ────────────────────────────────────────────────
   async function setStatus(item: Testimonial, status: TestimonialStatus, extra: Partial<Testimonial> = {}) {
     const { data, error } = await supabase
