@@ -1,4 +1,8 @@
 /**
+ * See `docs/accessibility.md` ("Tile image alt text — decorative vs
+ * descriptive") and `CONTRIBUTING.md` for the project-wide rule this
+ * helper enforces. Enforced in CI by `src/test/landing-a11y.test.tsx`.
+ *
  * Decide the correct `alt` value for an image that lives inside a tile/card.
  *
  * Accessibility rule of thumb:
