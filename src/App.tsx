@@ -227,6 +227,7 @@ const App = () => (
             <Route path="/join/:sessionId" element={<MeetingHandoffPage />} />
             <Route path="/index" element={<Navigate to="/" replace />} />
             <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/demo/confirmation/:token" element={<DemoRequestConfirmationPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
