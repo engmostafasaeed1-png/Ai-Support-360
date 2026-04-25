@@ -280,7 +280,7 @@ function DemoRequestWizard({
         {/* Body */}
         <div className="px-6 md:px-8 py-6 max-h-[60vh] overflow-y-auto">
           {submitted ? (
-            <SuccessPanel selectedType={selectedType} time={time} email={email} />
+            <SuccessPanel selectedType={selectedType} time={time} email={email} date={date} slot={slot} />
           ) : step === 0 ? (
             <DemoTypeStep value={type} onChange={setType} />
           ) : step === 1 ? (
