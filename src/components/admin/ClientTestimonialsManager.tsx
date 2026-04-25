@@ -12,9 +12,21 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Plus, Save, Trash2, Upload, Quote, ImageIcon, Send, CheckCircle2, XCircle, EyeOff } from 'lucide-react';
+import {
+  Loader2, Plus, Save, Trash2, Upload, Quote, ImageIcon, Send,
+  CheckCircle2, XCircle, EyeOff, Star, GripVertical,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import LogoCropDialog from './LogoCropDialog';
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates,
+  useSortable, verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 type TestimonialStatus = 'draft' | 'pending_review' | 'published';
 
