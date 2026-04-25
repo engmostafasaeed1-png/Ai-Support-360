@@ -46,6 +46,7 @@ type Testimonial = {
   rejected_reason: string | null;
   submitted_at: string | null;
   published_at: string | null;
+  updated_at: string | null;
 };
 
 const ACCENT_PRESETS = [
