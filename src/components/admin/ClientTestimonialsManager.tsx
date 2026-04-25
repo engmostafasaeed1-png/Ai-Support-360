@@ -485,3 +485,125 @@ function humanizeLogoErrorTitle(code: string): string {
     default:                 return 'Logo validation failed';
   }
 }
+
+/**
+ * Compact status pill shown next to each testimonial card. Status flow:
+ *  - draft           → not visible to the public; admin is editing
+ *  - pending_review  → admin asked for super-admin approval
+ *  - published       → visible on the public landing page (if active)
+ */
+function StatusBadge({ status }: { status: TestimonialStatus }) {
+  const map = {
+    draft:          { label: 'Draft',        className: 'bg-muted text-muted-foreground border-transparent' },
+    pending_review: { label: 'Pending review', className: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30' },
+    published:      { label: 'Published',    className: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' },
+  } as const;
+  const s = map[status];
+  return (
+    <Badge variant="outline" className={`text-[10px] font-semibold ${s.className}`}>
+      {s.label}
+    </Badge>
+  );
+}
+
+/**
+ * Moderation buttons rendered per testimonial. The available actions
+ * depend on the row's status and the caller's role:
+ *
+ *   draft           → admin: Submit for review · super: Publish
+ *   pending_review  → super: Approve & Publish · Reject (with reason)
+ *   published       → super: Unpublish
+ *
+ * All transitions are also enforced server-side by the
+ * `guard_testimonial_publish` trigger, so the UI is purely a guard rail.
+ */
+function ModerationActions({
+  item, isSuperAdmin, onSubmit, onApprove, onReject, onUnpublish,
+}: {
+  item: Testimonial;
+  isSuperAdmin: boolean;
+  onSubmit: () => void | Promise<void>;
+  onApprove: () => void | Promise<void>;
+  onReject: (reason: string) => void | Promise<void>;
+  onUnpublish: () => void | Promise<void>;
+}) {
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [reason, setReason] = useState('');
+
+  // Draft → submit for review (admin) or publish directly (super).
+  if (item.status === 'draft') {
+    return (
+      <>
+        {!isSuperAdmin && (
+          <Button variant="secondary" size="sm" className="gap-1.5" onClick={onSubmit}>
+            <Send className="w-4 h-4" /> Submit for review
+          </Button>
+        )}
+        {isSuperAdmin && (
+          <Button variant="default" size="sm" className="gap-1.5" onClick={onApprove}>
+            <CheckCircle2 className="w-4 h-4" /> Publish
+          </Button>
+        )}
+      </>
+    );
+  }
+
+  // Pending → super-admin approves or rejects.
+  if (item.status === 'pending_review') {
+    if (!isSuperAdmin) {
+      return (
+        <span className="text-xs text-muted-foreground italic">
+          Awaiting super-admin approval
+        </span>
+      );
+    }
+    return (
+      <>
+        <Button variant="default" size="sm" className="gap-1.5" onClick={onApprove}>
+          <CheckCircle2 className="w-4 h-4" /> Approve &amp; Publish
+        </Button>
+        <AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <XCircle className="w-4 h-4" /> Reject
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Send back for changes?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Add a short note so the author knows what to fix. The testimonial returns to draft.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <Textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Replace the logo with a higher-resolution version."
+              rows={3}
+              className="text-sm"
+            />
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setReason('')}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => { await onReject(reason.trim()); setReason(''); }}
+              >
+                Send back
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
+    );
+  }
+
+  // Published → only super-admin can unpublish.
+  if (item.status === 'published' && isSuperAdmin) {
+    return (
+      <Button variant="outline" size="sm" className="gap-1.5" onClick={onUnpublish}>
+        <EyeOff className="w-4 h-4" /> Unpublish
+      </Button>
+    );
+  }
+
+  return null;
+}
