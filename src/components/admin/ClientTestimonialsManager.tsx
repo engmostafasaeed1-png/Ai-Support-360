@@ -12,9 +12,11 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Plus, Save, Trash2, Upload, Quote, ImageIcon } from 'lucide-react';
+import { Loader2, Plus, Save, Trash2, Upload, Quote, ImageIcon, Send, CheckCircle2, XCircle, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import LogoCropDialog from './LogoCropDialog';
+
+type TestimonialStatus = 'draft' | 'pending_review' | 'published';
 
 type Testimonial = {
   id: string;
@@ -27,6 +29,10 @@ type Testimonial = {
   logo_url: string | null;
   display_order: number;
   is_active: boolean;
+  status: TestimonialStatus;
+  rejected_reason: string | null;
+  submitted_at: string | null;
+  published_at: string | null;
 };
 
 const ACCENT_PRESETS = [
@@ -48,7 +54,21 @@ export default function ClientTestimonialsManager() {
   const [cropTargetId, setCropTargetId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  // Role detection — drives which moderation actions are available.
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    fetchAll();
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+      setIsSuperAdmin(!!data?.some((r: any) => r.role === 'super_admin'));
+    })();
+  }, []);
 
   async function fetchAll() {
     setLoading(true);
