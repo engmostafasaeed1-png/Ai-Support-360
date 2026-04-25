@@ -126,23 +126,47 @@ export default function ClientTestimonialsManager() {
     if (!cropTargetId) return;
     const id = cropTargetId;
     try {
-      const path = `${id}/${Date.now()}.png`;
-      const { error: upErr } = await supabase.storage
-        .from('client-logos')
-        .upload(path, blob, { contentType: 'image/png', upsert: true });
-      if (upErr) throw upErr;
+      // Send the cropped PNG to the edge function for server-side
+      // validation (1:1 square, exactly 512×512, transparent PNG, ≤ 2MB)
+      // before it ever lands in storage.
+      const file = new File([blob], 'logo.png', { type: 'image/png' });
+      const form = new FormData();
+      form.append('testimonial_id', id);
+      form.append('file', file);
 
-      const { data: { publicUrl } } = supabase.storage.from('client-logos').getPublicUrl(path);
-      const cacheBusted = `${publicUrl}?t=${Date.now()}`;
+      const { data, error } = await supabase.functions.invoke('validate-client-logo', {
+        body: form,
+      });
 
-      const { error: updErr } = await supabase
-        .from('client_testimonials')
-        .update({ logo_url: cacheBusted })
-        .eq('id', id);
-      if (updErr) throw updErr;
+      // `functions.invoke` only sets `error` on transport / non-2xx;
+      // for 4xx the body still contains our structured error payload.
+      const payload = (data ?? (error as any)?.context?.json?.()) as
+        | { ok: true; logo_url: string }
+        | { ok: false; code: string; message: string }
+        | undefined;
 
-      patchItem(id, { logo_url: cacheBusted });
-      toast.success('Logo updated');
+      let resolved = payload;
+      if (!resolved && error) {
+        // Try to read JSON body off the failed response.
+        try {
+          const ctx = (error as any).context;
+          if (ctx?.body) resolved = await new Response(ctx.body).json();
+        } catch {
+          /* fall through */
+        }
+      }
+
+      if (!resolved || resolved.ok !== true) {
+        const code = (resolved as any)?.code ?? 'internal';
+        const msg = (resolved as any)?.message ?? error?.message ?? 'Validation failed';
+        toast.error(humanizeLogoErrorTitle(code), { description: msg });
+        return;
+      }
+
+      patchItem(id, { logo_url: resolved.logo_url });
+      toast.success('Logo updated', {
+        description: 'Validated as a transparent 512×512 PNG.',
+      });
     } catch (err: any) {
       toast.error('Upload failed', { description: err.message });
     } finally {
@@ -343,4 +367,26 @@ function LogoPreview({ url, accent, name }: { url: string | null; accent: string
       )}
     </div>
   );
+}
+
+/**
+ * Map the structured `code` returned by the validate-client-logo edge
+ * function to a short, human-friendly toast title. Keep titles to a
+ * single line — the full server message is shown in the description.
+ */
+function humanizeLogoErrorTitle(code: string): string {
+  switch (code) {
+    case 'unauthenticated':  return 'Please sign in again';
+    case 'forbidden':        return 'Admin role required';
+    case 'missing_fields':   return 'Missing upload data';
+    case 'bad_mime':         return 'Wrong file type';
+    case 'file_too_large':   return 'File too large';
+    case 'unreadable_png':   return 'Invalid PNG file';
+    case 'wrong_dimensions': return 'Wrong dimensions';
+    case 'not_square':       return 'Logo is not square';
+    case 'not_transparent':  return 'Background is not transparent';
+    case 'upload_failed':    return 'Could not save the logo';
+    case 'db_update_failed': return 'Saved file but failed to link it';
+    default:                 return 'Logo validation failed';
+  }
 }
