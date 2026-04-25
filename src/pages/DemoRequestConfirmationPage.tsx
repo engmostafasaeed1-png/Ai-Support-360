@@ -393,6 +393,25 @@ function RescheduleForm({
     }
     demoFunnel.rescheduleSubmitSuccess(baseProps);
     toast.success('Reschedule request sent — we\u2019ll confirm shortly.');
+    // Send "awaiting confirmation" email (best-effort; do not block UI on failure)
+    try {
+      const confirmationUrl = `${window.location.origin}/demo/confirmation/${token}`;
+      await supabase.functions.invoke('send-transactional-email', {
+        body: {
+          templateName: 'demo-reschedule-received',
+          recipientEmail: requestEmail,
+          idempotencyKey: `demo-reschedule-received-${requestId}-${Date.now()}`,
+          templateData: {
+            name: requestName,
+            confirmationUrl,
+            proposedSlots: valid,
+            reason: reason.trim() || undefined,
+          },
+        },
+      });
+    } catch (e) {
+      console.warn('Failed to enqueue reschedule email', e);
+    }
     await onSuccess();
   };
 
