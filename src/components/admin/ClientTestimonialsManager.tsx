@@ -454,6 +454,202 @@ export default function ClientTestimonialsManager() {
   );
 }
 
+/**
+ * One sortable card. Owns the dnd-kit `useSortable` wiring so the
+ * parent list stays declarative. The drag handle is a dedicated button
+ * (rather than the whole card) to avoid hijacking text selection,
+ * input focus, and dialog clicks inside the editor.
+ */
+function SortableTestimonialRow({
+  item, savingId, isSuperAdmin,
+  onPatch, onToggleFeatured, onPickFile, onSave, onDelete,
+  onSubmitForReview, onApprove, onReject, onUnpublish,
+}: {
+  item: Testimonial;
+  savingId: string | null;
+  isSuperAdmin: boolean;
+  onPatch: (patch: Partial<Testimonial>) => void;
+  onToggleFeatured: (next: boolean) => void;
+  onPickFile: () => void;
+  onSave: () => void;
+  onDelete: () => void;
+  onSubmitForReview: () => void;
+  onApprove: () => void;
+  onReject: (reason: string) => void;
+  onUnpublish: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: item.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    // Lift the dragged row above its siblings + dim the rest visually.
+    zIndex: isDragging ? 20 : undefined,
+    opacity: isDragging ? 0.85 : 1,
+  };
+
+  return (
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={`rounded-2xl ${isDragging ? 'ring-2 ring-primary shadow-lg' : ''}`}
+    >
+      <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Drag handle — only this element listens for drag events. */}
+          <button
+            type="button"
+            className="flex h-9 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+            aria-label={`Reorder ${item.name || 'testimonial'}`}
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="w-4 h-4" />
+          </button>
+          <LogoPreview url={item.logo_url} accent={item.accent} name={item.name} />
+          <div className="min-w-0">
+            <CardTitle className="text-base truncate flex items-center gap-1.5">
+              {item.name || 'Untitled'}
+              {item.is_featured && (
+                <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" aria-label="Featured" />
+              )}
+            </CardTitle>
+            <CardDescription className="truncate">{item.company}</CardDescription>
+            {item.status === 'draft' && item.rejected_reason && (
+              <p className="mt-1 text-[11px] text-destructive">
+                Sent back: {item.rejected_reason}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <StatusBadge status={item.status} />
+          <Badge variant={item.is_active ? 'default' : 'outline'} className="text-[10px]">
+            {item.is_active ? 'Visible' : 'Hidden'}
+          </Badge>
+          <Switch
+            checked={item.is_active}
+            onCheckedChange={(v) => onPatch({ is_active: v })}
+            aria-label="Toggle visibility"
+          />
+        </div>
+      </CardHeader>
+
+      <CardContent className="grid md:grid-cols-2 gap-4">
+        <Field label="Name">
+          <Input value={item.name} onChange={(e) => onPatch({ name: e.target.value })} />
+        </Field>
+        <Field label="Role / title line">
+          <Input value={item.role} onChange={(e) => onPatch({ role: e.target.value })} />
+        </Field>
+        <Field label="Company (used for logo alt text)">
+          <Input value={item.company} onChange={(e) => onPatch({ company: e.target.value })} />
+        </Field>
+        <Field label="Display order (auto-managed by drag & drop)">
+          <Input
+            type="number"
+            value={item.display_order}
+            onChange={(e) => onPatch({ display_order: Number(e.target.value) || 0 })}
+          />
+        </Field>
+        <Field label="Quote" className="md:col-span-2">
+          <Textarea
+            rows={3}
+            value={item.quote}
+            onChange={(e) => onPatch({ quote: e.target.value })}
+          />
+        </Field>
+        <Field label="Rating (1–5)">
+          <Input
+            type="number"
+            min={1}
+            max={5}
+            value={item.rating}
+            onChange={(e) =>
+              onPatch({ rating: Math.min(5, Math.max(1, Number(e.target.value) || 5)) })
+            }
+          />
+        </Field>
+        <Field label="Accent gradient">
+          <select
+            value={item.accent}
+            onChange={(e) => onPatch({ accent: e.target.value })}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            {ACCENT_PRESETS.map((p) => (
+              <option key={p.value} value={p.value}>{p.label}</option>
+            ))}
+          </select>
+        </Field>
+
+        {/* Featured toggle — persists immediately so the row jumps to
+            the right bucket without waiting for Save. */}
+        <Field label="Featured" className="md:col-span-2">
+          <div className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Star className={`w-4 h-4 ${item.is_featured ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground'}`} />
+              <span>
+                {item.is_featured
+                  ? 'Pinned to the top of the landing page'
+                  : 'Shown after featured testimonials'}
+              </span>
+            </div>
+            <Switch
+              checked={item.is_featured}
+              onCheckedChange={onToggleFeatured}
+              aria-label="Toggle featured"
+            />
+          </div>
+        </Field>
+
+        <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-3 pt-2">
+          <Button variant="outline" onClick={onPickFile} className="gap-2">
+            <Upload className="w-4 h-4" />
+            {item.logo_url ? 'Replace logo' : 'Upload logo'}
+          </Button>
+
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <ModerationActions
+              item={item}
+              isSuperAdmin={isSuperAdmin}
+              onSubmit={onSubmitForReview}
+              onApprove={onApprove}
+              onReject={onReject}
+              onUnpublish={onUnpublish}
+            />
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-destructive gap-1.5">
+                  <Trash2 className="w-4 h-4" /> Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete testimonial?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will remove the testimonial from the landing page. The uploaded logo file is kept in storage.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <Button onClick={onSave} disabled={savingId === item.id} className="gap-2">
+              {savingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Save
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function Field({ label, children, className = '' }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={`space-y-1.5 ${className}`}>
