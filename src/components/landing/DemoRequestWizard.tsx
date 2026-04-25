@@ -284,7 +284,11 @@ function DemoRequestWizard({
           ) : step === 0 ? (
             <DemoTypeStep value={type} onChange={setType} />
           ) : step === 1 ? (
-            <ScheduleStep value={time} onChange={setTime} />
+            <ScheduleStep
+              value={time} onChange={setTime}
+              date={date} onDateChange={setDate}
+              slot={slot} onSlotChange={setSlot}
+            />
           ) : (
             <DetailsStep
               name={name} setName={setName}
