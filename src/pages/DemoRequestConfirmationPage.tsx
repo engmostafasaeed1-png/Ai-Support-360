@@ -11,6 +11,7 @@ import {
   Globe, Video, Users, CalendarClock, Plus, X, RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { demoFunnel } from '@/lib/analytics';
 
 /**
  * Public confirmation page reached after submitting the demo wizard.
