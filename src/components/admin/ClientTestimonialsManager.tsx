@@ -509,7 +509,7 @@ function SortableTestimonialRow({
           >
             <GripVertical className="w-4 h-4" />
           </button>
-          <LogoPreview url={item.logo_url} accent={item.accent} name={item.name} />
+          <LogoPreview url={withCacheBust(item.logo_url, item.updated_at)} accent={item.accent} name={item.name} />
           <div className="min-w-0">
             <CardTitle className="text-base truncate flex items-center gap-1.5">
               {item.name || 'Untitled'}
