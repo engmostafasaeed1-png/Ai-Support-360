@@ -421,3 +421,49 @@ export default function ValueDifferentiationSection() {
     </section>
   );
 }
+
+/**
+ * Single check / cross / label cell for the comparison table. Pulled
+ * out so the row markup stays readable and so the same visual rules
+ * (gradient halo for "us yes", muted plate for everything else) apply
+ * consistently across all rows.
+ *
+ *  - boolean true  → check icon
+ *  - boolean false → cross icon
+ *  - string        → small pill with the literal label (e.g. "Add-on")
+ *
+ * The `variant` only affects the "yes" treatment: only our column gets
+ * the gradient halo, so the eye is pulled to the differences.
+ */
+function CompareCell({ value, variant }: { value: CompareCellValue; variant: 'us' | 'them' }) {
+  if (value === true) {
+    if (variant === 'us') {
+      return (
+        <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30 motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-110 motion-safe:group-hover:-rotate-6">
+          <div aria-hidden="true" className="absolute inset-0 rounded-2xl bg-primary/40 blur-lg -z-10" />
+          <Check size={18} strokeWidth={3} absoluteStrokeWidth className="relative text-primary-foreground" aria-label="Included" />
+        </div>
+      );
+    }
+    return (
+      <div className="w-10 h-10 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/55">
+        <Check size={18} strokeWidth={2.5} absoluteStrokeWidth aria-label="Included" />
+      </div>
+    );
+  }
+
+  if (value === false) {
+    return (
+      <div className="w-10 h-10 rounded-2xl bg-muted/40 border border-border/50 flex items-center justify-center text-muted-foreground/45">
+        <X size={18} strokeWidth={2.25} absoluteStrokeWidth aria-label="Not included" />
+      </div>
+    );
+  }
+
+  // String label (e.g. "Generic", "Add-on", "Varies")
+  return (
+    <span className="text-xs font-medium text-muted-foreground/80 italic px-3 py-1 rounded-full bg-muted/40 border border-border/40 whitespace-nowrap">
+      {value}
+    </span>
+  );
+}
