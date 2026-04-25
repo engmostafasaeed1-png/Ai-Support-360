@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { accents, iconPlate, type AccentName } from './tokens';
 
 /* -------------------------------------------------------------------------- */
@@ -131,6 +133,7 @@ function DemoRequestWizard({
   initialType?: DemoType['id'];
 }) {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -164,15 +167,51 @@ function DemoRequestWizard({
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
   const submit = async () => {
+    if (!type || !time) return;
     setSubmitting(true);
-    // Simulated submit — wire to backend later.
-    await new Promise((r) => setTimeout(r, 700));
+
+    // Pull the current user (if any) so admins can later see who logged in
+    // as well as the email on the row. Anon users still get inserted.
+    const { data: userRes } = await supabase.auth.getUser();
+
+    const { data, error } = await supabase
+      .from('demo_requests')
+      .insert({
+        user_id: userRes.user?.id ?? null,
+        demo_type: type,
+        scheduling_preference: time,
+        full_name: name.trim(),
+        email: email.trim(),
+        company: company.trim() || null,
+        notes: notes.trim() || null,
+        source: 'landing-wizard',
+      })
+      .select('request_token')
+      .single();
+
     setSubmitting(false);
+
+    if (error || !data?.request_token) {
+      toast({
+        variant: 'destructive',
+        title: 'Couldn\u2019t submit request',
+        description: error?.message ?? 'Please try again in a moment.',
+      });
+      return;
+    }
+
     setSubmitted(true);
     toast({
       title: 'Demo request received',
       description: 'We\u2019ll be in touch within one business hour.',
     });
+
+    // Give the success state a beat to render, then route to the
+    // shareable confirmation page so the user can revisit anytime.
+    setTimeout(() => {
+      onOpenChange(false);
+      navigate(`/demo/confirmation/${data.request_token}`);
+    }, 900);
   };
 
   const selectedType = demoTypes.find((d) => d.id === type) ?? null;

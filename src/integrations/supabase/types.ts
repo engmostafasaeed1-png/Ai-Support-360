@@ -1198,6 +1198,57 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_requests: {
+        Row: {
+          company: string | null
+          created_at: string
+          demo_type: string
+          email: string
+          full_name: string
+          id: string
+          notes: string | null
+          request_token: string
+          scheduling_preference: string
+          source: string | null
+          status: string
+          status_note: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          demo_type: string
+          email: string
+          full_name: string
+          id?: string
+          notes?: string | null
+          request_token?: string
+          scheduling_preference: string
+          source?: string | null
+          status?: string
+          status_note?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          demo_type?: string
+          email?: string
+          full_name?: string
+          id?: string
+          notes?: string | null
+          request_token?: string
+          scheduling_preference?: string
+          source?: string | null
+          status?: string
+          status_note?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       environment_connections: {
         Row: {
           created_at: string
@@ -5391,6 +5442,22 @@ export type Database = {
       }
     }
     Functions: {
+      get_demo_request_by_token: {
+        Args: { _token: string }
+        Returns: {
+          company: string
+          created_at: string
+          demo_type: string
+          email: string
+          full_name: string
+          id: string
+          notes: string
+          scheduling_preference: string
+          status: string
+          status_note: string
+          updated_at: string
+        }[]
+      }
       get_integration_credentials: {
         Args: { _integration_id: string }
         Returns: {
