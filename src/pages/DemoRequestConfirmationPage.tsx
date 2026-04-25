@@ -20,6 +20,8 @@ type DemoRequest = {
   scheduling_preference: 'asap' | 'this-week' | 'next-week' | 'flexible';
   scheduled_date: string | null;
   scheduled_slot: string | null;
+  timezone: string | null;
+  meeting_format: 'video' | 'phone' | 'in-person' | null;
   full_name: string;
   email: string;
   company: string | null;
