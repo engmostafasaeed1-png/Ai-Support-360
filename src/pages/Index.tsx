@@ -11,9 +11,11 @@ import FAQSection from '@/components/landing/FAQSection';
 import ContactSection from '@/components/landing/ContactSection';
 import Footer from '@/components/landing/Footer';
 import ScrollFadeIn from '@/components/landing/ScrollFadeIn';
+import { DemoWizardProvider } from '@/components/landing/DemoRequestWizard';
 
 const Index = () => {
   return (
+    <DemoWizardProvider>
     <div className="min-h-screen bg-background">
       <Navbar />
       <HeroSection />
