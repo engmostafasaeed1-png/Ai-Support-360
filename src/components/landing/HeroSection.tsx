@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Users, CheckCircle, Clock, Eye, Zap, ShieldCheck, Bot, Activity, LogIn, Rocket } from 'lucide-react';
+import { ArrowRight, Sparkles, Users, CheckCircle, Clock, Eye, Zap, ShieldCheck, Bot, Activity, LogIn, Rocket, CalendarPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import GuestExploreModal from '@/components/guest/GuestExploreModal';
+import { useDemoWizard } from './DemoRequestWizard';
 import VideoBackground from '@/components/VideoBackground';
 import heroBgAsset from '@/assets/videos/hero-bg.mp4.asset.json';
 import introCollab from '@/assets/intro-collab.jpg';
@@ -13,6 +14,7 @@ import introConsultant from '@/assets/intro-consultant.jpg';
 export default function HeroSection() {
   const { t } = useTranslation();
   const [exploreOpen, setExploreOpen] = useState(false);
+  const demoWizard = useDemoWizard();
 
   const stats = [
     { value: '500+', label: t('hero.stat_consultants'), icon: Users },
@@ -117,6 +119,14 @@ export default function HeroSection() {
               <Link to="/signup?role=consultant" className="text-primary-foreground/70 hover:text-primary-foreground underline-offset-4 hover:underline transition-colors">
                 {t('hero.cta_consultant')}
               </Link>
+              <span className="text-primary-foreground/30">•</span>
+              <button
+                onClick={() => demoWizard.open('live')}
+                className="inline-flex items-center gap-1.5 text-primary-foreground/90 hover:text-primary-foreground transition-colors font-semibold"
+              >
+                <CalendarPlus className="w-4 h-4" />
+                Request a demo
+              </button>
               <span className="text-primary-foreground/30">•</span>
               <button
                 onClick={() => setExploreOpen(true)}

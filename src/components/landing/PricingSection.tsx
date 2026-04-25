@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Check, Sparkles } from 'lucide-react';
 import SectionHeader from './SectionHeader';
+import { useDemoWizard } from './DemoRequestWizard';
 
 const plans = [
   {
@@ -35,6 +36,7 @@ const plans = [
 
 export default function PricingSection() {
   const { t } = useTranslation();
+  const demoWizard = useDemoWizard();
 
   return (
     <section id="pricing" className="relative py-24 md:py-32 bg-muted/30 overflow-hidden">
@@ -113,6 +115,7 @@ export default function PricingSection() {
                 className={`rounded-2xl h-12 font-semibold ${plan.popular ? 'bg-gradient-to-r from-primary to-accent hover:opacity-95 border-0 shadow-lg' : ''}`}
                 variant={plan.popular ? 'default' : 'outline'}
                 size="lg"
+                onClick={() => demoWizard.open(plan.ctaKey === 'contact_sales' ? 'pricing-roi' : 'live')}
               >
                 {t(`pricing.${plan.ctaKey}`)}
               </Button>

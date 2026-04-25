@@ -1,10 +1,14 @@
 import { useTranslation } from 'react-i18next';
 import logo from '@/assets/logo.png';
+import { useDemoWizard } from './DemoRequestWizard';
 
 export default function Footer() {
   const { t } = useTranslation();
+  const demoWizard = useDemoWizard();
 
-  const links = {
+  type FooterLink = { label: string; href: string; onClick?: () => void };
+
+  const links: Record<string, FooterLink[]> = {
     platform: [
       { label: t('nav.services'), href: '#categories' },
       { label: t('nav.consultants'), href: '#consultants' },
@@ -17,6 +21,7 @@ export default function Footer() {
       { label: t('footer.blog'), href: '#faq' },
     ],
     support: [
+      { label: 'Request a demo', href: '#', onClick: () => demoWizard.open() },
       { label: t('footer.help'), href: '#how-it-works' },
       { label: t('footer.contact'), href: '#contact' },
     ],
@@ -49,7 +54,11 @@ export default function Footer() {
               <ul className="space-y-3">
                 {items.map((item, i) => (
                   <li key={i}>
-                    <a href={item.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <a
+                      href={item.href}
+                      onClick={item.onClick ? (e) => { e.preventDefault(); item.onClick!(); } : undefined}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
                       {item.label}
                     </a>
                   </li>
