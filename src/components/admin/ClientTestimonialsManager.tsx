@@ -395,130 +395,53 @@ export default function ClientTestimonialsManager() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {items.map((item) => (
-            <Card key={item.id} className="rounded-2xl">
-              <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
-                <div className="flex items-center gap-4 min-w-0">
-                  <LogoPreview url={item.logo_url} accent={item.accent} name={item.name} />
-                  <div className="min-w-0">
-                    <CardTitle className="text-base truncate">{item.name || 'Untitled'}</CardTitle>
-                    <CardDescription className="truncate">{item.company}</CardDescription>
-                    {item.status === 'draft' && item.rejected_reason && (
-                      <p className="mt-1 text-[11px] text-destructive">
-                        Sent back: {item.rejected_reason}
-                      </p>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={items.map((i) => i.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="grid gap-4">
+              {items.map((item, idx) => {
+                // Render a small visual divider where the featured
+                // bucket ends, so the user understands why drags don't
+                // cross that line.
+                const prev = items[idx - 1];
+                const showDivider = prev && prev.is_featured && !item.is_featured;
+                return (
+                  <div key={item.id} className="contents">
+                    {showDivider && (
+                      <div className="flex items-center gap-3 px-1 pt-2">
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          Other testimonials
+                        </span>
+                        <div className="h-px flex-1 bg-border" />
+                      </div>
                     )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <StatusBadge status={item.status} />
-                  <Badge variant={item.is_active ? 'default' : 'outline'} className="text-[10px]">
-                    {item.is_active ? 'Visible' : 'Hidden'}
-                  </Badge>
-                  <Switch
-                    checked={item.is_active}
-                    onCheckedChange={(v) => patchItem(item.id, { is_active: v })}
-                    aria-label="Toggle visibility"
-                  />
-                </div>
-              </CardHeader>
-
-              <CardContent className="grid md:grid-cols-2 gap-4">
-                <Field label="Name">
-                  <Input value={item.name} onChange={(e) => patchItem(item.id, { name: e.target.value })} />
-                </Field>
-                <Field label="Role / title line">
-                  <Input value={item.role} onChange={(e) => patchItem(item.id, { role: e.target.value })} />
-                </Field>
-                <Field label="Company (used for logo alt text)">
-                  <Input value={item.company} onChange={(e) => patchItem(item.id, { company: e.target.value })} />
-                </Field>
-                <Field label="Display order">
-                  <Input
-                    type="number"
-                    value={item.display_order}
-                    onChange={(e) => patchItem(item.id, { display_order: Number(e.target.value) || 0 })}
-                  />
-                </Field>
-                <Field label="Quote" className="md:col-span-2">
-                  <Textarea
-                    rows={3}
-                    value={item.quote}
-                    onChange={(e) => patchItem(item.id, { quote: e.target.value })}
-                  />
-                </Field>
-                <Field label="Rating (1–5)">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={5}
-                    value={item.rating}
-                    onChange={(e) =>
-                      patchItem(item.id, {
-                        rating: Math.min(5, Math.max(1, Number(e.target.value) || 5)),
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="Accent gradient">
-                  <select
-                    value={item.accent}
-                    onChange={(e) => patchItem(item.id, { accent: e.target.value })}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    {ACCENT_PRESETS.map((p) => (
-                      <option key={p.value} value={p.value}>{p.label}</option>
-                    ))}
-                  </select>
-                </Field>
-
-                <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-3 pt-2">
-                  <Button variant="outline" onClick={() => pickFileFor(item.id)} className="gap-2">
-                    <Upload className="w-4 h-4" />
-                    {item.logo_url ? 'Replace logo' : 'Upload logo'}
-                  </Button>
-
-                  <div className="flex items-center gap-2 flex-wrap justify-end">
-                    <ModerationActions
+                    <SortableTestimonialRow
                       item={item}
+                      savingId={savingId}
                       isSuperAdmin={isSuperAdmin}
-                      onSubmit={() => submitForReview(item)}
+                      onPatch={(patch) => patchItem(item.id, patch)}
+                      onToggleFeatured={(v) => toggleFeatured(item, v)}
+                      onPickFile={() => pickFileFor(item.id)}
+                      onSave={() => saveItem(item)}
+                      onDelete={() => deleteItem(item)}
+                      onSubmitForReview={() => submitForReview(item)}
                       onApprove={() => approveAndPublish(item)}
                       onReject={(reason) => reject(item, reason)}
                       onUnpublish={() => unpublish(item)}
                     />
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-destructive gap-1.5">
-                          <Trash2 className="w-4 h-4" /> Delete
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete testimonial?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will remove the testimonial from the landing page. The uploaded logo file is kept in storage.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteItem(item)}>Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-
-                    <Button onClick={() => saveItem(item)} disabled={savingId === item.id} className="gap-2">
-                      {savingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                      Save
-                    </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                );
+              })}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
   );
