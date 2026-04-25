@@ -382,45 +382,58 @@ function RescheduleForm({
       </div>
 
       <div className="space-y-3">
-        {slots.map((slot, i) => (
-          <div key={i} className="flex items-end gap-2">
-            <div className="flex-1 grid grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor={`d-${i}`} className="text-[10px] uppercase tracking-wider text-muted-foreground">Date</Label>
-                <Input
-                  id={`d-${i}`}
-                  type="date"
-                  min={today}
-                  value={slot.date}
-                  onChange={(e) => updateSlot(i, { date: e.target.value })}
-                  className="rounded-lg"
-                />
+        {slots.map((slot, i) => {
+          const err = slotErrors[i];
+          const hasErr = Boolean(err);
+          return (
+            <div key={i} className="space-y-1">
+              <div className="flex items-end gap-2">
+                <div className="flex-1 grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor={`d-${i}`} className="text-[10px] uppercase tracking-wider text-muted-foreground">Date</Label>
+                    <Input
+                      id={`d-${i}`}
+                      type="date"
+                      min={today}
+                      value={slot.date}
+                      onChange={(e) => updateSlot(i, { date: e.target.value })}
+                      aria-invalid={hasErr}
+                      className={cn('rounded-lg', hasErr && 'border-destructive focus-visible:ring-destructive/40')}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`t-${i}`} className="text-[10px] uppercase tracking-wider text-muted-foreground">Time</Label>
+                    <Input
+                      id={`t-${i}`}
+                      type="time"
+                      value={slot.time}
+                      onChange={(e) => updateSlot(i, { time: e.target.value })}
+                      aria-invalid={hasErr}
+                      className={cn('rounded-lg', hasErr && 'border-destructive focus-visible:ring-destructive/40')}
+                    />
+                  </div>
+                </div>
+                {slots.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeSlot(i)}
+                    className="shrink-0 text-muted-foreground hover:text-destructive"
+                    aria-label="Remove slot"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
-              <div>
-                <Label htmlFor={`t-${i}`} className="text-[10px] uppercase tracking-wider text-muted-foreground">Time</Label>
-                <Input
-                  id={`t-${i}`}
-                  type="time"
-                  value={slot.time}
-                  onChange={(e) => updateSlot(i, { time: e.target.value })}
-                  className="rounded-lg"
-                />
-              </div>
+              {hasErr && (
+                <p className="text-[11px] text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> {err}
+                </p>
+              )}
             </div>
-            {slots.length > 1 && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => removeSlot(i)}
-                className="shrink-0 text-muted-foreground hover:text-destructive"
-                aria-label="Remove slot"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {slots.length < 5 && (
