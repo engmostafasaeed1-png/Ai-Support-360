@@ -39,7 +39,7 @@ export default function TestimonialsSection() {
     (async () => {
       const { data, error } = await supabase
         .from('client_testimonials')
-        .select('id,name,role,company,quote,rating,accent,logo_url,display_order,is_active,is_featured')
+        .select('id,name,role,company,quote,rating,accent,logo_url,display_order,is_active,is_featured,updated_at')
         .eq('is_active', true)
         // Featured testimonials are pinned to the front; everything else
         // falls back to the manual display_order set in the admin UI.
