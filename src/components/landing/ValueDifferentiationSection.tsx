@@ -1,4 +1,4 @@
-import { Check, X, Sparkles, Bot, ShieldCheck, Zap, BrainCircuit, FileSearch, ArrowUpRight } from 'lucide-react';
+import { Check, X, Sparkles, Bot, ShieldCheck, Zap, BrainCircuit, FileSearch, ArrowUpRight, Clock, TrendingDown, Layers, Activity } from 'lucide-react';
 import { accents, iconPlate, radius, shadow, type AccentName } from './tokens';
 import { tileImageAlt } from './tileImageAlt';
 import aiTriageImg from '@/assets/value/ai-triage.jpg';
