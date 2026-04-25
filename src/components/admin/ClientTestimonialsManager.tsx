@@ -382,6 +382,8 @@ export default function ClientTestimonialsManager() {
         </Button>
       </div>
 
+      <LastPublishedBanner items={items} />
+
       <input
         ref={fileInputRef}
         type="file"
