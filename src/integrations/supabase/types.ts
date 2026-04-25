@@ -1206,6 +1206,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          meeting_format: string | null
           notes: string | null
           request_token: string
           scheduled_date: string | null
@@ -1214,6 +1215,7 @@ export type Database = {
           source: string | null
           status: string
           status_note: string | null
+          timezone: string | null
           updated_at: string
           user_id: string | null
         }
@@ -1224,6 +1226,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          meeting_format?: string | null
           notes?: string | null
           request_token?: string
           scheduled_date?: string | null
@@ -1232,6 +1235,7 @@ export type Database = {
           source?: string | null
           status?: string
           status_note?: string | null
+          timezone?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -1242,6 +1246,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          meeting_format?: string | null
           notes?: string | null
           request_token?: string
           scheduled_date?: string | null
@@ -1250,6 +1255,7 @@ export type Database = {
           source?: string | null
           status?: string
           status_note?: string | null
+          timezone?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -5457,12 +5463,14 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          meeting_format: string
           notes: string
           scheduled_date: string
           scheduled_slot: string
           scheduling_preference: string
           status: string
           status_note: string
+          timezone: string
           updated_at: string
         }[]
       }
