@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
   ArrowLeft, Calendar, Check, Clock, Loader2, Mail, Phone, Sparkles, AlertCircle,
+  Globe, Video, Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
