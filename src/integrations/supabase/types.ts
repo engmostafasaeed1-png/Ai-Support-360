@@ -827,6 +827,7 @@ export type Database = {
           display_order: number
           id: string
           is_active: boolean
+          is_featured: boolean
           logo_url: string | null
           name: string
           published_at: string | null
@@ -847,6 +848,7 @@ export type Database = {
           display_order?: number
           id?: string
           is_active?: boolean
+          is_featured?: boolean
           logo_url?: string | null
           name: string
           published_at?: string | null
@@ -867,6 +869,7 @@ export type Database = {
           display_order?: number
           id?: string
           is_active?: boolean
+          is_featured?: boolean
           logo_url?: string | null
           name?: string
           published_at?: string | null
