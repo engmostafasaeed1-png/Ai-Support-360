@@ -10,6 +10,7 @@ import { useDemoWizard } from './DemoRequestWizard';
 export default function ContactSection() {
   const { t } = useTranslation();
   const [submitted, setSubmitted] = useState(false);
+  const demoWizard = useDemoWizard();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
