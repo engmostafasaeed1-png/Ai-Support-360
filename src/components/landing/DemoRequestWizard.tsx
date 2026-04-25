@@ -154,6 +154,10 @@ function DemoRequestWizard({
 
   const [type, setType] = useState<DemoType['id'] | null>(initialType ?? null);
   const [time, setTime] = useState<TimePref | null>(null);
+  // Optional exact slot. Visitors can pick a date + slot for any
+  // scheduling preference (or skip and let us follow up).
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [slot, setSlot] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
@@ -166,6 +170,8 @@ function DemoRequestWizard({
     setSubmitted(false);
     setType(initialType ?? null);
     setTime(null);
+    setDate(undefined);
+    setSlot(null);
     setName('');
     setEmail('');
     setCompany('');
@@ -174,7 +180,10 @@ function DemoRequestWizard({
 
   const canNext =
     (step === 0 && !!type) ||
-    (step === 1 && !!time) ||
+    // On the schedule step a preference is enough, but if the visitor
+    // picks a date they must also pick a slot (and vice versa) so we
+    // never persist a half-chosen time.
+    (step === 1 && !!time && (!date || !!slot) && (!slot || !!date)) ||
     (step === 2 && name.trim().length > 1 && /\S+@\S+\.\S+/.test(email));
 
   const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
@@ -194,6 +203,8 @@ function DemoRequestWizard({
         user_id: userRes.user?.id ?? null,
         demo_type: type,
         scheduling_preference: time,
+        scheduled_date: date ? format(date, 'yyyy-MM-dd') : null,
+        scheduled_slot: slot,
         full_name: name.trim(),
         email: email.trim(),
         company: company.trim() || null,
