@@ -267,7 +267,7 @@ export default function CompanyProfilePage() {
               <input
                 ref={logoInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/webp"
                 className="hidden"
                 onChange={handleLogoUpload}
               />
