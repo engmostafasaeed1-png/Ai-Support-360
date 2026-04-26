@@ -67,6 +67,23 @@ export default function CompanyProfilePage() {
   const [logoUploadProgress, setLogoUploadProgress] = useState(0);
   const logoProgressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const [confirmReplaceOpen, setConfirmReplaceOpen] = useState(false);
+
+  // Open the file picker; if a logo already exists, ask for confirmation first.
+  const requestLogoSelect = () => {
+    if (uploadingLogo) return;
+    if (logoUrl) {
+      setConfirmReplaceOpen(true);
+    } else {
+      logoInputRef.current?.click();
+    }
+  };
+
+  const confirmReplaceLogo = () => {
+    setConfirmReplaceOpen(false);
+    // Defer to next tick so the dialog unmounts cleanly before the file dialog opens.
+    setTimeout(() => logoInputRef.current?.click(), 0);
+  };
   const [loaded, setLoaded] = useState(false);
 
   // New landscape fields
