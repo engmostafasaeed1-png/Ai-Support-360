@@ -461,6 +461,16 @@ export default function CompanyProfilePage() {
                 <Progress value={logoUploadProgress} className="mt-2 h-1.5 max-w-xs" />
               )}
             </div>
+
+            {/* Drag-over overlay */}
+            {isDraggingLogo && !uploadingLogo && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-primary/10 backdrop-blur-[1px]">
+                <div className="flex items-center gap-2 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-lg">
+                  <Upload className="w-3.5 h-3.5" />
+                  Drop image to upload
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Confirm replace dialog — only shown when a logo already exists */}
