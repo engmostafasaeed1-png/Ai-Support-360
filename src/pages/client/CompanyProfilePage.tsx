@@ -68,10 +68,16 @@ export default function CompanyProfilePage() {
   const logoProgressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [confirmReplaceOpen, setConfirmReplaceOpen] = useState(false);
+  const [isDraggingLogo, setIsDraggingLogo] = useState(false);
+  // When a drop happens while a logo already exists, hold the file here until
+  // the user confirms the replace dialog.
+  const pendingDropRef = useRef<{ file: File; ext: string } | null>(null);
+  const dragDepthRef = useRef(0);
 
   // Open the file picker; if a logo already exists, ask for confirmation first.
   const requestLogoSelect = () => {
     if (uploadingLogo) return;
+    pendingDropRef.current = null;
     if (logoUrl) {
       setConfirmReplaceOpen(true);
     } else {
@@ -81,8 +87,20 @@ export default function CompanyProfilePage() {
 
   const confirmReplaceLogo = () => {
     setConfirmReplaceOpen(false);
+    const pending = pendingDropRef.current;
+    pendingDropRef.current = null;
+    if (pending) {
+      // Drag-and-drop path — bypass the file picker.
+      void processLogoFile(pending.file, pending.ext);
+      return;
+    }
     // Defer to next tick so the dialog unmounts cleanly before the file dialog opens.
     setTimeout(() => logoInputRef.current?.click(), 0);
+  };
+
+  const cancelReplaceLogo = () => {
+    pendingDropRef.current = null;
+    setConfirmReplaceOpen(false);
   };
   const [loaded, setLoaded] = useState(false);
 
@@ -133,42 +151,51 @@ export default function CompanyProfilePage() {
   const ALLOWED_LOGO_EXTS = ['png', 'jpg', 'jpeg', 'webp'] as const;
   const MAX_LOGO_BYTES = 5 * 1024 * 1024; // 5MB
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const resetLogoInput = () => {
+    if (logoInputRef.current) logoInputRef.current.value = '';
+  };
 
-    // Validate MIME type — restrict to safe, broadly supported image formats
+  // Validate the file using the same rules used by the file-picker path.
+  // Returns the normalized extension (without the dot) or null if invalid.
+  const validateLogoFile = (file: File): string | null => {
     if (!(ALLOWED_LOGO_TYPES as readonly string[]).includes(file.type)) {
       toast.error('Unsupported file type', {
         description: 'Please upload a PNG, JPG, or WebP image.',
       });
-      if (logoInputRef.current) logoInputRef.current.value = '';
-      return;
+      return null;
     }
-
-    // Defense-in-depth: also check the file extension since `type` can be spoofed
     const extRaw = (file.name.split('.').pop() || '').toLowerCase();
     if (!(ALLOWED_LOGO_EXTS as readonly string[]).includes(extRaw)) {
       toast.error('Unsupported file extension', {
         description: 'Allowed extensions: .png, .jpg, .jpeg, .webp',
       });
-      if (logoInputRef.current) logoInputRef.current.value = '';
-      return;
+      return null;
     }
-
     if (file.size > MAX_LOGO_BYTES) {
       toast.error('File too large', {
         description: `Max size is ${(MAX_LOGO_BYTES / (1024 * 1024)).toFixed(0)}MB.`,
       });
-      if (logoInputRef.current) logoInputRef.current.value = '';
-      return;
+      return null;
     }
     if (file.size === 0) {
       toast.error('Empty file', { description: 'The selected file is empty.' });
-      if (logoInputRef.current) logoInputRef.current.value = '';
+      return null;
+    }
+    return extRaw;
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const extRaw = validateLogoFile(file);
+    if (!extRaw) {
+      resetLogoInput();
       return;
     }
+    await processLogoFile(file, extRaw);
+  };
 
+  const processLogoFile = async (file: File, extRaw: string) => {
     setUploadingLogo(true);
     setLogoUploadProgress(5);
     // Supabase JS upload doesn't surface progress events; simulate a smooth
@@ -232,6 +259,60 @@ export default function CompanyProfilePage() {
         setLogoUploadProgress(0);
       }, 400);
       if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
+
+  // ---------- Drag-and-drop handlers ----------
+  const handleLogoDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    if (uploadingLogo) return;
+    if (!Array.from(e.dataTransfer?.types || []).includes('Files')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current += 1;
+    setIsDraggingLogo(true);
+  };
+
+  const handleLogoDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (uploadingLogo) return;
+    if (!Array.from(e.dataTransfer?.types || []).includes('Files')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleLogoDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    if (uploadingLogo) return;
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setIsDraggingLogo(false);
+  };
+
+  const handleLogoDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current = 0;
+    setIsDraggingLogo(false);
+    if (uploadingLogo) return;
+
+    const files = e.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+    if (files.length > 1) {
+      toast.error('Drop a single image', {
+        description: 'Only one logo file can be uploaded at a time.',
+      });
+      return;
+    }
+    const file = files[0];
+    const ext = validateLogoFile(file);
+    if (!ext) return;
+
+    if (logoUrl) {
+      // Hold the file and ask for confirmation before replacing.
+      pendingDropRef.current = { file, ext };
+      setConfirmReplaceOpen(true);
+    } else {
+      void processLogoFile(file, ext);
     }
   };
 
@@ -313,8 +394,19 @@ export default function CompanyProfilePage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Logo upload */}
-          <div className="flex items-center gap-4">
+          {/* Logo upload + dropzone */}
+          <div
+            onDragEnter={handleLogoDragEnter}
+            onDragOver={handleLogoDragOver}
+            onDragLeave={handleLogoDragLeave}
+            onDrop={handleLogoDrop}
+            className={`relative flex items-center gap-4 rounded-xl border-2 border-dashed p-3 transition-colors ${
+              isDraggingLogo
+                ? 'border-primary bg-primary/5 ring-2 ring-primary/30'
+                : 'border-border/50 hover:border-border'
+            } ${uploadingLogo ? 'opacity-90' : ''}`}
+            aria-label="Drop a company logo here to upload"
+          >
             <div className="relative group">
               <Avatar className="w-20 h-20 rounded-xl border-2 border-border/50">
                 <AvatarImage src={logoUrl || undefined} alt="Company logo" className="object-cover" />
@@ -343,7 +435,7 @@ export default function CompanyProfilePage() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground">{t('company_profile_page.company_logo', 'Company Logo')}</p>
-              <p className="text-xs text-muted-foreground">{t('company_profile_page.logo_hint', 'Click to upload. Max 5MB, JPG/PNG.')}</p>
+              <p className="text-xs text-muted-foreground">{t('company_profile_page.logo_hint', 'Click or drag & drop a PNG, JPG, or WebP up to 5MB.')}</p>
               <div className="mt-2 flex items-center gap-2">
                 <Button
                   type="button"
@@ -369,10 +461,23 @@ export default function CompanyProfilePage() {
                 <Progress value={logoUploadProgress} className="mt-2 h-1.5 max-w-xs" />
               )}
             </div>
+
+            {/* Drag-over overlay */}
+            {isDraggingLogo && !uploadingLogo && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-primary/10 backdrop-blur-[1px]">
+                <div className="flex items-center gap-2 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-lg">
+                  <Upload className="w-3.5 h-3.5" />
+                  Drop image to upload
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Confirm replace dialog — only shown when a logo already exists */}
-          <AlertDialog open={confirmReplaceOpen} onOpenChange={setConfirmReplaceOpen}>
+          <AlertDialog
+            open={confirmReplaceOpen}
+            onOpenChange={(open) => (open ? setConfirmReplaceOpen(true) : cancelReplaceLogo())}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Replace company logo?</AlertDialogTitle>
@@ -396,8 +501,9 @@ export default function CompanyProfilePage() {
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel onClick={cancelReplaceLogo}>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={confirmReplaceLogo}>
-                  Choose new logo
+                  {pendingDropRef.current ? 'Upload new logo' : 'Choose new logo'}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
