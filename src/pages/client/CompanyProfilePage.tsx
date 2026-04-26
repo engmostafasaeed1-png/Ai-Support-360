@@ -9,10 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
 import {
   Building2, Globe, MapPin, Save, Loader2, Plus, Trash2,
   Server, Database, Users2, Mail, Phone, Briefcase, Camera,
-  HardDrive, Cpu, Calendar, Code, Link2, Package,
+  HardDrive, Cpu, Calendar, Code, Link2, Package, Upload,
 } from 'lucide-react';
 import { useClientProfileData, useUpdateClientProfile, type ClientProfile } from '@/hooks/useClientProfile';
 import { useGuestMode } from '@/contexts/GuestModeContext';
@@ -53,6 +54,8 @@ export default function CompanyProfilePage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoUploadProgress, setLogoUploadProgress] = useState(0);
+  const logoProgressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -140,14 +143,17 @@ export default function CompanyProfilePage() {
     }
 
     setUploadingLogo(true);
+    setLogoUploadProgress(5);
+    // Supabase JS upload doesn't surface progress events; simulate a smooth
+    // ramp up to 90% so the user gets responsive feedback during the request.
+    if (logoProgressTimerRef.current) clearInterval(logoProgressTimerRef.current);
+    logoProgressTimerRef.current = setInterval(() => {
+      setLogoUploadProgress((p) => (p < 90 ? p + Math.max(1, Math.round((90 - p) * 0.15)) : p));
+    }, 200);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      // Normalize jpeg → jpg in the stored path
       const ext = extRaw === 'jpeg' ? 'jpg' : extRaw;
-      // Storage RLS on the `avatars` bucket requires the first folder
-      // segment to equal the user's id. Putting "company-logos/" first
-      // (as before) was rejected by the policy, so we flip the order.
       const path = `${user.id}/company-logo.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('avatars')
@@ -157,11 +163,21 @@ export default function CompanyProfilePage() {
       const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
       setLogoUrl(newUrl);
       updateProfile.mutate({ company_logo_url: newUrl });
+      setLogoUploadProgress(100);
       toast.success('Logo uploaded');
     } catch (err: any) {
       toast.error('Upload failed', { description: err.message });
+      setLogoUploadProgress(0);
     } finally {
-      setUploadingLogo(false);
+      if (logoProgressTimerRef.current) {
+        clearInterval(logoProgressTimerRef.current);
+        logoProgressTimerRef.current = null;
+      }
+      // Brief delay so users see the bar reach 100% before it disappears.
+      setTimeout(() => {
+        setUploadingLogo(false);
+        setLogoUploadProgress(0);
+      }, 400);
       if (logoInputRef.current) logoInputRef.current.value = '';
     }
   };
@@ -272,9 +288,33 @@ export default function CompanyProfilePage() {
                 onChange={handleLogoUpload}
               />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground">{t('company_profile_page.company_logo', 'Company Logo')}</p>
               <p className="text-xs text-muted-foreground">{t('company_profile_page.logo_hint', 'Click to upload. Max 5MB, JPG/PNG.')}</p>
+              <div className="mt-2 flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={uploadingLogo}
+                >
+                  {uploadingLogo ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 me-1.5 animate-spin" />
+                      Uploading… {logoUploadProgress}%
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3.5 h-3.5 me-1.5" />
+                      {logoUrl ? 'Replace logo' : 'Upload logo'}
+                    </>
+                  )}
+                </Button>
+              </div>
+              {uploadingLogo && (
+                <Progress value={logoUploadProgress} className="mt-2 h-1.5 max-w-xs" />
+              )}
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
