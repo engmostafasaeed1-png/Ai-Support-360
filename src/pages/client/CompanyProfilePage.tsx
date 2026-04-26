@@ -288,9 +288,33 @@ export default function CompanyProfilePage() {
                 onChange={handleLogoUpload}
               />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground">{t('company_profile_page.company_logo', 'Company Logo')}</p>
               <p className="text-xs text-muted-foreground">{t('company_profile_page.logo_hint', 'Click to upload. Max 5MB, JPG/PNG.')}</p>
+              <div className="mt-2 flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={uploadingLogo}
+                >
+                  {uploadingLogo ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 me-1.5 animate-spin" />
+                      Uploading… {logoUploadProgress}%
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3.5 h-3.5 me-1.5" />
+                      {logoUrl ? 'Replace logo' : 'Upload logo'}
+                    </>
+                  )}
+                </Button>
+              </div>
+              {uploadingLogo && (
+                <Progress value={logoUploadProgress} className="mt-2 h-1.5 max-w-xs" />
+              )}
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
