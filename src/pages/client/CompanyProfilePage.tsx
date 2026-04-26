@@ -435,7 +435,7 @@ export default function CompanyProfilePage() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground">{t('company_profile_page.company_logo', 'Company Logo')}</p>
-              <p className="text-xs text-muted-foreground">{t('company_profile_page.logo_hint', 'Click to upload. Max 5MB, JPG/PNG.')}</p>
+              <p className="text-xs text-muted-foreground">{t('company_profile_page.logo_hint', 'Click or drag & drop a PNG, JPG, or WebP up to 5MB.')}</p>
               <div className="mt-2 flex items-center gap-2">
                 <Button
                   type="button"
