@@ -394,8 +394,19 @@ export default function CompanyProfilePage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Logo upload */}
-          <div className="flex items-center gap-4">
+          {/* Logo upload + dropzone */}
+          <div
+            onDragEnter={handleLogoDragEnter}
+            onDragOver={handleLogoDragOver}
+            onDragLeave={handleLogoDragLeave}
+            onDrop={handleLogoDrop}
+            className={`relative flex items-center gap-4 rounded-xl border-2 border-dashed p-3 transition-colors ${
+              isDraggingLogo
+                ? 'border-primary bg-primary/5 ring-2 ring-primary/30'
+                : 'border-border/50 hover:border-border'
+            } ${uploadingLogo ? 'opacity-90' : ''}`}
+            aria-label="Drop a company logo here to upload"
+          >
             <div className="relative group">
               <Avatar className="w-20 h-20 rounded-xl border-2 border-border/50">
                 <AvatarImage src={logoUrl || undefined} alt="Company logo" className="object-cover" />
