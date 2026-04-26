@@ -349,7 +349,7 @@ export default function CompanyProfilePage() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => logoInputRef.current?.click()}
+                  onClick={requestLogoSelect}
                   disabled={uploadingLogo}
                 >
                   {uploadingLogo ? (
