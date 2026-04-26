@@ -370,6 +370,38 @@ export default function CompanyProfilePage() {
               )}
             </div>
           </div>
+
+          {/* Confirm replace dialog — only shown when a logo already exists */}
+          <AlertDialog open={confirmReplaceOpen} onOpenChange={setConfirmReplaceOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Replace company logo?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will replace the current logo for everyone in your company. The change cannot be undone, but you can upload a new logo at any time.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-muted/30 p-3">
+                <Avatar className="w-14 h-14 rounded-lg border border-border/50">
+                  <AvatarImage src={logoUrl || undefined} alt="Current company logo" className="object-cover" />
+                  <AvatarFallback className="rounded-lg bg-primary/10 text-primary font-bold">
+                    {companyName ? companyName.charAt(0).toUpperCase() : <Building2 className="w-6 h-6" />}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Current logo</p>
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {companyName || 'Your company'}
+                  </p>
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmReplaceLogo}>
+                  Choose new logo
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>{t('company_profile_page.company_name', 'Company Name')}</Label>
