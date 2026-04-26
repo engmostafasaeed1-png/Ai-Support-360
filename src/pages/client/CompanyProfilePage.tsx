@@ -150,30 +150,56 @@ export default function CompanyProfilePage() {
     logoProgressTimerRef.current = setInterval(() => {
       setLogoUploadProgress((p) => (p < 90 ? p + Math.max(1, Math.round((90 - p) * 0.15)) : p));
     }, 200);
+    const bucket = 'avatars';
+    let path = '';
+    let uploadOk = false;
+    let errCode: string | null = null;
+    let errMessage: string | null = null;
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       const ext = extRaw === 'jpeg' ? 'jpg' : extRaw;
-      const path = `${user.id}/company-logo.${ext}`;
+      path = `${user.id}/company-logo.${ext}`;
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from(bucket)
         .upload(path, file, { upsert: true, contentType: file.type });
       if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
       const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
       setLogoUrl(newUrl);
       updateProfile.mutate({ company_logo_url: newUrl });
       setLogoUploadProgress(100);
+      uploadOk = true;
       toast.success('Logo uploaded');
     } catch (err: any) {
-      toast.error('Upload failed', { description: err.message });
+      errCode = err?.statusCode || err?.code || err?.name || 'unknown_error';
+      errMessage = err?.message || String(err);
+      toast.error('Upload failed', { description: errMessage });
       setLogoUploadProgress(0);
     } finally {
+      // Server-side log every attempt (success + failure) for debugging.
+      // Best-effort: never block UI on logging errors.
+      try {
+        await supabase.functions.invoke('log-logo-upload', {
+          body: {
+            bucket,
+            path,
+            file_name: file.name,
+            file_type: file.type,
+            file_size: file.size,
+            success: uploadOk,
+            error_code: errCode,
+            error_message: errMessage,
+          },
+        });
+      } catch (logErr) {
+        // eslint-disable-next-line no-console
+        console.warn('Failed to record logo upload attempt', logErr);
+      }
       if (logoProgressTimerRef.current) {
         clearInterval(logoProgressTimerRef.current);
         logoProgressTimerRef.current = null;
       }
-      // Brief delay so users see the bar reach 100% before it disappears.
       setTimeout(() => {
         setUploadingLogo(false);
         setLogoUploadProgress(0);

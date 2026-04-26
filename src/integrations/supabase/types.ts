@@ -2011,6 +2011,51 @@ export type Database = {
         }
         Relationships: []
       }
+      logo_upload_attempts: {
+        Row: {
+          bucket: string
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          path: string
+          success: boolean
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          path: string
+          success?: boolean
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          path?: string
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       major_incident_updates: {
         Row: {
           content: string
