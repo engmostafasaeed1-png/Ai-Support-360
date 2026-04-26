@@ -501,8 +501,9 @@ export default function CompanyProfilePage() {
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel onClick={cancelReplaceLogo}>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={confirmReplaceLogo}>
-                  Choose new logo
+                  {pendingDropRef.current ? 'Upload new logo' : 'Choose new logo'}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
