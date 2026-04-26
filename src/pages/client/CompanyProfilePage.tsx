@@ -11,6 +11,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Building2, Globe, MapPin, Save, Loader2, Plus, Trash2,
   Server, Database, Users2, Mail, Phone, Briefcase, Camera,
   HardDrive, Cpu, Calendar, Code, Link2, Package, Upload,
@@ -57,6 +67,23 @@ export default function CompanyProfilePage() {
   const [logoUploadProgress, setLogoUploadProgress] = useState(0);
   const logoProgressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const [confirmReplaceOpen, setConfirmReplaceOpen] = useState(false);
+
+  // Open the file picker; if a logo already exists, ask for confirmation first.
+  const requestLogoSelect = () => {
+    if (uploadingLogo) return;
+    if (logoUrl) {
+      setConfirmReplaceOpen(true);
+    } else {
+      logoInputRef.current?.click();
+    }
+  };
+
+  const confirmReplaceLogo = () => {
+    setConfirmReplaceOpen(false);
+    // Defer to next tick so the dialog unmounts cleanly before the file dialog opens.
+    setTimeout(() => logoInputRef.current?.click(), 0);
+  };
   const [loaded, setLoaded] = useState(false);
 
   // New landscape fields
@@ -296,7 +323,7 @@ export default function CompanyProfilePage() {
                 </AvatarFallback>
               </Avatar>
               <button
-                onClick={() => logoInputRef.current?.click()}
+                onClick={requestLogoSelect}
                 disabled={uploadingLogo}
                 className="absolute inset-0 rounded-xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
               >
@@ -322,7 +349,7 @@ export default function CompanyProfilePage() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => logoInputRef.current?.click()}
+                  onClick={requestLogoSelect}
                   disabled={uploadingLogo}
                 >
                   {uploadingLogo ? (
@@ -343,6 +370,38 @@ export default function CompanyProfilePage() {
               )}
             </div>
           </div>
+
+          {/* Confirm replace dialog — only shown when a logo already exists */}
+          <AlertDialog open={confirmReplaceOpen} onOpenChange={setConfirmReplaceOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Replace company logo?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will replace the current logo for everyone in your company. The change cannot be undone, but you can upload a new logo at any time.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-muted/30 p-3">
+                <Avatar className="w-14 h-14 rounded-lg border border-border/50">
+                  <AvatarImage src={logoUrl || undefined} alt="Current company logo" className="object-cover" />
+                  <AvatarFallback className="rounded-lg bg-primary/10 text-primary font-bold">
+                    {companyName ? companyName.charAt(0).toUpperCase() : <Building2 className="w-6 h-6" />}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Current logo</p>
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {companyName || 'Your company'}
+                  </p>
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmReplaceLogo}>
+                  Choose new logo
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>{t('company_profile_page.company_name', 'Company Name')}</Label>
