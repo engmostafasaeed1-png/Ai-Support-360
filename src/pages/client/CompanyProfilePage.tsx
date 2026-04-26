@@ -474,7 +474,10 @@ export default function CompanyProfilePage() {
           </div>
 
           {/* Confirm replace dialog — only shown when a logo already exists */}
-          <AlertDialog open={confirmReplaceOpen} onOpenChange={setConfirmReplaceOpen}>
+          <AlertDialog
+            open={confirmReplaceOpen}
+            onOpenChange={(open) => (open ? setConfirmReplaceOpen(true) : cancelReplaceLogo())}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Replace company logo?</AlertDialogTitle>
