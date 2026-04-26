@@ -143,14 +143,17 @@ export default function CompanyProfilePage() {
     }
 
     setUploadingLogo(true);
+    setLogoUploadProgress(5);
+    // Supabase JS upload doesn't surface progress events; simulate a smooth
+    // ramp up to 90% so the user gets responsive feedback during the request.
+    if (logoProgressTimerRef.current) clearInterval(logoProgressTimerRef.current);
+    logoProgressTimerRef.current = setInterval(() => {
+      setLogoUploadProgress((p) => (p < 90 ? p + Math.max(1, Math.round((90 - p) * 0.15)) : p));
+    }, 200);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      // Normalize jpeg → jpg in the stored path
       const ext = extRaw === 'jpeg' ? 'jpg' : extRaw;
-      // Storage RLS on the `avatars` bucket requires the first folder
-      // segment to equal the user's id. Putting "company-logos/" first
-      // (as before) was rejected by the policy, so we flip the order.
       const path = `${user.id}/company-logo.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('avatars')
@@ -160,11 +163,21 @@ export default function CompanyProfilePage() {
       const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
       setLogoUrl(newUrl);
       updateProfile.mutate({ company_logo_url: newUrl });
+      setLogoUploadProgress(100);
       toast.success('Logo uploaded');
     } catch (err: any) {
       toast.error('Upload failed', { description: err.message });
+      setLogoUploadProgress(0);
     } finally {
-      setUploadingLogo(false);
+      if (logoProgressTimerRef.current) {
+        clearInterval(logoProgressTimerRef.current);
+        logoProgressTimerRef.current = null;
+      }
+      // Brief delay so users see the bar reach 100% before it disappears.
+      setTimeout(() => {
+        setUploadingLogo(false);
+        setLogoUploadProgress(0);
+      }, 400);
       if (logoInputRef.current) logoInputRef.current.value = '';
     }
   };
