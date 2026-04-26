@@ -133,42 +133,51 @@ export default function CompanyProfilePage() {
   const ALLOWED_LOGO_EXTS = ['png', 'jpg', 'jpeg', 'webp'] as const;
   const MAX_LOGO_BYTES = 5 * 1024 * 1024; // 5MB
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const resetLogoInput = () => {
+    if (logoInputRef.current) logoInputRef.current.value = '';
+  };
 
-    // Validate MIME type — restrict to safe, broadly supported image formats
+  // Validate the file using the same rules used by the file-picker path.
+  // Returns the normalized extension (without the dot) or null if invalid.
+  const validateLogoFile = (file: File): string | null => {
     if (!(ALLOWED_LOGO_TYPES as readonly string[]).includes(file.type)) {
       toast.error('Unsupported file type', {
         description: 'Please upload a PNG, JPG, or WebP image.',
       });
-      if (logoInputRef.current) logoInputRef.current.value = '';
-      return;
+      return null;
     }
-
-    // Defense-in-depth: also check the file extension since `type` can be spoofed
     const extRaw = (file.name.split('.').pop() || '').toLowerCase();
     if (!(ALLOWED_LOGO_EXTS as readonly string[]).includes(extRaw)) {
       toast.error('Unsupported file extension', {
         description: 'Allowed extensions: .png, .jpg, .jpeg, .webp',
       });
-      if (logoInputRef.current) logoInputRef.current.value = '';
-      return;
+      return null;
     }
-
     if (file.size > MAX_LOGO_BYTES) {
       toast.error('File too large', {
         description: `Max size is ${(MAX_LOGO_BYTES / (1024 * 1024)).toFixed(0)}MB.`,
       });
-      if (logoInputRef.current) logoInputRef.current.value = '';
-      return;
+      return null;
     }
     if (file.size === 0) {
       toast.error('Empty file', { description: 'The selected file is empty.' });
-      if (logoInputRef.current) logoInputRef.current.value = '';
+      return null;
+    }
+    return extRaw;
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const extRaw = validateLogoFile(file);
+    if (!extRaw) {
+      resetLogoInput();
       return;
     }
+    await processLogoFile(file, extRaw);
+  };
 
+  const processLogoFile = async (file: File, extRaw: string) => {
     setUploadingLogo(true);
     setLogoUploadProgress(5);
     // Supabase JS upload doesn't surface progress events; simulate a smooth
