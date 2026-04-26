@@ -114,8 +114,11 @@ export default function CompanyProfilePage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      const ext = file.name.split('.').pop();
-      const path = `company-logos/${user.id}/logo.${ext}`;
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+      // Storage RLS on the `avatars` bucket requires the first folder
+      // segment to equal the user's id. Putting "company-logos/" first
+      // (as before) was rejected by the policy, so we flip the order.
+      const path = `${user.id}/company-logo.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(path, file, { upsert: true });
