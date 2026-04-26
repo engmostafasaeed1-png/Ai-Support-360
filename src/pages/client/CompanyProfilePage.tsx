@@ -68,10 +68,16 @@ export default function CompanyProfilePage() {
   const logoProgressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [confirmReplaceOpen, setConfirmReplaceOpen] = useState(false);
+  const [isDraggingLogo, setIsDraggingLogo] = useState(false);
+  // When a drop happens while a logo already exists, hold the file here until
+  // the user confirms the replace dialog.
+  const pendingDropRef = useRef<{ file: File; ext: string } | null>(null);
+  const dragDepthRef = useRef(0);
 
   // Open the file picker; if a logo already exists, ask for confirmation first.
   const requestLogoSelect = () => {
     if (uploadingLogo) return;
+    pendingDropRef.current = null;
     if (logoUrl) {
       setConfirmReplaceOpen(true);
     } else {
@@ -81,8 +87,20 @@ export default function CompanyProfilePage() {
 
   const confirmReplaceLogo = () => {
     setConfirmReplaceOpen(false);
+    const pending = pendingDropRef.current;
+    pendingDropRef.current = null;
+    if (pending) {
+      // Drag-and-drop path — bypass the file picker.
+      void processLogoFile(pending.file, pending.ext);
+      return;
+    }
     // Defer to next tick so the dialog unmounts cleanly before the file dialog opens.
     setTimeout(() => logoInputRef.current?.click(), 0);
+  };
+
+  const cancelReplaceLogo = () => {
+    pendingDropRef.current = null;
+    setConfirmReplaceOpen(false);
   };
   const [loaded, setLoaded] = useState(false);
 
