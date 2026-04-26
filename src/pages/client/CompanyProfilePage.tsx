@@ -9,10 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
 import {
   Building2, Globe, MapPin, Save, Loader2, Plus, Trash2,
   Server, Database, Users2, Mail, Phone, Briefcase, Camera,
-  HardDrive, Cpu, Calendar, Code, Link2, Package,
+  HardDrive, Cpu, Calendar, Code, Link2, Package, Upload,
 } from 'lucide-react';
 import { useClientProfileData, useUpdateClientProfile, type ClientProfile } from '@/hooks/useClientProfile';
 import { useGuestMode } from '@/contexts/GuestModeContext';
