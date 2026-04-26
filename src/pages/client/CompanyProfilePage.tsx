@@ -262,6 +262,60 @@ export default function CompanyProfilePage() {
     }
   };
 
+  // ---------- Drag-and-drop handlers ----------
+  const handleLogoDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    if (uploadingLogo) return;
+    if (!Array.from(e.dataTransfer?.types || []).includes('Files')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current += 1;
+    setIsDraggingLogo(true);
+  };
+
+  const handleLogoDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (uploadingLogo) return;
+    if (!Array.from(e.dataTransfer?.types || []).includes('Files')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleLogoDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    if (uploadingLogo) return;
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setIsDraggingLogo(false);
+  };
+
+  const handleLogoDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current = 0;
+    setIsDraggingLogo(false);
+    if (uploadingLogo) return;
+
+    const files = e.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+    if (files.length > 1) {
+      toast.error('Drop a single image', {
+        description: 'Only one logo file can be uploaded at a time.',
+      });
+      return;
+    }
+    const file = files[0];
+    const ext = validateLogoFile(file);
+    if (!ext) return;
+
+    if (logoUrl) {
+      // Hold the file and ask for confirmation before replacing.
+      pendingDropRef.current = { file, ext };
+      setConfirmReplaceOpen(true);
+    } else {
+      void processLogoFile(file, ext);
+    }
+  };
+
   const handleSave = () => {
     if (isGuest) {
       toast.success('Changes saved (demo mode)');
