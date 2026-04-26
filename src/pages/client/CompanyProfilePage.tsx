@@ -54,6 +54,8 @@ export default function CompanyProfilePage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoUploadProgress, setLogoUploadProgress] = useState(0);
+  const logoProgressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [loaded, setLoaded] = useState(false);
 
