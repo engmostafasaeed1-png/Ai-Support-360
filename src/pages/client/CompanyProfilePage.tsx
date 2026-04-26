@@ -99,29 +99,59 @@ export default function CompanyProfilePage() {
     }
   }, [profile, loaded]);
 
+  const ALLOWED_LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
+  const ALLOWED_LOGO_EXTS = ['png', 'jpg', 'jpeg', 'webp'] as const;
+  const MAX_LOGO_BYTES = 5 * 1024 * 1024; // 5MB
+
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+
+    // Validate MIME type — restrict to safe, broadly supported image formats
+    if (!(ALLOWED_LOGO_TYPES as readonly string[]).includes(file.type)) {
+      toast.error('Unsupported file type', {
+        description: 'Please upload a PNG, JPG, or WebP image.',
+      });
+      if (logoInputRef.current) logoInputRef.current.value = '';
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be under 5MB');
+
+    // Defense-in-depth: also check the file extension since `type` can be spoofed
+    const extRaw = (file.name.split('.').pop() || '').toLowerCase();
+    if (!(ALLOWED_LOGO_EXTS as readonly string[]).includes(extRaw)) {
+      toast.error('Unsupported file extension', {
+        description: 'Allowed extensions: .png, .jpg, .jpeg, .webp',
+      });
+      if (logoInputRef.current) logoInputRef.current.value = '';
       return;
     }
+
+    if (file.size > MAX_LOGO_BYTES) {
+      toast.error('File too large', {
+        description: `Max size is ${(MAX_LOGO_BYTES / (1024 * 1024)).toFixed(0)}MB.`,
+      });
+      if (logoInputRef.current) logoInputRef.current.value = '';
+      return;
+    }
+    if (file.size === 0) {
+      toast.error('Empty file', { description: 'The selected file is empty.' });
+      if (logoInputRef.current) logoInputRef.current.value = '';
+      return;
+    }
+
     setUploadingLogo(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+      // Normalize jpeg → jpg in the stored path
+      const ext = extRaw === 'jpeg' ? 'jpg' : extRaw;
       // Storage RLS on the `avatars` bucket requires the first folder
       // segment to equal the user's id. Putting "company-logos/" first
       // (as before) was rejected by the policy, so we flip the order.
       const path = `${user.id}/company-logo.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(path, file, { upsert: true });
+        .upload(path, file, { upsert: true, contentType: file.type });
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
       const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
