@@ -105,8 +105,16 @@ export default function ResetPasswordPage() {
             {error ? (
               <>
                 <p className="text-sm text-destructive">{error}</p>
-                <Link to="/forgot-password" className="text-sm text-primary hover:underline inline-block">
-                  {t('auth.request_new_link', 'Request a new reset link')}
+                <Button
+                  asChild
+                  className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02] mt-2"
+                >
+                  <Link to="/forgot-password">
+                    {t('auth.request_new_link', 'Request a new reset link')}
+                  </Link>
+                </Button>
+                <Link to="/login" className="text-xs text-muted-foreground hover:text-foreground inline-block mt-2">
+                  {t('auth.back_to_login', 'Back to sign in')}
                 </Link>
               </>
             ) : (
