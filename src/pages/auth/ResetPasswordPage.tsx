@@ -101,9 +101,20 @@ export default function ResetPasswordPage() {
       <div className="min-h-screen flex items-center justify-center px-4 relative">
         <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
         <Card className="w-full max-w-md relative z-10 shadow-2xl border-border/30 backdrop-blur-sm bg-card/95">
-          <CardContent className="py-12 text-center">
-            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">{t('auth.verifying_link')}</p>
+          <CardContent className="py-12 text-center space-y-3">
+            {error ? (
+              <>
+                <p className="text-sm text-destructive">{error}</p>
+                <Link to="/forgot-password" className="text-sm text-primary hover:underline inline-block">
+                  {t('auth.request_new_link', 'Request a new reset link')}
+                </Link>
+              </>
+            ) : (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">{t('auth.verifying_link')}</p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
