@@ -176,6 +176,35 @@ export default function LoginPage() {
     }
 
     setLoading(true);
+
+    // Preflight: validate auth config, endpoint reachability, and existing session
+    const preflight = await runSignInPreflight();
+    if (!preflight.ok) {
+      setLoading(false);
+      toast.error(preflight.message);
+      logAudit('login_preflight_failed', { reason: preflight.reason });
+      return;
+    }
+
+    // If a valid session already exists, skip password sign-in and route by role
+    if (preflight.hasValidSession) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const role = await getRoleAndRepairAccount(user);
+          if (from) navigate(from, { replace: true });
+          else navigateByRole(role);
+          return;
+        }
+      } catch (err) {
+        console.error('Existing session route failed:', err);
+        // Fall through to password sign-in
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
