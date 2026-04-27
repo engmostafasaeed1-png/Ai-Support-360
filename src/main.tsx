@@ -1,3 +1,6 @@
+import { assertSingleReact } from "./lib/reactSingletonGuard";
+assertSingleReact();
+
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "./components/ErrorBoundary";
 import App from "./App.tsx";
