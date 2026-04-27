@@ -25,7 +25,15 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Force every import to resolve to the SAME on-disk copy of React.
+      // Prevents "Cannot read properties of null (reading 'useEffect')" caused
+      // by duplicate React instances (e.g. nested node_modules or stale cache).
+      react: path.resolve(__dirname, "./node_modules/react"),
+      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core", "react-i18next", "i18next"],
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
   },
 }));
