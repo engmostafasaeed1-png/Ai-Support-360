@@ -20,6 +20,78 @@ export default function ResetPasswordPage() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Map Supabase auth error codes / messages to user-friendly i18n strings
+  const mapResetError = (opts: {
+    code?: string | null;
+    errorName?: string | null;
+    description?: string | null;
+    status?: number | null;
+  }): string => {
+    const code = (opts.code || '').toLowerCase();
+    const name = (opts.errorName || '').toLowerCase();
+    const desc = (opts.description || '').toLowerCase();
+    const status = opts.status ?? null;
+
+    // Expired link (Supabase: otp_expired / "Email link is invalid or has expired")
+    if (
+      code === 'otp_expired' ||
+      code === 'token_expired' ||
+      desc.includes('expired') ||
+      desc.includes('has expired')
+    ) {
+      return t(
+        'auth.reset_link_expired',
+        'This password reset link has expired. Please request a new one.'
+      );
+    }
+
+    // Already used / consumed
+    if (code === 'otp_used' || desc.includes('already been used') || desc.includes('already used')) {
+      return t(
+        'auth.reset_link_used',
+        'This reset link has already been used. Please request a new one.'
+      );
+    }
+
+    // Invalid / malformed token (Supabase often returns 401/403 + access_denied)
+    if (
+      code === 'invalid_token' ||
+      code === 'bad_jwt' ||
+      code === 'invalid_request' ||
+      name === 'access_denied' ||
+      desc.includes('invalid') ||
+      desc.includes('not found') ||
+      status === 401 ||
+      status === 403
+    ) {
+      return t(
+        'auth.reset_link_invalid',
+        'This password reset link is invalid. Please request a new one.'
+      );
+    }
+
+    // Rate limited
+    if (code === 'over_email_send_rate_limit' || status === 429 || desc.includes('rate limit')) {
+      return t(
+        'auth.reset_rate_limited',
+        'Too many attempts. Please wait a moment and try again.'
+      );
+    }
+
+    // Server error
+    if (status && status >= 500) {
+      return t(
+        'auth.reset_server_error',
+        'We could not verify your reset link due to a server error. Please try again.'
+      );
+    }
+
+    return (
+      opts.description ||
+      t('auth.reset_link_invalid', 'This password reset link is invalid or has expired. Please request a new one.')
+    );
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -34,13 +106,33 @@ export default function ResetPasswordPage() {
         const hash = window.location.hash || '';
         const hashParams = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
 
+        // 0) Detect Supabase error in URL early (hash or query)
+        const urlErrorCode =
+          hashParams.get('error_code') || url.searchParams.get('error_code');
+        const urlErrorName =
+          hashParams.get('error') || url.searchParams.get('error');
+        const urlErrorDesc =
+          hashParams.get('error_description') || url.searchParams.get('error_description');
+
+        if (urlErrorCode || urlErrorName || urlErrorDesc) {
+          if (mounted) {
+            setError(
+              mapResetError({
+                code: urlErrorCode,
+                errorName: urlErrorName,
+                description: urlErrorDesc ? decodeURIComponent(urlErrorDesc.replace(/\+/g, ' ')) : null,
+              })
+            );
+          }
+          return;
+        }
+
         // 1) New PKCE flow: ?code=...
         const code = url.searchParams.get('code');
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) throw error;
           if (mounted) setReady(true);
-          // Clean URL
           window.history.replaceState({}, '', url.pathname);
           return;
         }
@@ -64,17 +156,23 @@ export default function ResetPasswordPage() {
           return;
         }
 
-        // 4) Hash error from Supabase (expired link, etc.)
-        const errDesc = hashParams.get('error_description') || url.searchParams.get('error_description');
-        if (errDesc && mounted) {
-          setError(decodeURIComponent(errDesc.replace(/\+/g, ' ')));
-          return;
+        // 4) No valid token at all
+        if (mounted) {
+          setError(
+            t('auth.reset_link_missing', 'No reset link detected. Please request a new password reset email.')
+          );
         }
-
-        // No valid token at all
-        if (mounted) setError(t('auth.reset_link_invalid', 'This password reset link is invalid or has expired. Please request a new one.'));
       } catch (e: any) {
-        if (mounted) setError(e?.message || 'Unable to verify reset link.');
+        if (mounted) {
+          setError(
+            mapResetError({
+              code: e?.code ?? e?.error_code ?? null,
+              errorName: e?.name ?? null,
+              description: e?.message ?? null,
+              status: e?.status ?? null,
+            })
+          );
+        }
       }
     })();
 
@@ -83,6 +181,7 @@ export default function ResetPasswordPage() {
       subscription.unsubscribe();
     };
   }, [t]);
+
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
