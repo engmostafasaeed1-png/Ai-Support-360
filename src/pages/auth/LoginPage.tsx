@@ -13,6 +13,7 @@ import PasswordInput from '@/components/auth/PasswordInput';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
 import { logAudit } from '@/lib/auditLog';
+import { runSignInPreflight } from '@/lib/authPreflight';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
@@ -172,6 +173,35 @@ export default function LoginPage() {
       const remaining = Math.ceil((lockoutUntil - now) / 60000);
       toast.error(`Account temporarily locked. Try again in ${remaining} minute${remaining > 1 ? 's' : ''}.`);
       return;
+    }
+
+    setLoading(true);
+
+    // Preflight: validate auth config, endpoint reachability, and existing session
+    const preflight = await runSignInPreflight();
+    if (!preflight.ok) {
+      setLoading(false);
+      toast.error(preflight.message);
+      logAudit('login_preflight_failed', { reason: preflight.reason });
+      return;
+    }
+
+    // If a valid session already exists, skip password sign-in and route by role
+    if (preflight.hasValidSession) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const role = await getRoleAndRepairAccount(user);
+          if (from) navigate(from, { replace: true });
+          else navigateByRole(role);
+          return;
+        }
+      } catch (err) {
+        console.error('Existing session route failed:', err);
+        // Fall through to password sign-in
+      } finally {
+        setLoading(false);
+      }
     }
 
     setLoading(true);
