@@ -35,10 +35,29 @@ export default function SignupPage() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [lastResentAt, setLastResentAt] = useState<Date | null>(null);
 
-  // Cooldown ticker
-  useState(() => {
-    // noop placeholder to satisfy linter; real ticker via useEffect below
-  });
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const id = setInterval(() => setResendCooldown(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [resendCooldown]);
+
+  const handleResend = async () => {
+    if (!pendingEmail || resendCooldown > 0) return;
+    setResending(true);
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: pendingEmail,
+      options: { emailRedirectTo: `${window.location.origin}/login` },
+    });
+    setResending(false);
+    if (error) {
+      toast.error(error.message || 'Could not resend verification email.');
+      return;
+    }
+    setLastResentAt(new Date());
+    setResendCooldown(60);
+    toast.success('Verification email sent. Check your inbox.');
+  };
 
   const DISPOSABLE_DOMAINS = ['mailinator.com', 'tempmail.com', 'guerrillamail.com', '10minutemail.com', 'throwaway.email', 'yopmail.com'];
 
