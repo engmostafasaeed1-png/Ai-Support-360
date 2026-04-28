@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import GuestExploreModal from '@/components/guest/GuestExploreModal';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
+import VerificationTimeline from '@/components/auth/VerificationTimeline';
 
 type Role = 'client' | 'consultant';
 
@@ -166,11 +167,7 @@ export default function SignupPage() {
                 <span>Didn't see it? Check your <strong>Spam</strong> or <strong>Promotions</strong> folder.</span>
               </div>
             </div>
-            {lastResentAt && (
-              <p className="text-xs text-muted-foreground text-center" aria-live="polite">
-                Last sent at {lastResentAt.toLocaleTimeString()}
-              </p>
-            )}
+            {lastResentAt && <VerificationTimeline sentAt={lastResentAt} />}
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
             <Button
