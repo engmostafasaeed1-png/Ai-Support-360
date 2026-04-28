@@ -314,6 +314,15 @@ export default function LoginPage() {
             <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('auth.forgot_link')}
             </Link>
+            <button
+              type="button"
+              onClick={handleResendConfirmation}
+              disabled={resending}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5 disabled:opacity-60"
+            >
+              {resending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              Didn't get the confirmation email? Resend
+            </button>
             <p className="text-sm text-muted-foreground">
               {t('auth.no_account')}{' '}
               <Link to="/signup" className="text-primary font-medium hover:underline">{t('auth.signup_link')}</Link>
