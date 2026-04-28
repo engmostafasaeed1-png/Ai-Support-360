@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Clock, AlertCircle, Loader2, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { useAuthEmailExpiry } from '@/hooks/useAuthEmailExpiry';
 
 interface VerificationTimelineProps {
@@ -8,6 +9,12 @@ interface VerificationTimelineProps {
   /** Verification link lifetime in minutes (Supabase default = 1440 / 24h) */
   expiresInMinutes?: number;
   className?: string;
+  /** When provided, an expired-state CTA is rendered inside the timeline. */
+  onResend?: () => void | Promise<void>;
+  /** Seconds remaining before resend is allowed again. 0 = ready. */
+  resendCooldown?: number;
+  /** Resend in flight. */
+  resending?: boolean;
 }
 
 const formatTime = (d: Date) =>
@@ -30,6 +37,9 @@ export default function VerificationTimeline({
   sentAt,
   expiresInMinutes,
   className,
+  onResend,
+  resendCooldown = 0,
+  resending = false,
 }: VerificationTimelineProps) {
   const fetchedExpiry = useAuthEmailExpiry();
   const effectiveExpiry = expiresInMinutes ?? fetchedExpiry;
@@ -107,13 +117,38 @@ export default function VerificationTimeline({
               ({formatRelative(remainingMs)})
             </span>
           </p>
-          {expired && (
+          {expired && !onResend && (
             <p className="text-[11px] text-destructive mt-1">
               Tap "Resend" to get a new verification link.
             </p>
           )}
         </div>
       </div>
+
+      {expired && onResend && (
+        <div className="pt-1">
+          <Button
+            type="button"
+            onClick={() => { void onResend(); }}
+            disabled={resending || resendCooldown > 0}
+            className="w-full h-10 rounded-xl gradient-primary border-0 shadow-premium hover:shadow-xl transition-all gap-2"
+          >
+            {resending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+            {resending
+              ? 'Sending new link...'
+              : resendCooldown > 0
+                ? `Resend available in ${resendCooldown}s`
+                : 'Resend verification email'}
+          </Button>
+          <p className="text-[11px] text-muted-foreground text-center mt-1.5">
+            Your previous link is no longer valid.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
