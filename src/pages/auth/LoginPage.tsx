@@ -243,6 +243,19 @@ export default function LoginPage() {
 
     if (error) {
       setLoading(false);
+
+      // Special-case: email not yet confirmed — surface resend flow instead of "invalid credentials"
+      const msg = (error.message || '').toLowerCase();
+      const code = (error as any).code as string | undefined;
+      if (code === 'email_not_confirmed' || msg.includes('not confirmed') || msg.includes('email not confirmed')) {
+        toast.error('Your email is not verified yet. Please check your inbox.');
+        // Auto-trigger resend if not in cooldown so the user has a fresh link
+        if (!resendCooldown && !resending) {
+          await handleResendConfirmation();
+        }
+        return;
+      }
+
       const newAttempts = failedAttempts + 1;
       setFailedAttempts(newAttempts);
       sessionStorage.setItem('login_attempts', String(newAttempts));
