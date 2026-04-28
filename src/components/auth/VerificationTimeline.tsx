@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuthEmailExpiry } from '@/hooks/useAuthEmailExpiry';
 
 interface VerificationTimelineProps {
   sentAt: Date;
@@ -27,10 +28,12 @@ const formatRelative = (ms: number) => {
 
 export default function VerificationTimeline({
   sentAt,
-  expiresInMinutes = 1440,
+  expiresInMinutes,
   className,
 }: VerificationTimelineProps) {
-  const expiresAt = new Date(sentAt.getTime() + expiresInMinutes * 60 * 1000);
+  const fetchedExpiry = useAuthEmailExpiry();
+  const effectiveExpiry = expiresInMinutes ?? fetchedExpiry;
+  const expiresAt = new Date(sentAt.getTime() + effectiveExpiry * 60 * 1000);
   const [now, setNow] = useState<Date>(new Date());
 
   useEffect(() => {
