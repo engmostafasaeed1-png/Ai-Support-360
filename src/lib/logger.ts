@@ -1,4 +1,5 @@
 import { captureException } from '@/lib/sentry';
+import { reportError } from '@/lib/errorReporter';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -27,5 +28,14 @@ export const logger = {
     logEntry('error', message, errorContext);
     // Forward to Sentry when configured. No-op otherwise.
     captureException(error ?? new Error(message), { message, ...errorContext });
+    // Persist to backend so admins are notified.
+    const errObj = error instanceof Error ? error : undefined;
+    reportError({
+      level: 'error',
+      source: 'logger',
+      message: errObj?.message ? `${message}: ${errObj.message}` : message,
+      stack: errObj?.stack,
+      context,
+    });
   },
 };

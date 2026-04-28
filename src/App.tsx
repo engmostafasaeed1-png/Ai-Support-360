@@ -134,6 +134,7 @@ const OnCallSchedulePage = React.lazy(() => import("./pages/admin/OnCallSchedule
 const LandingEditorPage = React.lazy(() => import("./pages/admin/LandingEditorPage.tsx"));
 const AdminConsolePage = React.lazy(() => import("./pages/admin/AdminConsolePage.tsx"));
 const AdminVMwareSettingsPage = React.lazy(() => import("./pages/admin/VMwareSettingsPage.tsx"));
+const AdminErrorsPage = React.lazy(() => import("./pages/admin/AdminErrorsPage.tsx"));
 
 // Super admin pages
 const SuperAdminOverview = React.lazy(() => import("./pages/superadmin/SuperAdminOverview.tsx"));
@@ -359,6 +360,7 @@ const App = () => (
               <Route path="interview-training" element={<InterviewTrainingPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="oncall" element={<OnCallSchedulePage />} />
+              <Route path="errors" element={<AdminErrorsPage />} />
             </Route>
             <Route path="/super-admin" element={<ProtectedRoute requiredRole="super-admin"><ErrorBoundary><SuperAdminLayout /></ErrorBoundary></ProtectedRoute>}>
               <Route index element={<SuperAdminOverview />} />

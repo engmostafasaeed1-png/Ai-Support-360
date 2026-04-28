@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { reportError } from '@/lib/errorReporter';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -25,6 +26,13 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
+    reportError({
+      level: 'fatal',
+      source: 'ErrorBoundary',
+      message: error.message || 'React render error',
+      stack: error.stack,
+      context: { componentStack: errorInfo.componentStack?.slice(0, 2000) },
+    });
   }
 
   render() {
