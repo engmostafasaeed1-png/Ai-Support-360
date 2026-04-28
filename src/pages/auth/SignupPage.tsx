@@ -127,8 +127,11 @@ export default function SignupPage() {
       return;
     }
     if (data.user && !data.session) {
+      const now = new Date();
       setPendingEmail(email);
-      setLastResentAt(new Date());
+      try { localStorage.setItem(PENDING_EMAIL_KEY, email); } catch { /* ignore */ }
+      setLastResentAt(now);
+      setVerificationSentAt(email, now);
       setResendCooldown(60);
       toast.success('Check your inbox to verify your email before signing in.');
       return;
@@ -195,7 +198,13 @@ export default function SignupPage() {
             </Button>
             <button
               type="button"
-              onClick={() => { setPendingEmail(null); setResendCooldown(0); }}
+              onClick={() => {
+                if (pendingEmail) clearVerificationSentAt(pendingEmail);
+                try { localStorage.removeItem(PENDING_EMAIL_KEY); } catch { /* ignore */ }
+                setPendingEmail(null);
+                setLastResentAt(null);
+                setResendCooldown(0);
+              }}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               Use a different email
