@@ -374,7 +374,12 @@ export default function LoginPage() {
                     <span>Not there? Check <strong>Spam</strong> or <strong>Promotions</strong>.</span>
                   </li>
                 </ul>
-                <VerificationTimeline sentAt={resendSuccessAt} />
+                <VerificationTimeline
+                  sentAt={resendSuccessAt}
+                  onResend={handleResendConfirmation}
+                  resending={resending}
+                  resendCooldown={resendCooldown}
+                />
                 <button
                   type="button"
                   onClick={handleResendConfirmation}
