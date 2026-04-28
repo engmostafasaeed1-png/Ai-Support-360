@@ -1552,6 +1552,69 @@ export type Database = {
           },
         ]
       }
+      error_reports: {
+        Row: {
+          context: Json | null
+          created_at: string
+          fingerprint: string | null
+          id: string
+          level: string
+          message: string
+          occurrence_count: number
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          resolved_notes: string | null
+          route: string | null
+          source: string
+          stack: string | null
+          updated_at: string
+          url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          fingerprint?: string | null
+          id?: string
+          level?: string
+          message: string
+          occurrence_count?: number
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_notes?: string | null
+          route?: string | null
+          source?: string
+          stack?: string | null
+          updated_at?: string
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          fingerprint?: string | null
+          id?: string
+          level?: string
+          message?: string
+          occurrence_count?: number
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_notes?: string | null
+          route?: string | null
+          source?: string
+          stack?: string | null
+          updated_at?: string
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       integration_sync_log: {
         Row: {
           action: string
