@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import GuestExploreModal from '@/components/guest/GuestExploreModal';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
+import VerificationTimeline from '@/components/auth/VerificationTimeline';
 
 type Role = 'client' | 'consultant';
 
