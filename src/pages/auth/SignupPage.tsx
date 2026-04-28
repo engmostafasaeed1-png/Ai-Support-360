@@ -114,8 +114,10 @@ export default function SignupPage() {
       return;
     }
     if (data.user && !data.session) {
+      setPendingEmail(email);
+      setLastResentAt(new Date());
+      setResendCooldown(60);
       toast.success('Check your inbox to verify your email before signing in.');
-      navigate('/login');
       return;
     }
     if (data.user) {
