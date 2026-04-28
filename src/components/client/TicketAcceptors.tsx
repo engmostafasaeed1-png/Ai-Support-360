@@ -27,7 +27,7 @@ export default function TicketAcceptors({ ticketId, currentConsultantId }: Props
     }
     const { error } = await supabase
       .from('tickets')
-      .update({ consultant_id: consultantId, status: 'matched' as any })
+      .update({ consultant_id: consultantId, status: 'in_progress' as any })
       .eq('id', ticketId);
     if (error) {
       toast.error('Failed to assign consultant.');
