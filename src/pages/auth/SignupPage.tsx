@@ -141,6 +141,62 @@ export default function SignupPage() {
     }
   };
 
+  if (pendingEmail) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 relative py-8">
+        <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
+        <Card className="w-full max-w-md relative z-10 shadow-2xl border-border/30 backdrop-blur-sm bg-card/95 animate-fade-in">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+              <MailCheck className="w-7 h-7 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Verify your email</CardTitle>
+            <CardDescription>
+              We sent a verification link to <span className="font-medium text-foreground">{pendingEmail}</span>.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-xl bg-muted/40 border border-border/50 p-4 space-y-2 text-sm">
+              <div className="flex items-start gap-2">
+                <Inbox className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+                <span>Open your inbox and click the verification link.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <ShieldAlert className="w-4 h-4 mt-0.5 text-orange-500 shrink-0" />
+                <span>Didn't see it? Check your <strong>Spam</strong> or <strong>Promotions</strong> folder.</span>
+              </div>
+            </div>
+            {lastResentAt && (
+              <p className="text-xs text-muted-foreground text-center" aria-live="polite">
+                Last sent at {lastResentAt.toLocaleTimeString()}
+              </p>
+            )}
+          </CardContent>
+          <CardFooter className="flex flex-col gap-3">
+            <Button
+              onClick={handleResend}
+              disabled={resending || resendCooldown > 0}
+              className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all"
+            >
+              {resending && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
+              {resendCooldown > 0 ? `Resend available in ${resendCooldown}s` : 'Resend verification email'}
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/login')} className="w-full h-11 rounded-xl">
+              Go to login
+            </Button>
+            <button
+              type="button"
+              onClick={() => { setPendingEmail(null); setResendCooldown(0); }}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Use a different email
+            </button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative py-8">
       <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
