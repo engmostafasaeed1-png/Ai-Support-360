@@ -250,6 +250,9 @@ export default function CaseDetailPage() {
         <TicketQuickActions
           ticketId={ticket.id}
           role="consultant"
+          ticketStatus={ticket.status}
+          hasConsultant={!!ticket.consultant_id}
+          isAssignedConsultant={!!consultantData?.id && consultantData.id === ticket.consultant_id}
           onScheduleMeeting={() => setMeetingOpen(true)}
         />
       )}
