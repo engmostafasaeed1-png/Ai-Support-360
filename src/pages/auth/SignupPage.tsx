@@ -75,7 +75,10 @@ export default function SignupPage() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { display_name: name, role, ...(referralCode ? { referral_code: referralCode } : {}) } },
+      options: {
+        emailRedirectTo: `${window.location.origin}/login`,
+        data: { display_name: name, role, ...(referralCode ? { referral_code: referralCode } : {}) },
+      },
     });
     setLoading(false);
     if (error) {
@@ -83,7 +86,7 @@ export default function SignupPage() {
       return;
     }
     if (data.user && !data.session) {
-      toast.success(t('auth.check_email'));
+      toast.success('Check your inbox to verify your email before signing in.');
       navigate('/login');
       return;
     }
