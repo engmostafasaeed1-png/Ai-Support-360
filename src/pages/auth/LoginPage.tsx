@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2, Eye, MailCheck, Inbox, ShieldAlert } from 'lucide-react';
+import VerificationTimeline from '@/components/auth/VerificationTimeline';
 import PasswordInput from '@/components/auth/PasswordInput';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
