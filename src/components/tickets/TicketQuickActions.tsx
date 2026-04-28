@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Server, CalendarDays } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { FileText, Server, CalendarDays, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import TicketDocuments from '@/components/client/TicketDocuments';
 
 interface Props {
   ticketId: string;
@@ -12,9 +15,9 @@ interface Props {
 }
 
 /**
- * Three individual quick-action buttons surfaced once a consultant is
- * assigned to a ticket. Each button has its own dedicated link so the
- * client/consultant can jump straight to the relevant context.
+ * Three quick-action buttons surfaced once a consultant is assigned to a
+ * ticket. The Documents button opens an inline dialog so users can upload
+ * a new file and see recent uploads without leaving the case.
  */
 export default function TicketQuickActions({ ticketId, role, onScheduleMeeting }: Props) {
   const base = role === 'client' ? '/client' : '/consultant';
@@ -23,20 +26,20 @@ export default function TicketQuickActions({ ticketId, role, onScheduleMeeting }
     : `/consultant/cases/${ticketId}#documents`;
   const remoteAccessLink = `${base}/remote-access?ticket=${ticketId}`;
 
+  const [docsOpen, setDocsOpen] = useState(false);
+
   return (
     <Card className="rounded-2xl border-border/50">
       <CardContent className="p-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Button
-            asChild
             variant="outline"
             className="h-auto py-3 flex-col gap-1.5 hover:border-primary/50 hover:bg-primary/5"
+            onClick={() => setDocsOpen(true)}
           >
-            <Link to={ticketDocsLink}>
-              <FileText className="w-5 h-5 text-primary" />
-              <span className="text-xs font-semibold">Documents</span>
-              <span className="text-[10px] text-muted-foreground">View &amp; upload files</span>
-            </Link>
+            <FileText className="w-5 h-5 text-primary" />
+            <span className="text-xs font-semibold">Documents</span>
+            <span className="text-[10px] text-muted-foreground">Upload &amp; view files</span>
           </Button>
 
           <Button
@@ -76,6 +79,30 @@ export default function TicketQuickActions({ ticketId, role, onScheduleMeeting }
           )}
         </div>
       </CardContent>
+
+      {/* Inline Documents dialog: upload step + recent uploads */}
+      <Dialog open={docsOpen} onOpenChange={setDocsOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" /> Ticket Documents
+            </DialogTitle>
+            <DialogDescription>
+              Upload a new file or browse recent uploads for this ticket.
+            </DialogDescription>
+          </DialogHeader>
+
+          <TicketDocuments ticketId={ticketId} />
+
+          <div className="flex justify-end pt-2">
+            <Button asChild variant="outline" size="sm" className="gap-1.5">
+              <Link to={ticketDocsLink} onClick={() => setDocsOpen(false)}>
+                <ArrowUpRight className="w-3.5 h-3.5" /> Open full documents tab
+              </Link>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
