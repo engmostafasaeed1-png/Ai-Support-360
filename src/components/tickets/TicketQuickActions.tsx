@@ -10,16 +10,40 @@ interface Props {
   ticketId: string;
   /** 'client' or 'consultant' — controls link prefixes */
   role: 'client' | 'consultant';
+  /** Current ticket status (e.g. 'in_progress', 'resolved', 'closed'). */
+  ticketStatus?: string | null;
+  /** True when a consultant is assigned to this ticket. */
+  hasConsultant?: boolean;
+  /**
+   * For role='consultant': true when the current viewer IS the assigned
+   * consultant. Defaults to true to preserve previous behaviour.
+   */
+  isAssignedConsultant?: boolean;
   /** Optional: open the schedule meeting dialog inline rather than navigating */
   onScheduleMeeting?: () => void;
 }
 
 /**
- * Three quick-action buttons surfaced once a consultant is assigned to a
- * ticket. The Documents button opens an inline dialog so users can upload
- * a new file and see recent uploads without leaving the case.
+ * Quick actions surfaced on the ticket detail page. Each action is gated
+ * by role + ticket state so users only see what they're allowed to do:
+ *
+ *  - Documents:      visible to client always, and to the assigned consultant.
+ *                    Read-only badge when the ticket is closed/cancelled.
+ *  - Remote Access:  only when a consultant is assigned and the ticket is in
+ *                    an active working state (not new / closed / cancelled).
+ *                    Consultant must be the assigned one.
+ *  - Request Meeting: client can schedule whenever the ticket is open; the
+ *                    assigned consultant can schedule when working on it.
+ *                    Hidden after resolution / closure / cancellation.
  */
-export default function TicketQuickActions({ ticketId, role, onScheduleMeeting }: Props) {
+export default function TicketQuickActions({
+  ticketId,
+  role,
+  ticketStatus,
+  hasConsultant = true,
+  isAssignedConsultant = true,
+  onScheduleMeeting,
+}: Props) {
   const base = role === 'client' ? '/client' : '/consultant';
   const ticketDocsLink = role === 'client'
     ? `/client/tickets/${ticketId}?tab=documents#documents`
@@ -28,54 +52,91 @@ export default function TicketQuickActions({ ticketId, role, onScheduleMeeting }
 
   const [docsOpen, setDocsOpen] = useState(false);
 
+  // ── Visibility rules ────────────────────────────────────────────────
+  const status = (ticketStatus || '').toLowerCase();
+  const isTerminal = ['closed', 'cancelled', 'resolved'].includes(status);
+  const isHardClosed = ['closed', 'cancelled'].includes(status);
+  const isPreWork = ['new', 'triaging', 'under_review', 'planning', 'pending_approval'].includes(status);
+  const isActiveWork =
+    !!status &&
+    !isTerminal &&
+    !isPreWork; // in_progress / waiting_* / on_hold / matched / approved / testing
+
+  // Consultants must be the assigned one to act on the ticket.
+  const consultantAllowed = role === 'client' || isAssignedConsultant;
+
+  const showDocuments = consultantAllowed; // always allowed; read-only when closed
+  const documentsReadOnly = isHardClosed;
+
+  const showRemoteAccess =
+    consultantAllowed && hasConsultant && isActiveWork;
+
+  const showRequestMeeting =
+    consultantAllowed && hasConsultant && !isTerminal;
+
+  const visibleCount = [showDocuments, showRemoteAccess, showRequestMeeting].filter(Boolean).length;
+  if (visibleCount === 0) return null;
+
+  const gridCols = visibleCount === 1 ? 'grid-cols-1'
+    : visibleCount === 2 ? 'grid-cols-1 sm:grid-cols-2'
+    : 'grid-cols-1 sm:grid-cols-3';
+
   return (
     <Card className="rounded-2xl border-border/50">
       <CardContent className="p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Button
-            variant="outline"
-            className="h-auto py-3 flex-col gap-1.5 hover:border-primary/50 hover:bg-primary/5"
-            onClick={() => setDocsOpen(true)}
-          >
-            <FileText className="w-5 h-5 text-primary" />
-            <span className="text-xs font-semibold">Documents</span>
-            <span className="text-[10px] text-muted-foreground">Upload &amp; view files</span>
-          </Button>
-
-          <Button
-            asChild
-            variant="outline"
-            className="h-auto py-3 flex-col gap-1.5 hover:border-accent/50 hover:bg-accent/5"
-          >
-            <Link to={remoteAccessLink}>
-              <Server className="w-5 h-5 text-accent" />
-              <span className="text-xs font-semibold">Remote Access</span>
-              <span className="text-[10px] text-muted-foreground">Connect to environment</span>
-            </Link>
-          </Button>
-
-          {onScheduleMeeting ? (
+        <div className={`grid ${gridCols} gap-3`}>
+          {showDocuments && (
             <Button
               variant="outline"
-              className="h-auto py-3 flex-col gap-1.5 hover:border-emerald-500/50 hover:bg-emerald-500/5"
-              onClick={onScheduleMeeting}
+              className="h-auto py-3 flex-col gap-1.5 hover:border-primary/50 hover:bg-primary/5"
+              onClick={() => setDocsOpen(true)}
             >
-              <CalendarDays className="w-5 h-5 text-emerald-600" />
-              <span className="text-xs font-semibold">Request Meeting</span>
-              <span className="text-[10px] text-muted-foreground">Schedule a session</span>
+              <FileText className="w-5 h-5 text-primary" />
+              <span className="text-xs font-semibold">Documents</span>
+              <span className="text-[10px] text-muted-foreground">
+                {documentsReadOnly ? 'View files (read-only)' : 'Upload & view files'}
+              </span>
             </Button>
-          ) : (
+          )}
+
+          {showRemoteAccess && (
             <Button
               asChild
               variant="outline"
-              className="h-auto py-3 flex-col gap-1.5 hover:border-emerald-500/50 hover:bg-emerald-500/5"
+              className="h-auto py-3 flex-col gap-1.5 hover:border-accent/50 hover:bg-accent/5"
             >
-              <Link to={`${base}/calendar?ticket=${ticketId}`}>
+              <Link to={remoteAccessLink}>
+                <Server className="w-5 h-5 text-accent" />
+                <span className="text-xs font-semibold">Remote Access</span>
+                <span className="text-[10px] text-muted-foreground">Connect to environment</span>
+              </Link>
+            </Button>
+          )}
+
+          {showRequestMeeting && (
+            onScheduleMeeting ? (
+              <Button
+                variant="outline"
+                className="h-auto py-3 flex-col gap-1.5 hover:border-emerald-500/50 hover:bg-emerald-500/5"
+                onClick={onScheduleMeeting}
+              >
                 <CalendarDays className="w-5 h-5 text-emerald-600" />
                 <span className="text-xs font-semibold">Request Meeting</span>
                 <span className="text-[10px] text-muted-foreground">Schedule a session</span>
-              </Link>
-            </Button>
+              </Button>
+            ) : (
+              <Button
+                asChild
+                variant="outline"
+                className="h-auto py-3 flex-col gap-1.5 hover:border-emerald-500/50 hover:bg-emerald-500/5"
+              >
+                <Link to={`${base}/calendar?ticket=${ticketId}`}>
+                  <CalendarDays className="w-5 h-5 text-emerald-600" />
+                  <span className="text-xs font-semibold">Request Meeting</span>
+                  <span className="text-[10px] text-muted-foreground">Schedule a session</span>
+                </Link>
+              </Button>
+            )
           )}
         </div>
       </CardContent>
@@ -88,7 +149,9 @@ export default function TicketQuickActions({ ticketId, role, onScheduleMeeting }
               <FileText className="w-5 h-5 text-primary" /> Ticket Documents
             </DialogTitle>
             <DialogDescription>
-              Upload a new file or browse recent uploads for this ticket.
+              {documentsReadOnly
+                ? 'This ticket is closed — files are read-only.'
+                : 'Upload a new file or browse recent uploads for this ticket.'}
             </DialogDescription>
           </DialogHeader>
 
