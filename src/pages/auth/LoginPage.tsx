@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Eye } from 'lucide-react';
+import { Loader2, Eye, MailCheck, Inbox, ShieldAlert } from 'lucide-react';
 import PasswordInput from '@/components/auth/PasswordInput';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
@@ -35,8 +35,18 @@ export default function LoginPage() {
   });
   const [lockRemaining, setLockRemaining] = useState('');
   const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendSuccessAt, setResendSuccessAt] = useState<Date | null>(null);
+  const [resendSuccessEmail, setResendSuccessEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const id = setInterval(() => setResendCooldown(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [resendCooldown]);
 
   const handleResendConfirmation = async () => {
+    if (resending || resendCooldown > 0) return;
     if (!email) {
       toast.error('Please enter your email above first.');
       return;
@@ -52,7 +62,10 @@ export default function LoginPage() {
       toast.error(error.message || 'Could not resend confirmation email.');
       return;
     }
-    toast.success('Confirmation email sent. Please check your inbox.');
+    setResendSuccessAt(new Date());
+    setResendSuccessEmail(email);
+    setResendCooldown(60);
+    toast.success('Verification email sent.');
     logAudit('resend_confirmation_email', { email });
   };
 
@@ -314,15 +327,52 @@ export default function LoginPage() {
             <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('auth.forgot_link')}
             </Link>
-            <button
-              type="button"
-              onClick={handleResendConfirmation}
-              disabled={resending}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5 disabled:opacity-60"
-            >
-              {resending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Didn't get the confirmation email? Resend
-            </button>
+            {resendSuccessAt ? (
+              <div
+                role="status"
+                aria-live="polite"
+                className="w-full rounded-xl border border-green-500/30 bg-green-500/5 p-3 space-y-2 animate-fade-in"
+              >
+                <div className="flex items-center gap-2 text-sm font-medium text-green-700 dark:text-green-400">
+                  <MailCheck className="w-4 h-4" />
+                  Verification email sent to {resendSuccessEmail}
+                </div>
+                <ul className="text-xs text-muted-foreground space-y-1 ps-1">
+                  <li className="flex items-start gap-2">
+                    <Inbox className="w-3.5 h-3.5 mt-0.5 text-primary shrink-0" />
+                    <span>Open the link in your inbox to verify your account.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <ShieldAlert className="w-3.5 h-3.5 mt-0.5 text-orange-500 shrink-0" />
+                    <span>Not there? Check <strong>Spam</strong> or <strong>Promotions</strong>.</span>
+                  </li>
+                </ul>
+                <button
+                  type="button"
+                  onClick={handleResendConfirmation}
+                  disabled={resending || resendCooldown > 0}
+                  className="text-xs text-primary hover:underline disabled:opacity-60 disabled:no-underline inline-flex items-center gap-1.5"
+                >
+                  {resending && <Loader2 className="w-3 h-3 animate-spin" />}
+                  {resendCooldown > 0 ? `Resend again in ${resendCooldown}s` : 'Resend again'}
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleResendConfirmation}
+                disabled={resending || resendCooldown > 0}
+                aria-busy={resending}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {resending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {resending
+                  ? 'Sending...'
+                  : resendCooldown > 0
+                    ? `Resend available in ${resendCooldown}s`
+                    : "Didn't get the confirmation email? Resend"}
+              </button>
+            )}
             <p className="text-sm text-muted-foreground">
               {t('auth.no_account')}{' '}
               <Link to="/signup" className="text-primary font-medium hover:underline">{t('auth.signup_link')}</Link>

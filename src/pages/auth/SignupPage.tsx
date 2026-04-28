@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Users, Briefcase, Eye } from 'lucide-react';
+import { Loader2, Users, Briefcase, Eye, MailCheck, Inbox, ShieldAlert } from 'lucide-react';
 import PasswordInput from '@/components/auth/PasswordInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 import { cn } from '@/lib/utils';
@@ -30,6 +30,34 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [lastResentAt, setLastResentAt] = useState<Date | null>(null);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const id = setInterval(() => setResendCooldown(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [resendCooldown]);
+
+  const handleResend = async () => {
+    if (!pendingEmail || resendCooldown > 0) return;
+    setResending(true);
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: pendingEmail,
+      options: { emailRedirectTo: `${window.location.origin}/login` },
+    });
+    setResending(false);
+    if (error) {
+      toast.error(error.message || 'Could not resend verification email.');
+      return;
+    }
+    setLastResentAt(new Date());
+    setResendCooldown(60);
+    toast.success('Verification email sent. Check your inbox.');
+  };
 
   const DISPOSABLE_DOMAINS = ['mailinator.com', 'tempmail.com', 'guerrillamail.com', '10minutemail.com', 'throwaway.email', 'yopmail.com'];
 
@@ -86,8 +114,10 @@ export default function SignupPage() {
       return;
     }
     if (data.user && !data.session) {
+      setPendingEmail(email);
+      setLastResentAt(new Date());
+      setResendCooldown(60);
       toast.success('Check your inbox to verify your email before signing in.');
-      navigate('/login');
       return;
     }
     if (data.user) {
@@ -110,6 +140,62 @@ export default function SignupPage() {
       }
     }
   };
+
+  if (pendingEmail) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 relative py-8">
+        <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
+        <Card className="w-full max-w-md relative z-10 shadow-2xl border-border/30 backdrop-blur-sm bg-card/95 animate-fade-in">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+              <MailCheck className="w-7 h-7 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Verify your email</CardTitle>
+            <CardDescription>
+              We sent a verification link to <span className="font-medium text-foreground">{pendingEmail}</span>.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-xl bg-muted/40 border border-border/50 p-4 space-y-2 text-sm">
+              <div className="flex items-start gap-2">
+                <Inbox className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+                <span>Open your inbox and click the verification link.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <ShieldAlert className="w-4 h-4 mt-0.5 text-orange-500 shrink-0" />
+                <span>Didn't see it? Check your <strong>Spam</strong> or <strong>Promotions</strong> folder.</span>
+              </div>
+            </div>
+            {lastResentAt && (
+              <p className="text-xs text-muted-foreground text-center" aria-live="polite">
+                Last sent at {lastResentAt.toLocaleTimeString()}
+              </p>
+            )}
+          </CardContent>
+          <CardFooter className="flex flex-col gap-3">
+            <Button
+              onClick={handleResend}
+              disabled={resending || resendCooldown > 0}
+              className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all"
+            >
+              {resending && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
+              {resendCooldown > 0 ? `Resend available in ${resendCooldown}s` : 'Resend verification email'}
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/login')} className="w-full h-11 rounded-xl">
+              Go to login
+            </Button>
+            <button
+              type="button"
+              onClick={() => { setPendingEmail(null); setResendCooldown(0); }}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Use a different email
+            </button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative py-8">
