@@ -128,7 +128,9 @@ export default function TicketQuickActions({
               <Link to={remoteAccessLink}>
                 <Server className="w-5 h-5 text-accent" />
                 <span className="text-xs font-semibold">Remote Access</span>
-                <span className="text-[10px] text-muted-foreground">Connect to environment</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {isMatched ? 'Set up environment' : isRemotePaused ? 'Paused — review status' : 'Connect to environment'}
+                </span>
               </Link>
             </Button>
           )}
