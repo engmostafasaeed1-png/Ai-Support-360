@@ -12,14 +12,17 @@ interface VerificationTimelineProps {
 const formatTime = (d: Date) =>
   d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+const pad = (n: number) => n.toString().padStart(2, '0');
+
 const formatRelative = (ms: number) => {
   if (ms <= 0) return 'expired';
   const totalSec = Math.floor(ms / 1000);
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
-  if (h > 0) return `${h}h ${m}m left`;
-  if (m > 0) return `${m}m left`;
-  return `${totalSec}s left`;
+  const s = totalSec % 60;
+  if (h > 0) return `${h}h ${pad(m)}m ${pad(s)}s left`;
+  if (m > 0) return `${m}m ${pad(s)}s left`;
+  return `${s}s left`;
 };
 
 export default function VerificationTimeline({
@@ -31,7 +34,7 @@ export default function VerificationTimeline({
   const [now, setNow] = useState<Date>(new Date());
 
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30_000);
+    const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
