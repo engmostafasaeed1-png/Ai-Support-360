@@ -26,6 +26,7 @@ import TicketAssignments from '@/components/client/TicketAssignments';
 import TicketAcceptors from '@/components/client/TicketAcceptors';
 import TicketBids from '@/components/client/TicketBids';
 import TicketQuickActions from '@/components/tickets/TicketQuickActions';
+import RemoteAccessStatusPanel from '@/components/tickets/RemoteAccessStatusPanel';
 import TicketTimeline from '@/components/client/TicketTimeline';
 import TicketEditDialog from '@/components/client/TicketEditDialog';
 import SendMatchRequestDialog from '@/components/client/SendMatchRequestDialog';
@@ -207,6 +208,11 @@ export default function TicketDetailPage() {
           role="client"
           onScheduleMeeting={() => setMeetingOpen(true)}
         />
+      )}
+
+      {/* ─── Remote Access Status ─── */}
+      {ticket.consultant_id && (
+        <RemoteAccessStatusPanel ticketId={ticket.id} role="client" />
       )}
 
       {/* ─── Info Cards ─── */}
