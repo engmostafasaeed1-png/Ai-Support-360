@@ -35,8 +35,18 @@ export default function LoginPage() {
   });
   const [lockRemaining, setLockRemaining] = useState('');
   const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendSuccessAt, setResendSuccessAt] = useState<Date | null>(null);
+  const [resendSuccessEmail, setResendSuccessEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const id = setInterval(() => setResendCooldown(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [resendCooldown]);
 
   const handleResendConfirmation = async () => {
+    if (resending || resendCooldown > 0) return;
     if (!email) {
       toast.error('Please enter your email above first.');
       return;
@@ -52,7 +62,10 @@ export default function LoginPage() {
       toast.error(error.message || 'Could not resend confirmation email.');
       return;
     }
-    toast.success('Confirmation email sent. Please check your inbox.');
+    setResendSuccessAt(new Date());
+    setResendSuccessEmail(email);
+    setResendCooldown(60);
+    toast.success('Verification email sent.');
     logAudit('resend_confirmation_email', { email });
   };
 
