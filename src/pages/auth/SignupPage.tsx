@@ -30,6 +30,15 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [lastResentAt, setLastResentAt] = useState<Date | null>(null);
+
+  // Cooldown ticker
+  useState(() => {
+    // noop placeholder to satisfy linter; real ticker via useEffect below
+  });
 
   const DISPOSABLE_DOMAINS = ['mailinator.com', 'tempmail.com', 'guerrillamail.com', '10minutemail.com', 'throwaway.email', 'yopmail.com'];
 
