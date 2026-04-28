@@ -58,7 +58,6 @@ export default function VerificationTimeline({
 }: VerificationTimelineProps) {
   const fetchedExpiry = useAuthEmailExpiry();
   const effectiveExpiry = expiresInMinutes ?? fetchedExpiry;
-  const expiresAt = new Date(sentAt.getTime() + effectiveExpiry * 60 * 1000);
   const [now, setNow] = useState<Date>(new Date());
 
   useEffect(() => {
@@ -66,12 +65,8 @@ export default function VerificationTimeline({
     return () => clearInterval(id);
   }, []);
 
-  const remainingMs = expiresAt.getTime() - now.getTime();
-  const elapsedMs = now.getTime() - sentAt.getTime();
-  const totalMs = expiresAt.getTime() - sentAt.getTime();
-  const progress = Math.min(100, Math.max(0, (elapsedMs / totalMs) * 100));
-  const expired = remainingMs <= 0;
-  const expiringSoon = !expired && remainingMs < 60 * 60 * 1000; // < 1h
+  const { expiresAt, remainingMs, progress, expired, expiringSoon } =
+    computeTimelineState(sentAt, effectiveExpiry, now);
 
   return (
     <div className={cn('rounded-xl border border-border/50 bg-muted/30 p-3 space-y-3', className)}>
