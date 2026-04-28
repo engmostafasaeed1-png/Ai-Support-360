@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, formatDistanceToNow } from 'date-fns';
 import NDASigningModal from '@/components/consultant/NDASigningModal';
 import TicketQuickActions from '@/components/tickets/TicketQuickActions';
+import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 
 const urgencyColors: Record<string, string> = {
@@ -59,6 +60,7 @@ export default function CaseDetailPage() {
   const { caseId } = useParams<{ caseId: string }>();
   const queryClient = useQueryClient();
   const [ndaModalOpen, setNdaModalOpen] = useState(false);
+  const [meetingOpen, setMeetingOpen] = useState(false);
 
   // Get current consultant ID
   const { data: consultantData } = useQuery({
@@ -244,8 +246,22 @@ export default function CaseDetailPage() {
 
       {/* Quick Actions: Documents · Remote Access · Request Meeting */}
       {ticket.consultant_id && (
-        <TicketQuickActions ticketId={ticket.id} role="consultant" />
+        <TicketQuickActions
+          ticketId={ticket.id}
+          role="consultant"
+          onScheduleMeeting={() => setMeetingOpen(true)}
+        />
       )}
+
+      {/* Inline Schedule Meeting Dialog */}
+      <ScheduleMeetingDialog
+        open={meetingOpen}
+        onOpenChange={setMeetingOpen}
+        ticketId={ticket.id}
+        ticketTitle={ticket.title}
+        clientId={ticket.client_id}
+        consultantId={ticket.consultant_id}
+      />
 
       {/* Details Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
