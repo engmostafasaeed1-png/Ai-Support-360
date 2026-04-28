@@ -199,6 +199,15 @@ export default function TicketDetailPage() {
         </CardContent>
       </Card>
 
+      {/* ─── Quick Actions (visible once consultant assigned) ─── */}
+      {ticket.consultant_id && (
+        <TicketQuickActions
+          ticketId={ticket.id}
+          role="client"
+          onScheduleMeeting={() => setMeetingOpen(true)}
+        />
+      )}
+
       {/* ─── Info Cards ─── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <InfoCard icon={Tag} label="SAP Module" value={ticket.sap_module} />
