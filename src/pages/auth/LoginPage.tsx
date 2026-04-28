@@ -15,6 +15,7 @@ import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
 import { logAudit } from '@/lib/auditLog';
 import { runSignInPreflight } from '@/lib/authPreflight';
+import { getVerificationSentAt, setVerificationSentAt } from '@/lib/verificationStorage';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
@@ -46,6 +47,16 @@ export default function LoginPage() {
     return () => clearInterval(id);
   }, [resendCooldown]);
 
+  // Rehydrate the verification timeline if we previously sent an email to this address.
+  useEffect(() => {
+    if (!email) return;
+    const stored = getVerificationSentAt(email);
+    if (stored) {
+      setResendSuccessAt(stored);
+      setResendSuccessEmail(email);
+    }
+  }, [email]);
+
   const handleResendConfirmation = async () => {
     if (resending || resendCooldown > 0) return;
     if (!email) {
@@ -63,8 +74,10 @@ export default function LoginPage() {
       toast.error(error.message || 'Could not resend confirmation email.');
       return;
     }
-    setResendSuccessAt(new Date());
+    const now = new Date();
+    setResendSuccessAt(now);
     setResendSuccessEmail(email);
+    setVerificationSentAt(email, now);
     setResendCooldown(60);
     toast.success('Verification email sent.');
     logAudit('resend_confirmation_email', { email });

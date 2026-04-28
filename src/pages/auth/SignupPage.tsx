@@ -15,6 +15,9 @@ import GuestExploreModal from '@/components/guest/GuestExploreModal';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
 import VerificationTimeline from '@/components/auth/VerificationTimeline';
+import { getVerificationSentAt, setVerificationSentAt, clearVerificationSentAt } from '@/lib/verificationStorage';
+
+const PENDING_EMAIL_KEY = 'verification_pending_email';
 
 type Role = 'client' | 'consultant';
 
@@ -31,10 +34,17 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(() => {
+    try { return localStorage.getItem(PENDING_EMAIL_KEY); } catch { return null; }
+  });
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [lastResentAt, setLastResentAt] = useState<Date | null>(null);
+  const [lastResentAt, setLastResentAt] = useState<Date | null>(() => {
+    try {
+      const stored = localStorage.getItem(PENDING_EMAIL_KEY);
+      return stored ? getVerificationSentAt(stored) : null;
+    } catch { return null; }
+  });
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -55,7 +65,9 @@ export default function SignupPage() {
       toast.error(error.message || 'Could not resend verification email.');
       return;
     }
-    setLastResentAt(new Date());
+    const now = new Date();
+    setLastResentAt(now);
+    setVerificationSentAt(pendingEmail, now);
     setResendCooldown(60);
     toast.success('Verification email sent. Check your inbox.');
   };
@@ -115,8 +127,11 @@ export default function SignupPage() {
       return;
     }
     if (data.user && !data.session) {
+      const now = new Date();
       setPendingEmail(email);
-      setLastResentAt(new Date());
+      try { localStorage.setItem(PENDING_EMAIL_KEY, email); } catch { /* ignore */ }
+      setLastResentAt(now);
+      setVerificationSentAt(email, now);
       setResendCooldown(60);
       toast.success('Check your inbox to verify your email before signing in.');
       return;
@@ -183,7 +198,13 @@ export default function SignupPage() {
             </Button>
             <button
               type="button"
-              onClick={() => { setPendingEmail(null); setResendCooldown(0); }}
+              onClick={() => {
+                if (pendingEmail) clearVerificationSentAt(pendingEmail);
+                try { localStorage.removeItem(PENDING_EMAIL_KEY); } catch { /* ignore */ }
+                setPendingEmail(null);
+                setLastResentAt(null);
+                setResendCooldown(0);
+              }}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               Use a different email
