@@ -25,6 +25,7 @@ import TicketHierarchyTree from '@/components/client/TicketHierarchyTree';
 import TicketAssignments from '@/components/client/TicketAssignments';
 import TicketAcceptors from '@/components/client/TicketAcceptors';
 import TicketBids from '@/components/client/TicketBids';
+import TicketQuickActions from '@/components/tickets/TicketQuickActions';
 import TicketTimeline from '@/components/client/TicketTimeline';
 import TicketEditDialog from '@/components/client/TicketEditDialog';
 import SendMatchRequestDialog from '@/components/client/SendMatchRequestDialog';
