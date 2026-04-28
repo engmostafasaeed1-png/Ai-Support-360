@@ -53,26 +53,46 @@ export default function TicketQuickActions({
   const [docsOpen, setDocsOpen] = useState(false);
 
   // ── Visibility rules ────────────────────────────────────────────────
+  // Full lifecycle map (mirrors backend ticket statuses):
+  //   Pre-work:   new, triaging, under_review, planning, pending_approval, approved, matched
+  //   Active:     in_progress, testing, waiting_for_client, waiting_for_vendor, on_hold, reopened
+  //   Terminal:   resolved, closed, cancelled
   const status = (ticketStatus || '').toLowerCase();
-  const isTerminal = ['closed', 'cancelled', 'resolved'].includes(status);
-  const isHardClosed = ['closed', 'cancelled'].includes(status);
-  const isPreWork = ['new', 'triaging', 'under_review', 'planning', 'pending_approval'].includes(status);
-  const isActiveWork =
-    !!status &&
-    !isTerminal &&
-    !isPreWork; // in_progress / waiting_* / on_hold / matched / approved / testing
+
+  const TERMINAL = ['closed', 'cancelled', 'resolved'];
+  const HARD_CLOSED = ['closed', 'cancelled'];
+  const PRE_WORK = ['new', 'triaging', 'under_review', 'planning', 'pending_approval', 'approved', 'matched'];
+  const ACTIVE_WORK = ['in_progress', 'testing', 'waiting_for_client', 'waiting_for_vendor', 'on_hold', 'reopened'];
+  // Statuses where the client owes a response — meeting request is most useful here.
+  const AWAITING_CLIENT = ['waiting_for_client', 'pending_approval'];
+  // Statuses where remote access is paused — show as visible but de-prioritised.
+  const REMOTE_PAUSED = ['on_hold', 'waiting_for_client', 'waiting_for_vendor'];
+
+  const isTerminal = TERMINAL.includes(status);
+  const isHardClosed = HARD_CLOSED.includes(status);
+  const isPreWork = PRE_WORK.includes(status);
+  const isActiveWork = ACTIVE_WORK.includes(status);
+  const isMatched = status === 'matched' || status === 'approved';
+  const isRemotePaused = REMOTE_PAUSED.includes(status);
+  const isAwaitingClient = AWAITING_CLIENT.includes(status);
 
   // Consultants must be the assigned one to act on the ticket.
   const consultantAllowed = role === 'client' || isAssignedConsultant;
 
-  const showDocuments = consultantAllowed; // always allowed; read-only when closed
+  // Documents: visible across the entire lifecycle; read-only once hard-closed.
+  const showDocuments = consultantAllowed;
   const documentsReadOnly = isHardClosed;
 
+  // Remote Access: needs an assigned consultant + work phase. Also allow
+  // 'matched'/'approved' so credentials can be exchanged before kickoff.
   const showRemoteAccess =
-    consultantAllowed && hasConsultant && isActiveWork;
+    consultantAllowed && hasConsultant && (isActiveWork || isMatched);
 
+  // Request Meeting: any time after a consultant is assigned, until terminal.
+  // Also allow during 'pending_approval' (clients often want to discuss the plan).
   const showRequestMeeting =
-    consultantAllowed && hasConsultant && !isTerminal;
+    consultantAllowed && hasConsultant && !isTerminal &&
+    (isActiveWork || isMatched || isAwaitingClient || status === 'pending_approval');
 
   const visibleCount = [showDocuments, showRemoteAccess, showRequestMeeting].filter(Boolean).length;
   if (visibleCount === 0) return null;
