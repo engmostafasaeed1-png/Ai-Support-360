@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 type AuditAction =
-  | 'login' | 'logout' | 'login_failed' | 'login_preflight_failed'
+  | 'login' | 'logout' | 'login_failed' | 'login_preflight_failed' | 'resend_confirmation_email'
   | 'ticket_created' | 'ticket_viewed' | 'ticket_updated' | 'ticket_deleted'
   | 'nda_viewed' | 'nda_signed' | 'nda_revoked'
   | 'document_uploaded' | 'document_downloaded'
