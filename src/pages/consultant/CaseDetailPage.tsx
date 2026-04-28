@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, formatDistanceToNow } from 'date-fns';
 import NDASigningModal from '@/components/consultant/NDASigningModal';
 import TicketQuickActions from '@/components/tickets/TicketQuickActions';
+import RemoteAccessStatusPanel from '@/components/tickets/RemoteAccessStatusPanel';
 import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 
@@ -251,6 +252,11 @@ export default function CaseDetailPage() {
           role="consultant"
           onScheduleMeeting={() => setMeetingOpen(true)}
         />
+      )}
+
+      {/* Remote Access Status */}
+      {ticket.consultant_id && (
+        <RemoteAccessStatusPanel ticketId={ticket.id} role="consultant" />
       )}
 
       {/* Inline Schedule Meeting Dialog */}
