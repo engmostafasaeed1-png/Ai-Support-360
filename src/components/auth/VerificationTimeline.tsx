@@ -22,7 +22,7 @@ const formatTime = (d: Date) =>
 
 const pad = (n: number) => n.toString().padStart(2, '0');
 
-const formatRelative = (ms: number) => {
+export const formatRelative = (ms: number) => {
   if (ms <= 0) return 'expired';
   const totalSec = Math.floor(ms / 1000);
   const h = Math.floor(totalSec / 3600);
@@ -31,6 +31,21 @@ const formatRelative = (ms: number) => {
   if (h > 0) return `${h}h ${pad(m)}m ${pad(s)}s left`;
   if (m > 0) return `${m}m ${pad(s)}s left`;
   return `${s}s left`;
+};
+
+export const computeTimelineState = (
+  sentAt: Date,
+  expiresInMinutes: number,
+  now: Date = new Date(),
+) => {
+  const expiresAt = new Date(sentAt.getTime() + expiresInMinutes * 60 * 1000);
+  const remainingMs = expiresAt.getTime() - now.getTime();
+  const elapsedMs = now.getTime() - sentAt.getTime();
+  const totalMs = expiresAt.getTime() - sentAt.getTime();
+  const progress = Math.min(100, Math.max(0, (elapsedMs / totalMs) * 100));
+  const expired = remainingMs <= 0;
+  const expiringSoon = !expired && remainingMs < 60 * 60 * 1000;
+  return { expiresAt, remainingMs, elapsedMs, totalMs, progress, expired, expiringSoon };
 };
 
 export default function VerificationTimeline({
@@ -43,7 +58,6 @@ export default function VerificationTimeline({
 }: VerificationTimelineProps) {
   const fetchedExpiry = useAuthEmailExpiry();
   const effectiveExpiry = expiresInMinutes ?? fetchedExpiry;
-  const expiresAt = new Date(sentAt.getTime() + effectiveExpiry * 60 * 1000);
   const [now, setNow] = useState<Date>(new Date());
 
   useEffect(() => {
@@ -51,12 +65,8 @@ export default function VerificationTimeline({
     return () => clearInterval(id);
   }, []);
 
-  const remainingMs = expiresAt.getTime() - now.getTime();
-  const elapsedMs = now.getTime() - sentAt.getTime();
-  const totalMs = expiresAt.getTime() - sentAt.getTime();
-  const progress = Math.min(100, Math.max(0, (elapsedMs / totalMs) * 100));
-  const expired = remainingMs <= 0;
-  const expiringSoon = !expired && remainingMs < 60 * 60 * 1000; // < 1h
+  const { expiresAt, remainingMs, progress, expired, expiringSoon } =
+    computeTimelineState(sentAt, effectiveExpiry, now);
 
   return (
     <div className={cn('rounded-xl border border-border/50 bg-muted/30 p-3 space-y-3', className)}>
