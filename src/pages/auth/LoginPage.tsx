@@ -47,6 +47,16 @@ export default function LoginPage() {
     return () => clearInterval(id);
   }, [resendCooldown]);
 
+  // Rehydrate the verification timeline if we previously sent an email to this address.
+  useEffect(() => {
+    if (!email) return;
+    const stored = getVerificationSentAt(email);
+    if (stored) {
+      setResendSuccessAt(stored);
+      setResendSuccessEmail(email);
+    }
+  }, [email]);
+
   const handleResendConfirmation = async () => {
     if (resending || resendCooldown > 0) return;
     if (!email) {
