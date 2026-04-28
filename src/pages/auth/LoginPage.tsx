@@ -34,6 +34,27 @@ export default function LoginPage() {
     return v > 0 ? v : null;
   });
   const [lockRemaining, setLockRemaining] = useState('');
+  const [resending, setResending] = useState(false);
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      toast.error('Please enter your email above first.');
+      return;
+    }
+    setResending(true);
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/login` },
+    });
+    setResending(false);
+    if (error) {
+      toast.error(error.message || 'Could not resend confirmation email.');
+      return;
+    }
+    toast.success('Confirmation email sent. Please check your inbox.');
+    logAudit('resend_confirmation_email', { email });
+  };
 
   const getRoleAndRepairAccount = async (user: {
     id: string;
