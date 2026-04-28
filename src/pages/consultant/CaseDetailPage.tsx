@@ -15,6 +15,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, formatDistanceToNow } from 'date-fns';
 import NDASigningModal from '@/components/consultant/NDASigningModal';
+import TicketQuickActions from '@/components/tickets/TicketQuickActions';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 
 const urgencyColors: Record<string, string> = {
@@ -240,6 +241,11 @@ export default function CaseDetailPage() {
           {(ticket.status || 'new').replace(/_/g, ' ')}
         </Badge>
       </div>
+
+      {/* Quick Actions: Documents · Remote Access · Request Meeting */}
+      {ticket.consultant_id && (
+        <TicketQuickActions ticketId={ticket.id} role="consultant" />
+      )}
 
       {/* Details Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
