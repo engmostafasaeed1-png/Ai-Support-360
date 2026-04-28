@@ -28,10 +28,12 @@ const formatRelative = (ms: number) => {
 
 export default function VerificationTimeline({
   sentAt,
-  expiresInMinutes = 1440,
+  expiresInMinutes,
   className,
 }: VerificationTimelineProps) {
-  const expiresAt = new Date(sentAt.getTime() + expiresInMinutes * 60 * 1000);
+  const fetchedExpiry = useAuthEmailExpiry();
+  const effectiveExpiry = expiresInMinutes ?? fetchedExpiry;
+  const expiresAt = new Date(sentAt.getTime() + effectiveExpiry * 60 * 1000);
   const [now, setNow] = useState<Date>(new Date());
 
   useEffect(() => {
