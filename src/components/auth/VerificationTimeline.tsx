@@ -83,20 +83,46 @@ export default function VerificationTimeline({
     return t('auth.verification.left_s', { s });
   };
 
+  const progressRounded = Math.round(progress);
+  const progressLabel = expired
+    ? t('auth.verification.link_expired')
+    : `${t('auth.verification.link_expires')} — ${formatRelativeI18n(remainingMs)}`;
+  const statusLabel = `${t('auth.verification.email_sent')} ${localeTime(sentAt)}. ${
+    expired ? t('auth.verification.link_expired') : t('auth.verification.link_expires')
+  } ${localeTime(expiresAt)}. ${formatRelativeI18n(remainingMs)}.`;
+
   return (
-    <div className={cn('rounded-xl border border-border/50 bg-muted/30 p-3 space-y-3', className)}>
+    <div
+      className={cn('rounded-xl border border-border/50 bg-muted/30 p-3 space-y-3', className)}
+      role="group"
+      aria-label={t('auth.verification.email_sent')}
+    >
+      <p role="status" aria-live="polite" className="sr-only">
+        {statusLabel}
+      </p>
+
       <div className="flex items-start gap-3">
-        <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+        <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 shrink-0" aria-hidden="true" />
         <div className="flex-1 min-w-0">
           <p className="text-xs font-medium text-foreground">{t('auth.verification.email_sent')}</p>
           <p className="text-[11px] text-muted-foreground">
-            {localeTime(sentAt)} • {localeDate(sentAt)}
+            <time dateTime={sentAt.toISOString()}>
+              {localeTime(sentAt)} • {localeDate(sentAt)}
+            </time>
           </p>
         </div>
       </div>
 
       <div className="relative ms-2 ps-4 border-s-2 border-dashed border-border">
-        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        <div
+          className="h-1.5 rounded-full bg-muted overflow-hidden"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progressRounded}
+          aria-valuetext={progressLabel}
+          aria-label={t('auth.verification.link_expires')}
+        >
           <div
             className={cn(
               'h-full transition-all',
@@ -109,13 +135,14 @@ export default function VerificationTimeline({
 
       <div className="flex items-start gap-3">
         {expired ? (
-          <AlertCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+          <AlertCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" aria-hidden="true" />
         ) : (
           <Clock
             className={cn(
               'w-4 h-4 mt-0.5 shrink-0',
               expiringSoon ? 'text-orange-500' : 'text-muted-foreground',
             )}
+            aria-hidden="true"
           />
         )}
         <div className="flex-1 min-w-0">
@@ -128,7 +155,9 @@ export default function VerificationTimeline({
             {expired ? t('auth.verification.link_expired') : t('auth.verification.link_expires')}
           </p>
           <p className="text-[11px] text-muted-foreground">
-            {localeTime(expiresAt)} • {localeDate(expiresAt)}{' '}
+            <time dateTime={expiresAt.toISOString()}>
+              {localeTime(expiresAt)} • {localeDate(expiresAt)}
+            </time>{' '}
             <span
               className={cn(
                 'ms-1',
@@ -156,12 +185,21 @@ export default function VerificationTimeline({
             type="button"
             onClick={() => { void onResend(); }}
             disabled={resending || resendCooldown > 0}
+            aria-busy={resending}
+            aria-disabled={resending || resendCooldown > 0}
+            aria-label={
+              resending
+                ? t('auth.verification.resend_sending')
+                : resendCooldown > 0
+                  ? t('auth.verification.resend_cooldown', { seconds: resendCooldown })
+                  : t('auth.verification.resend_btn')
+            }
             className="w-full h-10 rounded-xl gradient-primary border-0 shadow-premium hover:shadow-xl transition-all gap-2"
           >
             {resending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
             ) : (
-              <Send className="w-4 h-4" />
+              <Send className="w-4 h-4" aria-hidden="true" />
             )}
             {resending
               ? t('auth.verification.resend_sending')

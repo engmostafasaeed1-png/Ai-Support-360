@@ -133,3 +133,85 @@ describe('<VerificationTimeline />', () => {
     expect(btn).toBeDisabled();
   });
 });
+
+describe('<VerificationTimeline /> accessibility', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('renders the progress bar with proper ARIA attributes mid-window', () => {
+    const sent = new Date('2026-04-28T10:00:00Z');
+    vi.setSystemTime(new Date(sent.getTime() + 12 * 3600_000)); // 50%
+    render(<VerificationTimeline sentAt={sent} expiresInMinutes={1440} />);
+    const bar = screen.getByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-valuemin', '0');
+    expect(bar).toHaveAttribute('aria-valuemax', '100');
+    expect(Number(bar.getAttribute('aria-valuenow'))).toBeGreaterThanOrEqual(49);
+    expect(Number(bar.getAttribute('aria-valuenow'))).toBeLessThanOrEqual(51);
+    expect(bar).toHaveAttribute('aria-valuetext');
+    expect(bar.getAttribute('aria-valuetext')).toMatch(/left/i);
+  });
+
+  it('progress bar reports 100 and "expired" valuetext when past expiry', () => {
+    const sent = new Date('2026-04-28T10:00:00Z');
+    vi.setSystemTime(new Date(sent.getTime() + 25 * 3600_000));
+    render(<VerificationTimeline sentAt={sent} expiresInMinutes={1440} />);
+    const bar = screen.getByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-valuenow', '100');
+    expect(bar.getAttribute('aria-valuetext')).toMatch(/expired/i);
+  });
+
+  it('exposes a polite live status region', () => {
+    const sent = new Date('2026-04-28T10:00:00Z');
+    vi.setSystemTime(new Date(sent.getTime() + 60 * 60_000));
+    render(<VerificationTimeline sentAt={sent} expiresInMinutes={1440} />);
+    const status = screen.getByRole('status');
+    expect(status).toHaveAttribute('aria-live', 'polite');
+  });
+
+  it('Resend button has aria-busy=false and aria-disabled=false when ready', () => {
+    const sent = new Date('2026-04-28T10:00:00Z');
+    vi.setSystemTime(new Date(sent.getTime() + 25 * 3600_000));
+    render(
+      <VerificationTimeline
+        sentAt={sent}
+        expiresInMinutes={1440}
+        onResend={() => {}}
+      />,
+    );
+    const btn = screen.getByRole('button', { name: /resend verification email/i });
+    expect(btn).toHaveAttribute('aria-busy', 'false');
+    expect(btn).toHaveAttribute('aria-disabled', 'false');
+  });
+
+  it('Resend button reflects cooldown via aria-disabled and aria-label', () => {
+    const sent = new Date('2026-04-28T10:00:00Z');
+    vi.setSystemTime(new Date(sent.getTime() + 25 * 3600_000));
+    render(
+      <VerificationTimeline
+        sentAt={sent}
+        expiresInMinutes={1440}
+        onResend={() => {}}
+        resendCooldown={30}
+      />,
+    );
+    const btn = screen.getByRole('button');
+    expect(btn).toHaveAttribute('aria-disabled', 'true');
+    expect(btn.getAttribute('aria-label')).toMatch(/30/);
+  });
+
+  it('Resend button reflects in-flight state via aria-busy', () => {
+    const sent = new Date('2026-04-28T10:00:00Z');
+    vi.setSystemTime(new Date(sent.getTime() + 25 * 3600_000));
+    render(
+      <VerificationTimeline
+        sentAt={sent}
+        expiresInMinutes={1440}
+        onResend={() => {}}
+        resending
+      />,
+    );
+    const btn = screen.getByRole('button');
+    expect(btn).toHaveAttribute('aria-busy', 'true');
+    expect(btn).toHaveAttribute('aria-disabled', 'true');
+  });
+});
