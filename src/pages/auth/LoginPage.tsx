@@ -87,6 +87,7 @@ export default function LoginPage() {
     setResendSuccessEmail(email);
     setVerificationSentAt(email, now);
     setResendCooldown(60);
+    persistResendCooldown(email, 60);
     toast.success('Verification email sent.');
     logAudit('resend_confirmation_email', { email });
   };
