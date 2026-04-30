@@ -15,7 +15,14 @@ import GuestExploreModal from '@/components/guest/GuestExploreModal';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
 import VerificationTimeline from '@/components/auth/VerificationTimeline';
-import { getVerificationSentAt, setVerificationSentAt, clearVerificationSentAt } from '@/lib/verificationStorage';
+import {
+  getVerificationSentAt,
+  setVerificationSentAt,
+  clearVerificationSentAt,
+  setResendCooldown as persistResendCooldown,
+  getResendCooldownRemaining,
+  clearResendCooldown,
+} from '@/lib/verificationStorage';
 
 const PENDING_EMAIL_KEY = 'verification_pending_email';
 
