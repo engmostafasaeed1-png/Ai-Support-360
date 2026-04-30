@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Clock, AlertCircle, Loader2, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -16,9 +17,6 @@ interface VerificationTimelineProps {
   /** Resend in flight. */
   resending?: boolean;
 }
-
-const formatTime = (d: Date) =>
-  d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
 const pad = (n: number) => n.toString().padStart(2, '0');
 
@@ -56,6 +54,7 @@ export default function VerificationTimeline({
   resendCooldown = 0,
   resending = false,
 }: VerificationTimelineProps) {
+  const { t, i18n } = useTranslation();
   const fetchedExpiry = useAuthEmailExpiry();
   const effectiveExpiry = expiresInMinutes ?? fetchedExpiry;
   const [now, setNow] = useState<Date>(new Date());
@@ -68,14 +67,30 @@ export default function VerificationTimeline({
   const { expiresAt, remainingMs, progress, expired, expiringSoon } =
     computeTimelineState(sentAt, effectiveExpiry, now);
 
+  const locale = i18n.language?.startsWith('ar') ? 'ar' : i18n.language;
+  const localeTime = (d: Date) =>
+    d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  const localeDate = (d: Date) => d.toLocaleDateString(locale);
+
+  const formatRelativeI18n = (ms: number) => {
+    if (ms <= 0) return t('auth.verification.expired');
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (h > 0) return t('auth.verification.left_h', { h, m: pad(m), s: pad(s) });
+    if (m > 0) return t('auth.verification.left_m', { m, s: pad(s) });
+    return t('auth.verification.left_s', { s });
+  };
+
   return (
     <div className={cn('rounded-xl border border-border/50 bg-muted/30 p-3 space-y-3', className)}>
       <div className="flex items-start gap-3">
         <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-foreground">Email sent</p>
+          <p className="text-xs font-medium text-foreground">{t('auth.verification.email_sent')}</p>
           <p className="text-[11px] text-muted-foreground">
-            {formatTime(sentAt)} • {sentAt.toLocaleDateString()}
+            {localeTime(sentAt)} • {localeDate(sentAt)}
           </p>
         </div>
       </div>
@@ -110,10 +125,10 @@ export default function VerificationTimeline({
               expired ? 'text-destructive' : 'text-foreground',
             )}
           >
-            {expired ? 'Link expired' : 'Link expires'}
+            {expired ? t('auth.verification.link_expired') : t('auth.verification.link_expires')}
           </p>
           <p className="text-[11px] text-muted-foreground">
-            {formatTime(expiresAt)} • {expiresAt.toLocaleDateString()}{' '}
+            {localeTime(expiresAt)} • {localeDate(expiresAt)}{' '}
             <span
               className={cn(
                 'ms-1',
@@ -124,12 +139,12 @@ export default function VerificationTimeline({
                     : '',
               )}
             >
-              ({formatRelative(remainingMs)})
+              ({formatRelativeI18n(remainingMs)})
             </span>
           </p>
           {expired && !onResend && (
             <p className="text-[11px] text-destructive mt-1">
-              Tap "Resend" to get a new verification link.
+              {t('auth.verification.tap_resend_hint')}
             </p>
           )}
         </div>
@@ -149,13 +164,13 @@ export default function VerificationTimeline({
               <Send className="w-4 h-4" />
             )}
             {resending
-              ? 'Sending new link...'
+              ? t('auth.verification.resend_sending')
               : resendCooldown > 0
-                ? `Resend available in ${resendCooldown}s`
-                : 'Resend verification email'}
+                ? t('auth.verification.resend_cooldown', { seconds: resendCooldown })
+                : t('auth.verification.resend_btn')}
           </Button>
           <p className="text-[11px] text-muted-foreground text-center mt-1.5">
-            Your previous link is no longer valid.
+            {t('auth.verification.previous_invalid')}
           </p>
         </div>
       )}
