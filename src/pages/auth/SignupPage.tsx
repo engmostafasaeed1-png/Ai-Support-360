@@ -146,6 +146,7 @@ export default function SignupPage() {
       setLastResentAt(now);
       setVerificationSentAt(email, now);
       setResendCooldown(60);
+      persistResendCooldown(email, 60);
       toast.success('Check your inbox to verify your email before signing in.');
       return;
     }
