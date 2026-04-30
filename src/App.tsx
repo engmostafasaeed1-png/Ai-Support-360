@@ -48,6 +48,9 @@ const UnsubscribePage = React.lazy(() => import("./pages/UnsubscribePage.tsx"));
 const LoginPage = React.lazy(() => import("./pages/auth/LoginPage.tsx"));
 const SignupPage = React.lazy(() => import("./pages/auth/SignupPage.tsx"));
 const ForgotPasswordPage = React.lazy(() => import("./pages/auth/ForgotPasswordPage.tsx"));
+const VerificationTimelineHarness = React.lazy(
+  () => import("./pages/dev/VerificationTimelineHarness.tsx"),
+);
 const ResetPasswordPage = React.lazy(() => import("./pages/auth/ResetPasswordPage.tsx"));
 
 // Consultant pages
@@ -236,6 +239,9 @@ const App = () => (
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            {import.meta.env.MODE !== 'production' && (
+              <Route path="/dev/verification-timeline" element={<VerificationTimelineHarness />} />
+            )}
             <Route path="/consultant" element={<ProtectedRoute requiredRole="consultant"><ErrorBoundary><ConsultantLayout /></ErrorBoundary></ProtectedRoute>}>
               <Route index element={<ConsultantDashboard />} />
               <Route path="cases" element={<CasesPage />} />
