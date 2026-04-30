@@ -45,7 +45,12 @@ export default function SignupPage() {
     try { return localStorage.getItem(PENDING_EMAIL_KEY); } catch { return null; }
   });
   const [resending, setResending] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendCooldown, setResendCooldown] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(PENDING_EMAIL_KEY);
+      return stored ? getResendCooldownRemaining(stored) : 0;
+    } catch { return 0; }
+  });
   const [lastResentAt, setLastResentAt] = useState<Date | null>(() => {
     try {
       const stored = localStorage.getItem(PENDING_EMAIL_KEY);
