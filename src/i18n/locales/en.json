@@ -864,7 +864,21 @@
     "reset_btn": "Update Password",
     "password_mismatch": "Passwords do not match",
     "password_updated": "Password updated successfully!",
-    "verifying_link": "Verifying your reset link…"
+    "verifying_link": "Verifying your reset link…",
+    "verification": {
+      "email_sent": "Email sent",
+      "link_expires": "Link expires",
+      "link_expired": "Link expired",
+      "tap_resend_hint": "Tap \"Resend\" to get a new verification link.",
+      "resend_btn": "Resend verification email",
+      "resend_sending": "Sending new link...",
+      "resend_cooldown": "Resend available in {{seconds}}s",
+      "previous_invalid": "Your previous link is no longer valid.",
+      "expired": "expired",
+      "left_h": "{{h}}h {{m}}m {{s}}s left",
+      "left_m": "{{m}}m {{s}}s left",
+      "left_s": "{{s}}s left"
+    }
   },
   "explore": {
     "badge": "Explore Our Services",
