@@ -61,6 +61,8 @@ export default function LoginPage() {
       setResendSuccessAt(stored);
       setResendSuccessEmail(email);
     }
+    const cooldown = getResendCooldownRemaining(email);
+    if (cooldown > 0) setResendCooldown(cooldown);
   }, [email]);
 
   const handleResendConfirmation = async () => {
