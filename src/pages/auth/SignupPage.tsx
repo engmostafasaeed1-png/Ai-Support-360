@@ -81,6 +81,7 @@ export default function SignupPage() {
     setLastResentAt(now);
     setVerificationSentAt(pendingEmail, now);
     setResendCooldown(60);
+    persistResendCooldown(pendingEmail, 60);
     toast.success('Verification email sent. Check your inbox.');
   };
 
