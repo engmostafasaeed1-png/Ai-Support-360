@@ -239,6 +239,9 @@ const App = () => (
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            {import.meta.env.MODE !== 'production' && (
+              <Route path="/dev/verification-timeline" element={<VerificationTimelineHarness />} />
+            )}
             <Route path="/consultant" element={<ProtectedRoute requiredRole="consultant"><ErrorBoundary><ConsultantLayout /></ErrorBoundary></ProtectedRoute>}>
               <Route index element={<ConsultantDashboard />} />
               <Route path="cases" element={<CasesPage />} />
