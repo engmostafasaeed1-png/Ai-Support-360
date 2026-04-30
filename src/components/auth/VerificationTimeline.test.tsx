@@ -82,6 +82,109 @@ describe('computeTimelineState', () => {
   });
 });
 
+describe('boundary conditions', () => {
+  const sent = new Date('2026-04-28T10:00:00Z');
+
+  it('formatRelative: 0ms is treated as expired', () => {
+    expect(formatRelative(0)).toBe('expired');
+  });
+
+  it('formatRelative: 1ms still rounds down to 0s left (not expired)', () => {
+    expect(formatRelative(1)).toBe('0s left');
+  });
+
+  it('formatRelative: exactly 1 minute uses minute formatter', () => {
+    expect(formatRelative(60_000)).toBe('1m 00s left');
+  });
+
+  it('formatRelative: exactly 59s stays in seconds-only formatter', () => {
+    expect(formatRelative(59_000)).toBe('59s left');
+  });
+
+  it('formatRelative: exactly 1 hour uses hour formatter with zero minutes', () => {
+    expect(formatRelative(3600_000)).toBe('1h 00m 00s left');
+  });
+
+  it('formatRelative: 1 hour minus 1ms still falls into minutes branch', () => {
+    expect(formatRelative(3600_000 - 1)).toBe('59m 59s left');
+  });
+
+  it('formatRelative: very large durations (7 days) format without overflow', () => {
+    const sevenDaysMs = 7 * 24 * 3600_000;
+    expect(formatRelative(sevenDaysMs)).toBe('168h 00m 00s left');
+  });
+
+  it('computeTimelineState: 0ms elapsed → progress is exactly 0', () => {
+    const s = computeTimelineState(sent, 1440, sent);
+    expect(s.progress).toBe(0);
+    expect(s.expired).toBe(false);
+    expect(s.remainingMs).toBe(1440 * 60_000);
+  });
+
+  it('computeTimelineState: exactly 1h remaining is the boundary — NOT expiringSoon', () => {
+    const at = new Date(sent.getTime() + (1440 - 60) * 60_000);
+    const s = computeTimelineState(sent, 1440, at);
+    expect(s.remainingMs).toBe(60 * 60_000);
+    expect(s.expiringSoon).toBe(false);
+    expect(s.expired).toBe(false);
+  });
+
+  it('computeTimelineState: 1ms under the 1h boundary flips to expiringSoon', () => {
+    const at = new Date(sent.getTime() + (1440 - 60) * 60_000 + 1);
+    const s = computeTimelineState(sent, 1440, at);
+    expect(s.remainingMs).toBe(60 * 60_000 - 1);
+    expect(s.expiringSoon).toBe(true);
+  });
+
+  it('computeTimelineState: at exact expiry, expired=true and progress=100', () => {
+    const at = new Date(sent.getTime() + 1440 * 60_000);
+    const s = computeTimelineState(sent, 1440, at);
+    expect(s.expired).toBe(true);
+    expect(s.progress).toBe(100);
+    expect(s.remainingMs).toBe(0);
+  });
+
+  it('computeTimelineState: 1ms before expiry, NOT expired and progress < 100', () => {
+    const at = new Date(sent.getTime() + 1440 * 60_000 - 1);
+    const s = computeTimelineState(sent, 1440, at);
+    expect(s.expired).toBe(false);
+    expect(s.progress).toBeLessThan(100);
+    expect(s.expiringSoon).toBe(true);
+  });
+
+  it('computeTimelineState: now < sentAt clamps progress to 0 (no negative)', () => {
+    const before = new Date(sent.getTime() - 60_000);
+    const s = computeTimelineState(sent, 1440, before);
+    expect(s.progress).toBe(0);
+    expect(s.expired).toBe(false);
+  });
+
+  it('computeTimelineState: very long expiry (30 days) midpoint reports ~50% without overflow', () => {
+    const thirtyDaysMin = 30 * 24 * 60;
+    const mid = new Date(sent.getTime() + 15 * 24 * 3600_000);
+    const s = computeTimelineState(sent, thirtyDaysMin, mid);
+    expect(s.progress).toBeCloseTo(50, 5);
+    expect(s.expired).toBe(false);
+    expect(s.expiringSoon).toBe(false);
+  });
+
+  it('computeTimelineState: very long expiry (30 days) just past expiry clamps to 100', () => {
+    const thirtyDaysMin = 30 * 24 * 60;
+    const after = new Date(sent.getTime() + 31 * 24 * 3600_000);
+    const s = computeTimelineState(sent, thirtyDaysMin, after);
+    expect(s.expired).toBe(true);
+    expect(s.progress).toBe(100);
+  });
+
+  it('computeTimelineState: tiny expiry (1 minute) at 30s in is exactly 50%', () => {
+    const half = new Date(sent.getTime() + 30_000);
+    const s = computeTimelineState(sent, 1, half);
+    expect(s.progress).toBeCloseTo(50, 5);
+    expect(s.expiringSoon).toBe(true); // <1h remaining
+    expect(s.expired).toBe(false);
+  });
+});
+
 describe('<VerificationTimeline />', () => {
   beforeEach(() => {
     vi.useFakeTimers();
