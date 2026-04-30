@@ -15,7 +15,13 @@ import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
 import { logAudit } from '@/lib/auditLog';
 import { runSignInPreflight } from '@/lib/authPreflight';
-import { getVerificationSentAt, setVerificationSentAt } from '@/lib/verificationStorage';
+import {
+  getVerificationSentAt,
+  setVerificationSentAt,
+  setResendCooldown as persistResendCooldown,
+  getResendCooldownRemaining,
+  clearResendCooldown,
+} from '@/lib/verificationStorage';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
@@ -55,6 +61,8 @@ export default function LoginPage() {
       setResendSuccessAt(stored);
       setResendSuccessEmail(email);
     }
+    const cooldown = getResendCooldownRemaining(email);
+    if (cooldown > 0) setResendCooldown(cooldown);
   }, [email]);
 
   const handleResendConfirmation = async () => {
@@ -79,6 +87,7 @@ export default function LoginPage() {
     setResendSuccessEmail(email);
     setVerificationSentAt(email, now);
     setResendCooldown(60);
+    persistResendCooldown(email, 60);
     toast.success('Verification email sent.');
     logAudit('resend_confirmation_email', { email });
   };

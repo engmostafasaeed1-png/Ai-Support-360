@@ -15,7 +15,14 @@ import GuestExploreModal from '@/components/guest/GuestExploreModal';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
 import VerificationTimeline from '@/components/auth/VerificationTimeline';
-import { getVerificationSentAt, setVerificationSentAt, clearVerificationSentAt } from '@/lib/verificationStorage';
+import {
+  getVerificationSentAt,
+  setVerificationSentAt,
+  clearVerificationSentAt,
+  setResendCooldown as persistResendCooldown,
+  getResendCooldownRemaining,
+  clearResendCooldown,
+} from '@/lib/verificationStorage';
 
 const PENDING_EMAIL_KEY = 'verification_pending_email';
 
@@ -38,7 +45,12 @@ export default function SignupPage() {
     try { return localStorage.getItem(PENDING_EMAIL_KEY); } catch { return null; }
   });
   const [resending, setResending] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendCooldown, setResendCooldown] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(PENDING_EMAIL_KEY);
+      return stored ? getResendCooldownRemaining(stored) : 0;
+    } catch { return 0; }
+  });
   const [lastResentAt, setLastResentAt] = useState<Date | null>(() => {
     try {
       const stored = localStorage.getItem(PENDING_EMAIL_KEY);
@@ -69,6 +81,7 @@ export default function SignupPage() {
     setLastResentAt(now);
     setVerificationSentAt(pendingEmail, now);
     setResendCooldown(60);
+    persistResendCooldown(pendingEmail, 60);
     toast.success('Verification email sent. Check your inbox.');
   };
 
@@ -133,6 +146,7 @@ export default function SignupPage() {
       setLastResentAt(now);
       setVerificationSentAt(email, now);
       setResendCooldown(60);
+      persistResendCooldown(email, 60);
       toast.success('Check your inbox to verify your email before signing in.');
       return;
     }
@@ -206,7 +220,10 @@ export default function SignupPage() {
             <button
               type="button"
               onClick={() => {
-                if (pendingEmail) clearVerificationSentAt(pendingEmail);
+                if (pendingEmail) {
+                  clearVerificationSentAt(pendingEmail);
+                  clearResendCooldown(pendingEmail);
+                }
                 try { localStorage.removeItem(PENDING_EMAIL_KEY); } catch { /* ignore */ }
                 setPendingEmail(null);
                 setLastResentAt(null);
