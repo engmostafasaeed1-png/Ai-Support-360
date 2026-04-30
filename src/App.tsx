@@ -48,6 +48,9 @@ const UnsubscribePage = React.lazy(() => import("./pages/UnsubscribePage.tsx"));
 const LoginPage = React.lazy(() => import("./pages/auth/LoginPage.tsx"));
 const SignupPage = React.lazy(() => import("./pages/auth/SignupPage.tsx"));
 const ForgotPasswordPage = React.lazy(() => import("./pages/auth/ForgotPasswordPage.tsx"));
+const VerificationTimelineHarness = React.lazy(
+  () => import("./pages/dev/VerificationTimelineHarness.tsx"),
+);
 const ResetPasswordPage = React.lazy(() => import("./pages/auth/ResetPasswordPage.tsx"));
 
 // Consultant pages
