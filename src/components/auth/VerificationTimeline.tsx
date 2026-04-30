@@ -18,9 +18,6 @@ interface VerificationTimelineProps {
   resending?: boolean;
 }
 
-const formatTime = (d: Date) =>
-  d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
 const pad = (n: number) => n.toString().padStart(2, '0');
 
 export const formatRelative = (ms: number) => {
