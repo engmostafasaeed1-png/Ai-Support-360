@@ -15,7 +15,13 @@ import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
 import { logAudit } from '@/lib/auditLog';
 import { runSignInPreflight } from '@/lib/authPreflight';
-import { getVerificationSentAt, setVerificationSentAt } from '@/lib/verificationStorage';
+import {
+  getVerificationSentAt,
+  setVerificationSentAt,
+  setResendCooldown as persistResendCooldown,
+  getResendCooldownRemaining,
+  clearResendCooldown,
+} from '@/lib/verificationStorage';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
