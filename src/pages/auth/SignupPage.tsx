@@ -220,7 +220,10 @@ export default function SignupPage() {
             <button
               type="button"
               onClick={() => {
-                if (pendingEmail) clearVerificationSentAt(pendingEmail);
+                if (pendingEmail) {
+                  clearVerificationSentAt(pendingEmail);
+                  clearResendCooldown(pendingEmail);
+                }
                 try { localStorage.removeItem(PENDING_EMAIL_KEY); } catch { /* ignore */ }
                 setPendingEmail(null);
                 setLastResentAt(null);
