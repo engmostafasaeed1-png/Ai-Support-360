@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { buildRemoteUri, connectionIdHint, isValidConnectionId, normalizeConnectionId } from '@/lib/remoteAccess';
+import { openProtocolLink } from '@/lib/safeUrl';
 import { Monitor, Copy, ExternalLink, Plus, Trash2, Pencil, Shield, Share2 } from 'lucide-react';
 
 interface TeamViewerDevice {
@@ -25,11 +27,16 @@ export default function TeamViewerPanel({ onShare }: { onShare?: () => void }) {
 
   const handleSave = () => {
     if (!alias || !tvId) return;
+    if (!isValidConnectionId('teamviewer', tvId)) {
+      toast.error(connectionIdHint('teamviewer'));
+      return;
+    }
+    const cleanId = normalizeConnectionId('teamviewer', tvId);
     if (editDevice) {
-      setDevices(prev => prev.map(d => d.id === editDevice.id ? { ...d, alias, teamviewerId: tvId } : d));
+      setDevices(prev => prev.map(d => d.id === editDevice.id ? { ...d, alias, teamviewerId: cleanId } : d));
       toast.success('Device updated');
     } else {
-      setDevices(prev => [...prev, { id: crypto.randomUUID(), alias, teamviewerId: tvId, status: 'offline' }]);
+      setDevices(prev => [...prev, { id: crypto.randomUUID(), alias, teamviewerId: cleanId, status: 'offline' }]);
       toast.success('Device added');
     }
     setAddOpen(false);
@@ -39,7 +46,11 @@ export default function TeamViewerPanel({ onShare }: { onShare?: () => void }) {
   };
 
   const handleConnect = (id: string) => {
-    window.open(`teamviewer10://control?device=${id}`, '_blank');
+    const uri = buildRemoteUri('teamviewer', id);
+    if (!uri || !openProtocolLink(uri, ['teamviewer10'])) {
+      toast.error('Invalid TeamViewer ID');
+      return;
+    }
     toast.success('Opening TeamViewer...');
   };
 
@@ -131,10 +142,11 @@ export default function TeamViewerPanel({ onShare }: { onShare?: () => void }) {
             <div className="space-y-3">
               <Input value={alias} onChange={e => setAlias(e.target.value)} placeholder="Device name (e.g. SAP Server)" />
               <Input value={tvId} onChange={e => setTvId(e.target.value)} placeholder="TeamViewer ID (e.g. 123 456 789)" />
+              {tvId && !isValidConnectionId('teamviewer', tvId) && <p className="text-[10px] text-destructive">{connectionIdHint('teamviewer')}</p>}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => { setAddOpen(false); setEditDevice(null); }}>Cancel</Button>
-              <Button onClick={handleSave} disabled={!alias || !tvId} className="gradient-primary border-0">Save</Button>
+              <Button onClick={handleSave} disabled={!alias || !tvId || !isValidConnectionId('teamviewer', tvId)} className="gradient-primary border-0">Save</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
