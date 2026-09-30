@@ -14,6 +14,8 @@ import GuestBanner from "./components/guest/GuestBanner.tsx";
 import AIChatbot from "./components/chatbot/AIChatbot.tsx";
 import MaintenanceBanner from "./components/MaintenanceBanner.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
+import RouteSeo from "./components/RouteSeo";
+import { HelmetProvider } from "react-helmet-async";
 import ScreenProtection from "./components/ScreenProtection.tsx";
 import Watermark from "./components/Watermark.tsx";
 import WhatsAppButton from "./components/WhatsAppButton.tsx";
@@ -211,6 +213,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <HelmetProvider>
       <BrowserRouter>
         <GuestModeProvider>
         <CurrencyProvider>
@@ -219,6 +222,7 @@ const App = () => (
           <RealtimeStatusSync />
           <a href="#main-content" className="skip-to-main">Skip to main content</a>
           <ScrollToTop />
+          <RouteSeo />
           <ScreenProtection />
           <Watermark />
           <GlobalSearch />
@@ -389,6 +393,7 @@ const App = () => (
         </CurrencyProvider>
         </GuestModeProvider>
       </BrowserRouter>
+      </HelmetProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
