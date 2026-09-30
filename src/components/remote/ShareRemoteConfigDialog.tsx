@@ -13,6 +13,7 @@ import { Loader2, Send, CalendarIcon, Mail, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAvailableConsultants, useShareRemoteConfig } from '@/hooks/useSharedRemoteConfigs';
 import { toast } from 'sonner';
+import { connectionIdHint, isValidConnectionId, normalizeConnectionId } from '@/lib/remoteAccess';
 
 interface ShareRemoteConfigDialogProps {
   open: boolean;
@@ -46,6 +47,11 @@ export default function ShareRemoteConfigDialog({
   }, [open, defaultConfig]);
 
   const handleShare = async () => {
+    const cleanId = normalizeConnectionId(toolType, connectionId);
+    if (!isValidConnectionId(toolType, cleanId)) {
+      toast.error(connectionIdHint(toolType));
+      return;
+    }
     if (shareMode === 'consultant') {
       if (!consultantId) return;
       await shareMutation.mutateAsync({
@@ -54,7 +60,7 @@ export default function ShareRemoteConfigDialog({
         config: {
           ...defaultConfig,
           alias,
-          connectionId,
+          connectionId: cleanId,
           startDate: startDate?.toISOString() || null,
           endDate: endDate?.toISOString() || null,
         },
@@ -67,9 +73,9 @@ export default function ShareRemoteConfigDialog({
         ? `\nValid: ${format(startDate, 'MMM d, yyyy')} → ${format(endDate, 'MMM d, yyyy')}`
         : startDate ? `\nStarting: ${format(startDate, 'MMM d, yyyy')}` : '';
       const body = encodeURIComponent(
-        `Hi,\n\nI'm sharing ${toolLabel} remote access credentials with you.\n\nTool: ${toolLabel}\nAlias: ${alias || 'N/A'}\nConnection ID: ${connectionId || 'N/A'}${period}\n\n${message ? `Note: ${message}\n\n` : ''}Please use these details to connect.\n\nBest regards`
+        `Hi,\n\nI'm sharing ${toolLabel} remote access credentials with you.\n\nTool: ${toolLabel}\nAlias: ${alias || 'N/A'}\nConnection ID: ${cleanId || 'N/A'}${period}\n\n${message ? `Note: ${message}\n\n` : ''}Please use these details to connect.\n\nBest regards`
       );
-      window.open(`mailto:${recipientEmail}?subject=${subject}&body=${body}`, '_blank');
+      window.open(`mailto:${encodeURIComponent(recipientEmail.trim())}?subject=${subject}&body=${body}`, '_blank');
       toast.success('Email client opened with share details');
     }
     resetForm();
@@ -154,6 +160,7 @@ export default function ShareRemoteConfigDialog({
           <div>
             <label className="text-xs font-medium text-foreground mb-1 block">{toolLabel} ID / Hostname</label>
             <Input value={connectionId} onChange={e => setConnectionId(e.target.value)} placeholder="e.g. 123456789 or 192.168.1.100" className="h-8 text-sm" />
+            {connectionId && !isValidConnectionId(toolType, connectionId) && <p className="text-[10px] text-destructive mt-1">{connectionIdHint(toolType)}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -198,7 +205,7 @@ export default function ShareRemoteConfigDialog({
           <Button
             onClick={handleShare}
             disabled={
-              !connectionId ||
+              !isValidConnectionId(toolType, connectionId) ||
               (shareMode === 'consultant' ? (!consultantId || shareMutation.isPending) : !recipientEmail) 
             }
             className="gradient-primary border-0 gap-1.5"
