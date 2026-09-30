@@ -12,6 +12,7 @@ import {
 import { useTicketDocuments, useUploadTicketDocument, useDeleteTicketDocument, type TicketDocument } from '@/hooks/useTicketDocuments';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
+import { openExternal } from '@/lib/safeUrl';
 
 const fileIcons: Record<string, typeof FileText> = {
   'application/pdf': FileText,
@@ -77,7 +78,7 @@ export default function TicketDocuments({ ticketId }: { ticketId: string }) {
   const handleDownload = async (doc: TicketDocument) => {
     const { data } = await supabase.storage.from('ticket-documents').createSignedUrl(doc.file_url, 60);
     if (data?.signedUrl) {
-      window.open(data.signedUrl, '_blank');
+      openExternal(data.signedUrl);
     }
   };
 

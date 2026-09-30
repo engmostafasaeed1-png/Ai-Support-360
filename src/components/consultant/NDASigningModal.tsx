@@ -14,6 +14,7 @@ import { useNDATemplate, useNDAAgreement } from '@/hooks/useNDA';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
+import { openExternal } from '@/lib/safeUrl';
 
 interface NDASigningModalProps {
   open: boolean;
@@ -218,7 +219,7 @@ export default function NDASigningModal({
 
   const handleDownloadPreview = async () => {
     if (hasCustomNDA && customNdaPublicUrl) {
-      window.open(customNdaPublicUrl, '_blank');
+      openExternal(customNdaPublicUrl);
       return;
     }
     await exportNDAAsPDF({

@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ExternalLink, Loader2, ShieldAlert, Frame, CheckCircle2 } from 'lucide-react';
 import { isInIframe } from '@/components/session/FramedAppNotice';
 import { detectProvider } from '@/components/session/MeetingLinkButton';
+import { hostIsOneOf } from '@/lib/safeUrl';
 import { logProviderEvent } from '@/lib/diagnostics';
 
 const PROVIDER_LABEL: Record<string, string> = {
@@ -15,6 +16,9 @@ const PROVIDER_LABEL: Record<string, string> = {
   teams: 'Microsoft Teams',
   unknown: 'Meeting',
 };
+
+// Only these providers are opened automatically; any other host needs an explicit click (prevents use as an open redirect).
+const TRUSTED_MEETING_DOMAINS = ['meet.google.com', 'meet.jit.si', 'zoom.us', 'teams.microsoft.com', 'teams.live.com'];
 
 /**
  * Dedicated meeting handoff page. The "Join in new tab" button on the session
@@ -53,6 +57,14 @@ export default function MeetingHandoffPage() {
   }, [params, sessionId]);
 
   const provider = target ? detectProvider(target) : 'unknown';
+  const trusted = !!target && hostIsOneOf(target, TRUSTED_MEETING_DOMAINS);
+  const targetHost = (() => {
+    try {
+      return target ? new URL(target).hostname : '';
+    } catch {
+      return '';
+    }
+  })();
   const framed = isInIframe();
 
   // If we somehow ended up framed (e.g. user opened the link in the same tab
@@ -78,7 +90,7 @@ export default function MeetingHandoffPage() {
 
   // Auto-redirect once when target is valid and we're top-level.
   useEffect(() => {
-    if (!target || framed || autoRedirected) return;
+    if (!target || framed || autoRedirected || !trusted) return;
     setAutoRedirected(true);
     logProviderEvent('opened', {
       stage: 'handoff_redirect',
@@ -91,7 +103,7 @@ export default function MeetingHandoffPage() {
       window.location.replace(target);
     }, 350);
     return () => window.clearTimeout(id);
-  }, [target, framed, autoRedirected, provider, sessionId]);
+  }, [target, framed, autoRedirected, trusted, provider, sessionId]);
 
   if (!target) {
     return (
@@ -127,10 +139,15 @@ export default function MeetingHandoffPage() {
                 <Frame className="w-5 h-5 text-amber-600" aria-hidden="true" />
                 Open in a top-level tab
               </>
-            ) : (
+            ) : trusted ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin text-primary" aria-hidden="true" />
                 Opening {PROVIDER_LABEL[provider]}…
+              </>
+            ) : (
+              <>
+                <ShieldAlert className="w-5 h-5 text-amber-600" aria-hidden="true" />
+                Check this link before opening
               </>
             )}
           </h1>
@@ -148,11 +165,19 @@ export default function MeetingHandoffPage() {
                 </p>
               </AlertDescription>
             </Alert>
-          ) : (
+          ) : trusted ? (
             <p className="text-sm text-muted-foreground">
               Your meeting will open in this tab. If nothing happens within a few seconds, click
               the button below.
             </p>
+          ) : (
+            <Alert variant="destructive">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertTitle>Unrecognised meeting provider</AlertTitle>
+              <AlertDescription>
+                This link leads to <strong>{targetHost}</strong>, which is not a known meeting provider, so it will not open automatically. Continue only if you trust whoever sent it.
+              </AlertDescription>
+            </Alert>
           )}
 
           <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground break-all">

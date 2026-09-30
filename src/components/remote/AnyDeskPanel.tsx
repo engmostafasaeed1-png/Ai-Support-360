@@ -22,6 +22,7 @@ import {
   type AnyDeskSession,
 } from '@/hooks/useAnyDesk';
 import { format } from 'date-fns';
+import { openProtocolLink } from '@/lib/safeUrl';
 
 export default function AnyDeskPanel({ onShare }: { onShare?: () => void }) {
   const [tab, setTab] = useState('clients');
@@ -35,7 +36,8 @@ export default function AnyDeskPanel({ onShare }: { onShare?: () => void }) {
   } = useAnyDeskStatus();
 
   const isConfigured = status?.configured ?? false;
-  const statusLabel = isStatusLoading ? 'Checking' : isConfigured ? 'Integrated' : 'Setup Required';
+  const isRestricted = status?.restricted === true;
+  const statusLabel = isStatusLoading ? 'Checking' : isRestricted ? 'Admin only' : isConfigured ? 'Integrated' : 'Setup Required';
 
   return (
     <Card className="rounded-2xl border-border/50">
@@ -69,6 +71,14 @@ export default function AnyDeskPanel({ onShare }: { onShare?: () => void }) {
              <Button variant="outline" size="sm" onClick={() => refetchStatus()} className="gap-1.5">
                <RefreshCw className="w-3.5 h-3.5" /> Retry
              </Button>
+           </div>
+         ) : isRestricted ? (
+           <div className="text-center py-8">
+             <Shield className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
+             <p className="text-sm font-medium text-muted-foreground">The AnyDesk directory is managed by administrators</p>
+             <p className="text-xs text-muted-foreground/60 mt-1">
+               Clients, sessions and licence details are only visible to administrators. Connection details that were shared with you appear under Shared Remote Access.
+             </p>
            </div>
          ) : !isConfigured ? (
            <div className="text-center py-8">
@@ -169,7 +179,7 @@ function ClientsList({ search, onlineOnly, enabled }: { search: string; onlineOn
   const handleConnect = async (clientId: string) => {
     try {
       const result = await connectionLink.mutateAsync(clientId);
-      window.open(result.uri, '_blank');
+      if (!openProtocolLink(result.uri, ['anydesk'])) throw new Error('Unexpected connection link');
       toast.success('Opening AnyDesk connection...');
     } catch {
       toast.error('Failed to generate connection link');

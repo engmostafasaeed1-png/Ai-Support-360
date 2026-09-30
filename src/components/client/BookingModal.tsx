@@ -13,6 +13,7 @@ import { Video, MessageSquare, Monitor, Clock, Loader2, CalendarDays, CheckCircl
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { openExternal } from '@/lib/safeUrl';
 
 interface BookingModalProps {
   open: boolean;
@@ -293,7 +294,7 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
               <Button
                 variant="outline"
                 className="w-full gap-2"
-                onClick={() => window.open(meetingUrl, '_blank')}
+                onClick={() => openExternal(meetingUrl)}
               >
                 <Video className="w-4 h-4" />
                 Open Video Call
