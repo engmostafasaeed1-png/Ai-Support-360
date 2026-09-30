@@ -1,44 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://esm.sh/zod@3.23.8";
+import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit, getUserRoles, hasAnyRole, ADMIN_ROLES } from "../_shared/security.ts";
 
 const BodySchema = z.object({ session_id: z.string().uuid() });
 
-const ALLOWED_ORIGINS = [
-  'https://smartsapsupport.qurtubatalks.com',
-  'https://www.qurtubatalks.com',
-  'http://localhost:8080',
-  'http://localhost:5173',
-];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get('Origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-    'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin',
-  };
-}
-
-// Simple in-memory rate limiter
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 20;
-const WINDOW_MS = 60_000;
 const MAX_BODY_SIZE = 50 * 1024;
-
-function checkRateLimit(identifier: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(identifier);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(identifier, { count: 1, resetAt: now + WINDOW_MS });
-    return true;
-  }
-  entry.count++;
-  return entry.count <= RATE_LIMIT;
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
@@ -65,8 +32,7 @@ serve(async (req) => {
       });
     }
 
-    const clientId = req.headers.get("authorization")?.slice(-16) || req.headers.get("x-client-info") || "anon";
-    if (!checkRateLimit(clientId)) {
+    if (!(await withinRateLimit(adminClient(), `ai-session-analysis:${authUser.id}`, 10, 60, true))) {
       return new Response(JSON.stringify({ error: "Rate limit exceeded." }),
         { status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json", "Retry-After": "60" } });
     }
@@ -104,6 +70,30 @@ serve(async (req) => {
       .eq("id", session_id)
       .single();
     if (sErr || !session) throw new Error("Session not found");
+
+    // Authorization: only the session's client, its consultant, or an admin may analyse a session.
+    {
+      const { data: sessionConsultant } = await supabase
+        .from("consultants").select("user_id").eq("id", session.consultant_id).maybeSingle();
+      const callerRoles = await getUserRoles(supabase, authUser.id);
+      const isParticipant = session.client_id === authUser.id || sessionConsultant?.user_id === authUser.id;
+      if (!isParticipant && !hasAnyRole(callerRoles, ADMIN_ROLES)) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Idempotency: one analysis per session (prevents duplicate feedback / surveys / notifications).
+    {
+      const { count: alreadyAnalysed } = await supabase
+        .from("session_feedback").select("id", { count: "exact", head: true }).eq("session_id", session_id);
+      if ((alreadyAnalysed ?? 0) > 0) {
+        return new Response(JSON.stringify({ success: true, already_analyzed: true }), {
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        });
+      }
+    }
 
     // Fetch ticket info
     let ticketInfo = "";
@@ -360,7 +350,7 @@ Return ONLY valid JSON.`;
     });
   } catch (e) {
     console.error("Error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: "Analysis failed. Please try again." }), {
       status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
