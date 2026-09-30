@@ -1695,7 +1695,7 @@ export type Database = {
           sync_enabled: boolean
           tenant_id: string | null
           updated_at: string
-          webhook_secret: string | null
+          webhook_secret: string
         }
         Insert: {
           api_key_ciphertext?: string | null
@@ -1712,7 +1712,7 @@ export type Database = {
           sync_enabled?: boolean
           tenant_id?: string | null
           updated_at?: string
-          webhook_secret?: string | null
+          webhook_secret?: string
         }
         Update: {
           api_key_ciphertext?: string | null
@@ -1729,7 +1729,7 @@ export type Database = {
           sync_enabled?: boolean
           tenant_id?: string | null
           updated_at?: string
-          webhook_secret?: string | null
+          webhook_secret?: string
         }
         Relationships: [
           {
@@ -3252,6 +3252,24 @@ export type Database = {
           },
         ]
       }
+      rate_limit_counters: {
+        Row: {
+          bucket: string
+          hits: number
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          hits?: number
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          hits?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       ratings: {
         Row: {
           client_id: string
@@ -4039,6 +4057,7 @@ export type Database = {
         Row: {
           ai_quota: number
           created_at: string
+          created_by: string | null
           domain: string | null
           id: string
           logo_url: string | null
@@ -4057,6 +4076,7 @@ export type Database = {
         Insert: {
           ai_quota?: number
           created_at?: string
+          created_by?: string | null
           domain?: string | null
           id?: string
           logo_url?: string | null
@@ -4075,6 +4095,7 @@ export type Database = {
         Update: {
           ai_quota?: number
           created_at?: string
+          created_by?: string | null
           domain?: string | null
           id?: string
           logo_url?: string | null
@@ -5744,6 +5765,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      can_bootstrap_tenant_membership: {
+        Args: { _tenant_id: string }
+        Returns: boolean
+      }
+      check_rate_limit: {
+        Args: { _bucket: string; _limit: number; _window_seconds: number }
+        Returns: boolean
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -5827,6 +5856,7 @@ export type Database = {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
       }
+      is_untrusted_writer: { Args: never; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -5907,6 +5937,22 @@ export type Database = {
           _title: string
           _type: string
           _user_id: string
+        }
+        Returns: string
+      }
+      submit_demo_request: {
+        Args: {
+          _company: string
+          _demo_type: string
+          _email: string
+          _full_name: string
+          _meeting_format: string
+          _notes: string
+          _scheduled_date: string
+          _scheduled_slot: string
+          _scheduling_preference: string
+          _source?: string
+          _timezone: string
         }
         Returns: string
       }
