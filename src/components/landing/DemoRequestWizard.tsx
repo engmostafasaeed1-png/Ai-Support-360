@@ -315,32 +315,23 @@ function DemoRequestWizard({
     // The final step is "complete" once we attempt the submit.
     demoFunnel.wizardStepComplete(STEPS.length - 1, STEPS[STEPS.length - 1], {});
 
-    // Pull the current user (if any) so admins can later see who logged in
-    // as well as the email on the row. Anon users still get inserted.
-    const { data: userRes } = await supabase.auth.getUser();
-
-    const { data, error } = await supabase
-      .from('demo_requests')
-      .insert({
-        user_id: userRes.user?.id ?? null,
-        demo_type: type,
-        scheduling_preference: time,
-        scheduled_date: date ? format(date, 'yyyy-MM-dd') : null,
-        scheduled_slot: slot,
-        timezone,
-        meeting_format: meetingFormat,
-        full_name: name.trim(),
-        email: email.trim(),
-        company: company.trim() || null,
-        notes: notes.trim() || null,
-        source: 'landing-wizard',
-      })
-      .select('request_token')
-      .single();
+    const { data: requestToken, error } = await supabase.rpc('submit_demo_request', {
+      _demo_type: type,
+      _scheduling_preference: time,
+      _scheduled_date: date ? format(date, 'yyyy-MM-dd') : null,
+      _scheduled_slot: slot,
+      _timezone: timezone,
+      _meeting_format: meetingFormat,
+      _full_name: name.trim(),
+      _email: email.trim(),
+      _company: company.trim() || null,
+      _notes: notes.trim() || null,
+      _source: 'landing-wizard',
+    } as never);
 
     setSubmitting(false);
 
-    if (error || !data?.request_token) {
+    if (error || !requestToken || typeof requestToken !== 'string') {
       demoFunnel.submitError(error?.message ?? 'unknown');
       toast({
         variant: 'destructive',
@@ -351,7 +342,7 @@ function DemoRequestWizard({
     }
 
     setSubmitted(true);
-    demoFunnel.submitSuccess({ ...submitProps, request_token: data.request_token });
+    demoFunnel.submitSuccess({ ...submitProps });
     toast({
       title: 'Demo request received',
       description: 'We\u2019ll be in touch within one business hour.',
@@ -361,7 +352,7 @@ function DemoRequestWizard({
     // shareable confirmation page so the user can revisit anytime.
     setTimeout(() => {
       onOpenChange(false);
-      navigate(`/demo/confirmation/${data.request_token}`);
+      navigate(`/demo/confirmation/${requestToken}`);
     }, 900);
   };
 
