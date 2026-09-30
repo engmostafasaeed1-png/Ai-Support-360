@@ -2,16 +2,12 @@
 // from the Supabase Auth admin settings. This lets the frontend show a real
 // countdown instead of assuming 24 hours.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-};
+import { corsHeaders as sharedCorsHeaders } from "../_shared/security.ts";
 
 const DEFAULT_EXPIRY_SECONDS = 24 * 60 * 60; // 24h
 
 Deno.serve(async (req) => {
+  const corsHeaders = sharedCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

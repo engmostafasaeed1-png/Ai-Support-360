@@ -16,6 +16,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { decode as decodePng } from "https://deno.land/x/pngs@0.1.1/mod.ts";
+import { corsHeaders as sharedCorsHeaders } from "../_shared/security.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -23,12 +24,6 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const MAX_BYTES = 2 * 1024 * 1024; // 2 MiB
 const REQUIRED_DIM = 512;
-
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
 
 type ErrorCode =
   | "unauthenticated"
@@ -44,14 +39,13 @@ type ErrorCode =
   | "db_update_failed"
   | "internal";
 
-function fail(code: ErrorCode, message: string, status = 400, extra: Record<string, unknown> = {}) {
-  return new Response(
-    JSON.stringify({ ok: false, code, message, ...extra }),
-    { status, headers: { ...cors, "Content-Type": "application/json" } },
-  );
-}
-
 Deno.serve(async (req) => {
+  const cors = sharedCorsHeaders(req);
+  const fail = (code: ErrorCode, message: string, status = 400, extra: Record<string, unknown> = {}) =>
+    new Response(JSON.stringify({ ok: false, code, message, ...extra }), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   if (req.method !== "POST") return fail("internal", "Method not allowed", 405);
 

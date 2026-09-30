@@ -3,12 +3,7 @@
 // Uses the caller's JWT so RLS enforces user_id ownership on insert.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders as sharedCorsHeaders } from '../_shared/security.ts';
 
 interface LogPayload {
   bucket?: string;
@@ -21,14 +16,13 @@ interface LogPayload {
   error_message?: string | null;
 }
 
-function bad(status: number, error: string) {
-  return new Response(JSON.stringify({ error }), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
-
 Deno.serve(async (req) => {
+  const corsHeaders = sharedCorsHeaders(req);
+  const bad = (status: number, error: string) =>
+    new Response(JSON.stringify({ error }), {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -99,7 +93,7 @@ Deno.serve(async (req) => {
   if (insertErr) {
     console.error('logo_upload_attempt insert failed', insertErr);
     return new Response(
-      JSON.stringify({ ok: false, error: insertErr.message }),
+      JSON.stringify({ ok: false, error: 'Could not record the upload attempt' }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
