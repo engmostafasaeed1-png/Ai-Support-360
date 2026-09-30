@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { buildRdpFileContent, connectionIdHint, isValidConnectionId } from '@/lib/remoteAccess';
+import { isSafeHttpsUrl, openExternal } from '@/lib/safeUrl';
 import { Monitor, Plus, Trash2, Pencil, Globe, ExternalLink, Copy, Share2 } from 'lucide-react';
 
 interface RDPConnection {
@@ -31,6 +33,15 @@ export default function RDPWebClientPanel({ onShare }: { onShare?: () => void })
 
   const handleSave = () => {
     if (!name || !hostname) return;
+    const address = `${hostname.trim()}:${port.trim() || '3389'}`;
+    if (!isValidConnectionId(protocol, address)) {
+      toast.error(connectionIdHint(protocol));
+      return;
+    }
+    if (gatewayUrl.trim() && !isSafeHttpsUrl(gatewayUrl.trim())) {
+      toast.error('The web gateway URL must start with https://');
+      return;
+    }
     if (editConn) {
       setConnections(prev => prev.map(c => c.id === editConn.id ? { ...c, name, hostname, port, protocol, gatewayUrl: gatewayUrl || undefined } : c));
       toast.success('Connection updated');
@@ -44,15 +55,21 @@ export default function RDPWebClientPanel({ onShare }: { onShare?: () => void })
 
   const handleConnect = (conn: RDPConnection) => {
     if (conn.gatewayUrl) {
-      window.open(conn.gatewayUrl, '_blank');
-    } else if (conn.protocol === 'rdp') {
-      // Generate RDP file download
-      const rdpContent = `full address:s:${conn.hostname}:${conn.port}\nprompt for credentials:i:1\nadministrative session:i:1`;
+      if (!openExternal(conn.gatewayUrl)) toast.error('The web gateway URL must start with https:// or http://');
+      return;
+    }
+    if (conn.protocol === 'rdp') {
+      const base = buildRdpFileContent(`${conn.hostname}:${conn.port}`);
+      if (!base) {
+        toast.error('Invalid hostname or port — no RDP file was created.');
+        return;
+      }
+      const rdpContent = `${base}administrative session:i:1\r\n`;
       const blob = new Blob([rdpContent], { type: 'application/x-rdp' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${conn.name}.rdp`;
+      a.download = `${conn.name.replace(/[^\w.-]+/g, '_').slice(0, 60) || 'connection'}.rdp`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success('RDP file downloaded — open it to connect');
@@ -165,7 +182,7 @@ export default function RDPWebClientPanel({ onShare }: { onShare?: () => void })
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => { setAddOpen(false); resetForm(); }}>Cancel</Button>
-              <Button onClick={handleSave} disabled={!name || !hostname} className="gradient-primary border-0">Save</Button>
+              <Button onClick={handleSave} disabled={!name || !hostname || !isValidConnectionId(protocol, `${hostname.trim()}:${port.trim() || '3389'}`)} className="gradient-primary border-0">Save</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
