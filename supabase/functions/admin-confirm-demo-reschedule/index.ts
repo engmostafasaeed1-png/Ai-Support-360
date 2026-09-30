@@ -1,80 +1,88 @@
-// Admin endpoint: confirms a proposed reschedule slot and sends the
-// requester a confirmation email with a tokenized link to their request page.
-import { createClient } from 'npm:@supabase/supabase-js@2'
+// Admin endpoint: confirms a proposed reschedule slot and sends the requester a
+// confirmation email with a tokenized link to their request page.
+//
+// Security: the link is always built from the server-side SITE_URL (never from the request
+// body), and the caller must be an admin / super admin.
+import {
+  ADMIN_ROLES,
+  adminClient,
+  authenticateUser,
+  getUserRoles,
+  hasAnyRole,
+  jsonResponse,
+  preflight,
+  SITE_URL,
+} from '../_shared/security.ts';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-function json(data: Record<string, unknown>, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  })
-}
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
+  const pre = preflight(req);
+  if (pre) return pre;
+  if (req.method !== 'POST') return jsonResponse(req, { error: 'Method not allowed' }, 405);
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')
-  if (!supabaseUrl || !serviceKey || !anonKey) return json({ error: 'Server misconfigured' }, 500)
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  if (!supabaseUrl || !anonKey || !Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
+    return jsonResponse(req, { error: 'Server misconfigured' }, 500);
+  }
 
-  // Auth: validate the caller's JWT and confirm admin role
-  const authHeader = req.headers.get('Authorization') ?? ''
+  // AuthN + AuthZ: a real user JWT whose account holds an admin role.
+  const user = await authenticateUser(req);
+  if (!user) return jsonResponse(req, { error: 'Unauthorized' }, 401);
+  const admin = adminClient();
+  if (!hasAnyRole(await getUserRoles(admin, user.id), ADMIN_ROLES)) {
+    return jsonResponse(req, { error: 'Forbidden' }, 403);
+  }
+
+  let body: { request_id?: string; slot_index?: number; note?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return jsonResponse(req, { error: 'Invalid JSON' }, 400);
+  }
+  const requestId = body.request_id;
+  const slotIndex = Number.isInteger(body.slot_index) ? (body.slot_index as number) : 0;
+  const note = typeof body.note === 'string' ? body.note.slice(0, 1000) : undefined;
+  if (!requestId || !UUID_RE.test(requestId)) return jsonResponse(req, { error: 'request_id is required' }, 400);
+
+  // Call the RPC as the user (the RPC re-checks the admin role).
   const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } },
-  })
-  const { data: userRes, error: userErr } = await userClient.auth.getUser()
-  if (userErr || !userRes?.user) return json({ error: 'Unauthorized' }, 401)
-
-  let body: { request_id?: string; slot_index?: number; note?: string; site_origin?: string }
-  try { body = await req.json() } catch { return json({ error: 'Invalid JSON' }, 400) }
-  const { request_id, slot_index = 0, note, site_origin } = body
-  if (!request_id) return json({ error: 'request_id is required' }, 400)
-
-  const admin = createClient(supabaseUrl, serviceKey)
-
-  // Call the existing RPC as the user (RPC enforces admin role check)
+    global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
+  });
   const { data: row, error: rpcErr } = await userClient.rpc('admin_confirm_reschedule_slot', {
-    _request_id: request_id,
-    _slot_index: slot_index,
+    _request_id: requestId,
+    _slot_index: slotIndex,
     _note: note,
-  })
-  if (rpcErr) return json({ error: rpcErr.message }, 400)
+  });
+  if (rpcErr) return jsonResponse(req, { error: rpcErr.message }, 400);
 
-  // Look up the request token + email/name to build the confirmation link
-  const { data: req2, error: reqErr } = await admin
+  const { data: request, error: reqErr } = await admin
     .from('demo_requests')
     .select('email, full_name, request_token, scheduled_date, scheduled_slot, timezone')
-    .eq('id', request_id)
-    .maybeSingle()
-  if (reqErr || !req2) return json({ ok: true, warning: 'request not found for email' })
-
-  const origin = site_origin || 'https://smart-sap-connect.lovable.app'
-  const confirmationUrl = `${origin}/demo/confirmation/${req2.request_token}`
+    .eq('id', requestId)
+    .maybeSingle();
+  if (reqErr || !request) return jsonResponse(req, { ok: true, warning: 'request not found for email' });
 
   try {
     await admin.functions.invoke('send-transactional-email', {
       body: {
         templateName: 'demo-reschedule-confirmed',
-        recipientEmail: req2.email,
-        idempotencyKey: `demo-reschedule-confirmed-${request_id}-${req2.scheduled_date}-${req2.scheduled_slot}`,
+        recipientEmail: request.email,
+        idempotencyKey: `demo-reschedule-confirmed-${requestId}-${request.scheduled_date}-${request.scheduled_slot}`,
         templateData: {
-          name: req2.full_name,
-          confirmationUrl,
-          scheduledDate: req2.scheduled_date,
-          scheduledSlot: req2.scheduled_slot,
-          timezone: req2.timezone,
+          name: request.full_name,
+          confirmationUrl: `${SITE_URL}/demo/confirmation/${request.request_token}`,
+          scheduledDate: request.scheduled_date,
+          scheduledSlot: request.scheduled_slot,
+          timezone: request.timezone,
         },
       },
-    })
+    });
   } catch (e) {
-    console.warn('Failed to enqueue confirmation email', e)
+    console.warn('Failed to enqueue confirmation email', e instanceof Error ? e.message : String(e));
   }
 
-  return json({ ok: true, request: row })
-})
+  return jsonResponse(req, { ok: true, request: row });
+});

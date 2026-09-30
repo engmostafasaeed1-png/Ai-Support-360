@@ -30,14 +30,35 @@ function generateToken(): string {
     .join('')
 }
 
-// Auth note: this function uses verify_jwt = true in config.toml, so Supabase's
-// gateway validates the caller's JWT (anon or service_role) before the request
-// reaches this code. No in-function auth check is needed.
+// Auth note: verify_jwt = true only proves the caller holds *a* valid Supabase key — the public
+// anon key included — so it is NOT sufficient here. This function can send any registered template
+// to any address, so it is restricted to trusted server-side callers (the service-role key).
+// Public flows (e.g. demo reschedule) go through dedicated token-gated functions instead.
+function timingSafeEqual(a: string, b: string): boolean {
+  const ea = new TextEncoder().encode(a)
+  const eb = new TextEncoder().encode(b)
+  let diff = ea.length ^ eb.length
+  const n = Math.max(ea.length, eb.length)
+  for (let i = 0; i < n; i++) diff |= (ea[i] ?? 0) ^ (eb[i] ?? 0)
+  return diff === 0
+}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
+  }
+
+  // Only trusted server-side callers may send arbitrary templates.
+  {
+    const bearer = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').trim()
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    if (!serviceKey || !bearer || !timingSafeEqual(bearer, serviceKey)) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
