@@ -79,6 +79,7 @@ export default function SharedConfigsConsultantPanel() {
           const connectionId = (config.connectionId as string) || '';
           const alias = (config.alias as string) || '';
           const isPending = cfg.status === 'pending';
+          const idValid = !connectionId || isValidConnectionId(cfg.tool_type, connectionId);
 
           return (
             <Card key={cfg.id} className={`rounded-xl border-border/30 ${isPending ? 'ring-1 ring-accent/30' : ''}`}>
@@ -101,6 +102,7 @@ export default function SharedConfigsConsultantPanel() {
                       )}
                     </div>
                     {connectionId && <p className="text-xs text-muted-foreground font-mono mt-0.5">ID: {connectionId}</p>}
+                    {connectionId && !idValid && <p className="text-[10px] text-destructive mt-0.5">Unexpected ID format — Connect is disabled.</p>}
                     {(config.startDate || config.endDate) && (
                       <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
                         <CalendarDays className="w-2.5 h-2.5" />
@@ -131,7 +133,8 @@ export default function SharedConfigsConsultantPanel() {
                           <Copy className="w-3.5 h-3.5" />
                         </Button>
                         <Button size="sm" className="h-7 text-xs gap-1" variant="outline"
-                          onClick={() => handleConnect(cfg.tool_type, connectionId)}>
+                          onClick={() => handleConnect(cfg.tool_type, connectionId)}
+                          disabled={!idValid}>
                           <ExternalLink className="w-3 h-3" /> Connect
                         </Button>
                       </>
