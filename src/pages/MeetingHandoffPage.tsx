@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ExternalLink, Loader2, ShieldAlert, Frame, CheckCircle2 } from 'lucide-react';
@@ -98,10 +98,10 @@ export default function MeetingHandoffPage() {
       <div className="min-h-screen flex items-center justify-center p-6 bg-background">
         <Card className="max-w-md w-full rounded-2xl border-border/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
+            <h1 className="font-semibold leading-none tracking-tight flex items-center gap-2 text-destructive">
               <ShieldAlert className="w-5 h-5" aria-hidden="true" />
               Invalid meeting link
-            </CardTitle>
+            </h1>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
@@ -121,7 +121,7 @@ export default function MeetingHandoffPage() {
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
       <Card className="max-w-md w-full rounded-2xl border-border/50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <h1 className="font-semibold leading-none tracking-tight flex items-center gap-2">
             {framed ? (
               <>
                 <Frame className="w-5 h-5 text-amber-600" aria-hidden="true" />
@@ -133,7 +133,7 @@ export default function MeetingHandoffPage() {
                 Opening {PROVIDER_LABEL[provider]}…
               </>
             )}
-          </CardTitle>
+          </h1>
         </CardHeader>
         <CardContent className="space-y-4">
           {framed && error === 'framed' ? (

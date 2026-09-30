@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft, MailCheck } from 'lucide-react';
 import VideoBackground from '@/components/VideoBackground';
@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
             <img src="/assets/logo.png" alt="AI SAP Support Now" className="w-9 h-9 rounded-xl object-contain shadow-sm group-hover:scale-110 transition-transform" />
             <span className="font-bold text-xl text-foreground">AI SAP Support Now</span>
           </Link>
-          <CardTitle className="text-2xl">{t('auth.forgot_title')}</CardTitle>
+          <h1 className="font-semibold leading-none tracking-tight text-2xl">{t('auth.forgot_title')}</h1>
           <CardDescription>{t('auth.forgot_desc')}</CardDescription>
         </CardHeader>
         {sent ? (

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle2, XCircle, MailX } from 'lucide-react';
 
@@ -79,7 +79,7 @@ export default function UnsubscribePage() {
               <MailX className="h-6 w-6 text-muted-foreground" />
             )}
           </div>
-          <CardTitle>
+          <h1 className="text-2xl font-semibold leading-none tracking-tight">
             {status === 'loading' && 'Verifying link…'}
             {status === 'valid' && 'Unsubscribe from emails'}
             {status === 'submitting' && 'Processing…'}
@@ -87,7 +87,7 @@ export default function UnsubscribePage() {
             {status === 'already' && 'Already unsubscribed'}
             {status === 'invalid' && 'Invalid link'}
             {status === 'error' && 'Something went wrong'}
-          </CardTitle>
+          </h1>
           <CardDescription>
             {status === 'valid' &&
               'Click below to stop receiving emails from us at this address.'}

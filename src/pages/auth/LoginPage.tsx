@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2, Eye, MailCheck, Inbox, ShieldAlert } from 'lucide-react';
 import VerificationTimeline from '@/components/auth/VerificationTimeline';
@@ -341,7 +341,7 @@ export default function LoginPage() {
             <img src="/assets/logo.png" alt="AI SAP Support Now" className="w-9 h-9 rounded-xl object-contain shadow-sm group-hover:scale-110 transition-transform" />
             <span className="font-bold text-xl text-foreground">AI SAP Support Now</span>
           </Link>
-          <CardTitle className="text-2xl">{t('auth.login_title')}</CardTitle>
+          <h1 className="font-semibold leading-none tracking-tight text-2xl">{t('auth.login_title')}</h1>
           <CardDescription>{t('auth.login_desc')}</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
