@@ -16,7 +16,6 @@ import MaintenanceBanner from "./components/MaintenanceBanner.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
 import RouteSeo from "./components/RouteSeo";
 import { HelmetProvider } from "react-helmet-async";
-import ScreenProtection from "./components/ScreenProtection.tsx";
 import Watermark from "./components/Watermark.tsx";
 import WhatsAppButton from "./components/WhatsAppButton.tsx";
 import GlobalSearch from "./components/GlobalSearch.tsx";
@@ -223,7 +222,6 @@ const App = () => (
           <a href="#main-content" className="skip-to-main">Skip to main content</a>
           <ScrollToTop />
           <RouteSeo />
-          <ScreenProtection />
           <Watermark />
           <GlobalSearch />
           <MaintenanceBanner />
