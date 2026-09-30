@@ -163,7 +163,6 @@ export default function ConsultantOnboarding() {
           nationality: data.nationality || null,
           city: data.city || null,
           country: data.country || null,
-          verification_status: 'pending',
           availability_status: 'offline',
         }, { onConflict: 'user_id' })
         .select('id')

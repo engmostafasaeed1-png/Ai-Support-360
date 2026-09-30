@@ -18,6 +18,14 @@ interface AuthState {
   needsOnboarding: boolean;
 }
 
+// Route keys use hyphens; the database enum uses underscores.
+const DB_ROLE: Record<NonNullable<Props['requiredRole']>, string> = {
+  client: 'client',
+  consultant: 'consultant',
+  admin: 'admin',
+  'super-admin': 'super_admin',
+};
+
 export default function ProtectedRoute({ children, requiredRole }: Props) {
   const [state, setState] = useState<AuthState>({
     status: 'loading',
@@ -43,12 +51,12 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
 
     // Run all checks in parallel
     const [roleResult, tenantResult, onboardingResult] = await Promise.all([
-      // Role check - cast to any to support super-admin role
+      // Role check - maps the route key to the database enum value
       supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', session.user.id)
-        .eq('role', requiredRole as any)
+        .eq('role', DB_ROLE[requiredRole] as any)
         .maybeSingle(),
 
       // Tenant check (only for clients)

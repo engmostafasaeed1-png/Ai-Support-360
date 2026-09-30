@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, Linkedin, FileText, Loader2, Sparkles, X, Check } from 'lucide-react';
+import { Upload, FileText, Loader2, Sparkles, X, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useGuestMode } from '@/contexts/GuestModeContext';
@@ -19,9 +19,8 @@ interface Props {
 export default function ImportStep({ data, onChange }: Props) {
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
-  const [linkedinUrl, setLinkedinUrl] = useState('');
-  const [importing, setImporting] = useState<'cv' | 'linkedin' | null>(null);
-  const [imported, setImported] = useState<'cv' | 'linkedin' | null>(null);
+  const [importing, setImporting] = useState<'cv' | null>(null);
+  const [imported, setImported] = useState<'cv' | null>(null);
 
   const applyProfile = (profile: any) => {
     const partial: Partial<OnboardingData> = {};
@@ -117,6 +116,14 @@ export default function ImportStep({ data, onChange }: Props) {
       return;
     }
 
+    if (!/\.txt$/i.test(file.name) && file.type !== 'text/plain') {
+      toast.error('Please upload a plain-text (.txt) file. For PDF or Word CVs, copy the text into a .txt file first.');
+      return;
+    }
+    if (file.size > 300 * 1024) {
+      toast.error('Please choose a CV text file smaller than 300 KB.');
+      return;
+    }
     setImporting('cv');
     try {
       // Read file as text
@@ -138,58 +145,13 @@ export default function ImportStep({ data, onChange }: Props) {
     }
   };
 
-  const handleLinkedinImport = async () => {
-    if (!linkedinUrl.trim()) return;
-
-    if (isGuest) {
-      toast.success('Demo: LinkedIn profile imported!');
-      setImported('linkedin');
-      applyProfile({
-        display_name: 'Sarah Johnson',
-        bio: 'SAP BTP & Integration specialist with 8+ years building cloud solutions.',
-        linkedin_url: linkedinUrl,
-        city: 'Dubai',
-        country: 'UAE',
-        languages: ['en'],
-        skills: [
-          { sap_module: 'SAP BTP/CPI', proficiency_level: 5, years_experience: 8, certified: true },
-        ],
-        work_history: [
-          { company_name: 'SAP', job_title: 'Solution Architect', start_date: '2021-01-01', is_current: true },
-        ],
-        education: [
-          { institution: 'MIT', degree: 'MSc', field_of_study: 'Information Systems', start_year: 2013, end_year: 2015 },
-        ],
-      });
-      return;
-    }
-
-    setImporting('linkedin');
-    try {
-      const { data: result, error } = await supabase.functions.invoke('parse-linkedin', {
-        body: { linkedin_url: linkedinUrl },
-      });
-      if (error) throw error;
-      if (result?.error) throw new Error(result.error);
-
-      applyProfile(result.profile);
-      setImported('linkedin');
-      toast.success('LinkedIn profile imported! Review and edit the data.');
-    } catch (err: any) {
-      console.error('LinkedIn import error:', err);
-      toast.error(err.message || 'Failed to import LinkedIn profile');
-    } finally {
-      setImporting(null);
-    }
-  };
-
   return (
     <div className="space-y-5">
       <div className="text-center space-y-1.5 mb-2">
         <Sparkles className="w-8 h-8 text-primary mx-auto" />
         <h3 className="font-semibold text-lg">Quick Profile Import</h3>
         <p className="text-sm text-muted-foreground">
-          Speed up your setup by importing from your CV or LinkedIn. You can review and edit everything afterward.
+          Speed up your setup by importing from your CV. You can review and edit everything afterward.
         </p>
       </div>
 
@@ -199,7 +161,7 @@ export default function ImportStep({ data, onChange }: Props) {
           <FileText className="w-5 h-5 text-primary shrink-0" />
           <div className="flex-1">
             <h4 className="font-medium text-sm">Upload CV / Resume</h4>
-            <p className="text-xs text-muted-foreground">Upload a .txt, .pdf, or .doc file — AI will extract your details</p>
+            <p className="text-xs text-muted-foreground">Upload your CV as a plain-text (.txt) file — AI will extract your details. For PDF or Word CVs, copy the text into a .txt file first.</p>
           </div>
           {imported === 'cv' && <Check className="w-5 h-5 text-green-500" />}
         </div>
@@ -207,7 +169,7 @@ export default function ImportStep({ data, onChange }: Props) {
           <label className="flex-1">
             <input
               type="file"
-              accept=".txt,.pdf,.doc,.docx"
+              accept=".txt,text/plain"
               className="hidden"
               onChange={e => {
                 const f = e.target.files?.[0];
@@ -230,39 +192,6 @@ export default function ImportStep({ data, onChange }: Props) {
               </span>
             </Button>
           </label>
-        </div>
-      </Card>
-
-      {/* LinkedIn Import */}
-      <Card className="p-4 space-y-3 border-2 border-dashed border-border hover:border-primary/40 transition-colors">
-        <div className="flex items-center gap-3">
-          <Linkedin className="w-5 h-5 text-[#0A66C2] shrink-0" />
-          <div className="flex-1">
-            <h4 className="font-medium text-sm">Import from LinkedIn</h4>
-            <p className="text-xs text-muted-foreground">Paste your LinkedIn profile URL to auto-fill your profile</p>
-          </div>
-          {imported === 'linkedin' && <Check className="w-5 h-5 text-green-500" />}
-        </div>
-        <div className="flex gap-2">
-          <Input
-            placeholder="https://linkedin.com/in/your-profile"
-            value={linkedinUrl}
-            onChange={e => setLinkedinUrl(e.target.value)}
-            disabled={importing !== null}
-            className="flex-1"
-          />
-          <Button
-            onClick={handleLinkedinImport}
-            disabled={importing !== null || !linkedinUrl.trim()}
-            variant="outline"
-            className="gap-1.5 shrink-0"
-          >
-            {importing === 'linkedin' ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              'Import'
-            )}
-          </Button>
         </div>
       </Card>
 

@@ -11,6 +11,7 @@ import { Loader2, Users, Briefcase, Eye, MailCheck, Inbox, ShieldAlert } from 'l
 import PasswordInput from '@/components/auth/PasswordInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 import { cn } from '@/lib/utils';
+import { MIN_PASSWORD_LENGTH } from '@/lib/passwordPolicy';
 import GuestExploreModal from '@/components/guest/GuestExploreModal';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
@@ -121,7 +122,7 @@ export default function SignupPage() {
       return;
     }
 
-    if (password.length < 6) {
+    if (password.length < MIN_PASSWORD_LENGTH) {
       toast.error(t('auth.password_min'));
       return;
     }
@@ -151,9 +152,8 @@ export default function SignupPage() {
       return;
     }
     if (data.user) {
-      await supabase.from('user_roles').insert({ user_id: data.user.id, role });
+      // Role, profile and consultant / client_profile rows are provisioned by the handle_new_user database trigger.
       if (role === 'consultant') {
-        await supabase.from('consultants').insert({ user_id: data.user.id });
         navigate('/consultant/onboarding');
       } else {
         // Create tenant for client signup
@@ -165,7 +165,6 @@ export default function SignupPage() {
           user_id: data.user.id,
           org_role: 'owner' as any,
         });
-        await supabase.from('client_profiles').insert({ user_id: data.user.id });
         navigate('/client/companies');
       }
     }

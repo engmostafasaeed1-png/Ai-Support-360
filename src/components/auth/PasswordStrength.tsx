@@ -9,8 +9,8 @@ interface Props {
 function getStrength(pw: string): number {
   if (!pw) return 0;
   let score = 0;
-  if (pw.length >= 6) score++;
-  if (pw.length >= 10) score++;
+  if (pw.length >= 12) score++;
+  if (pw.length >= 16) score++;
   if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
   if (/\d/.test(pw)) score++;
   if (/[^a-zA-Z0-9]/.test(pw)) score++;

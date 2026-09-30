@@ -10,6 +10,7 @@ import { Loader2 } from 'lucide-react';
 import PasswordInput from '@/components/auth/PasswordInput';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
+import { MIN_PASSWORD_LENGTH, isPasswordAcceptable } from '@/lib/passwordPolicy';
 
 export default function ResetPasswordPage() {
   const { t } = useTranslation();
@@ -185,7 +186,8 @@ export default function ResetPasswordPage() {
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) { toast.error(t('auth.password_min')); return; }
+    if (password.length < MIN_PASSWORD_LENGTH) { toast.error(t('auth.password_min')); return; }
+    if (!isPasswordAcceptable(password)) { toast.error('Password does not meet security requirements.'); return; }
     if (password !== confirm) { toast.error(t('auth.password_mismatch')); return; }
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
