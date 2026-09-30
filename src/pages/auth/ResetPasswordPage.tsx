@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import PasswordInput from '@/components/auth/PasswordInput';
@@ -237,7 +237,7 @@ export default function ResetPasswordPage() {
             <img src="/assets/logo.png" alt="AI SAP Support Now" className="w-9 h-9 rounded-xl object-contain shadow-sm group-hover:scale-110 transition-transform" />
             <span className="font-bold text-xl text-foreground">AI SAP Support Now</span>
           </Link>
-          <CardTitle className="text-2xl">{t('auth.reset_title')}</CardTitle>
+          <h1 className="font-semibold leading-none tracking-tight text-2xl">{t('auth.reset_title')}</h1>
           <CardDescription>{t('auth.reset_desc')}</CardDescription>
         </CardHeader>
         <form onSubmit={handleReset}>

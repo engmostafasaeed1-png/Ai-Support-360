@@ -1,0 +1,73 @@
+import { Helmet } from 'react-helmet-async';
+import { useLocation } from 'react-router-dom';
+
+const BASE_URL = 'https://www.aisapsupportnow.com';
+const BRAND = 'AI SAP Support Now';
+
+type Meta = { title: string; description: string; noindex?: boolean };
+
+const DEFAULT: Meta = {
+  title: `Smart SAP Support Portal — ${BRAND}`,
+  description:
+    'AI-powered enterprise SAP support platform. Connect with verified SAP experts for S/4HANA, BTP, SuccessFactors, and 20+ modules. Bilingual Arabic & English.',
+};
+
+const ROUTES: Record<string, Meta> = {
+  '/': DEFAULT,
+  '/pricing': {
+    title: `SAP Support Plans & Pricing — ${BRAND}`,
+    description:
+      'Compare SAP support plans: pay-per-session, monthly retainers and enterprise coverage with verified S/4HANA, BTP and SuccessFactors experts.',
+  },
+  '/login': {
+    title: `Sign in — ${BRAND}`,
+    description: 'Sign in to your SAP support portal to manage tickets, sessions and consultants.',
+  },
+  '/signup': {
+    title: `Create your account — ${BRAND}`,
+    description: 'Join as a client or SAP consultant and get matched with verified SAP experts in minutes.',
+  },
+  '/forgot-password': {
+    title: `Reset your password — ${BRAND}`,
+    description: 'Request a secure link to reset your SAP support portal password.',
+    noindex: true,
+  },
+  '/reset-password': {
+    title: `Choose a new password — ${BRAND}`,
+    description: 'Set a new password for your SAP support portal account.',
+    noindex: true,
+  },
+  '/unsubscribe': {
+    title: `Email preferences — ${BRAND}`,
+    description: 'Manage or unsubscribe from SAP support portal emails.',
+    noindex: true,
+  },
+};
+
+function resolve(pathname: string): Meta {
+  if (ROUTES[pathname]) return ROUTES[pathname];
+  if (pathname.startsWith('/join/'))
+    return { title: `Join your SAP support session — ${BRAND}`, description: DEFAULT.description, noindex: true };
+  if (pathname.startsWith('/demo/confirmation/'))
+    return { title: `Demo request status — ${BRAND}`, description: DEFAULT.description, noindex: true };
+  return { ...DEFAULT, noindex: true };
+}
+
+export default function RouteSeo() {
+  const { pathname } = useLocation();
+  const meta = resolve(pathname);
+  const url = `${BASE_URL}${pathname === '/' ? '/' : pathname}`;
+  return (
+    <Helmet>
+      <title>{meta.title}</title>
+      <meta name="description" content={meta.description} />
+      <link rel="canonical" href={url} />
+      <meta property="og:title" content={meta.title} />
+      <meta property="og:description" content={meta.description} />
+      <meta property="og:url" content={url} />
+      <meta name="twitter:title" content={meta.title} />
+      <meta name="twitter:description" content={meta.description} />
+      {meta.noindex && <meta name="robots" content="noindex, follow" />}
+    </Helmet>
+  );
+}

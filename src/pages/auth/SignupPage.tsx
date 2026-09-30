@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2, Users, Briefcase, Eye, MailCheck, Inbox, ShieldAlert } from 'lucide-react';
 import PasswordInput from '@/components/auth/PasswordInput';
@@ -180,7 +180,7 @@ export default function SignupPage() {
             <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
               <MailCheck className="w-7 h-7 text-primary" />
             </div>
-            <CardTitle className="text-2xl">Verify your email</CardTitle>
+            <h1 className="font-semibold leading-none tracking-tight text-2xl">Verify your email</h1>
             <CardDescription>
               We sent a verification link to <span className="font-medium text-foreground">{pendingEmail}</span>.
             </CardDescription>
@@ -248,7 +248,7 @@ export default function SignupPage() {
             <img src="/assets/logo.png" alt="AI SAP Support Now" className="w-9 h-9 rounded-xl object-contain shadow-sm group-hover:scale-110 transition-transform" />
             <span className="font-bold text-xl text-foreground">AI SAP Support Now</span>
           </Link>
-          <CardTitle className="text-2xl">{t('auth.signup_title')}</CardTitle>
+          <h1 className="font-semibold leading-none tracking-tight text-2xl">{t('auth.signup_title')}</h1>
           <CardDescription>{t('auth.signup_desc')}</CardDescription>
         </CardHeader>
         <form onSubmit={handleSignup}>
