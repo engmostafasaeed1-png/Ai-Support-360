@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useClientTimeline, type TimelineTicket } from '@/hooks/useClientTimeline';
+import { safeHref } from '@/lib/safeUrl';
 
 type StageKey = 'created' | 'matched' | 'booked' | 'session' | 'resolved';
 
@@ -284,7 +285,7 @@ function TicketTimelineCard({ ticket }: { ticket: TimelineTicket }) {
           <div className="flex items-center gap-2">
             {liveSession?.meeting_url && (
               <Button asChild size="sm" className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700">
-                <a href={liveSession.meeting_url} target="_blank" rel="noreferrer">
+                <a href={safeHref(liveSession.meeting_url)} target="_blank" rel="noopener noreferrer">
                   <PlayCircle className="w-3.5 h-3.5" />
                   Join Live
                 </a>

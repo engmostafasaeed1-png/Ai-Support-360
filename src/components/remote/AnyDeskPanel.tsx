@@ -179,7 +179,7 @@ function ClientsList({ search, onlineOnly, enabled }: { search: string; onlineOn
   const handleConnect = async (clientId: string) => {
     try {
       const result = await connectionLink.mutateAsync(clientId);
-      window.open(result.uri, '_blank');
+      if (!openProtocolLink(result.uri, ['anydesk'])) throw new Error('Unexpected connection link');
       toast.success('Opening AnyDesk connection...');
     } catch {
       toast.error('Failed to generate connection link');

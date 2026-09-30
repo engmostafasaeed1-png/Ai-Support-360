@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { FileSignature, Upload, FileText, Trash2, Loader2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { openExternal } from '@/lib/safeUrl';
 
 export default function ClientNDAUpload() {
   const { t } = useTranslation();
@@ -109,7 +110,7 @@ export default function ClientNDAUpload() {
       toast.error('Could not generate download link');
       return;
     }
-    window.open(data.signedUrl, '_blank');
+    openExternal(data.signedUrl);
   };
 
   const hasCustomNDA = !!clientProfile?.custom_nda_url;

@@ -13,6 +13,7 @@ import {
   AlertTriangle, Paperclip, X, Clock, CheckCircle2, XCircle, Loader2,
   ShieldAlert, FileText, Plus, Eye,
 } from 'lucide-react';
+import { openExternal } from '@/lib/safeUrl';
 
 const disputeSchema = z.object({
   reason_category: z.string().min(1, 'Select a reason'),
@@ -141,7 +142,7 @@ export function InvoiceDisputeSection({ payment }: Props) {
       toast.error('Could not open file');
       return;
     }
-    window.open(data.signedUrl, '_blank');
+    openExternal(data.signedUrl);
   };
 
   const hasOpen = disputes.some(d => d.status === 'open' || d.status === 'under_review');
