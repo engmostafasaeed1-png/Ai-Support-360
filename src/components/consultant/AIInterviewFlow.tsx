@@ -557,7 +557,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
       const resp = await fetch(BODY_LANG_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-        body: JSON.stringify({ frames: framesRef.current }),
+        body: JSON.stringify({ frames: framesRef.current.slice(-8) }),
       });
       if (!resp.ok) return null;
       const data = await resp.json();
