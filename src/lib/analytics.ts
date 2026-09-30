@@ -32,13 +32,30 @@ function getSessionId(): string {
 
 export type AnalyticsProps = Record<string, unknown>;
 
+const SECRET_KEYS = ['request_token', 'token', 'access_token', 'refresh_token', 'password'];
+
+/** Drops secret-looking keys so they never reach window.dataLayer or the analytics_events table. */
+function scrub(props: AnalyticsProps): AnalyticsProps {
+  const out: AnalyticsProps = {};
+  for (const [k, v] of Object.entries(props)) {
+    if (!SECRET_KEYS.includes(k)) out[k] = v;
+  }
+  return out;
+}
+
+/** The demo confirmation URL carries a bearer token in its path; never store it. */
+function sanitizePath(path: string): string {
+  return path.replace(/^\/demo\/confirmation\/[^/?#]+/, '/demo/confirmation/:token');
+}
+
 export function track(event: string, properties: AnalyticsProps = {}): void {
+  const safeProps = scrub(properties);
   // Browser dataLayer fan-out — runs first so even an offline insert is
   // captured by GTM if it's installed later.
   if (typeof window !== 'undefined') {
     const w = window as unknown as { dataLayer?: unknown[] };
     w.dataLayer = w.dataLayer ?? [];
-    w.dataLayer.push({ event, ...properties });
+    w.dataLayer.push({ event, ...safeProps });
   }
 
   // Persist to Supabase. We deliberately don't await — we don't want to
@@ -50,8 +67,8 @@ export function track(event: string, properties: AnalyticsProps = {}): void {
         event,
         session_id: getSessionId(),
         user_id: userRes.user?.id ?? null,
-        path: typeof window !== 'undefined' ? window.location.pathname : null,
-        properties: properties as never,
+        path: typeof window !== 'undefined' ? sanitizePath(window.location.pathname) : null,
+        properties: safeProps as never,
       });
     } catch (err) {
       if (import.meta.env.DEV) {
