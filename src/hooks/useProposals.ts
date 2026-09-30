@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import { safeFileName } from '@/lib/storagePath';
 
 export function useConsultantProposals() {
   const { isGuest } = useGuestMode();
@@ -144,7 +145,7 @@ export function useSubmitProposal() {
       // Upload attachments
       if (files && files.length > 0 && proposal) {
         for (const file of files) {
-          const storagePath = `${proposal.id}/${Date.now()}_${file.name}`;
+          const storagePath = `proposals/${proposal.id}/${Date.now()}_${safeFileName(file.name)}`;
           const { error: uploadErr } = await supabase.storage.from('proposal-documents').upload(storagePath, file);
           if (uploadErr) throw uploadErr;
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { safeFileName } from '@/lib/storagePath';
 
 export interface ChatMessage {
   id: string;
@@ -155,23 +156,22 @@ export function useChat({ sessionId, userId }: UseChatOptions) {
 
   const uploadFile = useCallback(
     async (file: File) => {
-      const path = `${userId}/${Date.now()}-${file.name}`;
+      // Storage policy: the first folder must be the session id (both participants can read and write it).
+      const path = `${sessionId}/${Date.now()}-${safeFileName(file.name)}`;
       const { data, error } = await supabase.storage
         .from('chat-files')
         .upload(path, file);
 
       if (error) {
         console.error('Upload error:', error);
+        toast.error('Could not upload the file. Please try again.');
         return null;
       }
 
-      const { data: urlData } = supabase.storage
-        .from('chat-files')
-        .getPublicUrl(data.path);
-
-      return { url: urlData.publicUrl, name: file.name };
+      // The bucket is private: store the storage path; the UI signs it for display (useChatFileUrl).
+      return { url: data.path, name: file.name };
     },
-    [userId]
+    [sessionId]
   );
 
   return { messages, isLoading, typingUsers, sendMessage, sendTyping, uploadFile };
