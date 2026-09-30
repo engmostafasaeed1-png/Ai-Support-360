@@ -6,6 +6,8 @@ import { Inbox, CheckCircle2, ExternalLink, Copy, Clock, CalendarDays } from 'lu
 import { useConsultantSharedConfigs, useAcceptRemoteConfig } from '@/hooks/useSharedRemoteConfigs';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { buildRdpFileContent, buildRemoteUri, isValidConnectionId } from '@/lib/remoteAccess';
+import { openProtocolLink } from '@/lib/safeUrl';
 
 const toolLabels: Record<string, string> = {
   anydesk: 'AnyDesk',
@@ -15,11 +17,7 @@ const toolLabels: Record<string, string> = {
   guacamole: 'Guacamole',
 };
 
-const toolProtocols: Record<string, string> = {
-  anydesk: 'anydesk:',
-  teamviewer: 'teamviewer10://control?device=',
-  rustdesk: 'rustdesk://connection/new/',
-};
+const REMOTE_SCHEMES = ['anydesk', 'teamviewer10', 'rustdesk'];
 
 export default function SharedConfigsConsultantPanel() {
   const { data: configs, isLoading } = useConsultantSharedConfigs();
@@ -29,20 +27,31 @@ export default function SharedConfigsConsultantPanel() {
   if (!configs?.length) return null;
 
   const handleConnect = (toolType: string, connectionId: string) => {
-    const protocol = toolProtocols[toolType];
-    if (protocol) {
-      window.open(`${protocol}${connectionId}`, '_blank');
-      toast.success(`Opening ${toolLabels[toolType]}...`);
-    } else if (toolType === 'rdp') {
-      const rdpContent = `full address:s:${connectionId}\nprompt for credentials:i:1`;
+    if (!isValidConnectionId(toolType, connectionId)) {
+      toast.error('This connection ID has an unexpected format, so it was not opened. Ask the client to share it again.');
+      return;
+    }
+    if (toolType === 'rdp') {
+      const rdpContent = buildRdpFileContent(connectionId);
+      if (!rdpContent) {
+        toast.error('This host address has an unexpected format, so no RDP file was created.');
+        return;
+      }
       const blob = new Blob([rdpContent], { type: 'application/x-rdp' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `connection.rdp`;
+      a.download = 'connection.rdp';
       a.click();
       URL.revokeObjectURL(url);
       toast.success('RDP file downloaded');
+      return;
+    }
+    const uri = buildRemoteUri(toolType, connectionId);
+    if (uri && openProtocolLink(uri, REMOTE_SCHEMES)) {
+      toast.success(`Opening ${toolLabels[toolType]}...`);
+    } else {
+      toast.error(`${toolLabels[toolType] || toolType} links are not supported for this connection.`);
     }
   };
 
