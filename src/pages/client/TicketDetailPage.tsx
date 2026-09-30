@@ -47,6 +47,24 @@ import TicketMeetingsList from '@/components/client/TicketMeetingsList';
 import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfactionDialog';
 import { useSatisfactionSurveys } from '@/hooks/useSatisfactionSurveys';
 import { formatDistanceToNow, format } from 'date-fns';
+import { useChatFileUrl } from '@/hooks/useChatFileUrl';
+
+function TicketFileLink({ fileUrl, fileName }: { fileUrl: string | null; fileName: string | null }) {
+  const href = useChatFileUrl(fileUrl);
+  if (!href) {
+    return (
+      <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+        <FileText className="w-3 h-3" /> {fileName || 'File'}
+      </span>
+    );
+  }
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer"
+      className="text-xs text-primary underline flex items-center gap-1 mt-0.5">
+      <FileText className="w-3 h-3" /> {fileName || 'File'}
+    </a>
+  );
+}
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -673,10 +691,7 @@ function ChatInline({ messages, isLoading }: { messages: any[]; isLoading: boole
                 </span>
               </div>
               {msg.message_type === 'file' ? (
-                <a href={msg.file_url} target="_blank" rel="noopener noreferrer"
-                  className="text-xs text-primary underline flex items-center gap-1 mt-0.5">
-                  <FileText className="w-3 h-3" /> {msg.file_name || 'File'}
-                </a>
+                <TicketFileLink fileUrl={msg.file_url ?? null} fileName={msg.file_name ?? null} />
               ) : (
                 <p className="text-sm text-muted-foreground mt-0.5">{msg.content}</p>
               )}

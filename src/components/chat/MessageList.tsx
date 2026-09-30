@@ -2,11 +2,40 @@ import { useRef, useEffect } from 'react';
 import { ChatMessage } from '@/hooks/useChat';
 import { FileText, Download } from 'lucide-react';
 import { format } from 'date-fns';
+import { useChatFileUrl } from '@/hooks/useChatFileUrl';
 
 interface MessageListProps {
   messages: ChatMessage[];
   currentUserId: string;
   participantNames: Record<string, string>;
+}
+
+function ChatFileAttachment({ msg, isMine }: { msg: ChatMessage; isMine: boolean }) {
+  const href = useChatFileUrl(msg.file_url);
+  const image = /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(msg.file_url || '');
+
+  if (!href) {
+    return <span className="text-xs opacity-70">{msg.file_name || 'Attachment'}</span>;
+  }
+
+  return image ? (
+    <img
+      src={href}
+      alt={msg.file_name || 'image'}
+      className="rounded-lg max-w-full max-h-60 object-cover mb-1"
+    />
+  ) : (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`flex items-center gap-2 ${isMine ? 'text-primary-foreground/80 hover:text-primary-foreground' : 'text-accent hover:underline'}`}
+    >
+      <FileText className="w-4 h-4 shrink-0" />
+      <span className="truncate text-xs">{msg.file_name || 'Download file'}</span>
+      <Download className="w-3.5 h-3.5 shrink-0" />
+    </a>
+  );
 }
 
 export default function MessageList({ messages, currentUserId, participantNames }: MessageListProps) {
@@ -15,8 +44,6 @@ export default function MessageList({ messages, currentUserId, participantNames 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  const isImage = (url: string) => /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(url);
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -72,24 +99,7 @@ export default function MessageList({ messages, currentUserId, participantNames 
               >
                 {msg.message_type === 'file' && msg.file_url ? (
                   <div>
-                    {isImage(msg.file_url) ? (
-                      <img
-                        src={msg.file_url}
-                        alt={msg.file_name || 'image'}
-                        className="rounded-lg max-w-full max-h-60 object-cover mb-1"
-                      />
-                    ) : (
-                      <a
-                        href={msg.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`flex items-center gap-2 ${isMine ? 'text-primary-foreground/80 hover:text-primary-foreground' : 'text-accent hover:underline'}`}
-                      >
-                        <FileText className="w-4 h-4 shrink-0" />
-                        <span className="truncate text-xs">{msg.file_name || 'Download file'}</span>
-                        <Download className="w-3.5 h-3.5 shrink-0" />
-                      </a>
-                    )}
+                    <ChatFileAttachment msg={msg} isMine={isMine} />
                     {msg.content && msg.content !== msg.file_name && (
                       <p className="mt-1">{msg.content}</p>
                     )}

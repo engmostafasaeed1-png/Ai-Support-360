@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { fireConfetti } from '@/lib/confetti';
+import { safeFileName } from '@/lib/storagePath';
 
 export interface WorkHistoryEntry {
   companyName: string;
@@ -188,11 +189,14 @@ export default function ConsultantOnboarding() {
       for (const cert of data.certifications) {
         let docUrl: string | null = null;
         if (cert.file) {
-          const filePath = `${user.id}/${Date.now()}-${cert.file.name}`;
-          const { error: uploadErr } = await supabase.storage.from('chat-files').upload(filePath, cert.file);
-          if (!uploadErr) {
-            const { data: urlData } = supabase.storage.from('chat-files').getPublicUrl(filePath);
-            docUrl = urlData.publicUrl;
+          // Private bucket; the stored value is the storage path (first folder = user id, as the storage policy requires).
+          const filePath = `${user.id}/certifications/${Date.now()}-${safeFileName(cert.file.name)}`;
+          const { error: uploadErr } = await supabase.storage.from('consultant-documents').upload(filePath, cert.file);
+          if (uploadErr) {
+            console.error('Certificate upload failed:', uploadErr);
+            toast.warning(`The file for "${cert.name}" could not be uploaded.`);
+          } else {
+            docUrl = filePath;
           }
         }
         await supabase.from('certifications').insert({
