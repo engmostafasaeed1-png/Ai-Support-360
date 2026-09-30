@@ -101,9 +101,11 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e) {
+    // Never fail loudly: error reporting must not create new errors
+    // (e.g. when the database is temporarily unreachable).
     console.error('log-error failed:', e);
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
-      status: 500,
+    return new Response(JSON.stringify({ ok: false, dropped: true }), {
+      status: 202,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
