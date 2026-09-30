@@ -1,208 +1,180 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.101.1";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.101.1/cors";
-import { z } from "https://esm.sh/zod@3.23.8";
+// AnyDesk directory API proxy.
+//
+// The AnyDesk API key belongs to the platform operator's own AnyDesk account and exposes that
+// account's whole device / session / licence inventory, so only platform administrators may use
+// it. Other signed-in users only learn that the directory is restricted.
+import { z } from 'https://esm.sh/zod@3.23.8';
+import {
+  ADMIN_ROLES,
+  adminClient,
+  authenticateUser,
+  getUserRoles,
+  hasAnyRole,
+  jsonResponse,
+  preflight,
+  withinRateLimit,
+} from '../_shared/security.ts';
+
+const ANYDESK_API_BASE = 'https://v1.api.anydesk.com';
+const ID_RE = /^[A-Za-z0-9._@-]{1,64}$/;
+const TIME_RE = /^[0-9TZ:+.-]{1,40}$/;
+const SORTS = new Set(['last-session', 'alias', 'client-id', 'online', 'version']);
+const ORDERS = new Set(['asc', 'desc']);
 
 const SetAliasSchema = z.object({
-  clientId: z.union([z.string().min(1).max(200), z.number()]),
+  clientId: z.union([z.string().regex(ID_RE), z.number().int().nonnegative()]),
   alias: z.string().max(200).optional(),
 });
 
-const ANYDESK_API_BASE = "https://v1.api.anydesk.com";
+class UpstreamError extends Error {
+  status: number;
+  constructor(status: number) {
+    super('AnyDesk request failed');
+    this.status = status;
+  }
+}
+class BadRequest extends Error {}
+
+function intParam(v: string | null, def: number, min: number, max: number): number {
+  const n = Number.parseInt(v ?? '', 10);
+  if (!Number.isFinite(n)) return def;
+  return Math.min(Math.max(n, min), max);
+}
+
+function idParam(v: string | null, name: string): string {
+  if (!v || !ID_RE.test(v)) throw new BadRequest(`${name} is missing or invalid`);
+  return v;
+}
+
+async function anydesk(path: string, apiKey: string, init: RequestInit = {}): Promise<Response> {
+  const res = await fetch(`${ANYDESK_API_BASE}${path}`, {
+    ...init,
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    redirect: 'error',
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) {
+    console.error(`AnyDesk API error [${res.status}] ${path.split('?')[0]}`);
+    throw new UpstreamError(res.status);
+  }
+  return res;
+}
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const pre = preflight(req);
+  if (pre) return pre;
 
   try {
-    // Verify user is authenticated
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const user = await authenticateUser(req);
+    if (!user) return jsonResponse(req, { error: 'Unauthorized' }, 401);
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
+    const admin = adminClient();
+    const isAdmin = hasAnyRole(await getUserRoles(admin, user.id), ADMIN_ROLES);
     const url = new URL(req.url);
-    const action = url.searchParams.get("action");
-    const ANYDESK_API_KEY = Deno.env.get("ANYDESK_API_KEY");
+    const action = url.searchParams.get('action');
+    const apiKey = Deno.env.get('ANYDESK_API_KEY');
 
-    if (action === "status") {
-      return new Response(
-        JSON.stringify({
-          configured: Boolean(ANYDESK_API_KEY),
-          missing: ANYDESK_API_KEY ? [] : ["ANYDESK_API_KEY"],
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    if (action === 'status') {
+      return jsonResponse(
+        req,
+        isAdmin
+          ? { configured: Boolean(apiKey), missing: apiKey ? [] : ['ANYDESK_API_KEY'] }
+          : { configured: false, restricted: true, missing: [] },
       );
     }
 
-    if (!ANYDESK_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "AnyDesk integration not configured" }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (!isAdmin) return jsonResponse(req, { error: 'Forbidden' }, 403);
+    if (!apiKey) return jsonResponse(req, { error: 'AnyDesk integration not configured' }, 503);
+    if (!(await withinRateLimit(admin, `anydesk:${user.id}`, 60, 60, true))) {
+      return jsonResponse(req, { error: 'Too many requests' }, 429);
     }
 
-    const headers = {
-      Authorization: `Bearer ${ANYDESK_API_KEY}`,
-      "Content-Type": "application/json",
-    };
-
-    let result;
+    let result: unknown;
 
     switch (action) {
-      case "clients": {
-        // List all registered AnyDesk clients
-        const offset = url.searchParams.get("offset") || "0";
-        const limit = url.searchParams.get("limit") || "50";
-        const sort = url.searchParams.get("sort") || "last-session";
-        const order = url.searchParams.get("order") || "desc";
-        const online = url.searchParams.get("online"); // "true" to filter online only
-
-        let endpoint = `${ANYDESK_API_BASE}/clients?offset=${offset}&limit=${limit}&sort=${sort}&order=${order}`;
-        if (online === "true") endpoint += "&online=true";
-
-        const res = await fetch(endpoint, { headers });
-        if (!res.ok) {
-          const errBody = await res.text();
-          throw new Error(`AnyDesk API error [${res.status}]: ${errBody}`);
-        }
-        result = await res.json();
+      case 'clients': {
+        const offset = intParam(url.searchParams.get('offset'), 0, 0, 100_000);
+        const limit = intParam(url.searchParams.get('limit'), 50, 1, 100);
+        const sortParam = url.searchParams.get('sort') ?? 'last-session';
+        const orderParam = url.searchParams.get('order') ?? 'desc';
+        if (!SORTS.has(sortParam) || !ORDERS.has(orderParam)) throw new BadRequest('Invalid sort or order');
+        let endpoint = `/clients?offset=${offset}&limit=${limit}&sort=${encodeURIComponent(sortParam)}&order=${orderParam}`;
+        if (url.searchParams.get('online') === 'true') endpoint += '&online=true';
+        result = await (await anydesk(endpoint, apiKey)).json();
         break;
       }
 
-      case "client-detail": {
-        // Get details for a specific client
-        const clientId = url.searchParams.get("clientId");
-        if (!clientId) throw new Error("clientId is required");
-
-        const res = await fetch(`${ANYDESK_API_BASE}/clients/${clientId}`, { headers });
-        if (!res.ok) {
-          const errBody = await res.text();
-          throw new Error(`AnyDesk API error [${res.status}]: ${errBody}`);
-        }
-        result = await res.json();
+      case 'client-detail': {
+        const clientId = idParam(url.searchParams.get('clientId'), 'clientId');
+        result = await (await anydesk(`/clients/${encodeURIComponent(clientId)}`, apiKey)).json();
         break;
       }
 
-      case "sessions": {
-        // Get session history
-        const from = url.searchParams.get("from") || "";
-        const to = url.searchParams.get("to") || "";
-        const clientId = url.searchParams.get("clientId") || "";
-        const limit = url.searchParams.get("limit") || "50";
-
-        let endpoint = `${ANYDESK_API_BASE}/sessions?limit=${limit}`;
-        if (from) endpoint += `&from=${from}`;
-        if (to) endpoint += `&to=${to}`;
-        if (clientId) endpoint += `&cid=${clientId}`;
-
-        const res = await fetch(endpoint, { headers });
-        if (!res.ok) {
-          const errBody = await res.text();
-          throw new Error(`AnyDesk API error [${res.status}]: ${errBody}`);
-        }
-        result = await res.json();
+      case 'sessions': {
+        const limit = intParam(url.searchParams.get('limit'), 50, 1, 100);
+        const from = url.searchParams.get('from') ?? '';
+        const to = url.searchParams.get('to') ?? '';
+        const clientId = url.searchParams.get('clientId') ?? '';
+        if ((from && !TIME_RE.test(from)) || (to && !TIME_RE.test(to))) throw new BadRequest('Invalid time range');
+        if (clientId && !ID_RE.test(clientId)) throw new BadRequest('clientId is invalid');
+        let endpoint = `/sessions?limit=${limit}`;
+        if (from) endpoint += `&from=${encodeURIComponent(from)}`;
+        if (to) endpoint += `&to=${encodeURIComponent(to)}`;
+        if (clientId) endpoint += `&cid=${encodeURIComponent(clientId)}`;
+        result = await (await anydesk(endpoint, apiKey)).json();
         break;
       }
 
-      case "session-detail": {
-        // Get detail for specific session
-        const sessionId = url.searchParams.get("sessionId");
-        if (!sessionId) throw new Error("sessionId is required");
-
-        const res = await fetch(`${ANYDESK_API_BASE}/sessions/${sessionId}`, { headers });
-        if (!res.ok) {
-          const errBody = await res.text();
-          throw new Error(`AnyDesk API error [${res.status}]: ${errBody}`);
-        }
-        result = await res.json();
+      case 'session-detail': {
+        const sessionId = idParam(url.searchParams.get('sessionId'), 'sessionId');
+        result = await (await anydesk(`/sessions/${encodeURIComponent(sessionId)}`, apiKey)).json();
         break;
       }
 
-      case "set-alias": {
-        // Set alias for a client
-        if (req.method !== "POST") throw new Error("POST required");
+      case 'set-alias': {
+        if (req.method !== 'POST') throw new BadRequest('POST required');
         const parsed = SetAliasSchema.safeParse(await req.json());
-        if (!parsed.success) {
-          return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
-            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
+        if (!parsed.success) return jsonResponse(req, { error: parsed.error.flatten().fieldErrors }, 400);
         const { clientId, alias } = parsed.data;
-
-        const res = await fetch(`${ANYDESK_API_BASE}/clients/${clientId}`, {
-          method: "PATCH",
-          headers,
-          body: JSON.stringify({ alias: alias || "" }),
+        await anydesk(`/clients/${encodeURIComponent(String(clientId))}`, apiKey, {
+          method: 'PATCH',
+          body: JSON.stringify({ alias: alias || '' }),
         });
-        if (!res.ok) {
-          const errBody = await res.text();
-          throw new Error(`AnyDesk API error [${res.status}]: ${errBody}`);
-        }
         result = { success: true };
         break;
       }
 
-      case "connection-link": {
-        // Generate AnyDesk connection URI
-        const clientId = url.searchParams.get("clientId");
-        if (!clientId) throw new Error("clientId is required");
+      case 'connection-link': {
+        const clientId = idParam(url.searchParams.get('clientId'), 'clientId');
         result = {
           uri: `anydesk:${clientId}`,
           clientId,
-          instructions: "Click the link or paste the AnyDesk ID into your AnyDesk app to connect.",
+          instructions: 'Click the link or paste the AnyDesk ID into your AnyDesk app to connect.',
         };
         break;
       }
 
-      case "license": {
-        // Get license info
-        const res = await fetch(`${ANYDESK_API_BASE}/license`, { headers });
-        if (!res.ok) {
-          const errBody = await res.text();
-          throw new Error(`AnyDesk API error [${res.status}]: ${errBody}`);
-        }
-        result = await res.json();
+      case 'license': {
+        result = await (await anydesk('/license', apiKey)).json();
         break;
       }
 
       default:
-        return new Response(
-          JSON.stringify({
-            error: "Invalid action",
-            validActions: ["status", "clients", "client-detail", "sessions", "session-detail", "set-alias", "connection-link", "license"],
-          }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        return jsonResponse(
+          req,
+          {
+            error: 'Invalid action',
+            validActions: ['status', 'clients', 'client-detail', 'sessions', 'session-detail', 'set-alias', 'connection-link', 'license'],
+          },
+          400,
         );
     }
 
-    return new Response(JSON.stringify(result), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(req, result);
   } catch (error: unknown) {
-    console.error("AnyDesk API error:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    if (error instanceof BadRequest) return jsonResponse(req, { error: error.message }, 400);
+    if (error instanceof UpstreamError) return jsonResponse(req, { error: 'AnyDesk request failed' }, 502);
+    console.error('anydesk-api error:', error instanceof Error ? error.message : String(error));
+    return jsonResponse(req, { error: 'Internal error' }, 500);
   }
 });

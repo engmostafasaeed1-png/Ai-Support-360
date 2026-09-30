@@ -1,135 +1,109 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { z } from "https://esm.sh/zod@3.23.8";
+// Outbound / on-demand sync with helpdesk platforms (Zendesk, Freshdesk, Jira, ServiceNow).
+//
+// Security model
+//  * caller must be the integration owner (or an admin);
+//  * the platform URL is validated (https, platform host allow-list, no IP literals, no private DNS
+//    results) BEFORE any request carrying the customer's credentials is made, and redirects are refused;
+//  * authoritative fields (platform_url, api_key) can never be overridden by the free-form settings JSON;
+//  * every value interpolated into a URL path / JQL is validated or encoded;
+//  * upstream error bodies are logged server-side only.
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { z } from 'https://esm.sh/zod@3.23.8';
+import { authenticateUser, corsHeaders, jsonResponse, preflight, withinRateLimit } from '../_shared/security.ts';
+import { decryptSecret } from '../_shared/credentials-crypto.ts';
+import { assertJiraProjectKey, assertSafeOutboundUrl, pathSegment } from '../_shared/ssrf.ts';
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+const EXTERNAL_ID_RE = /^[A-Za-z0-9._:-]{1,200}$/;
+const LOCAL_STATUSES = new Set(['new', 'in_progress', 'waiting_for_client', 'resolved', 'closed']);
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const SyncRequestSchema = z.object({
   integration_id: z.string().uuid(),
-  action: z.enum(["sync_tickets", "push_update", "webhook_inbound"]),
+  action: z.enum(['sync_tickets', 'push_update', 'webhook_inbound']),
   payload: z.unknown().optional(),
 });
 
-const ALLOWED_ORIGINS = [
-  'https://smartsapsupport.qurtubatalks.com',
-  'https://www.qurtubatalks.com',
-  'http://localhost:8080',
-  'http://localhost:5173',
-];
+// Only these keys of integrations.settings are honoured, and they can never replace platform_url / api_key.
+const ALLOWED_SETTINGS = ['email', 'project_key', 'password', 'password_ciphertext'] as const;
 
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get('Origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-    'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin',
-  };
+type Config = { platform_url: string; api_key: string; email?: string; project_key?: string; password?: string };
+
+async function upstream(url: string, init: RequestInit): Promise<Response> {
+  return await fetch(url, { ...init, redirect: 'error', signal: AbortSignal.timeout(20_000) });
 }
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-// AES-GCM decrypt helper for *_ciphertext columns. Mirrors credentials-decrypt.
-async function getCredKey(): Promise<CryptoKey> {
-  const raw = Deno.env.get("CREDENTIALS_ENCRYPTION_KEY");
-  if (!raw) throw new Error("CREDENTIALS_ENCRYPTION_KEY not configured");
-  const hashed = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
-  return crypto.subtle.importKey("raw", hashed, "AES-GCM", false, ["encrypt", "decrypt"]);
-}
-function b64ToBytesSync(b64: string): Uint8Array {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-async function decryptCiphertext(b64: string | null | undefined): Promise<string> {
-  if (!b64) return "";
-  const key = await getCredKey();
-  const buf = b64ToBytesSync(b64);
-  const iv = buf.slice(0, 12);
-  const cipher = buf.slice(12);
-  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher);
-  return new TextDecoder().decode(plain);
+function basic(user: string, secret: string): string {
+  return `Basic ${btoa(`${user}:${secret}`)}`;
 }
 
-interface SyncRequest {
-  integration_id: string;
-  action: "sync_tickets" | "push_update" | "webhook_inbound";
-  payload?: Record<string, unknown>;
-}
-
-// Platform-specific API adapters
 const platformAdapters: Record<string, {
-  fetchTickets: (config: Record<string, string>) => Promise<unknown[]>;
-  pushUpdate: (config: Record<string, string>, ticket: Record<string, unknown>) => Promise<unknown>;
+  fetchTickets: (config: Config) => Promise<unknown[]>;
+  pushUpdate: (config: Config, ticket: Record<string, unknown>) => Promise<unknown>;
   mapInbound: (externalTicket: Record<string, unknown>) => Record<string, unknown>;
   mapOutbound: (localTicket: Record<string, unknown>) => Record<string, unknown>;
 }> = {
   zendesk: {
     async fetchTickets(config) {
-      const resp = await fetch(`${config.platform_url}/api/v2/tickets.json?sort_by=updated_at&sort_order=desc&per_page=50`, {
-        headers: {
-          "Authorization": `Basic ${btoa(`${config.email}/token:${config.api_key}`)}`,
-          "Content-Type": "application/json",
-        },
+      const resp = await upstream(`${config.platform_url}/api/v2/tickets.json?sort_by=updated_at&sort_order=desc&per_page=50`, {
+        headers: { Authorization: basic(`${config.email}/token`, config.api_key), 'Content-Type': 'application/json' },
       });
       if (!resp.ok) throw new Error(`Zendesk API error: ${resp.status}`);
       const data = await resp.json();
       return data.tickets || [];
     },
     async pushUpdate(config, ticket) {
-      const resp = await fetch(`${config.platform_url}/api/v2/tickets/${ticket.external_id}.json`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Basic ${btoa(`${config.email}/token:${config.api_key}`)}`,
-          "Content-Type": "application/json",
-        },
+      const resp = await upstream(`${config.platform_url}/api/v2/tickets/${pathSegment(ticket.external_id)}.json`, {
+        method: 'PUT',
+        headers: { Authorization: basic(`${config.email}/token`, config.api_key), 'Content-Type': 'application/json' },
         body: JSON.stringify({ ticket: { status: ticket.status, comment: { body: ticket.comment } } }),
       });
       if (!resp.ok) throw new Error(`Zendesk push error: ${resp.status}`);
       return resp.json();
     },
     mapInbound(ext) {
-      const statusMap: Record<string, string> = { new: "new", open: "in_progress", pending: "waiting_for_client", solved: "resolved", closed: "closed" };
-      const urgencyMap: Record<string, string> = { low: "low", normal: "medium", high: "high", urgent: "critical" };
+      const statusMap: Record<string, string> = { new: 'new', open: 'in_progress', pending: 'waiting_for_client', solved: 'resolved', closed: 'closed' };
+      const urgencyMap: Record<string, string> = { low: 'low', normal: 'medium', high: 'high', urgent: 'critical' };
       return {
         title: ext.subject,
         description: ext.description,
-        status: statusMap[ext.status as string] || "new",
-        urgency: urgencyMap[ext.priority as string] || "medium",
+        status: statusMap[ext.status as string] || 'new',
+        urgency: urgencyMap[ext.priority as string] || 'medium',
         external_id: String(ext.id),
       };
     },
     mapOutbound(local) {
-      const statusMap: Record<string, string> = { new: "new", in_progress: "open", waiting_for_client: "pending", resolved: "solved", closed: "closed" };
-      return { status: statusMap[local.status as string] || "open", comment: `Updated from Qurtuba: ${local.title}` };
+      const statusMap: Record<string, string> = { new: 'new', in_progress: 'open', waiting_for_client: 'pending', resolved: 'solved', closed: 'closed' };
+      return { status: statusMap[local.status as string] || 'open', comment: `Updated from Qurtuba: ${local.title}` };
     },
   },
   freshdesk: {
     async fetchTickets(config) {
-      const resp = await fetch(`${config.platform_url}/api/v2/tickets?order_by=updated_at&order_type=desc&per_page=50`, {
-        headers: { "Authorization": `Basic ${btoa(`${config.api_key}:X`)}`, "Content-Type": "application/json" },
+      const resp = await upstream(`${config.platform_url}/api/v2/tickets?order_by=updated_at&order_type=desc&per_page=50`, {
+        headers: { Authorization: basic(config.api_key, 'X'), 'Content-Type': 'application/json' },
       });
       if (!resp.ok) throw new Error(`Freshdesk API error: ${resp.status}`);
-      return resp.json();
+      return await resp.json();
     },
     async pushUpdate(config, ticket) {
-      const resp = await fetch(`${config.platform_url}/api/v2/tickets/${ticket.external_id}`, {
-        method: "PUT",
-        headers: { "Authorization": `Basic ${btoa(`${config.api_key}:X`)}`, "Content-Type": "application/json" },
+      const resp = await upstream(`${config.platform_url}/api/v2/tickets/${pathSegment(ticket.external_id)}`, {
+        method: 'PUT',
+        headers: { Authorization: basic(config.api_key, 'X'), 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: ticket.status }),
       });
       if (!resp.ok) throw new Error(`Freshdesk push error: ${resp.status}`);
       return resp.json();
     },
     mapInbound(ext) {
-      const statusMap: Record<number, string> = { 2: "new", 3: "waiting_for_client", 4: "resolved", 5: "closed" };
-      const urgencyMap: Record<number, string> = { 1: "low", 2: "medium", 3: "high", 4: "critical" };
+      const statusMap: Record<number, string> = { 2: 'new', 3: 'waiting_for_client', 4: 'resolved', 5: 'closed' };
+      const urgencyMap: Record<number, string> = { 1: 'low', 2: 'medium', 3: 'high', 4: 'critical' };
       return {
         title: ext.subject,
         description: ext.description_text,
-        status: statusMap[ext.status as number] || "new",
-        urgency: urgencyMap[ext.priority as number] || "medium",
+        status: statusMap[ext.status as number] || 'new',
+        urgency: urgencyMap[ext.priority as number] || 'medium',
         external_id: String(ext.id),
       };
     },
@@ -140,38 +114,33 @@ const platformAdapters: Record<string, {
   },
   jira: {
     async fetchTickets(config) {
-      const jql = encodeURIComponent(`project=${config.project_key} ORDER BY updated DESC`);
-      const resp = await fetch(`${config.platform_url}/rest/api/3/search?jql=${jql}&maxResults=50`, {
-        headers: {
-          "Authorization": `Basic ${btoa(`${config.email}:${config.api_key}`)}`,
-          "Content-Type": "application/json",
-        },
+      const projectKey = assertJiraProjectKey(config.project_key);
+      const jql = encodeURIComponent(`project=${projectKey} ORDER BY updated DESC`);
+      const resp = await upstream(`${config.platform_url}/rest/api/3/search?jql=${jql}&maxResults=50`, {
+        headers: { Authorization: basic(String(config.email), config.api_key), 'Content-Type': 'application/json' },
       });
       if (!resp.ok) throw new Error(`Jira API error: ${resp.status}`);
       const data = await resp.json();
       return data.issues || [];
     },
     async pushUpdate(config, ticket) {
-      const resp = await fetch(`${config.platform_url}/rest/api/3/issue/${ticket.external_id}`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Basic ${btoa(`${config.email}:${config.api_key}`)}`,
-          "Content-Type": "application/json",
-        },
+      const resp = await upstream(`${config.platform_url}/rest/api/3/issue/${pathSegment(ticket.external_id)}`, {
+        method: 'PUT',
+        headers: { Authorization: basic(String(config.email), config.api_key), 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields: { summary: ticket.title } }),
       });
       if (!resp.ok) throw new Error(`Jira push error: ${resp.status}`);
       return { success: true };
     },
     mapInbound(ext) {
-      const fields = ext.fields as Record<string, unknown>;
-      const priority = (fields?.priority as Record<string, string>)?.name?.toLowerCase() || "medium";
-      const urgencyMap: Record<string, string> = { lowest: "low", low: "low", medium: "medium", high: "high", highest: "critical" };
+      const fields = (ext.fields ?? {}) as Record<string, unknown>;
+      const priority = ((fields.priority as Record<string, string>)?.name ?? 'medium').toLowerCase();
+      const urgencyMap: Record<string, string> = { lowest: 'low', low: 'low', medium: 'medium', high: 'high', highest: 'critical' };
       return {
-        title: fields?.summary || ext.key,
-        description: typeof fields?.description === "string" ? fields.description : "",
-        status: "new",
-        urgency: urgencyMap[priority] || "medium",
+        title: fields.summary || ext.key,
+        description: typeof fields.description === 'string' ? fields.description : '',
+        status: 'new',
+        urgency: urgencyMap[priority] || 'medium',
         external_id: ext.key as string,
       };
     },
@@ -181,219 +150,196 @@ const platformAdapters: Record<string, {
   },
   servicenow: {
     async fetchTickets(config) {
-      const resp = await fetch(`${config.platform_url}/api/now/table/incident?sysparm_limit=50&sysparm_order_by=sys_updated_on desc`, {
-        headers: {
-          "Authorization": `Basic ${btoa(`${config.api_key}:${config.password}`)}`,
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
+      const resp = await upstream(`${config.platform_url}/api/now/table/incident?sysparm_limit=50&sysparm_order_by=sys_updated_on%20desc`, {
+        headers: { Authorization: basic(config.api_key, String(config.password ?? '')), 'Content-Type': 'application/json', Accept: 'application/json' },
       });
       if (!resp.ok) throw new Error(`ServiceNow API error: ${resp.status}`);
       const data = await resp.json();
       return data.result || [];
     },
     async pushUpdate(config, ticket) {
-      const resp = await fetch(`${config.platform_url}/api/now/table/incident/${ticket.external_id}`, {
-        method: "PATCH",
-        headers: {
-          "Authorization": `Basic ${btoa(`${config.api_key}:${config.password}`)}`,
-          "Content-Type": "application/json",
-        },
+      const resp = await upstream(`${config.platform_url}/api/now/table/incident/${pathSegment(ticket.external_id)}`, {
+        method: 'PATCH',
+        headers: { Authorization: basic(config.api_key, String(config.password ?? '')), 'Content-Type': 'application/json' },
         body: JSON.stringify({ short_description: ticket.title, state: ticket.status }),
       });
       if (!resp.ok) throw new Error(`ServiceNow push error: ${resp.status}`);
       return resp.json();
     },
     mapInbound(ext) {
-      const stateMap: Record<string, string> = { "1": "new", "2": "in_progress", "3": "waiting_for_client", "6": "resolved", "7": "closed" };
-      const urgencyMap: Record<string, string> = { "1": "critical", "2": "high", "3": "medium", "4": "low" };
+      const stateMap: Record<string, string> = { '1': 'new', '2': 'in_progress', '3': 'waiting_for_client', '6': 'resolved', '7': 'closed' };
+      const urgencyMap: Record<string, string> = { '1': 'critical', '2': 'high', '3': 'medium', '4': 'low' };
       return {
         title: ext.short_description,
         description: ext.description,
-        status: stateMap[ext.state as string] || "new",
-        urgency: urgencyMap[ext.urgency as string] || "medium",
+        status: stateMap[ext.state as string] || 'new',
+        urgency: urgencyMap[ext.urgency as string] || 'medium',
         external_id: ext.sys_id as string,
       };
     },
     mapOutbound(local) {
-      const stateMap: Record<string, string> = { new: "1", in_progress: "2", waiting_for_client: "3", resolved: "6", closed: "7" };
-      return { state: stateMap[local.status as string] || "1", short_description: local.title };
+      const stateMap: Record<string, string> = { new: '1', in_progress: '2', waiting_for_client: '3', resolved: '6', closed: '7' };
+      return { state: stateMap[local.status as string] || '1', short_description: local.title };
     },
   },
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: getCorsHeaders(req) });
-  }
+  const pre = preflight(req);
+  if (pre) return pre;
+  if (req.method !== 'POST') return jsonResponse(req, { error: 'Method not allowed' }, 405);
 
   try {
-    // Require authenticated user
-    const authHeader = req.headers.get("Authorization") || "";
-    if (!authHeader.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
-    const token = authHeader.slice(7);
-    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-    });
-    const { data: userData, error: authError } = await supabaseAuth.auth.getUser(token);
-    if (authError || !userData?.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
-    const authUserId = userData.user.id;
+    const user = await authenticateUser(req);
+    if (!user) return jsonResponse(req, { error: 'Unauthorized' }, 401);
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+    if (!(await withinRateLimit(supabase, `integration-sync:${user.id}`, 30, 60, true))) {
+      return jsonResponse(req, { error: 'Too many requests' }, 429);
+    }
+
     const parsedBody = SyncRequestSchema.safeParse(await req.json());
-    if (!parsedBody.success) {
-      return new Response(JSON.stringify({ error: parsedBody.error.flatten().fieldErrors }), {
-        status: 400,
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
-    const body = parsedBody.data as SyncRequest;
+    if (!parsedBody.success) return jsonResponse(req, { error: parsedBody.error.flatten().fieldErrors }, 400);
+    const body = parsedBody.data;
 
-    // Fetch integration config
     const { data: integration, error: intError } = await supabase
-      .from("integrations")
-      .select("*")
-      .eq("id", body.integration_id)
-      .single();
-
-    if (intError || !integration) {
-      return new Response(JSON.stringify({ error: "Integration not found" }), {
-        status: 404,
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
-
-    // Verify the authenticated user owns this integration (or is an admin)
-    const { data: isAdmin } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", authUserId)
-      .eq("role", "admin")
+      .from('integrations')
+      .select('id, platform, platform_url, client_id, status, settings, api_key_ciphertext, api_key_encrypted')
+      .eq('id', body.integration_id)
       .maybeSingle();
+    if (intError || !integration) return jsonResponse(req, { error: 'Integration not found' }, 404);
 
-    if (integration.client_id !== authUserId && !isAdmin) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403,
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-      });
+    // The caller must own this integration (or be an admin).
+    if (integration.client_id !== user.id) {
+      const { data: adminRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .in('role', ['admin', 'super_admin'])
+        .limit(1)
+        .maybeSingle();
+      if (!adminRole) return jsonResponse(req, { error: 'Forbidden' }, 403);
     }
+    if (integration.status === 'inactive') return jsonResponse(req, { error: 'Integration is disabled' }, 409);
 
     const adapter = platformAdapters[integration.platform];
-    if (!adapter) {
-      return new Response(JSON.stringify({ error: `Unsupported platform: ${integration.platform}` }), {
-        status: 400,
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-      });
+    if (!adapter) return jsonResponse(req, { error: 'Unsupported platform' }, 400);
+
+    // Validate the outbound URL before any credential leaves the platform.
+    let baseUrl: string;
+    try {
+      const u = await assertSafeOutboundUrl(String(integration.platform_url), integration.platform);
+      baseUrl = u.origin + u.pathname.replace(/\/+$/, '');
+    } catch (e) {
+      return jsonResponse(req, { error: e instanceof Error ? e.message : 'Invalid platform URL' }, 400);
     }
 
-    // Decrypt API key from the new ciphertext column; fall back to the legacy
-    // plaintext column for records written before encryption was enabled.
-    let apiKey = "";
-    if ((integration as any).api_key_ciphertext) {
-      apiKey = await decryptCiphertext((integration as any).api_key_ciphertext);
-    } else if ((integration as any).api_key_encrypted) {
-      apiKey = (integration as any).api_key_encrypted;
+    // Credentials: prefer the encrypted column; the legacy plaintext column is only a fallback.
+    let apiKey = '';
+    if (integration.api_key_ciphertext) {
+      apiKey = await decryptSecret(integration.api_key_ciphertext);
+    } else if (integration.api_key_encrypted && integration.api_key_encrypted !== 'ENCRYPTED') {
+      apiKey = integration.api_key_encrypted;
     }
 
-    const config = {
-      platform_url: integration.platform_url,
-      api_key: apiKey,
-      ...((integration.settings as Record<string, string>) || {}),
-    };
+    // Free-form settings first (whitelisted keys only), authoritative fields last.
+    const rawSettings = (integration.settings && typeof integration.settings === 'object' ? integration.settings : {}) as Record<string, unknown>;
+    const settings: Record<string, string> = {};
+    for (const key of ALLOWED_SETTINGS) {
+      if (typeof rawSettings[key] === 'string') settings[key] = rawSettings[key] as string;
+    }
+    if (settings.password_ciphertext) {
+      settings.password = await decryptSecret(settings.password_ciphertext);
+      delete settings.password_ciphertext;
+    }
+    const config: Config = { ...settings, platform_url: baseUrl, api_key: apiKey };
 
     let result: unknown;
 
-    if (body.action === "sync_tickets") {
-      // Fetch external tickets and sync inbound
+    if (body.action === 'sync_tickets') {
       const externalTickets = await adapter.fetchTickets(config);
       const synced: unknown[] = [];
 
       for (const ext of externalTickets as Record<string, unknown>[]) {
         const mapped = adapter.mapInbound(ext);
-        
-        // Check if already synced
+        const externalId = String(mapped.external_id ?? '');
+        if (!EXTERNAL_ID_RE.test(externalId)) continue;
+
         const { data: existing } = await supabase
-          .from("integration_sync_log")
-          .select("local_ticket_id")
-          .eq("integration_id", integration.id)
-          .eq("external_ticket_id", mapped.external_id as string)
-          .order("created_at", { ascending: false })
+          .from('integration_sync_log')
+          .select('local_ticket_id')
+          .eq('integration_id', integration.id)
+          .eq('external_ticket_id', externalId)
+          .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        // Log the sync attempt
-        await supabase.from("integration_sync_log").insert({
+        await supabase.from('integration_sync_log').insert({
           integration_id: integration.id,
-          direction: "inbound",
-          entity_type: "ticket",
-          external_ticket_id: mapped.external_id as string,
+          direction: 'inbound',
+          entity_type: 'ticket',
+          external_ticket_id: externalId,
           local_ticket_id: existing?.local_ticket_id || null,
-          action: existing ? "ticket_updated" : "ticket_created",
-          status: "success",
+          action: existing ? 'ticket_updated' : 'ticket_created',
+          status: 'success',
           payload: mapped,
         });
-
         synced.push(mapped);
       }
 
-      // Update last synced
-      await supabase.from("integrations").update({ last_synced_at: new Date().toISOString() }).eq("id", integration.id);
-
+      await supabase.from('integrations').update({ last_synced_at: new Date().toISOString() }).eq('id', integration.id);
       result = { synced: synced.length, tickets: synced };
-    } else if (body.action === "push_update") {
-      const ticket = body.payload as Record<string, unknown>;
-      const mapped = adapter.mapOutbound(ticket);
-      await adapter.pushUpdate(config, { ...mapped, external_id: ticket.external_id, title: ticket.title });
+    } else if (body.action === 'push_update') {
+      const ticket = (body.payload && typeof body.payload === 'object' ? body.payload : {}) as Record<string, unknown>;
+      const externalId = String(ticket.external_id ?? '');
+      if (!EXTERNAL_ID_RE.test(externalId)) return jsonResponse(req, { error: 'payload.external_id is invalid' }, 400);
+      const title = String(ticket.title ?? '').slice(0, 500);
+      const status = LOCAL_STATUSES.has(String(ticket.status)) ? String(ticket.status) : 'in_progress';
+      const localId = typeof ticket.id === 'string' && UUID_RE.test(ticket.id) ? ticket.id : null;
 
-      await supabase.from("integration_sync_log").insert({
+      // A local ticket reference must belong to the integration owner.
+      if (localId) {
+        const { data: owned } = await supabase.from('tickets').select('id').eq('id', localId).eq('client_id', integration.client_id).maybeSingle();
+        if (!owned) return jsonResponse(req, { error: 'Ticket not found' }, 404);
+      }
+
+      const mapped = adapter.mapOutbound({ title, status });
+      await adapter.pushUpdate(config, { ...mapped, external_id: externalId, title });
+
+      await supabase.from('integration_sync_log').insert({
         integration_id: integration.id,
-        direction: "outbound",
-        entity_type: "ticket",
-        external_ticket_id: ticket.external_id as string,
-        local_ticket_id: ticket.id as string,
-        action: "status_updated",
-        status: "success",
+        direction: 'outbound',
+        entity_type: 'ticket',
+        external_ticket_id: externalId,
+        local_ticket_id: localId,
+        action: 'status_updated',
+        status: 'success',
         payload: mapped,
       });
-
       result = { success: true };
-    } else if (body.action === "webhook_inbound") {
-      // Handle incoming webhook from external platform
-      const mapped = adapter.mapInbound(body.payload as Record<string, unknown>);
-
-      await supabase.from("integration_sync_log").insert({
+    } else {
+      // webhook_inbound (authenticated relay): validate and log only.
+      const mapped = adapter.mapInbound((body.payload && typeof body.payload === 'object' ? body.payload : {}) as Record<string, unknown>);
+      const externalId = String(mapped.external_id ?? '');
+      if (!EXTERNAL_ID_RE.test(externalId)) return jsonResponse(req, { error: 'Could not extract a valid ticket id' }, 400);
+      await supabase.from('integration_sync_log').insert({
         integration_id: integration.id,
-        direction: "inbound",
-        entity_type: "ticket",
-        external_ticket_id: mapped.external_id as string,
-        action: "webhook_received",
-        status: "success",
+        direction: 'inbound',
+        entity_type: 'ticket',
+        external_ticket_id: externalId,
+        action: 'webhook_received',
+        status: 'success',
         payload: mapped,
       });
-
       result = { received: true, mapped };
     }
 
     return new Response(JSON.stringify(result), {
       status: 200,
-      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    console.error("Sync error:", err);
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }), {
-      status: 500,
-      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-    });
+    console.error('Sync error:', err instanceof Error ? err.message : String(err));
+    return jsonResponse(req, { error: 'Sync failed. Check the integration settings and try again.' }, 500);
   }
 });
