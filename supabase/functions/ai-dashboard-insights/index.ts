@@ -1,19 +1,15 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://esm.sh/zod@3.23.8";
+import { corsHeaders as sharedCorsHeaders, adminClient, withinRateLimit } from "../_shared/security.ts";
 
 const BodySchema = z.object({
   role: z.enum(["admin", "client", "consultant"]).optional(),
   metrics: z.record(z.string(), z.unknown()),
 });
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
-
 serve(async (req) => {
+  const corsHeaders = sharedCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -38,6 +34,12 @@ serve(async (req) => {
       });
     }
 
+    if (!(await withinRateLimit(adminClient(), `ai-dashboard-insights:${authUser.id}`, 10, 60, true))) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait before sending more requests." }), {
+        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" },
+      });
+    }
+
     const parsed = BodySchema.safeParse(await req.json());
     if (!parsed.success) {
       return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
@@ -45,6 +47,11 @@ serve(async (req) => {
       });
     }
     const { role, metrics } = parsed.data;
+    if (JSON.stringify(metrics).length > 20_000) {
+      return new Response(JSON.stringify({ error: "Metrics payload too large" }), {
+        status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -104,7 +111,7 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("insights error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: "Request failed. Please try again." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
