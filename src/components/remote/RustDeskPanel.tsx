@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { buildRemoteUri, connectionIdHint, isValidConnectionId, normalizeConnectionId } from '@/lib/remoteAccess';
+import { openProtocolLink } from '@/lib/safeUrl';
 import { Monitor, Copy, ExternalLink, Plus, Trash2, Pencil, Server, Settings, Share2 } from 'lucide-react';
 
 interface RustDeskHost {
@@ -24,11 +26,16 @@ export default function RustDeskPanel({ onShare }: { onShare?: () => void }) {
 
   const handleSave = () => {
     if (!alias || !rdId) return;
+    if (!isValidConnectionId('rustdesk', rdId)) {
+      toast.error(connectionIdHint('rustdesk'));
+      return;
+    }
+    const cleanId = normalizeConnectionId('rustdesk', rdId);
     if (editHost) {
-      setHosts(prev => prev.map(h => h.id === editHost.id ? { ...h, alias, rustDeskId: rdId, relayServer: relay || undefined } : h));
+      setHosts(prev => prev.map(h => h.id === editHost.id ? { ...h, alias, rustDeskId: cleanId, relayServer: relay || undefined } : h));
       toast.success('Host updated');
     } else {
-      setHosts(prev => [...prev, { id: crypto.randomUUID(), alias, rustDeskId: rdId, relayServer: relay || undefined }]);
+      setHosts(prev => [...prev, { id: crypto.randomUUID(), alias, rustDeskId: cleanId, relayServer: relay || undefined }]);
       toast.success('Host added');
     }
     setAddOpen(false);
@@ -39,7 +46,11 @@ export default function RustDeskPanel({ onShare }: { onShare?: () => void }) {
   };
 
   const handleConnect = (id: string) => {
-    window.open(`rustdesk://connection/new/${id}`, '_blank');
+    const uri = buildRemoteUri('rustdesk', id);
+    if (!uri || !openProtocolLink(uri, ['rustdesk'])) {
+      toast.error('Invalid RustDesk ID');
+      return;
+    }
     toast.success('Opening RustDesk...');
   };
 
@@ -130,11 +141,12 @@ export default function RustDeskPanel({ onShare }: { onShare?: () => void }) {
             <div className="space-y-3">
               <Input value={alias} onChange={e => setAlias(e.target.value)} placeholder="Host name (e.g. SAP Dev Server)" />
               <Input value={rdId} onChange={e => setRdId(e.target.value)} placeholder="RustDesk ID (e.g. 123456789)" />
+              {rdId && !isValidConnectionId('rustdesk', rdId) && <p className="text-[10px] text-destructive">{connectionIdHint('rustdesk')}</p>}
               <Input value={relay} onChange={e => setRelay(e.target.value)} placeholder="Relay server (optional)" />
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => { setAddOpen(false); setEditHost(null); }}>Cancel</Button>
-              <Button onClick={handleSave} disabled={!alias || !rdId} className="gradient-primary border-0">Save</Button>
+              <Button onClick={handleSave} disabled={!alias || !rdId || !isValidConnectionId('rustdesk', rdId)} className="gradient-primary border-0">Save</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
