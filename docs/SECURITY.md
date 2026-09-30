@@ -48,7 +48,7 @@ Notes:
 ## 5. Manual settings outside the code base
 
 1. Supabase, Authentication, Password: minimum length 12, require upper/lower/digit/symbol, enable leaked-password protection.
-2. Supabase, Authentication, Email: set the OTP / link expiry to 1 hour or less (the project currently reports 24 hours).
+2. Supabase, Authentication, Email: set the OTP / link expiry to 1 hour or less (the in-app expiry endpoint falls back to 24 hours when it cannot read the setting, so check the real value in the dashboard).
 3. Supabase, Storage: keep `chat-files`, `nda-documents`, `ticket-documents`, `dispute-evidence`, `proposal-documents` and `business-process-docs` private.
 4. Enable multi-factor authentication for every admin and super-admin account.
 5. Review admin roles regularly: `select * from public.user_roles where role in ('admin','super_admin');`
@@ -68,6 +68,7 @@ select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
 where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity;
 ```
 
+- Database regression suite: run `docs/security-regression.sql` in the Supabase SQL editor. It creates synthetic users and rows inside one transaction, exercises the guards and the main workflows as anon / authenticated / service_role, and always ends with an error so that everything is rolled back; the error text lists the results and any line containing `(BAD)` or `ERROR` is a regression. Run it after every migration that touches policies, triggers or grants.
 - Front-end unit tests: `npx vitest run src/lib`.
 - Smoke test after every publish: sign up as a client and as a consultant, submit the landing-page demo wizard while signed out, open Remote access as a consultant, run an AI triage chat.
 
