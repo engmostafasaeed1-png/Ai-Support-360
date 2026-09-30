@@ -6,6 +6,7 @@ const FUNCTION_NAME = 'anydesk-api';
 type AnyDeskStatus = {
   configured: boolean;
   missing?: string[];
+  restricted?: boolean;
 };
 
 export type AnyDeskClient = {
