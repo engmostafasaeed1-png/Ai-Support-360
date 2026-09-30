@@ -1,29 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://esm.sh/zod@3.23.8";
+import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit } from "../_shared/security.ts";
 
 const BodySchema = z.object({
-  frames: z.array(z.string().min(1)).min(1).max(20),
+  frames: z.array(
+    z.string().max(400_000).regex(/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/),
+  ).min(1).max(20),
 });
-
-const ALLOWED_ORIGINS = [
-  'https://smartsapsupport.qurtubatalks.com',
-  'https://www.qurtubatalks.com',
-  'http://localhost:8080',
-  'http://localhost:5173',
-];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get('Origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-    'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin',
-  };
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
@@ -47,6 +31,12 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Invalid or expired session' }), {
         status: 401,
         headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!(await withinRateLimit(adminClient(), `ai-body-language:${authUser.id}`, 10, 60, true))) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait before sending more requests." }), {
+        status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json", "Retry-After": "60" },
       });
     }
 
@@ -141,7 +131,7 @@ Return ONLY valid JSON:
     });
   } catch (e) {
     console.error("Error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: "Request failed. Please try again." }), {
       status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
