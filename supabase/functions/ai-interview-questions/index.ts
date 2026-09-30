@@ -1,27 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://esm.sh/zod@3.23.8";
+import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit } from "../_shared/security.ts";
 
 const BodySchema = z.object({ interview_id: z.string().uuid() });
-
-const ALLOWED_ORIGINS = [
-  'https://smartsapsupport.qurtubatalks.com',
-  'https://www.qurtubatalks.com',
-  'http://localhost:8080',
-  'http://localhost:5173',
-];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get('Origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-    'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin',
-  };
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
@@ -45,6 +27,12 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Invalid or expired session' }), {
         status: 401,
         headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!(await withinRateLimit(adminClient(), `ai-interview-questions:${authUser.id}`, 10, 60, true))) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait before sending more requests." }), {
+        status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json", "Retry-After": "60" },
       });
     }
 
@@ -175,7 +163,7 @@ Return ONLY the JSON array, no other text.`;
     });
   } catch (e) {
     console.error("Error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: "Request failed. Please try again." }), {
       status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
