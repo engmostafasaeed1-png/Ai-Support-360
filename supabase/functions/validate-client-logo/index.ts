@@ -86,6 +86,14 @@ Deno.serve(async (req) => {
     if (!testimonialId || !(file instanceof File)) {
       return fail("missing_fields", "Both `testimonial_id` and `file` are required.");
     }
+    // The id becomes part of the storage path: it must be a plain UUID (no path segments) and must exist.
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(testimonialId)) {
+      return fail("missing_fields", "`testimonial_id` must be a valid id.");
+    }
+    {
+      const { data: existing } = await admin.from("client_testimonials").select("id").eq("id", testimonialId).maybeSingle();
+      if (!existing) return fail("missing_fields", "Unknown testimonial.", 404);
+    }
 
     // ── Cheap checks before decoding ────────────────────────────────────
     if (file.type !== "image/png") {
@@ -186,6 +194,6 @@ Deno.serve(async (req) => {
     );
   } catch (e) {
     console.error("validate-client-logo: unexpected error", e);
-    return fail("internal", (e as Error).message ?? "Unexpected error", 500);
+    return fail("internal", "Unexpected error", 500);
   }
 });

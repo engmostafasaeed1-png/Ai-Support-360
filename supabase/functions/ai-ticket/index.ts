@@ -1,25 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://esm.sh/zod@3.23.8";
-
-const ALLOWED_ORIGINS = [
-  'https://smartsapsupport.qurtubatalks.com',
-  'https://www.qurtubatalks.com',
-  'http://localhost:8080',
-  'http://localhost:5173',
-];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get('Origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-    'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin',
-  };
-}
+import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit, getUserRoles, hasAnyRole, ADMIN_ROLES } from "../_shared/security.ts";
 
 const VALID_MODELS = [
   "google/gemini-2.5-flash-lite",
@@ -31,22 +13,7 @@ const VALID_MODELS = [
 
 const DEFAULT_MODEL = "google/gemini-2.5-flash";
 
-// Simple in-memory rate limiter
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 20;
-const WINDOW_MS = 60_000;
 const MAX_BODY_SIZE = 50 * 1024;
-
-function checkRateLimit(identifier: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(identifier);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(identifier, { count: 1, resetAt: now + WINDOW_MS });
-    return true;
-  }
-  entry.count++;
-  return entry.count <= RATE_LIMIT;
-}
 
 function aiRequest(apiKey: string, systemPrompt: string, userPrompt: string, tools: any[], toolChoice: any, model: string) {
   return fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -100,8 +67,7 @@ serve(async (req) => {
       });
     }
 
-    const clientId = req.headers.get("authorization")?.slice(-16) || req.headers.get("x-client-info") || "anon";
-    if (!checkRateLimit(clientId)) {
+    if (!(await withinRateLimit(adminClient(), `ai-ticket:${authUser.id}`, 20, 60, true))) {
       return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait before sending more requests." }),
         { status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json", "Retry-After": "60" } });
     }
@@ -261,12 +227,20 @@ serve(async (req) => {
       const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseKey);
 
+      // Only clients and admins may request consultant matching (this branch reads consultant data with the service role).
+      const callerRoles = await getUserRoles(supabase, authUser.id);
+      if (!hasAnyRole(callerRoles, ["client", ...ADMIN_ROLES])) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        });
+      }
+
       const { data: consultants, error: consultantsError } = await supabase
         .from("consultants")
         .select(`
           id, user_id, bio, hourly_rate, currency, timezone, languages, industries,
           availability_status, rating, total_reviews, response_time_minutes,
-          verification_status, ai_skills_score, country, city, nationality
+          verification_status, ai_skills_score, country
         `)
         .in("verification_status", ["verified", "under_review"])
         .limit(50);
@@ -364,8 +338,6 @@ serve(async (req) => {
           currency: c.currency,
           timezone: c.timezone,
           country: c.country,
-          city: c.city,
-          nationality: c.nationality,
           languages: c.languages,
           industries: c.industries,
           availability: c.availability_status,
@@ -565,7 +537,7 @@ Rank the top consultants for this ticket. Be specific about why each matches.`,
 
   } catch (e) {
     console.error("ai-ticket error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: "Request failed. Please try again." }), {
       status: 500,
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });

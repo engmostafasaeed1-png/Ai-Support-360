@@ -6,25 +6,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://esm.sh/zod@3.23.8";
-
-const ALLOWED_ORIGINS = [
-  'https://smartsapsupport.qurtubatalks.com',
-  'https://www.qurtubatalks.com',
-  'http://localhost:8080',
-  'http://localhost:5173',
-];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get('Origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-    'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin',
-  };
-}
+import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit } from "../_shared/security.ts";
 
 const VALID_MODELS = [
   "google/gemini-3-flash-preview",
@@ -36,22 +18,7 @@ const VALID_MODELS = [
 ];
 const DEFAULT_MODEL = "google/gemini-3-flash-preview";
 
-// Simple in-memory rate limiter (per Edge Function instance)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 20;
-const WINDOW_MS = 60_000;
 const MAX_BODY_SIZE = 50 * 1024;
-
-function checkRateLimit(id: string): boolean {
-  const now = Date.now();
-  const e = rateLimitMap.get(id);
-  if (!e || now > e.resetAt) {
-    rateLimitMap.set(id, { count: 1, resetAt: now + WINDOW_MS });
-    return true;
-  }
-  e.count++;
-  return e.count <= RATE_LIMIT;
-}
 
 const SYSTEM_PROMPT = `You are AI SAP Support Now, the AI support agent for Qurtuba Talks — a premium SAP consulting platform.
 
@@ -208,8 +175,11 @@ async function execTool(
   if (name === "search_knowledge_base") {
     const query = String(args.query || "").trim();
     if (!query) return { error: "query is required" };
-    const sapModule = args.sap_module ? String(args.sap_module) : null;
-    const ilike = `%${query.replace(/[%_]/g, " ")}%`;
+    // PostgREST filter grammar uses , ( ) . * and quotes: keep only plain words so user text cannot alter the filter.
+    const safeQuery = query.replace(/[^\p{L}\p{N}\s-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, 100);
+    if (!safeQuery) return { articles: [], playbooks: [] };
+    const sapModule = args.sap_module && /^[A-Za-z0-9 /&._-]{1,40}$/.test(String(args.sap_module)) ? String(args.sap_module) : null;
+    const ilike = `%${safeQuery}%`;
 
     let aq = sbUser.from("knowledge_articles")
       .select("id, title, content, sap_module, tags")
@@ -283,8 +253,7 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } },
     );
 
-    const clientId = authHeader.slice(-16);
-    if (!checkRateLimit(clientId)) {
+    if (!(await withinRateLimit(adminClient(), `ai-triage:${authUser.id}`, 20, 60, true))) {
       return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait before sending more requests." }),
         { status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json", "Retry-After": "60" } });
     }
@@ -301,7 +270,7 @@ serve(async (req) => {
     }
     const BodySchema = z.object({
       messages: z.array(z.object({
-        role: z.enum(["system", "user", "assistant"]),
+        role: z.enum(["user", "assistant"]),
         content: z.string().min(1).max(8000),
       })).min(1).max(50),
       model: z.string().max(100).optional(),
@@ -402,7 +371,7 @@ serve(async (req) => {
     return new Response(safetyResp.body, { headers: { ...getCorsHeaders(req), "Content-Type": "text/event-stream" } });
   } catch (e) {
     console.error("ai-triage-chat error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+    return new Response(JSON.stringify({ error: "Request failed. Please try again." }),
       { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
   }
 });
