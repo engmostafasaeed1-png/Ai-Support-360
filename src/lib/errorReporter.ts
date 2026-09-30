@@ -27,6 +27,21 @@ function shouldSkip(message: string): boolean {
   );
 }
 
+/** Removes secrets / personal data from free text before it leaves the browser. */
+function redact(text: string | undefined): string | undefined {
+  if (!text) return text;
+  return text
+    .replace(/eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g, '[jwt]')
+    .replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/gi, 'Bearer [redacted]')
+    .replace(/([?&#](?:access_token|refresh_token|token|code|key|apikey|secret|password)=)[^&\s"']+/gi, '$1[redacted]')
+    .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, '[email]');
+}
+
+/** Path without query/hash; bearer tokens embedded in known routes are masked. */
+function safePath(pathname: string): string {
+  return pathname.replace(/^\/demo\/confirmation\/[^/]+/, '/demo/confirmation/:token');
+}
+
 export function reportError(input: ReportInput): void {
   try {
     if (!input?.message) return;
@@ -45,10 +60,10 @@ export function reportError(input: ReportInput): void {
     const body = JSON.stringify({
       level: input.level ?? 'error',
       source: input.source ?? 'client',
-      message: input.message,
-      stack: input.stack,
-      url: typeof window !== 'undefined' ? window.location.href : undefined,
-      route: typeof window !== 'undefined' ? window.location.pathname : undefined,
+      message: redact(input.message),
+      stack: redact(input.stack),
+      url: typeof window !== 'undefined' ? window.location.origin + safePath(window.location.pathname) : undefined,
+      route: typeof window !== 'undefined' ? safePath(window.location.pathname) : undefined,
       user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
       context: input.context,
     });
