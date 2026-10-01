@@ -1003,14 +1003,26 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                         ? 'bg-primary/20 rounded-tr-sm border border-primary/30'
                         : 'bg-white/5 rounded-tl-sm border border-white/10'
                     }`}>
-                      {msg.role === 'assistant' && (
-                        <div className="text-[10px] font-semibold text-primary/90 mb-1">
-                          {interviewerLabel} <span className="text-white/40 font-normal">· AI SAP Support Now</span>
-                        </div>
-                      )}
-                      <div className="text-sm text-white/90 leading-relaxed prose prose-sm prose-invert max-w-none">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
-                      </div>
+                      {(() => {
+                        const { author, text } = msg.role === 'assistant' ? splitAuthorTag(msg.content) : { author: null, text: msg.content };
+                        return (
+                          <>
+                            {msg.role === 'assistant' && (
+                              <div className="text-[10px] font-semibold text-primary/90 mb-1">
+                                {interviewerLabel} <span className="text-white/40 font-normal">· AI SAP Support Now</span>
+                              </div>
+                            )}
+                            {author && (
+                              <div className="inline-flex items-center gap-1 mb-1.5 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-[10px] text-amber-200">
+                                <Award className="w-3 h-3" /> Question from {author}
+                              </div>
+                            )}
+                            <div className="text-sm text-white/90 leading-relaxed prose prose-sm prose-invert max-w-none">
+                              <ReactMarkdown>{text}</ReactMarkdown>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 );
