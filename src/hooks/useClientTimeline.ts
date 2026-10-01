@@ -87,7 +87,7 @@ export function useClientTimeline() {
           .in('id', allConsultantIds);
         const userIds = (consultants || []).map(c => c.user_id);
         const profiles = userIds.length
-          ? (await supabase.from('profiles').select('user_id, display_name').in('user_id', userIds)).data || []
+          ? (await supabase.from('profile_directory').select('user_id, display_name').in('user_id', userIds)).data || []
           : [];
         const profileMap = new Map(profiles.map(p => [p.user_id, p.display_name]));
         (consultants || []).forEach(c => {

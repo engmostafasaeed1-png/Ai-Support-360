@@ -166,13 +166,18 @@ export function useAvailableConsultants() {
       if (!consultantIds.length) return [];
       const { data } = await supabase
         .from('consultants')
-        .select('id, user_id, profiles:user_id (display_name, avatar_url)')
+        .select('id, user_id')
         .in('id', consultantIds as string[]);
+      const { data: people } = await supabase
+        .from('profile_directory')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', (data ?? []).map((c: any) => c.user_id));
+      const personMap = new Map((people ?? []).map((p: any) => [p.user_id, p]));
       return (data ?? []).map((c: any) => ({
         id: c.id,
         user_id: c.user_id,
-        display_name: c.profiles?.display_name || 'Unnamed',
-        avatar_url: c.profiles?.avatar_url || null,
+        display_name: (personMap.get(c.user_id) as any)?.display_name || 'Unnamed',
+        avatar_url: (personMap.get(c.user_id) as any)?.avatar_url || null,
       }));
     },
   });

@@ -89,11 +89,16 @@ export function useTicketProposals(ticketId: string) {
       if (!consultantIds.length) return [];
 
       const [{ data: consultants }, { data: attachments }] = await Promise.all([
-        supabase.from('consultants').select(`id, hourly_rate, rating, total_reviews, profiles:user_id (display_name, avatar_url)`).in('id', consultantIds),
+        supabase.from('consultants').select('id, user_id, hourly_rate, rating, total_reviews').in('id', consultantIds),
         supabase.from('proposal_attachments').select('*').in('proposal_id', proposalIds.length ? proposalIds : ['none']),
       ]);
 
-      const cMap = new Map((consultants || []).map((c: any) => [c.id, c]));
+      const { data: people } = await supabase
+        .from('profile_directory')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', (consultants || []).map((c: any) => c.user_id));
+      const personMap = new Map((people || []).map((p: any) => [p.user_id, p]));
+      const cMap = new Map((consultants || []).map((c: any) => [c.id, { ...c, profiles: personMap.get(c.user_id) }]));
       const attachByProposal = new Map<string, any[]>();
       (attachments || []).forEach((a: any) => {
         if (!attachByProposal.has(a.proposal_id)) attachByProposal.set(a.proposal_id, []);
@@ -161,20 +166,7 @@ export function useSubmitProposal() {
         }
       }
 
-      // Notify the client
-      const { data: ticket } = await supabase.from('tickets').select('client_id, title').eq('id', rest.ticket_id).maybeSingle();
-      if (ticket) {
-        const { data: profile } = await supabase.from('profiles').select('display_name').eq('user_id', user.id).maybeSingle();
-        const consultantName = profile?.display_name || 'A consultant';
-        const versionLabel = rest.version && rest.version > 1 ? ` (v${rest.version})` : '';
-        await supabase.from('notifications').insert({
-          user_id: ticket.client_id,
-          title: `New Proposal Received${versionLabel}`,
-          body: `${consultantName} submitted a proposal${versionLabel} for "${ticket.title}" — $${rest.proposed_rate}/hr, ${rest.estimated_hours}h estimated.`,
-          type: 'ticket',
-          link: `/client/tickets/${rest.ticket_id}`,
-        });
-      }
+      // The client is notified by a database trigger when a proposal arrives.
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['consultant-proposals'] });

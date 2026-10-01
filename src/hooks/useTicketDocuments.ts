@@ -32,7 +32,7 @@ export function useTicketDocuments(ticketId: string | undefined) {
       // Resolve uploader names
       const uploaderIds = [...new Set((data || []).map(d => d.uploaded_by))];
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profile_directory')
         .select('user_id, display_name')
         .in('user_id', uploaderIds);
       const nameMap = Object.fromEntries((profiles || []).map(p => [p.user_id, p.display_name || 'Unknown']));
