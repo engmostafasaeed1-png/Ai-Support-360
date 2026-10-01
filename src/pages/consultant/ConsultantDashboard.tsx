@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
   DollarSign, Briefcase, Clock, Star, TrendingUp,
-  Calendar, Video, MessageSquare, Monitor, ChevronRight,
+  Calendar, Video, MessageSquare, Monitor, ChevronRight, ShieldCheck,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,14 @@ const statusColors: Record<string, string> = {
   in_progress: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   resolved: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
   closed: 'bg-muted text-muted-foreground',
+};
+
+const verificationNotice: Record<string, string> = {
+  pending: 'Your profile is waiting for review. An administrator reviews every application and you will be notified when a decision is made.',
+  under_review: 'Your profile is being reviewed by an administrator. You will be notified when a decision is made.',
+  on_hold: 'Your application is on hold. Open the Verification page for details.',
+  rejected: 'Your application was not approved. Open the Verification page for details.',
+  suspended: 'Your profile is suspended. Please contact support.',
 };
 
 export default function ConsultantDashboard() {
