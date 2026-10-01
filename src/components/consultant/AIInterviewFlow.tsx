@@ -192,7 +192,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const avatarImg = voiceGender === 'male' ? aiMaleAvatar : aiFemaleAvatar;
   const [speechRate, setSpeechRate] = useState(1.0);
   const [interviewLang, setInterviewLang] = useState<'en' | 'fr' | 'ar' | 'es' | 'de' | 'ar-SA'>('en');
-  const [conversationMode, setConversationMode] = useState(false);
+  const [conversationMode, setConversationMode] = useState(true);
   const sendToAIRef = useRef<(h: ChatMessage[]) => Promise<void>>();
   const [capturedFrames, setCapturedFrames] = useState(0);
   const [interviewStarted, setInterviewStarted] = useState(false);
