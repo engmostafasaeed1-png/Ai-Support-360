@@ -65,13 +65,8 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
       ];
       const { error: pErr } = await supabase.from('interview_participants' as any).insert(rows);
       if (pErr) throw pErr;
-      await supabase.rpc('safe_insert_notification', {
-        _user_id: consultantUserId,
-        _title: 'Live interview scheduled',
-        _body: when ? `Your live interview is on ${new Date(when).toLocaleString()}.` : 'A live interview is ready for you to join.',
-        _type: 'interview',
-        _link: `/interview/live/${sess.id}`,
-      });
+      // The invitation notification is created by a database trigger on interview_participants
+      // (the browser is not allowed to call safe_insert_notification, so the old call here failed silently).
       toast.success('Live interview scheduled');
       onOpenChange(false);
       navigate(`/interview/live/${sess.id}`);

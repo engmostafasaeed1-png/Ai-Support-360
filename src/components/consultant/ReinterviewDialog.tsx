@@ -69,46 +69,8 @@ export default function ReinterviewDialog({ open, onOpenChange, consultantId, co
 
       if (sessionError) throw sessionError;
 
-      // Get consultant's user_id for notification
-      const { data: consultant } = await supabase
-        .from('consultants')
-        .select('user_id')
-        .eq('id', consultantId)
-        .single();
-
-      if (consultant?.user_id) {
-        const typeLabel = t(`interview.type_${selectedType}`, selectedType);
-        const slotsText = proposedSlots.length > 0
-          ? ` Proposed times: ${proposedSlots.map(s => `${format(s.date, 'MMM d')} ${s.startTime}-${s.endTime}`).join(', ')}`
-          : '';
-        await supabase.from('notifications').insert({
-          user_id: consultant.user_id,
-          title: t('interview.reinterview_requested', 'Re-Interview Requested'),
-          body: t('interview.reinterview_body', `You have been requested for a ${typeLabel} re-interview.${slotsText}`, { type: typeLabel }),
-          type: 'interview',
-          link: '/consultant/interviews',
-        });
-      }
-
-      // Notify admins about the scheduling request
-      if (needsScheduling) {
-        const { data: admins } = await supabase
-          .from('user_roles')
-          .select('user_id')
-          .eq('role', 'admin');
-
-        if (admins) {
-          for (const admin of admins) {
-            await supabase.from('notifications').insert({
-              user_id: admin.user_id,
-              title: 'Interview Scheduling Request',
-              body: `A ${selectedType} re-interview has been requested for ${consultantName || 'a consultant'} with ${proposedSlots.length} proposed time slot(s).`,
-              type: 'interview',
-              link: '/admin/tickets',
-            });
-          }
-        }
-      }
+      // The consultant (and, for in-person/online interviews, the admins) are notified by the database trigger
+      // notify_admin_requested_interview; the browser-side notification inserts used to fail silently.
 
       toast.success(t('interview.reinterview_sent', 'Re-interview request sent'));
       setNotes('');
