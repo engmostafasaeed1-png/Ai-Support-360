@@ -249,7 +249,7 @@ export default function LoginPage() {
         const role = await getRoleAndRepairAccount(user);
         const next = sessionStorage.getItem('oauth_next');
         sessionStorage.removeItem('oauth_next');
-        logAudit('login_google');
+        logAudit('login');
         if (next) navigate(next, { replace: true });
         else navigateByRole(role);
       }
