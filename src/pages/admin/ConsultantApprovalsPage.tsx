@@ -16,12 +16,14 @@ import { useGuestMode } from '@/contexts/GuestModeContext';
 import { pendingConsultants } from '@/data/adminMockData';
 import { toast } from 'sonner';
 import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
+import ScheduleLiveInterviewDialog from '@/components/admin/ScheduleLiveInterviewDialog';
 import InterviewHistory from '@/components/consultant/InterviewHistory';
 import ConsultantVerificationAuditLog from '@/components/admin/ConsultantVerificationAuditLog';
 
 export default function ConsultantApprovalsPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [reinterviewTarget, setReinterviewTarget] = useState<{ id: string; name: string } | null>(null);
+  const [liveTarget, setLiveTarget] = useState<{ id: string; userId: string; name: string } | null>(null);
   const [decisionTarget, setDecisionTarget] = useState<{ id: string; name: string; status: string } | null>(null);
   const [decisionReason, setDecisionReason] = useState('');
   const { t } = useTranslation();
@@ -220,6 +222,11 @@ export default function ConsultantApprovalsPage() {
                         <Button variant="outline" size="sm" onClick={() => setReinterviewTarget({ id: c.id, name: c.name })}>
                           <RotateCcw className="w-3.5 h-3.5 me-1" /> {t('interview.reinterview', 'Re-Interview')}
                         </Button>
+                        {!isGuest && c.user_id && (
+                          <Button variant="outline" size="sm" onClick={() => setLiveTarget({ id: c.id, userId: c.user_id, name: c.name })}>
+                            <Users className="w-3.5 h-3.5 me-1" /> Live interview
+                          </Button>
+                        )}
                         <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => openDecision(c.id, c.name, 'rejected')} disabled={updateStatus.isPending}>
                           <X className="w-3.5 h-3.5 me-1" /> {t('approvals_page.reject')}
                         </Button>
@@ -278,6 +285,16 @@ export default function ConsultantApprovalsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {liveTarget && (
+        <ScheduleLiveInterviewDialog
+          open={!!liveTarget}
+          onOpenChange={(o) => !o && setLiveTarget(null)}
+          consultantId={liveTarget.id}
+          consultantUserId={liveTarget.userId}
+          consultantName={liveTarget.name}
+        />
+      )}
 
       {reinterviewTarget && (
         <ReinterviewDialog

@@ -10,11 +10,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Video, Play, CheckCircle, Clock, Brain, ExternalLink } from 'lucide-react';
 import AIInterviewFlow from '@/components/consultant/AIInterviewFlow';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 export default function InterviewsPage() {
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
   const [activeInterviewId, setActiveInterviewId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const { data: interviews, isLoading, refetch } = useQuery({
     queryKey: ['consultant-interviews'],
@@ -167,10 +169,10 @@ export default function InterviewsPage() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-foreground">
-                          {interview.interview_type === 'physical' ? 'Manual Interview' : 'AI Skills Assessment'}
+                          {(interview as any).interview_style === 'live' ? 'Live Interview with our team' : interview.interview_type === 'physical' ? 'Manual Interview' : 'AI Skills Assessment'}
                         </h3>
                         <p className="text-xs text-muted-foreground">
-                          Requested {format(new Date(interview.created_at), 'MMM d, yyyy')}
+                          {(interview as any).scheduled_at ? `Scheduled ${format(new Date((interview as any).scheduled_at), 'MMM d, yyyy HH:mm')} · ` : ''}Requested {format(new Date(interview.created_at), 'MMM d, yyyy')}
                         </p>
                         <Badge variant="secondary" className={`mt-1 text-[10px] ${
                           interview.status === 'in_progress' 
@@ -182,11 +184,11 @@ export default function InterviewsPage() {
                       </div>
                     </div>
                     <Button
-                      onClick={() => setActiveInterviewId(interview.id)}
+                      onClick={() => (interview as any).interview_style === 'live' ? navigate(`/interview/live/${interview.id}`) : setActiveInterviewId(interview.id)}
                       className="gap-2"
                     >
                       <Play className="w-4 h-4" />
-                      {interview.status === 'in_progress' ? 'Resume' : 'Join Interview'}
+                      {(interview as any).interview_style === 'live' ? 'Join live interview' : interview.status === 'in_progress' ? 'Resume' : 'Join Interview'}
                     </Button>
                   </CardContent>
                 </Card>
@@ -226,7 +228,7 @@ export default function InterviewsPage() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-foreground">
-                          {interview.interview_type === 'physical' ? 'Manual Interview' : 'AI Skills Assessment'}
+                          {(interview as any).interview_style === 'live' ? 'Live Interview' : interview.interview_type === 'physical' ? 'Manual Interview' : 'AI Skills Assessment'}
                         </h3>
                         <p className="text-xs text-muted-foreground">
                           Completed {format(new Date(interview.created_at), 'MMM d, yyyy')}
