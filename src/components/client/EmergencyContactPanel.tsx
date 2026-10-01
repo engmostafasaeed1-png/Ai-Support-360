@@ -22,9 +22,9 @@ const EMERGENCY_PRICING = {
   low:      { multiplier: 1.0, label: 'Standard Rate', responseTime: '< 24 hours', surcharge: '0%' },
 };
 
-function useConsultantContact(consultantId: string | null) {
+function useConsultantContact(consultantId: string | null, ticketId: string) {
   return useQuery({
-    queryKey: ['consultant-contact', consultantId],
+    queryKey: ['consultant-contact', consultantId, ticketId],
     enabled: !!consultantId,
     queryFn: async () => {
       if (!consultantId) return null;
@@ -35,18 +35,20 @@ function useConsultantContact(consultantId: string | null) {
         .maybeSingle();
       if (!consultant) return null;
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('display_name, phone')
-        .eq('user_id', consultant.user_id)
-        .maybeSingle();
-      return { ...profile, hourly_rate: consultant.hourly_rate };
+      // the consultant's phone is released only for an urgent (high / critical) ticket of this client
+      const { data: contact } = await supabase.rpc('get_emergency_contact', { _ticket_id: ticketId });
+      const row = Array.isArray(contact) ? contact[0] : null;
+      return {
+        display_name: row?.display_name ?? null,
+        phone: row?.phone ?? null,
+        hourly_rate: row?.hourly_rate ?? consultant.hourly_rate,
+      };
     },
   });
 }
 
 export default function EmergencyContactPanel({ consultantId, consultantName, ticketId, ticketTitle, urgency }: Props) {
-  const { data: contact } = useConsultantContact(consultantId);
+  const { data: contact } = useConsultantContact(consultantId, ticketId);
   const phone = (contact as any)?.phone;
   const hourlyRate = (contact as any)?.hourly_rate || 0;
   const isEmergency = urgency === 'critical' || urgency === 'high';
@@ -61,16 +63,12 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
   const callUrl = cleanPhone ? `tel:${cleanPhone}` : '';
 
   const logContact = async (method: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase.from('audit_logs').insert({
-        action: `emergency_contact.${method}`,
-        entity_type: 'ticket',
-        entity_id: ticketId,
-        user_id: user.id,
-        metadata: { consultant_id: consultantId, method, urgency, rate: emergencyRate } as any,
-      });
-    }
+    await supabase.rpc('log_client_event', {
+      _action: `emergency_contact.${method}`,
+      _entity_type: 'ticket',
+      _entity_id: ticketId,
+      _metadata: { consultant_id: consultantId, method, urgency, rate: emergencyRate } as any,
+    });
   };
 
   const handleCall = () => {
@@ -92,24 +90,12 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
   };
 
   const handlePortalMessage = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || !consultantId) return;
-    const { data: consultant } = await supabase
-      .from('consultants')
-      .select('user_id')
-      .eq('id', consultantId)
-      .maybeSingle();
-    if (consultant) {
-      await supabase.from('notifications').insert({
-        user_id: consultant.user_id,
-        title: '🚨 Emergency Contact',
-        body: `Client urgently needs to reach you regarding "${ticketTitle}". Please respond immediately.`,
-        type: 'ticket',
-        link: `/consultant/cases/${ticketId}`,
-      });
-      toast.success('Emergency notification sent to consultant!');
+    const { error } = await supabase.rpc('send_emergency_alert', { _ticket_id: ticketId });
+    if (error) {
+      toast.error(error.message || 'Could not send the alert. Please try again.');
+      return;
     }
-    logContact('portal_notification');
+    toast.success('Emergency notification sent to consultant!');
   };
 
   return (

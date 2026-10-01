@@ -79,7 +79,7 @@ export default function ConsultantDashboard() {
       let clientMap: Record<string, string> = {};
       if (clientIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profile_directory')
           .select('user_id, display_name')
           .in('user_id', clientIds);
         if (profiles) {
@@ -108,7 +108,7 @@ export default function ConsultantDashboard() {
         .reduce((sum, p) => sum + Number(p.amount), 0);
 
       const { data: ratings } = await supabase
-        .from('ratings')
+        .from('consultant_reviews')
         .select('score, comment, created_at, client_id')
         .eq('consultant_id', consultant.id)
         .order('created_at', { ascending: false })

@@ -321,9 +321,7 @@ export default function InvoicesPage() {
           </h1>
           <p className="text-xs md:text-sm text-muted-foreground mt-1">View invoice details, link to tickets, and export as PDF.</p>
         </div>
-        <Button className="gap-1.5 gradient-primary border-0" onClick={() => setCreateOpen(true)}>
-          <Plus className="w-4 h-4" /> Create Invoice
-        </Button>
+        {/* Invoices are issued by the platform; clients cannot create them (the database refuses it). */}
       </div>
 
       {/* Search + Filter + Sort */}
@@ -655,9 +653,7 @@ export default function InvoicesPage() {
                 )}
 
                 <div className="flex gap-2 pt-2">
-                  <Button className="flex-1 gap-1.5" variant="outline" size="sm" onClick={() => setEditing(true)}>
-                    <Pencil className="w-4 h-4" /> Edit
-                  </Button>
+                  {/* Invoices cannot be edited by the client (the database refuses it). */}
                   <Button className="flex-1 gap-1.5" variant="outline" size="sm" onClick={() => generateInvoicePdf(selected, true)} disabled={retryingId === selected.id}>
                     <Eye className="w-4 h-4" /> Preview PDF
                   </Button>

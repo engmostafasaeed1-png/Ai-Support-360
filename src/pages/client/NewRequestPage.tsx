@@ -370,7 +370,11 @@ export default function NewRequestPage() {
       toast.success(t('ticket_create.submit_success'));
     } catch (err) {
       console.error(err);
-      toast.error(t('onboarding.error_generic'));
+      toast.error(
+        (err as any)?.code === '53400' ? String((err as any).message)
+        : (err as any)?.code === '23514' ? 'Please check the title (up to 300 characters) and the description (up to 50,000 characters).'
+        : t('onboarding.error_generic'),
+      );
     }
   };
 

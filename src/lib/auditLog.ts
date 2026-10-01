@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 type AuditAction =
   | 'login' | 'logout' | 'login_failed' | 'login_preflight_failed' | 'resend_confirmation_email'
@@ -12,17 +13,19 @@ type AuditAction =
 
 export async function logAudit(action: AuditAction, metadata?: Record<string, unknown>) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from('audit_logs').insert({
-      action,
-      user_id: user?.id ?? null,
-      entity_type: action.split('_')[0],
-      metadata: {
+    // The browser may not write audit rows directly: a database function records the event for the signed-in user
+    // (events before sign-in, such as a failed login, cannot be recorded from the browser).
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await supabase.rpc('log_client_event', {
+      _action: action,
+      _entity_type: action.split('_')[0],
+      _metadata: {
         ...metadata,
         userAgent: navigator.userAgent.slice(0, 200),
         timestamp: new Date().toISOString(),
         path: window.location.pathname,
-      },
+      } as unknown as Json,
     });
   } catch {
     // Audit logging must never break the main flow

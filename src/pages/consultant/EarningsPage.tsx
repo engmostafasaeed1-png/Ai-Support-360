@@ -72,7 +72,7 @@ export default function EarningsPage() {
       let clientMap: Record<string, string> = {};
       if (clientIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profile_directory')
           .select('user_id, display_name')
           .in('user_id', clientIds);
         if (profiles) {

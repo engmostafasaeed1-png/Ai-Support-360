@@ -38,6 +38,7 @@ export function useActivityFeed() {
       const { data, error } = await supabase
         .from('notifications')
         .select('id, title, body, type, created_at')
+        .neq('type', 'error')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);

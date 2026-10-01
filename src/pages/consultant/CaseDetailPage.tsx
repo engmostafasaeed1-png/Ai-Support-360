@@ -18,6 +18,7 @@ import NDASigningModal from '@/components/consultant/NDASigningModal';
 import TicketQuickActions from '@/components/tickets/TicketQuickActions';
 import RemoteAccessStatusPanel from '@/components/tickets/RemoteAccessStatusPanel';
 import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
+import TicketPlanApproval from '@/components/client/TicketPlanApproval';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 
 const urgencyColors: Record<string, string> = {
@@ -261,6 +262,9 @@ export default function CaseDetailPage() {
       {ticket.consultant_id && (
         <RemoteAccessStatusPanel ticketId={ticket.id} role="consultant" />
       )}
+
+      {/* Cost & effort plan: the assigned consultant proposes it, the client approves it */}
+      {ticket.consultant_id && <TicketPlanApproval ticket={ticket as any} isClient={false} />}
 
       {/* Inline Schedule Meeting Dialog */}
       <ScheduleMeetingDialog

@@ -29,7 +29,7 @@ export default function ReviewsPage() {
       if (!consultant) return null;
 
       const { data: ratings } = await supabase
-        .from('ratings')
+        .from('consultant_reviews')
         .select('id, score, comment, created_at, client_id, is_anonymous')
         .eq('consultant_id', consultant.id)
         .order('created_at', { ascending: false });
@@ -42,7 +42,7 @@ export default function ReviewsPage() {
       let clientMap: Record<string, string> = {};
       if (nonAnonIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profile_directory')
           .select('user_id, display_name')
           .in('user_id', nonAnonIds);
         if (profiles) {
