@@ -6005,6 +6005,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      bp_matches_ticket_client: {
+        Args: { _bp_id: string; _ticket_id: string }
+        Returns: boolean
+      }
       can_bootstrap_tenant_membership: {
         Args: { _tenant_id: string }
         Returns: boolean
@@ -6114,6 +6118,10 @@ export type Database = {
         Args: { _session_id: string; _user_id: string }
         Returns: string
       }
+      is_session_participant: {
+        Args: { _session_id: string }
+        Returns: boolean
+      }
       is_tenant_member: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
@@ -6186,6 +6194,10 @@ export type Database = {
         }
         Returns: string
       }
+      share_a_company: {
+        Args: { _user_a: string; _user_b: string }
+        Returns: boolean
+      }
       submit_demo_request: {
         Args: {
           _company: string
@@ -6202,8 +6214,13 @@ export type Database = {
         }
         Returns: string
       }
+      ticket_consultant_id: { Args: { _ticket_id: string }; Returns: string }
       ticket_owned_by: {
         Args: { _client_id: string; _ticket_id: string }
+        Returns: boolean
+      }
+      users_share_engagement: {
+        Args: { _user_a: string; _user_b: string }
         Returns: boolean
       }
     }
