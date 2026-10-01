@@ -60,7 +60,7 @@ export default function ConsultantInterviewsPage() {
 
       const byConsultant = new Map<string, { count: number; scores: number[]; last: string; modules: Map<string, number[]> }>();
       for (const s of sessions || []) {
-        const entry = byConsultant.get(s.consultant_id) || { count: 0, scores: [], last: s.created_at, modules: new Map() };
+        const entry = byConsultant.get(s.consultant_id) || { count: 0, scores: [] as number[], last: s.created_at, modules: new Map<string, number[]>() };
         entry.count += 1;
         if (s.overall_score != null) entry.scores.push(s.overall_score);
         if (s.created_at > entry.last) entry.last = s.created_at;
