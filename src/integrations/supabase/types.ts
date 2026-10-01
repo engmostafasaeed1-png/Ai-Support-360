@@ -5968,15 +5968,6 @@ export type Database = {
         Args: { _consultant_id: string }
         Returns: boolean
       }
-      delete_email: {
-        Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
-      email_queue_dispatch: { Args: never; Returns: undefined }
-      enqueue_email: {
-        Args: { payload: Json; queue_name: string }
-        Returns: number
-      }
       get_demo_request_by_token: {
         Args: { _token: string }
         Returns: {
@@ -6057,23 +6048,6 @@ export type Database = {
         Returns: boolean
       }
       is_untrusted_writer: { Args: never; Returns: boolean }
-      move_to_dlq: {
-        Args: {
-          dlq_name: string
-          message_id: number
-          payload: Json
-          source_queue: string
-        }
-        Returns: number
-      }
-      read_email_batch: {
-        Args: { batch_size: number; queue_name: string; vt: number }
-        Returns: {
-          message: Json
-          msg_id: number
-          read_ct: number
-        }[]
-      }
       request_demo_reschedule: {
         Args: { _proposed_slots: Json; _reason?: string; _token: string }
         Returns: {
