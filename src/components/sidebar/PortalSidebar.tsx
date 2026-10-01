@@ -58,6 +58,7 @@ export default function PortalSidebar({
   const location = useLocation();
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const isAdmin = useIsAdmin();
 
   const labelOf = useCallback(
     (item: NavItem) =>
