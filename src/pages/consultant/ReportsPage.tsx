@@ -100,15 +100,15 @@ export default function ConsultantReportsPage() {
 
       // Ratings
       const { data: ratings } = await supabase
-        .from('ratings')
+        .from('consultant_reviews')
         .select('score, created_at')
         .eq('consultant_id', consultant.id)
         .order('created_at', { ascending: true });
 
       const ratingTrend = (ratings || []).map((r, i) => ({
         index: i + 1,
-        score: r.score,
-        avg: (ratings || []).slice(0, i + 1).reduce((s, rr) => s + rr.score, 0) / (i + 1),
+        score: r.score ?? 0,
+        avg: (ratings || []).slice(0, i + 1).reduce((s, rr) => s + (rr.score ?? 0), 0) / (i + 1),
       }));
 
       // Avg resolution
