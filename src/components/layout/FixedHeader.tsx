@@ -6,6 +6,7 @@ interface FixedHeaderProps {
   className?: string;
 }
 
+// Logical offsets (start/end) keep the headers beside the sidebar in both LTR and RTL.
 export function FixedHeader({ children, className }: FixedHeaderProps) {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
@@ -13,8 +14,8 @@ export function FixedHeader({ children, className }: FixedHeaderProps) {
   return (
     <header
       className={cn(
-        'h-14 flex items-center justify-between border-b border-border/50 px-4 bg-background/95 backdrop-blur-xl fixed top-0 right-0 left-0 z-40 shadow-sm transition-[left] duration-200 ease-linear',
-        collapsed ? 'md:left-[3rem]' : 'md:left-[16rem]',
+        'h-14 flex items-center justify-between border-b border-border/50 px-4 bg-background/95 backdrop-blur-xl fixed top-0 start-0 end-0 z-40 shadow-sm transition-[inset-inline-start] duration-200 ease-linear',
+        collapsed ? 'md:start-[3rem]' : 'md:start-[16rem]',
         className
       )}
     >
@@ -30,8 +31,8 @@ export function FixedSubHeader({ children, className }: FixedHeaderProps) {
   return (
     <div
       className={cn(
-        'border-b border-border/30 bg-background/90 backdrop-blur-sm fixed top-14 right-0 left-0 z-30 hidden md:block transition-[left] duration-200 ease-linear shadow-[0_1px_3px_rgba(0,0,0,0.04)]',
-        collapsed ? 'md:left-[3rem]' : 'md:left-[16rem]',
+        'border-b border-border/30 bg-background/90 backdrop-blur-sm fixed top-14 start-0 end-0 z-30 hidden md:block transition-[inset-inline-start] duration-200 ease-linear shadow-[0_1px_3px_rgba(0,0,0,0.04)]',
+        collapsed ? 'md:start-[3rem]' : 'md:start-[16rem]',
         className
       )}
     >
