@@ -1,7 +1,13 @@
 import React, { Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+// Lazy-loaded: the devtools module reads the browser locale at import time and
+// throws "Incorrect locale information provided" on unusual locale strings.
+const ReactQueryDevtools = import.meta.env.DEV
+  ? React.lazy(() =>
+      import("@tanstack/react-query-devtools").then((m) => ({ default: m.ReactQueryDevtools })),
+    )
+  : () => null;
 import { logger } from '@/lib/logger';
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -212,7 +218,11 @@ const RealtimeStatusSync = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />}
+    {import.meta.env.DEV && (
+      <Suspense fallback={null}>
+        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+      </Suspense>
+    )}
     <TooltipProvider>
       <Toaster />
       <Sonner />
