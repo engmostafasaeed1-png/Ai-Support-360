@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
   DollarSign, Briefcase, Clock, Star, TrendingUp,
-  Calendar, Video, MessageSquare, Monitor, ChevronRight,
+  Calendar, Video, MessageSquare, Monitor, ChevronRight, ShieldCheck,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,14 @@ const statusColors: Record<string, string> = {
   in_progress: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   resolved: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
   closed: 'bg-muted text-muted-foreground',
+};
+
+const verificationNotice: Record<string, string> = {
+  pending: 'Your profile is waiting for review. An administrator reviews every application and you will be notified when a decision is made.',
+  under_review: 'Your profile is being reviewed by an administrator. You will be notified when a decision is made.',
+  on_hold: 'Your application is on hold. Open the Verification page for details.',
+  rejected: 'Your application was not approved. Open the Verification page for details.',
+  suspended: 'Your profile is suspended. Please contact support.',
 };
 
 export default function ConsultantDashboard() {
@@ -176,6 +184,20 @@ export default function ConsultantDashboard() {
       <WelcomeBanner />
       <EmailVerificationBanner />
       <OnboardingProgressCard role="consultant" />
+
+      {liveData?.consultant && profile.verification_status && profile.verification_status !== 'verified' && (
+        <Card className="rounded-2xl border-yellow-300/50 bg-yellow-50/60 dark:bg-yellow-900/10 dark:border-yellow-700/40">
+          <CardContent className="p-4 flex items-center gap-3">
+            <ShieldCheck className="w-5 h-5 text-yellow-600 dark:text-yellow-400 shrink-0" />
+            <p className="text-sm text-foreground flex-1">
+              {verificationNotice[profile.verification_status] || 'Your profile is not verified yet.'}
+            </p>
+            <Link to="/consultant/verification">
+              <Button size="sm" variant="outline" className="text-xs">View status</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Welcome */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
