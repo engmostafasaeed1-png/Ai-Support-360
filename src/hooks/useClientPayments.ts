@@ -29,7 +29,7 @@ export function useClientPayments() {
         if (consultants && consultants.length > 0) {
           const userIds = consultants.map((c: any) => c.user_id);
           const { data: profiles } = await supabase
-            .from('profiles')
+            .from('profile_directory')
             .select('user_id, display_name')
             .in('user_id', userIds);
           const profileMap: Record<string, string> = {};

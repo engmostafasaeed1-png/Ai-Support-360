@@ -58,7 +58,7 @@ export function useRealtimeConsultants() {
       // Get user profiles for names
       const userIds = consultantRows.map(c => c.user_id);
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profile_directory')
         .select('user_id, display_name, avatar_url')
         .in('user_id', userIds);
 

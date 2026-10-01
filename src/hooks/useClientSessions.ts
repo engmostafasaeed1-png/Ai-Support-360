@@ -42,11 +42,11 @@ export function useClientSessions() {
         if (consultants && consultants.length > 0) {
           const userIds = consultants.map(c => c.user_id);
           const { data: profiles } = await supabase
-            .from('profiles')
+            .from('profile_directory')
             .select('user_id, display_name')
             .in('user_id', userIds);
           const profileMap: Record<string, string> = {};
-          (profiles || []).forEach(p => { profileMap[p.user_id] = p.display_name || 'Consultant'; });
+          (profiles || []).forEach(p => { if (p.user_id) profileMap[p.user_id] = p.display_name || 'Consultant'; });
           consultants.forEach(c => { consultantMap[c.id] = profileMap[c.user_id] || 'Consultant'; });
         }
       }

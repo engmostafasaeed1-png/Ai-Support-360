@@ -54,7 +54,7 @@ export function useTicketDetail(ticketId: string | undefined) {
           .single();
         if (c) {
           const { data: p } = await supabase
-            .from('profiles')
+            .from('profile_directory')
             .select('display_name')
             .eq('user_id', c.user_id)
             .single();
@@ -94,7 +94,7 @@ export function useTicketSessions(ticketId: string | undefined) {
           .in('id', consultantIds as string[]);
         const userIds = (consultants || []).map(c => c.user_id);
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profile_directory')
           .select('user_id, display_name')
           .in('user_id', userIds);
         const profileMap = Object.fromEntries((profiles || []).map(p => [p.user_id, p.display_name || 'Unknown']));
@@ -134,7 +134,7 @@ export function useTicketMessages(ticketId: string | undefined) {
       // Resolve sender names
       const senderIds = [...new Set((messages || []).map(m => m.sender_id))];
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profile_directory')
         .select('user_id, display_name')
         .in('user_id', senderIds);
       const nameMap = Object.fromEntries((profiles || []).map(p => [p.user_id, p.display_name || 'Unknown']));

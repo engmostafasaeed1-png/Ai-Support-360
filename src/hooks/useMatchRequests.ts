@@ -113,12 +113,17 @@ export function useClientMatchAcceptors(ticketId: string) {
 
       const { data: consultants } = await supabase
         .from('consultants')
-        .select(`id, hourly_rate, currency, rating, total_reviews, ai_skills_score,
-          profiles:user_id (display_name, avatar_url),
+        .select(`id, user_id, hourly_rate, currency, rating, total_reviews, ai_skills_score,
           consultant_skills (sap_module, proficiency_level)`)
         .in('id', consultantIds);
 
-      const cMap = new Map((consultants || []).map((c: any) => [c.id, c]));
+      const { data: people } = await supabase
+        .from('profile_directory')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', (consultants || []).map((c: any) => c.user_id));
+      const personMap = new Map((people || []).map((p: any) => [p.user_id, p]));
+
+      const cMap = new Map((consultants || []).map((c: any) => [c.id, { ...c, profiles: personMap.get(c.user_id) }]));
 
       return (data || []).map((r: any) => {
         const c = cMap.get(r.consultant_id) as any;
