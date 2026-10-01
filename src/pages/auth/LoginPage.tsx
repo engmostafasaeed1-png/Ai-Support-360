@@ -227,22 +227,22 @@ export default function LoginPage() {
     return () => clearInterval(id);
   }, [lockoutUntil]);
 
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<string | null>(null);
 
-  const handleGoogleLogin = async () => {
-    if (googleLoading) return;
-    setGoogleLoading(true);
+  const handleOAuthLogin = async (provider: 'google' | 'apple' | 'microsoft' | 'lovable') => {
+    if (oauthLoading) return;
+    setOauthLoading(provider);
     try {
       // Remember the intended destination across the OAuth redirect
       if (from) sessionStorage.setItem('oauth_next', from);
-      const result = await lovable.auth.signInWithOAuth('google', {
+      const result = await lovable.auth.signInWithOAuth(provider, {
         redirect_uri: `${window.location.origin}/login`,
       });
       if (result.error) {
-        toast.error(result.error.message || 'Google sign-in failed. Please try again.');
+        toast.error(result.error.message || 'Sign-in failed. Please try again.');
         return;
       }
-      if (result.redirected) return; // browser is navigating to Google
+      if (result.redirected) return; // browser is navigating to the provider
       // Tokens returned and session already set — route by role
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -254,10 +254,10 @@ export default function LoginPage() {
         else navigateByRole(role);
       }
     } catch (err) {
-      console.error('Google sign-in failed:', err);
-      toast.error('Google sign-in failed. Please try again.');
+      console.error('OAuth sign-in failed:', err);
+      toast.error('Sign-in failed. Please try again.');
     } finally {
-      setGoogleLoading(false);
+      setOauthLoading(null);
     }
   };
 
