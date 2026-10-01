@@ -150,7 +150,8 @@ Return ONLY valid JSON.`;
             score: evalAnswer.score,
             ai_feedback: evalAnswer.feedback,
           })
-          .eq("id", ans.id);
+          .eq("id", ans.id)
+          .eq("interview_id", interview_id);
       }
     }
 

@@ -1,3 +1,4 @@
+import { neutralizeCsvCell } from '@/components/reports/exportUtils';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
@@ -108,7 +109,7 @@ export default function NDAManagementPage() {
       n.consultant_name, n.client_name, n.signature_type,
       new Date(n.signed_at).toISOString(), n.revoked_at ? 'Revoked' : 'Active',
     ]);
-    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const csv = [headers, ...rows].map(r => r.map(c => `"${neutralizeCsvCell(c).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
