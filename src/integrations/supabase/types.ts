@@ -6236,6 +6236,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      plan_limits_enforced: { Args: never; Returns: boolean }
       recompute_consultant_rating: {
         Args: { _consultant_id: string }
         Returns: undefined
