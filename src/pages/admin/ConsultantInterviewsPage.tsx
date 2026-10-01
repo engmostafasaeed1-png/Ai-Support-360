@@ -28,9 +28,14 @@ export default function ConsultantInterviewsPage() {
     queryFn: async () => {
       const { data: cons, error: consErr } = await supabase
         .from('consultants')
-        .select('id, verification_status, profiles:user_id (display_name, avatar_url)')
+        .select('id, user_id, verification_status')
         .order('created_at', { ascending: false });
       if (consErr) throw consErr;
+
+      const { data: profs } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url');
+      const profileByUser = new Map((profs || []).map((p: any) => [p.user_id, p]));
 
       const { data: sessions, error: sessErr } = await supabase
         .from('interview_sessions')
