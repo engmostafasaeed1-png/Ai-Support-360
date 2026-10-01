@@ -104,6 +104,7 @@ export default function PortalSidebar({
   const activePath = bestMatchPath(location.pathname, allPaths, rootPath);
 
   const subtitle = String(t(subtitleKey, { defaultValue: subtitleFallback }));
+  const adminConsoleLabel = String(t('sidebar.admin_console', { defaultValue: 'Admin console' }));
   const showPrimaryAction = primaryAction !== undefined && isVisible(primaryAction.key);
   const PrimaryIcon = primaryAction?.icon;
 
