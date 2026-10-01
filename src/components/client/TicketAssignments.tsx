@@ -77,7 +77,7 @@ function useTicketAssignments(ticketId: string) {
           .single();
         if (c) {
           const { data: p } = await supabase
-            .from('profiles')
+            .from('profile_directory')
             .select('display_name, avatar_url')
             .eq('user_id', c.user_id)
             .single();
@@ -115,7 +115,7 @@ function useAvailableConsultants(ticketId: string) {
       for (const c of consultants || []) {
         if (assignedIds.includes(c.id)) continue;
         const { data: p } = await supabase
-          .from('profiles')
+          .from('profile_directory')
           .select('display_name, avatar_url')
           .eq('user_id', c.user_id)
           .single();

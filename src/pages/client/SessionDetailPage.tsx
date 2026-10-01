@@ -93,7 +93,7 @@ export default function SessionDetailPage() {
       let consultantName = t('session_detail.unknown_consultant');
       if (data.consultants?.user_id) {
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('profile_directory')
           .select('display_name, avatar_url')
           .eq('user_id', data.consultants.user_id)
           .single();
@@ -146,7 +146,7 @@ export default function SessionDetailPage() {
     enabled: !!consultantId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('ratings')
+        .from('consultant_reviews')
         .select('id, score, comment, is_anonymous, created_at, communication_score, technical_expertise_score, responsiveness_score')
         .eq('consultant_id', consultantId!)
         .order('created_at', { ascending: false })

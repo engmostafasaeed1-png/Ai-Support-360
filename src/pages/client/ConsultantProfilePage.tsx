@@ -42,7 +42,7 @@ export default function ConsultantProfilePage() {
     queryFn: async () => {
       if (!id) return [];
       const { data: ratings } = await supabase
-        .from('ratings')
+        .from('consultant_reviews')
         .select('id, score, comment, created_at, client_id, is_anonymous')
         .eq('consultant_id', id)
         .order('created_at', { ascending: false })
@@ -50,11 +50,11 @@ export default function ConsultantProfilePage() {
 
       if (!ratings || ratings.length === 0) return [];
 
-      const nonAnonIds = ratings.filter((r: any) => !r.is_anonymous).map((r: any) => r.client_id);
+      const nonAnonIds = ratings.filter((r: any) => !r.is_anonymous && r.client_id).map((r: any) => r.client_id);
       let clientMap: Record<string, string> = {};
       if (nonAnonIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profile_directory')
           .select('user_id, display_name')
           .in('user_id', nonAnonIds);
         if (profiles) {
@@ -77,13 +77,13 @@ export default function ConsultantProfilePage() {
       if (!id) return null;
       const { data: c } = await supabase
         .from('consultants')
-        .select('id, user_id, bio, hourly_rate, currency, languages, industries, response_time_minutes, credly_username, availability_status, rating, total_reviews, verification_status')
+        .select('id, user_id, bio, hourly_rate, currency, languages, industries, response_time_minutes, credly_username, availability_status, rating, total_reviews, verification_status, ai_skills_score')
         .eq('id', id)
         .maybeSingle();
       if (!c) return null;
 
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('profile_directory')
         .select('display_name, avatar_url')
         .eq('user_id', c.user_id)
         .maybeSingle();
@@ -94,7 +94,7 @@ export default function ConsultantProfilePage() {
         .eq('consultant_id', id);
 
       const { data: certs } = await supabase
-        .from('certifications')
+        .from('certifications_public')
         .select('name, issuer, issue_date, verified')
         .eq('consultant_id', id);
 
@@ -133,6 +133,7 @@ export default function ConsultantProfilePage() {
             certified: !!sk.certified,
           })),
           availableSlots: [] as { time: string; type: 'video' | 'chat' | 'screen_share'; duration: number }[],
+          aiScore: Number((c as any).ai_skills_score) || 0,
           reviews: [] as any[],
         },
       };
@@ -655,8 +656,8 @@ export default function ConsultantProfilePage() {
 
           {/* Credibility breakdown */}
           {(() => {
-            const hasInterview = true; // Would come from real data
-            const interviewScore = 82; // Would come from real data (best overall_score)
+            const interviewScore = Number(detail.aiScore) || 0;
+            const hasInterview = interviewScore > 0;
             
             const certScore = Math.min(detail.certifications.length * 10, 25);
             const expScore = Math.min(detail.skills.reduce((s: any, sk: any) => s + sk.years, 0), 25);

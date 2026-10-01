@@ -88,7 +88,7 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
           .in('id', consultantIds);
         const userIds = (consultants || []).map((c: any) => c.user_id);
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profile_directory')
           .select('user_id, display_name')
           .in('user_id', userIds);
         const profileMap = Object.fromEntries((profiles || []).map((p: any) => [p.user_id, p.display_name || 'Unknown']));
@@ -230,7 +230,7 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
 
       toast.success(
         method === 'email'
-          ? `Timesheet sent to ${email} for signature`
+          ? `Timesheet recorded as submitted for ${email}. E-mail delivery is not connected yet, so please share the PDF with them yourself.`
           : method === 'docusign'
           ? 'Timesheet prepared for DocuSign (integration pending)'
           : method === 'adobe_sign'
@@ -517,8 +517,8 @@ function AddWorkLogDialog({ ticketId, open, onOpenChange }: { ticketId: string; 
       queryClient.invalidateQueries({ queryKey: ['ticket-work-logs', ticketId] });
       onOpenChange(false);
       setForm({ work_date: format(new Date(), 'yyyy-MM-dd'), hours: '1', description: '', category: 'support', billable: true, hourly_rate: '0' });
-    } catch {
-      toast.error('Failed to log work');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to log work');
     } finally {
       setSaving(false);
     }
@@ -538,7 +538,7 @@ function AddWorkLogDialog({ ticketId, open, onOpenChange }: { ticketId: string; 
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Hours</Label>
-              <Input type="number" step="0.25" min="0.25" value={form.hours} onChange={e => setForm(f => ({ ...f, hours: e.target.value }))} />
+              <Input type="number" step="0.25" min="0.25" max="24" value={form.hours} onChange={e => setForm(f => ({ ...f, hours: e.target.value }))} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -622,7 +622,7 @@ function SendForSignatureDialog({
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="email">
-                  <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" /> Send by Email</div>
+                  <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" /> Record as e-mailed</div>
                 </SelectItem>
                 <SelectItem value="docusign">
                   <div className="flex items-center gap-2"><FileSignature className="w-3.5 h-3.5" /> DocuSign</div>
@@ -659,7 +659,7 @@ function SendForSignatureDialog({
             className="gradient-primary border-0 gap-1.5"
           >
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            {method === 'email' ? 'Send Email' : method === 'manual' ? 'Submit' : 'Prepare'}
+            {method === 'email' ? 'Record' : method === 'manual' ? 'Submit' : 'Prepare'}
           </Button>
         </DialogFooter>
       </DialogContent>

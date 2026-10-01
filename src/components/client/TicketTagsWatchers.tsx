@@ -46,7 +46,7 @@ export default function TicketTagsWatchers({ ticketId, isReadOnly = false }: Pro
       const userIds = (data || []).map((w: any) => w.user_id);
       if (userIds.length === 0) return [];
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profile_directory')
         .select('user_id, display_name')
         .in('user_id', userIds);
       const nameMap = Object.fromEntries((profiles || []).map((p: any) => [p.user_id, p.display_name || 'Unknown']));

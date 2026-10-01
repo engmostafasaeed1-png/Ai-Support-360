@@ -126,7 +126,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
 
       const userIds = consultants.map(c => c.user_id);
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profile_directory')
         .select('user_id, display_name, avatar_url')
         .in('user_id', userIds);
 
@@ -158,7 +158,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
 
       const userIds = consultants.map(c => c.user_id);
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profile_directory')
         .select('user_id, display_name, avatar_url')
         .in('user_id', userIds);
 
@@ -247,22 +247,14 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
       return;
     }
 
-    // Notify all selected consultants
-    for (const cId of selectedConsultantIds) {
-      const { data: consultant } = await supabase
-        .from('consultants')
-        .select('user_id')
-        .eq('id', cId)
-        .maybeSingle();
-      if (consultant) {
-        await supabase.from('notifications').insert({
-          user_id: consultant.user_id,
-          title: 'Meeting Invitation',
-          body: `You're invited to a ${sessionType} meeting for "${ticketTitle}" on ${format(scheduledAt, 'MMM d, yyyy')} at ${format(scheduledAt, 'h:mm a')}. Join: ${meetingUrl}`,
-          type: 'session',
-          link: `/consultant/cases/${ticketId}`,
-        });
-      }
+    // The session's own consultant is notified by the database; tell the other selected consultants
+    const otherInvitees = selectedConsultantIds.filter(id => id !== primaryConsultantId);
+    if (otherInvitees.length > 0) {
+      const { error: inviteError } = await supabase.rpc('invite_to_meeting', {
+        _session_id: sessionId,
+        _consultant_ids: otherInvitees,
+      });
+      if (inviteError) console.error(inviteError);
     }
 
     // Download .ics
