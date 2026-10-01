@@ -4,7 +4,7 @@ import PageTransition from '@/components/PageTransition';
 import MatchRequestPopup from '@/components/consultant/MatchRequestPopup';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Outlet } from 'react-router-dom';
-import { Search, Briefcase, Building2, Zap, Plus } from 'lucide-react';
+import { Search, Briefcase, Building2, Zap } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Input } from '@/components/ui/input';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
@@ -14,6 +14,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import SecurityAlert from '@/components/SecurityAlert';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useConsultantProfile } from '@/hooks/useConsultantProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 export default function ConsultantLayout() {
   useSessionTimeout();
   const { profile } = useUserProfile();
+  const { data: consultantProfile } = useConsultantProfile();
 
   return (
     <SidebarProvider>
@@ -70,29 +72,22 @@ export default function ConsultantLayout() {
                   <p className="text-xs">Switch to Client view</p>
                 </TooltipContent>
               </Tooltip>
-              {/* AI Credits */}
+              {/* Credibility credits earned from the AI interview and platform rewards */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-accent/10 border border-accent/20">
+                  <Link
+                    to="/consultant/credits"
+                    className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-accent/10 border border-accent/20 hover:bg-accent/20 transition-colors"
+                  >
                     <Zap className="w-3.5 h-3.5 text-accent" />
-                    <span className="text-xs font-semibold text-accent">42</span>
+                    <span className="text-xs font-semibold text-accent">{consultantProfile ? consultantProfile.credibility_credits : '–'}</span>
                     <span className="text-[10px] text-muted-foreground">credits</span>
-                  </div>
+                  </Link>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  <p className="text-xs">AI credits consumed this month</p>
+                  <p className="text-xs">Credibility credits you have earned</p>
                 </TooltipContent>
               </Tooltip>
-
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 px-2.5 text-xs gap-1 border-accent/30 text-accent hover:bg-accent/10"
-                onClick={() => window.open('https://pay.link/recharge', '_blank')}
-              >
-                <Plus className="w-3 h-3" />
-                <span className="hidden sm:inline">Recharge</span>
-              </Button>
 
               <NotificationBell basePath="/consultant" />
 

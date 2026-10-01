@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,13 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { useConsultantProfile } from '@/hooks/useConsultantProfile';
 
-const verificationSteps = [
-  { key: 'identity', label: 'Identity Verification', desc: 'Upload government-issued ID', status: 'completed' },
-  { key: 'certifications', label: 'SAP Certifications', desc: 'Upload and verify SAP certificates', status: 'completed' },
-  { key: 'experience', label: 'Experience Validation', desc: 'Verify work history and references', status: 'completed' },
-  { key: 'skills', label: 'AI Skills Assessment', desc: 'Complete AI-powered skills evaluation', status: 'completed' },
-  { key: 'interview', label: 'Technical Interview', desc: 'Pass a brief technical screening', status: 'completed' },
-];
+type StepStatus = 'completed' | 'in_progress' | 'pending' | 'failed';
 
 const statusIcon: Record<string, typeof CheckCircle> = {
   completed: CheckCircle,
@@ -39,22 +34,38 @@ const statusColor: Record<string, string> = {
   failed: 'text-red-500',
 };
 
+const statusLabel: Record<StepStatus, string> = {
+  completed: 'Completed',
+  in_progress: 'In progress',
+  pending: 'Not done yet',
+  failed: 'Not approved',
+};
+
 const verificationBadge: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
   under_review: { label: 'Under Review', color: 'bg-blue-100 text-blue-700' },
+  on_hold: { label: 'On Hold', color: 'bg-orange-100 text-orange-700' },
   verified: { label: 'Verified', color: 'bg-green-100 text-green-700' },
   rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
   suspended: { label: 'Suspended', color: 'bg-red-100 text-red-700' },
 };
 
+const statusNote: Record<string, string> = {
+  pending: 'An administrator reviews every application. You will be notified when a decision is made.',
+  under_review: 'An administrator is reviewing your profile. You will be notified when a decision is made.',
+  on_hold: 'Your application is on hold. Please contact support if you have questions.',
+  verified: 'Your profile is verified and visible to clients.',
+  rejected: 'Your application was not approved. Please contact support for details.',
+  suspended: 'Your profile is suspended. Please contact support for details.',
+};
+
 export default function VerificationPage() {
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
-  const { data: consultantProfile } = useConsultantProfile();
-  const profile = consultantProfile || { verification_status: 'pending', ai_skills_score: 0 };
-  const vBadge = verificationBadge[profile.verification_status] || verificationBadge.pending;
-  const completedSteps = verificationSteps.filter((s) => s.status === 'completed').length;
-  const progress = Math.round((completedSteps / verificationSteps.length) * 100);
+  const { data: consultantProfile, isLoading: profileLoading } = useConsultantProfile();
+  const profile: any = consultantProfile || { verification_status: 'pending', ai_skills_score: 0 };
+  const verificationStatus: string = profile.verification_status || 'pending';
+  const vBadge = verificationBadge[verificationStatus] || verificationBadge.pending;
   const [credlyUsername, setCredlyUsername] = useState<string | undefined>(undefined);
   const [userId, setUserId] = useState<string | undefined>(undefined);
   const [pendingInterview, setPendingInterview] = useState<{ id: string } | null>(null);
@@ -62,7 +73,7 @@ export default function VerificationPage() {
   const [consultantId, setConsultantId] = useState<string | undefined>(undefined);
 
   // Fetch skills and certifications from DB
-  const { data: skills = [] } = useQuery({
+  const { data: skills = [], isLoading: skillsLoading } = useQuery({
     queryKey: ['consultant-skills', consultantId],
     queryFn: async () => {
       if (!consultantId) return [];
@@ -72,7 +83,7 @@ export default function VerificationPage() {
     enabled: !!consultantId,
   });
 
-  const { data: certifications = [] } = useQuery({
+  const { data: certifications = [], isLoading: certsLoading } = useQuery({
     queryKey: ['consultant-certs', consultantId],
     queryFn: async () => {
       if (!consultantId) return [];
@@ -114,6 +125,46 @@ export default function VerificationPage() {
         });
     });
   }, [isGuest]);
+
+  // Everything below is derived from the consultant's real data, nothing is hard-coded.
+  const noConsultant = !profileLoading && !isGuest && consultantProfile == null;
+  const ready = !profileLoading && (isGuest || noConsultant || (!!consultantId && !skillsLoading && !certsLoading));
+  const verifiedCerts = certifications.filter((c: any) => c.verified).length;
+  const hasAiInterview = !!profile.ai_interview_completed_at;
+  const aiScore = hasAiInterview ? Math.round(Number(profile.ai_skills_score) || 0) : null;
+  const reviewStatus: StepStatus =
+    verificationStatus === 'verified' ? 'completed'
+    : verificationStatus === 'rejected' || verificationStatus === 'suspended' ? 'failed'
+    : verificationStatus === 'under_review' || verificationStatus === 'on_hold' ? 'in_progress'
+    : 'pending';
+  const verificationSteps: { key: string; label: string; desc: string; status: StepStatus }[] = [
+    {
+      key: 'profile',
+      label: 'Profile completed',
+      desc: 'A bio and at least one SAP skill',
+      status: profile.bio && skills.length > 0 ? 'completed' : 'pending',
+    },
+    {
+      key: 'certifications',
+      label: 'SAP certifications',
+      desc: verifiedCerts > 0 ? 'Verified by the platform team' : 'Add your certificates; the platform team verifies them',
+      status: verifiedCerts > 0 ? 'completed' : certifications.length > 0 ? 'in_progress' : 'pending',
+    },
+    {
+      key: 'skills',
+      label: 'AI skills assessment',
+      desc: 'Optional AI interview that earns a tier badge and credits',
+      status: hasAiInterview ? 'completed' : 'pending',
+    },
+    {
+      key: 'review',
+      label: 'Platform review',
+      desc: 'An administrator reviews your profile and decides',
+      status: reviewStatus,
+    },
+  ];
+  const completedSteps = verificationSteps.filter((s) => s.status === 'completed').length;
+  const progress = Math.round((completedSteps / verificationSteps.length) * 100);
 
   // Show AI interview flow full-screen
   if (showInterviewFlow && pendingInterview) {
@@ -160,40 +211,52 @@ export default function VerificationPage() {
       {/* Verification Status Card */}
       <Card className="rounded-2xl border-border/50">
         <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center">
-                <ShieldCheck className="w-7 h-7 text-primary-foreground" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-foreground">Verification Progress</h3>
-                <p className="text-sm text-muted-foreground">{completedSteps} of {verificationSteps.length} steps completed</p>
-              </div>
+          {!ready ? (
+            <div className="space-y-4">
+              <Skeleton className="h-14 w-full rounded-xl" />
+              <Skeleton className="h-2 w-full" />
+              <Skeleton className="h-16 w-full rounded-xl" />
+              <Skeleton className="h-16 w-full rounded-xl" />
             </div>
-            <Badge className={`${vBadge.color} text-sm px-4 py-1`}>{vBadge.label}</Badge>
-          </div>
-          <Progress value={progress} className="h-2 mb-6" />
-
-          <div className="space-y-4">
-            {verificationSteps.map((step, i) => {
-              const Icon = statusIcon[step.status] || Clock;
-              return (
-                <div key={step.key} className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-border/30">
-                  <div className="relative">
-                    <Icon className={`w-5 h-5 ${statusColor[step.status]}`} />
-                    {i < verificationSteps.length - 1 && (
-                      <div className="absolute top-7 left-1/2 w-0.5 h-6 -translate-x-1/2 bg-border" />
-                    )}
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center">
+                    <ShieldCheck className="w-7 h-7 text-primary-foreground" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">{step.label}</p>
-                    <p className="text-xs text-muted-foreground">{step.desc}</p>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">Verification Progress</h3>
+                    <p className="text-sm text-muted-foreground">{completedSteps} of {verificationSteps.length} steps completed</p>
                   </div>
-                  <span className={`text-xs font-medium capitalize ${statusColor[step.status]}`}>{step.status.replace('_', ' ')}</span>
                 </div>
-              );
-            })}
-          </div>
+                <Badge className={`${vBadge.color} text-sm px-4 py-1`}>{vBadge.label}</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mb-6">{statusNote[verificationStatus] || statusNote.pending}</p>
+              <Progress value={progress} className="h-2 mb-6" />
+
+              <div className="space-y-4">
+                {verificationSteps.map((step, i) => {
+                  const Icon = statusIcon[step.status] || Clock;
+                  return (
+                    <div key={step.key} className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-border/30">
+                      <div className="relative">
+                        <Icon className={`w-5 h-5 ${statusColor[step.status]}`} />
+                        {i < verificationSteps.length - 1 && (
+                          <div className="absolute top-7 left-1/2 w-0.5 h-6 -translate-x-1/2 bg-border" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">{step.label}</p>
+                        <p className="text-xs text-muted-foreground">{step.desc}</p>
+                      </div>
+                      <span className={`text-xs font-medium ${statusColor[step.status]}`}>{statusLabel[step.status]}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -208,11 +271,25 @@ export default function VerificationPage() {
         <CardContent>
           <div className="flex items-center gap-6 mb-6">
             <div className="w-24 h-24 rounded-full border-4 border-accent flex items-center justify-center">
-              <span className="text-2xl font-bold text-foreground">{profile.ai_skills_score}</span>
+              <span className="text-2xl font-bold text-foreground">{!ready ? '…' : aiScore !== null ? aiScore : '—'}</span>
             </div>
             <div>
-              <p className="font-medium text-foreground">Excellent Performance</p>
-              <p className="text-sm text-muted-foreground">You scored in the top 5% of SAP consultants on the platform.</p>
+              {!ready ? (
+                <Skeleton className="h-5 w-48" />
+              ) : aiScore !== null ? (
+                <>
+                  <p className="font-medium text-foreground">
+                    Latest AI interview: {aiScore}/100{profile.ai_interview_badge ? ` · ${profile.ai_interview_badge} badge` : ''}
+                  </p>
+                  <p className="text-sm text-muted-foreground">An administrator reviews every interview as part of your verification.</p>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium text-foreground">No AI interview yet</p>
+                  <p className="text-sm text-muted-foreground">The AI interview is optional. It earns a tier badge and credibility credits that clients can see.</p>
+                  <Link to="/consultant/interviews" className="text-sm text-primary hover:underline">Start an AI interview</Link>
+                </>
+              )}
             </div>
           </div>
 
