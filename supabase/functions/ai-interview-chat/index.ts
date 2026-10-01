@@ -234,21 +234,26 @@ Return ONLY valid JSON.`;
       evaluation.technical_score = clampScore(evaluation.technical_score);
       evaluation.soft_skills_score = clampScore(evaluation.soft_skills_score);
 
-      // Save conversation as answers for records
-      const userMessages = (messages || []).filter((m: any) => m.role === "user");
-      const aiMessages = (messages || []).filter((m: any) => m.role === "assistant");
-      
-      for (let i = 0; i < Math.min(userMessages.length, 10); i++) {
-        await supabase.from("interview_answers").insert({
-          interview_id,
-          question: aiMessages[i]?.content?.slice(0, 500) || `Discussion point ${i + 1}`,
-          answer_transcript: userMessages[i]?.content || "",
-          category: "technical",
-          question_order: i + 1,
-          score: evaluation.overall_score,
-          ai_feedback: i === 0 ? evaluation.detailed_feedback : null,
-        });
+      // Save every question/answer pair (each answer paired with the interviewer turn right before it)
+      const rows: any[] = [];
+      let lastQuestion = "";
+      for (const m of (messages || []) as any[]) {
+        if (m.role === "assistant") lastQuestion = String(m.content || "");
+        else if (m.role === "user" && String(m.content || "").trim()) {
+          rows.push({
+            interview_id,
+            question: (lastQuestion || `Discussion point ${rows.length + 1}`).slice(0, 2000),
+            answer_transcript: String(m.content).slice(0, 8000),
+            category: "technical",
+            question_order: rows.length + 1,
+            score: evaluation.overall_score,
+            ai_feedback: rows.length === 0 ? evaluation.detailed_feedback : null,
+          });
+        }
+        if (rows.length >= 60) break;
       }
+      await supabase.from("interview_answers").delete().eq("interview_id", interview_id);
+      if (rows.length) await supabase.from("interview_answers").insert(rows);
 
       // Update interview session
       await supabase.from("interview_sessions").update({
