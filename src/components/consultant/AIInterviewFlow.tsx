@@ -475,7 +475,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         const msg = typeof errBody?.error === 'string' ? errBody.error : 'Failed to connect to interviewer';
         throw new Error(msg);
       }
-      setError(null);
+      setError('');
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
