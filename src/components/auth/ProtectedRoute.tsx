@@ -38,7 +38,7 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
   const location = useLocation();
 
   const checkAuth = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSessionWithRetry();
 
     if (!session) {
       setState({ status: 'ready', session: null, roleOk: false, hasTenant: true, needsOnboarding: false });

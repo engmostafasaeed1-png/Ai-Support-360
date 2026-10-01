@@ -23,7 +23,7 @@ export function useUserProfile() {
   const { data: profile = null, isLoading: loading } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async (): Promise<UserProfile | null> => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getSessionWithRetry();
       if (!session?.user) return null;
 
       const user = session.user;
