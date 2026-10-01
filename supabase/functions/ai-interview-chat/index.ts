@@ -257,11 +257,23 @@ Return ONLY valid JSON.`;
     let difficultyBlock = "";
 
     if (trainingConfigs && trainingConfigs.length > 0) {
-      const allQuestions = trainingConfigs.flatMap((c: any) => 
-        (c.custom_questions || []).map((q: any) => `- [${q.weight > 1 ? 'IMPORTANT' : 'Normal'}] ${q.question}${q.expected_topics ? ` (look for: ${q.expected_topics})` : ''}`)
-      );
+      const cleanAuthor = (s: unknown) =>
+        typeof s === "string" ? s.replace(/[\[\]\n\r]/g, " ").trim().slice(0, 120) : "";
+      const bank = trainingConfigs
+        .flatMap((c: any) => c.custom_questions || [])
+        .filter((q: any) => typeof q?.question === "string" && q.question.trim())
+        .sort((a: any, b: any) => (b.weight || 1) - (a.weight || 1));
+      const allQuestions = bank.map((q: any, i: number) => {
+        const author = cleanAuthor(q.author_name) || "AI SAP Support Now expert panel";
+        return `${i + 1}. [AUTHOR: ${author}] ${q.question.trim()}${q.expected_topics ? ` (look for: ${q.expected_topics})` : ''}`;
+      });
       if (allQuestions.length > 0) {
-        customQuestionsBlock = `\n\nMANDATORY QUESTIONS (you MUST ask these during the interview):\n${allQuestions.join("\n")}`;
+        customQuestionsBlock = `\n\nQUESTION BANK — written by real senior SAP consultants. STRICT RULES:
+- After the introduction, your interview questions MUST come ONLY from this bank, in order. Do NOT invent new main questions.
+- You may ask at most one short follow-up on an answer, then move to the next bank question.
+- Every message in which you ask a bank question MUST start with the exact tag [[by: AUTHOR]] using that question's author, e.g. "[[by: Ahmed Ali — Senior FICO Consultant]] ...". Never use the tag on other messages.
+- Phrase the question naturally, but keep its meaning. When all bank questions are done, wrap up.
+${allQuestions.join("\n")}`;
       }
       const instructions = trainingConfigs.map((c: any) => c.training_instructions).filter(Boolean);
       if (instructions.length > 0) {
