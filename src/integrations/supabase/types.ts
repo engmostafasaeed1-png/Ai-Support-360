@@ -1858,6 +1858,57 @@ export type Database = {
           },
         ]
       }
+      interview_question_library: {
+        Row: {
+          author_name: string | null
+          best_answer: string
+          category: string | null
+          created_at: string
+          created_by: string | null
+          difficulty: string
+          id: string
+          is_active: boolean
+          key_points: string | null
+          question: string
+          sap_module: string
+          source: string
+          tags: string[]
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string | null
+          best_answer?: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string
+          id?: string
+          is_active?: boolean
+          key_points?: string | null
+          question: string
+          sap_module?: string
+          source?: string
+          tags?: string[]
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string | null
+          best_answer?: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string
+          id?: string
+          is_active?: boolean
+          key_points?: string | null
+          question?: string
+          sap_module?: string
+          source?: string
+          tags?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       interview_sessions: {
         Row: {
           ai_summary: string | null
