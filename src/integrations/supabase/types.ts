@@ -1918,9 +1918,11 @@ export type Database = {
           completed_at: string | null
           consultant_id: string
           created_at: string
+          duration_minutes: number
           id: string
           interview_style: string
           interview_type: Database["public"]["Enums"]["interview_mode"] | null
+          meeting_url: string | null
           overall_score: number | null
           requested_by: string | null
           scheduled_at: string | null
@@ -1936,9 +1938,11 @@ export type Database = {
           completed_at?: string | null
           consultant_id: string
           created_at?: string
+          duration_minutes?: number
           id?: string
           interview_style?: string
           interview_type?: Database["public"]["Enums"]["interview_mode"] | null
+          meeting_url?: string | null
           overall_score?: number | null
           requested_by?: string | null
           scheduled_at?: string | null
@@ -1954,9 +1958,11 @@ export type Database = {
           completed_at?: string | null
           consultant_id?: string
           created_at?: string
+          duration_minutes?: number
           id?: string
           interview_style?: string
           interview_type?: Database["public"]["Enums"]["interview_mode"] | null
+          meeting_url?: string | null
           overall_score?: number | null
           requested_by?: string | null
           scheduled_at?: string | null
