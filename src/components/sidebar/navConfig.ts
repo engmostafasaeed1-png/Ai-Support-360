@@ -224,6 +224,7 @@ export const adminNavGroups: NavGroup[] = [
       { key: 'approvals', icon: UserCheck, path: '/admin/approvals' },
       { key: 'interview_training', icon: Brain, path: '/admin/interview-training' },
       { key: 'question_library', icon: BookMarked, path: '/admin/question-library', fallback: 'Question library' },
+      { key: 'consultant_interviews', icon: ClipboardList, path: '/admin/consultant-interviews', fallback: 'Consultant interviews' },
       { key: 'nda_management', icon: FileSignature, path: '/admin/nda-management' },
     ],
   },
