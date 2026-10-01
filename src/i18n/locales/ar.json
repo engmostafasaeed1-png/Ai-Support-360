@@ -840,6 +840,8 @@
     "strength_strong": "قوية",
     "password_min": "كلمة المرور يجب أن تكون ١٢ حرفاً على الأقل",
     "login_btn": "تسجيل الدخول",
+    "or_continue_with": "أو تابع باستخدام",
+    "continue_with_google": "المتابعة باستخدام Google",
     "signup_btn": "إنشاء حساب",
     "no_account": "ليس لديك حساب؟",
     "signup_link": "سجّل الآن",
