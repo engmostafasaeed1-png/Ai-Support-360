@@ -9,6 +9,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, ClipboardList, Star } from 'lucide-react';
 import InterviewHistory from '@/components/consultant/InterviewHistory';
 
+interface ModuleScore {
+  module: string;
+  avg: number;
+  count: number;
+}
+
 interface ConsultantRow {
   id: string;
   name: string;
@@ -17,6 +23,7 @@ interface ConsultantRow {
   interviewCount: number;
   avgScore: number | null;
   lastInterviewAt: string | null;
+  moduleScores: ModuleScore[];
 }
 
 export default function ConsultantInterviewsPage() {
@@ -39,21 +46,49 @@ export default function ConsultantInterviewsPage() {
 
       const { data: sessions, error: sessErr } = await supabase
         .from('interview_sessions')
-        .select('consultant_id, overall_score, created_at');
+        .select('id, consultant_id, overall_score, created_at');
       if (sessErr) throw sessErr;
 
-      const byConsultant = new Map<string, { count: number; scores: number[]; last: string }>();
+      const sessionIds = (sessions || []).map((s) => s.id);
+      const { data: answers } = sessionIds.length
+        ? await supabase
+            .from('interview_answers')
+            .select('interview_id, score, sap_module')
+            .in('interview_id', sessionIds)
+        : { data: [] as any[] };
+      const sessionConsultant = new Map((sessions || []).map((s) => [s.id, s.consultant_id]));
+
+      const byConsultant = new Map<string, { count: number; scores: number[]; last: string; modules: Map<string, number[]> }>();
       for (const s of sessions || []) {
-        const entry = byConsultant.get(s.consultant_id) || { count: 0, scores: [], last: s.created_at };
+        const entry = byConsultant.get(s.consultant_id) || { count: 0, scores: [] as number[], last: s.created_at, modules: new Map<string, number[]>() };
         entry.count += 1;
         if (s.overall_score != null) entry.scores.push(s.overall_score);
         if (s.created_at > entry.last) entry.last = s.created_at;
         byConsultant.set(s.consultant_id, entry);
       }
+      for (const a of answers || []) {
+        const consultantId = sessionConsultant.get(a.interview_id);
+        if (!consultantId || a.score == null) continue;
+        const entry = byConsultant.get(consultantId);
+        if (!entry) continue;
+        const mod = (a.sap_module || 'General').trim() || 'General';
+        const list: number[] = entry.modules.get(mod) || [];
+        list.push(a.score);
+        entry.modules.set(mod, list);
+      }
 
       return (cons || []).map((c: any): ConsultantRow => {
         const agg = byConsultant.get(c.id);
         const prof = profileByUser.get(c.user_id) as any;
+        const moduleScores: ModuleScore[] = agg
+          ? Array.from(agg.modules.entries())
+              .map(([module, scores]) => ({
+                module,
+                avg: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+                count: scores.length,
+              }))
+              .sort((a, b) => b.count - a.count || a.module.localeCompare(b.module))
+          : [];
         return {
           id: c.id,
           name: prof?.display_name || 'Unknown',
@@ -64,6 +99,7 @@ export default function ConsultantInterviewsPage() {
             ? Math.round(agg.scores.reduce((a, b) => a + b, 0) / agg.scores.length)
             : null,
           lastInterviewAt: agg?.last || null,
+          moduleScores,
         };
       });
     },
@@ -159,6 +195,23 @@ export default function ConsultantInterviewsPage() {
                   </p>
                 </div>
               </div>
+              {selected.moduleScores.length > 0 && (
+                <Card className="rounded-2xl border-border/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold">Scores by SAP area</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-wrap gap-2">
+                    {selected.moduleScores.map((m) => (
+                      <Badge key={m.module} variant="secondary" className="gap-1.5 px-3 py-1.5">
+                        <span className="font-medium">{m.module}</span>
+                        <span className="text-muted-foreground">·</span>
+                        <span className="font-bold">{m.avg}/100</span>
+                        <span className="text-muted-foreground text-xs">({m.count} q)</span>
+                      </Badge>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
               <InterviewHistory consultantId={selected.id} />
             </div>
           ) : (

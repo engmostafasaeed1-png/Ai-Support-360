@@ -1,0 +1,1 @@
+ALTER TABLE public.interview_answers ADD COLUMN IF NOT EXISTS sap_module text;

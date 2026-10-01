@@ -192,9 +192,12 @@ Provide evaluation as JSON:
   "summary": "2-3 sentence summary of performance",
   "strengths": ["strength1", "strength2"],
   "improvements": ["area1", "area2"],
-  "detailed_feedback": "A paragraph of detailed feedback"
+  "detailed_feedback": "A paragraph of detailed feedback",
+  "question_scores": [
+    { "question_order": number (1-based, matching the candidate's answers in order), "score": number (0-100), "sap_module": "SAP area the question tests, e.g. FI, CO, MM, SD, HCM, Basis, BTP, S/4HANA, or General" }
+  ]
 }
-Return ONLY valid JSON.`;
+Include one question_scores entry per candidate answer, in the same order the answers appear. Return ONLY valid JSON.`;
 
       const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -235,18 +238,32 @@ Return ONLY valid JSON.`;
       evaluation.soft_skills_score = clampScore(evaluation.soft_skills_score);
 
       // Save every question/answer pair (each answer paired with the interviewer turn right before it)
+      const perQuestion = new Map<number, { score: number; sap_module: string }>();
+      if (Array.isArray(evaluation.question_scores)) {
+        for (const qs of evaluation.question_scores) {
+          const order = Number(qs?.question_order);
+          if (!Number.isInteger(order) || order < 1) continue;
+          perQuestion.set(order, {
+            score: clampScore(qs?.score),
+            sap_module: String(qs?.sap_module || "General").slice(0, 100),
+          });
+        }
+      }
       const rows: any[] = [];
       let lastQuestion = "";
       for (const m of (messages || []) as any[]) {
         if (m.role === "assistant") lastQuestion = String(m.content || "");
         else if (m.role === "user" && String(m.content || "").trim()) {
+          const order = rows.length + 1;
+          const pq = perQuestion.get(order);
           rows.push({
             interview_id,
-            question: (lastQuestion || `Discussion point ${rows.length + 1}`).slice(0, 2000),
+            question: (lastQuestion || `Discussion point ${order}`).slice(0, 2000),
             answer_transcript: String(m.content).slice(0, 8000),
             category: "technical",
-            question_order: rows.length + 1,
-            score: evaluation.overall_score,
+            question_order: order,
+            score: pq?.score ?? evaluation.overall_score,
+            sap_module: pq?.sap_module ?? "General",
             ai_feedback: rows.length === 0 ? evaluation.detailed_feedback : null,
           });
         }
