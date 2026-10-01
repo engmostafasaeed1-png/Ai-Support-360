@@ -14,6 +14,7 @@ import {
   SITE_URL,
 } from '../_shared/security.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -65,23 +66,29 @@ Deno.serve(async (req) => {
     .maybeSingle();
   if (reqErr || !request) return jsonResponse(req, { ok: true, warning: 'request not found for email' });
 
+  const templateName = 'demo-reschedule-confirmed';
+  const logRow = async (status: string, error_message?: string) => {
+    const { error: logErr } = await admin.from('email_send_log').insert({
+      message_id: null, template_name: templateName, recipient_email: request.email, status, error_message: error_message ?? null,
+    });
+    if (logErr) console.error('send log failed', { code: logErr.code, message: logErr.message });
+  };
   try {
-    await admin.functions.invoke('send-transactional-email', {
-      body: {
-        templateName: 'demo-reschedule-confirmed',
-        recipientEmail: request.email,
-        idempotencyKey: `demo-reschedule-confirmed-${requestId}-${request.scheduled_date}-${request.scheduled_slot}`,
-        templateData: {
-          name: request.full_name,
-          confirmationUrl: `${SITE_URL}/demo/confirmation/${request.request_token}`,
-          scheduledDate: request.scheduled_date,
-          scheduledSlot: request.scheduled_slot,
-          timezone: request.timezone,
-        },
+    const result = await sendTemplateEmail(templateName, request.email, {
+      idempotencyKey: `demo-reschedule-confirmed-${requestId}-${request.scheduled_date}-${request.scheduled_slot}`,
+      templateData: {
+        name: request.full_name,
+        confirmationUrl: `${SITE_URL}/demo/confirmation/${request.request_token}`,
+        scheduledDate: request.scheduled_date,
+        scheduledSlot: request.scheduled_slot,
+        timezone: request.timezone,
       },
     });
+    await logRow(result.sent ? 'sent' : 'suppressed');
   } catch (e) {
-    console.warn('Failed to enqueue confirmation email', e instanceof Error ? e.message : String(e));
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn('Failed to send confirmation email', msg);
+    await logRow('failed', msg.slice(0, 1000));
   }
 
   return jsonResponse(req, { ok: true, request: row });
