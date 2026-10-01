@@ -4687,7 +4687,9 @@ export type Database = {
           ended_at: string | null
           facial_verification_result: Json | null
           id: string
+          interview_type: string
           overall_recommendation: string | null
+          proposed_slots: Json | null
           recording_url: string | null
           room_id: string | null
           scheduled_at: string | null
@@ -4708,7 +4710,9 @@ export type Database = {
           ended_at?: string | null
           facial_verification_result?: Json | null
           id?: string
+          interview_type?: string
           overall_recommendation?: string | null
+          proposed_slots?: Json | null
           recording_url?: string | null
           room_id?: string | null
           scheduled_at?: string | null
@@ -4729,7 +4733,9 @@ export type Database = {
           ended_at?: string | null
           facial_verification_result?: Json | null
           id?: string
+          interview_type?: string
           overall_recommendation?: string | null
+          proposed_slots?: Json | null
           recording_url?: string | null
           room_id?: string | null
           scheduled_at?: string | null
@@ -5773,6 +5779,63 @@ export type Database = {
           },
         ]
       }
+      consultant_reviews: {
+        Row: {
+          client_id: string | null
+          comment: string | null
+          communication_score: number | null
+          consultant_id: string | null
+          created_at: string | null
+          id: string | null
+          is_anonymous: boolean | null
+          responsiveness_score: number | null
+          score: number | null
+          session_id: string | null
+          technical_expertise_score: number | null
+        }
+        Insert: {
+          client_id?: never
+          comment?: string | null
+          communication_score?: number | null
+          consultant_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_anonymous?: boolean | null
+          responsiveness_score?: number | null
+          score?: number | null
+          session_id?: string | null
+          technical_expertise_score?: number | null
+        }
+        Update: {
+          client_id?: never
+          comment?: string | null
+          communication_score?: number | null
+          consultant_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_anonymous?: boolean | null
+          responsiveness_score?: number | null
+          score?: number | null
+          session_id?: string | null
+          technical_expertise_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       environment_credentials_safe: {
         Row: {
           created_at: string | null
@@ -5872,6 +5935,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profile_directory: {
+        Row: {
+          avatar_url: string | null
+          display_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          display_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          display_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       vmware_settings_safe: {
         Row: {
@@ -6066,6 +6147,14 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_emergency_contact: {
+        Args: { _ticket_id: string }
+        Returns: {
+          display_name: string
+          hourly_rate: number
+          phone: string
+        }[]
+      }
       get_integration_credentials: {
         Args: { _integration_id: string }
         Returns: {
@@ -6128,6 +6217,15 @@ export type Database = {
       }
       is_ticket_participant: { Args: { _ticket_id: string }; Returns: boolean }
       is_untrusted_writer: { Args: never; Returns: boolean }
+      log_client_event: {
+        Args: {
+          _action: string
+          _entity_id?: string
+          _entity_type?: string
+          _metadata?: Json
+        }
+        Returns: undefined
+      }
       notify_unread_once: {
         Args: {
           _body: string
@@ -6208,6 +6306,7 @@ export type Database = {
         }
         Returns: string
       }
+      send_emergency_alert: { Args: { _ticket_id: string }; Returns: boolean }
       share_a_company: {
         Args: { _user_a: string; _user_b: string }
         Returns: boolean
@@ -6228,6 +6327,16 @@ export type Database = {
         }
         Returns: string
       }
+      submit_ticket_plan: {
+        Args: {
+          _breakdown?: Json
+          _cost_currency?: string
+          _planned_cost: number
+          _planned_hours: number
+          _ticket_id: string
+        }
+        Returns: boolean
+      }
       ticket_consultant_id: { Args: { _ticket_id: string }; Returns: string }
       ticket_owned_by: {
         Args: { _client_id: string; _ticket_id: string }
@@ -6235,6 +6344,10 @@ export type Database = {
       }
       users_share_engagement: {
         Args: { _user_a: string; _user_b: string }
+        Returns: boolean
+      }
+      users_visible_to_each_other: {
+        Args: { _a: string; _b: string }
         Returns: boolean
       }
     }
