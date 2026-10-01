@@ -12,9 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import {
-  mockConsultantProfile, mockEarnings, mockCases, mockReviews,
-} from '@/data/consultantMockData';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import OnboardingProgressCard from '@/components/onboarding/OnboardingProgressCard';
 import WelcomeBanner from '@/components/onboarding/WelcomeBanner';
@@ -120,9 +117,14 @@ export default function ConsultantDashboard() {
     },
   });
 
-  const profile = liveData?.consultant || mockConsultantProfile;
-  const earnings = mockEarnings;
-  const activeCases = liveData ? liveData.tickets : mockCases.filter(c => c.status !== 'resolved' && c.status !== 'closed');
+  const profile: any = liveData?.consultant || {};
+  const earnings = {
+    total: liveData?.totalEarned ?? 0,
+    thisMonth: liveData?.totalEarned ?? 0,
+    pending: liveData?.pending ?? 0,
+    monthlyTrend: [] as { month: string; amount: number }[],
+  };
+  const activeCases = liveData ? liveData.tickets : [];
   const upcomingSessions = liveData?.sessions || [];
 
   const kpis = [
@@ -182,7 +184,7 @@ export default function ConsultantDashboard() {
           <p className="text-sm text-muted-foreground mt-1">{t('consultant_dashboard.subtitle')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <AIInsightsButton role="consultant" metrics={{ rating: profile.rating, totalReviews: profile.total_reviews, hourlyRate: profile.hourly_rate, activeCases: mockCases.filter(c => c.status === 'in_progress').length, totalEarnings: mockEarnings.total }} />
+          <AIInsightsButton role="consultant" metrics={{ rating: profile.rating, totalReviews: profile.total_reviews, hourlyRate: profile.hourly_rate, activeCases: activeCases.filter((c: any) => c.status === 'in_progress').length, totalEarnings: earnings.total }} />
           <AvailabilityToggle />
           <Link to="/consultant/calendar">
             <Button size="sm" className="gradient-primary border-0 shadow-premium hover:shadow-glow transition-all">
@@ -393,18 +395,9 @@ export default function ConsultantDashboard() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 stagger-fade">
-              {mockReviews.map((review) => (
-                <div key={review.id} className="p-4 rounded-xl bg-muted/20 border border-border/30 card-interactive">
-                  <div className="flex items-center gap-1 mb-2">
-                    {Array.from({ length: review.score }).map((_, j) => (
-                      <Star key={j} className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">"{review.comment}"</p>
-                  <p className="text-xs font-medium text-foreground">{review.client}</p>
-                </div>
-              ))}
+            <div className="text-center py-8">
+              <Star className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">{t('consultant_dashboard.no_reviews', 'No reviews yet')}</p>
             </div>
           )}
         </CardContent>

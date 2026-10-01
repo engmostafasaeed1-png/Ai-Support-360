@@ -26,14 +26,28 @@ export function useConsultantEarnings() {
     queryKey: ['consultant-earnings'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return mockEarnings;
+      if (!user) return {
+        total: 0,
+        thisMonth: 0,
+        pending: 0,
+        available: 0,
+        currency: 'USD',
+        monthlyTrend: [],
+      };
 
       const { data: consultant } = await supabase
         .from('consultants')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
-      if (!consultant) return mockEarnings;
+      if (!consultant) return {
+        total: 0,
+        thisMonth: 0,
+        pending: 0,
+        available: 0,
+        currency: 'USD',
+        monthlyTrend: [],
+      };
 
       const { data: payments } = await supabase
         .from('payments')

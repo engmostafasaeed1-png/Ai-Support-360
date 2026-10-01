@@ -89,11 +89,11 @@ export default function ClientDashboard() {
   const resolutionRate = totalTickets > 0 ? Math.round((resolvedCount / totalTickets) * 100) : 0;
 
   const recommendedConsultants = useMemo(() => isGuest ? mockRecommendedConsultants : (
-    realtimeConsultants.length > 0 ? realtimeConsultants.slice(0, 6).map(c => ({
+    realtimeConsultants.slice(0, 6).map(c => ({
       ...c, avatar: c.name.split(' ').map(w => w[0]).join('').slice(0, 2),
       reviews: c.reviews || 0, badges: c.badges || [], credly_username: c.credly_username,
       credibility_credits: c.credibility_credits, ai_interview_badge: c.ai_interview_badge,
-    })) : mockRecommendedConsultants
+    }))
   ), [realtimeConsultants, isGuest]);
 
   const ticketSpark = useMemo(() => Array.from({ length: 7 }, (_, i) =>
@@ -458,6 +458,15 @@ export default function ClientDashboard() {
           </Link>
         </CardHeader>
         <CardContent>
+          {recommendedConsultants.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mx-auto mb-3">
+                <Users className="w-6 h-6 text-purple-500" />
+              </div>
+              <p className="text-sm font-medium text-foreground">Nothing here yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Recommended consultants will appear here once matches are available.</p>
+            </div>
+          ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-fade">
             {recommendedConsultants.map((c: any) => (
               <Link key={c.id} to={`/client/consultants/${c.id}`} className="block">
@@ -516,6 +525,7 @@ export default function ClientDashboard() {
               </Link>
             ))}
           </div>
+          )}
         </CardContent>
       </Card>
 

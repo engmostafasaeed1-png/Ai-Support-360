@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { mockRecommendedConsultants } from '@/data/clientMockData';
 import { mockConsultantDetailData } from '@/data/consultantDetailMockData';
+import { useGuestMode } from '@/contexts/GuestModeContext';
 import {
   Star, MapPin, Clock, Globe, Shield, Award, Video,
   MessageSquare, Monitor, ChevronLeft, CalendarDays, BadgeCheck, ExternalLink, Brain, EyeOff, User,
@@ -33,15 +34,17 @@ export default function ConsultantProfilePage() {
   const [credlyBadges, setCredlyBadges] = useState<any[]>([]);
   const [credlyLoading, setCredlyLoading] = useState(false);
 
+  const { isGuest } = useGuestMode();
+
   // Fetch live reviews for this consultant
   const { data: liveReviews, isLoading: reviewsLoading } = useQuery({
     queryKey: ['consultant-profile-reviews', id],
     queryFn: async () => {
       if (!id) return [];
-      // Find consultant by mock id - in real app would query by consultant.id
       const { data: ratings } = await supabase
         .from('ratings')
         .select('id, score, comment, created_at, client_id, is_anonymous')
+        .eq('consultant_id', id)
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -67,8 +70,78 @@ export default function ConsultantProfilePage() {
     },
   });
 
-  const consultant = mockRecommendedConsultants.find(c => c.id === id);
-  const detail = mockConsultantDetailData;
+  // Fetch live consultant profile + detail (bio, skills, certifications) for signed-in users
+  const { data: liveProfile, isLoading: profileLoading } = useQuery({
+    queryKey: ['consultant-profile-detail', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data: c } = await supabase
+        .from('consultants')
+        .select('id, user_id, bio, hourly_rate, currency, languages, industries, response_time_minutes, credly_username, availability_status, rating, total_reviews, verification_status')
+        .eq('id', id)
+        .maybeSingle();
+      if (!c) return null;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name, avatar_url')
+        .eq('user_id', c.user_id)
+        .maybeSingle();
+
+      const { data: skills } = await supabase
+        .from('consultant_skills')
+        .select('sap_module, proficiency_level, years_experience, certified')
+        .eq('consultant_id', id);
+
+      const { data: certs } = await supabase
+        .from('certifications')
+        .select('name, issuer, issue_date, verified')
+        .eq('consultant_id', id);
+
+      const name = profile?.display_name || 'Consultant';
+      const initials = name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2);
+
+      return {
+        consultant: {
+          id: c.id,
+          name,
+          specialty: skills?.[0]?.sap_module || 'SAP',
+          rating: Number(c.rating) || 0,
+          reviews: c.total_reviews || 0,
+          rate: Number(c.hourly_rate) || 0,
+          avatar: initials,
+          available: c.availability_status === 'available',
+          badges: c.verification_status === 'verified' ? ['verified'] : [],
+          city: '',
+          credly_username: c.credly_username,
+        },
+        detail: {
+          bio: c.bio || 'No bio provided yet.',
+          responseTime: c.response_time_minutes || 0,
+          languages: c.languages || [],
+          industries: c.industries || [],
+          certifications: (certs || []).map((ct: any) => ({
+            name: ct.name,
+            issuer: ct.issuer || '',
+            year: ct.issue_date ? new Date(ct.issue_date).getFullYear().toString() : '',
+            verified: !!ct.verified,
+          })),
+          skills: (skills || []).map((sk: any) => ({
+            module: sk.sap_module,
+            proficiency: sk.proficiency_level || 0,
+            years: sk.years_experience || 0,
+            certified: !!sk.certified,
+          })),
+          availableSlots: [] as { time: string; type: 'video' | 'chat' | 'screen_share'; duration: number }[],
+          reviews: [] as any[],
+        },
+      };
+    },
+    enabled: !isGuest && !!id,
+  });
+
+  const consultant: any = isGuest ? mockRecommendedConsultants.find(c => c.id === id) : liveProfile?.consultant;
+  const detail: any = isGuest ? mockConsultantDetailData : (liveProfile?.detail || mockConsultantDetailData);
 
   // Try to fetch real verification_status; fall back to mock badge
   const { data: liveConsultant } = useQuery({
@@ -129,6 +202,15 @@ export default function ConsultantProfilePage() {
     };
     fetchCredly();
   }, [consultant?.credly_username]);
+
+  if (!isGuest && profileLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-64 rounded-2xl" />
+      </div>
+    );
+  }
 
   if (!consultant) {
     return (
@@ -515,6 +597,12 @@ export default function ConsultantProfilePage() {
               </div>
 
               {/* Review list */}
+              {(liveReviews && liveReviews.length > 0 ? liveReviews : detail.reviews).length === 0 ? (
+                <div className="text-center py-8">
+                  <Star className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">{t('reviews.no_reviews', 'No reviews yet')}</p>
+                </div>
+              ) : (
               <div className="space-y-4">
                 {(liveReviews && liveReviews.length > 0 ? liveReviews : detail.reviews).map((review: any, i: number) => (
                   <div key={review.id || i} className="p-4 rounded-xl border border-border/30">
@@ -549,6 +637,7 @@ export default function ConsultantProfilePage() {
                   </div>
                 ))}
               </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

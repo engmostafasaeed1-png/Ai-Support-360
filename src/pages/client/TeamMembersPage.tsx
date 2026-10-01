@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,13 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Users, Plus, Mail, Shield, Crown, UserCog } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
-const mockMembers = [
-  { id: '1', name: 'Mostafa A.', email: 'mostafa@company.com', role: 'Owner', status: 'Active', initials: 'MA' },
-  { id: '2', name: 'Sara M.', email: 'sara@company.com', role: 'Admin', status: 'Active', initials: 'SM' },
-  { id: '3', name: 'Ahmed K.', email: 'ahmed@company.com', role: 'Member', status: 'Active', initials: 'AK' },
-  { id: '4', name: 'Fatima R.', email: 'fatima@company.com', role: 'Member', status: 'Invited', initials: 'FR' },
-];
 
 const roleIcons: Record<string, typeof Crown> = {
   Owner: Crown,
@@ -35,6 +30,54 @@ export default function TeamMembersPage() {
   const [open, setOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('member');
+  const [members, setMembers] = useState<{ id: string; name: string; email: string; role: string; status: string; initials: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { if (active) setLoading(false); return; }
+
+      const { data: myMembership } = await supabase
+        .from('tenant_members')
+        .select('tenant_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!myMembership) { if (active) setLoading(false); return; }
+
+      const { data: rows } = await supabase
+        .from('tenant_members')
+        .select('id, user_id, org_role')
+        .eq('tenant_id', myMembership.tenant_id);
+
+      if (!rows || rows.length === 0) { if (active) setLoading(false); return; }
+
+      const userIds = rows.map(r => r.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', userIds);
+      const nameMap = new Map((profiles || []).map(p => [p.user_id, p.display_name || 'Member']));
+
+      if (!active) return;
+      setMembers(rows.map(r => {
+        const name = nameMap.get(r.user_id) || 'Member';
+        return {
+          id: r.id,
+          name,
+          email: '',
+          role: r.org_role === 'owner' ? 'Owner' : r.org_role === 'admin' ? 'Admin' : 'Member',
+          status: 'Active',
+          initials: name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+        };
+      }));
+      setLoading(false);
+    };
+    load();
+    return () => { active = false; };
+  }, []);
 
   const handleInvite = () => {
     if (!inviteEmail) return;
@@ -96,12 +139,19 @@ export default function TeamMembersPage() {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Users className="w-4 h-4" />
-            {mockMembers.length} Members
+            {members.length} Members
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
+          {loading ? null : members.length === 0 ? (
+            <div className="py-12 text-center">
+              <Users className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">Nothing here yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Invite teammates to collaborate on your company portal.</p>
+            </div>
+          ) : (
           <div className="divide-y divide-border">
-            {mockMembers.map((member) => {
+            {members.map((member) => {
               const RoleIcon = roleIcons[member.role] || UserCog;
               return (
                 <div key={member.id} className="flex items-center gap-3 px-6 py-4 hover:bg-muted/30 transition-colors">
@@ -123,6 +173,7 @@ export default function TeamMembersPage() {
               );
             })}
           </div>
+          )}
         </CardContent>
       </Card>
     </div>
