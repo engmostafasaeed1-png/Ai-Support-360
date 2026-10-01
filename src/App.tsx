@@ -47,6 +47,7 @@ const PricingPage = React.lazy(() => import("./pages/PricingPage.tsx"));
 const DemoRequestConfirmationPage = React.lazy(() => import("./pages/DemoRequestConfirmationPage.tsx"));
 const UnsubscribePage = React.lazy(() => import("./pages/UnsubscribePage.tsx"));
 const LoginPage = React.lazy(() => import("./pages/auth/LoginPage.tsx"));
+const OAuthConsentPage = React.lazy(() => import("./pages/auth/OAuthConsentPage.tsx"));
 const SignupPage = React.lazy(() => import("./pages/auth/SignupPage.tsx"));
 const ForgotPasswordPage = React.lazy(() => import("./pages/auth/ForgotPasswordPage.tsx"));
 const VerificationTimelineHarness = React.lazy(
@@ -238,6 +239,7 @@ const App = () => (
             <Route path="/demo/confirmation/:token" element={<DemoRequestConfirmationPage />} />
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/.lovable/oauth/consent" element={<OAuthConsentPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
