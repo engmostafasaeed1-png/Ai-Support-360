@@ -195,8 +195,11 @@ export default function LoginPage() {
       try {
         const role = await getRoleAndRepairAccount(session.user);
 
-        if (from) {
-          navigate(from, { replace: true });
+        const oauthNext = sessionStorage.getItem('oauth_next');
+        sessionStorage.removeItem('oauth_next');
+        const dest = from || oauthNext;
+        if (dest) {
+          navigate(dest, { replace: true });
           return;
         }
 
@@ -233,7 +236,7 @@ export default function LoginPage() {
       // Remember the intended destination across the OAuth redirect
       if (from) sessionStorage.setItem('oauth_next', from);
       const result = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}/login`,
       });
       if (result.error) {
         toast.error(result.error.message || 'Google sign-in failed. Please try again.');
