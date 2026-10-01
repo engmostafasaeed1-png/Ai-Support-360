@@ -5,6 +5,14 @@ import type { Tables } from '@/integrations/supabase/types';
 
 type Notification = Tables<'notifications'>;
 
+// Unique per subscription. Several components can call this hook in the same render (header bell + notifications page);
+// a Date.now() based name collided, supabase-js returned the already-subscribed channel and threw
+// "cannot add `postgres_changes` callbacks ... after `subscribe()`", which crashed the Notifications page.
+const uniqueSuffix = () =>
+  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -79,7 +87,7 @@ export function useNotifications() {
   useEffect(() => {
     fetchNotifications();
 
-    const channelName = `notifications-realtime-${Date.now()}`;
+    const channelName = `notifications-realtime-${uniqueSuffix()}`;
     const channel = supabase
       .channel(channelName)
       .on(
