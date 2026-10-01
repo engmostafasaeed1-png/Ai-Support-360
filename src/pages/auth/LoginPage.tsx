@@ -227,22 +227,22 @@ export default function LoginPage() {
     return () => clearInterval(id);
   }, [lockoutUntil]);
 
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<string | null>(null);
 
-  const handleGoogleLogin = async () => {
-    if (googleLoading) return;
-    setGoogleLoading(true);
+  const handleOAuthLogin = async (provider: 'google' | 'apple' | 'microsoft' | 'lovable') => {
+    if (oauthLoading) return;
+    setOauthLoading(provider);
     try {
       // Remember the intended destination across the OAuth redirect
       if (from) sessionStorage.setItem('oauth_next', from);
-      const result = await lovable.auth.signInWithOAuth('google', {
+      const result = await lovable.auth.signInWithOAuth(provider, {
         redirect_uri: `${window.location.origin}/login`,
       });
       if (result.error) {
-        toast.error(result.error.message || 'Google sign-in failed. Please try again.');
+        toast.error(result.error.message || 'Sign-in failed. Please try again.');
         return;
       }
-      if (result.redirected) return; // browser is navigating to Google
+      if (result.redirected) return; // browser is navigating to the provider
       // Tokens returned and session already set — route by role
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -254,10 +254,10 @@ export default function LoginPage() {
         else navigateByRole(role);
       }
     } catch (err) {
-      console.error('Google sign-in failed:', err);
-      toast.error('Google sign-in failed. Please try again.');
+      console.error('OAuth sign-in failed:', err);
+      toast.error('Sign-in failed. Please try again.');
     } finally {
-      setGoogleLoading(false);
+      setOauthLoading(null);
     }
   };
 
@@ -396,7 +396,7 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
-            <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" disabled={loading || googleLoading || !!(lockoutUntil && Date.now() < lockoutUntil)}>
+            <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" disabled={loading || !!oauthLoading || !!(lockoutUntil && Date.now() < lockoutUntil)}>
               {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {lockRemaining ? `Locked (${lockRemaining})` : t('auth.login_btn')}
             </Button>
@@ -405,25 +405,78 @@ export default function LoginPage() {
               <span className="text-xs text-muted-foreground">{t('auth.or_continue_with')}</span>
               <span className="h-px flex-1 bg-border" />
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full h-11 rounded-xl text-base"
-              onClick={handleGoogleLogin}
-              disabled={loading || googleLoading}
-            >
-              {googleLoading ? (
-                <Loader2 className="w-4 h-4 me-2 animate-spin" />
-              ) : (
-                <svg className="w-4 h-4 me-2" viewBox="0 0 24 24" aria-hidden="true">
-                  <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z" />
-                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z" />
-                  <path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z" />
-                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z" />
-                </svg>
-              )}
-              {t('auth.continue_with_google')}
-            </Button>
+            <div className="grid grid-cols-2 gap-3 w-full">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 rounded-xl"
+                onClick={() => handleOAuthLogin('google')}
+                disabled={loading || !!oauthLoading}
+              >
+                {oauthLoading === 'google' ? (
+                  <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                ) : (
+                  <svg className="w-4 h-4 me-2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z" />
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z" />
+                    <path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z" />
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z" />
+                  </svg>
+                )}
+                Google
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 rounded-xl"
+                onClick={() => handleOAuthLogin('apple')}
+                disabled={loading || !!oauthLoading}
+              >
+                {oauthLoading === 'apple' ? (
+                  <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                ) : (
+                  <svg className="w-4 h-4 me-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+                  </svg>
+                )}
+                Apple
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 rounded-xl"
+                onClick={() => handleOAuthLogin('microsoft')}
+                disabled={loading || !!oauthLoading}
+              >
+                {oauthLoading === 'microsoft' ? (
+                  <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                ) : (
+                  <svg className="w-4 h-4 me-2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="#F25022" d="M1 1h10v10H1z" />
+                    <path fill="#7FBA00" d="M13 1h10v10H13z" />
+                    <path fill="#00A4EF" d="M1 13h10v10H1z" />
+                    <path fill="#FFB900" d="M13 13h10v10H13z" />
+                  </svg>
+                )}
+                Microsoft
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 rounded-xl"
+                onClick={() => handleOAuthLogin('lovable')}
+                disabled={loading || !!oauthLoading}
+              >
+                {oauthLoading === 'lovable' ? (
+                  <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                ) : (
+                  <svg className="w-4 h-4 me-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 21s-7.5-4.9-10-9.2C.4 8.6 2.2 5 5.5 5c2 0 3.4 1.1 4.2 2.3h4.6C15.1 6.1 16.5 5 18.5 5c3.3 0 5.1 3.6 3.5 6.8C19.5 16.1 12 21 12 21z" />
+                  </svg>
+                )}
+                Lovable
+              </Button>
+            </div>
             <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('auth.forgot_link')}
             </Link>
