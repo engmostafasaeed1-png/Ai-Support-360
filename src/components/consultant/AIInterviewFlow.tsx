@@ -537,6 +537,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     }
   };
 
+  sendToAIRef.current = sendToAI;
+
   const handleSend = async () => {
     const text = input.trim();
     if (!text || isStreaming) return;
@@ -1077,11 +1079,16 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                 <textarea
                   ref={inputRef}
                   value={input}
-                  onChange={e => setInput(e.target.value)}
+                  onChange={e => {
+                    // Typing takes over: stop the mic and keep exactly what the user typed
+                    if (isListening) stopListening();
+                    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+                    pendingTextRef.current = '';
+                    setInput(e.target.value);
+                  }}
                   onKeyDown={handleKeyDown}
-                  placeholder={isListening ? "Speak now... or type here" : "Type your response or click 🎤"}
+                  placeholder={isListening ? "Speak now... or type here" : "Type your answer and press Enter (or click 🎤 to speak)"}
                   rows={2}
-                  disabled={isStreaming}
                   className="flex-1 resize-none bg-white/5 border border-white/10 text-white placeholder:text-white/30 text-sm rounded-xl p-3 focus:outline-none focus:border-primary/50 disabled:opacity-50"
                 />
                 {SpeechRecognition && (
