@@ -30,24 +30,39 @@ export default function ConsultantApprovalsPage() {
   const { isGuest } = useGuestMode();
   const queryClient = useQueryClient();
 
-  const { data: consultants, isLoading } = useQuery({
+  const { data: consultants, isLoading, isError, error: loadError, refetch } = useQuery({
     queryKey: ['pending-consultants'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // consultants and profiles are only linked through auth.users (there is no foreign key between them),
+      // so PostgREST cannot embed profiles inside consultants (that request failed with HTTP 400 and the page
+      // silently showed "No pending approvals"). Read the consultants first, then their names in a second query.
+      const { data, error: consultantsError } = await supabase
         .from('consultants')
         .select(`
           id, user_id, bio, hourly_rate, currency, languages, industries, ai_skills_score, created_at,
-          profiles:user_id (display_name, avatar_url),
           consultant_skills (sap_module, proficiency_level),
           certifications (name, issuer)
         `)
         .in('verification_status', ['pending', 'under_review'])
         .order('created_at', { ascending: false });
-      if (error) throw error;
-      return (data || []).map((c: any) => ({
+      if (consultantsError) throw consultantsError;
+
+      const rows = data || [];
+      const userIds = rows.map((c: any) => c.user_id).filter(Boolean);
+      const nameByUser = new Map<string, string | null>();
+      if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, display_name')
+          .in('user_id', userIds);
+        if (profilesError) throw profilesError;
+        (profiles || []).forEach((p: any) => nameByUser.set(p.user_id, p.display_name));
+      }
+
+      return rows.map((c: any) => ({
         id: c.id,
         user_id: c.user_id,
-        name: c.profiles?.display_name || 'Unknown',
+        name: nameByUser.get(c.user_id) || 'Unknown',
         bio: c.bio || '',
         modules: (c.consultant_skills || []).map((s: any) => s.sap_module),
         certifications: (c.certifications || []).map((cert: any) => cert.name),
@@ -94,6 +109,9 @@ export default function ConsultantApprovalsPage() {
       queryClient.invalidateQueries({ queryKey: ['consultant-verification-audit', id] });
       toast.success(status === 'verified' ? 'Consultant approved!' : 'Consultant rejected.');
     },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Could not save the decision.');
+    },
   });
 
   const openDecision = (id: string, name: string, status: string) => {
@@ -103,13 +121,17 @@ export default function ConsultantApprovalsPage() {
 
   const submitDecision = async () => {
     if (!decisionTarget) return;
-    await updateStatus.mutateAsync({
-      id: decisionTarget.id,
-      status: decisionTarget.status,
-      reason: decisionReason,
-    });
-    setDecisionTarget(null);
-    setDecisionReason('');
+    try {
+      await updateStatus.mutateAsync({
+        id: decisionTarget.id,
+        status: decisionTarget.status,
+        reason: decisionReason,
+      });
+      setDecisionTarget(null);
+      setDecisionReason('');
+    } catch {
+      // The error toast is shown by the mutation's onError; keep the dialog open so the reviewer can retry.
+    }
   };
 
   const list = consultants || [];
@@ -118,13 +140,21 @@ export default function ConsultantApprovalsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">{t('approvals_page.title')}</h1>
-        <p className="text-sm text-muted-foreground">{list.length} {t('approvals_page.subtitle')}</p>
+        <p className="text-sm text-muted-foreground">{isError ? '' : `${list.length} ${t('approvals_page.subtitle')}`}</p>
       </div>
 
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
         </div>
+      ) : isError ? (
+        <Card className="border-destructive/30">
+          <CardContent className="py-10 text-center space-y-3">
+            <p className="text-sm font-medium text-destructive">Could not load consultant applications.</p>
+            <p className="text-xs text-muted-foreground">{(loadError as Error)?.message}</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>Try again</Button>
+          </CardContent>
+        </Card>
       ) : list.length === 0 ? (
         <Card className="border-border/50">
           <CardContent className="py-12 text-center">
