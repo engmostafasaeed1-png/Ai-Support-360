@@ -1788,6 +1788,47 @@ export type Database = {
           },
         ]
       }
+      interview_invitations: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          responded_at: string | null
+          sent_at: string | null
+          session_id: string
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          responded_at?: string | null
+          sent_at?: string | null
+          session_id: string
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          responded_at?: string | null
+          sent_at?: string | null
+          session_id?: string
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_invitations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interview_messages: {
         Row: {
           content: string
@@ -1831,7 +1872,11 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          proposed_slots: Json | null
           role: string
+          rsvp_at: string | null
+          rsvp_note: string | null
+          rsvp_status: string
           session_id: string
           user_id: string
         }
@@ -1839,7 +1884,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          proposed_slots?: Json | null
           role?: string
+          rsvp_at?: string | null
+          rsvp_note?: string | null
+          rsvp_status?: string
           session_id: string
           user_id: string
         }
@@ -1847,7 +1896,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          proposed_slots?: Json | null
           role?: string
+          rsvp_at?: string | null
+          rsvp_note?: string | null
+          rsvp_status?: string
           session_id?: string
           user_id?: string
         }
