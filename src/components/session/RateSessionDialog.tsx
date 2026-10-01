@@ -144,7 +144,7 @@ export default function RateSessionDialog({
         responsiveness_score: responsivenessScore || undefined,
       });
       if (!parsed.success) {
-        throw new Error(parsed.error.errors[0]?.message || 'Invalid input');
+        throw new Error(parsed.error.issues[0]?.message || 'Invalid input');
       }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');

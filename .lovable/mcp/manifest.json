@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "sdk_version": "3.0.4",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://ozzgsfsnlejfuexikwrm.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "ai-sap-support-now",
+      "version": "0.1.0",
+      "title": "AI SAP Support now"
+    },
+    "tools": [
+      {
+        "name": "list_my_tickets",
+        "title": "List my tickets",
+        "description": "List the SAP support tickets you can see, newest first.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Optional status filter, e.g. new, in_progress, resolved.",
+              "type": "string"
+            },
+            "limit": {
+              "description": "Max tickets to return (default 20).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_ticket",
+        "title": "Get ticket",
+        "description": "Get the details of one support ticket by its ID.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ticket_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "The ticket ID."
+            }
+          },
+          "required": [
+            "ticket_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_ticket",
+        "title": "Create ticket",
+        "description": "Open a new SAP support ticket for the signed-in client.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 200,
+              "description": "Short summary of the issue."
+            },
+            "description": {
+              "description": "Detailed description of the issue.",
+              "type": "string",
+              "maxLength": 5000
+            },
+            "sap_module": {
+              "type": "string",
+              "minLength": 1,
+              "description": "SAP module, e.g. FI, MM, SD, S/4HANA, BTP."
+            }
+          },
+          "required": [
+            "title",
+            "sap_module"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
