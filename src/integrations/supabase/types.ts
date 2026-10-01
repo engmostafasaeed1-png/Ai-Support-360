@@ -1751,6 +1751,7 @@ export type Database = {
           interview_id: string
           question: string
           question_order: number
+          sap_module: string | null
           score: number | null
         }
         Insert: {
@@ -1762,6 +1763,7 @@ export type Database = {
           interview_id: string
           question: string
           question_order?: number
+          sap_module?: string | null
           score?: number | null
         }
         Update: {
@@ -1773,6 +1775,7 @@ export type Database = {
           interview_id?: string
           question?: string
           question_order?: number
+          sap_module?: string | null
           score?: number | null
         }
         Relationships: [
