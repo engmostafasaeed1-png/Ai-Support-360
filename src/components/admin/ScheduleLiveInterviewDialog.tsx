@@ -25,29 +25,35 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
   const [people, setPeople] = useState<Person[]>([]);
   const [picked, setPicked] = useState<string[]>([]);
   const [me, setMe] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
+    setLoaded(false);
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setMe(user?.id ?? null);
-      if (user) setPicked([user.id]);
+      // The candidate can never be one of their own interviewers (an admin who is also the consultant being interviewed).
+      setPicked(user && user.id !== consultantUserId ? [user.id] : []);
       // Possible interviewers: admins and verified consultants (excluding the candidate)
       const [{ data: admins }, { data: consultants }] = await Promise.all([
         supabase.from('user_roles').select('user_id').in('role', ['admin', 'super_admin']),
         supabase.from('consultants').select('user_id').eq('verification_status', 'verified'),
       ]);
       const ids = Array.from(new Set([...(admins || []), ...(consultants || [])].map((r: any) => r.user_id))).filter((x) => x !== consultantUserId);
-      if (!ids.length) { setPeople([]); return; }
+      if (!ids.length) { setPeople([]); setLoaded(true); return; }
       const { data: profs } = await supabase.from('profiles').select('user_id, display_name').in('user_id', ids);
       setPeople(ids.map((uid) => ({ user_id: uid, display_name: profs?.find((p) => p.user_id === uid)?.display_name ?? null })));
+      setLoaded(true);
     })();
   }, [open, consultantUserId]);
 
   const save = async () => {
-    if (!picked.length) { toast.error('Pick at least one interviewer'); return; }
+    const interviewers = Array.from(new Set(picked)).filter((uid) => uid !== consultantUserId);
+    if (!interviewers.length) { toast.error('Pick at least one interviewer other than the candidate'); return; }
     setSaving(true);
+    let createdId: string | null = null;
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const { data: sess, error } = await supabase.from('interview_sessions').insert({
@@ -59,25 +65,30 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
         scheduled_at: when ? new Date(when).toISOString() : null,
       } as any).select('id').single();
       if (error) throw error;
+      createdId = sess.id;
       const rows = [
         { session_id: sess.id, user_id: consultantUserId, role: 'candidate', display_name: consultantName },
-        ...picked.map((uid) => ({ session_id: sess.id, user_id: uid, role: 'interviewer', display_name: people.find((p) => p.user_id === uid)?.display_name || (uid === me ? 'Admin' : 'Interviewer') })),
+        ...interviewers.map((uid) => ({ session_id: sess.id, user_id: uid, role: 'interviewer', display_name: people.find((p) => p.user_id === uid)?.display_name || (uid === me ? 'Admin' : 'Interviewer') })),
       ];
       const { error: pErr } = await supabase.from('interview_participants' as any).insert(rows);
       if (pErr) throw pErr;
+      createdId = null;
       // The invitation notification is created by a database trigger on interview_participants
       // (the browser is not allowed to call safe_insert_notification, so the old call here failed silently).
       toast.success('Live interview scheduled');
       onOpenChange(false);
       navigate(`/interview/live/${sess.id}`);
     } catch (e: any) {
+      // Do not leave an empty session behind when the participants could not be added.
+      if (createdId) await supabase.from('interview_sessions').delete().eq('id', createdId);
       toast.error(e?.message || 'Could not schedule interview');
     } finally {
       setSaving(false);
     }
   };
 
-  const meInList = me && !people.some((p) => p.user_id === me);
+  const meInList = !!me && me !== consultantUserId && !people.some((p) => p.user_id === me);
+  const noInterviewerAvailable = loaded && !meInList && people.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -105,12 +116,17 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
                   {p.display_name || 'Unnamed user'}{p.user_id === me ? ' (you)' : ''}
                 </label>
               ))}
+              {noInterviewerAvailable && (
+                <p className="p-3 text-sm text-muted-foreground">
+                  No interviewer is available. A live interview needs at least one interviewer other than the candidate: another admin or a verified consultant.
+                </p>
+              )}
             </div>
           </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-          <Button onClick={save} disabled={saving}>{saving && <Loader2 className="w-4 h-4 animate-spin me-1" />} Schedule</Button>
+          <Button onClick={save} disabled={saving || noInterviewerAvailable}>{saving && <Loader2 className="w-4 h-4 animate-spin me-1" />} Schedule</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
