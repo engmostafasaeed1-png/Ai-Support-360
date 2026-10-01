@@ -24,15 +24,10 @@ type Testimonial = {
  * (e.g. RLS blocked, network error). Keeps the section non-empty for
  * marketing visitors. The bundled images live in src/assets/clients.
  */
-const FALLBACK: Testimonial[] = [
-  { id: 'f1', name: 'Khalid Al-Otaibi', role: 'CIO, Saudi Petrochemical Corp', company: 'Saudi Petrochemical Corp', quote: 'The platform matched us with an S/4HANA expert in under 10 minutes. Our migration issue was resolved in a single session. Outstanding service.', rating: 5, accent: 'from-cyan-500 to-blue-600',     logo: logoSaudiPetro },
-  { id: 'f2', name: 'Noura Al-Saud',    role: 'IT Director, Riyadh National Bank', company: 'Riyadh National Bank',    quote: 'The bilingual support is a game-changer for our team. Arabic consultants who understand Saudi banking regulations and SAP FI/CO deeply.', rating: 5, accent: 'from-violet-500 to-purple-600', logo: logoRiyadhBank },
-  { id: 'f3', name: 'James Mitchell',   role: 'VP Technology, GCC Retail Group',   company: 'GCC Retail Group',        quote: 'We moved our entire SAP support here. The AI matching, SLA tracking, and consultant quality are enterprise-grade. Highly recommended.', rating: 5, accent: 'from-emerald-500 to-teal-600',  logo: logoGccRetail },
-];
 
 export default function TestimonialsSection() {
   const { t } = useTranslation();
-  const [items, setItems] = useState<Testimonial[]>(FALLBACK);
+  const [items, setItems] = useState<Testimonial[]>([]);
 
   useEffect(() => {
     let cancelled = false;
