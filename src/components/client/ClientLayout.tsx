@@ -2,9 +2,10 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import ClientSidebar from '@/components/client/ClientSidebar';
 import PageTransition from '@/components/PageTransition';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { usePortalMargin } from '@/hooks/usePortalMargin';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { useIsConsultant } from '@/hooks/useIsConsultant';
 import SecurityAlert from '@/components/SecurityAlert';
 import { Search, AlertTriangle, Briefcase, Building2 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
@@ -19,6 +20,8 @@ import logo from '@/assets/logo.png';
 
 export default function ClientLayout() {
   const portalMargin = usePortalMargin();
+  const navigate = useNavigate();
+  const isConsultant = useIsConsultant();
   useSessionTimeout();
   return (
     <SidebarProvider>
@@ -51,22 +54,24 @@ export default function ClientLayout() {
                 <Building2 className="w-3.5 h-3.5" />
                 Client
               </Badge>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 px-2.5 text-xs gap-1.5 border-border/50 hover:bg-primary/10"
-                    onClick={() => window.location.href = '/consultant'}
-                  >
-                    <Briefcase className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Switch to Consultant</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p className="text-xs">Switch to Consultant view</p>
-                </TooltipContent>
-              </Tooltip>
+              {isConsultant && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2.5 text-xs gap-1.5 border-border/50 hover:bg-primary/10"
+                      onClick={() => navigate('/consultant')}
+                    >
+                      <Briefcase className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Switch to Consultant</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">Switch to Consultant view</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
               <Link to="/client/new-request">
                 <Button size="sm" variant="destructive" className="text-xs gap-1.5 shadow-sm hover:shadow-md transition-shadow">
                   <AlertTriangle className="w-3.5 h-3.5" />
