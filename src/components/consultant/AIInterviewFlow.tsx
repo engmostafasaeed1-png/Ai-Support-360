@@ -64,12 +64,42 @@ function SpeakingIndicator() {
 }
 
 // Interviewer messages may start with [[by: Name]] when asking a question from the admin question bank.
-function splitAuthorTag(content: string): { author: string | null; text: string } {
+function splitAuthorTag(content: string): { author: string | null; speaker: { name: string; role: string } | null; text: string } {
   const m = content.match(/\[\[by:\s*([^\]]{1,120})\]\]/i);
-  // Hide a half-streamed tag at the end ("[[by: Ahm") until it completes.
-  const text = content.replace(/\[\[by:\s*[^\]]{0,120}\]\]\s*/gi, '').replace(/\[\[(b(y(:[^\]]*)?)?)?$/i, '');
-  return { author: m ? m[1].trim() : null, text };
+  const sp = content.match(/\[\[speaker:\s*([^\]|]{1,60})\|?([^\]]{0,60})\]\]/i);
+  // Hide half-streamed tags at the end ("[[by: Ahm", "[[speak") until they complete.
+  const text = content
+    .replace(/\[\[(by|speaker):\s*[^\]]{0,140}\]\]\s*/gi, '')
+    .replace(/\[\[[a-z:|\s\-—.,'A-Z\u0600-\u06FF]*$/i, '');
+  return {
+    author: m ? m[1].trim() : null,
+    speaker: sp ? { name: sp[1].trim(), role: (sp[2] || '').trim() } : null,
+    text,
+  };
 }
+
+// Panel replies may contain several [[speaker: ...]] turns; split them into separate bubbles.
+function splitSpeakerTurns(content: string): string[] {
+  const idx: number[] = [];
+  const re = /\[\[speaker:/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(content))) idx.push(m.index);
+  if (idx.length <= 1) return [content];
+  const out: string[] = [];
+  if (content.slice(0, idx[0]).trim()) out.push(content.slice(0, idx[0]));
+  idx.forEach((start, i) => out.push(content.slice(start, idx[i + 1] ?? content.length)));
+  return out;
+}
+
+export type InterviewStyle = 'standard' | 'discussion' | 'scenario' | 'panel';
+const STYLE_OPTIONS: { key: InterviewStyle; label: string; hint: string }[] = [
+  { key: 'standard', label: '📋 Standard Q&A', hint: 'Questions one by one, from the expert question bank' },
+  { key: 'discussion', label: '💬 Open discussion', hint: 'A natural back-and-forth conversation about your work' },
+  { key: 'scenario', label: '🧩 Scenario discussion', hint: 'Solve real SAP problems step by step, with twists' },
+  { key: 'panel', label: '👥 AI panel', hint: 'Three interviewers: functional, technical and project lead' },
+];
+const speakerGender = (name: string | undefined, fallback: 'male' | 'female'): 'male' | 'female' =>
+  !name ? fallback : /mariam/i.test(name) ? 'female' : /ezz|omar/i.test(name) ? 'male' : fallback;
 
 function DynamicAvatar({ src, isSpeaking, isListening, isThinking }: { src: string; isSpeaking: boolean; isListening: boolean; isThinking: boolean }) {
   const [blink, setBlink] = useState(false);
@@ -197,6 +227,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [interimTranscript, setInterimTranscript] = useState('');
   const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('male');
   const [interviewerTone, setInterviewerTone] = useState<'friendly' | 'formal' | 'strict'>('friendly');
+  const [interviewStyle, setInterviewStyle] = useState<InterviewStyle>('standard');
   const avatarImg = voiceGender === 'male' ? aiMaleAvatar : aiFemaleAvatar;
   const [speechRate, setSpeechRate] = useState(1.0);
   const [interviewLang, setInterviewLang] = useState<'en' | 'fr' | 'ar' | 'es' | 'de' | 'ar-SA'>('en');
@@ -300,6 +331,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
 
   const startInterviewAfterDisclaimer = useCallback(async () => {
     setPhase('chat');
+    await supabase.from('interview_sessions').update({ interview_style: interviewStyle } as any).eq('id', interviewId);
     // Check if there's a saved conversation to resume
     const { data } = await supabase
       .from('interview_sessions')
@@ -317,7 +349,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     } else {
       sendToAI([]);
     }
-  }, [interviewId]);
+  }, [interviewId, interviewStyle]);
 
   const handleRejectDisclaimer = () => {
     onCancel();
@@ -364,13 +396,16 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const speakText = useCallback((text: string) => {
     if (!ttsEnabled || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const cleanText = splitAuthorTag(text).text.replace(/[#*_`~[\]()>]/g, '').replace(/\n+/g, '. ').replace(/\s+/g, ' ').trim();
+    const parts = splitAuthorTag(text);
+    const g = speakerGender(parts.speaker?.name, voiceGender);
+    const isOmar = /omar/i.test(parts.speaker?.name || '');
+    const cleanText = parts.text.replace(/[#*_`~[\]()>]/g, '').replace(/\n+/g, '. ').replace(/\s+/g, ' ').trim();
     if (!cleanText || cleanText === lastSpokenRef.current) return;
     lastSpokenRef.current = cleanText;
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = voiceGender === 'male' ? speechRate * 0.92 : speechRate;
-    utterance.pitch = voiceGender === 'female' ? 1.1 : 0.72;
+    utterance.rate = g === 'male' ? speechRate * 0.92 : speechRate;
+    utterance.pitch = g === 'female' ? 1.1 : isOmar ? 0.95 : 0.72;
     utterance.volume = 1.0;
     const langMap: Record<string, string> = { 'en': 'en-US', 'fr': 'fr-FR', 'ar': 'ar-EG', 'es': 'es-ES', 'de': 'de-DE', 'ar-SA': 'ar-SA' };
     utterance.lang = langMap[interviewLang] || 'en-US';
@@ -383,7 +418,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     const isMaleVoice = (name: string) => maleHints.some(h => new RegExp(h, 'i').test(name));
 
     let preferred;
-    if (voiceGender === 'male') {
+    if (g === 'male') {
       // Strictly pick male voice; never fall back to female
       preferred = voices.find(v => v.lang.startsWith(langPrefix) && isMaleVoice(v.name) && !v.localService)
         || voices.find(v => v.lang.startsWith(langPrefix) && isMaleVoice(v.name))
@@ -830,6 +865,24 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             </div>
           </div>
 
+          {/* Interview style */}
+          <div className="w-full flex flex-col items-center gap-2">
+            <span className="text-[11px] uppercase tracking-wide text-white/40">Interview style</span>
+            <div className="grid grid-cols-2 gap-2 w-full">
+              {STYLE_OPTIONS.map((o) => (
+                <button
+                  key={o.key}
+                  onClick={() => setInterviewStyle(o.key)}
+                  aria-pressed={interviewStyle === o.key}
+                  className={`text-left rounded-xl px-3 py-2 border transition-colors ${interviewStyle === o.key ? 'bg-primary/20 border-primary/40' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
+                >
+                  <div className={`text-xs font-semibold ${interviewStyle === o.key ? 'text-primary' : 'text-white/80'}`}>{o.label}</div>
+                  <div className="text-[10px] text-white/50 leading-snug mt-0.5">{o.hint}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Disclaimer */}
           <div className="w-full bg-white/5 rounded-xl p-4 text-left space-y-3 border border-white/10">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
@@ -987,14 +1040,22 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                 </div>
               )}
 
-              {messages.map((msg, i) => {
-                const interviewerLabel = voiceGender === 'female' ? 'Mariam' : 'Ezz';
+              {messages.flatMap((m) => (m.role === 'assistant' ? splitSpeakerTurns(m.content).map((c) => ({ ...m, content: c })) : [m])).map((msg, i) => {
+                const sp = msg.role === 'assistant' ? splitAuthorTag(msg.content).speaker : null;
+                const interviewerLabel = sp?.name || (voiceGender === 'female' ? 'Mariam' : 'Ezz');
+                const spGender = speakerGender(sp?.name, voiceGender);
+                const isOmar = /omar/i.test(sp?.name || '');
+                const msgAvatar = spGender === 'female' ? aiFemaleAvatar : aiMaleAvatar;
                 return (
                   <div key={i} className={`flex items-start gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                     {msg.role === 'assistant' ? (
                       <div className="flex flex-col items-center shrink-0 mt-0.5 gap-0.5">
                         <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-primary/40">
-                          <img src={avatarImg} alt={`${interviewerLabel} avatar`} className="w-full h-full object-cover" />
+                          {isOmar ? (
+                            <div className="w-full h-full bg-primary/30 flex items-center justify-center text-[11px] font-bold text-white">O</div>
+                          ) : (
+                            <img src={msgAvatar} alt={`${interviewerLabel} avatar`} className="w-full h-full object-cover" />
+                          )}
                         </div>
                         <span className="text-[9px] font-medium text-primary/80 leading-none">{interviewerLabel}</span>
                       </div>
@@ -1017,7 +1078,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                           <>
                             {msg.role === 'assistant' && (
                               <div className="text-[10px] font-semibold text-primary/90 mb-1">
-                                {interviewerLabel} <span className="text-white/40 font-normal">· AI SAP Support Now</span>
+                                {interviewerLabel} <span className="text-white/40 font-normal">· {sp?.role || 'AI SAP Support Now'}</span>
                               </div>
                             )}
                             {author && (

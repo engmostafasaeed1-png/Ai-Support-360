@@ -155,6 +155,7 @@ const ExecutiveDashboardPage = React.lazy(() => import("./pages/superadmin/Execu
 
 // Shared pages
 const ChatSessionPage = React.lazy(() => import("./pages/chat/ChatSessionPage.tsx"));
+const LiveInterviewPage = React.lazy(() => import("./pages/interview/LiveInterviewPage.tsx"));
 const NotificationsPage = React.lazy(() => import("./pages/notifications/NotificationsPage.tsx"));
 const ReferralsPage = React.lazy(() => import("./pages/ReferralsPage.tsx"));
 const MatchRequestPopup = React.lazy(() => import("./components/consultant/MatchRequestPopup.tsx"));
@@ -387,6 +388,7 @@ const App = () => (
               <Route path="system" element={<SystemHealthPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
             </Route>
+            <Route path="/interview/live/:id" element={<ProtectedRoute><ErrorBoundary><LiveInterviewPage /></ErrorBoundary></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
