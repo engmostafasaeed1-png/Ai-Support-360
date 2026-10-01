@@ -11,6 +11,16 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.aisapsupportnow.com/services/s4hana-support</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.aisapsupportnow.com/services/btp-support</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.aisapsupportnow.com/login</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>

@@ -11,6 +11,8 @@ export default function Footer() {
   const links: Record<string, FooterLink[]> = {
     platform: [
       { label: t('nav.services'), href: '#categories' },
+      { label: t('categories.s4hana'), href: '/services/s4hana-support' },
+      { label: t('categories.btp'), href: '/services/btp-support' },
       { label: t('nav.consultants'), href: '#consultants' },
       { label: t('nav.pricing'), href: '/pricing' },
       { label: t('nav.knowledge'), href: '#faq' },
