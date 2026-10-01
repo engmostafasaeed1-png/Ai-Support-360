@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { Helmet } from 'react-helmet-async';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import { Button } from '@/components/ui/button';
@@ -89,8 +90,51 @@ const faqs = [
 export default function PricingPage() {
   const { t } = useTranslation();
 
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.q,
+      acceptedAnswer: { '@type': 'Answer', text: faq.a },
+    })),
+  };
+
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: 'AI SAP Support Now — SAP Support Plans',
+    description:
+      'AI-powered enterprise SAP support: pay-per-session, monthly retainer, and enterprise managed support plans with verified SAP experts.',
+    brand: { '@type': 'Brand', name: 'AI SAP Support Now' },
+    offers: [
+      {
+        '@type': 'Offer',
+        name: 'On-Demand',
+        price: '99',
+        priceCurrency: 'USD',
+        description: 'Pay per session for ad-hoc SAP support.',
+        availability: 'https://schema.org/InStock',
+        url: 'https://www.aisapsupportnow.com/pricing',
+      },
+      {
+        '@type': 'Offer',
+        name: 'Professional',
+        price: '1499',
+        priceCurrency: 'USD',
+        description: 'Monthly retainer with 20 support hours, SLA guarantees, and a dedicated consultant pool.',
+        availability: 'https://schema.org/InStock',
+        url: 'https://www.aisapsupportnow.com/pricing',
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
+        <script type="application/ld+json">{JSON.stringify(productJsonLd)}</script>
+      </Helmet>
       <Navbar />
 
       {/* Hero */}

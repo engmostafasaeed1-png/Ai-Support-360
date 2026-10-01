@@ -19,6 +19,16 @@ const ROUTES: Record<string, Meta> = {
     description:
       'Compare SAP support plans: pay-per-session, monthly retainers and enterprise coverage with verified S/4HANA, BTP and SuccessFactors experts.',
   },
+  '/services/s4hana-support': {
+    title: `SAP S/4HANA Support Services — ${BRAND}`,
+    description:
+      'On-demand and retainer SAP S/4HANA support: incident resolution, performance tuning, Fiori troubleshooting, and migration follow-up by verified experts.',
+  },
+  '/services/btp-support': {
+    title: `SAP BTP & Integration Support — ${BRAND}`,
+    description:
+      'Expert SAP BTP and Cloud Integration (CPI) support: iFlow monitoring, extension development, API management, and cross-system connectivity.',
+  },
   '/login': {
     title: `Sign in — ${BRAND}`,
     description: 'Sign in to your SAP support portal to manage tickets, sessions and consultants.',
