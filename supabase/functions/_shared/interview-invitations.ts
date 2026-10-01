@@ -5,6 +5,28 @@ import { sendTemplateEmail } from './transactional-email-templates/send-email.ts
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const TOKEN_RE = /^[0-9a-f]{64}$/;
 
+const EMAIL_RE = /^[^\s@<>()\[\]\\,;:"]+@[^\s@<>()\[\]\\,;:"]+\.[^\s@<>()\[\]\\,;:"]{2,}$/;
+
+/** Clean, unique, lower-case addresses from an array or a comma / semicolon / space separated string. */
+export function cleanEmails(value: unknown, max: number): { emails: string[]; error: string | null } {
+  const raw: string[] = Array.isArray(value)
+    ? value.map((v) => String(v))
+    : typeof value === 'string'
+      ? value.split(/[\s,;]+/)
+      : [];
+  const emails: string[] = [];
+  for (const item of raw) {
+    const email = item.trim().toLowerCase();
+    if (!email) continue;
+    if (email.length > 254 || !EMAIL_RE.test(email)) {
+      return { emails: [], error: `"${item.trim().slice(0, 60)}" is not a valid e-mail address` };
+    }
+    if (!emails.includes(email)) emails.push(email);
+  }
+  if (emails.length > max) return { emails: [], error: `You can add at most ${max} addresses` };
+  return { emails, error: null };
+}
+
 export async function sha256Hex(value: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
