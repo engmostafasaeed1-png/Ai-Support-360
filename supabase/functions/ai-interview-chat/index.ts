@@ -192,9 +192,12 @@ Provide evaluation as JSON:
   "summary": "2-3 sentence summary of performance",
   "strengths": ["strength1", "strength2"],
   "improvements": ["area1", "area2"],
-  "detailed_feedback": "A paragraph of detailed feedback"
+  "detailed_feedback": "A paragraph of detailed feedback",
+  "question_scores": [
+    { "question_order": number (1-based, matching the candidate's answers in order), "score": number (0-100), "sap_module": "SAP area the question tests, e.g. FI, CO, MM, SD, HCM, Basis, BTP, S/4HANA, or General" }
+  ]
 }
-Return ONLY valid JSON.`;
+Include one question_scores entry per candidate answer, in the same order the answers appear. Return ONLY valid JSON.`;
 
       const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
