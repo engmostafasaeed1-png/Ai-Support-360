@@ -50,7 +50,7 @@ export default function VideoSessionsPage() {
       let profileMap: Record<string, { name: string; avatar?: string }> = {};
       if (consultantUserIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profile_directory')
           .select('user_id, display_name, avatar_url')
           .in('user_id', consultantUserIds);
 

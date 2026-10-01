@@ -67,7 +67,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
         .from('consultants')
         .select(`id, user_id, hourly_rate, currency, rating, total_reviews, ai_skills_score, availability_status, languages, response_time_minutes,
           consultant_skills (sap_module, proficiency_level, years_experience)`)
-        .in('verification_status', ['verified', 'pending'] as any[])
+        .eq('verification_status', 'verified')
         .limit(50);
 
       if (availabilityFilter !== 'all') {
@@ -79,7 +79,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
 
       const userIds = (data || []).map(c => c.user_id);
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profile_directory')
         .select('user_id, display_name, avatar_url')
         .in('user_id', userIds);
       const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));

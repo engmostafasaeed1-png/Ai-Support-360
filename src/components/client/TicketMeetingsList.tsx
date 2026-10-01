@@ -47,7 +47,7 @@ export default function TicketMeetingsList({ ticketId, onSchedule }: TicketMeeti
       let profileMap: Record<string, string> = {};
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profile_directory')
           .select('user_id, display_name')
           .in('user_id', userIds);
         if (profiles) {

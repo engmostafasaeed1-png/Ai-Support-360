@@ -55,7 +55,7 @@ export default function ContractsPage() {
 
     const userIds = (consultants || []).map(c => c.user_id);
     const { data: profiles } = await supabase
-      .from('profiles')
+      .from('profile_directory')
       .select('user_id, display_name')
       .in('user_id', userIds);
 

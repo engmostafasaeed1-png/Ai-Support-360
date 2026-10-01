@@ -49,7 +49,7 @@ export default function SessionsPage() {
       let profileMap: Record<string, string> = {};
       if (consultantUserIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
+          .from('profile_directory')
           .select('user_id, display_name, avatar_url')
           .in('user_id', consultantUserIds);
 

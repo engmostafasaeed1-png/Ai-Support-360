@@ -31,7 +31,7 @@ export default function TicketInternalNotes({ ticketId }: Props) {
 
       const authorIds = [...new Set((data || []).map((n: any) => n.author_id))];
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profile_directory')
         .select('user_id, display_name')
         .in('user_id', authorIds);
       const nameMap = Object.fromEntries((profiles || []).map((p: any) => [p.user_id, p.display_name || 'Unknown']));

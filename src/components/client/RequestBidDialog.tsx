@@ -42,7 +42,7 @@ function useVerifiedConsultants(sapModule?: string) {
 
       const userIds = consultants.map(c => c.user_id);
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profile_directory')
         .select('user_id, display_name, avatar_url')
         .in('user_id', userIds);
       const pMap = new Map((profiles || []).map(p => [p.user_id, p]));
@@ -153,38 +153,37 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
       return;
     }
     setSaving(true);
-    // Create notifications for selected consultants
     const { data: { user } } = await supabase.auth.getUser();
-    for (const consultantId of selectedConsultants) {
-      // Look up consultant user_id
-      const { data: consultant } = await supabase
-        .from('consultants')
-        .select('user_id')
-        .eq('id', consultantId)
-        .maybeSingle();
-      if (consultant) {
-        await supabase.from('notifications').insert({
-          user_id: consultant.user_id,
-          title: 'Private Bid Invitation',
-          body: `You've been invited to bid on "${ticketTitle}".${bidMessage ? ' Note: ' + bidMessage : ''}`,
-          type: 'match_request',
-          link: '/consultant/open-tickets',
-        });
-      }
+    if (!user) {
+      setSaving(false);
+      toast.error('Not authenticated');
+      return;
     }
-    // Also open for bids so they can submit proposals
-    await supabase
-      .from('tickets')
-      .update({
-        open_for_bids: true,
-        opened_for_bids_at: new Date().toISOString(),
-      } as any)
-      .eq('id', ticketId);
-
+    // A private invitation is a match request: only the invited consultants can see and answer the ticket.
+    // The ticket is NOT opened to everybody.
+    let sent = 0;
+    let already = 0;
+    for (const consultantId of selectedConsultants) {
+      const { error } = await supabase.from('ticket_match_requests').insert({
+        ticket_id: ticketId,
+        consultant_id: consultantId,
+        sent_by: user.id,
+        message: `Private bid invitation${bidMessage.trim() ? ': ' + bidMessage.trim() : ''}`,
+      } as any);
+      if (!error) sent += 1;
+      else if (error.code === '23505') already += 1;
+    }
     setSaving(false);
-    toast.success(`Private bid invitations sent to ${selectedConsultants.length} consultant(s)!`);
-    queryClient.invalidateQueries({ queryKey: ['ticket-detail', ticketId] });
-    onOpenChange(false);
+    queryClient.invalidateQueries({ queryKey: ['client-match-acceptors', ticketId] });
+    queryClient.invalidateQueries({ queryKey: ['available-consultants'] });
+    if (sent > 0) {
+      toast.success(`Private bid invitations sent to ${sent} consultant(s)!${already > 0 ? ` (${already} had already been invited.)` : ''}`);
+      onOpenChange(false);
+    } else if (already > 0) {
+      toast.info('These consultants have already been invited.');
+    } else {
+      toast.error('Could not send the invitations. Please try again.');
+    }
   };
 
   const handleCloseBids = async () => {

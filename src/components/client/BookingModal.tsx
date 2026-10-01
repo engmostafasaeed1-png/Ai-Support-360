@@ -206,35 +206,7 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
       if (error) throw error;
       if (generatedMeetingUrl) setMeetingUrl(generatedMeetingUrl);
 
-      const modeLabel = bookingMode === 'instant' ? 'Instant' : 'Scheduled';
-
-      // Notify client
-      await supabase.from('notifications').insert({
-        user_id: user.id,
-        title: `Session Booked (${modeLabel})`,
-        body: `Your ${sessionType.replace('_', ' ')} session with ${consultantName} is ${bookingMode === 'instant' ? 'starting now' : `scheduled for ${dateLabel} at ${timeLabel}`}.`,
-        type: 'booking',
-        link: '/client/sessions',
-      });
-
-      // Notify consultant if real
-      if (realConsultantId) {
-        const { data: consultant } = await supabase
-          .from('consultants')
-          .select('user_id')
-          .eq('id', realConsultantId)
-          .single();
-
-        if (consultant) {
-          await supabase.from('notifications').insert({
-            user_id: consultant.user_id,
-            title: 'New Session Booking',
-            body: `A client booked an ${modeLabel.toLowerCase()} ${sessionType.replace('_', ' ')} session ${bookingMode === 'instant' ? 'starting now' : `for ${dateLabel} at ${timeLabel}`}.`,
-            type: 'booking',
-            link: '/consultant/calendar',
-          });
-        }
-      }
+      // Both people are notified by the database ("Session Confirmed").
 
       setConfirmed(true);
       toast.success(t('booking.confirmed_title'), {

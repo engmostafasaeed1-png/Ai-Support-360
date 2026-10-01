@@ -66,7 +66,7 @@ export default function NDASigningModal({
       });
 
     supabase
-      .from('profiles')
+      .from('profile_directory')
       .select('display_name')
       .eq('user_id', clientId)
       .maybeSingle()
