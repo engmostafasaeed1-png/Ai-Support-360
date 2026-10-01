@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getSessionWithRetry } from '@/lib/authSession';
 
 const QUERY_KEY = ['is-admin'];
 

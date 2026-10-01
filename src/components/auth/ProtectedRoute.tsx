@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Session } from '@supabase/supabase-js';
 import { Loader2 } from 'lucide-react';
 import { getClientOnboardingState } from '@/lib/clientOnboarding';
+import { getSessionWithRetry } from '@/lib/authSession';
 
 interface Props {
   children: React.ReactNode;
