@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Session } from '@supabase/supabase-js';
 import { Loader2 } from 'lucide-react';
 import { getClientOnboardingState } from '@/lib/clientOnboarding';
+import { getSessionWithRetry } from '@/lib/authSession';
 
 interface Props {
   children: React.ReactNode;
@@ -37,7 +38,7 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
   const location = useLocation();
 
   const checkAuth = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSessionWithRetry();
 
     if (!session) {
       setState({ status: 'ready', session: null, roleOk: false, hasTenant: true, needsOnboarding: false });

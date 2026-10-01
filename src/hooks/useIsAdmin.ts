@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getSessionWithRetry } from '@/lib/authSession';
 
 const QUERY_KEY = ['is-admin'];
 
@@ -22,7 +23,7 @@ export function useIsAdmin() {
   const { data } = useQuery({
     queryKey: QUERY_KEY,
     queryFn: async (): Promise<boolean> => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getSessionWithRetry();
       if (!session?.user) return false;
       const { data: rows } = await supabase
         .from('user_roles')

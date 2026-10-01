@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getSessionWithRetry } from '@/lib/authSession';
 
 interface UserProfile {
   displayName: string;
@@ -22,7 +23,7 @@ export function useUserProfile() {
   const { data: profile = null, isLoading: loading } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async (): Promise<UserProfile | null> => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getSessionWithRetry();
       if (!session?.user) return null;
 
       const user = session.user;
