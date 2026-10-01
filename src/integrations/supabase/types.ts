@@ -1977,6 +1977,54 @@ export type Database = {
           },
         ]
       }
+      interview_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          focus_areas: string
+          id: string
+          instructions: string
+          is_active: boolean
+          question_count: number
+          role_focus: string
+          sample_questions: string
+          sap_module: string
+          seniority: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          focus_areas?: string
+          id?: string
+          instructions?: string
+          is_active?: boolean
+          question_count?: number
+          role_focus?: string
+          sample_questions?: string
+          sap_module: string
+          seniority?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          focus_areas?: string
+          id?: string
+          instructions?: string
+          is_active?: boolean
+          question_count?: number
+          role_focus?: string
+          sample_questions?: string
+          sap_module?: string
+          seniority?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       interview_training_config: {
         Row: {
           created_at: string

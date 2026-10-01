@@ -143,6 +143,7 @@ const AdminSettingsPage = React.lazy(() => import("./pages/admin/AdminSettingsPa
 const NDAManagementPage = React.lazy(() => import("./pages/admin/NDAManagementPage.tsx"));
 const InterviewTrainingPage = React.lazy(() => import("./pages/admin/InterviewTrainingPage.tsx"));
 const QuestionLibraryPage = React.lazy(() => import("./pages/admin/QuestionLibraryPage.tsx"));
+const InterviewTemplatesPage = React.lazy(() => import("./pages/admin/InterviewTemplatesPage.tsx"));
 const ConsultantInterviewsPage = React.lazy(() => import("./pages/admin/ConsultantInterviewsPage.tsx"));
 const OnCallSchedulePage = React.lazy(() => import("./pages/admin/OnCallSchedulePage.tsx"));
 const LandingEditorPage = React.lazy(() => import("./pages/admin/LandingEditorPage.tsx"));
@@ -385,6 +386,7 @@ const App = () => (
               <Route path="landing-editor" element={<LandingEditorPage />} />
               <Route path="interview-training" element={<InterviewTrainingPage />} />
               <Route path="question-library" element={<QuestionLibraryPage />} />
+              <Route path="interview-templates" element={<InterviewTemplatesPage />} />
               <Route path="consultant-interviews" element={<ConsultantInterviewsPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="oncall" element={<OnCallSchedulePage />} />
