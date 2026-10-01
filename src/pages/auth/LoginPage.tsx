@@ -224,6 +224,40 @@ export default function LoginPage() {
     return () => clearInterval(id);
   }, [lockoutUntil]);
 
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogleLogin = async () => {
+    if (googleLoading) return;
+    setGoogleLoading(true);
+    try {
+      // Remember the intended destination across the OAuth redirect
+      if (from) sessionStorage.setItem('oauth_next', from);
+      const result = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        toast.error(result.error.message || 'Google sign-in failed. Please try again.');
+        return;
+      }
+      if (result.redirected) return; // browser is navigating to Google
+      // Tokens returned and session already set — route by role
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const role = await getRoleAndRepairAccount(user);
+        const next = sessionStorage.getItem('oauth_next');
+        sessionStorage.removeItem('oauth_next');
+        logAudit('login_google');
+        if (next) navigate(next, { replace: true });
+        else navigateByRole(role);
+      }
+    } catch (err) {
+      console.error('Google sign-in failed:', err);
+      toast.error('Google sign-in failed. Please try again.');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
