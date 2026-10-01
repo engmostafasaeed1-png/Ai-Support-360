@@ -12,6 +12,7 @@ import {
   SITE_URL,
   withinRateLimit,
 } from '../_shared/security.ts';
+import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
 
 const TOKEN_RE = /^[a-f0-9]{32}$/;
 const RESCHEDULE_WINDOW_MS = 15 * 60 * 1000;
@@ -51,23 +52,28 @@ Deno.serve(async (req) => {
     return accepted();
   }
 
+  const templateName = 'demo-reschedule-received';
+  const logRow = async (status: string, error_message?: string) => {
+    const { error: logErr } = await admin.from('email_send_log').insert({
+      message_id: null, template_name: templateName, recipient_email: row.email, status, error_message: error_message ?? null,
+    });
+    if (logErr) console.error('demo-reschedule-notify: send log failed', { code: logErr.code, message: logErr.message });
+  };
   try {
-    const { error: sendErr } = await admin.functions.invoke('send-transactional-email', {
-      body: {
-        templateName: 'demo-reschedule-received',
-        recipientEmail: row.email,
-        idempotencyKey: `demo-reschedule-received-${row.id}-${row.reschedule_requested_at}`,
-        templateData: {
-          name: row.full_name,
-          confirmationUrl: `${SITE_URL}/demo/confirmation/${row.request_token}`,
-          proposedSlots: row.proposed_slots ?? [],
-          reason: row.reschedule_reason ?? undefined,
-        },
+    const result = await sendTemplateEmail(templateName, row.email, {
+      idempotencyKey: `demo-reschedule-received-${row.id}-${row.reschedule_requested_at}`,
+      templateData: {
+        name: row.full_name,
+        confirmationUrl: `${SITE_URL}/demo/confirmation/${row.request_token}`,
+        proposedSlots: row.proposed_slots ?? [],
+        reason: row.reschedule_reason ?? undefined,
       },
     });
-    if (sendErr) console.warn('demo-reschedule-notify: enqueue failed:', sendErr.message);
+    await logRow(result.sent ? 'sent' : 'suppressed');
   } catch (e) {
-    console.warn('demo-reschedule-notify: enqueue threw:', e instanceof Error ? e.message : String(e));
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn('demo-reschedule-notify: send failed:', msg);
+    await logRow('failed', msg.slice(0, 1000));
   }
   return accepted();
 });
