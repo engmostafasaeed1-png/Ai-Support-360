@@ -3,7 +3,6 @@ import { Outlet } from 'react-router-dom';
 import SuperAdminSidebar from './SuperAdminSidebar';
 import PageTransition from '@/components/PageTransition';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
-import { LayoutDashboard, ShieldCheck, BarChart3, Settings2, Users, PieChart, Workflow, FileText, Activity } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 import { Crown } from 'lucide-react';
@@ -11,21 +10,6 @@ import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
 import HeaderNav from '@/components/HeaderNav';
 import logo from '@/assets/logo.png';
 import { Link } from 'react-router-dom';
-
-const bottomNavItems = [
-  { key: 'overview', icon: LayoutDashboard, path: '/super-admin', labelKey: 'super_admin.overview' },
-  { key: 'roles', icon: ShieldCheck, path: '/super-admin/roles', labelKey: 'super_admin.roles' },
-  { key: 'users', icon: Users, path: '/super-admin/users', labelKey: 'super_admin.user_management' },
-  { key: 'reports', icon: BarChart3, path: '/super-admin/reports', labelKey: 'super_admin.reports' },
-];
-
-const moreNavItems = [
-  { key: 'executive', icon: PieChart, path: '/super-admin/executive', labelKey: 'super_admin.executive_dashboard' },
-  { key: 'config', icon: Settings2, path: '/super-admin/config', labelKey: 'super_admin.config' },
-  { key: 'workflows', icon: Workflow, path: '/super-admin/workflows', labelKey: 'super_admin.workflows' },
-  { key: 'audit', icon: FileText, path: '/super-admin/audit', labelKey: 'super_admin.audit_logs' },
-  { key: 'system', icon: Activity, path: '/super-admin/system', labelKey: 'super_admin.system_health' },
-];
 
 export default function SuperAdminLayout() {
   return (

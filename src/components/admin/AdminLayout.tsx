@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import PageTransition from '@/components/PageTransition';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
-import { Search, LayoutDashboard, Users, Kanban, UserCheck, BarChart3, Settings, Plug, Shield, Server, ClipboardList, Settings2, FileSignature, PanelTop, Brain, Bell, Download } from 'lucide-react';
+import { Search } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
@@ -11,29 +11,6 @@ import HeaderNav from '@/components/HeaderNav';
 import logo from '@/assets/logo.png';
 import { Link } from 'react-router-dom';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
-
-const bottomNavItems = [
-  { key: 'dashboard', icon: LayoutDashboard, path: '/admin', labelKey: 'sidebar.dashboard' },
-  { key: 'users', icon: Users, path: '/admin/users', labelKey: 'sidebar.users' },
-  { key: 'tickets', icon: Kanban, path: '/admin/tickets', labelKey: 'sidebar.ticket_board' },
-  { key: 'approvals', icon: UserCheck, path: '/admin/approvals', labelKey: 'sidebar.approvals' },
-];
-
-const moreNavItems = [
-  { key: 'console', icon: Shield, path: '/admin/console', labelKey: 'sidebar.console' },
-  { key: 'analytics', icon: BarChart3, path: '/admin/analytics', labelKey: 'sidebar.analytics' },
-  { key: 'integrations', icon: Plug, path: '/admin/integrations', labelKey: 'sidebar.integrations' },
-  { key: 'environments', icon: Server, path: '/admin/environments', labelKey: 'sidebar.environments' },
-  { key: 'environment_logs', icon: ClipboardList, path: '/admin/environment-logs', labelKey: 'sidebar.environment_logs' },
-  { key: 'meeting_join_export', icon: Download, path: '/admin/meeting-join-events', labelKey: 'sidebar.meeting_join_export' },
-  { key: 'vmware_settings', icon: Settings2, path: '/admin/vmware-settings', labelKey: 'sidebar.vmware_settings' },
-  { key: 'nda_management', icon: FileSignature, path: '/admin/nda-management', labelKey: 'sidebar.nda_management' },
-  { key: 'landing_editor', icon: PanelTop, path: '/admin/landing-editor', labelKey: 'sidebar.landing_editor' },
-  { key: 'interview_training', icon: Brain, path: '/admin/interview-training', labelKey: 'sidebar.interview_training' },
-  { key: 'oncall', icon: Bell, path: '/admin/oncall', labelKey: 'sidebar.oncall' },
-  { key: 'notifications', icon: Bell, path: '/admin/notifications', labelKey: 'sidebar.notifications' },
-  { key: 'settings', icon: Settings, path: '/admin/settings', labelKey: 'sidebar.settings' },
-];
 
 export default function AdminLayout() {
   useSessionTimeout();

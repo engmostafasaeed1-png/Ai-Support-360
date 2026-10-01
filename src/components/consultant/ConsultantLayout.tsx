@@ -4,11 +4,7 @@ import PageTransition from '@/components/PageTransition';
 import MatchRequestPopup from '@/components/consultant/MatchRequestPopup';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Outlet } from 'react-router-dom';
-import {
-  Search, LayoutDashboard, Briefcase, Calendar, MessageSquare,
-  CreditCard, Star, User, ShieldCheck, BookOpen, Bell, Settings, Settings2, Brain, Server, Building2,
-  Handshake, FileText, Gavel, Clock, ClipboardList, BarChart3, Gift, Zap, Plus, Sparkles,
-} from 'lucide-react';
+import { Search, Briefcase, Building2, Zap, Plus } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Input } from '@/components/ui/input';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
@@ -22,33 +18,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-
-const bottomNavItems = [
-  { key: 'dashboard', icon: LayoutDashboard, path: '/consultant', labelKey: 'sidebar.dashboard' },
-  { key: 'cases', icon: Briefcase, path: '/consultant/cases', labelKey: 'sidebar.cases' },
-  { key: 'calendar', icon: Calendar, path: '/consultant/calendar', labelKey: 'sidebar.calendar' },
-  { key: 'chat', icon: MessageSquare, path: '/consultant/chat', labelKey: 'sidebar.chat' },
-];
-
-const moreNavItems = [
-  { key: 'requests', icon: Handshake, path: '/consultant/requests', labelKey: 'sidebar.requests' },
-  { key: 'proposals', icon: FileText, path: '/consultant/proposals', labelKey: 'sidebar.proposals' },
-  { key: 'open_tickets', icon: Gavel, path: '/consultant/open-tickets', labelKey: 'sidebar.open_tickets' },
-  { key: 'work_diary', icon: Clock, path: '/consultant/work-diary', labelKey: 'sidebar.work_diary' },
-  { key: 'earnings', icon: CreditCard, path: '/consultant/earnings', labelKey: 'sidebar.earnings' },
-  { key: 'reviews', icon: Star, path: '/consultant/reviews', labelKey: 'sidebar.reviews' },
-  { key: 'interviews', icon: Brain, path: '/consultant/interviews', labelKey: 'sidebar.interviews' },
-  { key: 'credits', icon: Sparkles, path: '/consultant/credits', labelKey: 'sidebar.credits' },
-  { key: 'profile', icon: User, path: '/consultant/profile', labelKey: 'sidebar.profile' },
-  { key: 'onboarding', icon: ClipboardList, path: '/consultant/onboarding', labelKey: 'sidebar.onboarding' },
-  { key: 'verification', icon: ShieldCheck, path: '/consultant/verification', labelKey: 'sidebar.verification' },
-  { key: 'remote_access', icon: Server, path: '/consultant/remote-access', labelKey: 'sidebar.remote_access' },
-  { key: 'knowledge', icon: BookOpen, path: '/consultant/knowledge', labelKey: 'sidebar.knowledge' },
-  { key: 'reports', icon: BarChart3, path: '/consultant/reports', labelKey: 'sidebar.reports' },
-  { key: 'referrals', icon: Gift, path: '/consultant/referrals', labelKey: 'sidebar.referrals' },
-  { key: 'notifications', icon: Bell, path: '/consultant/notifications', labelKey: 'sidebar.notifications' },
-  { key: 'settings', icon: Settings, path: '/consultant/settings', labelKey: 'sidebar.settings' },
-];
 
 export default function ConsultantLayout() {
   useSessionTimeout();
