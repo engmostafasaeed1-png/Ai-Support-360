@@ -167,6 +167,18 @@ export default function PortalSidebar({
         </SidebarContent>
 
         <SidebarFooter className="border-t border-sidebar-border/60 p-2">
+          {isAdmin && (
+            <SidebarMenuButton
+              asChild
+              tooltip={adminConsoleLabel}
+              className="mb-1.5 h-9 justify-center gap-2 rounded-md border border-sidebar-primary/30 bg-sidebar-primary/10 px-3 text-[13px] font-semibold text-sidebar-primary hover:bg-sidebar-primary/20 hover:text-sidebar-primary data-[active=true]:bg-sidebar-primary/20 data-[active=true]:text-sidebar-primary"
+            >
+              <Link to="/admin/console" aria-label={collapsed ? adminConsoleLabel : undefined}>
+                <Shield aria-hidden="true" focusable="false" />
+                {!collapsed && <span>{adminConsoleLabel}</span>}
+              </Link>
+            </SidebarMenuButton>
+          )}
           <SidebarAccountMenu
             collapsed={collapsed}
             onEditProfile={profileRole ? () => setProfileOpen(true) : undefined}
