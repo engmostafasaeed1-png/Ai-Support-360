@@ -277,7 +277,8 @@
     "nda_management": "NDA management",
     "landing_editor": "Landing editor",
     "interview_training": "Interview training",
-    "executive": "Executive dashboard"
+    "executive": "Executive dashboard",
+    "question_library": "Question library"
   },
   "client_dashboard": {
     "title": "Welcome back",
