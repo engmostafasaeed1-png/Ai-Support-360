@@ -6023,8 +6023,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      consultant_has_ticket_link: {
+        Args: { _ticket_id: string }
+        Returns: boolean
+      }
       consultant_profile_visible: {
         Args: { _consultant_id: string }
+        Returns: boolean
+      }
+      consultant_related_to_client: {
+        Args: {
+          _client_id: string
+          _consultant_id: string
+          _include_bids?: boolean
+        }
         Returns: boolean
       }
       get_demo_request_by_token: {
@@ -6106,6 +6118,7 @@ export type Database = {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
       }
+      is_ticket_participant: { Args: { _ticket_id: string }; Returns: boolean }
       is_untrusted_writer: { Args: never; Returns: boolean }
       request_demo_reschedule: {
         Args: { _proposed_slots: Json; _reason?: string; _token: string }
@@ -6188,6 +6201,10 @@ export type Database = {
           _timezone: string
         }
         Returns: string
+      }
+      ticket_owned_by: {
+        Args: { _client_id: string; _ticket_id: string }
+        Returns: boolean
       }
     }
     Enums: {
