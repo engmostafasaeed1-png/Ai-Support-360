@@ -4,9 +4,6 @@ import { Star, Quote } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 import { supabase } from '@/integrations/supabase/client';
 import { withCacheBust } from '@/lib/cacheBust';
-import logoSaudiPetro from '@/assets/clients/saudi-petrochemical.png';
-import logoRiyadhBank from '@/assets/clients/riyadh-bank.png';
-import logoGccRetail from '@/assets/clients/gcc-retail.png';
 
 type Testimonial = {
   id: string;
@@ -62,6 +59,8 @@ export default function TestimonialsSection() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  if (items.length === 0) return null;
 
   return (
     <section className="relative py-24 md:py-32 overflow-hidden bg-background">
