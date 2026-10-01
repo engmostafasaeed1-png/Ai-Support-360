@@ -53,10 +53,11 @@ export default function ConsultantInterviewsPage() {
 
       return (cons || []).map((c: any): ConsultantRow => {
         const agg = byConsultant.get(c.id);
+        const prof = profileByUser.get(c.user_id) as any;
         return {
           id: c.id,
-          name: c.profiles?.display_name || 'Unknown',
-          avatarUrl: c.profiles?.avatar_url || null,
+          name: prof?.display_name || 'Unknown',
+          avatarUrl: prof?.avatar_url || null,
           verificationStatus: c.verification_status,
           interviewCount: agg?.count || 0,
           avgScore: agg && agg.scores.length > 0
