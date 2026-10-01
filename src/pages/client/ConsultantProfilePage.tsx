@@ -279,7 +279,7 @@ export default function ConsultantProfilePage() {
                         </Badge>
                       </a>
                     )}
-                    {consultant.badges.map(badge => (
+                    {consultant.badges.map((badge: any) => (
                       <Badge key={badge} variant="secondary" className="text-xs">
                         {t(`consultants.${badge}`)}
                       </Badge>
@@ -438,7 +438,7 @@ export default function ConsultantProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {detail.industries.map(ind => (
+                {detail.industries.map((ind: any) => (
                   <Badge key={ind} variant="outline" className="text-xs">{ind}</Badge>
                 ))}
               </div>
