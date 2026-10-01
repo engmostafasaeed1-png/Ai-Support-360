@@ -6207,6 +6207,10 @@ export type Database = {
         Args: { _session_id: string; _user_id: string }
         Returns: string
       }
+      invite_to_meeting: {
+        Args: { _consultant_ids: string[]; _session_id: string }
+        Returns: number
+      }
       is_session_participant: {
         Args: { _session_id: string }
         Returns: boolean
