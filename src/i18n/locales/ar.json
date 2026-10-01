@@ -279,7 +279,8 @@
     "landing_editor": "محرر الصفحة الرئيسية",
     "interview_training": "تدريب المقابلات",
     "executive": "لوحة المؤشرات التنفيذية",
-    "question_library": "مكتبة الأسئلة"
+    "question_library": "مكتبة الأسئلة",
+    "consultant_interviews": "مقابلات الاستشاريين"
   },
   "client_dashboard": {
     "title": "مرحباً بعودتك",

@@ -279,7 +279,8 @@
     "landing_editor": "Landing editor",
     "interview_training": "Interview training",
     "executive": "Executive dashboard",
-    "question_library": "Question library"
+    "question_library": "Question library",
+    "consultant_interviews": "Consultant interviews"
   },
   "client_dashboard": {
     "title": "Welcome back",
