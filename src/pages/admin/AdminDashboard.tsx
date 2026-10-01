@@ -5,7 +5,49 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Ticket, DollarSign, Clock, Star, TrendingUp, UserCheck, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAdminStats } from '@/hooks/useAdminData';
-import { revenueData, ticketsByStatus, ticketsByModule } from '@/data/adminMockData';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+const STATUS_COLORS: Record<string, string> = {
+  new: 'hsl(var(--accent))', under_review: 'hsl(38, 92%, 50%)', matched: 'hsl(262, 83%, 58%)',
+  in_progress: 'hsl(200, 90%, 50%)', waiting_for_client: 'hsl(0, 84%, 60%)', resolved: 'hsl(142, 71%, 45%)', closed: 'hsl(var(--muted-foreground))',
+};
+
+function useDashboardCharts() {
+  return useQuery({
+    queryKey: ['admin-dashboard-charts'],
+    queryFn: async () => {
+      const since = new Date(); since.setMonth(since.getMonth() - 5); since.setDate(1);
+      const [{ data: tickets }, { data: payments }] = await Promise.all([
+        supabase.from('tickets').select('status, sap_module').limit(5000),
+        supabase.from('payments').select('amount, created_at, status').gte('created_at', since.toISOString()).limit(5000),
+      ]);
+      const statusCounts: Record<string, number> = {};
+      const moduleCounts: Record<string, number> = {};
+      (tickets || []).forEach((t: any) => {
+        statusCounts[t.status] = (statusCounts[t.status] || 0) + 1;
+        const m = t.sap_module || 'Other';
+        moduleCounts[m] = (moduleCounts[m] || 0) + 1;
+      });
+      const months: { month: string; revenue: number }[] = [];
+      for (let i = 0; i < 6; i++) {
+        const d = new Date(since); d.setMonth(since.getMonth() + i);
+        months.push({ month: d.toLocaleString('en', { month: 'short' }), revenue: 0 });
+      }
+      (payments || []).forEach((p: any) => {
+        if (p.status !== 'completed') return;
+        const d = new Date(p.created_at);
+        const idx = (d.getFullYear() - since.getFullYear()) * 12 + d.getMonth() - since.getMonth();
+        if (months[idx]) months[idx].revenue += Number(p.amount) || 0;
+      });
+      return {
+        revenueData: months,
+        ticketsByStatus: Object.entries(statusCounts).map(([name, value]) => ({ name: name.replace(/_/g, ' '), value, color: STATUS_COLORS[name] || 'hsl(var(--accent))' })),
+        ticketsByModule: Object.entries(moduleCounts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([module, count]) => ({ module, count })),
+      };
+    },
+  });
+}
 import { Link } from 'react-router-dom';
 import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { Sparkline } from '@/components/ui/sparkline';
@@ -14,18 +56,22 @@ import AIInsightsButton from '@/components/ai/AIInsightsButton';
 export default function AdminDashboard() {
   const { t } = useTranslation();
   const { data: stats, isLoading } = useAdminStats();
+  const { data: charts } = useDashboardCharts();
+  const revenueData = charts?.revenueData ?? [];
+  const ticketsByStatus = charts?.ticketsByStatus ?? [];
+  const ticketsByModule = charts?.ticketsByModule ?? [];
 
   const s = stats || { totalUsers: 0, activeConsultants: 0, openTickets: 0, revenue: 0, avgResolutionTime: '—', satisfaction: 0, ticketsThisMonth: 0, pendingApprovals: 0 };
 
   const kpis = [
-    { labelKey: 'admin_dashboard.total_users', value: s.totalUsers, prefix: '', icon: Users, link: '/admin/users', sparkData: [50, 80, 100, 130, 160, 190, s.totalUsers], color: 'hsl(var(--accent))' },
-    { labelKey: 'admin_dashboard.active_consultants', value: s.activeConsultants, prefix: '', icon: UserCheck, link: '/admin/approvals', sparkData: [5, 8, 10, 12, 15, 18, s.activeConsultants], color: 'hsl(142, 71%, 45%)' },
-    { labelKey: 'admin_dashboard.open_tickets', value: s.openTickets, prefix: '', icon: Ticket, link: '/admin/tickets', sparkData: [10, 15, 12, 18, 20, 16, s.openTickets], color: 'hsl(38, 92%, 50%)' },
-    { labelKey: 'admin_dashboard.monthly_revenue', value: Math.round(s.revenue / 1000), prefix: '$', suffix: 'K', icon: DollarSign, link: '/admin/analytics', sparkData: [20, 30, 25, 35, 40, 38, Math.round(s.revenue / 1000)], color: 'hsl(262, 83%, 58%)' },
-    { labelKey: 'admin_dashboard.avg_resolution', value: 0, displayValue: s.avgResolutionTime, icon: Clock, link: '/admin/analytics', sparkData: [5, 4.5, 4, 3.5, 3, 2.5, 2], color: 'hsl(var(--accent))' },
-    { labelKey: 'admin_dashboard.satisfaction', value: s.satisfaction, prefix: '', suffix: '/5', icon: Star, link: '/admin/analytics', sparkData: [3.8, 4.0, 4.2, 4.1, 4.3, 4.5, s.satisfaction], color: 'hsl(38, 92%, 50%)' },
-    { labelKey: 'admin_dashboard.tickets_this_month', value: s.ticketsThisMonth, prefix: '', icon: TrendingUp, link: '/admin/tickets', sparkData: [20, 25, 30, 28, 35, 32, s.ticketsThisMonth], color: 'hsl(142, 71%, 45%)' },
-    { labelKey: 'admin_dashboard.pending_approvals', value: s.pendingApprovals, prefix: '', icon: AlertTriangle, link: '/admin/approvals', sparkData: [3, 5, 4, 6, 3, 4, s.pendingApprovals], color: 'hsl(0, 84%, 60%)' },
+    { labelKey: 'admin_dashboard.total_users', value: s.totalUsers, prefix: '', icon: Users, link: '/admin/users', sparkData: [] as number[], color: 'hsl(var(--accent))' },
+    { labelKey: 'admin_dashboard.active_consultants', value: s.activeConsultants, prefix: '', icon: UserCheck, link: '/admin/approvals', sparkData: [] as number[], color: 'hsl(142, 71%, 45%)' },
+    { labelKey: 'admin_dashboard.open_tickets', value: s.openTickets, prefix: '', icon: Ticket, link: '/admin/tickets', sparkData: [] as number[], color: 'hsl(38, 92%, 50%)' },
+    { labelKey: 'admin_dashboard.monthly_revenue', value: Math.round(s.revenue / 1000), prefix: '$', suffix: 'K', icon: DollarSign, link: '/admin/analytics', sparkData: [] as number[], color: 'hsl(262, 83%, 58%)' },
+    { labelKey: 'admin_dashboard.avg_resolution', value: 0, displayValue: s.avgResolutionTime, icon: Clock, link: '/admin/analytics', sparkData: [] as number[], color: 'hsl(var(--accent))' },
+    { labelKey: 'admin_dashboard.satisfaction', value: s.satisfaction, prefix: '', suffix: '/5', icon: Star, link: '/admin/analytics', sparkData: [] as number[], color: 'hsl(38, 92%, 50%)' },
+    { labelKey: 'admin_dashboard.tickets_this_month', value: s.ticketsThisMonth, prefix: '', icon: TrendingUp, link: '/admin/tickets', sparkData: [] as number[], color: 'hsl(142, 71%, 45%)' },
+    { labelKey: 'admin_dashboard.pending_approvals', value: s.pendingApprovals, prefix: '', icon: AlertTriangle, link: '/admin/approvals', sparkData: [] as number[], color: 'hsl(0, 84%, 60%)' },
   ];
 
   return (
