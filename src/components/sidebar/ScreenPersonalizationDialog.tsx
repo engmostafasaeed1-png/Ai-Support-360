@@ -6,9 +6,8 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Settings2, Search, RotateCcw, Eye, EyeOff, Sparkles, Rows3, Rows2 } from 'lucide-react';
+import { Settings2, Search, RotateCcw, Eye, EyeOff, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useTileDensity, type TileDensity } from '@/hooks/useTileDensity';
 
 interface ScreenItem {
   key: string;
@@ -24,18 +23,23 @@ interface Props {
   onToggle: (key: string, visible: boolean) => void;
   onResetAll: () => void;
   collapsed?: boolean;
+  /** Controlled mode: when `open` is passed the dialog renders without its own trigger button. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export default function ScreenPersonalizationDialog({ screens, hiddenScreens, onToggle, onResetAll, collapsed }: Props) {
+export default function ScreenPersonalizationDialog({
+  screens, hiddenScreens, onToggle, onResetAll, collapsed, open: openProp, onOpenChange,
+}: Props) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const { density, setDensity } = useTileDensity();
-
-  const densityOptions: { value: TileDensity; label: string; hint: string; Icon: LucideIcon }[] = [
-    { value: 'comfortable', label: t('sidebar.density_comfortable', 'Comfortable'), hint: t('sidebar.density_comfortable_hint', 'Bigger labels, easier to tap'), Icon: Rows2 },
-    { value: 'compact', label: t('sidebar.density_compact', 'Compact'), hint: t('sidebar.density_compact_hint', 'Fit more tiles on screen'), Icon: Rows3 },
-  ];
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : internalOpen;
+  const setOpen = (next: boolean) => {
+    if (controlled) onOpenChange?.(next);
+    else setInternalOpen(next);
+  };
 
   const groups = [...new Set(screens.map(s => s.group || 'General'))];
   const filtered = screens.filter(s =>
@@ -48,33 +52,35 @@ export default function ScreenPersonalizationDialog({ screens, hiddenScreens, on
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button
-          className="flex items-center gap-2 text-[11px] text-sidebar-foreground/50 hover:text-sidebar-foreground transition-all hover:bg-sidebar-accent/40 rounded-lg px-2 py-1.5 w-full"
-          title={t('sidebar.personalize', 'Personalize Screens')}
-        >
-          <Settings2 className="w-3.5 h-3.5" />
-          {!collapsed && <span>{t('sidebar.personalize', 'Personalize')}</span>}
-        </button>
-      </DialogTrigger>
+      {!controlled && (
+        <DialogTrigger asChild>
+          <button
+            className="flex items-center gap-2 text-[11px] text-sidebar-foreground/50 hover:text-sidebar-foreground transition-all hover:bg-sidebar-accent/40 rounded-lg px-2 py-1.5 w-full"
+            title={String(t('sidebar.personalize', { defaultValue: 'Customize menu' }))}
+          >
+            <Settings2 className="w-3.5 h-3.5" />
+            {!collapsed && <span>{String(t('sidebar.personalize', { defaultValue: 'Customize menu' }))}</span>}
+          </button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-5 pb-3 bg-gradient-to-br from-primary/5 to-primary/10 border-b border-border/50">
           <DialogTitle className="flex items-center gap-2.5 text-lg">
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-primary" />
             </div>
-            {t('sidebar.personalize_title', 'Personalize Screens')}
+            {String(t('sidebar.personalize_title', { defaultValue: 'Customize menu' }))}
           </DialogTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            {t('sidebar.personalize_desc', 'Show or hide pages from your navigation. Changes are saved automatically.')}
+            {String(t('sidebar.personalize_desc', { defaultValue: 'Show or hide pages from your navigation. Changes are saved automatically.' }))}
           </p>
           <div className="flex items-center gap-2 mt-3">
             <Badge variant="secondary" className="text-[10px] gap-1">
-              <Eye className="w-3 h-3" /> {visibleCount} visible
+              <Eye className="w-3 h-3" /> {String(t('sidebar.visible_n', { n: visibleCount, defaultValue: '{{n}} visible' }))}
             </Badge>
             {hiddenCount > 0 && (
               <Badge variant="outline" className="text-[10px] gap-1 text-muted-foreground">
-                <EyeOff className="w-3 h-3" /> {hiddenCount} hidden
+                <EyeOff className="w-3 h-3" /> {String(t('sidebar.hidden_n', { n: hiddenCount, defaultValue: '{{n}} hidden' }))}
               </Badge>
             )}
           </div>
@@ -84,60 +90,11 @@ export default function ScreenPersonalizationDialog({ screens, hiddenScreens, on
           <div className="relative">
             <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder={t('sidebar.search_screens', 'Search screens...')}
+              placeholder={String(t('sidebar.search_screens', { defaultValue: 'Search pages...' }))}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="ps-9 h-9 text-sm bg-muted/30"
             />
-          </div>
-        </div>
-
-        {/* Tile density (mobile-focused but applies anywhere the row tile shows) */}
-        <div className="px-4 py-3 border-b border-border/30">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              {t('sidebar.density_title', 'Tile density (mobile)')}
-            </p>
-            <span className="text-[10px] text-muted-foreground/70">
-              {t('sidebar.density_subtitle', 'Choose your reading comfort')}
-            </span>
-          </div>
-          <div
-            role="radiogroup"
-            aria-label={t('sidebar.density_title', 'Tile density (mobile)')}
-            className="grid grid-cols-2 gap-2"
-          >
-            {densityOptions.map(({ value, label, hint, Icon }) => {
-              const active = density === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => setDensity(value)}
-                  className={`flex items-start gap-2.5 rounded-xl border p-2.5 text-start transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                    active
-                      ? 'border-primary bg-primary/10 shadow-sm'
-                      : 'border-border/60 bg-background hover:bg-muted/40'
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                    active ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                  }`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-xs font-semibold ${active ? 'text-primary' : 'text-foreground'}`}>
-                      {label}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground leading-tight mt-0.5">
-                      {hint}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
           </div>
         </div>
 
@@ -148,7 +105,7 @@ export default function ScreenPersonalizationDialog({ screens, hiddenScreens, on
               if (groupScreens.length === 0) return null;
               return (
                 <div key={group}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2.5 px-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2.5 px-1 rtl:tracking-normal">
                     {group}
                   </p>
                   <div className="space-y-1">
@@ -178,11 +135,14 @@ export default function ScreenPersonalizationDialog({ screens, hiddenScreens, on
                             {screen.label}
                           </span>
                           {isRequired ? (
-                            <Badge variant="secondary" className="text-[9px]">Required</Badge>
+                            <Badge variant="secondary" className="text-[9px]">
+                              {String(t('sidebar.required', { defaultValue: 'Required' }))}
+                            </Badge>
                           ) : (
                             <Switch
                               checked={visible}
                               onCheckedChange={val => onToggle(screen.key, val)}
+                              aria-label={screen.label}
                               className="scale-90"
                             />
                           )}
@@ -205,7 +165,7 @@ export default function ScreenPersonalizationDialog({ screens, hiddenScreens, on
               className="w-full gap-2 text-xs"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              {t('sidebar.reset_all', 'Reset All — Show Everything')}
+              {String(t('sidebar.reset_all', { defaultValue: 'Reset all and show everything' }))}
             </Button>
           </div>
         )}
