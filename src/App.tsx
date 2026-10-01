@@ -165,6 +165,7 @@ const ExecutiveDashboardPage = React.lazy(() => import("./pages/superadmin/Execu
 // Shared pages
 const ChatSessionPage = React.lazy(() => import("./pages/chat/ChatSessionPage.tsx"));
 const LiveInterviewPage = React.lazy(() => import("./pages/interview/LiveInterviewPage.tsx"));
+const InterviewRespondPage = React.lazy(() => import("./pages/interview/InterviewRespondPage.tsx"));
 const NotificationsPage = React.lazy(() => import("./pages/notifications/NotificationsPage.tsx"));
 const ReferralsPage = React.lazy(() => import("./pages/ReferralsPage.tsx"));
 const MatchRequestPopup = React.lazy(() => import("./components/consultant/MatchRequestPopup.tsx"));
@@ -254,6 +255,7 @@ const App = () => (
             <Route path="/services/s4hana-support" element={<ServiceModulePage moduleSlug="s4hana-support" />} />
             <Route path="/services/btp-support" element={<ServiceModulePage moduleSlug="btp-support" />} />
             <Route path="/demo/confirmation/:token" element={<DemoRequestConfirmationPage />} />
+            <Route path="/interview/respond/:token" element={<InterviewRespondPage />} />
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/.lovable/oauth/consent" element={<OAuthConsentPage />} />
