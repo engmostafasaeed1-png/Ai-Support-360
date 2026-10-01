@@ -6,8 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { callInterviewFunction } from '@/lib/interviewRsvp';
 
 interface Props {
   open: boolean;
@@ -18,10 +21,17 @@ interface Props {
 }
 
 type Person = { user_id: string; display_name: string | null };
+type InviteResult = { sent: number; suppressed: number; failed: number; skipped: number };
+
+const DURATIONS = ['30', '45', '60', '90', '120'];
 
 export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consultantId, consultantUserId, consultantName }: Props) {
   const navigate = useNavigate();
   const [when, setWhen] = useState('');
+  const [duration, setDuration] = useState('60');
+  const [videoMode, setVideoMode] = useState<'free' | 'own'>('free');
+  const [ownUrl, setOwnUrl] = useState('');
+  const [emailInvites, setEmailInvites] = useState(true);
   const [people, setPeople] = useState<Person[]>([]);
   const [picked, setPicked] = useState<string[]>([]);
   const [me, setMe] = useState<string | null>(null);
@@ -31,6 +41,10 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
   useEffect(() => {
     if (!open) return;
     setLoaded(false);
+    setDuration('60');
+    setVideoMode('free');
+    setOwnUrl('');
+    setEmailInvites(true);
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setMe(user?.id ?? null);
@@ -52,6 +66,17 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
   const save = async () => {
     const interviewers = Array.from(new Set(picked)).filter((uid) => uid !== consultantUserId);
     if (!interviewers.length) { toast.error('Pick at least one interviewer other than the candidate'); return; }
+    let customUrl: string | undefined;
+    if (videoMode === 'own') {
+      try {
+        const parsed = new URL(ownUrl.trim());
+        if (parsed.protocol !== 'https:') throw new Error('not https');
+        customUrl = parsed.toString();
+      } catch {
+        toast.error('Enter a valid meeting link that starts with https://');
+        return;
+      }
+    }
     setSaving(true);
     let createdId: string | null = null;
     try {
@@ -63,6 +88,8 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
         requested_by: user?.id,
         interview_style: 'live',
         scheduled_at: when ? new Date(when).toISOString() : null,
+        duration_minutes: Number(duration) || 60,
+        ...(customUrl ? { meeting_url: customUrl } : {}),
       } as any).select('id').single();
       if (error) throw error;
       createdId = sess.id;
@@ -73,9 +100,20 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
       const { error: pErr } = await supabase.from('interview_participants' as any).insert(rows);
       if (pErr) throw pErr;
       createdId = null;
-      // The invitation notification is created by a database trigger on interview_participants
-      // (the browser is not allowed to call safe_insert_notification, so the old call here failed silently).
-      toast.success('Live interview scheduled');
+      // The in-app invitation notification is created by a database trigger on interview_participants.
+      // The e-mail invitation (with Accept / Suggest another time / Decline) is sent by an edge function.
+      let invited = '';
+      if (emailInvites) {
+        const { data: result, error: inviteError } = await callInterviewFunction<InviteResult>('send-interview-invitations', { session_id: sess.id });
+        if (inviteError || !result) {
+          toast.warning(`Scheduled, but the invitation e-mails could not be sent (${inviteError || 'unknown error'}). Use "Send invitation e-mails again" in the interview room.`);
+        } else if (result.sent) {
+          invited = ` Invitation e-mail sent to ${result.sent} ${result.sent === 1 ? 'person' : 'people'}.`;
+        } else if (result.suppressed + result.failed + result.skipped > 0) {
+          toast.warning('Scheduled, but no invitation e-mail could be delivered (blocked or missing address). They can still answer in the app.');
+        }
+      }
+      toast.success(`Live interview scheduled.${invited}`);
       onOpenChange(false);
       navigate(`/interview/live/${sess.id}`);
     } catch (e: any) {
@@ -92,16 +130,51 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Schedule live interview</DialogTitle>
-          <DialogDescription>Interview {consultantName} in a live chat. Pick more than one interviewer for a panel.</DialogDescription>
+          <DialogDescription>Interview {consultantName} in a live chat with a video call. Pick more than one interviewer for a panel.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="live-when">Date & time (optional — leave empty to start now)</Label>
-            <Input id="live-when" type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
+          <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
+            <div className="space-y-1.5">
+              <Label htmlFor="live-when">Date & time (optional — leave empty to start now)</Label>
+              <Input id="live-when" type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="live-duration">Length</Label>
+              <Select value={duration} onValueChange={setDuration}>
+                <SelectTrigger id="live-duration"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {DURATIONS.map((d) => <SelectItem key={d} value={d}>{d} minutes</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          <div className="space-y-1.5">
+            <Label>Video conference</Label>
+            <RadioGroup value={videoMode} onValueChange={(v) => setVideoMode(v === 'own' ? 'own' : 'free')} className="gap-2">
+              <label className="flex items-start gap-2 rounded-lg border p-2 text-sm cursor-pointer">
+                <RadioGroupItem value="free" className="mt-0.5" />
+                <span>
+                  <span className="font-medium">Free video call (Jitsi Meet)</span>
+                  <span className="block text-xs text-muted-foreground">Created automatically and put into the calendar invitation.</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 rounded-lg border p-2 text-sm cursor-pointer">
+                <RadioGroupItem value="own" className="mt-0.5" />
+                <span>
+                  <span className="font-medium">My own meeting link</span>
+                  <span className="block text-xs text-muted-foreground">Zoom, Google Meet, Microsoft Teams or any https link.</span>
+                </span>
+              </label>
+            </RadioGroup>
+            {videoMode === 'own' && (
+              <Input value={ownUrl} onChange={(e) => setOwnUrl(e.target.value)} placeholder="https://…" inputMode="url" aria-label="Meeting link" />
+            )}
+          </div>
+
           <div className="space-y-1.5">
             <Label>Interviewers</Label>
             <div className="max-h-56 overflow-y-auto rounded-lg border divide-y">
@@ -123,6 +196,16 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
               )}
             </div>
           </div>
+
+          <label className="flex items-start gap-2 text-sm">
+            <Checkbox checked={emailInvites} onCheckedChange={(c) => setEmailInvites(c === true)} className="mt-0.5" />
+            <span>
+              E-mail the invitation to the other participants
+              <span className="block text-xs text-muted-foreground">
+                With Accept, Suggest another time and Decline buttons and the calendar links. Their answers come back to you by notification and e-mail.
+              </span>
+            </span>
+          </label>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>

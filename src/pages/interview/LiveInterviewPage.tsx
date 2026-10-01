@@ -11,6 +11,21 @@ import { Slider } from '@/components/ui/slider';
 import { ArrowLeft, Lock, Send, Lightbulb, Loader2, Mic, Square, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import LiveInterviewMeetingBar from '@/components/interview/LiveInterviewMeetingBar';
+import InterviewRsvpCard from '@/components/interview/InterviewRsvpCard';
+import InterviewResponsesCard from '@/components/interview/InterviewResponsesCard';
+
+type Participant = {
+  user_id: string;
+  role: string;
+  display_name: string | null;
+  rsvp_status?: string | null;
+  rsvp_note?: string | null;
+  rsvp_at?: string | null;
+  proposed_slots?: unknown;
+};
+
+const PARTICIPANT_COLUMNS = 'user_id, role, display_name, rsvp_status, rsvp_note, rsvp_at, proposed_slots';
 
 type Msg = { id: string; sender_id: string; sender_name: string | null; content: string; is_private: boolean; created_at: string };
 
@@ -23,7 +38,7 @@ export default function LiveInterviewPage() {
   const [myName, setMyName] = useState('');
   const [role, setRole] = useState<'interviewer' | 'candidate' | 'admin' | null>(null);
   const [session, setSession] = useState<any>(null);
-  const [participants, setParticipants] = useState<{ user_id: string; role: string; display_name: string | null }[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [note, setNote] = useState('');
@@ -49,7 +64,7 @@ export default function LiveInterviewPage() {
       const [{ data: prof }, { data: sess }, { data: parts }, { data: msgs }, { data: isAdmin }] = await Promise.all([
         supabase.from('profiles').select('display_name').eq('user_id', user.id).maybeSingle(),
         supabase.from('interview_sessions').select('*').eq('id', id).maybeSingle(),
-        supabase.from('interview_participants' as any).select('user_id, role, display_name').eq('session_id', id),
+        supabase.from('interview_participants' as any).select(PARTICIPANT_COLUMNS).eq('session_id', id),
         supabase.from('interview_messages' as any).select('*').eq('session_id', id).order('created_at'),
         supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' }),
       ]);
@@ -77,6 +92,17 @@ export default function LiveInterviewPage() {
   }, [id]);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  // Re-read the session and the participants after an answer to the invitation or a reschedule.
+  const reloadParticipants = async () => {
+    if (!id) return;
+    const [{ data: parts }, { data: sess }] = await Promise.all([
+      supabase.from('interview_participants' as any).select(PARTICIPANT_COLUMNS).eq('session_id', id),
+      supabase.from('interview_sessions').select('*').eq('id', id).maybeSingle(),
+    ]);
+    setParticipants(((parts as any[]) || []) as Participant[]);
+    if (sess) setSession(sess);
+  };
 
   const publicMsgs = useMemo(() => messages.filter((m) => !m.is_private), [messages]);
   const privateMsgs = useMemo(() => messages.filter((m) => m.is_private), [messages]);
@@ -152,6 +178,10 @@ export default function LiveInterviewPage() {
   }
 
   const done = session.status === 'completed' || session.status === 'reviewed';
+  const isOrganizer = !!userId && session.requested_by === userId;
+  const canManage = isOrganizer || role === 'admin';
+  const myParticipant = participants.find((p) => p.user_id === userId);
+  const organizerName = participants.find((p) => p.user_id === session.requested_by)?.display_name || undefined;
   const nameOf = (m: Msg) => (m.sender_id === userId ? 'You' : m.sender_name || 'Participant');
   const roleOf = (uid: string) => participants.find((p) => p.user_id === uid)?.role;
 
@@ -169,6 +199,34 @@ export default function LiveInterviewPage() {
             ))}
           </div>
         </div>
+
+        {!done && (
+          <LiveInterviewMeetingBar
+            sessionId={session.id}
+            storedMeetingUrl={session.meeting_url}
+            scheduledAt={session.scheduled_at}
+            durationMinutes={session.duration_minutes}
+            title={`Live interview: ${participants.find((p) => p.role === 'candidate')?.display_name || 'Candidate'}`}
+            attendees={participants.map((p) => p.display_name || 'Participant')}
+          />
+        )}
+        {!done && myParticipant && !isOrganizer && (
+          <InterviewRsvpCard
+            sessionId={session.id}
+            status={myParticipant.rsvp_status || 'pending'}
+            organizerName={organizerName}
+            onAnswered={reloadParticipants}
+          />
+        )}
+        {canManage && (
+          <InterviewResponsesCard
+            sessionId={session.id}
+            organizerId={session.requested_by ?? null}
+            people={participants}
+            done={done}
+            onChanged={reloadParticipants}
+          />
+        )}
 
         <div className={`grid gap-4 ${isInterviewer ? 'lg:grid-cols-[1fr_340px]' : ''}`}>
           <Card className="rounded-2xl flex flex-col h-[70vh]">
