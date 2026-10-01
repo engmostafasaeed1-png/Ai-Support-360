@@ -18,7 +18,6 @@ import {
   LineChart, Line,
 } from 'recharts';
 import { format } from 'date-fns';
-import { mockEarnings } from '@/data/consultantMockData';
 import PayoutModal from '@/components/consultant/PayoutModal';
 import ShareMenu from '@/components/ShareMenu';
 
@@ -112,12 +111,12 @@ export default function EarningsPage() {
         totalEarned,
         pending,
         available: totalEarned - totalPaidOut,
-        monthlyTrend: monthlyTrend.length > 0 ? monthlyTrend : mockEarnings.monthlyTrend,
+        monthlyTrend,
       };
     },
   });
 
-  const e = data || { payments: [], payouts: [], totalEarned: mockEarnings.total, pending: mockEarnings.pending, available: mockEarnings.available, monthlyTrend: mockEarnings.monthlyTrend };
+  const e = data || { payments: [], payouts: [], totalEarned: 0, pending: 0, available: 0, monthlyTrend: [] as { month: string; amount: number }[] };
 
   const kpis = [
     { labelKey: 'earnings.total_earned', value: `$${e.totalEarned.toLocaleString()}`, icon: DollarSign, color: 'bg-accent/10 text-accent' },

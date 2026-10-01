@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Link2, Unlink, RefreshCw, CheckCircle2, XCircle, Clock,
   ArrowLeftRight, ExternalLink, Settings2, Trash2, Shield, Copy, Webhook,
@@ -79,33 +80,73 @@ const platforms: PlatformConfig[] = [
   },
 ];
 
-// Mock connected integrations for UI prototype
-const mockConnected: Record<string, {
-  status: 'active' | 'error' | 'inactive';
-  lastSynced: string;
-  ticketsSynced: number;
-  syncEnabled: boolean;
-}> = {
-  zendesk: {
-    status: 'active',
-    lastSynced: '2 min ago',
-    ticketsSynced: 47,
-    syncEnabled: true,
-  },
-};
-
-const mockSyncLog = [
-  { id: '1', direction: 'inbound' as const, action: 'ticket_created', external: 'ZD-1234', local: 'QT-089', status: 'success' as const, time: '2 min ago' },
-  { id: '2', direction: 'outbound' as const, action: 'status_updated', external: 'ZD-1230', local: 'QT-085', status: 'success' as const, time: '5 min ago' },
-  { id: '3', direction: 'inbound' as const, action: 'comment_synced', external: 'ZD-1228', local: 'QT-082', status: 'failed' as const, time: '12 min ago' },
-  { id: '4', direction: 'outbound' as const, action: 'ticket_resolved', external: 'ZD-1225', local: 'QT-079', status: 'success' as const, time: '1 hr ago' },
-];
 
 export default function IntegrationsPage() {
   const { t } = useTranslation();
   const [connectDialog, setConnectDialog] = useState<PlatformConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
-  const [connected, setConnected] = useState(mockConnected);
+  const [connected, setConnected] = useState<Record<string, {
+    id?: string;
+    status: 'active' | 'error' | 'inactive';
+    lastSynced: string;
+    ticketsSynced: number;
+    syncEnabled: boolean;
+  }>>({});
+  const [syncLog, setSyncLog] = useState<{
+    id: string; direction: 'inbound' | 'outbound'; action: string; external: string; local: string; status: 'success' | 'failed'; time: string;
+  }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load real integrations + sync log for the signed-in client
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { if (active) setLoading(false); return; }
+
+      const { data: integrations } = await supabase
+        .from('integrations')
+        .select('id, platform, status, last_synced_at, sync_enabled')
+        .eq('client_id', user.id);
+
+      if (!active) return;
+      if (integrations && integrations.length > 0) {
+        const map: typeof connected = {};
+        integrations.forEach((i) => {
+          map[i.platform] = {
+            id: i.id,
+            status: (i.status as 'active' | 'error' | 'inactive') || 'inactive',
+            lastSynced: i.last_synced_at ? new Date(i.last_synced_at).toLocaleString() : 'Never',
+            ticketsSynced: 0,
+            syncEnabled: !!i.sync_enabled,
+          };
+        });
+        setConnected(map);
+
+        const integrationIds = integrations.map(i => i.id);
+        const { data: logs } = await supabase
+          .from('integration_sync_log')
+          .select('id, direction, action, external_ticket_id, local_ticket_id, status, created_at')
+          .in('integration_id', integrationIds)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (active && logs) {
+          setSyncLog(logs.map((l) => ({
+            id: l.id,
+            direction: l.direction as 'inbound' | 'outbound',
+            action: l.action,
+            external: l.external_ticket_id || '—',
+            local: l.local_ticket_id || '—',
+            status: (l.status as 'success' | 'failed') === 'failed' ? 'failed' : 'success',
+            time: new Date(l.created_at).toLocaleString(),
+          })));
+        }
+      }
+      if (active) setLoading(false);
+    };
+    load();
+    return () => { active = false; };
+  }, []);
 
   const getWebhookUrl = (platformId: string, integrationId: string) => {
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'your-project';
@@ -247,7 +288,7 @@ export default function IntegrationsPage() {
       )}
 
       {/* Sync Activity Log */}
-      {Object.keys(connected).length > 0 && (
+      {Object.keys(connected).length > 0 && syncLog.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -257,7 +298,7 @@ export default function IntegrationsPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-border/50">
-              {mockSyncLog.map((log) => (
+              {syncLog.map((log) => (
                 <div key={log.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
                   <div className="flex items-center gap-3">
                     <Badge variant="outline" className={`text-[10px] ${log.direction === 'inbound' ? 'border-blue-300 text-blue-600' : 'border-emerald-300 text-emerald-600'}`}>

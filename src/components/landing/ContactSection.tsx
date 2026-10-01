@@ -6,14 +6,40 @@ import { useState } from 'react';
 import { Send, CheckCircle2, CalendarPlus } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 import { useDemoWizard } from './DemoRequestWizard';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function ContactSection() {
   const { t } = useTranslation();
   const [submitted, setSubmitted] = useState(false);
   const demoWizard = useDemoWizard();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [sending, setSending] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const get = (k: string) => String(f.get(k) ?? '').trim();
+    const notes = [get('phone') && `Phone: ${get('phone')}`, get('message')].filter(Boolean).join('\n\n').slice(0, 2000);
+    setSending(true);
+    const { error } = await supabase.rpc('submit_demo_request', {
+      _demo_type: 'live',
+      _scheduling_preference: 'flexible',
+      _scheduled_date: null as any,
+      _scheduled_slot: '',
+      _timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      _meeting_format: '',
+      _full_name: get('name'),
+      _email: get('email'),
+      _company: get('company'),
+      _notes: notes,
+      _source: 'contact-form',
+    });
+    setSending(false);
+    if (error) {
+      toast.error(error.message || 'Could not send your message. Please try again.');
+      return;
+    }
     setSubmitted(true);
   };
 
@@ -57,17 +83,18 @@ export default function ContactSection() {
               <div className="absolute -inset-px rounded-3xl bg-gradient-to-br from-primary/15 via-transparent to-accent/15 -z-10 blur-xl opacity-50 pointer-events-none" />
 
               <div className="grid md:grid-cols-2 gap-4">
-                <Input placeholder={t('contact.name')} required className="rounded-xl h-12 bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
-                <Input type="email" placeholder={t('contact.email')} required className="rounded-xl h-12 bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
+                <Input name="name" placeholder={t('contact.name')} required className="rounded-xl h-12 bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
+                <Input name="email" type="email" placeholder={t('contact.email')} required className="rounded-xl h-12 bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
               </div>
               <div className="grid md:grid-cols-2 gap-4">
-                <Input placeholder={t('contact.company')} className="rounded-xl h-12 bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
-                <Input placeholder={t('contact.phone')} className="rounded-xl h-12 bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
+                <Input name="company" placeholder={t('contact.company')} className="rounded-xl h-12 bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
+                <Input name="phone" placeholder={t('contact.phone')} className="rounded-xl h-12 bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
               </div>
-              <Textarea placeholder={t('contact.message')} rows={4} className="rounded-xl bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
+              <Textarea name="message" maxLength={1800} placeholder={t('contact.message')} rows={4} className="rounded-xl bg-background/60 border-border/60 focus-visible:border-primary/40 motion-safe:transition-colors" />
               <Button
                 type="submit"
                 size="lg"
+                disabled={sending}
                 className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-95 border-0 h-14 rounded-2xl font-semibold text-base shadow-lg motion-safe:transition-opacity"
               >
                 {t('contact.submit')}

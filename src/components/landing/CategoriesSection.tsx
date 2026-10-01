@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
   Database, ShoppingCart, Coins, Factory, Layers,
   Fingerprint, CloudCog, UserCheck, PackageSearch, BarChart3, Terminal,
@@ -37,6 +38,7 @@ const categoryIcons = [
 
 export default function CategoriesSection() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   return (
     <section id="categories" className="relative py-24 md:py-32 bg-muted/30 overflow-hidden">
@@ -65,6 +67,7 @@ export default function CategoriesSection() {
             <button
               key={key}
               type="button"
+              onClick={() => navigate(`/client/consultants?module=${key}`)}
               style={{ animationDelay: `${i * 30}ms` }}
               className="group relative rounded-2xl border border-border/60 bg-card/70 backdrop-blur-sm p-4 md:p-5 text-center motion-safe:transition-all motion-safe:duration-500 hover:border-primary/40 hover:bg-card hover:-translate-y-1 hover:shadow-xl motion-safe:animate-fade-in-up"
             >

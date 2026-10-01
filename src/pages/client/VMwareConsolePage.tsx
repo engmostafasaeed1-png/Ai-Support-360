@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
@@ -20,9 +19,6 @@ const statusColors: Record<string, string> = {
   inactive: 'bg-muted-foreground',
   maintenance: 'bg-amber-500',
 };
-
-// Mock resource usage (would come from monitoring API in production)
-const mockUsage = { cpu: 42, ram: 68, disk: 35, network: 12 };
 
 export default function VMwareConsolePage() {
   const { t } = useTranslation();
@@ -126,9 +122,9 @@ export default function VMwareConsolePage() {
             </CardHeader>
             <CardContent className="px-4 pb-4 space-y-3">
               {[
-                { label: 'CPU', value: mockUsage.cpu, icon: Cpu, specs: `${selectedEnv.cpu_cores || 2} cores` },
-                { label: 'RAM', value: mockUsage.ram, icon: MemoryStick, specs: `${selectedEnv.ram_gb || 4} GB` },
-                { label: 'Disk', value: mockUsage.disk, icon: HardDrive, specs: `${selectedEnv.disk_gb || 50} GB` },
+                { label: 'CPU', icon: Cpu, specs: `${selectedEnv.cpu_cores || 2} cores` },
+                { label: 'RAM', icon: MemoryStick, specs: `${selectedEnv.ram_gb || 4} GB` },
+                { label: 'Disk', icon: HardDrive, specs: `${selectedEnv.disk_gb || 50} GB` },
               ].map(r => (
                 <div key={r.label} className="space-y-1">
                   <div className="flex justify-between items-center text-xs">
@@ -137,21 +133,12 @@ export default function VMwareConsolePage() {
                       <span className="font-medium">{r.label}</span>
                       <span className="text-muted-foreground">({r.specs})</span>
                     </div>
-                    <span className={r.value > 80 ? 'text-destructive font-medium' : 'text-muted-foreground'}>
-                      {r.value}%
-                    </span>
+                    <span className="text-muted-foreground">—</span>
                   </div>
-                  <Progress value={r.value} className="h-2" />
                 </div>
               ))}
 
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
-                <Clock className="w-3 h-3" />
-                <span>Last updated: just now</span>
-                <Button variant="ghost" size="sm" className="h-5 w-5 p-0 ml-auto">
-                  <RefreshCw className="w-3 h-3" />
-                </Button>
-              </div>
+              <p className="text-xs text-muted-foreground text-center py-2">Usage data not available</p>
             </CardContent>
           </Card>
 
