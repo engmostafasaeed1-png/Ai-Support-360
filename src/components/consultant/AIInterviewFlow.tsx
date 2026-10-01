@@ -78,6 +78,19 @@ function splitAuthorTag(content: string): { author: string | null; speaker: { na
   };
 }
 
+// Panel replies may contain several [[speaker: ...]] turns; split them into separate bubbles.
+function splitSpeakerTurns(content: string): string[] {
+  const idx: number[] = [];
+  const re = /\[\[speaker:/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(content))) idx.push(m.index);
+  if (idx.length <= 1) return [content];
+  const out: string[] = [];
+  if (content.slice(0, idx[0]).trim()) out.push(content.slice(0, idx[0]));
+  idx.forEach((start, i) => out.push(content.slice(start, idx[i + 1] ?? content.length)));
+  return out;
+}
+
 export type InterviewStyle = 'standard' | 'discussion' | 'scenario' | 'panel';
 const STYLE_OPTIONS: { key: InterviewStyle; label: string; hint: string }[] = [
   { key: 'standard', label: '📋 Standard Q&A', hint: 'Questions one by one, from the expert question bank' },
@@ -1027,7 +1040,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                 </div>
               )}
 
-              {messages.map((msg, i) => {
+              {messages.flatMap((m) => (m.role === 'assistant' ? splitSpeakerTurns(m.content).map((c) => ({ ...m, content: c })) : [m])).map((msg, i) => {
                 const sp = msg.role === 'assistant' ? splitAuthorTag(msg.content).speaker : null;
                 const interviewerLabel = sp?.name || (voiceGender === 'female' ? 'Mariam' : 'Ezz');
                 const spGender = speakerGender(sp?.name, voiceGender);

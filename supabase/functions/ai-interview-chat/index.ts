@@ -337,9 +337,9 @@ ${allQuestions.join("\n")}`;
     } else if (style === "panel") {
       styleBlock = `\n\nINTERVIEW STYLE — PANEL OF THREE INTERVIEWERS:
 - You voice a panel: ${interviewerName} (Functional Lead, chairs the panel), ${altName} (Technical Architect), and Omar (Project Manager — delivery, stakeholders, communication).
-- EVERY message MUST start with exactly one speaker tag: [[speaker: ${interviewerName}|Functional Lead]], [[speaker: ${altName}|Technical Architect]] or [[speaker: Omar|Project Manager]]. Only one panelist speaks per message.
+- EVERY message MUST start with exactly one speaker tag: [[speaker: ${interviewerName}|Functional Lead]], [[speaker: ${altName}|Technical Architect]] or [[speaker: Omar|Project Manager]]. Only ONE panelist speaks per message — never put two speaker tags in one message; the next panelist speaks in your next reply.
 - ${interviewerName} gives the greeting and the closing. Rotate panelists so each asks questions; panelists may build on each other's questions and answers.
-- If you use a bank question, put the [[by: AUTHOR]] tag right after the speaker tag.
+- Only if you ask a QUESTION BANK question, put its [[by: AUTHOR]] tag right after the speaker tag. Never invent a [[by: ...]] tag otherwise.
 - Wrap up after about 12 exchanges.`;
     }
 
