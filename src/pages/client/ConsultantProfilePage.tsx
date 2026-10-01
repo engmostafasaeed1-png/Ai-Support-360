@@ -353,7 +353,7 @@ export default function ConsultantProfilePage() {
             <CardContent>
               <div className="space-y-3">
                 {/* Manual certifications */}
-                {detail.certifications.map((cert, i) => (
+                {detail.certifications.map((cert: any, i: number) => (
                   <div key={`manual-${i}`} className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-border/30">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
@@ -454,7 +454,7 @@ export default function ConsultantProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-4">
-                {detail.skills.map((skill, i) => (
+                {detail.skills.map((skill: any, i: number) => (
                   <div key={i} className="p-4 rounded-xl bg-muted/20 border border-border/30">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-foreground">{skill.module}</span>
@@ -503,7 +503,7 @@ export default function ConsultantProfilePage() {
               <CardContent>
                 {selectedDate ? (
                   <div className="space-y-2">
-                    {detail.availableSlots.map((slot, i) => (
+                    {detail.availableSlots.map((slot: any, i: number) => (
                       <button
                         key={i}
                         className="w-full flex items-center justify-between p-3 rounded-xl border border-border/50 hover:border-accent/50 hover:bg-accent/5 transition-colors text-start"
@@ -659,7 +659,7 @@ export default function ConsultantProfilePage() {
             const interviewScore = 82; // Would come from real data (best overall_score)
             
             const certScore = Math.min(detail.certifications.length * 10, 25);
-            const expScore = Math.min(detail.skills.reduce((s, sk) => s + sk.years, 0), 25);
+            const expScore = Math.min(detail.skills.reduce((s: any, sk: any) => s + sk.years, 0), 25);
             const reviewScore = Math.min(Math.round(consultant.rating * 5), 25);
             // Interview contributes 20% if completed, based on score (0-100 → 0-20)
             const interviewContrib = hasInterview ? Math.round((interviewScore / 100) * 20) : 0;
