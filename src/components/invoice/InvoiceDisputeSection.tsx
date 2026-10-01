@@ -96,7 +96,7 @@ export function InvoiceDisputeSection({ payment }: Props) {
   const handleSubmit = async () => {
     const parsed = disputeSchema.safeParse({ reason_category: reasonCategory, description });
     if (!parsed.success) {
-      toast.error(parsed.error.errors[0].message);
+      toast.error(parsed.error.issues[0].message);
       return;
     }
     setSubmitting(true);
