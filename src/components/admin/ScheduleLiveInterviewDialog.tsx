@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { callInterviewFunction } from '@/lib/interviewRsvp';
+import { parseEmailList } from '@/lib/emailList';
 
 interface Props {
   open: boolean;
@@ -21,7 +22,8 @@ interface Props {
 }
 
 type Person = { user_id: string; display_name: string | null };
-type InviteResult = { sent: number; suppressed: number; failed: number; skipped: number };
+type Counts = { sent: number; suppressed: number; failed: number };
+type InviteResult = { sent: number; suppressed: number; failed: number; skipped: number; extra?: Counts; cc?: Counts };
 
 const DURATIONS = ['30', '45', '60', '90', '120'];
 
@@ -32,6 +34,8 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
   const [videoMode, setVideoMode] = useState<'free' | 'own'>('free');
   const [ownUrl, setOwnUrl] = useState('');
   const [emailInvites, setEmailInvites] = useState(true);
+  const [extraTo, setExtraTo] = useState('');
+  const [ccText, setCcText] = useState('');
   const [people, setPeople] = useState<Person[]>([]);
   const [picked, setPicked] = useState<string[]>([]);
   const [me, setMe] = useState<string | null>(null);
@@ -45,6 +49,8 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
     setVideoMode('free');
     setOwnUrl('');
     setEmailInvites(true);
+    setExtraTo('');
+    setCcText('');
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setMe(user?.id ?? null);
@@ -77,6 +83,10 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
         return;
       }
     }
+    // Check the extra recipients before anything is created, so a typo does not leave a half-made interview behind.
+    const extra = parseEmailList(emailInvites ? extraTo : '');
+    const cc = parseEmailList(emailInvites ? ccText : '');
+    if (extra.error || cc.error) { toast.error(extra.error || cc.error || 'Check the e-mail addresses'); return; }
     setSaving(true);
     let createdId: string | null = null;
     try {
@@ -104,11 +114,19 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
       // The e-mail invitation (with Accept / Suggest another time / Decline) is sent by an edge function.
       let invited = '';
       if (emailInvites) {
-        const { data: result, error: inviteError } = await callInterviewFunction<InviteResult>('send-interview-invitations', { session_id: sess.id });
+        const { data: result, error: inviteError } = await callInterviewFunction<InviteResult>('send-interview-invitations', {
+          session_id: sess.id,
+          extra_to: extra.emails,
+          cc: cc.emails,
+        });
         if (inviteError || !result) {
           toast.warning(`Scheduled, but the invitation e-mails could not be sent (${inviteError || 'unknown error'}). Use "Send invitation e-mails again" in the interview room.`);
-        } else if (result.sent) {
-          invited = ` Invitation e-mail sent to ${result.sent} ${result.sent === 1 ? 'person' : 'people'}.`;
+        } else if (result.sent || result.extra?.sent || result.cc?.sent) {
+          const more = [
+            result.extra?.sent ? `${result.extra.sent} other address${result.extra.sent === 1 ? '' : 'es'}` : '',
+            result.cc?.sent ? `${result.cc.sent} cop${result.cc.sent === 1 ? 'y' : 'ies'}` : '',
+          ].filter(Boolean);
+          invited = ` Invitation e-mail sent to ${result.sent} ${result.sent === 1 ? 'person' : 'people'}${more.length ? ` and ${more.join(', ')}` : ''}.`;
         } else if (result.suppressed + result.failed + result.skipped > 0) {
           toast.warning('Scheduled, but no invitation e-mail could be delivered (blocked or missing address). They can still answer in the app.');
         }
@@ -206,6 +224,21 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
               </span>
             </span>
           </label>
+
+          {emailInvites && (
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="space-y-1">
+                <Label htmlFor="live-extra-to" className="text-xs">Also send to another e-mail (for the candidate)</Label>
+                <Input id="live-extra-to" value={extraTo} onChange={(e) => setExtraTo(e.target.value)} placeholder="name@example.com" inputMode="email" autoComplete="off" />
+                <p className="text-[10px] text-muted-foreground">The candidate gets the same invitation there, with their answer buttons. Separate several addresses with commas (up to 5).</p>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="live-cc" className="text-xs">CC (a copy for information)</Label>
+                <Input id="live-cc" value={ccText} onChange={(e) => setCcText(e.target.value)} placeholder="hr@example.com, manager@example.com" inputMode="email" autoComplete="off" />
+                <p className="text-[10px] text-muted-foreground">Each address gets its own copy without answer buttons (up to 5).</p>
+              </div>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
