@@ -63,6 +63,14 @@ function SpeakingIndicator() {
   );
 }
 
+// Interviewer messages may start with [[by: Name]] when asking a question from the admin question bank.
+function splitAuthorTag(content: string): { author: string | null; text: string } {
+  const m = content.match(/\[\[by:\s*([^\]]{1,120})\]\]/i);
+  // Hide a half-streamed tag at the end ("[[by: Ahm") until it completes.
+  const text = content.replace(/\[\[by:\s*[^\]]{0,120}\]\]\s*/gi, '').replace(/\[\[(b(y(:[^\]]*)?)?)?$/i, '');
+  return { author: m ? m[1].trim() : null, text };
+}
+
 function DynamicAvatar({ src, isSpeaking, isListening, isThinking }: { src: string; isSpeaking: boolean; isListening: boolean; isThinking: boolean }) {
   const [blink, setBlink] = useState(false);
 
@@ -356,7 +364,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const speakText = useCallback((text: string) => {
     if (!ttsEnabled || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const cleanText = text.replace(/[#*_`~[\]()>]/g, '').replace(/\n+/g, '. ').replace(/\s+/g, ' ').trim();
+    const cleanText = splitAuthorTag(text).text.replace(/[#*_`~[\]()>]/g, '').replace(/\n+/g, '. ').replace(/\s+/g, ' ').trim();
     if (!cleanText || cleanText === lastSpokenRef.current) return;
     lastSpokenRef.current = cleanText;
 
@@ -1003,14 +1011,26 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                         ? 'bg-primary/20 rounded-tr-sm border border-primary/30'
                         : 'bg-white/5 rounded-tl-sm border border-white/10'
                     }`}>
-                      {msg.role === 'assistant' && (
-                        <div className="text-[10px] font-semibold text-primary/90 mb-1">
-                          {interviewerLabel} <span className="text-white/40 font-normal">· AI SAP Support Now</span>
-                        </div>
-                      )}
-                      <div className="text-sm text-white/90 leading-relaxed prose prose-sm prose-invert max-w-none">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
-                      </div>
+                      {(() => {
+                        const { author, text } = msg.role === 'assistant' ? splitAuthorTag(msg.content) : { author: null, text: msg.content };
+                        return (
+                          <>
+                            {msg.role === 'assistant' && (
+                              <div className="text-[10px] font-semibold text-primary/90 mb-1">
+                                {interviewerLabel} <span className="text-white/40 font-normal">· AI SAP Support Now</span>
+                              </div>
+                            )}
+                            {author && (
+                              <div className="inline-flex items-center gap-1 mb-1.5 px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-[10px] text-amber-200">
+                                <Award className="w-3 h-3" /> Question from {author}
+                              </div>
+                            )}
+                            <div className="text-sm text-white/90 leading-relaxed prose prose-sm prose-invert max-w-none">
+                              <ReactMarkdown>{text}</ReactMarkdown>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 );

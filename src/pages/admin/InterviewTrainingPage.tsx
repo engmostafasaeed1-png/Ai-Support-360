@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 interface TrainingConfig {
   id: string;
   sap_module: string;
-  custom_questions: { question: string; expected_topics: string; weight: number }[];
+  custom_questions: { question: string; expected_topics: string; weight: number; author_name?: string }[];
   training_instructions: string | null;
   difficulty_level: string;
   is_active: boolean;
@@ -42,7 +42,7 @@ export default function InterviewTrainingPage() {
     difficulty_level: 'medium',
     training_instructions: '',
     is_active: true,
-    custom_questions: [] as { question: string; expected_topics: string; weight: number }[],
+    custom_questions: [] as { question: string; expected_topics: string; weight: number; author_name?: string }[],
   });
 
   const { data: configs, isLoading } = useQuery({
@@ -247,6 +247,13 @@ export default function InterviewTrainingPage() {
                           onChange={e => updateQuestion(i, 'question', e.target.value)}
                           placeholder="e.g., Explain the SAP FICO month-end closing process step by step."
                           className="text-sm"
+                        />
+                        <Input
+                          value={q.author_name || ''}
+                          onChange={e => updateQuestion(i, 'author_name', e.target.value)}
+                          placeholder="Written by (real consultant), e.g. Ahmed Ali — Senior SAP FICO Consultant"
+                          className="text-xs"
+                          maxLength={120}
                         />
                         <div className="flex gap-2">
                           <Input
