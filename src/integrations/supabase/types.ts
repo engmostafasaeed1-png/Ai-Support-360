@@ -6128,6 +6128,20 @@ export type Database = {
       }
       is_ticket_participant: { Args: { _ticket_id: string }; Returns: boolean }
       is_untrusted_writer: { Args: never; Returns: boolean }
+      notify_unread_once: {
+        Args: {
+          _body: string
+          _link: string
+          _title: string
+          _type: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      recompute_consultant_rating: {
+        Args: { _consultant_id: string }
+        Returns: undefined
+      }
       request_demo_reschedule: {
         Args: { _proposed_slots: Json; _reason?: string; _token: string }
         Returns: {
