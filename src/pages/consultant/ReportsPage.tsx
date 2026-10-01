@@ -100,7 +100,7 @@ export default function ConsultantReportsPage() {
 
       // Ratings
       const { data: ratings } = await supabase
-        .from('ratings')
+        .from('consultant_reviews')
         .select('score, created_at')
         .eq('consultant_id', consultant.id)
         .order('created_at', { ascending: true });
