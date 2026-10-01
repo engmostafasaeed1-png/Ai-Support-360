@@ -15,3 +15,7 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = false
   [functions.demo-reschedule-notify]
     verify_jwt = true
+  [functions.interview-rsvp]
+    verify_jwt = false
+  [functions.send-interview-invitations]
+    verify_jwt = true
