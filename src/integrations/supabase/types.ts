@@ -5852,6 +5852,16 @@ export type Database = {
         Args: { _bucket: string; _limit: number; _window_seconds: number }
         Returns: boolean
       }
+      complete_live_interview: {
+        Args: {
+          _overall: number
+          _session_id: string
+          _soft: number
+          _summary: string
+          _technical: number
+        }
+        Returns: undefined
+      }
       consultant_profile_visible: {
         Args: { _consultant_id: string }
         Returns: boolean
