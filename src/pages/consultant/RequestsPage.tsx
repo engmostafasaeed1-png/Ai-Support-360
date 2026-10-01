@@ -77,7 +77,7 @@ export default function RequestsPage() {
         .in('id', ticketIds);
       const clientIds = [...new Set((tickets || []).map(t => t.client_id))];
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profile_directory')
         .select('user_id, display_name')
         .in('user_id', clientIds.length ? clientIds : ['none']);
       const profileMap = new Map((profiles || []).map(p => [p.user_id, p.display_name]));

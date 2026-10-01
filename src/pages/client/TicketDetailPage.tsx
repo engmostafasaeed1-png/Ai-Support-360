@@ -295,7 +295,7 @@ export default function TicketDetailPage() {
               <div className="space-y-2">
                 <textarea
                   className="w-full min-h-[100px] rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  placeholder="Describe how this issue was resolved (will be anonymized and saved to playbooks)..."
+                  placeholder="Describe how this issue was resolved. An administrator may review these notes before anything is added to the playbook library..."
                   value={resolutionDraft}
                   onChange={e => setResolutionDraft(e.target.value)}
                 />
@@ -303,7 +303,7 @@ export default function TicketDetailPage() {
                   <Button size="sm" className="text-xs" onClick={async () => {
                     const { error } = await supabase.from('tickets').update({ resolution_notes: resolutionDraft } as any).eq('id', ticket.id);
                     if (error) { toast.error('Failed to save'); return; }
-                    toast.success('Resolution notes saved — playbook will be auto-generated');
+                    toast.success('Resolution notes saved');
                     setResolutionEditing(false);
                     queryClient.invalidateQueries({ queryKey: ['ticket-detail'] });
                   }}>Save</Button>

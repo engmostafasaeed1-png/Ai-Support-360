@@ -12,23 +12,15 @@ import { Loader2, Upload, X, FileText, Paperclip } from 'lucide-react';
 import type { TicketDetail } from '@/hooks/useTicketDetail';
 
 const urgencyOptions = ['low', 'medium', 'high', 'critical'];
+// only the statuses the database knows (enum ticket_status)
 const statusOptions = [
   { value: 'new', label: 'New' },
-  { value: 'triaging', label: 'Triaging' },
   { value: 'under_review', label: 'Under Review' },
-  { value: 'planning', label: 'Planning' },
-  { value: 'pending_approval', label: 'Pending Approval' },
-  { value: 'approved', label: 'Approved' },
   { value: 'matched', label: 'Matched' },
   { value: 'in_progress', label: 'In Progress' },
-  { value: 'on_hold', label: 'On Hold' },
   { value: 'waiting_for_client', label: 'Waiting for Client' },
-  { value: 'waiting_for_vendor', label: 'Waiting for Vendor' },
-  { value: 'testing', label: 'Testing' },
   { value: 'resolved', label: 'Resolved' },
   { value: 'closed', label: 'Closed' },
-  { value: 'cancelled', label: 'Cancelled' },
-  { value: 'reopened', label: 'Reopened' },
 ];
 const sessionTypes = ['chat', 'video', 'screen_share'];
 const languages = [
@@ -113,7 +105,7 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
       queryClient.invalidateQueries({ queryKey: ['ticket-documents', ticket.id] });
       onOpenChange(false);
     } catch (err) {
-      toast.error('Failed to update ticket');
+      toast.error((err as any)?.message || 'Failed to update ticket');
     } finally {
       setSaving(false);
     }

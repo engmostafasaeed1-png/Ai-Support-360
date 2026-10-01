@@ -25,7 +25,7 @@ function useOpenTickets() {
       const { data, error } = await supabase
         .from('tickets')
         .select('id, title, description, sap_module, urgency, status, created_at, preferred_session_type, preferred_language, open_for_bids, opened_for_bids_at')
-        .eq('open_for_bids', true)
+        // the database decides what this consultant may see: tickets open for bids and tickets they were invited to
         .in('status', ['new', 'under_review'])
         .is('consultant_id', null)
         .order('created_at', { ascending: false });
@@ -146,7 +146,7 @@ export default function OpenTicketsPage() {
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <div className="flex items-center gap-1.5">
                       <Badge variant="secondary" className="text-[9px] bg-accent/10 text-accent gap-1">
-                        <Globe className="w-2.5 h-2.5" /> Accepting Bids
+                        <Globe className="w-2.5 h-2.5" /> {ticket.open_for_bids ? 'Accepting Bids' : 'Private invitation'}
                       </Badge>
                       <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency || 'medium']}`}>
                         {ticket.urgency}

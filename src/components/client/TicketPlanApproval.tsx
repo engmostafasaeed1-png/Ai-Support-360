@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { TicketDetail } from '@/hooks/useTicketDetail';
+import TicketPlanSubmitForm from '@/components/consultant/TicketPlanSubmitForm';
 
 interface Props {
   ticket: TicketDetail;
@@ -42,7 +43,6 @@ export default function TicketPlanApproval({ ticket, isClient }: Props) {
           plan_approved_by: user?.id,
           plan_rejected_at: null,
           plan_rejection_reason: null,
-          status: 'approved',
         } as any)
         .eq('id', ticket.id);
       if (error) throw error;
@@ -65,7 +65,6 @@ export default function TicketPlanApproval({ ticket, isClient }: Props) {
           plan_rejected_at: new Date().toISOString(),
           plan_rejection_reason: rejectionReason.trim(),
           plan_approved_at: null,
-          status: 'planning',
         } as any)
         .eq('id', ticket.id);
       if (error) throw error;
@@ -196,6 +195,9 @@ export default function TicketPlanApproval({ ticket, isClient }: Props) {
             </div>
           </div>
         )}
+
+        {/* The assigned consultant submits or revises the plan here */}
+        {!isClient && <TicketPlanSubmitForm ticket={ticket} />}
 
         {/* No plan yet */}
         {hasNoPlan && (
