@@ -72,7 +72,7 @@ export default function ConsultantInterviewsPage() {
         const entry = byConsultant.get(consultantId);
         if (!entry) continue;
         const mod = (a.sap_module || 'General').trim() || 'General';
-        const list = entry.modules.get(mod) || [];
+        const list: number[] = entry.modules.get(mod) || [];
         list.push(a.score);
         entry.modules.set(mod, list);
       }
