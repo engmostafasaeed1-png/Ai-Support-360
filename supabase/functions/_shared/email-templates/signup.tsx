@@ -11,6 +11,7 @@ import {
   Html,
   Link,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
@@ -28,32 +29,39 @@ export const SignupEmail = ({
   confirmationUrl,
 }: SignupEmailProps) => (
   <Html lang="en" dir="ltr">
-    <Head>
-      <style>{darkModeCss}</style>
-    </Head>
-    <Preview>Confirm your email for {siteName}</Preview>
+    <Head />
+    <Preview>Verify your email to activate your {siteName} account</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm your email</Heading>
+        <Section style={brandBar}>
+          <Text style={brandText}>{siteName}</Text>
+        </Section>
+        <Heading style={h1}>Welcome aboard 👋</Heading>
         <Text style={text}>
           Thanks for signing up for{' '}
           <Link href={siteUrl} style={link}>
             <strong>{siteName}</strong>
           </Link>
-          !
-        </Text>
-        <Text style={text}>
-          Please confirm your email address (
+          . Please verify your email address (
           <Link href={`mailto:${recipient}`} style={link}>
             {recipient}
           </Link>
-          ) by clicking the button below:
+          ) to activate your account and start working with verified SAP consultants.
         </Text>
-        <Button className="dm-btn" style={button} href={confirmationUrl}>
-          Verify Email
-        </Button>
+        <Section style={buttonWrap}>
+          <Button style={button} href={confirmationUrl}>
+            Verify my email
+          </Button>
+        </Section>
+        <Text style={fallback}>
+          Or copy and paste this link into your browser:
+        </Text>
+        <Text style={fallbackLink}>{confirmationUrl}</Text>
         <Text style={footer}>
           If you didn't create an account, you can safely ignore this email.
+        </Text>
+        <Text style={brandFooter}>
+          {siteName} — Smart SAP Support Portal
         </Text>
       </Container>
     </Body>
@@ -62,36 +70,57 @@ export const SignupEmail = ({
 
 export default SignupEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
+const main = { backgroundColor: '#ffffff', fontFamily: 'Inter, Arial, sans-serif' }
+const container = { padding: '32px 28px', maxWidth: '560px', margin: '0 auto' }
+const brandBar = {
+  backgroundColor: '#1B2559',
+  borderRadius: '16px',
+  padding: '16px 20px',
+  marginBottom: '28px',
+}
+const brandText = {
+  color: '#ffffff',
+  fontSize: '16px',
   fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
+  margin: 0,
+  letterSpacing: '0.3px',
+}
+const h1 = {
+  fontSize: '24px',
+  fontWeight: 'bold' as const,
+  color: '#1B2559',
+  margin: '0 0 16px',
 }
 const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
+  fontSize: '15px',
+  color: '#475569',
+  lineHeight: '1.6',
+  margin: '0 0 20px',
 }
-const link = { color: 'inherit', textDecoration: 'underline' }
+const link = { color: '#3B82F6', textDecoration: 'underline' }
+const buttonWrap = { textAlign: 'center' as const, margin: '24px 0' }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#1B2559',
   color: '#ffffff',
-  fontSize: '14px',
-  border: '1px solid #000000',
-  borderRadius: '8px',
-  padding: '12px 20px',
+  fontSize: '15px',
+  fontWeight: 'bold' as const,
+  borderRadius: '14px',
+  padding: '14px 28px',
   textDecoration: 'none',
+  display: 'inline-block',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
-// Rendered as a text child, which React may HTML-escape: keep this CSS free of >, &, and quotes.
-const darkModeCss = `
-  @media (prefers-color-scheme: dark) {
-    .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
-  }
-  [data-ogsc] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
-  [data-ogsb] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
-`
+const fallback = { fontSize: '12px', color: '#94a3b8', margin: '20px 0 4px' }
+const fallbackLink = {
+  fontSize: '12px',
+  color: '#3B82F6',
+  wordBreak: 'break-all' as const,
+  margin: '0 0 24px',
+}
+const footer = { fontSize: '12px', color: '#94a3b8', margin: '24px 0 0' }
+const brandFooter = {
+  fontSize: '11px',
+  color: '#cbd5e1',
+  margin: '20px 0 0',
+  borderTop: '1px solid #f1f5f9',
+  paddingTop: '16px',
+}
