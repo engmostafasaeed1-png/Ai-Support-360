@@ -1,5 +1,11 @@
 import { format } from 'date-fns';
 
+/** Neutralize spreadsheet formula injection: prefix cells starting with = + - @ tab or CR with a quote. */
+export function neutralizeCsvCell(value: unknown): string {
+  const str = value === null || value === undefined ? '' : String(value);
+  return /^[=+\-@\t\r]/.test(str) ? `'${str}` : str;
+}
+
 export function exportToCSV(data: Record<string, any>[], filename: string) {
   if (data.length === 0) return;
   const headers = Object.keys(data[0]);
@@ -7,9 +13,8 @@ export function exportToCSV(data: Record<string, any>[], filename: string) {
     headers.join(','),
     ...data.map(row =>
       headers.map(h => {
-        const val = row[h];
-        const str = val === null || val === undefined ? '' : String(val);
-        return str.includes(',') || str.includes('"') || str.includes('\n')
+        const str = neutralizeCsvCell(row[h]);
+        return str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')
           ? `"${str.replace(/"/g, '""')}"`
           : str;
       }).join(',')
