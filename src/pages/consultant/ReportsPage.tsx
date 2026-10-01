@@ -107,8 +107,8 @@ export default function ConsultantReportsPage() {
 
       const ratingTrend = (ratings || []).map((r, i) => ({
         index: i + 1,
-        score: r.score,
-        avg: (ratings || []).slice(0, i + 1).reduce((s, rr) => s + rr.score, 0) / (i + 1),
+        score: r.score ?? 0,
+        avg: (ratings || []).slice(0, i + 1).reduce((s, rr) => s + (rr.score ?? 0), 0) / (i + 1),
       }));
 
       // Avg resolution
