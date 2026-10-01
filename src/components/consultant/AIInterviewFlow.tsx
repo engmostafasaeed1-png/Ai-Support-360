@@ -192,7 +192,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const avatarImg = voiceGender === 'male' ? aiMaleAvatar : aiFemaleAvatar;
   const [speechRate, setSpeechRate] = useState(1.0);
   const [interviewLang, setInterviewLang] = useState<'en' | 'fr' | 'ar' | 'es' | 'de' | 'ar-SA'>('en');
-  const [conversationMode, setConversationMode] = useState(true);
+  const [conversationMode, setConversationMode] = useState(false);
+  const sendToAIRef = useRef<(h: ChatMessage[]) => Promise<void>>();
   const [capturedFrames, setCapturedFrames] = useState(0);
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [startedAt, setStartedAt] = useState<Date | null>(null);
@@ -341,7 +342,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         const userMsg: ChatMessage = { role: 'user', content: text };
         const newHistory = [...messagesRef.current, userMsg];
         setMessages(newHistory);
-        sendToAI(newHistory);
+        sendToAIRef.current?.(newHistory);
       }
     }, 1200);
   }, []);
@@ -470,8 +471,11 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
       });
       if (!resp.ok || !resp.body) {
         if (resp.status === 429) { setError('Rate limited — please try again in a moment.'); setIsStreaming(false); setIsSpeaking(false); return; }
-        throw new Error('Failed to connect to interviewer');
+        const errBody = await resp.json().catch(() => null);
+        const msg = typeof errBody?.error === 'string' ? errBody.error : 'Failed to connect to interviewer';
+        throw new Error(msg);
       }
+      setError(null);
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
