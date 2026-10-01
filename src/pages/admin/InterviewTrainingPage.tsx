@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,9 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Brain, Plus, Trash2, Save, GripVertical, Lightbulb, Target, BookOpen,
-  CheckCircle, AlertTriangle, Settings2,
+  CheckCircle, AlertTriangle, Settings2, Upload, FileText, X, Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { extractFileText, TRAINING_FILE_ACCEPT } from '@/lib/extractFileText';
 
 interface TrainingConfig {
   id: string;
@@ -36,6 +37,11 @@ export default function InterviewTrainingPage() {
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newConfig, setNewConfig] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [sources, setSources] = useState<{ name: string; text: string }[]>([]);
+  const [extracting, setExtracting] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [genCount, setGenCount] = useState(5);
 
   const [form, setForm] = useState({
     sap_module: 'general',
@@ -148,6 +154,59 @@ export default function InterviewTrainingPage() {
     }));
   };
 
+  const handleFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setExtracting(true);
+    const added: { name: string; text: string }[] = [];
+    for (const file of Array.from(files)) {
+      try {
+        const text = await extractFileText(file);
+        if (!text) { toast.error(`${file.name}: no readable text found`); continue; }
+        added.push({ name: file.name, text });
+      } catch (e: any) {
+        toast.error(e?.message || `Could not read ${file.name}`);
+      }
+    }
+    setExtracting(false);
+    if (!added.length) return;
+    setSources(prev => [...prev, ...added]);
+    setForm(f => {
+      const blocks = added.map(a => `--- Reference: ${a.name} ---\n${a.text.slice(0, 6000)}`).join('\n\n');
+      const next = [f.training_instructions.trim(), blocks].filter(Boolean).join('\n\n');
+      return { ...f, training_instructions: next.slice(0, 20000) };
+    });
+    toast.success(`${added.length} file(s) added`);
+  };
+
+  const generateFromFiles = async () => {
+    const source_text = sources.map(s => `# ${s.name}\n${s.text}`).join('\n\n').slice(0, 80000);
+    if (!source_text) return;
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-interview-questions', {
+        body: { sap_module: form.sap_module, difficulty: form.difficulty_level, count: genCount, source_text },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message);
+      const qs = (data?.questions || []) as { question: string; best_answer: string; key_points: string; category: string }[];
+      if (!qs.length) throw new Error('No questions generated');
+      setForm(f => ({
+        ...f,
+        custom_questions: [...f.custom_questions, ...qs.map(q => ({ question: q.question, expected_topics: q.key_points, weight: 2 }))],
+      }));
+      const { data: u } = await supabase.auth.getUser();
+      await supabase.from('interview_question_library' as any).insert(qs.map(q => ({
+        sap_module: form.sap_module, difficulty: form.difficulty_level, category: q.category || null,
+        question: q.question, best_answer: q.best_answer, key_points: q.key_points,
+        source: 'ai', created_by: u.user?.id ?? null,
+      })) as any);
+      toast.success(`${qs.length} questions added — remember to Save Config`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Generation failed');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const isEditing = editingId !== null || newConfig;
 
   return (
@@ -217,10 +276,44 @@ export default function InterviewTrainingPage() {
                 value={form.training_instructions}
                 onChange={e => setForm(f => ({ ...f, training_instructions: e.target.value }))}
                 placeholder="E.g., Focus on real-world troubleshooting scenarios. Ask about config steps for month-end closing. Probe for S/4HANA migration experience..."
-                rows={3}
+                rows={5}
                 className="text-sm"
               />
               <p className="text-[10px] text-muted-foreground mt-1">These instructions guide the AI interviewer's behavior and focus areas.</p>
+
+              <div className="mt-3 p-3 rounded-xl border border-dashed border-border bg-background space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <input ref={fileInputRef} type="file" multiple accept={TRAINING_FILE_ACCEPT} className="hidden" onChange={e => { handleFiles(e.target.files); e.target.value = ''; }} />
+                  <Button size="sm" variant="outline" className="text-xs h-8" disabled={extracting} onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="w-3.5 h-3.5 me-1.5" /> {extracting ? 'Reading files...' : 'Upload files'}
+                  </Button>
+                  <span className="text-[10px] text-muted-foreground">PDF, Word (.docx), TXT, MD or CSV — up to 10 MB each</span>
+                </div>
+                {sources.length > 0 && (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      {sources.map((s, i) => (
+                        <Badge key={i} variant="secondary" className="gap-1.5">
+                          <FileText className="w-3 h-3" /> {s.name} · {Math.round(s.text.length / 1000)}k chars
+                          <button aria-label={`Remove ${s.name}`} onClick={() => setSources(prev => prev.filter((_, j) => j !== i))}><X className="w-3 h-3" /></button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Select value={String(genCount)} onValueChange={v => setGenCount(Number(v))}>
+                        <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[3, 5, 8, 10].map(n => <SelectItem key={n} value={String(n)}>{n} questions</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <Button size="sm" className="text-xs h-8 gradient-primary border-0" disabled={generating} onClick={generateFromFiles}>
+                        <Sparkles className="w-3.5 h-3.5 me-1.5" /> {generating ? 'Generating...' : 'Generate questions from files'}
+                      </Button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">The file content is also added to the instructions above, so the AI interviewer uses it during interviews. Generated questions are added to the Mandatory Questions list and the Question library.</p>
+                  </>
+                )}
+              </div>
             </div>
 
             <div>
