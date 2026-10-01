@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { LucideIcon } from 'lucide-react';
-import { Building, ChevronRight } from 'lucide-react';
+import { Building, ChevronRight, Shield } from 'lucide-react';
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenuButton, useSidebar,
 } from '@/components/ui/sidebar';
@@ -10,6 +10,7 @@ import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 import ScreenPersonalizationDialog from '@/components/sidebar/ScreenPersonalizationDialog';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useScreenPreferences } from '@/hooks/useScreenPreferences';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import SidebarAccountMenu from './SidebarAccountMenu';
 import SidebarBrand from './SidebarBrand';
 import SidebarNav from './SidebarNav';
