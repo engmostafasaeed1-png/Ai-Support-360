@@ -185,6 +185,20 @@ export default function ConsultantDashboard() {
       <EmailVerificationBanner />
       <OnboardingProgressCard role="consultant" />
 
+      {liveData?.consultant && profile.verification_status && profile.verification_status !== 'verified' && (
+        <Card className="rounded-2xl border-yellow-300/50 bg-yellow-50/60 dark:bg-yellow-900/10 dark:border-yellow-700/40">
+          <CardContent className="p-4 flex items-center gap-3">
+            <ShieldCheck className="w-5 h-5 text-yellow-600 dark:text-yellow-400 shrink-0" />
+            <p className="text-sm text-foreground flex-1">
+              {verificationNotice[profile.verification_status] || 'Your profile is not verified yet.'}
+            </p>
+            <Link to="/consultant/verification">
+              <Button size="sm" variant="outline" className="text-xs">View status</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Welcome */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
