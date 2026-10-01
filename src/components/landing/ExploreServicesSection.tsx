@@ -112,7 +112,17 @@ export default function ExploreServicesSection() {
                 return (
                   <div
                     key={key}
-                    className="group relative rounded-2xl p-[1px] bg-gradient-to-br from-border/60 via-border/30 to-transparent hover:from-transparent hover:via-transparent hover:to-transparent transition-all duration-500"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={t(`categories.${key}`)}
+                    onClick={() => navigate(`/client/consultants?module=${key}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        navigate(`/client/consultants?module=${key}`);
+                      }
+                    }}
+                    className="group relative rounded-2xl p-[1px] bg-gradient-to-br from-border/60 via-border/30 to-transparent hover:from-transparent hover:via-transparent hover:to-transparent cursor-pointer focus-visible:outline-2 focus-visible:outline-accent transition-all duration-500"
                   >
                     {/* Animated gradient border on hover */}
                     <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${s.ring} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
