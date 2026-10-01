@@ -63,6 +63,13 @@ function SpeakingIndicator() {
   );
 }
 
+// Interviewer messages may start with [[by: Name]] when asking a question from the admin question bank.
+function splitAuthorTag(content: string): { author: string | null; text: string } {
+  const m = content.match(/^\s*\[\[by:\s*([^\]]{1,120})\]\]\s*/i);
+  if (!m) return { author: null, text: content.replace(/^\s*\[\[by:[^\]]*$/i, '') };
+  return { author: m[1].trim(), text: content.slice(m[0].length) };
+}
+
 function DynamicAvatar({ src, isSpeaking, isListening, isThinking }: { src: string; isSpeaking: boolean; isListening: boolean; isThinking: boolean }) {
   const [blink, setBlink] = useState(false);
 
