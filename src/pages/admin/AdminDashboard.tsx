@@ -124,7 +124,6 @@ export default function AdminDashboard() {
                   contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px', background: 'hsl(var(--card))' }}
                 />
                 <Bar dataKey="revenue" fill="hsl(217, 91%, 60%)" radius={[4, 4, 0, 0]} name="Revenue" />
-                <Bar dataKey="expenses" fill="hsl(214, 32%, 91%)" radius={[4, 4, 0, 0]} name="Expenses" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
