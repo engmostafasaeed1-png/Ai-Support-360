@@ -65,9 +65,10 @@ function SpeakingIndicator() {
 
 // Interviewer messages may start with [[by: Name]] when asking a question from the admin question bank.
 function splitAuthorTag(content: string): { author: string | null; text: string } {
-  const m = content.match(/^\s*\[\[by:\s*([^\]]{1,120})\]\]\s*/i);
-  if (!m) return { author: null, text: content.replace(/^\s*\[\[by:[^\]]*$/i, '') };
-  return { author: m[1].trim(), text: content.slice(m[0].length) };
+  const m = content.match(/\[\[by:\s*([^\]]{1,120})\]\]/i);
+  // Hide a half-streamed tag at the end ("[[by: Ahm") until it completes.
+  const text = content.replace(/\[\[by:\s*[^\]]{0,120}\]\]\s*/gi, '').replace(/\[\[(b(y(:[^\]]*)?)?)?$/i, '');
+  return { author: m ? m[1].trim() : null, text };
 }
 
 function DynamicAvatar({ src, isSpeaking, isListening, isThinking }: { src: string; isSpeaking: boolean; isListening: boolean; isThinking: boolean }) {
