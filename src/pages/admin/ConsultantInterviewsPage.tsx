@@ -195,6 +195,23 @@ export default function ConsultantInterviewsPage() {
                   </p>
                 </div>
               </div>
+              {selected.moduleScores.length > 0 && (
+                <Card className="rounded-2xl border-border/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold">Scores by SAP area</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-wrap gap-2">
+                    {selected.moduleScores.map((m) => (
+                      <Badge key={m.module} variant="secondary" className="gap-1.5 px-3 py-1.5">
+                        <span className="font-medium">{m.module}</span>
+                        <span className="text-muted-foreground">·</span>
+                        <span className="font-bold">{m.avg}/100</span>
+                        <span className="text-muted-foreground text-xs">({m.count} q)</span>
+                      </Badge>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
               <InterviewHistory consultantId={selected.id} />
             </div>
           ) : (
