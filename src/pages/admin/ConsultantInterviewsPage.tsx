@@ -9,6 +9,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, ClipboardList, Star } from 'lucide-react';
 import InterviewHistory from '@/components/consultant/InterviewHistory';
 
+interface ModuleScore {
+  module: string;
+  avg: number;
+  count: number;
+}
+
 interface ConsultantRow {
   id: string;
   name: string;
@@ -17,6 +23,7 @@ interface ConsultantRow {
   interviewCount: number;
   avgScore: number | null;
   lastInterviewAt: string | null;
+  moduleScores: ModuleScore[];
 }
 
 export default function ConsultantInterviewsPage() {
