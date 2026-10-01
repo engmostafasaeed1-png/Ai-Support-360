@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { LucideIcon } from 'lucide-react';
-import { Building, ChevronRight } from 'lucide-react';
+import { Building, ChevronRight, Shield } from 'lucide-react';
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenuButton, useSidebar,
 } from '@/components/ui/sidebar';
@@ -10,6 +10,7 @@ import ProfileEditDialog from '@/components/profile/ProfileEditDialog';
 import ScreenPersonalizationDialog from '@/components/sidebar/ScreenPersonalizationDialog';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useScreenPreferences } from '@/hooks/useScreenPreferences';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import SidebarAccountMenu from './SidebarAccountMenu';
 import SidebarBrand from './SidebarBrand';
 import SidebarNav from './SidebarNav';
@@ -57,6 +58,7 @@ export default function PortalSidebar({
   const location = useLocation();
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const isAdmin = useIsAdmin();
 
   const labelOf = useCallback(
     (item: NavItem) =>
@@ -102,6 +104,7 @@ export default function PortalSidebar({
   const activePath = bestMatchPath(location.pathname, allPaths, rootPath);
 
   const subtitle = String(t(subtitleKey, { defaultValue: subtitleFallback }));
+  const adminConsoleLabel = String(t('sidebar.admin_console', { defaultValue: 'Admin console' }));
   const showPrimaryAction = primaryAction !== undefined && isVisible(primaryAction.key);
   const PrimaryIcon = primaryAction?.icon;
 
@@ -165,6 +168,18 @@ export default function PortalSidebar({
         </SidebarContent>
 
         <SidebarFooter className="border-t border-sidebar-border/60 p-2">
+          {isAdmin && (
+            <SidebarMenuButton
+              asChild
+              tooltip={adminConsoleLabel}
+              className="mb-1.5 h-9 justify-center gap-2 rounded-md border border-sidebar-primary/30 bg-sidebar-primary/10 px-3 text-[13px] font-semibold text-sidebar-primary hover:bg-sidebar-primary/20 hover:text-sidebar-primary data-[active=true]:bg-sidebar-primary/20 data-[active=true]:text-sidebar-primary"
+            >
+              <Link to="/admin/console" aria-label={collapsed ? adminConsoleLabel : undefined}>
+                <Shield aria-hidden="true" focusable="false" />
+                {!collapsed && <span>{adminConsoleLabel}</span>}
+              </Link>
+            </SidebarMenuButton>
+          )}
           <SidebarAccountMenu
             collapsed={collapsed}
             onEditProfile={profileRole ? () => setProfileOpen(true) : undefined}
