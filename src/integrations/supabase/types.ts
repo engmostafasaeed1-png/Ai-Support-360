@@ -1785,6 +1785,79 @@ export type Database = {
           },
         ]
       }
+      interview_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_private: boolean
+          sender_id: string
+          sender_name: string | null
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_private?: boolean
+          sender_id: string
+          sender_name?: string | null
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_private?: boolean
+          sender_id?: string
+          sender_name?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_participants: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          role: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          role?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          role?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interview_sessions: {
         Row: {
           ai_summary: string | null
@@ -1792,9 +1865,11 @@ export type Database = {
           consultant_id: string
           created_at: string
           id: string
+          interview_style: string
           interview_type: Database["public"]["Enums"]["interview_mode"] | null
           overall_score: number | null
           requested_by: string | null
+          scheduled_at: string | null
           skill_results: Json | null
           soft_skills_score: number | null
           started_at: string | null
@@ -1808,9 +1883,11 @@ export type Database = {
           consultant_id: string
           created_at?: string
           id?: string
+          interview_style?: string
           interview_type?: Database["public"]["Enums"]["interview_mode"] | null
           overall_score?: number | null
           requested_by?: string | null
+          scheduled_at?: string | null
           skill_results?: Json | null
           soft_skills_score?: number | null
           started_at?: string | null
@@ -1824,9 +1901,11 @@ export type Database = {
           consultant_id?: string
           created_at?: string
           id?: string
+          interview_style?: string
           interview_type?: Database["public"]["Enums"]["interview_mode"] | null
           overall_score?: number | null
           requested_by?: string | null
+          scheduled_at?: string | null
           skill_results?: Json | null
           soft_skills_score?: number | null
           started_at?: string | null
@@ -5856,6 +5935,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      interview_role: {
+        Args: { _session_id: string; _user_id: string }
+        Returns: string
       }
       is_tenant_member: {
         Args: { _tenant_id: string; _user_id: string }
