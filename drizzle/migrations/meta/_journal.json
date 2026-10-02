@@ -8,6 +8,13 @@
       "when": 1790946506890,
       "tag": "0000_client_cycle_m15_remote_access_nda",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790950240700,
+      "tag": "0001_client_cycle_m14_money_flow",
+      "breakpoints": true
     }
   ]
 }
