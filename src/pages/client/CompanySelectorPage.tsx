@@ -14,6 +14,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import VideoBackground from '@/components/VideoBackground';
+import CompanyInvitations from '@/components/client/CompanyInvitations';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
 
 const tierConfig: Record<string, { icon: typeof Sparkles; color: string; bg: string }> = {
