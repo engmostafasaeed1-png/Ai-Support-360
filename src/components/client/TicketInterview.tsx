@@ -95,32 +95,11 @@ export default function TicketInterview({ ticketId, consultantId, clientId, isCl
         consultant_id: consultantId,
         room_id: roomId,
         client_notes: notes || null,
+        interview_type: interviewType,
+        proposed_slots: needsScheduling ? slotsData : null,
       });
       if (error) throw error;
-
-      // Notify admins if scheduling is needed
-      if (needsScheduling && proposedSlots.length > 0) {
-        const { data: admins } = await supabase
-          .from('user_roles')
-          .select('user_id')
-          .eq('role', 'admin');
-
-        if (admins) {
-          const slotsText = proposedSlots.map(s =>
-            `${format(s.date, 'MMM d')} ${s.startTime}-${s.endTime}`
-          ).join(', ');
-
-          for (const admin of admins) {
-            await supabase.from('notifications').insert({
-              user_id: admin.user_id,
-              title: `${interviewType === 'physical' ? 'Physical' : 'Online'} Interview Request`,
-              body: `Client requested a ${interviewType} interview with ${consultantName || 'consultant'} for ticket. Proposed times: ${slotsText}`,
-              type: 'interview',
-              link: '/admin/tickets',
-            });
-          }
-        }
-      }
+      // The administrators are notified by a database trigger (a browser may not write notifications for other users).
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ticket-interviews', ticketId] });
