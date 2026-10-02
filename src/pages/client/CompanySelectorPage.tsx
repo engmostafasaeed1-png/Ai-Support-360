@@ -107,6 +107,8 @@ export default function CompanySelectorPage() {
             <p className="text-muted-foreground text-sm mt-2">{t('company_selector.welcome_subtitle')}</p>
           </div>
 
+          <CompanyInvitations onAccepted={refetch} />
+
           <Card className="border-border/40 bg-card/95 backdrop-blur-sm">
             <CardContent className="p-6 space-y-5">
               <div className="space-y-2">
@@ -182,6 +184,8 @@ export default function CompanySelectorPage() {
             </p>
           </div>
         </div>
+
+        <CompanyInvitations onAccepted={refetch} />
 
         <div className="grid gap-3 mb-6">
           {tenants.map((tenant) => {
