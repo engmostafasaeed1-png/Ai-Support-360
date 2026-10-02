@@ -4257,6 +4257,7 @@ export type Database = {
       }
       tenant_members: {
         Row: {
+          accepted_at: string | null
           created_at: string
           id: string
           invited_by: string | null
@@ -4266,6 +4267,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accepted_at?: string | null
           created_at?: string
           id?: string
           invited_by?: string | null
@@ -4275,6 +4277,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          accepted_at?: string | null
           created_at?: string
           id?: string
           invited_by?: string | null
@@ -6234,6 +6237,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      my_company_invitations: {
+        Args: never
+        Returns: {
+          company_name: string
+          invited_at: string
+          invited_by: string
+          org_role: Database["public"]["Enums"]["org_role"]
+          tenant_id: string
+        }[]
+      }
       notify_unread_once: {
         Args: {
           _body: string
@@ -6280,6 +6293,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      respond_to_company_invitation: {
+        Args: { _accept: boolean; _tenant_id: string }
+        Returns: undefined
       }
       retry_failed_notification: {
         Args: { _id: string }
@@ -6347,6 +6364,7 @@ export type Database = {
         Returns: boolean
       }
       ticket_consultant_id: { Args: { _ticket_id: string }; Returns: string }
+      ticket_in_my_company: { Args: { _ticket_id: string }; Returns: boolean }
       ticket_owned_by: {
         Args: { _client_id: string; _ticket_id: string }
         Returns: boolean
