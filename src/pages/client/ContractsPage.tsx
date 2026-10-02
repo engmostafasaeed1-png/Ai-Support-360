@@ -27,6 +27,8 @@ export default function ContractsPage() {
   const [contracts, setContracts] = useState<NDAContract[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewContract, setViewContract] = useState<NDAContract | null>(null);
+  const [revokeContract, setRevokeContract] = useState<NDAContract | null>(null);
+  const [revoking, setRevoking] = useState(false);
 
   useEffect(() => {
     fetchContracts();
@@ -72,6 +74,24 @@ export default function ContractsPage() {
       revoked_at: n.revoked_at,
     })));
     setLoading(false);
+  };
+
+  const revokeNda = async () => {
+    if (!revokeContract) return;
+    setRevoking(true);
+    const { data, error } = await supabase
+      .from('nda_agreements')
+      .update({ revoked_at: new Date().toISOString() })
+      .eq('id', revokeContract.id)
+      .select('id');
+    setRevoking(false);
+    if (error || !data || data.length === 0) {
+      toast({ title: 'Error', description: error?.message || 'The NDA could not be revoked', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'NDA revoked', description: 'The consultant has been told. They need to sign a new NDA to continue working with you.' });
+    setRevokeContract(null);
+    fetchContracts();
   };
 
   const downloadPDF = (contract: NDAContract) => {
@@ -220,6 +240,11 @@ export default function ContractsPage() {
                     <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => downloadPDF(contract)}>
                       <Download className="w-3.5 h-3.5" /> PDF
                     </Button>
+                    {!contract.revoked_at && (
+                      <Button variant="outline" size="sm" className="gap-1 text-xs text-destructive" onClick={() => setRevokeContract(contract)}>
+                        <ShieldOff className="w-3.5 h-3.5" /> Revoke
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -280,6 +305,28 @@ export default function ContractsPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Revoke NDA confirmation */}
+      <Dialog open={!!revokeContract} onOpenChange={(open) => { if (!open && !revoking) setRevokeContract(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldOff className="w-5 h-5 text-destructive" />
+              Revoke this NDA?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            The Non-Disclosure Agreement with {revokeContract?.consultant_name} will be marked as revoked and the consultant will be told.
+            They have to sign a new NDA before they can see your system details again. This does not remove them from your tickets; remove them from the ticket if you want that.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" disabled={revoking} onClick={() => setRevokeContract(null)}>Cancel</Button>
+            <Button variant="destructive" size="sm" className="gap-1" disabled={revoking} onClick={revokeNda}>
+              <ShieldOff className="w-3.5 h-3.5" /> {revoking ? 'Revoking…' : 'Revoke NDA'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -19,6 +19,7 @@ import TicketQuickActions from '@/components/tickets/TicketQuickActions';
 import RemoteAccessStatusPanel from '@/components/tickets/RemoteAccessStatusPanel';
 import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
 import TicketPlanApproval from '@/components/client/TicketPlanApproval';
+import TicketStatusActions from '@/components/consultant/TicketStatusActions';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 
 const urgencyColors: Record<string, string> = {
@@ -265,6 +266,11 @@ export default function CaseDetailPage() {
 
       {/* Cost & effort plan: the assigned consultant proposes it, the client approves it */}
       {ticket.consultant_id && <TicketPlanApproval ticket={ticket as any} isClient={false} />}
+
+      {/* The assigned consultant hands the ticket back to the client, resumes work or marks it resolved */}
+      {ticket.consultant_id && !!consultantData?.id && consultantData.id === ticket.consultant_id && (
+        <TicketStatusActions ticketId={ticket.id} status={ticket.status} />
+      )}
 
       {/* Inline Schedule Meeting Dialog */}
       <ScheduleMeetingDialog
