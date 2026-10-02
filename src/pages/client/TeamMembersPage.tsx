@@ -8,9 +8,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Users, Plus, Mail, Shield, Crown, UserCog } from 'lucide-react';
+import { Users, Plus, Mail, Shield, Crown, UserCog, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/contexts/TenantContext';
 
 
 const roleIcons: Record<string, typeof Crown> = {
@@ -32,25 +33,20 @@ export default function TeamMembersPage() {
   const [inviteRole, setInviteRole] = useState('member');
   const [members, setMembers] = useState<{ id: string; name: string; email: string; role: string; status: string; initials: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const { tenant, isOwnerOrAdmin } = useTenant();
+  const [inviting, setInviting] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { if (active) setLoading(false); return; }
-
-      const { data: myMembership } = await supabase
-        .from('tenant_members')
-        .select('tenant_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (!myMembership) { if (active) setLoading(false); return; }
+      // the members of the company that is active now
+      if (!tenant?.id) { if (active) { setMembers([]); setLoading(false); } return; }
 
       const { data: rows } = await supabase
         .from('tenant_members')
         .select('id, user_id, org_role, accepted_at')
-        .eq('tenant_id', myMembership.tenant_id);
+        .eq('tenant_id', tenant.id);
 
       if (!rows || rows.length === 0) { if (active) setLoading(false); return; }
 
@@ -77,13 +73,40 @@ export default function TeamMembersPage() {
     };
     load();
     return () => { active = false; };
-  }, []);
+  }, [tenant?.id, reloadKey]);
 
-  const handleInvite = () => {
-    if (!inviteEmail) return;
-    toast.info('E-mail invitations are not available yet.');
+  const handleInvite = async () => {
+    const email = inviteEmail.trim();
+    if (!email) return;
+    if (!tenant?.id) {
+      toast.error('Choose a company first.');
+      return;
+    }
+    setInviting(true);
+    const { error } = await supabase.rpc('invite_to_company', {
+      _tenant_id: tenant.id,
+      _email: email,
+      _role: inviteRole === 'admin' ? 'admin' : 'member',
+    });
+    setInviting(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success('Invitation sent. If this e-mail address has an account, the person sees it under Companies and can accept it.');
     setInviteEmail('');
     setOpen(false);
+    setReloadKey((k) => k + 1);
+  };
+
+  const cancelInvitation = async (memberId: string) => {
+    const { error } = await supabase.from('tenant_members').delete().eq('id', memberId).is('accepted_at', null);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success('Invitation cancelled.');
+    setReloadKey((k) => k + 1);
   };
 
   return (
@@ -95,7 +118,7 @@ export default function TeamMembersPage() {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5">
+            <Button size="sm" className="gap-1.5" disabled={!isOwnerOrAdmin} title={isOwnerOrAdmin ? undefined : 'Only company owners and administrators can invite people'}>
               <Plus className="w-4 h-4" />
               Invite
             </Button>
@@ -113,6 +136,7 @@ export default function TeamMembersPage() {
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">The person needs an account on this platform. They see the invitation under Companies and decide whether to join.</p>
               </div>
               <div className="space-y-2">
                 <Label>Role</Label>
@@ -126,8 +150,8 @@ export default function TeamMembersPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full" onClick={handleInvite}>
-                <Mail className="w-4 h-4 me-2" />
+              <Button className="w-full" onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
+                {inviting ? <Loader2 className="w-4 h-4 me-2 animate-spin" /> : <Mail className="w-4 h-4 me-2" />}
                 Send Invitation
               </Button>
             </div>
@@ -168,6 +192,9 @@ export default function TeamMembersPage() {
                   </Badge>
                   {member.status === 'Invited' && (
                     <Badge variant="outline" className="bg-amber-500/10 text-amber-600 text-[10px]">Pending</Badge>
+                  )}
+                  {member.status === 'Invited' && isOwnerOrAdmin && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => cancelInvitation(member.id)}>Cancel</Button>
                   )}
                 </div>
               );
