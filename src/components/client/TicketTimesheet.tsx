@@ -59,13 +59,17 @@ interface Props {
   ticketId: string;
   ticketTitle: string;
   isReadOnly?: boolean;
+  canApprove?: boolean;
 }
 
-export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = false }: Props) {
+export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = false, canApprove = false }: Props) {
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
   const [sending, setSending] = useState(false);
+  const [respondFor, setRespondFor] = useState<string | null>(null);
+  const [note, setNote] = useState('');
+  const [responding, setResponding] = useState(false);
 
   // Fetch work logs
   const { data: logs = [], isLoading } = useQuery({
@@ -246,6 +250,24 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
     }
   };
 
+  const respond = async (id: string, approve: boolean, noteText?: string) => {
+    setResponding(true);
+    const { error } = await supabase.rpc('respond_to_timesheet', {
+      _submission_id: id,
+      _approve: approve,
+      _note: noteText?.trim() || undefined,
+    });
+    setResponding(false);
+    if (error) {
+      toast.error(approve ? 'Could not approve the timesheet' : 'Could not send the timesheet back', { description: error.message });
+      return;
+    }
+    toast.success(approve ? 'Timesheet approved' : 'Timesheet sent back');
+    setRespondFor(null);
+    setNote('');
+    queryClient.invalidateQueries({ queryKey: ['ticket-timesheet-submissions', ticketId] });
+  };
+
   if (isLoading) return <Skeleton className="h-48 rounded-2xl" />;
 
   return (
@@ -408,7 +430,7 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-[10px] capitalize">{sub.status}</Badge>
+                      <Badge variant="secondary" className="text-[10px] capitalize">{sub.status === 'signed' ? 'approved' : sub.status}</Badge>
                       {sub.signature_method && (
                         <Badge variant="outline" className="text-[10px] capitalize">{sub.signature_method.replace(/_/g, ' ')}</Badge>
                       )}
@@ -420,7 +442,27 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
                     <p className="text-xs text-muted-foreground">
                       {sub.total_hours?.toFixed(1)}h · {sub.total_cost?.toFixed(2)} {sub.cost_currency}
                     </p>
+                    {sub.status === 'signed' && sub.signed_by_name && (
+                      <p className="text-xs text-green-700">
+                        Approved by {sub.signed_by_name}{sub.signed_at ? ` on ${format(new Date(sub.signed_at), 'MMM d, yyyy')}` : ''}
+                      </p>
+                    )}
+                    {sub.status === 'draft' && typeof sub.notes === 'string' && sub.notes.includes('Sent back by the client') && (
+                      <p className="text-xs text-amber-700">
+                        {sub.notes.split('\n').filter((l: string) => l.startsWith('Sent back by the client')).pop()}
+                      </p>
+                    )}
                   </div>
+                  {canApprove && sub.status === 'submitted' && (
+                    <div className="flex gap-1 shrink-0">
+                      <Button size="sm" className="h-7 text-xs gradient-primary border-0" disabled={responding} onClick={() => respond(sub.id, true)}>
+                        Approve
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-7 text-xs" disabled={responding} onClick={() => setRespondFor(sub.id)}>
+                        Send back
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -435,6 +477,20 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
           </div>
         </TabsContent>
       </Tabs>
+
+<Dialog open={!!respondFor} onOpenChange={(o) => { if (!o) { setRespondFor(null); setNote(''); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Send the timesheet back</DialogTitle></DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label className="text-xs">Note for the consultant (optional)</Label>
+            <Textarea value={note} onChange={e => setNote(e.target.value)} rows={3} maxLength={500} placeholder="What should be corrected..." />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRespondFor(null); setNote(''); }}>Cancel</Button>
+            <Button disabled={responding} onClick={() => respondFor && respond(respondFor, false, note)}>Send back</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Entry Dialog */}
       <AddWorkLogDialog ticketId={ticketId} open={addOpen} onOpenChange={setAddOpen} />
