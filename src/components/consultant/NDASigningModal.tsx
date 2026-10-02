@@ -265,7 +265,7 @@ export default function NDASigningModal({
           <Alert variant="destructive" className="border-destructive/50">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              {t('nda.revoked_warning', 'Your previous NDA for this client was revoked by an administrator. Please review and sign the updated agreement below to continue providing support.')}
+              {t('nda.revoked_warning', 'Your previous NDA for this client was revoked. Please review and sign the agreement again to continue providing support.')}
             </AlertDescription>
           </Alert>
         )}

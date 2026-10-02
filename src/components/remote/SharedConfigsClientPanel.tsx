@@ -2,8 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Send, RefreshCw, XCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { Send, RefreshCw, XCircle, Clock, CheckCircle2, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useClientSharedConfigs, useResendRemoteConfig, useRevokeRemoteConfig } from '@/hooks/useSharedRemoteConfigs';
+import { useClientNdaConsultantIds } from '@/hooks/useNdaAccess';
 import { format } from 'date-fns';
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -24,6 +25,7 @@ export default function SharedConfigsClientPanel() {
   const { data: configs, isLoading } = useClientSharedConfigs();
   const resend = useResendRemoteConfig();
   const revoke = useRevokeRemoteConfig();
+  const { data: ndaConsultants } = useClientNdaConsultantIds();
 
   if (isLoading) return <Skeleton className="h-32 rounded-2xl" />;
   if (!configs?.length) return null;
@@ -57,6 +59,13 @@ export default function SharedConfigsClientPanel() {
                         <StatusIcon className="w-2.5 h-2.5" /> {sc.label}
                       </Badge>
                     </div>
+                    {cfg.status !== 'revoked' && (
+                      <p className={`text-[10px] mt-0.5 flex items-center gap-1 ${ndaConsultants?.has(cfg.consultant_id) ? 'text-green-600' : 'text-amber-600'}`}>
+                        {ndaConsultants?.has(cfg.consultant_id)
+                          ? (<><ShieldCheck className="w-3 h-3" /> NDA signed: the consultant can see this share</>)
+                          : (<><ShieldAlert className="w-3 h-3" /> Waiting for the consultant&apos;s NDA: they see nothing until they sign</>)}
+                      </p>
+                    )}
                     {config.connectionId && (
                       <p className="text-xs text-muted-foreground font-mono mt-0.5">ID: {String(config.connectionId)}</p>
                     )}

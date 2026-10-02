@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -466,19 +467,12 @@ export default function EnvironmentsPage() {
   const { data: consultantNameMap } = useConsultantNameMap(allConsultantIds);
 
   const saveConsultants = async (envId: string, consultantIds: string[]) => {
-    // Delete existing
-    await supabase.from('environment_consultants').delete().eq('environment_id', envId);
-    // Insert new
-    if (consultantIds.length > 0) {
-      const { data: { user } } = await supabase.auth.getUser();
-      await supabase.from('environment_consultants').insert(
-        consultantIds.map(cid => ({
-          environment_id: envId,
-          consultant_id: cid,
-          assigned_by: user?.id || null,
-        }))
-      );
-    }
+    // One call: only the differences are written, the primary consultant stays consistent, the people concerned are told
+    const { error } = await supabase.rpc('set_environment_consultants', {
+      _environment_id: envId,
+      _consultant_ids: consultantIds,
+    });
+    if (error) toast.error('Could not save the assigned consultants', { description: error.message });
     qc.invalidateQueries({ queryKey: ['all-env-consultants'] });
     qc.invalidateQueries({ queryKey: ['env-consultants'] });
   };
