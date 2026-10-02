@@ -6330,6 +6330,10 @@ export type Database = {
         Args: { _accept: boolean; _tenant_id: string }
         Returns: undefined
       }
+      respond_to_timesheet: {
+        Args: { _approve: boolean; _note?: string; _submission_id: string }
+        Returns: undefined
+      }
       retry_failed_notification: {
         Args: { _id: string }
         Returns: {
