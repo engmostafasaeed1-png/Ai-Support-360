@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useLocation } from 'react-router-dom';
@@ -41,6 +41,7 @@ import TicketCSAT from '@/components/client/TicketCSAT';
 import TicketLinks from '@/components/client/TicketLinks';
 import TicketBusinessProcesses from '@/components/client/TicketBusinessProcesses';
 import TicketInterview from '@/components/client/TicketInterview';
+import TicketMatchRequests from '@/components/client/TicketMatchRequests';
 import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
 import EmergencyContactPanel from '@/components/client/EmergencyContactPanel';
 import TicketMeetingsList from '@/components/client/TicketMeetingsList';
@@ -124,6 +125,10 @@ export default function TicketDetailPage() {
   const [resolutionEditing, setResolutionEditing] = useState(false);
   const [resolutionDraft, setResolutionDraft] = useState('');
   const queryClient = useQueryClient();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
+  }, []);
 
   if (isLoading) {
     return (
@@ -148,6 +153,8 @@ export default function TicketDetailPage() {
 
   const completedSessions = (sessions || []).filter(s => s.status === 'completed');
   const recordedSessions = completedSessions.filter(s => s.session_type === 'video' || s.session_type === 'screen_share');
+  // A colleague of the ticket owner (same company) can read the ticket but only the owner can change it
+  const isColleague = isClient && !!currentUserId && ticket.client_id !== currentUserId;
 
   return (
     <div className="space-y-5">
@@ -176,7 +183,7 @@ export default function TicketDetailPage() {
               size="sm"
             />
           </div>
-          {!isConsultant && (
+          {!isConsultant && !isColleague && (
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setEditOpen(true)}>
                 <Pencil className="w-3.5 h-3.5" /> Edit
@@ -211,6 +218,14 @@ export default function TicketDetailPage() {
           </div>
         </div>
       </div>
+
+      {isColleague && (
+        <Card className="rounded-2xl border-border/50 bg-muted/30">
+          <CardContent className="p-3 text-xs text-muted-foreground flex items-center gap-2">
+            <Users className="w-3.5 h-3.5 shrink-0" /> This ticket belongs to a colleague in your company. You can follow it, but only its owner can change it.
+          </CardContent>
+        </Card>
+      )}
 
       {/* ─── Status Stepper ─── */}
       <Card className="rounded-2xl border-border/50">
@@ -285,7 +300,7 @@ export default function TicketDetailPage() {
               <p className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wider flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5" /> Resolution Notes
               </p>
-              {!resolutionEditing && (
+              {!resolutionEditing && !isColleague && (
                 <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setResolutionEditing(true); setResolutionDraft((ticket as any).resolution_notes || ''); }}>
                   <Pencil className="w-3 h-3" /> {(ticket as any).resolution_notes ? 'Edit' : 'Add Notes'}
                 </Button>
@@ -342,7 +357,7 @@ export default function TicketDetailPage() {
 
       {/* ─── Tags & Watchers ─── */}
       <SectionWrapper icon={Tags} title="Tags & Watchers" defaultOpen>
-        <TicketTagsWatchers ticketId={ticket.id} isReadOnly={false} />
+        <TicketTagsWatchers ticketId={ticket.id} isReadOnly={isColleague} />
       </SectionWrapper>
 
       {/* ─── Pre-Work Interview ─── */}
@@ -351,7 +366,7 @@ export default function TicketDetailPage() {
           ticketId={ticket.id}
           consultantId={ticket.consultant_id}
           clientId={ticket.client_id}
-          isClient={isClient}
+          isClient={isClient && !isColleague}
           isConsultant={isConsultant}
           consultantName={ticket.consultant_name || undefined}
         />
@@ -359,15 +374,17 @@ export default function TicketDetailPage() {
 
       {/* ─── Cost & Effort Plan ─── */}
       <SectionWrapper icon={Calculator} title="Cost & Effort Plan" defaultOpen>
-        <TicketPlanApproval ticket={ticket} isClient={isClient} />
+        <TicketPlanApproval ticket={ticket} isClient={isClient && !isColleague} />
       </SectionWrapper>
 
       {/* ─── Available Consultants (Acceptors) ─── */}
+      {isClient && <TicketMatchRequests ticketId={ticket.id} clientId={ticket.client_id} />}
+
       <TicketAcceptors ticketId={ticket.id} currentConsultantId={ticket.consultant_id} />
 
       {/* ─── Multi-Consultant Assignments ─── */}
       <SectionWrapper icon={Users} title="Consultant Assignments" defaultOpen>
-        <TicketAssignments ticketId={ticket.id} isReadOnly={isConsultant} />
+        <TicketAssignments ticketId={ticket.id} isReadOnly={isConsultant || isColleague} />
       </SectionWrapper>
 
       {/* ─── Bids Section ─── */}
@@ -448,12 +465,12 @@ export default function TicketDetailPage() {
 
       {/* ─── Linked Tickets ─── */}
       <SectionWrapper icon={Link2} title="Linked Tickets" defaultOpen={false}>
-        <TicketLinks ticketId={ticket.id} isReadOnly={isConsultant} />
+        <TicketLinks ticketId={ticket.id} isReadOnly={isConsultant || isColleague} />
       </SectionWrapper>
 
       {/* ─── Business Processes ─── */}
       <SectionWrapper icon={Network} title="Business Processes" defaultOpen={false}>
-        <TicketBusinessProcesses ticketId={ticket.id} isReadOnly={isConsultant} />
+        <TicketBusinessProcesses ticketId={ticket.id} isReadOnly={isConsultant || isColleague} />
       </SectionWrapper>
 
       {/* ─── CSAT Satisfaction ─── */}
