@@ -453,7 +453,7 @@ export default function TicketDetailPage() {
 
       {/* ─── Timesheet / Work Log ─── */}
       <SectionWrapper icon={ClipboardList} title="Timesheet & Work Log" defaultOpen>
-        <TicketTimesheet ticketId={ticket.id} ticketTitle={ticket.title} isReadOnly={isClient} />
+        <TicketTimesheet ticketId={ticket.id} ticketTitle={ticket.title} isReadOnly={isClient} canApprove={isClient && !isColleague} />
       </SectionWrapper>
 
       {/* ─── Internal Notes ─── */}
