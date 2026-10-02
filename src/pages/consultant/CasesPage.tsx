@@ -57,7 +57,8 @@ export default function CasesPage() {
       const { data: ndas } = await supabase
         .from('nda_agreements')
         .select('client_id')
-        .eq('consultant_id', consultant.id);
+        .eq('consultant_id', consultant.id)
+        .is('revoked_at', null);
       if (ndas) {
         setSignedClients(new Set(ndas.map((n: any) => n.client_id)));
       }
@@ -69,7 +70,8 @@ export default function CasesPage() {
     const { data: ndas } = await supabase
       .from('nda_agreements')
       .select('client_id')
-      .eq('consultant_id', consultantId);
+      .eq('consultant_id', consultantId)
+      .is('revoked_at', null);
     if (ndas) {
       setSignedClients(new Set(ndas.map((n: any) => n.client_id)));
     }

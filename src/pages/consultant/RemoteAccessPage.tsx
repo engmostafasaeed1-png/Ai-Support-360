@@ -17,6 +17,7 @@ import TeamViewerPanel from '@/components/remote/TeamViewerPanel';
 import RustDeskPanel from '@/components/remote/RustDeskPanel';
 import RDPWebClientPanel from '@/components/remote/RDPWebClientPanel';
 import SharedConfigsConsultantPanel from '@/components/remote/SharedConfigsConsultantPanel';
+import NdaPendingAccessPanel from '@/components/remote/NdaPendingAccessPanel';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -234,6 +235,8 @@ export default function RemoteAccessPage() {
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Connect to client VMware environments via remote desktop</p>
       </div>
+
+      <NdaPendingAccessPanel />
 
       {activeConn ? (
         <div className="space-y-4">

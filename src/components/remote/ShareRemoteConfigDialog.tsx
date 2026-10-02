@@ -105,6 +105,11 @@ export default function ShareRemoteConfigDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          {shareMode === 'consultant' && (
+            <p className="text-[10px] text-muted-foreground">
+              The consultant sees these details only after signing your NDA. If you revoke the NDA they disappear again.
+            </p>
+          )}
           <Tabs value={shareMode} onValueChange={(v) => setShareMode(v as 'consultant' | 'email')}>
             <TabsList className="grid w-full grid-cols-2 h-8">
               <TabsTrigger value="consultant" className="text-xs gap-1.5"><Users className="w-3 h-3" /> Consultant</TabsTrigger>

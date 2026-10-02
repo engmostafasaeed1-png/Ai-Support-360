@@ -82,7 +82,7 @@ export function useShareRemoteConfig() {
       toast.success('Remote config shared with consultant');
       queryClient.invalidateQueries({ queryKey: ['shared-remote-configs-client'] });
     },
-    onError: () => toast.error('Failed to share config'),
+    onError: (e: any) => toast.error('Failed to share config', { description: e?.message }),
   });
 }
 
@@ -110,7 +110,7 @@ export function useResendRemoteConfig() {
       toast.success('Config resent to consultant');
       queryClient.invalidateQueries({ queryKey: ['shared-remote-configs-client'] });
     },
-    onError: () => toast.error('Failed to resend config'),
+    onError: (e: any) => toast.error('Failed to resend config', { description: e?.message }),
   });
 }
 
@@ -128,7 +128,7 @@ export function useRevokeRemoteConfig() {
       toast.success('Access revoked');
       queryClient.invalidateQueries({ queryKey: ['shared-remote-configs-client'] });
     },
-    onError: () => toast.error('Failed to revoke access'),
+    onError: (e: any) => toast.error('Failed to revoke access', { description: e?.message }),
   });
 }
 
@@ -146,7 +146,7 @@ export function useAcceptRemoteConfig() {
       toast.success('Remote config accepted');
       queryClient.invalidateQueries({ queryKey: ['shared-remote-configs-consultant'] });
     },
-    onError: () => toast.error('Failed to accept config'),
+    onError: (e: any) => toast.error('Failed to accept config', { description: e?.message }),
   });
 }
 
