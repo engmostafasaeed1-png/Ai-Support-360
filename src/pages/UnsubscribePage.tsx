@@ -11,11 +11,12 @@ const FUNCTION_URL = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supaba
 export default function UnsubscribePage() {
   const [params] = useSearchParams();
   const token = params.get('token');
+  const email = params.get('email');
   const [status, setStatus] = useState<Status>('loading');
   const [errorMsg, setErrorMsg] = useState<string>('');
 
   useEffect(() => {
-    if (!token) {
+    if (!token && !email) {
       setStatus('invalid');
       setErrorMsg('Missing unsubscribe token.');
       return;
@@ -23,7 +24,10 @@ export default function UnsubscribePage() {
 
     (async () => {
       try {
-        const res = await fetch(`${FUNCTION_URL}?token=${encodeURIComponent(token)}`, {
+        const qs = new URLSearchParams();
+        if (token) qs.set('token', token);
+        if (email) qs.set('email', email);
+        const res = await fetch(`${FUNCTION_URL}?${qs.toString()}`, {
           method: 'GET',
         });
         const data = await res.json();
@@ -40,16 +44,16 @@ export default function UnsubscribePage() {
         setErrorMsg('Could not verify the unsubscribe link.');
       }
     })();
-  }, [token]);
+  }, [token, email]);
 
   const handleConfirm = async () => {
-    if (!token) return;
+    if (!token && !email) return;
     setStatus('submitting');
     try {
       const res = await fetch(FUNCTION_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token, email }),
       });
       const data = await res.json();
       if (data.success) {
