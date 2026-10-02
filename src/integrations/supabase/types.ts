@@ -6124,6 +6124,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      consultant_set_ticket_status: {
+        Args: { _status: string; _ticket_id: string }
+        Returns: undefined
+      }
       get_demo_request_by_token: {
         Args: { _token: string }
         Returns: {
