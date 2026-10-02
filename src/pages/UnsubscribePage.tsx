@@ -47,13 +47,13 @@ export default function UnsubscribePage() {
   }, [token]);
 
   const handleConfirm = async () => {
-    if (!token) return;
+    if (!token && !email) return;
     setStatus('submitting');
     try {
       const res = await fetch(FUNCTION_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token, email }),
       });
       const data = await res.json();
       if (data.success) {
