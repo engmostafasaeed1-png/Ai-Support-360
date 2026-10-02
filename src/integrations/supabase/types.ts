@@ -6214,6 +6214,14 @@ export type Database = {
         Args: { _session_id: string; _user_id: string }
         Returns: string
       }
+      invite_to_company: {
+        Args: {
+          _email: string
+          _role?: Database["public"]["Enums"]["org_role"]
+          _tenant_id: string
+        }
+        Returns: undefined
+      }
       invite_to_meeting: {
         Args: { _consultant_ids: string[]; _session_id: string }
         Returns: number
