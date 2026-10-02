@@ -44,7 +44,7 @@ export default function UnsubscribePage() {
         setErrorMsg('Could not verify the unsubscribe link.');
       }
     })();
-  }, [token]);
+  }, [token, email]);
 
   const handleConfirm = async () => {
     if (!token && !email) return;
