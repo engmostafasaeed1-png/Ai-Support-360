@@ -6111,6 +6111,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      consultant_has_environment_for_client: {
+        Args: { _client_id: string; _consultant_id: string }
+        Returns: boolean
+      }
       consultant_has_ticket_link: {
         Args: { _ticket_id: string }
         Returns: boolean
@@ -6131,6 +6135,7 @@ export type Database = {
         Args: { _status: string; _ticket_id: string }
         Returns: undefined
       }
+      consume_remote_share_quota: { Args: never; Returns: boolean }
       get_demo_request_by_token: {
         Args: { _token: string }
         Returns: {
@@ -6195,6 +6200,10 @@ export type Database = {
           vcenter_username: string
         }[]
       }
+      has_active_nda: {
+        Args: { _client_id: string; _consultant_id: string }
+        Returns: boolean
+      }
       has_org_role: {
         Args: {
           _role: Database["public"]["Enums"]["org_role"]
@@ -6253,6 +6262,21 @@ export type Database = {
           invited_by: string
           org_role: Database["public"]["Enums"]["org_role"]
           tenant_id: string
+        }[]
+      }
+      my_consultant_env_access: {
+        Args: { _connectable?: boolean; _env: string }
+        Returns: boolean
+      }
+      my_nda_pending_access: {
+        Args: never
+        Returns: {
+          client_id: string
+          client_name: string
+          detail: string
+          kind: string
+          ref_id: string
+          since: string
         }[]
       }
       notify_unread_once: {
@@ -6341,10 +6365,15 @@ export type Database = {
         Returns: string
       }
       send_emergency_alert: { Args: { _ticket_id: string }; Returns: boolean }
+      set_environment_consultants: {
+        Args: { _consultant_ids: string[]; _environment_id: string }
+        Returns: undefined
+      }
       share_a_company: {
         Args: { _user_a: string; _user_b: string }
         Returns: boolean
       }
+      share_in_validity_period: { Args: { _config: Json }; Returns: boolean }
       submit_demo_request: {
         Args: {
           _company: string
@@ -6377,6 +6406,7 @@ export type Database = {
         Args: { _client_id: string; _ticket_id: string }
         Returns: boolean
       }
+      try_timestamptz: { Args: { _t: string }; Returns: string }
       users_share_engagement: {
         Args: { _user_a: string; _user_b: string }
         Returns: boolean
