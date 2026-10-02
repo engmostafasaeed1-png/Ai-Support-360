@@ -49,14 +49,14 @@ export default function TeamMembersPage() {
 
       const { data: rows } = await supabase
         .from('tenant_members')
-        .select('id, user_id, org_role')
+        .select('id, user_id, org_role, accepted_at')
         .eq('tenant_id', myMembership.tenant_id);
 
       if (!rows || rows.length === 0) { if (active) setLoading(false); return; }
 
       const userIds = rows.map(r => r.user_id);
       const { data: profiles } = await supabase
-        .from('profiles')
+        .from('profile_directory')
         .select('user_id, display_name')
         .in('user_id', userIds);
       const nameMap = new Map((profiles || []).map(p => [p.user_id, p.display_name || 'Member']));
@@ -69,7 +69,7 @@ export default function TeamMembersPage() {
           name,
           email: '',
           role: r.org_role === 'owner' ? 'Owner' : r.org_role === 'admin' ? 'Admin' : 'Member',
-          status: 'Active',
+          status: r.accepted_at ? 'Active' : 'Invited',
           initials: name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
         };
       }));
@@ -81,7 +81,7 @@ export default function TeamMembersPage() {
 
   const handleInvite = () => {
     if (!inviteEmail) return;
-    toast.success(`Invitation sent to ${inviteEmail}`);
+    toast.info('E-mail invitations are not available yet.');
     setInviteEmail('');
     setOpen(false);
   };

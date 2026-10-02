@@ -8,7 +8,7 @@ import { useClientTickets } from '@/hooks/useClientTickets';
 import {
   Search, TicketPlus, Ticket, ChevronDown, ChevronUp,
   Clock, User, Calendar, Tag, Video, MessageSquare, Monitor,
-  Globe, Brain, Gavel, Pencil, ArrowUpRight, Timer,
+  Globe, Brain, Gavel, Pencil, ArrowUpRight, Timer, Users,
 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -164,6 +164,9 @@ export default function TicketsPage() {
                             )}
                             {ticket.ai_suggested_category && (
                               <Badge variant="outline" className="text-[10px] gap-0.5"><Brain className="w-2.5 h-2.5" /> {ticket.ai_suggested_category}</Badge>
+                            )}
+                            {ticket.is_own === false && (
+                              <Badge variant="outline" className="text-[10px] gap-0.5"><Users className="w-2.5 h-2.5" /> Colleague</Badge>
                             )}
                           </div>
                         </div>

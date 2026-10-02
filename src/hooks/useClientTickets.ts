@@ -28,11 +28,13 @@ export function useClientTickets() {
       if (!user) return [];
       let query = supabase
         .from('tickets')
-        .select('id, title, sap_module, urgency, status, created_at, updated_at, description, preferred_session_type, preferred_language, consultant_id, ai_suggested_category, ai_suggested_priority, sla_deadline, open_for_bids')
-        .eq('client_id', user.id)
+        .select('id, title, sap_module, urgency, status, created_at, updated_at, description, preferred_session_type, preferred_language, consultant_id, ai_suggested_category, ai_suggested_priority, sla_deadline, open_for_bids, client_id')
         .order('created_at', { ascending: false });
       if (tenant?.id) {
+        // the company's tickets: the user's own and, read-only, their colleagues' (row-level security decides what is visible)
         query = query.eq('tenant_id', tenant.id);
+      } else {
+        query = query.eq('client_id', user.id);
       }
       const { data, error } = await query;
       if (error) throw error;
@@ -74,6 +76,8 @@ export function useClientTickets() {
         ai_suggested_priority: t.ai_suggested_priority || null,
         sla_deadline: t.sla_deadline || null,
         open_for_bids: t.open_for_bids || false,
+        client_id: t.client_id,
+        is_own: t.client_id === user.id,
       }));
     },
     enabled: !isGuest,
