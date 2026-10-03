@@ -35,6 +35,7 @@ const BodySchema = z.object({
   sap_modules: z.array(z.string().max(80)).max(12).optional(),
   sap_module_other: z.string().max(160).optional(),
   area_details: z.string().max(2000).optional(),
+  sap_notes_tried: z.array(z.string().regex(/^\d{5,8}$/)).max(8).optional(),
   urgency: z.enum(["low", "medium", "high", "critical"]).optional(),
   preferred_language: z.string().max(20).optional(),
   model: z.string().max(100).optional(),
@@ -293,6 +294,9 @@ serve(async (req) => {
     ).text.slice(0, 6000);
     const problemText = scrubText(`${body.title ?? ""}\n${body.description}`, deny).text;
     const language = languageName(body.preferred_language);
+    // the SAP Notes the client says were already tried: only the numbers, and the model is told not to suggest them again
+    const triedNotes: string[] = [...new Set<string>(body.sap_notes_tried ?? [])].slice(0, 8);
+    const triedLine = triedNotes.length > 0 ? `\nSAP Notes the client already tried (do not suggest them again): ${triedNotes.join(", ")}` : "";
 
     // 1. published, anonymised knowledge
     const { data: found, error: searchError } = await admin.rpc("search_knowledge", {
@@ -355,13 +359,14 @@ Rules:
 - Use ONLY the numbered items. Do not add steps that are not in them. You may reorder, shorten and match them to the ticket.
 - Items labelled "SAP documentation, public" are pages of SAP's own documentation, not cases of this platform. Use one only when it really fits the ticket, write the steps in your own words and do not copy long passages.
 - Suggest an item only when it genuinely fits the ticket. If none fits, return an empty list.
+- If the draft ticket lists SAP Notes the client already tried, do not suggest those notes again and do not repeat the steps they describe.
 - At most 4 suggestions, best first. Every suggestion lists the numbers of the items it comes from.
 - Never write a company name, a person name, an e-mail address, a host name, a system ID or a document number. Leave such details out.
 - Write an SAP Note number only when it appears in the numbered items. Never guess or invent a note number.
 - confidence is "high" only when the item describes the same symptom in the same area.
 - search_terms: 2 to 5 single lowercase words someone would type into SAP Community to find help for this ticket (a transaction code, an error number or the key nouns). No names of people, companies or systems.
 - Write in ${language}. Keep every step short and concrete (one action each).`,
-        `Draft ticket:\n${ticketText}\n\nKnowledge items:\n${context}`,
+        `Draft ticket:\n${ticketText}${triedLine}\n\nKnowledge items:\n${context}`,
         model,
       );
       if (!response.ok) {
@@ -383,12 +388,13 @@ Rules:
         `You help an SAP client BEFORE they open a support ticket. Give general, well-known SAP guidance for the described problem: what to check first, standard transactions, typical causes. This guidance is NOT taken from this platform's past cases, so do not claim certainty.
 Rules:
 - At most 3 suggestions, best first. source_refs must be empty.
+- If the draft ticket lists SAP Notes the client already tried, do not suggest those notes again and do not repeat the steps they describe.
 - If the problem needs access to the client's own system, or the description is too unclear, say so in "note" and say that a ticket is the better way.
 - Never write a company name, a person name, an e-mail address, a host name, a system ID or a document number.
 - Do not write SAP Note numbers or KBA numbers: you cannot check them. You may say that a related SAP Note probably exists.
 - search_terms: 2 to 5 single lowercase words someone would type into SAP Community to find help for this ticket (a transaction code, an error number or the key nouns). No names of people, companies or systems.
 - Write in ${language}. Keep every step short and concrete (one action each).`,
-        `Draft ticket:\n${ticketText}`,
+        `Draft ticket:\n${ticketText}${triedLine}`,
         model,
       );
       if (!response.ok) {
@@ -409,7 +415,7 @@ Rules:
     const sources = usedItems.map((it) => ({ id: it.id, kind: it.kind, title: clean(it.title, 160) }));
 
     // SAP references: note numbers cited by the reviewed items and the documentation pages that were used, and words for SAP Community
-    const notes = noteNumbersOf([...usedItems, ...usedDocs]).slice(0, MAX_NOTES).flatMap((number) => {
+    const notes = noteNumbersOf([...usedItems, ...usedDocs]).filter((n) => !triedNotes.includes(n)).slice(0, MAX_NOTES).flatMap((number) => {
       const url = noteUrl(number);
       return url ? [{ number, url }] : [];
     });
