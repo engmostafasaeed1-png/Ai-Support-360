@@ -25,3 +25,5 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = true
   [functions.paymob-webhook]
     verify_jwt = false
+  [functions.ai-suggest]
+    verify_jwt = true
