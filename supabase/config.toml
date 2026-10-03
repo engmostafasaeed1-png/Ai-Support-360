@@ -29,3 +29,5 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = true
   [functions.ai-learn-from-ticket]
     verify_jwt = true
+  [functions.knowledge-submit]
+    verify_jwt = true
