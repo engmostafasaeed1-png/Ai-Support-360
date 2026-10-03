@@ -156,7 +156,7 @@ describe('SolutionSuggestions', () => {
         suggestions: [{
           title: 'Assign the role collection',
           summary: 'The user lacks the role.',
-          steps: ['Open the cockpit', 'Assign the role collection'],
+          steps: ['Open the cockpit', 'Assign the role collection to the user'],
           tcodes: [],
           confidence: 'medium',
           basis: 'sap_docs',
