@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit, getUserRoles, hasAnyRole, ADMIN_ROLES } from "../_shared/security.ts";
+import { scrubText } from "../_shared/scrub.ts";
 
 const VALID_MODELS = [
   "google/gemini-2.5-flash-lite",
@@ -91,6 +92,8 @@ serve(async (req) => {
       title: z.string().min(1).max(500).optional(),
       description: z.string().min(1).max(8000).optional(),
       sap_module: z.string().max(100).optional(),
+      sap_modules: z.array(z.string().max(80)).max(12).optional(),
+      sap_module_other: z.string().max(160).optional(),
       urgency: z.enum(["low", "medium", "high", "critical"]).optional(),
       preferred_language: z.string().max(20).optional(),
       model: z.string().max(100).optional(),
@@ -104,7 +107,7 @@ serve(async (req) => {
         { status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
       );
     }
-    const { action, title, description, sap_module, urgency, preferred_language, model } = parsed.data;
+    const { action, title, description, sap_module, sap_modules, sap_module_other, urgency, preferred_language, model } = parsed.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -235,6 +238,7 @@ serve(async (req) => {
         });
       }
 
+      // Only verified consultants can be asked to take a ticket (the match request is refused for anyone else).
       const { data: consultants, error: consultantsError } = await supabase
         .from("consultants")
         .select(`
@@ -242,7 +246,7 @@ serve(async (req) => {
           availability_status, rating, total_reviews, response_time_minutes,
           verification_status, ai_skills_score, country
         `)
-        .in("verification_status", ["verified", "under_review"])
+        .eq("verification_status", "verified")
         .limit(50);
 
       if (consultantsError) throw new Error(`DB error: ${consultantsError.message}`);
@@ -255,17 +259,24 @@ serve(async (req) => {
       const consultantIds = consultants.map(c => c.id);
       const userIds = consultants.map(c => c.user_id);
 
-      // Fetch all enrichment data in parallel
+      // The areas of this ticket and the caller's company, to count what each consultant solved before.
+      const ticketAreas = [...new Set((sap_modules && sap_modules.length > 0 ? sap_modules : (sap_module ? [sap_module] : []))
+        .map((a: string) => a.replace(/\s+/g, " ").trim()).filter(Boolean))].slice(0, 12);
+      const { data: member } = await supabase.from("tenant_members").select("tenant_id")
+        .eq("user_id", authUser.id).not("accepted_at", "is", null).limit(1).maybeSingle();
+      const searchText = scrubText(`${title ?? ""}\n${description ?? ""}`).text.replace(/\[[a-z ]{2,20}\]/g, " ").slice(0, 4000);
+
+      // Fetch all enrichment data in parallel. Other clients' review comments and a consultant's former employers are NOT read:
+      // the answer is shown to the client and must not repeat private details.
       const [
         { data: skills },
         { data: certs },
         { data: profiles },
         { data: interviews },
         { data: projects },
-        { data: workHistory },
         { data: ndaAgreements },
         { data: sessionStats },
-        { data: ratingDetails },
+        { data: solvedBefore },
       ] = await Promise.all([
         supabase.from("consultant_skills")
           .select("consultant_id, sap_module, proficiency_level, years_experience, certified")
@@ -282,10 +293,7 @@ serve(async (req) => {
           .eq("status", "completed")
           .order("completed_at", { ascending: false }),
         supabase.from("consultant_projects")
-          .select("consultant_id, project_name, sap_modules, client_industry, duration_months, role")
-          .in("consultant_id", consultantIds),
-        supabase.from("consultant_work_history")
-          .select("consultant_id, job_title, company_name, is_current, start_date, end_date")
+          .select("consultant_id, sap_modules, client_industry, duration_months, role")
           .in("consultant_id", consultantIds),
         supabase.from("nda_agreements")
           .select("consultant_id, signed_at, revoked_at")
@@ -294,12 +302,17 @@ serve(async (req) => {
         supabase.from("sessions")
           .select("consultant_id, status, duration_minutes")
           .in("consultant_id", consultantIds),
-        supabase.from("ratings")
-          .select("consultant_id, score, comment")
-          .in("consultant_id", consultantIds)
-          .order("created_at", { ascending: false })
-          .limit(200),
+        supabase.rpc("consultants_solved_similar", {
+          _query: searchText,
+          _areas: ticketAreas,
+          _tenant: member?.tenant_id ?? null,
+          _limit: 50,
+        }),
       ]);
+      const solvedMap = new Map<string, { solved_similar: number; resolved_in_areas: number }>();
+      for (const r of (solvedBefore ?? []) as any[]) {
+        solvedMap.set(r.consultant_id, { solved_similar: r.solved_similar ?? 0, resolved_in_areas: r.resolved_in_areas ?? 0 });
+      }
 
       const enrichedConsultants = consultants.map(c => {
         const cSkills = (skills || []).filter(s => s.consultant_id === c.id);
@@ -307,10 +320,9 @@ serve(async (req) => {
         const profile = (profiles || []).find(p => p.user_id === c.user_id);
         const cInterviews = (interviews || []).filter(i => i.consultant_id === c.id);
         const cProjects = (projects || []).filter(p => p.consultant_id === c.id);
-        const cWork = (workHistory || []).filter(w => w.consultant_id === c.id);
         const hasActiveNDA = (ndaAgreements || []).some(n => n.consultant_id === c.id);
         const cSessions = (sessionStats || []).filter(s => s.consultant_id === c.id);
-        const cRatings = (ratingDetails || []).filter(r => r.consultant_id === c.id);
+        const solved = solvedMap.get(c.id);
 
         // Compute session completion rate
         const totalSessions = cSessions.length;
@@ -326,14 +338,11 @@ serve(async (req) => {
         // Total years of SAP experience across all skills
         const totalSapYears = cSkills.reduce((sum, s) => sum + (s.years_experience || 0), 0);
 
-        // Relevant project modules
-        const projectModules = [...new Set(cProjects.flatMap(p => p.sap_modules || []))];
-
         return {
           id: c.id,
           name: profile?.display_name || "Consultant",
           avatar_url: profile?.avatar_url,
-          bio: c.bio,
+          bio: c.bio ? String(c.bio).slice(0, 400) : null,
           hourly_rate: c.hourly_rate,
           currency: c.currency,
           timezone: c.timezone,
@@ -351,6 +360,8 @@ serve(async (req) => {
           session_completion_rate: sessionCompletionRate,
           total_completed_sessions: completedSessions,
           avg_session_duration: avgSessionDuration,
+          solved_similar_issues: solved?.solved_similar ?? 0,
+          resolved_tickets_in_these_areas: solved?.resolved_in_areas ?? 0,
           skills: cSkills.map(s => ({
             module: s.sap_module,
             proficiency: s.proficiency_level,
@@ -370,20 +381,10 @@ serve(async (req) => {
             type: latestInterview.interview_type,
           } : null,
           project_history: cProjects.slice(0, 5).map(p => ({
-            name: p.project_name,
             modules: p.sap_modules,
             industry: p.client_industry,
             duration_months: p.duration_months,
             role: p.role,
-          })),
-          work_experience: cWork.slice(0, 3).map(w => ({
-            title: w.job_title,
-            company: w.company_name,
-            is_current: w.is_current,
-          })),
-          recent_ratings: cRatings.slice(0, 3).map(r => ({
-            score: r.score,
-            comment: r.comment,
           })),
         };
       });
@@ -399,10 +400,10 @@ SCORING CRITERIA (total = 100%):
    - Certified in the module = strong bonus
    - Cross-module knowledge relevant to the issue
 
-2. Project & Domain Experience (20%):
-   - Past projects involving the same SAP module
-   - Relevant industry experience matching the ticket context
-   - Duration and depth of past project work
+2. Track Record on Similar Issues (20%):
+   - solved_similar_issues: how many published solutions for similar problems came from this consultant's tickets
+   - resolved_tickets_in_these_areas: how many tickets this consultant resolved in the same SAP areas
+   - Past projects involving the same SAP modules, industry and role
 
 3. AI Interview & Verified Skills Score (15%):
    - Overall AI interview score (technical + soft skills)
@@ -422,7 +423,6 @@ SCORING CRITERIA (total = 100%):
 6. Client Satisfaction (8%):
    - Rating score (out of 5)
    - Number of reviews (statistical confidence)
-   - Recent review sentiment
 
 7. Language & Cultural Fit (5%):
    - Speaks client's preferred language
@@ -430,7 +430,7 @@ SCORING CRITERIA (total = 100%):
 
 8. Compliance & Trust (2%):
    - Active NDA on file = trust bonus
-   - Verification status (verified > under_review)
+   - Verification status
    - Valid (non-expired) certifications
 
 URGENCY MODIFIERS:
@@ -439,9 +439,14 @@ URGENCY MODIFIERS:
 - Medium: Prioritize best skill match over availability
 - Low: Focus on best overall value (skill + rate)
 
-Return the top 5 consultants. For each, provide a detailed match reason referencing specific data points from their profile.`,
+PRIVACY RULES (the answer is shown to a client):
+- Use only the facts given: skills, modules, scores, counts, availability, languages, rates.
+- Never mention other clients, companies, reviews or comments, former employers or personal details.
+- When solved_similar_issues or resolved_tickets_in_these_areas is above 0, you may say it as a plain count, for example "solved 3 similar issues".
+
+Return the top 5 consultants. For each, provide a match reason that references the facts above.`,
         `Client Ticket:
-Module: ${sap_module}
+Areas: ${ticketAreas.length > 0 ? ticketAreas.join(", ") : sap_module}${sap_module_other ? ` (other: ${sap_module_other})` : ""}
 Title: ${title}
 Description: ${description}
 Urgency: ${urgency}
@@ -466,11 +471,11 @@ Rank the top consultants for this ticket. Be specific about why each matches.`,
                     properties: {
                       consultant_id: { type: "string", description: "The consultant's id" },
                       match_score: { type: "number", description: "Overall match score 0-100" },
-                      match_reason: { type: "string", description: "3-4 sentence explanation referencing specific data points (skills, projects, scores)" },
+                      match_reason: { type: "string", description: "3-4 sentence explanation using only the given facts (skills, modules, scores, counts)" },
                       strengths: { type: "array", items: { type: "string" }, description: "Top 3-5 specific strengths for this ticket" },
                       concerns: { type: "array", items: { type: "string" }, description: "Any potential concerns or gaps (0-2 items)" },
                       skill_match_score: { type: "number", description: "Skill & module match sub-score 0-100" },
-                      experience_score: { type: "number", description: "Project & domain experience sub-score 0-100" },
+                      experience_score: { type: "number", description: "Track record on similar issues sub-score 0-100" },
                       availability_score: { type: "number", description: "Availability & response time sub-score 0-100" },
                       reliability_score: { type: "number", description: "Track record & reliability sub-score 0-100" },
                       interview_score: { type: "number", description: "AI interview performance sub-score 0-100" },
@@ -501,28 +506,38 @@ Rank the top consultants for this ticket. Be specific about why each matches.`,
       const rankResult = parseToolResult(rankData);
 
       if (rankResult?.recommendations) {
-        rankResult.recommendations = rankResult.recommendations.map((rec: any) => {
-          const consultant = enrichedConsultants.find(c => c.id === rec.consultant_id);
-          return {
-            ...rec,
-            name: consultant?.name || "Consultant",
-            avatar_url: consultant?.avatar_url,
-            hourly_rate: consultant?.hourly_rate,
-            currency: consultant?.currency,
-            rating: consultant?.rating,
-            total_reviews: consultant?.total_reviews,
-            availability: consultant?.availability,
-            response_time_minutes: consultant?.response_time_minutes,
-            languages: consultant?.languages,
-            verification_status: consultant?.verification_status,
-            ai_skills_score: consultant?.ai_skills_score,
-            session_completion_rate: consultant?.session_completion_rate,
-            total_completed_sessions: consultant?.total_completed_sessions,
-            has_active_nda: consultant?.has_active_nda,
-            top_skills: consultant?.skills?.slice(0, 5).map((s: any) => s.module) || [],
-            interview: consultant?.interview,
-          };
-        });
+        // Only consultants we sent can be recommended, and the free text is scrubbed once more before a client sees it.
+        rankResult.recommendations = rankResult.recommendations
+          .filter((rec: any) => enrichedConsultants.some(c => c.id === rec.consultant_id))
+          .map((rec: any) => {
+            const consultant = enrichedConsultants.find(c => c.id === rec.consultant_id);
+            const solved = solvedMap.get(rec.consultant_id);
+            return {
+              ...rec,
+              match_reason: scrubText(rec.match_reason).text,
+              strengths: (Array.isArray(rec.strengths) ? rec.strengths : []).map((s: unknown) => scrubText(String(s ?? "")).text),
+              concerns: (Array.isArray(rec.concerns) ? rec.concerns : []).map((s: unknown) => scrubText(String(s ?? "")).text),
+              name: consultant?.name || "Consultant",
+              avatar_url: consultant?.avatar_url,
+              hourly_rate: consultant?.hourly_rate,
+              currency: consultant?.currency,
+              rating: consultant?.rating,
+              total_reviews: consultant?.total_reviews,
+              availability: consultant?.availability,
+              response_time_minutes: consultant?.response_time_minutes,
+              languages: consultant?.languages,
+              verification_status: consultant?.verification_status,
+              ai_skills_score: consultant?.ai_skills_score,
+              session_completion_rate: consultant?.session_completion_rate,
+              total_completed_sessions: consultant?.total_completed_sessions,
+              has_active_nda: consultant?.has_active_nda,
+              solved_similar: solved?.solved_similar ?? 0,
+              resolved_in_areas: solved?.resolved_in_areas ?? 0,
+              top_skills: consultant?.skills?.slice(0, 5).map((s: any) => s.module) || [],
+              interview: consultant?.interview,
+            };
+          });
+        if (typeof rankResult.overall_rationale === "string") rankResult.overall_rationale = scrubText(rankResult.overall_rationale).text;
       }
 
       return new Response(JSON.stringify({ result: rankResult }), {
