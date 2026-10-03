@@ -26,6 +26,7 @@ import {
 import { generateInvoicePdf as buildInvoicePdf } from '@/lib/invoicePdf';
 import { Video, MessageSquare, Monitor, PlayCircle, Phone, HelpCircle } from 'lucide-react';
 import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
+import { PayInvoiceCard } from '@/components/invoice/PayInvoiceCard';
 import { InvoiceDisputeSection } from '@/components/invoice/InvoiceDisputeSection';
 import { PaymentDetailsDrawer } from '@/components/invoice/PaymentDetailsDrawer';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
@@ -447,6 +448,9 @@ export default function InvoicesPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-semibold text-foreground">{inv.invoice}</p>
+                          {inv.status === 'pending' && inv.client_reported_at && (
+                            <Badge variant="outline" className="text-[10px]">Reported, waiting for confirmation</Badge>
+                          )}
                           <Badge variant="secondary" className={`text-[10px] gap-1 ${sc.color}`}>
                             <StatusIcon className="w-3 h-3" /> {sc.label}
                           </Badge>
@@ -627,6 +631,8 @@ export default function InvoicesPage() {
                     </Link>
                   </div>
                 )}
+
+                <PayInvoiceCard key={selected.id} payment={selected} />
 
                 <PaymentStatusTimeline payment={selected} />
 
