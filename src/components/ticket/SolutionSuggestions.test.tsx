@@ -120,6 +120,56 @@ describe('SolutionSuggestions', () => {
     expect(await screen.findByText(/not available right now/)).not.toBeNull();
   });
 
+  it('shows SAP notes, community discussions and the search link, all opening SAP websites in a new tab', async () => {
+    mocks.invoke.mockResolvedValue({
+      data: {
+        ...knowledgeAnswer,
+        notes: [{ number: '2270407', url: 'https://me.sap.com/notes/2270407' }],
+        references: {
+          community_search_url: 'https://community.sap.com/t5/forums/searchpage/tab/message?q=fb60%20posting',
+          community: { enabled: true, items: [{ title: 'Posting period closed in FB60', url: 'https://community.sap.com/t5/x/qaq-p/1', solved: true }] },
+        },
+      },
+      error: null,
+    });
+    renderCard();
+    const note = (await screen.findByText('2270407')).closest('a') as HTMLAnchorElement;
+    expect(note.getAttribute('href')).toBe('https://me.sap.com/notes/2270407');
+    expect(note.getAttribute('target')).toBe('_blank');
+    expect(note.getAttribute('rel')).toContain('noopener');
+    const discussion = screen.getByText('Posting period closed in FB60').closest('a') as HTMLAnchorElement;
+    expect(discussion.getAttribute('href')).toBe('https://community.sap.com/t5/x/qaq-p/1');
+    expect(discussion.getAttribute('rel')).toContain('noopener');
+    expect(screen.queryByText('Solved')).not.toBeNull();
+    const search = screen.getByText(/Search SAP Community for this/).closest('a') as HTMLAnchorElement;
+    expect(search.getAttribute('href')).toContain('https://community.sap.com/t5/forums/searchpage/tab/message?q=fb60');
+    expect(screen.queryByText(/We do not copy SAP content/)).not.toBeNull();
+  });
+
+  it('shows no SAP block when there is no link to show', async () => {
+    mocks.invoke.mockResolvedValue({ data: knowledgeAnswer, error: null });
+    renderCard();
+    await screen.findByText('Open the posting period');
+    expect(screen.queryByTestId('sap-references')).toBeNull();
+  });
+
+  it('still offers the SAP Community search when there is nothing to suggest', async () => {
+    mocks.invoke.mockResolvedValue({
+      data: {
+        enabled: true,
+        mode: 'general',
+        suggestions: [],
+        sources: [],
+        note: 'No stored solution matches your description yet.',
+        references: { community_search_url: 'https://community.sap.com/t5/forums/searchpage/tab/message?q=fb60%20posting' },
+      },
+      error: null,
+    });
+    renderCard();
+    expect(await screen.findByText('No stored solution matches your description yet.')).not.toBeNull();
+    expect(screen.queryByText(/Search SAP Community for this/)).not.toBeNull();
+  });
+
   it('says so when nothing fits yet', async () => {
     mocks.invoke.mockResolvedValue({ data: { enabled: true, mode: 'general', suggestions: [], sources: [], note: 'No stored solution matches your description yet.' }, error: null });
     renderCard();

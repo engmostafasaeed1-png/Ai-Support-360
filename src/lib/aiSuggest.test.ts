@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeSuggestResult, suggestSignature, canSuggest, BASIS_LABEL } from './aiSuggest';
+import { normalizeSuggestResult, suggestSignature, canSuggest, hasReferences, sapNoteLink, BASIS_LABEL } from './aiSuggest';
 
 const ID1 = '123e4567-e89b-12d3-a456-426614174000';
 const ID2 = '223e4567-e89b-12d3-a456-426614174001';
@@ -85,6 +85,64 @@ describe('normalizeSuggestResult', () => {
   it('is switched off only when the server says so', () => {
     expect(normalizeSuggestResult({ enabled: false }).enabled).toBe(false);
     expect(normalizeSuggestResult({}).enabled).toBe(true);
+  });
+});
+
+describe('SAP references', () => {
+  const searchUrl = 'https://community.sap.com/t5/forums/searchpage/tab/message?q=fb60%20posting';
+
+  it('has no references when the server sent none', () => {
+    const r = normalizeSuggestResult({});
+    expect(r.notes).toEqual([]);
+    expect(r.references).toEqual({ communitySearchUrl: null, communityEnabled: false, community: [] });
+    expect(hasReferences(r)).toBe(false);
+  });
+
+  it('builds the note link itself from the number, whatever address the server sent', () => {
+    const r = normalizeSuggestResult({ notes: [{ number: '2270407', url: 'https://evil.example.com/steal' }, { number: '2270407' }, { number: '12' }, { number: 'abc' }, null] });
+    expect(r.notes).toEqual([{ number: '2270407', url: 'https://me.sap.com/notes/2270407' }]);
+    expect(sapNoteLink('3012345')).toBe('https://me.sap.com/notes/3012345');
+  });
+
+  it('keeps at most five notes', () => {
+    const r = normalizeSuggestResult({ notes: Array.from({ length: 9 }, (_, i) => ({ number: String(1000001 + i) })) });
+    expect(r.notes).toHaveLength(5);
+  });
+
+  it('accepts only links on SAP Community, at most three discussions', () => {
+    const r = normalizeSuggestResult({
+      references: {
+        community_search_url: searchUrl,
+        community: {
+          enabled: true,
+          items: [
+            { title: 'Posting period closed', url: 'https://community.sap.com/t5/x/qaq-p/1', solved: true },
+            { title: 'Elsewhere', url: 'https://evil.example.com/x', solved: true },
+            { title: 'Look-alike', url: 'https://community.sap.com.evil.example/x', solved: false },
+            { title: '', url: 'https://community.sap.com/t5/x/qaq-p/2', solved: false },
+            { title: 'Open question', url: 'https://community.sap.com/t5/x/qaq-p/3' },
+            { title: 'Third', url: 'https://community.sap.com/t5/x/qaq-p/4', solved: false },
+            { title: 'Fourth', url: 'https://community.sap.com/t5/x/qaq-p/5', solved: false },
+          ],
+        },
+      },
+    });
+    expect(r.references.communityEnabled).toBe(true);
+    expect(r.references.communitySearchUrl).toBe(searchUrl);
+    expect(r.references.community.map(c => c.title)).toEqual(['Posting period closed', 'Open question', 'Third']);
+    expect(r.references.community[0].solved).toBe(true);
+    expect(r.references.community[1].solved).toBe(false);
+    expect(hasReferences(r)).toBe(true);
+  });
+
+  it('refuses a search link that is not on SAP Community', () => {
+    const r = normalizeSuggestResult({ references: { community_search_url: 'https://www.google.com/search?q=x' } });
+    expect(r.references.communitySearchUrl).toBeNull();
+    expect(hasReferences(r)).toBe(false);
+  });
+
+  it('counts a note alone as a reference', () => {
+    expect(hasReferences(normalizeSuggestResult({ notes: [{ number: '2270407' }] }))).toBe(true);
   });
 });
 

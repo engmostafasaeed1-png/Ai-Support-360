@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Lightbulb, Loader2, RefreshCw, ThumbsUp, ThumbsDown, CheckCircle2, ShieldCheck, Info } from 'lucide-react';
+import { Lightbulb, Loader2, RefreshCw, ThumbsUp, ThumbsDown, CheckCircle2, ShieldCheck, Info, ExternalLink, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   BASIS_LABEL,
   canSuggest,
+  hasReferences,
   normalizeSuggestResult,
   suggestSignature,
   type SuggestResult,
@@ -35,6 +36,60 @@ const confidenceClass: Record<Suggestion['confidence'], string> = {
   medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
   low: 'bg-muted text-muted-foreground',
 };
+
+/** Links to SAP's own websites: notes cited by reviewed sources, matching SAP Community discussions, and SAP Community's search. Nothing of SAP's is copied. */
+function SapLinks({ result }: { result: SuggestResult }) {
+  if (!hasReferences(result)) return null;
+  const { notes, references } = result;
+  return (
+    <div className="space-y-2 rounded-xl border border-border/50 bg-background p-3" data-testid="sap-references">
+      <p className="text-xs font-semibold text-foreground">More from SAP</p>
+      {notes.length > 0 && (
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground">SAP Notes cited in the sources:</span>
+            {notes.map(n => (
+              <a
+                key={n.number}
+                href={n.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-md border border-border/60 px-1.5 py-0.5 font-mono text-[11px] text-primary hover:bg-accent/10"
+              >
+                <span>{n.number}</span>
+                <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                <span className="sr-only">(opens SAP for Me in a new tab)</span>
+              </a>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground">Opens SAP for Me. You need your own SAP login.</p>
+        </div>
+      )}
+      {references.community.length > 0 && (
+        <ul className="space-y-1">
+          {references.community.map(item => (
+            <li key={item.url} className="flex items-start gap-1.5 text-xs">
+              <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{item.title}</a>
+              {item.solved && <Badge variant="secondary" className="text-[9px]">Solved</Badge>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {references.communitySearchUrl && (
+        <a
+          href={references.communitySearchUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+        >
+          <Search className="h-3 w-3" aria-hidden="true" /> Search SAP Community for this
+        </a>
+      )}
+      <p className="text-[10px] text-muted-foreground">Links open SAP websites in a new tab. We do not copy SAP content.</p>
+    </div>
+  );
+}
 
 export default function SolutionSuggestions({ title, description, areas, other, details, urgency, language, model, onSolved }: Props) {
   const signature = suggestSignature({ title, description, areas, other, details, language });
@@ -152,9 +207,12 @@ export default function SolutionSuggestions({ title, description, areas, other, 
             </p>
 
             {result.suggestions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {result.note || 'We have nothing to suggest yet. Go on with your request and an expert will help you.'}
-              </p>
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {result.note || 'We have nothing to suggest yet. Go on with your request and an expert will help you.'}
+                </p>
+                <SapLinks result={result} />
+              </>
             ) : (
               <div className="space-y-3">
                 {result.suggestions.map((s, i) => (
@@ -196,6 +254,7 @@ export default function SolutionSuggestions({ title, description, areas, other, 
                   </div>
                 ))}
                 {result.note && <p className="text-xs text-muted-foreground">{result.note}</p>}
+                <SapLinks result={result} />
                 <div className="flex flex-wrap items-center gap-2 border-t border-border/40 pt-3">
                   <Button size="sm" className="gradient-primary gap-1.5 border-0" disabled={sending} onClick={() => void solved()}>
                     {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
