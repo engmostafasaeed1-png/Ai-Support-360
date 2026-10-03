@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { issueTypes } from '@/data/clientMockData';
 import SapAreaPicker from '@/components/ticket/SapAreaPicker';
+import SolutionSuggestions from '@/components/ticket/SolutionSuggestions';
 import { MAX_SAP_AREAS, MAX_OTHER_AREA_LENGTH, MAX_AREA_DETAILS_LENGTH, areasSummary, areaLabel, isOtherArea } from '@/lib/sapAreas';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -87,7 +88,19 @@ interface ConsultantRecommendation {
   top_skills: string[];
   credibility_credits?: number;
   ai_interview_badge?: string | null;
+  solved_similar?: number;
+  resolved_in_areas?: number;
 }
+
+// an expert the client asks to take the ticket (suggested by the AI or chosen by hand)
+interface PickedExpert {
+  id: string;
+  name: string;
+  subtitle: string;
+  source: 'ai' | 'manual';
+}
+
+const MAX_INVITED_EXPERTS = 3;
 
 interface AiMatchConsultants {
   recommendations: ConsultantRecommendation[];
@@ -126,7 +139,20 @@ export default function NewRequestPage() {
   const [selectedModel, setSelectedModel] = useState<AIModelId>(DEFAULT_MODEL);
   const [manualPickOpen, setManualPickOpen] = useState(false);
   const [manualSearch, setManualSearch] = useState('');
-  const [selectedConsultant, setSelectedConsultant] = useState<ConsultantLive | null>(null);
+  // the experts the client asks (up to 3): they get a match request when the ticket is created
+  const [picked, setPicked] = useState<PickedExpert[]>([]);
+  const [createdTicketId, setCreatedTicketId] = useState<string | null>(null);
+  const [solvedBySuggestion, setSolvedBySuggestion] = useState(false);
+  const togglePick = (expert: PickedExpert) => {
+    setPicked(prev => {
+      if (prev.some(p => p.id === expert.id)) return prev.filter(p => p.id !== expert.id);
+      if (prev.length >= MAX_INVITED_EXPERTS) {
+        toast.info(`You can ask ${MAX_INVITED_EXPERTS} experts at most. Remove one first.`);
+        return prev;
+      }
+      return [...prev, expert];
+    });
+  };
   const [linkedTickets, setLinkedTickets] = useState<{ id: string; title: string; linkType: string }[]>([]);
   const [linkSearch, setLinkSearch] = useState('');
   const [linkType, setLinkType] = useState('related');
@@ -268,6 +294,8 @@ export default function NewRequestPage() {
           title: form.title,
           description: form.description,
           sap_module: form.sap_module,
+          sap_modules: form.sap_modules,
+          sap_module_other: form.sap_module_other || undefined,
           urgency: form.urgency,
           preferred_language: form.preferred_language,
           model: selectedModel,
@@ -282,7 +310,7 @@ export default function NewRequestPage() {
     } finally {
       setAiLoading(null);
     }
-  }, [form.title, form.description, form.sap_module, form.urgency, form.preferred_language, selectedModel]);
+  }, [form.title, form.description, form.sap_module, form.sap_modules, form.sap_module_other, form.urgency, form.preferred_language, selectedModel]);
 
   const validateStep = (currentStep: number): boolean => {
     const result = ticketSchema.safeParse(form);
@@ -395,6 +423,22 @@ export default function NewRequestPage() {
         }
       }
 
+      // Ask the experts the client picked to take the ticket: the existing match-request flow (each expert gets a notice and can accept or decline)
+      if (ticketData && picked.length > 0) {
+        let asked = 0;
+        for (const expert of picked) {
+          const { error: askError } = await supabase.from('ticket_match_requests').insert({
+            ticket_id: ticketData.id,
+            consultant_id: expert.id,
+            sent_by: user.id,
+          } as any);
+          if (!askError || (askError as any).code === '23505') asked++;
+        }
+        if (asked < picked.length) {
+          toast.error('Your ticket was created, but not every expert request could be sent. You can send them again from the ticket page.');
+        }
+      }
+      setCreatedTicketId(ticketData?.id ?? null);
       setSubmitted(true);
       toast.success(t('ticket_create.submit_success'));
     } catch (err) {
@@ -406,6 +450,25 @@ export default function NewRequestPage() {
       );
     }
   };
+
+  // ====== THE SUGGESTIONS SOLVED IT: no ticket ======
+  if (solvedBySuggestion) {
+    return (
+      <div className="max-w-xl mx-auto space-y-6 py-12 text-center">
+        <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
+          <Check className="w-10 h-10 text-green-600" />
+        </div>
+        <h2 className="text-2xl font-bold">Great, we are glad it helped</h2>
+        <p className="text-muted-foreground">No ticket was created. If the problem comes back you can open a request at any time. Your draft is still here.</p>
+        <div className="flex gap-3 justify-center">
+          <Button variant="outline" onClick={() => setSolvedBySuggestion(false)}>Back to my request</Button>
+          <Button className="gradient-primary border-0" asChild>
+            <a href="/client">{t('ticket_create.back_dashboard')}</a>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // ====== SUCCESS PAGE WITH RECOMMENDATIONS ======
   if (submitted) {
@@ -429,29 +492,31 @@ export default function NewRequestPage() {
               </CardTitle>
               {aiRecommendations && <p className="text-xs text-muted-foreground mt-1">{aiRecommendations.overall_rationale}</p>}
             </div>
-            <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setManualPickOpen(true)}>
-              <UserPlus className="w-3.5 h-3.5" /> Choose Manually
-            </Button>
+            {createdTicketId && (
+              <Button variant="outline" size="sm" className="text-xs gap-1" asChild>
+                <a href={`/client/tickets/${createdTicketId}`}><UserPlus className="w-3.5 h-3.5" /> Invite more experts</a>
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="space-y-3">
-            {selectedConsultant && (
-              <div className="p-3 rounded-xl bg-accent/10 border border-accent/30 flex items-center gap-3">
+            {picked.map(expert => (
+              <div key={expert.id} className="p-3 rounded-xl bg-accent/10 border border-accent/30 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
-                  {selectedConsultant.avatar}
+                  {expert.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{selectedConsultant.name}</p>
-                  <p className="text-xs text-muted-foreground">{selectedConsultant.specialty} · ${selectedConsultant.rate}/hr</p>
+                  <p className="text-sm font-semibold text-foreground">{expert.name}</p>
+                  <p className="text-xs text-muted-foreground">{expert.subtitle}</p>
                 </div>
-                <Badge className="bg-accent text-accent-foreground text-[10px]">Your Pick</Badge>
+                <Badge className="bg-accent text-accent-foreground text-[10px]">Request sent</Badge>
               </div>
-            )}
+            ))}
             {aiRecommendations && aiRecommendations.recommendations.length > 0 ? (
               aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
                 <RecommendationCard key={rec.consultant_id} rec={rec} rank={i + 1} navigate={navigate} />
               ))
-            ) : !selectedConsultant ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No AI recommendations. Use "Choose Manually" to pick an expert.</p>
+            ) : picked.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No AI recommendations. You can invite experts from your ticket page.</p>
             ) : null}
           </CardContent>
         </Card>
@@ -461,6 +526,7 @@ export default function NewRequestPage() {
             setSubmitted(false); setStep(0);
             setForm({ sap_module: '', sap_modules: [], sap_module_other: '', area_details: '', issue_type: '', title: '', description: '', urgency: 'medium', preferred_session: 'video', preferred_language: 'en', ticket_type: 'standard' });
             setAiCategorization(null); setAiSummary(null); setAiMatch(null); setAiRecommendations(null); setAttachedFiles([]); setLinkedTickets([]);
+            setPicked([]); setCreatedTicketId(null);
           }} variant="outline">
             {t('ticket_create.submit_another')}
           </Button>
@@ -711,6 +777,20 @@ export default function NewRequestPage() {
         </Card>
       )}
 
+      {step === 2 && (
+        <SolutionSuggestions
+          title={form.title}
+          description={form.description}
+          areas={form.sap_modules}
+          other={form.sap_module_other}
+          details={form.area_details}
+          urgency={form.urgency}
+          language={form.preferred_language}
+          model={selectedModel}
+          onSolved={() => setSolvedBySuggestion(true)}
+        />
+      )}
+
       {/* Step 3: Urgency & Preferences */}
       {step === 2 && (
         <Card className="rounded-2xl border-border/50">
@@ -913,7 +993,7 @@ export default function NewRequestPage() {
           )}
 
           {/* AI Recommended Consultants */}
-          {(aiLoading === 'match_consultants' || aiRecommendations) && (
+          {(
             <Card className="rounded-2xl border-accent/20 bg-gradient-to-br from-accent/5 to-primary/5">
               <CardHeader className="pb-2 flex-row items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -925,18 +1005,23 @@ export default function NewRequestPage() {
                 </Button>
               </CardHeader>
               <CardContent>
-                {/* Selected consultant banner */}
-                {selectedConsultant && (
-                  <div className="mb-4 p-3 rounded-xl bg-accent/10 border border-accent/30 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
-                      {selectedConsultant.avatar}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{selectedConsultant.name}</p>
-                      <p className="text-xs text-muted-foreground">{selectedConsultant.specialty} · ${selectedConsultant.rate}/hr</p>
-                    </div>
-                    <Badge className="bg-accent text-accent-foreground text-[10px]">Selected</Badge>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSelectedConsultant(null)}>Remove</Button>
+                {/* The experts the client will ask (up to 3): they get a request when the ticket is created */}
+                {picked.length > 0 && (
+                  <div className="mb-4 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Experts you will ask to take this ticket ({picked.length} of {MAX_INVITED_EXPERTS})</p>
+                    {picked.map(expert => (
+                      <div key={expert.id} className="p-3 rounded-xl bg-accent/10 border border-accent/30 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
+                          {expert.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground">{expert.name}</p>
+                          <p className="text-xs text-muted-foreground">{expert.subtitle}</p>
+                        </div>
+                        <Badge className="bg-accent text-accent-foreground text-[10px]">{expert.source === 'ai' ? 'Suggested' : 'Your pick'}</Badge>
+                        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => togglePick(expert)}>Remove</Button>
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -949,10 +1034,18 @@ export default function NewRequestPage() {
                   <div className="space-y-3">
                     <p className="text-xs text-muted-foreground mb-3">{aiRecommendations.overall_rationale}</p>
                     {aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
-                      <RecommendationCard key={rec.consultant_id} rec={rec} rank={i + 1} navigate={navigate} />
+                      <RecommendationCard
+                        key={rec.consultant_id}
+                        rec={rec}
+                        rank={i + 1}
+                        navigate={navigate}
+                        picked={picked.some(p => p.id === rec.consultant_id)}
+                        pickDisabled={picked.length >= MAX_INVITED_EXPERTS}
+                        onTogglePick={() => togglePick({ id: rec.consultant_id, name: rec.name, subtitle: `${rec.top_skills?.[0] || 'SAP'} · $${rec.hourly_rate}/hr`, source: 'ai' })}
+                      />
                     ))}
                   </div>
-                ) : !selectedConsultant ? (
+                ) : picked.length === 0 ? (
                   <div className="py-6 text-center">
                     <Users className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
                     <p className="text-sm text-muted-foreground">No AI recommendations yet. Use "Browse & Choose Manually" to pick an expert.</p>
@@ -1001,9 +1094,20 @@ export default function NewRequestPage() {
                               ? 'border-accent bg-accent/5 ring-1 ring-accent/30'
                               : 'border-border/50 hover:border-accent/30'
                           }`}
-                          onClick={() => {
-                            setSelectedConsultant(c);
-                            setManualPickOpen(false);
+                          role="button"
+                          tabIndex={0}
+                          aria-pressed={picked.some(p => p.id === c.id)}
+                          className={`p-3 rounded-xl border cursor-pointer transition-all hover:shadow-sm ${
+                            picked.some(p => p.id === c.id)
+                              ? 'border-accent bg-accent/5 ring-1 ring-accent/30'
+                              : 'border-border/50 hover:border-accent/30'
+                          }`}
+                          onClick={() => togglePick({ id: c.id, name: c.name, subtitle: `${c.specialty} · $${c.rate}/hr`, source: 'manual' })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              togglePick({ id: c.id, name: c.name, subtitle: `${c.specialty} · $${c.rate}/hr`, source: 'manual' });
+                            }
                           }}
                         >
                           <div className="flex items-center gap-3">
@@ -1043,6 +1147,10 @@ export default function NewRequestPage() {
                   )}
                 </div>
               </ScrollArea>
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-xs text-muted-foreground">{picked.length} of {MAX_INVITED_EXPERTS} chosen</span>
+                <Button size="sm" onClick={() => setManualPickOpen(false)}>Done</Button>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
@@ -1068,7 +1176,14 @@ export default function NewRequestPage() {
 }
 
 // ====== Recommendation Card Component ======
-function RecommendationCard({ rec, rank, navigate }: { rec: ConsultantRecommendation; rank: number; navigate: (path: string) => void }) {
+function RecommendationCard({ rec, rank, navigate, picked, pickDisabled, onTogglePick }: {
+  rec: ConsultantRecommendation;
+  rank: number;
+  navigate: (path: string) => void;
+  picked?: boolean;
+  pickDisabled?: boolean;
+  onTogglePick?: () => void;
+}) {
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400';
     if (score >= 75) return 'text-accent bg-accent/10';
@@ -1131,6 +1246,20 @@ function RecommendationCard({ rec, rank, navigate }: { rec: ConsultantRecommenda
           {/* Match reason */}
           <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{rec.match_reason}</p>
 
+          {/* Experience on similar issues: counts only, no names and no tickets */}
+          {((rec.solved_similar ?? 0) > 0 || (rec.resolved_in_areas ?? 0) > 0) && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {(rec.solved_similar ?? 0) > 0 && (
+                <Badge variant="secondary" className="text-[9px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 gap-1">
+                  <BadgeCheck className="w-2.5 h-2.5" /> Solved {rec.solved_similar} similar {rec.solved_similar === 1 ? 'issue' : 'issues'} before
+                </Badge>
+              )}
+              {(rec.resolved_in_areas ?? 0) > 0 && (
+                <Badge variant="secondary" className="text-[9px]">{rec.resolved_in_areas} resolved in these areas</Badge>
+              )}
+            </div>
+          )}
+
           {/* Strengths & Skills */}
           <div className="flex flex-wrap gap-1 mt-2">
             {rec.strengths?.slice(0, 3).map((s, i) => (
@@ -1146,14 +1275,28 @@ function RecommendationCard({ rec, rank, navigate }: { rec: ConsultantRecommenda
                 <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" />{rec.response_time_minutes}min avg</span>
               )}
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-[10px] gap-1"
-              onClick={() => navigate(`/client/consultants/${rec.consultant_id}`)}
-            >
-              View Profile <ChevronRight className="w-3 h-3" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {onTogglePick && (
+                <Button
+                  size="sm"
+                  variant={picked ? 'default' : 'outline'}
+                  className="h-7 text-[10px] gap-1"
+                  disabled={!picked && pickDisabled}
+                  aria-pressed={!!picked}
+                  onClick={onTogglePick}
+                >
+                  {picked ? <Check className="w-3 h-3" /> : <UserPlus className="w-3 h-3" />} {picked ? 'Asked' : 'Ask this expert'}
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[10px] gap-1"
+                onClick={() => navigate(`/client/consultants/${rec.consultant_id}`)}
+              >
+                View Profile <ChevronRight className="w-3 h-3" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
