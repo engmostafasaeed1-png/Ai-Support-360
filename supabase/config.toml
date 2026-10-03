@@ -21,3 +21,7 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = false
   [functions.send-interview-invitations]
     verify_jwt = true
+  [functions.paymob-create-payment]
+    verify_jwt = true
+  [functions.paymob-webhook]
+    verify_jwt = false
