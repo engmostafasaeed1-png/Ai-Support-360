@@ -1,31 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { mockRecommendedConsultants } from '@/data/clientMockData';
+import { toConsultantLive, type ConsultantLive } from '@/lib/consultantDirectory';
 
-export interface ConsultantLive {
-  id: string;
-  name: string;
-  specialty: string;
-  rating: number;
-  reviews: number;
-  rate: number;
-  avatar: string;
-  available: boolean;
-  matchScore: number;
-  badges: string[];
-  lat: number;
-  lng: number;
-  city: string;
-  industries: string[];
-  credly_username?: string | null;
-  languages: string[];
-  response_time_minutes: number;
-  verification_status: string;
-  credibility_credits?: number;
-  ai_interview_badge?: string | null;
-}
+export type { ConsultantLive } from '@/lib/consultantDirectory';
 
 export function useRealtimeConsultants() {
   const { isGuest } = useGuestMode();
@@ -45,11 +25,11 @@ export function useRealtimeConsultants() {
 
   const { data: consultants = [], isLoading } = useQuery({
     queryKey: ['realtime-consultants'],
-    queryFn: async () => {
-      // Fetch all consultants with their skills
+    queryFn: async (): Promise<ConsultantLive[]> => {
+      // The consultants that the signed-in person may see (verified ones; an administrator sees all)
       const { data: consultantRows, error } = await supabase
         .from('consultants')
-        .select('id, user_id, bio, hourly_rate, currency, timezone, languages, industries, verification_status, rating, total_reviews, response_time_minutes, availability_status, location, credly_username, credibility_credits, ai_interview_badge')
+        .select('id, user_id, hourly_rate, industries, languages, verification_status, rating, total_reviews, response_time_minutes, availability_status, city, country, latitude, longitude, linkedin_url, linkedin_checked_at, credly_username, credly_checked_at, credibility_credits, ai_interview_badge')
         .order('rating', { ascending: false });
 
       if (error) throw error;
@@ -80,46 +60,18 @@ export function useRealtimeConsultants() {
         skillsMap.set(s.consultant_id, existing);
       });
 
-      return consultantRows.map((c): ConsultantLive => {
-        const profile = profileMap.get(c.user_id);
-        const name = profile?.display_name || 'Consultant';
-        const initials = name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2);
-        const topSkills = skillsMap.get(c.id) || [];
-        const loc = c.location as any;
-
-        const badges: string[] = [];
-        if (c.verification_status === 'verified') badges.push('verified');
-        if ((c.rating || 0) >= 4.5) badges.push('top_rated');
-        if ((c.response_time_minutes || 999) <= 30) badges.push('fast_responder');
-        if (c.credly_username) badges.push('credly');
-
-        return {
-          id: c.id,
-          name,
-          specialty: topSkills[0] || 'SAP',
-          rating: Number(c.rating) || 0,
-          reviews: c.total_reviews || 0,
-          rate: Number(c.hourly_rate) || 0,
-          avatar: initials,
-          available: c.availability_status === 'available',
-          matchScore: Math.round(60 + Math.random() * 40),
-          badges,
-          lat: loc?.x || 24.7136 + (Math.random() - 0.5) * 5,
-          lng: loc?.y || 46.6753 + (Math.random() - 0.5) * 5,
-          city: c.timezone?.split('/')[1]?.replace('_', ' ') || 'Riyadh',
-          industries: c.industries || [],
-          credly_username: c.credly_username,
-          languages: c.languages || ['en'],
-          response_time_minutes: c.response_time_minutes || 0,
-          verification_status: c.verification_status || 'pending',
-          credibility_credits: (c as any).credibility_credits || 0,
-          ai_interview_badge: (c as any).ai_interview_badge || null,
-        };
-      });
+      // The place, the availability and the links come from the database as they are: nothing is invented here.
+      return consultantRows.map(c => toConsultantLive(c, profileMap.get(c.user_id)?.display_name, skillsMap.get(c.id) || []));
     },
     enabled: !isGuest,
-    placeholderData: isGuest ? mockRecommendedConsultants.map((c, i) => ({
+    placeholderData: isGuest ? mockRecommendedConsultants.map((c, i): ConsultantLive => ({
       ...c,
+      status: c.available ? 'available' : 'offline',
+      country: '',
+      place: c.city,
+      linkedin_url: null,
+      linkedin_state: 'none',
+      credly_state: c.credly_username ? 'linked' : 'none',
       languages: ['en'],
       response_time_minutes: 15,
       verification_status: 'verified',
