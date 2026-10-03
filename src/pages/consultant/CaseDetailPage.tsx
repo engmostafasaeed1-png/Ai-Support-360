@@ -21,6 +21,9 @@ import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
 import TicketPlanApproval from '@/components/client/TicketPlanApproval';
 import TicketStatusActions from '@/components/consultant/TicketStatusActions';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
+import TicketAreasNotes from '@/components/ticket/TicketAreasNotes';
+import { areasOf, areaLabel } from '@/lib/sapAreas';
+import { cleanNoteList } from '@/lib/sapNotes';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -226,6 +229,8 @@ export default function CaseDetailPage() {
 
   const slaTime = ticket.sla_deadline ? new Date(ticket.sla_deadline) : null;
   const isOverdue = slaTime && slaTime < new Date() && ticket.status !== 'resolved' && ticket.status !== 'closed';
+  const caseAreas = areasOf(ticket);
+  const triedNotes = cleanNoteList(ticket.sap_notes_tried);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
