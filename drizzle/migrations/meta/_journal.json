@@ -22,6 +22,13 @@
       "when": 1791017365300,
       "tag": "0002_billing_m16_bank_transfer_flow",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791027753233,
+      "tag": "0003_client_cycle_m17_card_payments_paymob",
+      "breakpoints": true
     }
   ]
 }

@@ -2907,10 +2907,105 @@ export type Database = {
           },
         ]
       }
+      payment_card_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          payment_id: string
+          provider: string
+          provider_intention_id: string | null
+          provider_order_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payment_id: string
+          provider: string
+          provider_intention_id?: string | null
+          provider_order_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payment_id?: string
+          provider?: string
+          provider_intention_id?: string | null
+          provider_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_card_attempts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_provider_events: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string | null
+          delivered_via: string
+          detail: string | null
+          event_key: string
+          id: string
+          kind: string
+          order_id: string | null
+          outcome: string | null
+          payload: Json
+          payment_id: string | null
+          provider: string
+          transaction_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          delivered_via?: string
+          detail?: string | null
+          event_key: string
+          id?: string
+          kind: string
+          order_id?: string | null
+          outcome?: string | null
+          payload?: Json
+          payment_id?: string | null
+          provider: string
+          transaction_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          delivered_via?: string
+          detail?: string | null
+          event_key?: string
+          id?: string
+          kind?: string
+          order_id?: string | null
+          outcome?: string | null
+          payload?: Json
+          payment_id?: string | null
+          provider?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_provider_events_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
           bank_reference: string | null
+          card_started_at: string | null
           client_id: string
           client_note: string | null
           client_reported_at: string | null
@@ -2929,6 +3024,8 @@ export type Database = {
           paid_at: string | null
           payment_method: string | null
           provider: string
+          provider_status: string | null
+          provider_transaction_id: string | null
           received_amount: number | null
           reference: string | null
           rejection_note: string | null
@@ -2944,6 +3041,7 @@ export type Database = {
         Insert: {
           amount: number
           bank_reference?: string | null
+          card_started_at?: string | null
           client_id: string
           client_note?: string | null
           client_reported_at?: string | null
@@ -2962,6 +3060,8 @@ export type Database = {
           paid_at?: string | null
           payment_method?: string | null
           provider?: string
+          provider_status?: string | null
+          provider_transaction_id?: string | null
           received_amount?: number | null
           reference?: string | null
           rejection_note?: string | null
@@ -2977,6 +3077,7 @@ export type Database = {
         Update: {
           amount?: number
           bank_reference?: string | null
+          card_started_at?: string | null
           client_id?: string
           client_note?: string | null
           client_reported_at?: string | null
@@ -2995,6 +3096,8 @@ export type Database = {
           paid_at?: string | null
           payment_method?: string | null
           provider?: string
+          provider_status?: string | null
+          provider_transaction_id?: string | null
           received_amount?: number | null
           reference?: string | null
           rejection_note?: string | null
@@ -6277,6 +6380,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      apply_provider_payment: {
+        Args: {
+          _amount: number
+          _currency: string
+          _kind: string
+          _order_id: string
+          _payload?: Json
+          _provider: string
+          _source?: string
+          _transaction_id: string
+        }
+        Returns: string
+      }
       bp_matches_ticket_client: {
         Args: { _bp_id: string; _ticket_id: string }
         Returns: boolean
@@ -6285,6 +6401,11 @@ export type Database = {
         Args: { _tenant_id: string }
         Returns: boolean
       }
+      card_payment_context: {
+        Args: { _payment_id: string; _user_id: string }
+        Returns: Json
+      }
+      card_payments_enabled: { Args: never; Returns: boolean }
       check_rate_limit: {
         Args: { _bucket: string; _limit: number; _window_seconds: number }
         Returns: boolean
@@ -6477,6 +6598,10 @@ export type Database = {
           since: string
         }[]
       }
+      notify_payment_admins: {
+        Args: { _body: string; _title: string }
+        Returns: undefined
+      }
       notify_unread_once: {
         Args: {
           _body: string
@@ -6492,6 +6617,15 @@ export type Database = {
       plan_limits_enforced: { Args: never; Returns: boolean }
       recompute_consultant_rating: {
         Args: { _consultant_id: string }
+        Returns: undefined
+      }
+      register_card_attempt: {
+        Args: {
+          _intention_id?: string
+          _order_id: string
+          _payment_id: string
+          _provider: string
+        }
         Returns: undefined
       }
       request_demo_reschedule: {
