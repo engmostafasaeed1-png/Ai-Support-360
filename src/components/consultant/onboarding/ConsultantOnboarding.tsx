@@ -20,6 +20,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { fireConfetti } from '@/lib/confetti';
 import { safeFileName } from '@/lib/storagePath';
+import { cityPoint } from '@/lib/geo';
+import { CREDLY_HINT, LINKEDIN_HINT, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 
 export interface WorkHistoryEntry {
   companyName: string;
@@ -62,6 +64,7 @@ export interface OnboardingData {
   linkedinUrl: string;
   githubUrl: string;
   personalWebsite: string;
+  credlyUsername: string;
   // Skills
   skills: { sapModule: string; proficiencyLevel: number; yearsExperience: number; certified: boolean }[];
   // Certifications
@@ -89,6 +92,7 @@ const initialData: OnboardingData = {
   linkedinUrl: '',
   githubUrl: '',
   personalWebsite: '',
+  credlyUsername: '',
   skills: [],
   certifications: [],
   workHistory: [],
@@ -134,6 +138,16 @@ export default function ConsultantOnboarding() {
       setCurrentStep(STEP_COUNT - 1);
       return;
     }
+    // Same rules as the database: a wrong LinkedIn or Credly value is shown here, before anything is saved.
+    const linkedinUrl = data.linkedinUrl.trim() ? normalizeLinkedinUrl(data.linkedinUrl) : null;
+    const credlyUsername = data.credlyUsername.trim() ? normalizeCredlyUsername(data.credlyUsername) : null;
+    if ((data.linkedinUrl.trim() && !linkedinUrl) || (data.credlyUsername.trim() && !credlyUsername)) {
+      toast.error(data.linkedinUrl.trim() && !linkedinUrl ? LINKEDIN_HINT : CREDLY_HINT);
+      setCurrentStep(1);
+      return;
+    }
+    // The place on the map is the centre of the chosen city (the database rounds it to about 1 km).
+    const place = data.country && data.city ? cityPoint(data.country, data.city) : null;
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -158,13 +172,15 @@ export default function ConsultantOnboarding() {
           currency: data.currency,
           timezone: data.timezone,
           languages: data.languages,
-          linkedin_url: data.linkedinUrl || null,
+          linkedin_url: linkedinUrl,
+          ...(credlyUsername ? { credly_username: credlyUsername } : {}),
           github_url: data.githubUrl || null,
           personal_website: data.personalWebsite || null,
           nationality: data.nationality || null,
           city: data.city || null,
           country: data.country || null,
-          availability_status: 'offline',
+          latitude: place ? place.lat : null,
+          longitude: place ? place.lng : null,
         }, { onConflict: 'user_id' })
         .select('id')
         .single();
@@ -270,7 +286,8 @@ export default function ConsultantOnboarding() {
       setCurrentStep(STEP_COUNT - 1);
     } catch (err) {
       console.error(err);
-      toast.error(t('onboarding.error_generic'));
+      const failure = err as { code?: string; message?: string } | null;
+      toast.error(failure?.code === '22023' && failure.message ? failure.message : t('onboarding.error_generic'));
     } finally {
       setSubmitting(false);
     }
@@ -278,7 +295,11 @@ export default function ConsultantOnboarding() {
 
   const canNext = () => {
     if (currentStep === 0) return true; // Import is always skippable
-    if (currentStep === 1) return data.displayName.trim().length > 0 && data.bio.trim().length > 0;
+    if (currentStep === 1) {
+      const linkedinOk = !data.linkedinUrl.trim() || !!normalizeLinkedinUrl(data.linkedinUrl);
+      const credlyOk = !data.credlyUsername.trim() || !!normalizeCredlyUsername(data.credlyUsername);
+      return data.displayName.trim().length > 0 && data.bio.trim().length > 0 && linkedinOk && credlyOk;
+    }
     if (currentStep === 2) return data.skills.length > 0;
     return true;
   };

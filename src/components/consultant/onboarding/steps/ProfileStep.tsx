@@ -4,7 +4,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { X, Globe, Linkedin, Github } from 'lucide-react';
+import { X, Globe, Linkedin, Github, Award, MapPin } from 'lucide-react';
+import { COUNTRIES, citiesOf } from '@/lib/geo';
+import { CREDLY_HINT, LINKEDIN_HINT, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 import type { OnboardingData } from '../ConsultantOnboarding';
 
 const timezones = [
@@ -29,16 +31,6 @@ const allLanguages = [
   { code: 'tr', label: 'Türkçe' },
 ];
 
-const countries = [
-  'Saudi Arabia', 'UAE', 'Qatar', 'Kuwait', 'Bahrain', 'Oman',
-  'Egypt', 'Jordan', 'Lebanon', 'Iraq', 'Morocco', 'Tunisia',
-  'United States', 'United Kingdom', 'Germany', 'France', 'Netherlands',
-  'India', 'Pakistan', 'Philippines', 'Malaysia', 'Singapore',
-  'Turkey', 'South Africa', 'Nigeria', 'Brazil', 'Canada', 'Australia',
-  'Japan', 'South Korea', 'China', 'Indonesia', 'Thailand', 'Vietnam',
-  'Italy', 'Spain', 'Poland', 'Switzerland', 'Sweden', 'Ireland',
-];
-
 const nationalities = [
   'Saudi', 'Emirati', 'Qatari', 'Kuwaiti', 'Bahraini', 'Omani',
   'Egyptian', 'Jordanian', 'Lebanese', 'Iraqi', 'Moroccan', 'Tunisian',
@@ -48,37 +40,6 @@ const nationalities = [
   'Japanese', 'Korean', 'Chinese', 'Indonesian', 'Thai', 'Vietnamese',
   'Italian', 'Spanish', 'Polish', 'Swiss', 'Swedish', 'Irish',
 ];
-
-const citiesByCountry: Record<string, string[]> = {
-  'Saudi Arabia': ['Riyadh', 'Jeddah', 'Dammam', 'Khobar', 'Mecca', 'Medina', 'Tabuk', 'Abha'],
-  'UAE': ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Fujairah'],
-  'Qatar': ['Doha', 'Al Wakrah', 'Al Khor', 'Lusail'],
-  'Kuwait': ['Kuwait City', 'Hawalli', 'Salmiya'],
-  'Bahrain': ['Manama', 'Riffa', 'Muharraq'],
-  'Oman': ['Muscat', 'Salalah', 'Sohar'],
-  'Egypt': ['Cairo', 'Alexandria', 'Giza', 'Sharm El Sheikh'],
-  'Jordan': ['Amman', 'Aqaba', 'Irbid'],
-  'Lebanon': ['Beirut', 'Tripoli', 'Sidon'],
-  'India': ['Mumbai', 'Bangalore', 'Hyderabad', 'Delhi', 'Chennai', 'Pune', 'Kolkata', 'Noida', 'Gurgaon'],
-  'Pakistan': ['Karachi', 'Lahore', 'Islamabad', 'Rawalpindi'],
-  'United States': ['New York', 'San Francisco', 'Chicago', 'Dallas', 'Houston', 'Atlanta', 'Los Angeles', 'Seattle', 'Boston'],
-  'United Kingdom': ['London', 'Manchester', 'Birmingham', 'Edinburgh', 'Leeds'],
-  'Germany': ['Berlin', 'Munich', 'Frankfurt', 'Hamburg', 'Cologne', 'Walldorf'],
-  'France': ['Paris', 'Lyon', 'Marseille', 'Toulouse'],
-  'Netherlands': ['Amsterdam', 'Rotterdam', 'The Hague', 'Utrecht'],
-  'Singapore': ['Singapore'],
-  'Malaysia': ['Kuala Lumpur', 'Penang', 'Johor Bahru'],
-  'Philippines': ['Manila', 'Cebu', 'Davao'],
-  'Turkey': ['Istanbul', 'Ankara', 'Izmir'],
-  'South Africa': ['Johannesburg', 'Cape Town', 'Durban'],
-  'Nigeria': ['Lagos', 'Abuja', 'Port Harcourt'],
-  'Brazil': ['São Paulo', 'Rio de Janeiro', 'Brasília'],
-  'Canada': ['Toronto', 'Vancouver', 'Montreal', 'Calgary'],
-  'Australia': ['Sydney', 'Melbourne', 'Brisbane', 'Perth'],
-  'Japan': ['Tokyo', 'Osaka', 'Nagoya'],
-  'South Korea': ['Seoul', 'Busan'],
-  'China': ['Shanghai', 'Beijing', 'Shenzhen', 'Guangzhou'],
-};
 
 const currencies = ['USD', 'EUR', 'SAR', 'AED', 'GBP', 'QAR', 'KWD', 'BHD', 'OMR', 'EGP', 'INR', 'PKR', 'MYR', 'SGD', 'AUD', 'CAD', 'CHF'];
 
@@ -97,7 +58,9 @@ export default function ProfileStep({ data, onChange }: Props) {
     onChange({ languages: langs });
   };
 
-  const availableCities = data.country ? (citiesByCountry[data.country] || []) : [];
+  const availableCities = data.country ? citiesOf(data.country) : [];
+  const linkedinBad = !!data.linkedinUrl.trim() && !normalizeLinkedinUrl(data.linkedinUrl);
+  const credlyBad = !!data.credlyUsername.trim() && !normalizeCredlyUsername(data.credlyUsername);
 
   return (
     <div className="space-y-5">
@@ -140,10 +103,10 @@ export default function ProfileStep({ data, onChange }: Props) {
         </div>
         <div className="space-y-1.5">
           <Label>Country</Label>
-          <Select value={data.country} onValueChange={v => onChange({ country: v, city: '' })}>
+          <Select value={COUNTRIES.includes(data.country) ? data.country : ''} onValueChange={v => onChange({ country: v, city: '' })}>
             <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
             <SelectContent>
-              {countries.map(c => (
+              {COUNTRIES.map(c => (
                 <SelectItem key={c} value={c}>{c}</SelectItem>
               ))}
             </SelectContent>
@@ -151,7 +114,7 @@ export default function ProfileStep({ data, onChange }: Props) {
         </div>
         <div className="space-y-1.5">
           <Label>City</Label>
-          <Select value={data.city} onValueChange={v => onChange({ city: v })} disabled={!data.country}>
+          <Select value={availableCities.includes(data.city) ? data.city : ''} onValueChange={v => onChange({ city: v })} disabled={!data.country}>
             <SelectTrigger><SelectValue placeholder={data.country ? 'Select city' : 'Select country first'} /></SelectTrigger>
             <SelectContent>
               {availableCities.map(c => (
@@ -161,6 +124,10 @@ export default function ProfileStep({ data, onChange }: Props) {
           </Select>
         </div>
       </div>
+      <p className="-mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
+        Choose your city so that clients find you on the map. They see the area of the city, never an address.
+      </p>
 
       {/* Rate & Currency */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -208,9 +175,21 @@ export default function ProfileStep({ data, onChange }: Props) {
             <Input
               value={data.linkedinUrl}
               onChange={e => onChange({ linkedinUrl: e.target.value })}
-              placeholder="https://linkedin.com/in/your-profile"
+              placeholder="https://www.linkedin.com/in/your-name"
+              aria-label="LinkedIn profile address"
             />
           </div>
+          {linkedinBad && <p className="text-[11px] text-destructive" role="alert">{LINKEDIN_HINT}</p>}
+          <div className="flex items-center gap-2">
+            <Award className="w-4 h-4 text-muted-foreground shrink-0" />
+            <Input
+              value={data.credlyUsername}
+              onChange={e => onChange({ credlyUsername: e.target.value })}
+              placeholder="Your Credly username or profile address"
+              aria-label="Credly username or profile address"
+            />
+          </div>
+          {credlyBad && <p className="text-[11px] text-destructive" role="alert">{CREDLY_HINT}</p>}
           <div className="flex items-center gap-2">
             <Github className="w-4 h-4 text-muted-foreground shrink-0" />
             <Input
@@ -228,6 +207,9 @@ export default function ProfileStep({ data, onChange }: Props) {
             />
           </div>
         </div>
+        <p className="text-[11px] text-muted-foreground">
+          The platform team opens your LinkedIn and Credly links when it reviews your application. Clients see them as "linked", and as "checked" once the team confirmed them.
+        </p>
       </div>
 
       {/* Languages - Multi-select badges */}
