@@ -9,10 +9,12 @@ import "./index.css";
 import { installCspViolationLogger } from "./lib/diagnostics";
 import { initSentry } from "./lib/sentry";
 import { installGlobalErrorReporting } from "./lib/errorReporter";
+import { installStaleChunkReload } from "./lib/staleChunkReload";
 
 initSentry();
 installCspViolationLogger();
 installGlobalErrorReporting();
+installStaleChunkReload();
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
