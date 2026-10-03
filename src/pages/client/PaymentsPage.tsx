@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { generateInvoicePdf } from '@/lib/invoicePdf';
 import { generateReceiptPdf } from '@/lib/receiptPdf';
 import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
+import { PayInvoiceCard } from '@/components/invoice/PayInvoiceCard';
 import { InvoiceDisputeSection } from '@/components/invoice/InvoiceDisputeSection';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
@@ -148,6 +149,9 @@ export default function PaymentsPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-semibold text-foreground">{payment.invoice}</p>
+                          {payment.status === 'pending' && payment.client_reported_at && (
+                            <Badge variant="outline" className="text-[10px]">Reported, waiting for confirmation</Badge>
+                          )}
                           <Badge variant="secondary" className={`text-[10px] gap-1 ${sc.color}`}>
                             <StatusIcon className="w-3 h-3" /> {sc.label}
                           </Badge>
@@ -296,6 +300,8 @@ export default function PaymentsPage() {
                   </Link>
                 </div>
               )}
+
+              <PayInvoiceCard key={selectedPayment.id} payment={selectedPayment} />
 
               <PaymentStatusTimeline payment={selectedPayment} />
 

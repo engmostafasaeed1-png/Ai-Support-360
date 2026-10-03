@@ -13,7 +13,7 @@ export function useClientPayments() {
       if (!user) return [];
       const { data, error } = await supabase
         .from('payments')
-        .select('id, amount, currency, vat_amount, status, invoice_number, payment_method, description, due_date, created_at, updated_at, ticket_id, consultant_id, session_id')
+        .select('id, amount, currency, vat_amount, status, invoice_number, payment_method, description, due_date, created_at, updated_at, ticket_id, consultant_id, session_id, kind, reference, client_reported_at, client_transfer_reference, client_transfer_date, rejection_note, paid_at')
         .eq('client_id', user.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -88,6 +88,13 @@ export function useClientPayments() {
         ticket_sap_module: p.ticket_id ? ticketMap[p.ticket_id]?.sap_module : null,
         ticket_urgency: p.ticket_id ? ticketMap[p.ticket_id]?.urgency : null,
         session_id: p.session_id || null,
+        kind: p.kind || 'invoice',
+        reference: p.reference || null,
+        client_reported_at: p.client_reported_at || null,
+        client_transfer_reference: p.client_transfer_reference || null,
+        client_transfer_date: p.client_transfer_date || null,
+        rejection_note: p.rejection_note || null,
+        paid_at: p.paid_at || null,
         session_type: p.session_id ? sessionMap[p.session_id]?.session_type : null,
         session_status: p.session_id ? sessionMap[p.session_id]?.status : null,
         session_scheduled_at: p.session_id ? sessionMap[p.session_id]?.scheduled_at : null,
