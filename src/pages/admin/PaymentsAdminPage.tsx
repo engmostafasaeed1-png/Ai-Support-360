@@ -11,11 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertTriangle, Plus, ShieldCheck, Wallet } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { AlertTriangle, CheckCircle2, CreditCard, Plus, ShieldCheck, Wallet, XCircle } from 'lucide-react';
 import {
   useAdminInvoices, useAdminPayouts, useBillingPeople, useClientTicketsForInvoice, useConfirmPayment,
   useConsultantPayoutDetails, useCreateInvoice, usePaymentSettings, useRejectReport, useSavePaymentSetting,
-  useSetPayoutStatus, useVerifyPayoutDetails, type BankDetails,
+  usePaymobStatus, useProviderEvents, useSetPayoutStatus, useVerifyPayoutDetails, type BankDetails, type ProviderEvent,
 } from '@/hooks/useBilling';
 
 const money = (n: number | string | null | undefined, currency = 'USD') => {
@@ -78,7 +79,7 @@ export default function PaymentsAdminPage() {
             <Wallet className="w-6 h-6 text-primary" /> Payments & payouts
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Clients pay the platform by bank transfer, you confirm the money arrived, then you pay the consultant their share (invoice minus the platform commission).
+            Clients pay the platform by card (confirmed automatically) or by bank transfer (you confirm the money arrived), then you pay the consultant their share (invoice minus the platform commission).
           </p>
         </div>
         <Button className="gap-1.5" onClick={() => setNewInvoiceOpen(true)}>
@@ -166,6 +167,12 @@ export default function PaymentsAdminPage() {
                               Not reported yet{i.rejection_note ? ` (last answer: ${i.rejection_note})` : ''}
                             </span>
                           )}
+                          {i.provider_status === 'initiated' && (
+                            <div className="mt-1"><Badge variant="outline" className="text-[10px]">Card payment started {when(i.card_started_at)}</Badge></div>
+                          )}
+                          {i.provider_status === 'failed' && (
+                            <div className="mt-1"><Badge variant="destructive" className="text-[10px]">Last card attempt failed</Badge></div>
+                          )}
                         </TableCell>
                         <TableCell className="text-end whitespace-nowrap">
                           <Button size="sm" className="h-8 text-xs me-2" onClick={() => setConfirmFor(i)}>Confirm payment</Button>
@@ -227,11 +234,14 @@ export default function PaymentsAdminPage() {
                         <TableCell className="text-sm">{i.consultant_name || '-'}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{when(i.created_at)}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {i.paid_at ? <>{when(i.paid_at)}<div className="font-mono">{i.bank_reference}</div></> : '-'}
+                          {i.paid_at ? <>{when(i.paid_at)}<div className="font-mono">{i.bank_reference}</div>{i.payment_method === 'card' && <Badge variant="outline" className="text-[10px] mt-0.5">Card</Badge>}</> : '-'}
                         </TableCell>
                         <TableCell className="text-end font-semibold">{money(i.amount, i.currency)}</TableCell>
                         <TableCell className="text-end">
                           <Badge variant={invoiceVariant[i.status] || 'outline'} className="text-[10px] capitalize">{i.status === 'completed' ? 'paid' : i.status}</Badge>
+                          {(i.provider_status === 'refunded' || i.provider_status === 'voided') && (
+                            <div className="mt-0.5"><Badge variant="destructive" className="text-[10px]">Card {i.provider_status}</Badge></div>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -672,6 +682,136 @@ function SettingsTab() {
           </div>
         </CardContent>
       </Card>
+
+      <CardPaymentsCard
+        commissionSet={settingsQ.data?.commission !== null && settingsQ.data?.commission !== undefined}
+        cardsOn={!!settingsQ.data?.cards}
+      />
     </div>
+  );
+}
+
+function CardPaymentsCard({ commissionSet, cardsOn }: { commissionSet: boolean; cardsOn: boolean }) {
+  const statusQ = usePaymobStatus();
+  const eventsQ = useProviderEvents();
+  const save = useSavePaymentSetting();
+  const status = statusQ.data;
+  const keysReady =
+    !!status &&
+    status.configured.secret_key &&
+    status.configured.public_key &&
+    status.configured.hmac_secret &&
+    status.configured.card_integration_id &&
+    status.modes_match;
+  const canSwitchOn = keysReady && commissionSet;
+  const checks: Array<[string, boolean | undefined]> = [
+    ['Secret key', status?.configured.secret_key],
+    ['Public key', status?.configured.public_key],
+    ['HMAC secret', status?.configured.hmac_secret],
+    ['Card integration ID', status?.configured.card_integration_id],
+  ];
+  const events: ProviderEvent[] = eventsQ.data ?? [];
+
+  return (
+    <Card className="rounded-2xl border-border/50 md:col-span-2">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2"><CreditCard className="w-4 h-4" /> Card payments (Paymob)</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-xs text-muted-foreground">
+          Clients can pay an open invoice by card on Paymob's secure page. The invoice is then marked as paid and the consultant payout is created
+          automatically, exactly as when you confirm a bank transfer. Bank transfer stays available, and paying the consultant stays manual (Payouts tab).
+          Paymob pays out to your bank account in EGP.
+        </p>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Set-up</p>
+            {statusQ.isLoading ? (
+              <Skeleton className="h-24 rounded-lg" />
+            ) : statusQ.isError || !status ? (
+              <p className="text-xs text-destructive">The card payment service did not answer. It goes live when the latest version of the project is published.</p>
+            ) : (
+              <>
+                <ul className="text-sm space-y-1">
+                  {checks.map(([label, ok]) => (
+                    <li key={label} className="flex items-center gap-2">
+                      {ok ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <XCircle className="w-4 h-4 text-destructive" />}
+                      <span>{label}</span>
+                      <span className="text-xs text-muted-foreground">{ok ? 'set' : 'missing'}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <Badge variant={status.mode === 'live' ? 'default' : 'secondary'} className="text-[10px]">
+                    {status.mode === 'live' ? 'Live mode: real money' : status.mode === 'test' ? 'Test mode: no real money' : 'Mode unknown'}
+                  </Badge>
+                  {!status.modes_match && <Badge variant="destructive" className="text-[10px]">Secret and public key are from different modes</Badge>}
+                </div>
+                <p className="text-[11px] text-muted-foreground break-all">
+                  Paymob reports every payment to <span className="font-mono">{status.webhook_url}</span>. This address is sent with each payment, so nothing has to be set for it in the Paymob dashboard.
+                </p>
+                <p className="text-[11px] text-muted-foreground">The keys are stored as secrets of the project (Lovable: Cloud, Secrets). They are never shown here.</p>
+              </>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Offer card payments to clients</p>
+            <div className="flex items-center gap-3">
+              <Switch
+                checked={cardsOn}
+                disabled={save.isPending || (!cardsOn && !canSwitchOn)}
+                onCheckedChange={(on) => save.mutate({ key: 'card_payments_enabled', value: on })}
+                aria-label="Offer card payments to clients"
+              />
+              <span className="text-sm">{cardsOn ? 'On: clients see "Pay by card"' : 'Off: clients can only pay by bank transfer'}</span>
+            </div>
+            {!cardsOn && !canSwitchOn && (
+              <p className="text-xs text-muted-foreground">
+                {!keysReady ? 'Add the four Paymob secrets first (all from the same mode).' : 'Set the platform commission first (the card above).'}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Last messages from Paymob</p>
+          {eventsQ.isLoading ? (
+            <Skeleton className="h-16 rounded-lg" />
+          ) : events.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No card payment yet.</p>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Received</TableHead>
+                    <TableHead>What</TableHead>
+                    <TableHead className="text-end">Amount</TableHead>
+                    <TableHead>Result</TableHead>
+                    <TableHead>Via</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {events.map((e) => (
+                    <TableRow key={e.id}>
+                      <TableCell className="text-xs">{when(e.created_at)}</TableCell>
+                      <TableCell className="text-xs capitalize">{e.kind}</TableCell>
+                      <TableCell className="text-end text-sm">{money(e.amount, e.currency ?? 'USD')}</TableCell>
+                      <TableCell className="text-xs">
+                        <Badge variant={e.outcome === 'applied' || e.outcome === 'recorded' ? 'default' : 'destructive'} className="text-[10px]">{e.outcome ?? '-'}</Badge>
+                        {e.detail && <div className="text-muted-foreground mt-0.5 max-w-[240px]">{e.detail}</div>}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{e.delivered_via}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

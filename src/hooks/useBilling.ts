@@ -88,6 +88,94 @@ export function useReportPayment() {
   });
 }
 
+/* ----------------------------------------------------------------- card */
+
+export type ProviderEvent = {
+  id: string;
+  created_at: string;
+  kind: string;
+  amount: number | null;
+  currency: string | null;
+  outcome: string | null;
+  detail: string | null;
+  delivered_via: string;
+  order_id: string | null;
+  transaction_id: string | null;
+};
+
+export type PaymobStatus = {
+  ok: boolean;
+  configured: { secret_key: boolean; public_key: boolean; hmac_secret: boolean; card_integration_id: boolean };
+  mode: 'test' | 'live' | 'unknown';
+  modes_match: boolean;
+  webhook_url: string;
+  return_url: string;
+};
+
+/** The edge functions answer with JSON; the message in it is what the person should read. */
+async function functionMessage(error: any): Promise<string> {
+  try {
+    const body = await error?.context?.json?.();
+    if (body?.error) return body.provider_message ? `${body.error} (${body.provider_message})` : String(body.error);
+  } catch {
+    // not JSON: use the generic text below
+  }
+  return error?.message || 'Request failed';
+}
+
+export function useCardPaymentsEnabled(enabled = true) {
+  return useQuery({
+    queryKey: ['card-payments-enabled'],
+    enabled,
+    staleTime: 60_000,
+    queryFn: () => rpc<boolean>('card_payments_enabled'),
+  });
+}
+
+export function useStartCardPayment() {
+  return useMutation({
+    mutationFn: async (paymentId: string) => {
+      const { data, error } = await supabase.functions.invoke('paymob-create-payment', { body: { action: 'create', payment_id: paymentId } });
+      if (error) throw new Error(await functionMessage(error));
+      const url = data?.checkout_url;
+      if (typeof url !== 'string' || !/^https:\/\//i.test(url)) throw new Error('The card payment could not be started');
+      return url;
+    },
+    onSuccess: (url) => {
+      window.location.assign(url);
+    },
+    onError: fail('Could not start the card payment'),
+  });
+}
+
+export function usePaymobStatus(enabled = true) {
+  return useQuery({
+    queryKey: ['paymob-status'],
+    enabled,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('paymob-create-payment', { body: { action: 'status' } });
+      if (error) throw new Error(await functionMessage(error));
+      return data as PaymobStatus;
+    },
+  });
+}
+
+export function useProviderEvents(enabled = true) {
+  return useQuery({
+    queryKey: ['provider-events'],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await db.from('payment_provider_events')
+        .select('id, created_at, kind, amount, currency, outcome, detail, delivered_via, order_id, transaction_id')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as ProviderEvent[];
+    },
+  });
+}
+
 /* ----------------------------------------------------------- consultant */
 
 export function useMyPayoutDetails() {
@@ -214,7 +302,7 @@ export function usePaymentSettings() {
     queryKey: ['payment-settings'],
     queryFn: async () => {
       const { data, error } = await db.from('platform_settings').select('key, value')
-        .in('key', ['commission_percent', 'vat_percent', 'platform_bank_details']);
+        .in('key', ['commission_percent', 'vat_percent', 'platform_bank_details', 'card_payments_enabled']);
       if (error) throw new Error(error.message);
       const map: Record<string, any> = {};
       (data ?? []).forEach((r: any) => { map[r.key] = r.value; });
@@ -223,6 +311,7 @@ export function usePaymentSettings() {
         commission: num(map.commission_percent),
         vat: num(map.vat_percent),
         bank: (map.platform_bank_details && typeof map.platform_bank_details === 'object' ? map.platform_bank_details : {}) as BankDetails,
+        cards: map.card_payments_enabled === true,
       };
     },
   });
@@ -231,7 +320,7 @@ export function usePaymentSettings() {
 export function useSavePaymentSetting() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (v: { key: 'commission_percent' | 'vat_percent' | 'platform_bank_details'; value: unknown }) => {
+    mutationFn: async (v: { key: 'commission_percent' | 'vat_percent' | 'platform_bank_details' | 'card_payments_enabled'; value: unknown }) => {
       const { error } = await db.from('platform_settings').upsert({ key: v.key, value: v.value }, { onConflict: 'key' });
       if (error) throw new Error(error.message);
     },
@@ -239,6 +328,7 @@ export function useSavePaymentSetting() {
       toast.success('Saved');
       qc.invalidateQueries({ queryKey: ['payment-settings'] });
       qc.invalidateQueries({ queryKey: ['payment-instructions'] });
+      qc.invalidateQueries({ queryKey: ['card-payments-enabled'] });
     },
     onError: fail('Could not save'),
   });
