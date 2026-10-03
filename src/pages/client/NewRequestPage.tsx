@@ -1089,11 +1089,6 @@ export default function NewRequestPage() {
                       .map(c => (
                         <div
                           key={c.id}
-                          className={`p-3 rounded-xl border cursor-pointer transition-all hover:shadow-sm ${
-                            selectedConsultant?.id === c.id
-                              ? 'border-accent bg-accent/5 ring-1 ring-accent/30'
-                              : 'border-border/50 hover:border-accent/30'
-                          }`}
                           role="button"
                           tabIndex={0}
                           aria-pressed={picked.some(p => p.id === c.id)}
