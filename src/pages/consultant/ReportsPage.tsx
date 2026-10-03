@@ -64,20 +64,26 @@ export default function ConsultantReportsPage() {
       rangeTickets.forEach(t => { moduleCounts[t.sap_module] = (moduleCounts[t.sap_module] || 0) + 1; });
       const moduleData = Object.entries(moduleCounts).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
 
-      // Payments / earnings
+      // Payments / earnings: earned = the payouts (invoice minus the platform commission), pending = open invoices without VAT
       const { data: payments } = await supabase
         .from('payments')
+        .select('amount, vat_amount, status, created_at')
+        .eq('consultant_id', consultant.id);
+      const { data: payouts } = await supabase
+        .from('payouts')
         .select('amount, status, created_at')
         .eq('consultant_id', consultant.id);
 
       const allPayments = payments || [];
       const rangePayments = allPayments.filter(p => p.created_at >= fromISO && p.created_at < toISO);
-      const totalEarned = rangePayments.filter(p => p.status === 'completed').reduce((s, p) => s + Number(p.amount), 0);
-      const pendingAmount = rangePayments.filter(p => p.status === 'pending').reduce((s, p) => s + Number(p.amount), 0);
+      const allPayouts = (payouts || []).filter(p => p.status !== 'failed');
+      const rangePayouts = allPayouts.filter(p => p.created_at >= fromISO && p.created_at < toISO);
+      const totalEarned = rangePayouts.reduce((s, p) => s + Number(p.amount), 0);
+      const pendingAmount = rangePayments.filter(p => p.status === 'pending').reduce((s, p) => s + Number(p.amount) - Number(p.vat_amount || 0), 0);
 
       // Monthly earnings trend
       const monthlyEarnings: Record<string, number> = {};
-      allPayments.filter(p => p.status === 'completed').forEach(p => {
+      allPayouts.forEach(p => {
         const m = format(new Date(p.created_at), 'MMM');
         monthlyEarnings[m] = (monthlyEarnings[m] || 0) + Number(p.amount);
       });
@@ -138,7 +144,7 @@ export default function ConsultantReportsPage() {
           Created: format(new Date(t.created_at), 'PPP'),
           Resolved: t.resolved_at ? format(new Date(t.resolved_at), 'PPP') : '—',
         })),
-        earningsExport: rangePayments.map(p => ({
+        earningsExport: rangePayouts.map(p => ({
           Amount: `$${Number(p.amount).toFixed(2)}`, Status: p.status || 'unknown',
           Date: format(new Date(p.created_at), 'PPP'),
         })),

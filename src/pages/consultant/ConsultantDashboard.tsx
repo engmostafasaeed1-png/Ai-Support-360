@@ -95,17 +95,23 @@ export default function ConsultantDashboard() {
         .order('created_at', { ascending: false })
         .limit(5);
 
+      // Earned = what the consultant really receives (the payouts, after the platform commission).
+      // Pending = invoices the client has not paid yet, without VAT.
       const { data: payments } = await supabase
         .from('payments')
-        .select('amount, status, created_at')
+        .select('amount, vat_amount, status, created_at')
+        .eq('consultant_id', consultant.id);
+      const { data: payouts } = await supabase
+        .from('payouts')
+        .select('amount, status')
         .eq('consultant_id', consultant.id);
 
-      const totalEarned = (payments || [])
-        .filter(p => p.status === 'completed')
+      const totalEarned = (payouts || [])
+        .filter(p => p.status !== 'failed')
         .reduce((sum, p) => sum + Number(p.amount), 0);
       const pending = (payments || [])
         .filter(p => p.status === 'pending')
-        .reduce((sum, p) => sum + Number(p.amount), 0);
+        .reduce((sum, p) => sum + Number(p.amount) - Number(p.vat_amount || 0), 0);
 
       const { data: ratings } = await supabase
         .from('consultant_reviews')
