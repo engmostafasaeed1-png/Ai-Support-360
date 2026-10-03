@@ -10,6 +10,8 @@ import { User, Globe, Clock, DollarSign, Save, RotateCcw, Loader2, Brain } from 
 import InterviewTranscript from '@/components/consultant/InterviewTranscript';
 import AvatarUpload from '@/components/profile/AvatarUpload';
 import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
+import ConsultantLinksCard from '@/components/consultant/ConsultantLinksCard';
+import AvailabilityToggle from '@/components/consultant/AvailabilityToggle';
 import { useConsultantProfile } from '@/hooks/useConsultantProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -98,7 +100,8 @@ export default function ProfilePage() {
           <h1 className="text-2xl font-bold text-foreground">Profile Management</h1>
           <p className="text-sm text-muted-foreground mt-1">Keep your profile up to date to attract more clients.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <AvailabilityToggle variant="pill" />
           <Button variant="outline" size="sm" onClick={() => setReinterviewOpen(true)}>
             <RotateCcw className="w-4 h-4 me-1" /> {t('interview.request_reinterview', 'Request Re-Interview')}
           </Button>
@@ -209,6 +212,8 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
+
+      <ConsultantLinksCard />
 
       {/* AI Skills Score + Credibility Credits */}
       {(p.ai_skills_score || 0) > 0 || (p.credibility_credits || 0) > 0 ? (
