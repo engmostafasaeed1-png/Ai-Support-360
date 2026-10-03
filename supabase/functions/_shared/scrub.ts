@@ -37,10 +37,12 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/** A number that follows "Note", "KBA" or "OSS" is a public SAP reference and stays. */
+/** A number that follows "Note", "KBA" or "OSS" (also in a list such as "Notes 2270407 and 2345678") is a public SAP reference and stays. */
 function isNoteReference(whole: string, offset: number): boolean {
   const before = whole.slice(Math.max(0, offset - 16), offset);
-  return /(?:\bnotes?|\bkba|\boss)[^\d\n]{0,8}$/i.test(before);
+  if (/(?:\bnotes?|\bkba|\boss)[^\d\n]{0,8}$/i.test(before)) return true;
+  const longer = whole.slice(Math.max(0, offset - 120), offset);
+  return /(?:\bnotes?|\bkbas?|\boss)\s*(?:no\.?|numbers?|nr\.?|#|:)?\s*(?:\d{5,8}\s*(?:,|;|\/|&|and|or)\s*)+$/i.test(longer);
 }
 
 /** The full name and each distinctive word of it, to be removed from a text. */

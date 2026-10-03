@@ -2,11 +2,25 @@
 // Sources: only knowledge that an administrator has published (anonymised articles and solved cases, admin-written playbooks),
 // found by the database function search_knowledge. Nothing from another client's ticket, chat or session ever reaches this prompt or the answer.
 // When nothing published fits, the answer is clearly marked as general SAP guidance.
+// SAP references: an SAP Note number is shown only when a reviewed source cites it (the model may not invent one). The link to SAP Community's own
+// search carries a few generic words. When an administrator switches it on, up to 3 matching SAP Community discussions are looked up and shown as links.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit, getUserRoles, hasAnyRole, ADMIN_ROLES } from "../_shared/security.ts";
-import { scrubText } from "../_shared/scrub.ts";
+import { scrubText, type DenyTerm } from "../_shared/scrub.ts";
+import { buildDenyList } from "../_shared/knowledge.ts";
+import {
+  blockedWords,
+  cleanSearchTerms,
+  communitySearchUrl,
+  extractNoteNumbers,
+  MAX_NOTES,
+  noteUrl,
+  pickSearchTerms,
+  redactUnverifiedNotes,
+} from "../_shared/sapRefs.ts";
+import { searchCommunity, type CommunityHit } from "../_shared/sapCommunity.ts";
 
 const VALID_MODELS = ["openai/gpt-6-astra"];
 const DEFAULT_MODEL = "openai/gpt-6-astra";
@@ -59,17 +73,22 @@ const SUGGEST_TOOL = {
               title: { type: "string", description: "Short title of the suggestion" },
               summary: { type: "string", description: "One or two sentences: why this fits the ticket" },
               steps: { type: "array", items: { type: "string" }, description: "Short concrete steps, one action each" },
-              tcodes: { type: "array", items: { type: "string" }, description: "SAP transaction codes that are used" },
+              tcodes: { type: "array", items: { type: "string" }, description: "SAP transaction codes that are used (empty list if none)" },
               confidence: { type: "string", enum: ["high", "medium", "low"] },
               source_refs: { type: "array", items: { type: "integer" }, description: "Numbers of the knowledge items used (empty for general guidance)" },
             },
-            required: ["title", "summary", "steps", "confidence", "source_refs"],
+            required: ["title", "summary", "steps", "tcodes", "confidence", "source_refs"],
             additionalProperties: false,
           },
         },
-        note: { type: "string", description: "A short remark for the client, for example when a ticket is the better way" },
+        search_terms: {
+          type: "array",
+          items: { type: "string" },
+          description: "2 to 5 single lowercase words someone would type into SAP Community to find help for this ticket: a transaction code, an error number or the key nouns. No names of people, companies or systems.",
+        },
+        note: { type: "string", description: "A short remark for the client, for example when a ticket is the better way (empty string when there is nothing to add)" },
       },
-      required: ["suggestions"],
+      required: ["suggestions", "search_terms", "note"],
       additionalProperties: false,
     },
   },
@@ -126,9 +145,17 @@ function parseToolResult(data: any): any | null {
   }
 }
 
+/** Cuts a long text at the end of a sentence when it can, otherwise with an ellipsis. */
+function shorten(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const end = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("! "), cut.lastIndexOf("? "));
+  return end > max * 0.5 ? cut.slice(0, end + 1) : `${cut.slice(0, max - 1).trimEnd()}…`;
+}
+
 function clean(value: unknown, max: number): string {
   if (typeof value !== "string") return "";
-  return scrubText(value.replace(/\s+/g, " ").trim()).text.slice(0, max);
+  return shorten(scrubText(value.replace(/\s+/g, " ").trim()).text, max);
 }
 
 function languageName(code: string | undefined): string {
@@ -137,6 +164,11 @@ function languageName(code: string | undefined): string {
 
 function basisOf(kind: KnowledgeItem["kind"]): Basis {
   return kind === "article" ? "knowledge_base" : kind === "playbook" ? "playbook" : "past_case";
+}
+
+/** The SAP Note numbers that our reviewed items cite. */
+function noteNumbersOf(items: ReadonlyArray<KnowledgeItem>): string[] {
+  return [...new Set(items.flatMap((it) => extractNoteNumbers(`${it.problem ?? ""}\n${it.solution ?? ""}`)))];
 }
 
 function normalise(raw: any, items: KnowledgeItem[], grounded: boolean): Suggestion[] {
@@ -152,13 +184,16 @@ function normalise(raw: any, items: KnowledgeItem[], grounded: boolean): Suggest
       : [];
     if (grounded && refs.length === 0) continue; // a knowledge answer must name the items it comes from
     const used = refs.map((n) => items[n - 1]);
+    // a note number survives only when a reviewed item cites it; the model cannot be trusted to remember note numbers correctly
+    const allowed = new Set<string>(noteNumbersOf(used));
+    const guard = (text: string) => redactUnverifiedNotes(text, allowed);
     const tcodes = [...new Set<string>((Array.isArray(s?.tcodes) ? s.tcodes : [])
       .map((x: unknown) => String(x ?? "").trim().toUpperCase())
       .filter((x: string) => /^[A-Z0-9_\/]{2,20}$/.test(x)))].slice(0, 8);
     out.push({
-      title,
-      summary: clean(s?.summary, 600),
-      steps,
+      title: guard(title),
+      summary: guard(clean(s?.summary, 600)),
+      steps: steps.map(guard),
       tcodes,
       confidence: s?.confidence === "high" || s?.confidence === "low" ? s.confidence : "medium",
       basis: grounded ? basisOf(used[0].kind) : "general",
@@ -205,15 +240,25 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
     const model = body.model && VALID_MODELS.includes(body.model) ? body.model : DEFAULT_MODEL;
 
-    // the administrator's switch (absent = on)
-    const { data: setting } = await admin.from("platform_settings").select("value").eq("key", "ai_suggestions_enabled").maybeSingle();
-    if (setting && setting.value === false) {
+    // the administrator's switches: suggestions (absent = on) and the live SAP Community look-up (absent = off)
+    const { data: settingRows } = await admin.from("platform_settings").select("key, value").in("key", ["ai_suggestions_enabled", "ai_sap_community_enabled"]);
+    const flag = (key: string): unknown => ((settingRows ?? []) as Array<{ key: string; value: unknown }>).find((r) => r.key === key)?.value;
+    if (flag("ai_suggestions_enabled") === false) {
       return json({ enabled: false, mode: "general", suggestions: [], sources: [] });
     }
+    const communityOn = flag("ai_sap_community_enabled") === true;
 
     // the caller's company: global knowledge and the company's own, never another company's
     const { data: member } = await admin.from("tenant_members").select("tenant_id").eq("user_id", user.id).not("accepted_at", "is", null).limit(1).maybeSingle();
     const tenantId: string | null = member?.tenant_id ?? null;
+
+    // the names of the caller, the caller's company and systems are removed from everything that leaves this server
+    let deny: DenyTerm[] = [];
+    try {
+      deny = await buildDenyList(admin, { client_id: user.id, consultant_id: null, tenant_id: tenantId }, []);
+    } catch (e) {
+      console.warn("deny list failed:", e instanceof Error ? e.message : String(e));
+    }
 
     const areas = [...new Set((body.sap_modules ?? []).map((a: string) => a.replace(/\s+/g, " ").trim()).filter(Boolean))].slice(0, 12);
     const areaLine = areas.map((a: string) => (a.toLowerCase() === "other" && body.sap_module_other ? `Other: ${body.sap_module_other}` : a)).join(", ");
@@ -224,7 +269,9 @@ serve(async (req) => {
         `Description: ${body.description}`,
         body.area_details ? `More details: ${body.area_details}` : "",
       ].filter(Boolean).join("\n"),
+      deny,
     ).text.slice(0, 6000);
+    const problemText = scrubText(`${body.title ?? ""}\n${body.description}`, deny).text;
     const language = languageName(body.preferred_language);
 
     // 1. published, anonymised knowledge
@@ -247,6 +294,7 @@ serve(async (req) => {
     let suggestions: Suggestion[] = [];
     let note = "";
     let mode: "knowledge" | "general" = "knowledge";
+    let rawTerms: unknown = [];
 
     if (items.length > 0) {
       const context = items
@@ -263,7 +311,9 @@ Rules:
 - Suggest an item only when it genuinely fits the ticket. If none fits, return an empty list.
 - At most 4 suggestions, best first. Every suggestion lists the numbers of the items it comes from.
 - Never write a company name, a person name, an e-mail address, a host name, a system ID or a document number. Leave such details out.
+- Write an SAP Note number only when it appears in the numbered items. Never guess or invent a note number.
 - confidence is "high" only when the item describes the same symptom in the same area.
+- search_terms: 2 to 5 single lowercase words someone would type into SAP Community to find help for this ticket (a transaction code, an error number or the key nouns). No names of people, companies or systems.
 - Write in ${language}. Keep every step short and concrete (one action each).`,
         `Draft ticket:\n${ticketText}\n\nKnowledge items:\n${context}`,
         model,
@@ -275,7 +325,8 @@ Rules:
       }
       const result = parseToolResult(await response.json());
       suggestions = normalise(result, items, true);
-      note = clean(result?.note, 300);
+      note = clean(result?.note, 400);
+      rawTerms = result?.search_terms;
     }
 
     // 2. nothing published fits: general guidance, marked as such
@@ -288,6 +339,8 @@ Rules:
 - At most 3 suggestions, best first. source_refs must be empty.
 - If the problem needs access to the client's own system, or the description is too unclear, say so in "note" and say that a ticket is the better way.
 - Never write a company name, a person name, an e-mail address, a host name, a system ID or a document number.
+- Do not write SAP Note numbers or KBA numbers: you cannot check them. You may say that a related SAP Note probably exists.
+- search_terms: 2 to 5 single lowercase words someone would type into SAP Community to find help for this ticket (a transaction code, an error number or the key nouns). No names of people, companies or systems.
 - Write in ${language}. Keep every step short and concrete (one action each).`,
         `Draft ticket:\n${ticketText}`,
         model,
@@ -299,12 +352,34 @@ Rules:
       }
       const result = parseToolResult(await response.json());
       suggestions = normalise(result, items, false);
-      note = clean(result?.note, 300) || (items.length === 0 ? "No stored solution matches your description yet." : "");
+      note = clean(result?.note, 400) || (items.length === 0 ? "No stored solution matches your description yet." : "");
+      rawTerms = result?.search_terms;
     }
 
     const usedIds = new Set(suggestions.flatMap((s) => s.source_ids));
-    const sources = items.filter((it) => usedIds.has(it.id)).map((it) => ({ id: it.id, kind: it.kind, title: clean(it.title, 160) }));
-    return json({ enabled: true, mode, suggestions, sources, note });
+    const usedItems = items.filter((it) => usedIds.has(it.id));
+    const sources = usedItems.map((it) => ({ id: it.id, kind: it.kind, title: clean(it.title, 160) }));
+
+    // SAP references: note numbers cited by the reviewed items that were used, and words for SAP Community
+    const notes = noteNumbersOf(usedItems).slice(0, MAX_NOTES).flatMap((number) => {
+      const url = noteUrl(number);
+      return url ? [{ number, url }] : [];
+    });
+    const blocked = blockedWords(deny);
+    const fromModel = cleanSearchTerms(rawTerms, blocked);
+    const terms = fromModel.length >= 2 ? fromModel : cleanSearchTerms(pickSearchTerms(problemText, 5), blocked);
+    const community: { enabled: boolean; items: CommunityHit[] } = { enabled: communityOn, items: [] };
+    if (communityOn && terms.length >= 2) community.items = await searchCommunity(terms);
+
+    return json({
+      enabled: true,
+      mode,
+      suggestions,
+      sources,
+      note,
+      notes,
+      references: { community_search_url: communitySearchUrl(terms), community },
+    });
   } catch (e) {
     console.error("ai-suggest error:", e instanceof Error ? e.message : String(e));
     return json({ error: "Request failed. Please try again." }, 500);

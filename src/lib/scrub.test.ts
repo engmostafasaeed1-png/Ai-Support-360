@@ -37,6 +37,12 @@ describe('scrubText', () => {
     expect(r.flags).toEqual(['number']);
   });
 
+  it('keeps every number of a list of SAP notes', () => {
+    const r = scrubText('See SAP Notes 2270407, 2345678 and 3012345, but PO 4500123456 goes.');
+    expect(r.text).toBe('See SAP Notes 2270407, 2345678 and 3012345, but PO [number] goes.');
+    expect(r.flags).toEqual(['number']);
+  });
+
   it('removes customer objects but keeps standard names', () => {
     const r = scrubText('Program ZFI_VENDOR_REPORT, report ZFI01, but standard FBL1N, MIRO, /IWFND/MAINT_SERVICE and ZERO stay');
     expect(r.text).toBe('Program [custom object], report [custom object], but standard FBL1N, MIRO, /IWFND/MAINT_SERVICE and ZERO stay');

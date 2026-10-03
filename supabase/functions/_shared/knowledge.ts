@@ -84,7 +84,9 @@ export interface DraftInput {
   tags: string[];
   ticketId: string | null;
   consultantId: string | null;
-  originKind: "session" | "ticket";
+  originKind: "session" | "ticket" | "manual";
+  /** The person who wrote an item by hand (null for items the AI learned). */
+  createdBy?: string | null;
   deny: DenyTerm[];
 }
 
@@ -113,6 +115,7 @@ export async function saveKnowledgeDraft(admin: Admin, input: DraftInput): Promi
     sap_modules: areas,
     tags: input.tags,
     source_ticket_id: input.ticketId,
+    created_by: input.createdBy ?? null,
     status: "draft",
   }).select("id").single();
   if (solError || !sol) return { status: "error", reason: "could not store the draft" };
