@@ -5399,6 +5399,7 @@ export type Database = {
         Row: {
           ai_suggested_category: string | null
           ai_suggested_priority: string | null
+          area_details: string | null
           client_id: string
           consultant_id: string | null
           cost_breakdown: Json | null
@@ -5427,6 +5428,8 @@ export type Database = {
           resolution_notes: string | null
           resolved_at: string | null
           sap_module: string
+          sap_module_other: string | null
+          sap_modules: string[]
           sla_breached: boolean | null
           sla_deadline: string | null
           sla_policy_id: string | null
@@ -5441,6 +5444,7 @@ export type Database = {
         Insert: {
           ai_suggested_category?: string | null
           ai_suggested_priority?: string | null
+          area_details?: string | null
           client_id: string
           consultant_id?: string | null
           cost_breakdown?: Json | null
@@ -5469,6 +5473,8 @@ export type Database = {
           resolution_notes?: string | null
           resolved_at?: string | null
           sap_module: string
+          sap_module_other?: string | null
+          sap_modules?: string[]
           sla_breached?: boolean | null
           sla_deadline?: string | null
           sla_policy_id?: string | null
@@ -5483,6 +5489,7 @@ export type Database = {
         Update: {
           ai_suggested_category?: string | null
           ai_suggested_priority?: string | null
+          area_details?: string | null
           client_id?: string
           consultant_id?: string | null
           cost_breakdown?: Json | null
@@ -5511,6 +5518,8 @@ export type Database = {
           resolution_notes?: string | null
           resolved_at?: string | null
           sap_module?: string
+          sap_module_other?: string | null
+          sap_modules?: string[]
           sla_breached?: boolean | null
           sla_deadline?: string | null
           sla_policy_id?: string | null
