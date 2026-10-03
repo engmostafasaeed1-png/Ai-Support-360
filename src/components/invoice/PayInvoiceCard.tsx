@@ -6,10 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Banknote, Copy, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Banknote, Copy, CheckCircle2, AlertTriangle, CreditCard, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useGuestMode } from '@/contexts/GuestModeContext';
-import { usePaymentInstructions, useReportPayment } from '@/hooks/useBilling';
+import { useCardPaymentsEnabled, usePaymentInstructions, useReportPayment, useStartCardPayment } from '@/hooks/useBilling';
 
 // today in the client's own time zone, as YYYY-MM-DD
 const today = () => new Date().toLocaleDateString('en-CA');
@@ -40,11 +40,13 @@ function CopyRow({ label, value }: { label: string; value?: string }) {
   );
 }
 
-/** "How to pay" for an open invoice: the platform bank details, the payment reference and the "I have paid" report. */
+/** "How to pay" for an open invoice: pay by card (when the administrator switched it on), or by bank transfer and tell us ("I have paid"). */
 export function PayInvoiceCard({ payment }: { payment: any }) {
   const { isGuest } = useGuestMode();
   const open = payment?.status === 'pending' && !isGuest;
   const { data: bank, isLoading } = usePaymentInstructions(open);
+  const { data: cardsOn } = useCardPaymentsEnabled(open);
+  const startCard = useStartCardPayment();
   const report = useReportPayment();
   const [reference, setReference] = useState('');
   const [date, setDate] = useState(today);
@@ -53,6 +55,9 @@ export function PayInvoiceCard({ payment }: { payment: any }) {
   if (!open) return null;
 
   const hasBank = !!bank && (bank.iban || bank.account_number);
+  const cardStartedAt = payment.card_started_at ? new Date(payment.card_started_at) : null;
+  const cardStartedRecently = payment.provider_status === 'initiated' && !!cardStartedAt && Date.now() - cardStartedAt.getTime() < 60 * 60 * 1000;
+  const cardFailed = payment.provider_status === 'failed';
 
   return (
     <Card className="rounded-xl border-primary/30 bg-primary/5">
@@ -60,6 +65,39 @@ export function PayInvoiceCard({ payment }: { payment: any }) {
         <p className="text-xs font-semibold text-primary uppercase flex items-center gap-1.5">
           <Banknote className="w-3.5 h-3.5" /> How to pay
         </p>
+
+        {cardsOn && (
+          <div className="rounded-lg bg-background border p-3 space-y-2">
+            <p className="text-sm font-medium flex items-center gap-1.5">
+              <CreditCard className="w-4 h-4 text-primary" /> Pay by card
+            </p>
+            <p className="text-xs text-muted-foreground">
+              You pay <strong>{money(payment.amount, payment.currency)}</strong> on the secure page of our payment provider. Your invoice is marked as paid
+              automatically, and we never see your card number.
+            </p>
+            {cardFailed && (
+              <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-2 text-xs text-amber-900">
+                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span>Your last card payment was not completed. You can try again, or pay by bank transfer below.</span>
+              </div>
+            )}
+            {cardStartedRecently && cardStartedAt && (
+              <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 p-2 text-xs text-blue-900">
+                <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span>
+                  A card payment was started on {format(cardStartedAt, 'MMM d, HH:mm')}. If you completed it, this invoice is updated in a moment.
+                  Otherwise you can start again.
+                </span>
+              </div>
+            )}
+            <Button className="w-full gap-1.5" disabled={startCard.isPending} onClick={() => startCard.mutate(payment.id)}>
+              {startCard.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+              Pay {money(payment.amount, payment.currency)} by card
+            </Button>
+          </div>
+        )}
+
+        {cardsOn && <p className="text-xs font-semibold text-muted-foreground uppercase pt-1">Or pay by bank transfer</p>}
 
         {payment.rejection_note && (
           <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-2 text-xs text-amber-900">

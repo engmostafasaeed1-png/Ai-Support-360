@@ -14,6 +14,7 @@ import { generateInvoicePdf } from '@/lib/invoicePdf';
 import { generateReceiptPdf } from '@/lib/receiptPdf';
 import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
 import { PayInvoiceCard } from '@/components/invoice/PayInvoiceCard';
+import { PaymobReturnHandler } from '@/components/invoice/PaymobReturnHandler';
 import { InvoiceDisputeSection } from '@/components/invoice/InvoiceDisputeSection';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
@@ -69,6 +70,7 @@ export default function PaymentsPage() {
 
   return (
     <div className="space-y-6">
+      <PaymobReturnHandler />
       <div>
         <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
           <ReceiptText className="w-6 h-6 text-primary" /> Payments & Invoices
