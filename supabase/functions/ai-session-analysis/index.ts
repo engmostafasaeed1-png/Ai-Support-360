@@ -308,18 +308,35 @@ Return ONLY valid JSON.`;
       });
     }
 
-    // Insert anonymized knowledge solution
+    // Insert the anonymised knowledge solution as a DRAFT (an administrator reviews it before anything is published).
+    // The text is scrubbed again here (the model is told to anonymise, but a model can slip) and what was removed is recorded for the reviewer.
     if (analysis.knowledge_solution?.title) {
       const ks = analysis.knowledge_solution;
-      await supabase.from("knowledge_solutions").insert({
-        title: ks.title,
-        problem_description: ks.problem_description,
-        solution: ks.solution,
-        sap_module: ks.sap_module,
-        tags: ks.tags || [],
-        source_ticket_id: session.ticket_id,
-        status: "draft", // admin reviews before publishing
-      });
+      try {
+        let areas: string[] = ks.sap_module ? [String(ks.sap_module)] : [];
+        let tenantId: string | null = session.tenant_id ?? null;
+        if (session.ticket_id) {
+          const { data: ticketRow } = await supabase.from("tickets").select("sap_module, sap_modules, tenant_id").eq("id", session.ticket_id).maybeSingle();
+          if (ticketRow) {
+            areas = Array.isArray(ticketRow.sap_modules) && ticketRow.sap_modules.length > 0 ? ticketRow.sap_modules : [ticketRow.sap_module];
+            tenantId = ticketRow.tenant_id ?? tenantId;
+          }
+        }
+        const deny = await buildDenyList(supabase, { client_id: session.client_id, consultant_id: session.consultant_id, tenant_id: tenantId }, []);
+        await saveKnowledgeDraft(supabase, {
+          title: String(ks.title ?? ""),
+          problem: String(ks.problem_description ?? ""),
+          solution: String(ks.solution ?? ""),
+          areas,
+          tags: cleanTags(ks.tags),
+          ticketId: session.ticket_id ?? null,
+          consultantId: session.consultant_id ?? null,
+          originKind: "session",
+          deny,
+        });
+      } catch (e) {
+        console.error("knowledge draft failed:", e instanceof Error ? e.message : String(e));
+      }
     }
 
     // Update session with AI summary
