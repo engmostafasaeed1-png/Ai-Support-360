@@ -36,6 +36,13 @@
       "when": 1791038875302,
       "tag": "0004_client_cycle_m18_ticket_sap_areas",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791041600315,
+      "tag": "0005_client_cycle_m19_knowledge_ai_suggestions",
+      "breakpoints": true
     }
   ]
 }
