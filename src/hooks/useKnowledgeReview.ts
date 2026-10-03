@@ -90,16 +90,17 @@ export function useUpdateKnowledge() {
   });
 }
 
-export type AiSwitchKey = 'ai_suggestions_enabled' | 'ai_learning_enabled';
+export type AiSwitchKey = 'ai_suggestions_enabled' | 'ai_learning_enabled' | 'ai_sap_community_enabled';
 
-/** The two administrator switches. A missing row means "on". */
+/** The administrator switches. A missing row means "on" for the first two and "off" for the live SAP Community look-up. */
 export function useAiSwitches() {
   return useQuery({
     queryKey: ['knowledge-review', 'switches'],
     queryFn: async (): Promise<Record<AiSwitchKey, boolean>> => {
-      const { data, error } = await db.from('platform_settings').select('key, value').in('key', ['ai_suggestions_enabled', 'ai_learning_enabled']);
+      const { data, error } = await db.from('platform_settings').select('key, value')
+        .in('key', ['ai_suggestions_enabled', 'ai_learning_enabled', 'ai_sap_community_enabled']);
       if (error) throw new Error(error.message);
-      const out: Record<AiSwitchKey, boolean> = { ai_suggestions_enabled: true, ai_learning_enabled: true };
+      const out: Record<AiSwitchKey, boolean> = { ai_suggestions_enabled: true, ai_learning_enabled: true, ai_sap_community_enabled: false };
       for (const r of (data ?? []) as Array<{ key: AiSwitchKey; value: unknown }>) {
         if (typeof r.value === 'boolean') out[r.key] = r.value;
       }
@@ -144,5 +145,55 @@ export function useLearnFromTickets() {
       qc.invalidateQueries({ queryKey: ['knowledge-review'] });
     },
     onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export interface ArticleInput {
+  title: string;
+  problem: string;
+  solution: string;
+  areas: string[];
+  tags: string[];
+  note_numbers: string[];
+}
+
+/** Sends an article written by hand. It is stored as a draft that an administrator has to review and publish. */
+export function useSubmitArticle() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (article: ArticleInput): Promise<{ status: string; flags: string[] }> => {
+      const { data, error } = await supabase.functions.invoke('knowledge-submit', { body: { ...article, confirmed: true } });
+      if (error || data?.error) throw new Error(String(data?.error || error?.message || 'Could not send the article'));
+      return data as { status: string; flags: string[] };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['knowledge-review'] });
+      qc.invalidateQueries({ queryKey: ['my-articles'] });
+    },
+    onError: (e: Error) => toast.error(e.message || 'Could not send the article'),
+  });
+}
+
+export interface MyArticle {
+  id: string;
+  title: string;
+  status: KnowledgeStatus;
+  sap_modules: string[];
+  created_at: string;
+}
+
+/** The articles the signed-in person wrote (the database lets everybody read their own rows). */
+export function useMyArticles() {
+  return useQuery({
+    queryKey: ['my-articles'],
+    queryFn: async (): Promise<MyArticle[]> => {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) return [];
+      const { data, error } = await db.from('knowledge_solutions')
+        .select('id, title, status, sap_modules, created_at').eq('created_by', uid).order('created_at', { ascending: false }).limit(100);
+      if (error) throw new Error(error.message);
+      return ((data ?? []) as any[]).map(r => ({ ...r, sap_modules: r.sap_modules ?? [] })) as MyArticle[];
+    },
   });
 }

@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import KnowledgeArticleDialog from '@/components/knowledge/KnowledgeArticleDialog';
 import {
   useAiSwitches, useKnowledgeCounts, useKnowledgeItems, useLearnFromTickets, useSetAiSwitch, useUpdateKnowledge,
   type AiSwitchKey, type KnowledgeItem, type KnowledgeStatus,
@@ -22,7 +23,7 @@ import {
 } from '@/lib/knowledgeReview';
 
 const EMPTY_TEXT: Record<KnowledgeStatus, string> = {
-  draft: 'Nothing waits for review. Drafts appear after a session is analysed, or when you press "Learn from finished tickets" above.',
+  draft: 'Nothing waits for review. Drafts appear after a session is analysed, when you press "Learn from finished tickets" above, or when a consultant or you write an article.',
   published: 'Nothing is published yet. Until you publish solutions, clients see general SAP guidance, clearly marked as such.',
   archived: 'Nothing is archived.',
 };
@@ -141,6 +142,7 @@ function ReviewDialog({ item, onClose }: { item: KnowledgeItem; onClose: () => v
 export default function KnowledgeReviewPage() {
   const [status, setStatus] = useState<KnowledgeStatus>('draft');
   const [reviewing, setReviewing] = useState<KnowledgeItem | null>(null);
+  const [writing, setWriting] = useState(false);
   const counts = useKnowledgeCounts();
   const items = useKnowledgeItems(status);
   const switches = useAiSwitches();
@@ -167,6 +169,9 @@ export default function KnowledgeReviewPage() {
             Read each text first: it must name no company, person, system or host.
           </p>
         </div>
+        <Button variant="outline" size="sm" className="ms-auto shrink-0 gap-1.5" onClick={() => setWriting(true)}>
+          <Pencil className="h-3.5 w-3.5" /> Write an article
+        </Button>
       </div>
 
       <Card className="rounded-2xl border-border/50">
@@ -189,6 +194,14 @@ export default function KnowledgeReviewPage() {
             checked={switches.data?.ai_learning_enabled ?? true}
             disabled={switches.isLoading || setSwitch.isPending}
             onChange={(value) => setSwitch.mutate({ key: 'ai_learning_enabled' as AiSwitchKey, value })}
+          />
+          <SwitchRow
+            id="ai-community-switch"
+            label="Show matching SAP Community discussions as links"
+            help="Looks up SAP Community with a few generic keywords from the request and shows up to 3 links (titles only, nothing is copied or stored). Keep it off until your lawyer confirms that SAP's terms allow it. The 'Search SAP Community' link on the card does not need this switch."
+            checked={switches.data?.ai_sap_community_enabled ?? false}
+            disabled={switches.isLoading || setSwitch.isPending}
+            onChange={(value) => setSwitch.mutate({ key: 'ai_sap_community_enabled' as AiSwitchKey, value })}
           />
           <div className="flex flex-wrap items-center gap-3 border-t border-border/40 pt-3">
             <Button
@@ -287,6 +300,7 @@ export default function KnowledgeReviewPage() {
       )}
 
       {reviewing && <ReviewDialog item={reviewing} onClose={() => setReviewing(null)} />}
+      <KnowledgeArticleDialog open={writing} onOpenChange={setWriting} />
     </div>
   );
 }
