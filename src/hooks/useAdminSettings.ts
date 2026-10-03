@@ -39,10 +39,10 @@ export function useAdminSettings() {
 
   const updateSetting = useCallback(async (key: string, value: boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }));
+    // upsert: a setting that was never saved has no row yet (an update would change nothing and still look saved)
     const { error } = await supabase
       .from('platform_settings')
-      .update({ value: value as any })
-      .eq('key', key);
+      .upsert({ key, value: value as any }, { onConflict: 'key' });
     if (error) {
       toast({ title: 'Error saving setting', description: error.message, variant: 'destructive' });
       fetchSettings(); // revert

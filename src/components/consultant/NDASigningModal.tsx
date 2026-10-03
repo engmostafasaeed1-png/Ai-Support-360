@@ -109,11 +109,14 @@ export default function NDASigningModal({
       .replace(/\{\{consultant_name\}\}/g, consultantName || '_______________')
       .replace(/\{\{consultant_email\}\}/g, consultantEmail || '_______________')
       .replace(/\{\{client_name\}\}/g, clientDisplayName || '_______________')
-      .replace(/\{\{client_company\}\}/g, clientCompany || '_______________')
+      .replace(/\{\{client_company\}\}/g, clientCompany || clientDisplayName || '_______________')
       .replace(/\{\{client_industry\}\}/g, clientIndustry || '_______________')
       .replace(/\{\{sap_modules\}\}/g, clientSapModules || '_______________')
       .replace(/\{\{date\}\}/g, new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }));
   }, [template, consultantName, consultantEmail, clientDisplayName, clientCompany, clientIndustry, clientSapModules]);
+
+  // No NDA text in the platform settings (and no custom NDA of the client): nothing valid can be signed.
+  const ndaTextMissing = !hasCustomNDA && !templateLoading && template.trim().length < 20;
 
   const [sigType, setSigType] = useState<'draw' | 'type'>('type');
   const [typedName, setTypedName] = useState('');
@@ -195,6 +198,7 @@ export default function NDASigningModal({
   };
 
   const canSubmit =
+    !ndaTextMissing &&
     agreed &&
     (sigType === 'type' ? typedName.trim().length >= 2 : hasDrawn);
 
@@ -309,6 +313,14 @@ export default function NDASigningModal({
               </ScrollArea>
             )}
 
+            {ndaTextMissing && (
+              <Alert variant="destructive" className="border-destructive/50">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  {t('nda.template_missing', 'The NDA text has not been set up yet, so it cannot be signed. Please ask the platform administrator to add it.')}
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="flex items-center gap-2 p-3 rounded-lg bg-accent/50 border border-accent">
               <Eye className="w-4 h-4 text-muted-foreground shrink-0" />
               <p className="text-xs text-muted-foreground">
@@ -324,7 +336,7 @@ export default function NDASigningModal({
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 {t('common.cancel', 'Cancel')}
               </Button>
-              <Button className="gap-1.5" onClick={() => setStep('sign')}>
+              <Button className="gap-1.5" onClick={() => setStep('sign')} disabled={ndaTextMissing}>
                 {t('nda.proceed_to_sign', 'Proceed to Sign')}
                 <ArrowRight className="w-4 h-4" />
               </Button>

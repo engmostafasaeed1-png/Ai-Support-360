@@ -25,10 +25,10 @@ export function useNDATemplate() {
   useEffect(() => { fetchTemplate(); }, [fetchTemplate]);
 
   const saveTemplate = useCallback(async (content: string) => {
+    // upsert: the row may not exist yet (an update would then change nothing and still report success)
     const { error } = await supabase
       .from('platform_settings')
-      .update({ value: content, updated_at: new Date().toISOString() })
-      .eq('key', 'nda_template');
+      .upsert({ key: 'nda_template', value: content, updated_at: new Date().toISOString() }, { onConflict: 'key' });
 
     if (error) {
       toast({ title: 'Error', description: 'Failed to save NDA template', variant: 'destructive' });
@@ -76,7 +76,7 @@ export function useNDAAgreement(consultantId?: string, clientId?: string) {
     });
 
     if (error) {
-      toast({ title: 'Error', description: 'Failed to sign NDA', variant: 'destructive' });
+      toast({ title: 'Error', description: error.message || 'Failed to sign NDA', variant: 'destructive' });
       return false;
     }
     setSigned(true);
