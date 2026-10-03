@@ -10,6 +10,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, Upload, X, FileText, Paperclip } from 'lucide-react';
 import type { TicketDetail } from '@/hooks/useTicketDetail';
+import SapAreaPicker from '@/components/ticket/SapAreaPicker';
+import { MAX_SAP_AREAS, MAX_AREA_DETAILS_LENGTH, areasOf, cleanAreaList, isOtherArea } from '@/lib/sapAreas';
 
 const urgencyOptions = ['low', 'medium', 'high', 'critical'];
 // only the statuses the database knows (enum ticket_status)
@@ -45,11 +47,23 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
     preferred_language: ticket.preferred_language || 'en',
     preferred_session_type: ticket.preferred_session_type || '',
   });
+  const [areas, setAreas] = useState<string[]>(() => areasOf(ticket));
+  const [otherArea, setOtherArea] = useState(ticket.sap_module_other || '');
+  const [areaDetails, setAreaDetails] = useState(ticket.area_details || '');
+  const [areaErrors, setAreaErrors] = useState<{ areas?: string; other?: string; details?: string }>({});
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = async () => {
     if (!form.title.trim()) { toast.error('Title is required'); return; }
+    const cleanAreas = cleanAreaList(areas);
+    const errs: { areas?: string; other?: string; details?: string } = {};
+    if (cleanAreas.length === 0) errs.areas = 'Please choose at least one SAP module or area';
+    if (cleanAreas.length > MAX_SAP_AREAS) errs.areas = `Choose ${MAX_SAP_AREAS} SAP areas at most`;
+    if (cleanAreas.some(isOtherArea) && !otherArea.trim()) errs.other = 'Please name the other SAP area';
+    if (areaDetails.length > MAX_AREA_DETAILS_LENGTH) errs.details = 'The details about the areas are too long';
+    setAreaErrors(errs);
+    if (errs.areas || errs.other || errs.details) { toast.error(errs.areas || errs.other || errs.details || 'Please check the SAP areas'); return; }
     setSaving(true);
     try {
       const updates: any = {
@@ -60,6 +74,15 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
         preferred_language: form.preferred_language,
         preferred_session_type: form.preferred_session_type || null,
       };
+      const areasChanged = cleanAreas.join('|') !== areasOf(ticket).join('|')
+        || (cleanAreas.some(isOtherArea) ? otherArea.trim() : '') !== (ticket.sap_module_other || '')
+        || areaDetails.trim() !== (ticket.area_details || '');
+      if (areasChanged) {
+        updates.sap_module = cleanAreas[0];
+        updates.sap_modules = cleanAreas;
+        updates.sap_module_other = cleanAreas.some(isOtherArea) ? otherArea.trim() : null;
+        updates.area_details = areaDetails.trim() || null;
+      }
       if (form.status === 'resolved' && ticket.status !== 'resolved') {
         updates.resolved_at = new Date().toISOString();
       }
@@ -113,7 +136,7 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Ticket</DialogTitle>
         </DialogHeader>
@@ -125,6 +148,21 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={4} />
+          </div>
+          <div className="space-y-2">
+            <Label>SAP modules and areas</Label>
+            <SapAreaPicker
+              areas={areas}
+              other={otherArea}
+              details={areaDetails}
+              onAreasChange={next => { setAreas(next); setAreaErrors(prev => ({ ...prev, areas: undefined })); }}
+              onOtherChange={text => { setOtherArea(text); setAreaErrors(prev => ({ ...prev, other: undefined })); }}
+              onDetailsChange={text => { setAreaDetails(text); setAreaErrors(prev => ({ ...prev, details: undefined })); }}
+              areasError={areaErrors.areas}
+              otherError={areaErrors.other}
+              detailsError={areaErrors.details}
+              idPrefix="edit-ticket-areas"
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
