@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +9,15 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ReactMarkdown from 'react-markdown';
+import FreeSapSources from '@/components/knowledge/FreeSapSources';
+import { linkSapNotes } from '@/lib/sapNotes';
+
+// links in an article open in a new tab
+const ARTICLE_LINKS = {
+  a: ({ href, children }: { href?: string; children?: ReactNode }) => (
+    <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+  ),
+};
 
 export default function KnowledgePage() {
   const { t } = useTranslation();
@@ -61,6 +70,8 @@ export default function KnowledgePage() {
         <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input placeholder="Search articles & solutions..." className="ps-9" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
+
+      <FreeSapSources />
 
       <Tabs defaultValue="solutions" className="space-y-4">
         <TabsList>
@@ -143,13 +154,13 @@ export default function KnowledgePage() {
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
               <p className="text-xs font-semibold text-primary uppercase mb-1">Solution</p>
               <div className="prose prose-sm max-w-none dark:prose-invert">
-                <ReactMarkdown>{selectedArticle.solution}</ReactMarkdown>
+                <ReactMarkdown components={ARTICLE_LINKS}>{linkSapNotes(selectedArticle.solution)}</ReactMarkdown>
               </div>
             </div>
           )}
           {selectedArticle?.content && (
             <div className="prose prose-sm max-w-none dark:prose-invert">
-              <ReactMarkdown>{selectedArticle.content}</ReactMarkdown>
+              <ReactMarkdown components={ARTICLE_LINKS}>{linkSapNotes(selectedArticle.content)}</ReactMarkdown>
             </div>
           )}
           <div className="flex gap-2 flex-wrap">

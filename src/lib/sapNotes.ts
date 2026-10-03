@@ -50,3 +50,19 @@ export function addNoteNumbers(current: readonly string[], input: string): AddRe
   }
   return { notes, added, ignored, full };
 }
+
+// "SAP Note 2270407", "Notes 2270407 and 3012345", "KBA #3012345": the same wording that the edge functions look for
+const NOTE_KEYWORD = String.raw`(?:SAP\s+)?(?:Notes?|KBAs?|OSS(?:\s+Notes?)?)`;
+const NOTE_RUN = String.raw`\d{5,8}(?:\s*(?:,|;|/|&|\band\b|\bor\b)\s*\d{5,8})*`;
+const NOTE_REFERENCE = new RegExp(String.raw`(\b${NOTE_KEYWORD}\s*(?:no\.?|numbers?|nr\.?|#|:)?\s*)(${NOTE_RUN})(?!\d)`, 'gi');
+
+/**
+ * Turns the numbers of the SAP Note references in a text into markdown links to SAP for Me, where each reader signs in with their own SAP login.
+ * A reference that is already the text of a link is left alone.
+ */
+export function linkSapNotes(markdown: string): string {
+  return markdown.replace(NOTE_REFERENCE, (whole: string, lead: string, run: string, offset: number, text: string) => {
+    if (text.startsWith(']', offset + whole.length)) return whole;
+    return lead + run.replace(/\d{5,8}/g, (n) => `[${n}](https://me.sap.com/notes/${n})`);
+  });
+}

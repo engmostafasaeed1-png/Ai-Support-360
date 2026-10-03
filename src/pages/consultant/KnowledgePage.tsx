@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import KnowledgeArticleDialog from '@/components/knowledge/KnowledgeArticleDialog';
+import FreeSapSources from '@/components/knowledge/FreeSapSources';
 import { useMyArticles } from '@/hooks/useKnowledgeReview';
 import { ARTICLE_STATUS_LABEL } from '@/lib/knowledgeReview';
 
@@ -29,6 +30,8 @@ export default function ConsultantKnowledgePage() {
           <Pencil className="h-4 w-4" /> Write an article
         </Button>
       </div>
+
+      <FreeSapSources />
 
       {articles.isLoading ? (
         <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 rounded-2xl" />)}</div>

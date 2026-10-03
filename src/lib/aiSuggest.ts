@@ -1,4 +1,5 @@
 // Types and helpers for the "possible solutions" card on the New Request screen (edge function ai-suggest).
+import { freeSapSource, safeSourceUrl, type FreeSourceId } from '@/lib/sapSources';
 
 export type SuggestionBasis = 'knowledge_base' | 'past_case' | 'playbook' | 'sap_docs' | 'general';
 export type SuggestionConfidence = 'high' | 'medium' | 'low';
@@ -41,9 +42,19 @@ export interface CommunityItem {
   solved: boolean;
 }
 
+/** A link to one of SAP's own free websites (a search for a few generic words from the request). The address is checked here and the name comes from our own list. */
+export interface FreeSourceLink {
+  id: FreeSourceId;
+  name: string;
+  what: string;
+  url: string;
+}
+
 export interface SuggestReferences {
   /** SAP Community's own search page with a few generic words from the request. */
   communitySearchUrl: string | null;
+  /** The official free SAP websites: Help Portal, Community, Learning and Developer tutorials. */
+  freeSources: FreeSourceLink[];
   /** True when an administrator switched the live SAP Community look-up on. */
   communityEnabled: boolean;
   community: CommunityItem[];
@@ -153,6 +164,13 @@ export function normalizeSuggestResult(raw: unknown): SuggestResult {
     if (title && url.length <= 600 && COMMUNITY_LINK.test(url)) community.push({ title, url, solved: o.solved === true });
   }
   const searchUrl = typeof refs.community_search_url === 'string' ? refs.community_search_url : '';
+  const freeSources: FreeSourceLink[] = [];
+  for (const f of (Array.isArray(refs.free_sources) ? refs.free_sources : []).slice(0, 12)) {
+    const o = obj(f);
+    const source = freeSapSource(o.id);
+    const url = source ? safeSourceUrl(source.id, o.url) : null;
+    if (source && url && !freeSources.some(x => x.id === source.id)) freeSources.push({ id: source.id, name: source.name, what: source.what, url });
+  }
   return {
     enabled: r.enabled !== false,
     mode: r.mode === 'knowledge' ? 'knowledge' : 'general',
@@ -163,6 +181,7 @@ export function normalizeSuggestResult(raw: unknown): SuggestResult {
     references: {
       communitySearchUrl: searchUrl.length <= 400 && COMMUNITY_LINK.test(searchUrl) ? searchUrl : null,
       communityEnabled: live.enabled === true,
+      freeSources,
       community,
     },
   };
@@ -170,7 +189,7 @@ export function normalizeSuggestResult(raw: unknown): SuggestResult {
 
 /** True when the card has at least one link to an SAP website to show. */
 export function hasReferences(result: SuggestResult): boolean {
-  return result.notes.length > 0 || result.references.community.length > 0 || !!result.references.communitySearchUrl;
+  return result.notes.length > 0 || result.references.community.length > 0 || result.references.freeSources.length > 0 || !!result.references.communitySearchUrl;
 }
 
 /** The line under the card's title: where the suggestions come from. */

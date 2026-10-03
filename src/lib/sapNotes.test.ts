@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MAX_NOTES_TRIED, addNoteNumbers, cleanNoteList } from './sapNotes';
+import { MAX_NOTES_TRIED, addNoteNumbers, cleanNoteList, linkSapNotes } from './sapNotes';
 
 describe('cleanNoteList', () => {
   it('keeps valid, distinct numbers in order', () => {
@@ -73,5 +73,32 @@ describe('addNoteNumbers', () => {
     const current = ['2270407'];
     addNoteNumbers(current, '3012345');
     expect(current).toEqual(['2270407']);
+  });
+});
+
+describe('linkSapNotes', () => {
+  it('turns the number of a note reference into a link to SAP for Me', () => {
+    expect(linkSapNotes('See SAP Note 2270407 first.')).toBe('See SAP Note [2270407](https://me.sap.com/notes/2270407) first.');
+  });
+
+  it('links every number of a list and understands KBA and the # sign', () => {
+    expect(linkSapNotes('Apply SAP Notes 2270407, 2345678 and KBA #3012345.')).toBe(
+      'Apply SAP Notes [2270407](https://me.sap.com/notes/2270407), [2345678](https://me.sap.com/notes/2345678) and KBA #[3012345](https://me.sap.com/notes/3012345).',
+    );
+  });
+
+  it('leaves numbers that no note keyword leads, and numbers of nine digits or more', () => {
+    const text = 'Document 4900012345 posted. Amount 2270407 EUR. Note 123456789 is no note.';
+    expect(linkSapNotes(text)).toBe(text);
+  });
+
+  it('does not link a reference that is already the text of a link', () => {
+    const text = 'Read [SAP Note 2270407](https://me.sap.com/notes/2270407) now.';
+    expect(linkSapNotes(text)).toBe(text);
+  });
+
+  it('gives the text back when it has no note', () => {
+    expect(linkSapNotes('')).toBe('');
+    expect(linkSapNotes('Nothing here.')).toBe('Nothing here.');
   });
 });

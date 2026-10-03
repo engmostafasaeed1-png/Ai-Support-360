@@ -233,4 +233,50 @@ describe('SolutionSuggestions', () => {
     renderCard();
     expect(await screen.findByText('No stored solution matches your description yet.')).not.toBeNull();
   });
+
+  it('shows links to the official free SAP websites, each opening in a new tab', async () => {
+    mocks.invoke.mockResolvedValue({
+      data: {
+        ...knowledgeAnswer,
+        references: {
+          community_search_url: 'https://community.sap.com/t5/forums/searchpage/tab/message?q=fb60%20posting',
+          free_sources: [
+            { id: 'help', url: 'https://help.sap.com/docs/search?q=fb60%20posting' },
+            { id: 'community', url: 'https://community.sap.com/t5/forums/searchpage/tab/message?q=fb60%20posting' },
+            { id: 'learning', url: 'https://learning.sap.com/search?query=fb60%20posting' },
+            { id: 'developers', url: 'https://developers.sap.com/tutorial-navigator/?q=fb60%20posting' },
+          ],
+        },
+      },
+      error: null,
+    });
+    renderCard();
+    await screen.findByText('Open the posting period');
+    const box = screen.getByTestId('free-sources');
+    for (const name of ['SAP Help Portal', 'SAP Community', 'SAP Learning', 'SAP Developer tutorials']) {
+      const link = screen.getByText(name).closest('a') as HTMLAnchorElement;
+      expect(box.contains(link)).toBe(true);
+      expect(link.getAttribute('target')).toBe('_blank');
+      expect(link.getAttribute('rel')).toContain('noopener');
+    }
+    const help = screen.getByText('SAP Help Portal').closest('a') as HTMLAnchorElement;
+    expect(help.getAttribute('href')).toBe('https://help.sap.com/docs/search?q=fb60%20posting');
+    expect(box.textContent).toContain('No SAP login needed');
+    expect(screen.queryByText(/Search SAP Community for this/)).toBeNull();
+  });
+
+  it('shows the SAP Notes next to the free websites and says that they need an SAP login', async () => {
+    mocks.invoke.mockResolvedValue({
+      data: {
+        ...knowledgeAnswer,
+        notes: [{ number: '2270407', url: 'https://me.sap.com/notes/2270407' }],
+        references: { free_sources: [{ id: 'help', url: 'https://help.sap.com/docs/search?q=fb60' }] },
+      },
+      error: null,
+    });
+    renderCard();
+    await screen.findByText('2270407');
+    expect(screen.queryByTestId('free-sources')).not.toBeNull();
+    expect(screen.queryByText(/You need your own SAP login/)).not.toBeNull();
+  });
 });
