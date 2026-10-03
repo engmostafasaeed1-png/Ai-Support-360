@@ -23,6 +23,11 @@ import { format } from 'date-fns';
 import BookingModal from '@/components/client/BookingModal';
 import WriteReviewDialog from '@/components/client/WriteReviewDialog';
 import VerificationBadge, { type VerificationStatus } from '@/components/consultant/VerificationBadge';
+import LinkStatus from '@/components/consultant/LinkStatus';
+import ConsultantLocationMap from '@/components/client/ConsultantLocationMap';
+import { STATE_META, availabilityState } from '@/lib/mapMarkers';
+import { credlyProfileUrl, linkState, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
+import { placeLabel } from '@/lib/geo';
 
 export default function ConsultantProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -77,7 +82,7 @@ export default function ConsultantProfilePage() {
       if (!id) return null;
       const { data: c } = await supabase
         .from('consultants')
-        .select('id, user_id, bio, hourly_rate, currency, languages, industries, response_time_minutes, credly_username, availability_status, rating, total_reviews, verification_status, ai_skills_score')
+        .select('id, user_id, bio, hourly_rate, currency, languages, industries, response_time_minutes, credly_username, availability_status, rating, total_reviews, verification_status, ai_skills_score, city, country, latitude, longitude, linkedin_url, linkedin_checked_at, credly_checked_at')
         .eq('id', id)
         .maybeSingle();
       if (!c) return null;
@@ -111,9 +116,15 @@ export default function ConsultantProfilePage() {
           rate: Number(c.hourly_rate) || 0,
           avatar: initials,
           available: c.availability_status === 'available',
+          status: availabilityState(c.availability_status),
           badges: c.verification_status === 'verified' ? ['verified'] : [],
-          city: '',
-          credly_username: c.credly_username,
+          city: placeLabel(c.city, c.country),
+          lat: typeof c.latitude === 'number' && typeof c.longitude === 'number' ? c.latitude : null,
+          lng: typeof c.latitude === 'number' && typeof c.longitude === 'number' ? c.longitude : null,
+          credly_username: normalizeCredlyUsername(c.credly_username),
+          linkedin_url: normalizeLinkedinUrl(c.linkedin_url),
+          linkedin_state: linkState(normalizeLinkedinUrl(c.linkedin_url), c.linkedin_checked_at),
+          credly_state: linkState(normalizeCredlyUsername(c.credly_username), c.credly_checked_at),
         },
         detail: {
           bio: c.bio || 'No bio provided yet.',
@@ -221,7 +232,8 @@ export default function ConsultantProfilePage() {
     );
   }
 
-  const statusColor = consultant.available ? 'bg-green-500' : 'bg-muted-foreground';
+  const status = (consultant.status ?? (consultant.available ? 'available' : 'offline')) as 'available' | 'busy' | 'offline';
+  const statusColor = STATE_META[status].dot;
 
   return (
     <div className="space-y-6">
@@ -255,7 +267,7 @@ export default function ConsultantProfilePage() {
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
                     <div className="flex items-center gap-1 text-sm">
                       <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                      <span className="text-muted-foreground">{consultant.city}</span>
+                      <span className="text-muted-foreground">{consultant.city || 'Location not set'}</span>
                     </div>
                     <div className="flex items-center gap-1 text-sm">
                       <Clock className="w-3.5 h-3.5 text-muted-foreground" />
@@ -267,17 +279,18 @@ export default function ConsultantProfilePage() {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-3 flex-wrap">
-                    {consultant.credly_username && (
-                      <a
-                        href={`https://www.credly.com/users/${consultant.credly_username}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors gap-1 cursor-pointer">
-                          <Award className="w-3 h-3" />
-                          {t('consultants.credly_verified', 'Credly Verified')}
-                          <ExternalLink className="w-2.5 h-2.5" />
-                        </Badge>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium" data-testid="consultant-status">
+                      <span className={`h-2 w-2 rounded-full ${statusColor}`} />
+                      {STATE_META[status].label}
+                    </span>
+                    {consultant.linkedin_url && (
+                      <a href={consultant.linkedin_url} target="_blank" rel="noopener noreferrer" aria-label="Open the LinkedIn profile in a new tab">
+                        <LinkStatus state={consultant.linkedin_state} label="LinkedIn" />
+                      </a>
+                    )}
+                    {consultant.credly_username && credlyProfileUrl(consultant.credly_username) && (
+                      <a href={credlyProfileUrl(consultant.credly_username) as string} target="_blank" rel="noopener noreferrer" aria-label="Open the Credly profile in a new tab">
+                        <LinkStatus state={consultant.credly_state} label="Credly" />
                       </a>
                     )}
                     {consultant.badges.map((badge: any) => (
@@ -345,6 +358,10 @@ export default function ConsultantProfilePage() {
             </CardContent>
           </Card>
 
+          {consultant.lat != null && consultant.lng != null && (
+            <ConsultantLocationMap lat={consultant.lat} lng={consultant.lng} place={consultant.city || ''} />
+          )}
+
           <Card className="rounded-2xl border-border/50">
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -386,6 +403,12 @@ export default function ConsultantProfilePage() {
                       </div>
                     ))}
                   </>
+                )}
+
+                {credlyBadges.length > 0 && (
+                  <p className="text-[11px] text-muted-foreground" data-testid="credly-note">
+                    These badges are read from the Credly profile that the consultant linked{consultant.credly_state === 'checked' ? ', which the platform team has checked.' : '. The platform team has not checked that this profile belongs to the consultant yet.'}
+                  </p>
                 )}
 
                 {/* Credly synced badges */}

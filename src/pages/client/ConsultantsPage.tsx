@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import {
   Search, Star, BadgeCheck, Zap, Heart, Filter, Map, LayoutGrid,
   Wifi, WifiOff, X, ChevronDown, ChevronUp, Clock, Globe, DollarSign,
-  Users, Circle, Award, ShieldAlert, ShieldCheck, ShieldQuestion,
+  Users, Circle, Award, ShieldAlert, ShieldCheck, ShieldQuestion, MapPin,
 } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -21,6 +21,10 @@ import BookingModal from '@/components/client/BookingModal';
 import { sapModules } from '@/data/clientMockData';
 import VerificationBadge from '@/components/consultant/VerificationBadge';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
+import LinkStatus from '@/components/consultant/LinkStatus';
+import { STATE_META } from '@/lib/mapMarkers';
+import { compareRecommended } from '@/lib/consultantDirectory';
+import { credlyProfileUrl } from '@/lib/consultantLinks';
 
 const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
   verified: { icon: BadgeCheck, color: 'text-accent' },
@@ -51,7 +55,7 @@ export default function ConsultantsPage() {
   const [showFilters, setShowFilters] = useState(false);
 
   // Filter states
-  const [availabilityFilter, setAvailabilityFilter] = useState<'all' | 'online' | 'offline'>('all');
+  const [availabilityFilter, setAvailabilityFilter] = useState<'all' | 'online' | 'busy' | 'offline'>('all');
   const [moduleFilter, setModuleFilter] = useState<string>('all');
   const [minRating, setMinRating] = useState(0);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
@@ -72,20 +76,23 @@ export default function ConsultantsPage() {
     }
   }, [mapSelectedId]);
 
-  const onlineCount = consultants.filter(c => c.available).length;
-  const offlineCount = consultants.filter(c => !c.available).length;
+  const onlineCount = consultants.filter(c => c.status === 'available').length;
+  const busyCount = consultants.filter(c => c.status === 'busy').length;
+  const offlineCount = consultants.filter(c => c.status === 'offline').length;
   const credlyCount = consultants.filter(c => !!c.credly_username).length;
 
   const filtered = useMemo(() => {
     const result = consultants.filter((c) => {
       const matchesSearch =
         c.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        c.specialty.toLowerCase().includes(debouncedSearch.toLowerCase());
+        c.specialty.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        c.place.toLowerCase().includes(debouncedSearch.toLowerCase());
       const matchesIndustry = !industryFilter || c.industries?.includes(industryFilter);
       const matchesAvailability =
         availabilityFilter === 'all' ||
-        (availabilityFilter === 'online' && c.available) ||
-        (availabilityFilter === 'offline' && !c.available);
+        (availabilityFilter === 'online' && c.status === 'available') ||
+        (availabilityFilter === 'busy' && c.status === 'busy') ||
+        (availabilityFilter === 'offline' && c.status === 'offline');
       const matchesModule =
         moduleFilter === 'all' || c.specialty.toLowerCase().includes(moduleFilter.toLowerCase());
       const matchesRating = c.rating >= minRating;
@@ -108,7 +115,7 @@ export default function ConsultantsPage() {
         result.sort((a, b) => b.rate - a.rate);
         break;
       case 'fastest':
-        result.sort((a, b) => (a.available === b.available ? 0 : a.available ? -1 : 1));
+        result.sort((a, b) => STATE_META[a.status].order - STATE_META[b.status].order || b.rating - a.rating);
         break;
       case 'credly_first':
         result.sort((a, b) => {
@@ -118,11 +125,13 @@ export default function ConsultantsPage() {
         });
         break;
       default:
-        result.sort((a, b) => b.matchScore - a.matchScore);
+        result.sort(compareRecommended);
     }
 
     return result;
   }, [consultants, search, industryFilter, availabilityFilter, moduleFilter, minRating, priceRange, languageFilter, verifiedOnly, credlyOnly, sortBy]);
+
+  const notOnMapCount = filtered.filter(c => c.lat === null || c.lng === null).length;
 
   const activeFilterCount = [
     availabilityFilter !== 'all',
@@ -176,6 +185,13 @@ export default function ConsultantsPage() {
           Online ({onlineCount})
         </button>
         <button
+          onClick={() => setAvailabilityFilter(availabilityFilter === 'busy' ? 'all' : 'busy')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs md:text-sm font-medium transition-all whitespace-nowrap ${availabilityFilter === 'busy' ? 'bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+        >
+          <Circle className="w-3 h-3 fill-amber-500 text-amber-500" />
+          Busy ({busyCount})
+        </button>
+        <button
           onClick={() => setAvailabilityFilter(availabilityFilter === 'offline' ? 'all' : 'offline')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs md:text-sm font-medium transition-all whitespace-nowrap ${availabilityFilter === 'offline' ? 'bg-muted text-foreground border border-border' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
         >
@@ -217,7 +233,7 @@ export default function ConsultantsPage() {
             <SelectItem value="price_low">{t('consultants_page.sort_price_low', 'Price: Low → High')}</SelectItem>
             <SelectItem value="price_high">{t('consultants_page.sort_price_high', 'Price: High → Low')}</SelectItem>
             <SelectItem value="fastest">{t('consultants_page.sort_fastest', 'Available First')}</SelectItem>
-            <SelectItem value="credly_first">{t('consultants_page.credly_first', 'Credly Verified First')}</SelectItem>
+            <SelectItem value="credly_first">Credly profile first</SelectItem>
           </SelectContent>
         </Select>
 
@@ -316,7 +332,7 @@ export default function ConsultantsPage() {
                   <Switch id="credly-only" checked={credlyOnly} onCheckedChange={setCredlyOnly} />
                   <Label htmlFor="credly-only" className="text-xs cursor-pointer flex items-center gap-1">
                     <Award className="w-3.5 h-3.5 text-orange-500" />
-                    {t('consultants_page.credly_only', 'Credly Verified Only')}
+                    Credly profile only
                     <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">{credlyCount}</span>
                   </Label>
                 </div>
@@ -359,7 +375,7 @@ export default function ConsultantsPage() {
           {credlyOnly && (
             <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
               <Award className="w-3 h-3" />
-              {t('consultants_page.credly_only', 'Credly Verified Only')}
+              Credly profile only
               <button onClick={() => setCredlyOnly(false)} className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
             </Badge>
           )}
@@ -377,13 +393,26 @@ export default function ConsultantsPage() {
       {view === 'map' && (
         <div className="flex flex-col gap-4">
           {/* Legend */}
-          <div className="flex items-center gap-5 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-green-500 inline-block" /> {t('consultants.available')}</span>
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-muted-foreground/40 inline-block" /> {t('consultants.offline')}</span>
-            <span className="ms-auto text-[10px]">{filtered.filter(c => c.available).length} {t('consultants_page.online')} · {filtered.filter(c => !c.available).length} {t('consultants_page.offline_label')}</span>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground" data-testid="map-legend">
+            {(['available', 'busy', 'offline'] as const).map(s => (
+              <span key={s} className="flex items-center gap-1.5"><span className={`w-3 h-3 rounded-full inline-block ${STATE_META[s].dot}`} /> {STATE_META[s].label} ({filtered.filter(c => c.status === s).length})</span>
+            ))}
+            <span className="ms-auto text-[10px]">
+              Pins show the area of a city, never an address.
+              {notOnMapCount > 0 && ` ${notOnMapCount} consultant${notOnMapCount !== 1 ? 's have' : ' has'} not chosen a city and ${notOnMapCount !== 1 ? 'are' : 'is'} not on the map.`}
+            </span>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
-            <ConsultantMap consultants={filtered} selectedId={mapSelectedId} onSelectConsultant={setMapSelectedId} />
+            <ConsultantMap
+              consultants={filtered}
+              selectedId={mapSelectedId}
+              onSelectConsultant={setMapSelectedId}
+              onViewProfile={(id) => navigate(`/client/consultants/${id}`)}
+              onBook={(id) => {
+                const c = filtered.find(x => x.id === id);
+                if (c) setBookingConsultant({ id: c.id, name: c.name, rate: c.rate });
+              }}
+            />
             {/* Side list */}
             <div className="space-y-2 max-h-[300px] lg:max-h-[420px] overflow-y-auto pr-1">
               {filtered.map(c => (
@@ -395,11 +424,12 @@ export default function ConsultantsPage() {
                 >
                   <div className="relative">
                     <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">{c.avatar}</div>
-                    <span className={`absolute -top-0.5 -end-0.5 w-3 h-3 rounded-full border-2 border-card ${c.available ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
+                    <span className={`absolute -top-0.5 -end-0.5 w-3 h-3 rounded-full border-2 border-card ${STATE_META[c.status].dot}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
                     <p className="text-[11px] text-muted-foreground truncate">{c.specialty}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{c.place || 'Location not set'}</p>
                     <TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} className="mt-1" />
                   </div>
                   <div className="text-end shrink-0">
@@ -436,7 +466,7 @@ export default function ConsultantsPage() {
                     <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0">
                       {c.avatar}
                     </div>
-                    <span className={`absolute -top-1 -end-1 w-4 h-4 rounded-full border-2 border-card transition-colors ${c.available ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
+                    <span className={`absolute -top-1 -end-1 w-4 h-4 rounded-full border-2 border-card transition-colors ${STATE_META[c.status].dot}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
@@ -446,7 +476,10 @@ export default function ConsultantsPage() {
                       </Button>
                     </div>
                     <p className="text-sm text-muted-foreground">{c.specialty}</p>
-                    {'city' in c && <p className="text-xs text-muted-foreground">{c.city}</p>}
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <MapPin className="w-3 h-3 shrink-0" aria-hidden="true" />
+                      {c.place || 'Location not set'}
+                    </p>
 
                     <div className="flex items-center gap-2 mt-2">
                       <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
@@ -455,16 +488,14 @@ export default function ConsultantsPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 mt-2">
-                      {c.credly_username && (
-                        <a
-                          href={`https://www.credly.com/users/${c.credly_username}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Award className="w-2.5 h-2.5" />
-                          {t('consultants.credly_verified', 'Credly Verified')}
+                      {c.linkedin_url && (
+                        <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" aria-label={`LinkedIn profile of ${c.name} (opens in a new tab)`} onClick={(e) => e.stopPropagation()}>
+                          <LinkStatus state={c.linkedin_state} label="LinkedIn" />
+                        </a>
+                      )}
+                      {c.credly_username && credlyProfileUrl(c.credly_username) && (
+                        <a href={credlyProfileUrl(c.credly_username) as string} target="_blank" rel="noopener noreferrer" aria-label={`Credly profile of ${c.name} (opens in a new tab)`} onClick={(e) => e.stopPropagation()}>
+                          <LinkStatus state={c.credly_state} label="Credly" />
                         </a>
                       )}
                       {c.badges.map((badge) => {
@@ -490,22 +521,17 @@ export default function ConsultantsPage() {
                           <span className="text-lg font-bold text-foreground">${c.rate}</span>
                           <span className="text-xs text-muted-foreground">/hr</span>
                         </div>
-                        <Badge variant="secondary" className="text-[10px] bg-accent/10 text-accent">
-                          {c.matchScore}% {t('consultants_page.match')}
-                        </Badge>
+                        {c.matchScore !== undefined && (
+                          <Badge variant="secondary" className="text-[10px] bg-accent/10 text-accent">
+                            {c.matchScore}% {t('consultants_page.match')}
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex gap-2">
-                        {c.available ? (
-                          <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                            {t('consultants.available')}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
-                            {t('consultants.offline')}
-                          </span>
-                        )}
+                        <span className={`text-xs font-medium flex items-center gap-1 ${c.status === 'available' ? 'text-green-600' : c.status === 'busy' ? 'text-amber-600' : 'text-muted-foreground'}`} data-testid={`status-${c.id}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${STATE_META[c.status].dot} ${c.status === 'available' ? 'animate-pulse' : ''}`} />
+                          {STATE_META[c.status].label}
+                        </span>
                       </div>
                     </div>
 

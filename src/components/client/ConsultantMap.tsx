@@ -1,115 +1,147 @@
-import { useEffect, useState } from 'react';
-import L from 'leaflet';
+import { useEffect, useMemo, useRef } from 'react';
+import L, { type LayerGroup, type Map as LeafletMap, type Marker } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTranslation } from 'react-i18next';
+import { OSM_ATTRIBUTION, OSM_TILES, spreadPins, type AvailabilityState } from '@/lib/mapMarkers';
+import { buildMarkerElement, buildPopupElement, type PinView } from '@/lib/mapDom';
+import type { LinkState } from '@/lib/consultantLinks';
 
-interface Consultant {
+export interface MapConsultant {
   id: string;
   name: string;
+  avatar: string;
   specialty: string;
   rating: number;
   reviews: number;
   rate: number;
-  avatar: string;
-  available: boolean;
-  matchScore: number;
-  badges: string[];
-  lat: number;
-  lng: number;
-  city: string;
+  /** The centre of the consultant's city; null when the consultant has not chosen a city (no pin). */
+  lat: number | null;
+  lng: number | null;
+  place: string;
+  status: AvailabilityState;
+  linkedin_state: LinkState;
+  credly_state: LinkState;
 }
 
 interface ConsultantMapProps {
-  consultants: Consultant[];
+  consultants: MapConsultant[];
   selectedId?: string | null;
   onSelectConsultant?: (id: string) => void;
+  onViewProfile?: (id: string) => void;
+  onBook?: (id: string) => void;
 }
 
-export default function ConsultantMap({ consultants, selectedId, onSelectConsultant }: ConsultantMapProps) {
+const toView = (c: MapConsultant): PinView => ({
+  id: c.id,
+  name: c.name,
+  avatar: c.avatar,
+  specialty: c.specialty,
+  place: c.place,
+  rating: c.rating,
+  reviews: c.reviews,
+  rate: c.rate,
+  status: c.status,
+  linkedinState: c.linkedin_state,
+  credlyState: c.credly_state,
+});
+
+/** The consultants on a map: one pin for every consultant who chose a city, coloured by Online, Busy or Offline. The pins show the area of the city, never an address. */
+export default function ConsultantMap({ consultants, selectedId, onSelectConsultant, onViewProfile, onBook }: ConsultantMapProps) {
   const { t } = useTranslation();
+  const holder = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const layerRef = useRef<LayerGroup | null>(null);
+  const fitted = useRef('');
+  const lastSelected = useRef<string | null>(null);
 
+  // The newest functions of the page are kept here, so that a new function in the page does not rebuild the pins (that would close an open popup).
+  const handlers = useRef({ onSelectConsultant, onViewProfile, onBook });
+  handlers.current = { onSelectConsultant, onViewProfile, onBook };
+
+  const labels = {
+    reviews: t('consultants_page.reviews', 'reviews'),
+    viewProfile: t('consultants_page.view_profile', 'View profile'),
+    bookSession: t('consultants_page.book_session', 'Book session'),
+    noPlace: 'Location not set',
+  };
+  const labelsKey = JSON.stringify(labels);
+
+  const pins = useMemo(() => spreadPins(consultants), [consultants]);
+
+  // The map is made once.
   useEffect(() => {
-    const container = document.getElementById('consultant-map');
-    if (!container || (container as any)._leaflet_id) return;
+    const element = holder.current;
+    if (!element) return;
+    const map = L.map(element).setView([25, 40], 3);
+    L.tileLayer(OSM_TILES, { attribution: OSM_ATTRIBUTION, maxZoom: 18 }).addTo(map);
+    layerRef.current = L.layerGroup().addTo(map);
+    mapRef.current = map;
+    const resize = window.setTimeout(() => map.invalidateSize(), 0);
+    return () => {
+      window.clearTimeout(resize);
+      map.remove();
+      mapRef.current = null;
+      layerRef.current = null;
+      fitted.current = '';
+    };
+  }, []);
 
-    const map = L.map(container, { zoomControl: false }).setView([24.7, 46.7], 5);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    }).addTo(map);
-
-    if (consultants.length > 0) {
-      const bounds = L.latLngBounds(consultants.map(c => [c.lat, c.lng]));
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 8 });
+  // The pins are drawn again when the consultants, the chosen consultant or the words change. The map is moved only when the set of consultants changes, so that a refresh does not take the map away from the person who is looking at it.
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = layerRef.current;
+    if (!map || !layer) return;
+    layer.clearLayers();
+    const byId = new Map(consultants.map(c => [c.id, c]));
+    let chosen: Marker | null = null;
+    for (const pin of pins) {
+      const c = byId.get(pin.id);
+      if (!c) continue;
+      const view = toView(c);
+      const isChosen = pin.id === selectedId;
+      const marker = L.marker([pin.lat, pin.lng], {
+        icon: L.divIcon({
+          className: 'consultant-marker',
+          html: buildMarkerElement(view, isChosen),
+          iconSize: [48, 56],
+          iconAnchor: [24, 56],
+          popupAnchor: [0, -56],
+        }),
+        title: c.name,
+      }).bindPopup(
+        buildPopupElement(view, { onView: id => handlers.current.onViewProfile?.(id), onBook: id => handlers.current.onBook?.(id) }, labels),
+        { maxWidth: 280, minWidth: 240 },
+      );
+      marker.on('click', () => handlers.current.onSelectConsultant?.(c.id));
+      marker.addTo(layer);
+      if (isChosen) chosen = marker;
     }
 
-    consultants.forEach(c => {
-      const isSelected = c.id === selectedId;
-      const statusColor = c.available ? '#22c55e' : '#9ca3af';
-      const bgColor = c.available ? '#1B2559' : '#64748b';
-      const ring = isSelected ? 'border:3px solid #3B82F6;box-shadow:0 0 0 4px rgba(59,130,246,0.3),' : 'border:2px solid white;box-shadow:';
-
-      const icon = L.divIcon({
-        className: 'consultant-marker',
-        html: `
-          <div style="position:relative;width:48px;height:56px;cursor:pointer;">
-            <div style="width:44px;height:44px;border-radius:14px;background:${bgColor};display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;${ring}0 4px 12px rgba(0,0,0,0.25);transition:transform 0.15s;${isSelected ? 'transform:scale(1.15);' : ''}">
-              ${c.avatar}
-            </div>
-            <div style="position:absolute;top:-2px;right:-2px;width:14px;height:14px;border-radius:50%;background:${statusColor};border:2px solid white;"></div>
-            <div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid ${bgColor};margin:0 auto;"></div>
-          </div>
-        `,
-        iconSize: [48, 56],
-        iconAnchor: [24, 56],
-        popupAnchor: [0, -56],
-      });
-
-      const availText = c.available
-        ? `<span style="color:#16a34a;font-size:10px;font-weight:500;display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block"></span>${t('consultants.available')}</span>`
-        : `<span style="color:#9ca3af;font-size:10px">${t('consultants.offline')}</span>`;
-
-      const popup = L.popup({ maxWidth: 280, minWidth: 240 }).setContent(`
-        <div style="padding:4px">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-            <div style="width:44px;height:44px;border-radius:12px;background:${bgColor};display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;flex-shrink:0">${c.avatar}</div>
-            <div style="min-width:0">
-              <div style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</div>
-              <div style="font-size:12px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.specialty}</div>
-              <div style="font-size:10px;color:#9ca3af">${c.city}</div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-            <span style="color:#eab308">★</span>
-            <span style="font-weight:600;font-size:14px">${c.rating}</span>
-            <span style="font-size:12px;color:#9ca3af">(${c.reviews} ${t('consultants_page.reviews')})</span>
-            <span style="margin-inline-start:auto;font-size:12px;color:#9ca3af">${c.matchScore}% ${t('consultants_page.match')}</span>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div><span style="font-size:16px;font-weight:700">$${c.rate}</span><span style="font-size:10px;color:#9ca3af">/hr</span></div>
-            ${availText}
-          </div>
-          <div style="display:flex;gap:6px">
-            <button style="flex:1;font-size:10px;font-weight:500;padding:6px 12px;border-radius:8px;background:#1B2559;color:white;border:none;cursor:pointer">${t('consultants.book_session')}</button>
-            <button style="flex:1;font-size:10px;font-weight:500;padding:6px 12px;border-radius:8px;background:white;border:1px solid #e5e7eb;cursor:pointer">${t('consultants.view_profile')}</button>
-          </div>
-        </div>
-      `);
-
-      const marker = L.marker([c.lat, c.lng], { icon }).addTo(map).bindPopup(popup);
-      marker.on('click', () => {
-        onSelectConsultant?.(c.id);
-      });
-    });
-
-    return () => {
-      map.remove();
-    };
-  }, [consultants, selectedId, t, onSelectConsultant]);
+    const key = pins.map(p => p.id).sort().join(',');
+    if (key !== fitted.current) {
+      fitted.current = key;
+      if (pins.length > 0) {
+        map.fitBounds(L.latLngBounds(pins.map(p => [p.lat, p.lng] as [number, number])), { padding: [50, 50], maxZoom: 8 });
+      }
+    }
+    if (chosen) {
+      if (lastSelected.current !== selectedId) map.panTo(chosen.getLatLng());
+      chosen.openPopup();
+    }
+    lastSelected.current = selectedId ?? null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [consultants, pins, selectedId, labelsKey]);
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-border/50 shadow-sm" style={{ height: '420px' }}>
-      <div id="consultant-map" style={{ height: '100%', width: '100%' }} />
+    <div className="relative isolate rounded-2xl overflow-hidden border border-border/50 shadow-sm" style={{ height: '420px' }}>
+      <div ref={holder} data-testid="consultant-map" style={{ height: '100%', width: '100%' }} />
+      {pins.length === 0 && (
+        <div className="pointer-events-none absolute inset-0 z-[1000] flex items-center justify-center p-4" data-testid="consultant-map-empty">
+          <p className="rounded-xl bg-background/90 px-4 py-2 text-center text-sm text-muted-foreground shadow">
+            No consultant here has chosen a city yet, so there is nothing to show on the map.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
