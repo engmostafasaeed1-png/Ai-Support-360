@@ -21,6 +21,9 @@ import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
 import TicketPlanApproval from '@/components/client/TicketPlanApproval';
 import TicketStatusActions from '@/components/consultant/TicketStatusActions';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
+import TicketAreasNotes from '@/components/ticket/TicketAreasNotes';
+import { areasOf, areaLabel } from '@/lib/sapAreas';
+import { cleanNoteList } from '@/lib/sapNotes';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -226,6 +229,8 @@ export default function CaseDetailPage() {
 
   const slaTime = ticket.sla_deadline ? new Date(ticket.sla_deadline) : null;
   const isOverdue = slaTime && slaTime < new Date() && ticket.status !== 'resolved' && ticket.status !== 'closed';
+  const caseAreas = areasOf(ticket);
+  const triedNotes = cleanNoteList(ticket.sap_notes_tried);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -291,8 +296,12 @@ export default function CaseDetailPage() {
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2 text-sm">
               <Tag className="w-4 h-4 text-muted-foreground" />
-              <span className="text-muted-foreground">SAP Module:</span>
-              <span className="font-medium">{ticket.sap_module}</span>
+              <span className="text-muted-foreground">{caseAreas.length > 1 ? 'SAP Areas:' : 'SAP Module:'}</span>
+              <span className="font-medium">
+                {caseAreas.length > 1
+                  ? `${areaLabel(caseAreas[0], ticket.sap_module_other)} +${caseAreas.length - 1}`
+                  : areaLabel(ticket.sap_module, ticket.sap_module_other)}
+              </span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <AlertTriangle className="w-4 h-4 text-muted-foreground" />
@@ -336,6 +345,9 @@ export default function CaseDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* What the client chose and wrote: every area, details about the areas, SAP Notes already tried */}
+      <TicketAreasNotes areas={caseAreas} other={ticket.sap_module_other} details={ticket.area_details} notes={triedNotes} />
 
       {/* Client System Landscape — gated behind NDA */}
       {clientProfile && !ndaSigned && (
