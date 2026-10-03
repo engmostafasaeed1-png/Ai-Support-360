@@ -43,6 +43,13 @@
       "when": 1791041600315,
       "tag": "0005_client_cycle_m19_knowledge_ai_suggestions",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791051064836,
+      "tag": "0006_client_cycle_m21_sap_doc_sources",
+      "breakpoints": true
     }
   ]
 }

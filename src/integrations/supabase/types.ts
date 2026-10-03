@@ -4100,6 +4100,133 @@ export type Database = {
           },
         ]
       }
+      sap_doc_chunks: {
+        Row: {
+          body: string
+          chunk_no: number
+          doc_title: string
+          heading: string | null
+          id: string
+          path: string
+          source_id: string
+          tsv: unknown
+        }
+        Insert: {
+          body: string
+          chunk_no: number
+          doc_title: string
+          heading?: string | null
+          id?: string
+          path: string
+          source_id: string
+          tsv?: unknown
+        }
+        Update: {
+          body?: string
+          chunk_no?: number
+          doc_title?: string
+          heading?: string | null
+          id?: string
+          path?: string
+          source_id?: string
+          tsv?: unknown
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sap_doc_chunks_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sap_doc_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sap_doc_files: {
+        Row: {
+          bytes: number
+          done: boolean
+          path: string
+          source_id: string
+        }
+        Insert: {
+          bytes?: number
+          done?: boolean
+          path: string
+          source_id: string
+        }
+        Update: {
+          bytes?: number
+          done?: boolean
+          path?: string
+          source_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sap_doc_files_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sap_doc_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sap_doc_sources: {
+        Row: {
+          branch: string
+          chunk_count: number
+          commit_sha: string | null
+          created_at: string
+          enabled: boolean
+          files_done: number
+          files_total: number
+          id: string
+          imported_at: string | null
+          last_error: string | null
+          license: string
+          repo: string
+          status: string
+          text_bytes: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          branch?: string
+          chunk_count?: number
+          commit_sha?: string | null
+          created_at?: string
+          enabled?: boolean
+          files_done?: number
+          files_total?: number
+          id: string
+          imported_at?: string | null
+          last_error?: string | null
+          license?: string
+          repo: string
+          status?: string
+          text_bytes?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          branch?: string
+          chunk_count?: number
+          commit_sha?: string | null
+          created_at?: string
+          enabled?: boolean
+          files_done?: number
+          files_total?: number
+          id?: string
+          imported_at?: string | null
+          last_error?: string | null
+          license?: string
+          repo?: string
+          status?: string
+          text_bytes?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       satisfaction_surveys: {
         Row: {
           comment: string | null
@@ -6830,6 +6957,21 @@ export type Database = {
           solution: string
           tags: string[]
           title: string
+        }[]
+      }
+      search_sap_docs: {
+        Args: { _limit?: number; _terms: string[] }
+        Returns: {
+          body: string
+          branch: string
+          doc_title: string
+          heading: string
+          license: string
+          path: string
+          rank: number
+          repo: string
+          source_id: string
+          source_title: string
         }[]
       }
       send_emergency_alert: { Args: { _ticket_id: string }; Returns: boolean }
