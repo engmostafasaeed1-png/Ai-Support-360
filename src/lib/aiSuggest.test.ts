@@ -94,7 +94,7 @@ describe('SAP references', () => {
   it('has no references when the server sent none', () => {
     const r = normalizeSuggestResult({});
     expect(r.notes).toEqual([]);
-    expect(r.references).toEqual({ communitySearchUrl: null, communityEnabled: false, community: [] });
+    expect(r.references).toEqual({ communitySearchUrl: null, communityEnabled: false, community: [], freeSources: [] });
     expect(hasReferences(r)).toBe(false);
   });
 
@@ -143,6 +143,41 @@ describe('SAP references', () => {
 
   it('counts a note alone as a reference', () => {
     expect(hasReferences(normalizeSuggestResult({ notes: [{ number: '2270407' }] }))).toBe(true);
+  });
+
+  it('keeps the links to the official free SAP websites and builds their names itself', () => {
+    const r = normalizeSuggestResult({
+      references: {
+        free_sources: [
+          { id: 'help', name: 'Totally trusted site', url: 'https://help.sap.com/docs/search?q=fb60%20posting' },
+          { id: 'community', url: 'https://community.sap.com/t5/forums/searchpage/tab/message?q=fb60%20posting' },
+          { id: 'learning', url: 'https://learning.sap.com/search?query=fb60%20posting' },
+          { id: 'developers', url: 'https://developers.sap.com/tutorial-navigator/?q=fb60%20posting' },
+        ],
+      },
+    });
+    expect(r.references.freeSources.map(s => s.name)).toEqual(['SAP Help Portal', 'SAP Community', 'SAP Learning', 'SAP Developer tutorials']);
+    expect(r.references.freeSources[0].url).toBe('https://help.sap.com/docs/search?q=fb60%20posting');
+    expect(hasReferences(r)).toBe(true);
+  });
+
+  it('drops a link to the official free SAP websites when it is on another host, has an unknown id or is repeated', () => {
+    const r = normalizeSuggestResult({
+      references: {
+        free_sources: [
+          { id: 'help', url: 'https://evil.example.com/docs' },
+          { id: 'learning', url: 'https://help.sap.com/docs' },
+          { id: 'mystery', url: 'https://help.sap.com/docs' },
+          { id: 'community', url: 'https://community.sap.com/x' },
+          { id: 'community', url: 'https://community.sap.com/y' },
+          null,
+          7,
+        ],
+      },
+    });
+    expect(r.references.freeSources).toEqual([
+      { id: 'community', name: 'SAP Community', what: 'Questions and answers from SAP experts and users', url: 'https://community.sap.com/x' },
+    ]);
   });
 });
 
