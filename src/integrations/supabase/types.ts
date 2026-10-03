@@ -1219,6 +1219,7 @@ export type Database = {
           country: string | null
           created_at: string
           credibility_credits: number
+          credly_checked_at: string | null
           credly_username: string | null
           currency: string | null
           cv_url: string | null
@@ -1227,8 +1228,11 @@ export type Database = {
           id: string
           industries: string[] | null
           languages: string[] | null
+          latitude: number | null
+          linkedin_checked_at: string | null
           linkedin_url: string | null
           location: unknown
+          longitude: number | null
           nationality: string | null
           personal_website: string | null
           profile_video_url: string | null
@@ -1254,6 +1258,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           credibility_credits?: number
+          credly_checked_at?: string | null
           credly_username?: string | null
           currency?: string | null
           cv_url?: string | null
@@ -1262,8 +1267,11 @@ export type Database = {
           id?: string
           industries?: string[] | null
           languages?: string[] | null
+          latitude?: number | null
+          linkedin_checked_at?: string | null
           linkedin_url?: string | null
           location?: unknown
+          longitude?: number | null
           nationality?: string | null
           personal_website?: string | null
           profile_video_url?: string | null
@@ -1289,6 +1297,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           credibility_credits?: number
+          credly_checked_at?: string | null
           credly_username?: string | null
           currency?: string | null
           cv_url?: string | null
@@ -1297,8 +1306,11 @@ export type Database = {
           id?: string
           industries?: string[] | null
           languages?: string[] | null
+          latitude?: number | null
+          linkedin_checked_at?: string | null
           linkedin_url?: string | null
           location?: unknown
+          longitude?: number | null
           nationality?: string | null
           personal_website?: string | null
           profile_video_url?: string | null
@@ -6841,6 +6853,8 @@ export type Database = {
           since: string
         }[]
       }
+      normalize_credly_username: { Args: { _v: string }; Returns: string }
+      normalize_linkedin_url: { Args: { _v: string }; Returns: string }
       notify_payment_admins: {
         Args: { _body: string; _title: string }
         Returns: undefined

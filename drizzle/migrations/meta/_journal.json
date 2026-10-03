@@ -57,6 +57,13 @@
       "when": 1791060817899,
       "tag": "0007_client_cycle_m22_sap_notes_tried",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791066970152,
+      "tag": "0008_client_cycle_m25_consultant_trust_place",
+      "breakpoints": true
     }
   ]
 }
