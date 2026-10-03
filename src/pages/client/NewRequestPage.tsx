@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { sapModules, issueTypes } from '@/data/clientMockData';
+import { issueTypes } from '@/data/clientMockData';
+import SapAreaPicker from '@/components/ticket/SapAreaPicker';
+import { MAX_SAP_AREAS, MAX_OTHER_AREA_LENGTH, MAX_AREA_DETAILS_LENGTH, areasSummary, areaLabel, isOtherArea } from '@/lib/sapAreas';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -28,12 +30,19 @@ import VoiceInput from '@/components/ui/voice-input';
 
 const ticketSchema = z.object({
   sap_module: z.string().min(1, 'Please select an SAP module'),
+  sap_modules: z.array(z.string().min(1)).min(1, 'Please choose at least one SAP module or area').max(MAX_SAP_AREAS, `Choose ${MAX_SAP_AREAS} SAP areas at most`),
+  sap_module_other: z.string().max(MAX_OTHER_AREA_LENGTH, 'The name of the other area is too long'),
+  area_details: z.string().max(MAX_AREA_DETAILS_LENGTH, 'The details about the areas are too long'),
   issue_type: z.string().min(1, 'Please select an issue type'),
   title: z.string().min(5, 'Title must be at least 5 characters').max(200, 'Title too long'),
   description: z.string().min(20, 'Please describe your issue in at least 20 characters').max(5000, 'Description too long'),
   urgency: z.enum(['low', 'medium', 'high', 'critical']),
   preferred_session: z.enum(['chat', 'video', 'screen_share']),
   preferred_language: z.enum(['en', 'ar']),
+}).superRefine((val, ctx) => {
+  if (val.sap_modules.some(isOtherArea) && val.sap_module_other.trim().length === 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['sap_module_other'], message: 'Please name the other SAP area' });
+  }
 });
 
 interface AiCategorization {
@@ -105,7 +114,8 @@ export default function NewRequestPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    sap_module: '', issue_type: '', title: '', description: '',
+    sap_module: '', sap_modules: [] as string[], sap_module_other: '', area_details: '',
+    issue_type: '', title: '', description: '',
     urgency: 'medium', preferred_session: 'video', preferred_language: 'en',
     ticket_type: 'standard',
   });
@@ -147,7 +157,7 @@ export default function NewRequestPage() {
     if (module || title || description || urgency) {
       setForm(prev => ({
         ...prev,
-        ...(module && { sap_module: module }),
+        ...(module && { sap_module: module, sap_modules: [module] }),
         ...(title && { title }),
         ...(description && { description }),
         ...(urgency && { urgency }),
@@ -171,7 +181,17 @@ export default function NewRequestPage() {
     t('ticket_create.step_review'),
   ];
 
-  const updateForm = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
+  const updateForm = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value } as typeof prev));
+
+  // sap_module keeps ONE short line (at most 100 characters) for the AI calls and the review; the full list is sap_modules
+  const setAreas = (areas: string[]) => {
+    setForm(prev => ({ ...prev, sap_modules: areas, sap_module: areasSummary(areas, prev.sap_module_other) }));
+    setFieldErrors(prev => ({ ...prev, sap_modules: '' }));
+  };
+  const setOtherArea = (text: string) => {
+    setForm(prev => ({ ...prev, sap_module_other: text, sap_module: areasSummary(prev.sap_modules, text) }));
+    setFieldErrors(prev => ({ ...prev, sap_module_other: '' }));
+  };
 
   const handleAiError = (data: any): boolean => {
     if (data?.error === 'Credits exhausted') {
@@ -276,10 +296,16 @@ export default function NewRequestPage() {
     }
 
     // Step-specific validation
-    if (currentStep === 0 && errors.sap_module) {
-      setFieldErrors({ sap_module: errors.sap_module });
-      toast.error(errors.sap_module);
-      return false;
+    if (currentStep === 0) {
+      const stepErrors: Record<string, string> = {};
+      if (errors.sap_modules) stepErrors.sap_modules = errors.sap_modules;
+      if (errors.sap_module_other) stepErrors.sap_module_other = errors.sap_module_other;
+      if (errors.area_details) stepErrors.area_details = errors.area_details;
+      if (Object.keys(stepErrors).length > 0) {
+        setFieldErrors(stepErrors);
+        toast.error(Object.values(stepErrors)[0]);
+        return false;
+      }
     }
     if (currentStep === 1) {
       const stepErrors: Record<string, string> = {};
@@ -324,7 +350,10 @@ export default function NewRequestPage() {
       const { data: ticketData, error } = await supabase.from('tickets').insert({
         client_id: user.id,
         tenant_id: tenant?.id || null,
-        sap_module: form.sap_module,
+        sap_module: form.sap_modules[0] || form.sap_module,
+        sap_modules: form.sap_modules,
+        sap_module_other: form.sap_modules.some(isOtherArea) ? form.sap_module_other.trim() : null,
+        area_details: form.area_details.trim() || null,
         title: form.title,
         description: form.description,
         urgency: form.urgency as any,
@@ -430,7 +459,7 @@ export default function NewRequestPage() {
         <div className="flex gap-3 justify-center">
           <Button onClick={() => {
             setSubmitted(false); setStep(0);
-            setForm({ sap_module: '', issue_type: '', title: '', description: '', urgency: 'medium', preferred_session: 'video', preferred_language: 'en', ticket_type: 'standard' });
+            setForm({ sap_module: '', sap_modules: [], sap_module_other: '', area_details: '', issue_type: '', title: '', description: '', urgency: 'medium', preferred_session: 'video', preferred_language: 'en', ticket_type: 'standard' });
             setAiCategorization(null); setAiSummary(null); setAiMatch(null); setAiRecommendations(null); setAttachedFiles([]); setLinkedTickets([]);
           }} variant="outline">
             {t('ticket_create.submit_another')}
@@ -474,14 +503,17 @@ export default function NewRequestPage() {
         <Card className="rounded-2xl border-border/50">
           <CardHeader><CardTitle className="text-base">{t('ticket_create.select_module')}</CardTitle></CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {sapModules.map(mod => (
-                <button key={mod} onClick={() => updateForm('sap_module', mod)}
-                  className={`p-3 rounded-xl border text-sm text-start transition-all ${form.sap_module === mod ? 'border-accent bg-accent/10 text-foreground font-medium' : 'border-border/50 text-muted-foreground hover:border-accent/30'}`}>
-                  {mod}
-                </button>
-              ))}
-            </div>
+            <SapAreaPicker
+              areas={form.sap_modules}
+              other={form.sap_module_other}
+              details={form.area_details}
+              onAreasChange={setAreas}
+              onOtherChange={setOtherArea}
+              onDetailsChange={text => { updateForm('area_details', text); setFieldErrors(prev => ({ ...prev, area_details: '' })); }}
+              areasError={fieldErrors.sap_modules}
+              otherError={fieldErrors.sap_module_other}
+              detailsError={fieldErrors.area_details}
+            />
           </CardContent>
         </Card>
       )}
@@ -770,7 +802,7 @@ export default function NewRequestPage() {
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="p-3 rounded-xl bg-muted/30">
                   <p className="text-xs text-muted-foreground mb-0.5">{t('ticket_create.select_module')}</p>
-                  <p className="text-sm font-medium">{form.sap_module || '—'}</p>
+                  <p className="text-sm font-medium">{form.sap_modules.length > 0 ? form.sap_modules.map(n => areaLabel(n, form.sap_module_other)).join(', ') : '—'}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-muted/30">
                   <p className="text-xs text-muted-foreground mb-0.5">{t('ticket_create.issue_type')}</p>
@@ -785,6 +817,12 @@ export default function NewRequestPage() {
                   <p className="text-sm font-medium capitalize">{form.preferred_session.replace('_', ' ')}</p>
                 </div>
               </div>
+              {form.area_details.trim() && (
+                <div className="p-3 rounded-xl bg-muted/30">
+                  <p className="text-xs text-muted-foreground mb-0.5">More details about the areas</p>
+                  <p className="text-sm whitespace-pre-wrap">{form.area_details.trim()}</p>
+                </div>
+              )}
               <div className="p-3 rounded-xl bg-muted/30">
                 <p className="text-xs text-muted-foreground mb-0.5">{t('ticket_create.ticket_title')}</p>
                 <p className="text-sm font-medium">{form.title || '—'}</p>

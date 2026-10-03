@@ -49,6 +49,7 @@ import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfac
 import { useSatisfactionSurveys } from '@/hooks/useSatisfactionSurveys';
 import { formatDistanceToNow, format } from 'date-fns';
 import { useChatFileUrl } from '@/hooks/useChatFileUrl';
+import { areasOf, areaLabel } from '@/lib/sapAreas';
 
 function TicketFileLink({ fileUrl, fileName }: { fileUrl: string | null; fileName: string | null }) {
   const href = useChatFileUrl(fileUrl);
@@ -152,6 +153,7 @@ export default function TicketDetailPage() {
   }
 
   const completedSessions = (sessions || []).filter(s => s.status === 'completed');
+  const ticketAreas = areasOf(ticket);
   const recordedSessions = completedSessions.filter(s => s.session_type === 'video' || s.session_type === 'screen_share');
   // A colleague of the ticket owner (same company) can read the ticket but only the owner can change it
   const isColleague = isClient && !!currentUserId && ticket.client_id !== currentUserId;
@@ -252,11 +254,37 @@ export default function TicketDetailPage() {
 
       {/* ─── Info Cards ─── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <InfoCard icon={Tag} label="SAP Module" value={ticket.sap_module} />
+        <InfoCard
+          icon={Tag}
+          label={ticketAreas.length > 1 ? 'SAP Areas' : 'SAP Module'}
+          value={ticketAreas.length > 1 ? `${areaLabel(ticketAreas[0], ticket.sap_module_other)} +${ticketAreas.length - 1}` : areaLabel(ticket.sap_module, ticket.sap_module_other)}
+        />
         <InfoCard icon={User} label="Consultant" value={ticket.consultant_name || 'Unassigned'} />
         <InfoCard icon={Calendar} label="Created" value={format(new Date(ticket.created_at), 'MMM d, yyyy')} />
         <InfoCard icon={Clock} label="Last Updated" value={formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })} />
       </div>
+
+      {(ticketAreas.length > 1 || ticket.sap_module_other || ticket.area_details) && (
+        <Card className="rounded-2xl border-border/50">
+          <CardContent className="p-4 space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">SAP areas</p>
+            <div className="flex flex-wrap gap-1.5">
+              {ticketAreas.map((name, i) => (
+                <Badge key={name} variant="secondary" className="text-xs gap-1">
+                  {i === 0 && ticketAreas.length > 1 && <Star className="w-3 h-3 text-accent fill-accent" aria-label="Main area" />}
+                  {areaLabel(name, ticket.sap_module_other)}
+                </Badge>
+              ))}
+            </div>
+            {ticket.area_details && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">More details about the areas</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{ticket.area_details}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* ─── Description & Extra Details ─── */}
       {(ticket.description || ticket.preferred_language || ticket.sla_deadline || ticket.ai_suggested_category) && (

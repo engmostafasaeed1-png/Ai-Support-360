@@ -6,6 +6,9 @@ export interface TicketDetail {
   title: string;
   description: string | null;
   sap_module: string;
+  sap_modules?: string[] | null;
+  sap_module_other?: string | null;
+  area_details?: string | null;
   urgency: string;
   status: string;
   preferred_language: string | null;
