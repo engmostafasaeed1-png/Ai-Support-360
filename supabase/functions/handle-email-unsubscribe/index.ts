@@ -3,7 +3,7 @@ import {
   getEmailUnsubscribe,
   setEmailUnsubscribe,
 } from 'npm:@lovable.dev/email-js@0.1.0'
-import { corsHeaders as sharedCorsHeaders } from '../_shared/security.ts'
+import { corsHeaders as sharedCorsHeaders, clientIp, withinRateLimit } from '../_shared/security.ts'
 
 const SENDER_DOMAIN = 'notify.aisapsupportnow.com'
 
@@ -81,6 +81,26 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Token or email is required' }, 400)
   }
 
+  // Anyone who knows an address can open an unsubscribe link, so the endpoint must not be usable in bulk:
+  // the value has to look like one e-mail address, and requests are counted per IP and per address
+  // (the counters fail open: a real unsubscribe is never blocked because the counter is down).
+  if (recipient.length > 254 || !/^[^\s@<>",;]+@[^\s@<>",;]+\.[^\s@<>",;]+$/.test(recipient)) {
+    return jsonResponse({ error: 'Invalid e-mail address' }, 400)
+  }
+  const ip = clientIp(req)
+  const limiter = createClient(supabaseUrl, supabaseServiceKey)
+  let allowed = await withinRateLimit(limiter, `unsub-ip:${ip}`, 120, 3600, true)
+  if (allowed && req.method === 'POST') {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(recipient))
+    const recipientKey = Array.from(new Uint8Array(digest).slice(0, 8)).map((b) => b.toString(16).padStart(2, '0')).join('')
+    allowed =
+      (await withinRateLimit(limiter, `unsub-post-ip:${ip}`, 20, 3600, true)) &&
+      (await withinRateLimit(limiter, `unsub-post-rcpt:${recipientKey}`, 5, 3600, true))
+  }
+  if (!allowed) {
+    return jsonResponse({ error: 'Too many requests. Please try again later.' }, 429)
+  }
+
   const options = { apiKey }
 
   // Check current subscription state with the managed email system
@@ -132,7 +152,7 @@ Deno.serve(async (req) => {
     .from('suppressed_emails')
     .upsert({ email: recipient, reason: 'unsubscribe' }, { onConflict: 'email' })
 
-  console.log('Email unsubscribed')
+  console.log('Email unsubscribed', { via: token ? 'token' : 'email', ip })
 
   return jsonResponse({ success: true })
 })
