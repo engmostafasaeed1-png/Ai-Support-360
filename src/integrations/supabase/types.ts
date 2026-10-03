@@ -956,6 +956,62 @@ export type Database = {
           },
         ]
       }
+      consultant_payout_details: {
+        Row: {
+          account_holder: string
+          account_number: string | null
+          bank_name: string
+          consultant_id: string
+          country: string | null
+          created_at: string
+          currency: string
+          iban: string | null
+          notes: string | null
+          swift_bic: string | null
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          account_holder: string
+          account_number?: string | null
+          bank_name: string
+          consultant_id: string
+          country?: string | null
+          created_at?: string
+          currency?: string
+          iban?: string | null
+          notes?: string | null
+          swift_bic?: string | null
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          account_holder?: string
+          account_number?: string | null
+          bank_name?: string
+          consultant_id?: string
+          country?: string | null
+          created_at?: string
+          currency?: string
+          iban?: string | null
+          notes?: string | null
+          swift_bic?: string | null
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_payout_details_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultant_projects: {
         Row: {
           client_industry: string | null
@@ -2854,7 +2910,13 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          bank_reference: string | null
           client_id: string
+          client_note: string | null
+          client_reported_at: string | null
+          client_transfer_date: string | null
+          client_transfer_reference: string | null
+          confirmed_by: string | null
           consultant_id: string | null
           created_at: string
           currency: string | null
@@ -2862,18 +2924,32 @@ export type Database = {
           due_date: string | null
           id: string
           invoice_number: string | null
+          kind: string
+          milestone_id: string | null
+          paid_at: string | null
           payment_method: string | null
+          provider: string
+          received_amount: number | null
+          reference: string | null
+          rejection_note: string | null
           session_id: string | null
           status: Database["public"]["Enums"]["payment_status"] | null
           stripe_payment_id: string | null
           tenant_id: string | null
           ticket_id: string | null
+          timesheet_id: string | null
           updated_at: string
           vat_amount: number | null
         }
         Insert: {
           amount: number
+          bank_reference?: string | null
           client_id: string
+          client_note?: string | null
+          client_reported_at?: string | null
+          client_transfer_date?: string | null
+          client_transfer_reference?: string | null
+          confirmed_by?: string | null
           consultant_id?: string | null
           created_at?: string
           currency?: string | null
@@ -2881,18 +2957,32 @@ export type Database = {
           due_date?: string | null
           id?: string
           invoice_number?: string | null
+          kind?: string
+          milestone_id?: string | null
+          paid_at?: string | null
           payment_method?: string | null
+          provider?: string
+          received_amount?: number | null
+          reference?: string | null
+          rejection_note?: string | null
           session_id?: string | null
           status?: Database["public"]["Enums"]["payment_status"] | null
           stripe_payment_id?: string | null
           tenant_id?: string | null
           ticket_id?: string | null
+          timesheet_id?: string | null
           updated_at?: string
           vat_amount?: number | null
         }
         Update: {
           amount?: number
+          bank_reference?: string | null
           client_id?: string
+          client_note?: string | null
+          client_reported_at?: string | null
+          client_transfer_date?: string | null
+          client_transfer_reference?: string | null
+          confirmed_by?: string | null
           consultant_id?: string | null
           created_at?: string
           currency?: string | null
@@ -2900,12 +2990,20 @@ export type Database = {
           due_date?: string | null
           id?: string
           invoice_number?: string | null
+          kind?: string
+          milestone_id?: string | null
+          paid_at?: string | null
           payment_method?: string | null
+          provider?: string
+          received_amount?: number | null
+          reference?: string | null
+          rejection_note?: string | null
           session_id?: string | null
           status?: Database["public"]["Enums"]["payment_status"] | null
           stripe_payment_id?: string | null
           tenant_id?: string | null
           ticket_id?: string | null
+          timesheet_id?: string | null
           updated_at?: string
           vat_amount?: number | null
         }
@@ -2915,6 +3013,13 @@ export type Database = {
             columns: ["consultant_id"]
             isOneToOne: false
             referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "milestones"
             referencedColumns: ["id"]
           },
           {
@@ -2938,38 +3043,72 @@ export type Database = {
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "payments_timesheet_id_fkey"
+            columns: ["timesheet_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_timesheet_submissions"
+            referencedColumns: ["id"]
+          },
         ]
       }
       payouts: {
         Row: {
           amount: number
+          bank_reference: string | null
+          commission_amount: number | null
+          commission_percent: number | null
           consultant_id: string
           created_at: string
           currency: string | null
+          gross_amount: number | null
           id: string
+          milestone_id: string | null
+          note: string | null
+          paid_at: string | null
+          payment_id: string | null
           payout_method: string | null
+          processed_by: string | null
           reference: string | null
           status: Database["public"]["Enums"]["payout_status"] | null
           updated_at: string
         }
         Insert: {
           amount: number
+          bank_reference?: string | null
+          commission_amount?: number | null
+          commission_percent?: number | null
           consultant_id: string
           created_at?: string
           currency?: string | null
+          gross_amount?: number | null
           id?: string
+          milestone_id?: string | null
+          note?: string | null
+          paid_at?: string | null
+          payment_id?: string | null
           payout_method?: string | null
+          processed_by?: string | null
           reference?: string | null
           status?: Database["public"]["Enums"]["payout_status"] | null
           updated_at?: string
         }
         Update: {
           amount?: number
+          bank_reference?: string | null
+          commission_amount?: number | null
+          commission_percent?: number | null
           consultant_id?: string
           created_at?: string
           currency?: string | null
+          gross_amount?: number | null
           id?: string
+          milestone_id?: string | null
+          note?: string | null
+          paid_at?: string | null
+          payment_id?: string | null
           payout_method?: string | null
+          processed_by?: string | null
           reference?: string | null
           status?: Database["public"]["Enums"]["payout_status"] | null
           updated_at?: string
@@ -2980,6 +3119,20 @@ export type Database = {
             columns: ["consultant_id"]
             isOneToOne: false
             referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
             referencedColumns: ["id"]
           },
         ]
@@ -6057,6 +6210,15 @@ export type Database = {
       }
     }
     Functions: {
+      admin_confirm_payment: {
+        Args: {
+          _bank_reference: string
+          _note?: string
+          _payment_id: string
+          _received_amount?: number
+        }
+        Returns: undefined
+      }
       admin_confirm_reschedule_slot: {
         Args: { _note?: string; _request_id: string; _slot_index?: number }
         Returns: {
@@ -6089,6 +6251,32 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_create_invoice: {
+        Args: {
+          _amount: number
+          _client_id: string
+          _consultant_id: string
+          _currency: string
+          _description: string
+          _due_days?: number
+          _ticket_id: string
+          _vat_amount?: number
+        }
+        Returns: string
+      }
+      admin_reject_payment_report: {
+        Args: { _note: string; _payment_id: string }
+        Returns: undefined
+      }
+      admin_set_payout_status: {
+        Args: {
+          _bank_reference?: string
+          _note?: string
+          _payout_id: string
+          _status: string
+        }
+        Returns: undefined
+      }
       bp_matches_ticket_client: {
         Args: { _bp_id: string; _ticket_id: string }
         Returns: boolean
@@ -6100,6 +6288,15 @@ export type Database = {
       check_rate_limit: {
         Args: { _bucket: string; _limit: number; _window_seconds: number }
         Returns: boolean
+      }
+      client_report_payment: {
+        Args: {
+          _note?: string
+          _payment_id: string
+          _transfer_date: string
+          _transfer_reference: string
+        }
+        Returns: undefined
       }
       complete_live_interview: {
         Args: {
@@ -6174,6 +6371,7 @@ export type Database = {
           webhook_secret: string
         }[]
       }
+      get_payment_instructions: { Args: never; Returns: Json }
       get_user_tenant_id: { Args: never; Returns: string }
       get_vmware_settings_safe: {
         Args: { p_environment_id: string }
@@ -6289,6 +6487,8 @@ export type Database = {
         }
         Returns: undefined
       }
+      payment_commission_percent: { Args: never; Returns: number }
+      payment_vat_percent: { Args: never; Returns: number }
       plan_limits_enforced: { Args: never; Returns: boolean }
       recompute_consultant_rating: {
         Args: { _consultant_id: string }

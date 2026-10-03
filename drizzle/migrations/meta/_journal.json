@@ -15,6 +15,13 @@
       "when": 1790950240700,
       "tag": "0001_client_cycle_m14_money_flow",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791017365300,
+      "tag": "0002_billing_m16_bank_transfer_flow",
+      "breakpoints": true
     }
   ]
 }
