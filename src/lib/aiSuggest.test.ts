@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeSuggestResult, suggestSignature, canSuggest, hasReferences, sapNoteLink, BASIS_LABEL } from './aiSuggest';
+import { normalizeSuggestResult, suggestSignature, canSuggest, hasReferences, sapNoteLink, licenseLabel, shieldText, BASIS_LABEL } from './aiSuggest';
 
 const ID1 = '123e4567-e89b-12d3-a456-426614174000';
 const ID2 = '223e4567-e89b-12d3-a456-426614174001';
@@ -167,6 +167,74 @@ describe('suggestSignature and canSuggest', () => {
   });
 
   it('has a label for every basis', () => {
-    expect(Object.keys(BASIS_LABEL).sort()).toEqual(['general', 'knowledge_base', 'past_case', 'playbook']);
+    expect(Object.keys(BASIS_LABEL).sort()).toEqual(['general', 'knowledge_base', 'past_case', 'playbook', 'sap_docs']);
+  });
+});
+
+describe('SAP documentation sources', () => {
+  const doc = {
+    title: 'Setting Up Authorization - Next steps',
+    url: 'https://github.com/SAP-docs/btp-best-practices-guide/blob/main/docs/set-up-and-plan/setting-up-authorization-cb9f0ac.md',
+    source: 'SAP BTP best practices guide',
+    license: 'CC-BY-4.0',
+  };
+  const answer = (docs: unknown) => ({ mode: 'knowledge', suggestions: [{ title: 'A', steps: ['b'], basis: 'sap_docs', docs }] });
+
+  it('keeps the source of a suggestion that comes from SAP documentation', () => {
+    const r = normalizeSuggestResult(answer([doc]));
+    expect(r.suggestions[0].basis).toBe('sap_docs');
+    expect(r.suggestions[0].docs).toEqual([doc]);
+  });
+
+  it('has no sources for a suggestion that names none', () => {
+    expect(normalizeSuggestResult({ suggestions: [{ title: 'A', steps: ['b'] }] }).suggestions[0].docs).toEqual([]);
+    expect(normalizeSuggestResult({ suggestions: [{ title: 'A', steps: ['b'], docs: 'x' }] }).suggestions[0].docs).toEqual([]);
+  });
+
+  it('accepts only links to pages of the SAP-docs organisation on GitHub, at most three, no duplicates', () => {
+    const r = normalizeSuggestResult(answer([
+      doc,
+      doc,
+      { ...doc, url: 'https://github.com/evil/repo/blob/main/x.md' },
+      { ...doc, url: 'https://github.com.evil.example/SAP-docs/x/blob/main/x.md' },
+      { ...doc, url: 'https://github.com/SAP-docs/sapui5/blob/main/docs/a.md' },
+      { ...doc, title: '', url: 'https://github.com/SAP-docs/sapui5/blob/main/docs/b.md' },
+      { ...doc, url: 'https://github.com/SAP-docs/sapui5/blob/main/docs/c.md' },
+      { ...doc, url: 'https://github.com/SAP-docs/sapui5/blob/main/docs/d.md' },
+    ]));
+    expect(r.suggestions[0].docs.map(d => d.url)).toEqual([
+      doc.url,
+      'https://github.com/SAP-docs/sapui5/blob/main/docs/a.md',
+      'https://github.com/SAP-docs/sapui5/blob/main/docs/c.md',
+    ]);
+  });
+
+  it('shows the licence as CC BY 4.0 and assumes it when the server sent none', () => {
+    expect(licenseLabel('CC-BY-4.0')).toBe('CC BY 4.0');
+    expect(licenseLabel('')).toBe('CC BY 4.0');
+    expect(normalizeSuggestResult(answer([{ ...doc, license: '' }])).suggestions[0].docs[0].license).toBe('CC-BY-4.0');
+  });
+});
+
+describe('shieldText', () => {
+  const doc = { title: 'A page', url: 'https://github.com/SAP-docs/sapui5/blob/main/docs/a.md', source: 'SAPUI5', license: 'CC-BY-4.0' };
+  const make = (mode: string, parts: Array<[string, boolean]>) =>
+    normalizeSuggestResult({ mode, suggestions: parts.map(([basis, withDoc], i) => ({ title: 'S' + i, steps: ['x'], basis, docs: withDoc ? [doc] : [] })) });
+
+  it('says the suggestions come from published, anonymised knowledge', () => {
+    expect(shieldText(make('knowledge', [['past_case', false]]))).toBe('Taken from published, anonymised knowledge. No company or consultant data is shared.');
+  });
+
+  it('says so when every suggestion comes from SAP documentation', () => {
+    expect(shieldText(make('knowledge', [['sap_docs', true]]))).toMatch(/^Taken from SAP's open documentation \(CC BY 4\.0\) and reworded\./);
+  });
+
+  it('names both when the sources are mixed', () => {
+    expect(shieldText(make('knowledge', [['past_case', false], ['sap_docs', true]]))).toMatch(/published, anonymised knowledge and from SAP's open documentation/);
+    expect(shieldText(make('knowledge', [['knowledge_base', true]]))).toMatch(/published, anonymised knowledge and from SAP's open documentation/);
+  });
+
+  it('says that general guidance is not taken from past cases', () => {
+    expect(shieldText(make('general', [['general', false]]))).toMatch(/not taken from past cases/);
   });
 });

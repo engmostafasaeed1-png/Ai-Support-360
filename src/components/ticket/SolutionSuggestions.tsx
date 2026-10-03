@@ -7,9 +7,12 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import {
   BASIS_LABEL,
+  SAP_DOCS_LICENSE_URL,
   canSuggest,
   hasReferences,
+  licenseLabel,
   normalizeSuggestResult,
+  shieldText,
   suggestSignature,
   type SuggestResult,
   type Suggestion,
@@ -201,9 +204,7 @@ export default function SolutionSuggestions({ title, description, areas, other, 
           <>
             <p className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
               <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0" />
-              {result.mode === 'knowledge'
-                ? 'Taken from published, anonymised knowledge. No company or consultant data is shared.'
-                : 'General SAP guidance. It is not taken from past cases, so please check it before you apply it. No company or consultant data is shared.'}
+              {shieldText(result)}
             </p>
 
             {result.suggestions.length === 0 ? (
@@ -233,6 +234,19 @@ export default function SolutionSuggestions({ title, description, areas, other, 
                         <span className="text-[10px] text-muted-foreground">T-Codes:</span>
                         {s.tcodes.map(tc => (
                           <Badge key={tc} variant="outline" className="font-mono text-[9px]">{tc}</Badge>
+                        ))}
+                      </div>
+                    )}
+                    {s.docs.length > 0 && (
+                      <div className="space-y-0.5 rounded-lg bg-muted/40 p-2" data-testid="sap-docs-source">
+                        {s.docs.map(d => (
+                          <p key={d.url} className="text-[11px] text-muted-foreground">
+                            Source:{' '}
+                            <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{d.title}</a>
+                            {d.source ? `, ${d.source}` : ''}. © SAP SE,{' '}
+                            <a href={SAP_DOCS_LICENSE_URL} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{licenseLabel(d.license)}</a>.
+                            {' '}Shortened and reworded.
+                          </p>
                         ))}
                       </div>
                     )}
