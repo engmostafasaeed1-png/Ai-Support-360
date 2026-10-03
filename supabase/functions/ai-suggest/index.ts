@@ -8,14 +8,8 @@ import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit, getUserRoles, hasAnyRole, ADMIN_ROLES } from "../_shared/security.ts";
 import { scrubText } from "../_shared/scrub.ts";
 
-const VALID_MODELS = [
-  "google/gemini-2.5-flash-lite",
-  "google/gemini-2.5-flash",
-  "google/gemini-2.5-pro",
-  "openai/gpt-4o-mini",
-  "openai/gpt-4o",
-];
-const DEFAULT_MODEL = "google/gemini-2.5-flash";
+const VALID_MODELS = ["openai/gpt-6-astra"];
+const DEFAULT_MODEL = "openai/gpt-6-astra";
 const MAX_BODY_SIZE = 50 * 1024;
 
 const BodySchema = z.object({
@@ -81,27 +75,52 @@ const SUGGEST_TOOL = {
   },
 };
 
-function aiRequest(apiKey: string, system: string, user: string, model: string) {
-  return fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+// Lovable AI Gateway, Responses API (streamed). Returns a Response whose JSON is { arguments } of the forced tool call.
+async function aiRequest(apiKey: string, system: string, user: string, model: string): Promise<Response> {
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: { "Lovable-API-Key": apiKey, Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "X-Lovable-AIG-SDK": "fetch" },
     body: JSON.stringify({
       model,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      tools: [SUGGEST_TOOL],
-      tool_choice: { type: "function", function: { name: "suggest_solutions" } },
+      stream: true,
+      store: false,
+      reasoning: { effort: "low" },
+      instructions: system,
+      input: [{ role: "user", content: user }],
+      tools: [{ type: "function", ...SUGGEST_TOOL.function }],
+      tool_choice: { type: "function", name: "suggest_solutions" },
     }),
   });
+  if (!res.ok || !res.body) return res;
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let args: string | null = null;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let idx: number;
+    while ((idx = buffer.indexOf("\n")) >= 0) {
+      const line = buffer.slice(0, idx).trim();
+      buffer = buffer.slice(idx + 1);
+      if (!line.startsWith("data:")) continue;
+      const payload = line.slice(5).trim();
+      if (!payload || payload === "[DONE]") continue;
+      try {
+        const ev = JSON.parse(payload);
+        if (ev.type === "response.function_call_arguments.done" && typeof ev.arguments === "string") args = ev.arguments;
+        else if (ev.type === "response.output_item.done" && ev.item?.type === "function_call" && !args) args = ev.item.arguments;
+      } catch { /* partial or non-JSON line */ }
+    }
+  }
+  return new Response(JSON.stringify({ arguments: args }), { status: 200 });
 }
 
 function parseToolResult(data: any): any | null {
-  const call = data?.choices?.[0]?.message?.tool_calls?.[0];
-  if (!call) return null;
+  if (typeof data?.arguments !== "string") return null;
   try {
-    return JSON.parse(call.function.arguments);
+    return JSON.parse(data.arguments);
   } catch {
     return null;
   }
