@@ -239,6 +239,7 @@ export const adminNavGroups: NavGroup[] = [
       { key: 'ticket_board', icon: Kanban, path: '/admin/tickets' },
       { key: 'environments', icon: Server, path: '/admin/environments' },
       { key: 'environment_logs', icon: ClipboardList, path: '/admin/environment-logs' },
+      { key: 'payments_admin', icon: Wallet, path: '/admin/payments', fallback: 'Payments & payouts' },
       { key: 'integrations', icon: Plug, path: '/admin/integrations' },
       { key: 'vmware_settings', icon: Settings2, path: '/admin/vmware-settings' },
     ],
