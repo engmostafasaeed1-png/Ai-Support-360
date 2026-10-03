@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { issueTypes } from '@/data/clientMockData';
 import SapAreaPicker from '@/components/ticket/SapAreaPicker';
 import SolutionSuggestions from '@/components/ticket/SolutionSuggestions';
+import SapNotesField from '@/components/ticket/SapNotesField';
 import { MAX_SAP_AREAS, MAX_OTHER_AREA_LENGTH, MAX_AREA_DETAILS_LENGTH, areasSummary, areaLabel, isOtherArea } from '@/lib/sapAreas';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -127,7 +128,7 @@ export default function NewRequestPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    sap_module: '', sap_modules: [] as string[], sap_module_other: '', area_details: '',
+    sap_module: '', sap_modules: [] as string[], sap_module_other: '', area_details: '', sap_notes_tried: [] as string[],
     issue_type: '', title: '', description: '',
     urgency: 'medium', preferred_session: 'video', preferred_language: 'en',
     ticket_type: 'standard',
@@ -382,6 +383,7 @@ export default function NewRequestPage() {
         sap_modules: form.sap_modules,
         sap_module_other: form.sap_modules.some(isOtherArea) ? form.sap_module_other.trim() : null,
         area_details: form.area_details.trim() || null,
+        sap_notes_tried: form.sap_notes_tried,
         title: form.title,
         description: form.description,
         urgency: form.urgency as any,
@@ -524,7 +526,7 @@ export default function NewRequestPage() {
         <div className="flex gap-3 justify-center">
           <Button onClick={() => {
             setSubmitted(false); setStep(0);
-            setForm({ sap_module: '', sap_modules: [], sap_module_other: '', area_details: '', issue_type: '', title: '', description: '', urgency: 'medium', preferred_session: 'video', preferred_language: 'en', ticket_type: 'standard' });
+            setForm({ sap_module: '', sap_modules: [], sap_module_other: '', area_details: '', sap_notes_tried: [], issue_type: '', title: '', description: '', urgency: 'medium', preferred_session: 'video', preferred_language: 'en', ticket_type: 'standard' });
             setAiCategorization(null); setAiSummary(null); setAiMatch(null); setAiRecommendations(null); setAttachedFiles([]); setLinkedTickets([]);
             setPicked([]); setCreatedTicketId(null);
           }} variant="outline">
@@ -616,6 +618,11 @@ export default function NewRequestPage() {
               <Textarea value={form.description} onChange={e => { updateForm('description', e.target.value); setFieldErrors(prev => ({ ...prev, description: '' })); }} placeholder={t('ticket_create.desc_placeholder')} rows={5} className={`rounded-xl ${fieldErrors.description ? 'border-destructive' : ''}`} maxLength={2000} />
               {fieldErrors.description && <p className="text-[11px] text-destructive mt-1">{fieldErrors.description}</p>}
             </div>
+
+            <SapNotesField
+              value={form.sap_notes_tried}
+              onChange={notes => setForm(prev => ({ ...prev, sap_notes_tried: notes }))}
+            />
 
             {/* File Attachments */}
             <div>
@@ -787,6 +794,7 @@ export default function NewRequestPage() {
           urgency={form.urgency}
           language={form.preferred_language}
           model={selectedModel}
+          notesTried={form.sap_notes_tried}
           onSolved={() => setSolvedBySuggestion(true)}
         />
       )}
@@ -901,6 +909,12 @@ export default function NewRequestPage() {
                 <div className="p-3 rounded-xl bg-muted/30">
                   <p className="text-xs text-muted-foreground mb-0.5">More details about the areas</p>
                   <p className="text-sm whitespace-pre-wrap">{form.area_details.trim()}</p>
+                </div>
+              )}
+              {form.sap_notes_tried.length > 0 && (
+                <div className="p-3 rounded-xl bg-muted/30">
+                  <p className="text-xs text-muted-foreground mb-0.5">SAP Notes already tried</p>
+                  <p className="text-sm font-mono">{form.sap_notes_tried.join(', ')}</p>
                 </div>
               )}
               <div className="p-3 rounded-xl bg-muted/30">

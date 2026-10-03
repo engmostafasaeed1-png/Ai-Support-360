@@ -50,6 +50,8 @@ import { useSatisfactionSurveys } from '@/hooks/useSatisfactionSurveys';
 import { formatDistanceToNow, format } from 'date-fns';
 import { useChatFileUrl } from '@/hooks/useChatFileUrl';
 import { areasOf, areaLabel } from '@/lib/sapAreas';
+import { SapNoteLinks } from '@/components/ticket/SapNotesField';
+import { cleanNoteList } from '@/lib/sapNotes';
 
 function TicketFileLink({ fileUrl, fileName }: { fileUrl: string | null; fileName: string | null }) {
   const href = useChatFileUrl(fileUrl);
@@ -154,6 +156,7 @@ export default function TicketDetailPage() {
 
   const completedSessions = (sessions || []).filter(s => s.status === 'completed');
   const ticketAreas = areasOf(ticket);
+  const triedNotes = cleanNoteList(ticket.sap_notes_tried);
   const recordedSessions = completedSessions.filter(s => s.session_type === 'video' || s.session_type === 'screen_share');
   // A colleague of the ticket owner (same company) can read the ticket but only the owner can change it
   const isColleague = isClient && !!currentUserId && ticket.client_id !== currentUserId;
@@ -282,6 +285,17 @@ export default function TicketDetailPage() {
                 <p className="text-sm text-foreground whitespace-pre-wrap">{ticket.area_details}</p>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* SAP Notes the client already tried */}
+      {triedNotes.length > 0 && (
+        <Card className="rounded-2xl border-border/50" data-testid="notes-tried">
+          <CardContent className="p-4 space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">SAP Notes already tried</p>
+            <SapNoteLinks notes={triedNotes} />
+            <p className="text-[11px] text-muted-foreground">Each note opens in SAP for Me. You need your own SAP login to read it.</p>
           </CardContent>
         </Card>
       )}

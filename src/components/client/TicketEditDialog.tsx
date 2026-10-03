@@ -11,6 +11,8 @@ import { toast } from 'sonner';
 import { Loader2, Upload, X, FileText, Paperclip } from 'lucide-react';
 import type { TicketDetail } from '@/hooks/useTicketDetail';
 import SapAreaPicker from '@/components/ticket/SapAreaPicker';
+import SapNotesField from '@/components/ticket/SapNotesField';
+import { cleanNoteList } from '@/lib/sapNotes';
 import { MAX_SAP_AREAS, MAX_AREA_DETAILS_LENGTH, areasOf, cleanAreaList, isOtherArea } from '@/lib/sapAreas';
 
 const urgencyOptions = ['low', 'medium', 'high', 'critical'];
@@ -50,6 +52,7 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
   const [areas, setAreas] = useState<string[]>(() => areasOf(ticket));
   const [otherArea, setOtherArea] = useState(ticket.sap_module_other || '');
   const [areaDetails, setAreaDetails] = useState(ticket.area_details || '');
+  const [notesTried, setNotesTried] = useState<string[]>(() => cleanNoteList(ticket.sap_notes_tried));
   const [areaErrors, setAreaErrors] = useState<{ areas?: string; other?: string; details?: string }>({});
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,6 +85,9 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
         updates.sap_modules = cleanAreas;
         updates.sap_module_other = cleanAreas.some(isOtherArea) ? otherArea.trim() : null;
         updates.area_details = areaDetails.trim() || null;
+      }
+      if (notesTried.join('|') !== cleanNoteList(ticket.sap_notes_tried).join('|')) {
+        updates.sap_notes_tried = notesTried;
       }
       if (form.status === 'resolved' && ticket.status !== 'resolved') {
         updates.resolved_at = new Date().toISOString();
@@ -213,6 +219,8 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
               </Select>
             </div>
           </div>
+
+          <SapNotesField value={notesTried} onChange={setNotesTried} idPrefix="edit-ticket-notes" />
 
           {/* Document Upload */}
           <div className="space-y-2">
