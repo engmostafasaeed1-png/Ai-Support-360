@@ -131,6 +131,9 @@ function splitLong(text: string): string[] {
   return out.filter(Boolean);
 }
 
+/** SAP's call-out boxes ("> ### Tip:", "> ### Note:") are written as headings: they are text of the section they sit in, not a section of their own. */
+const CALLOUT_LABEL = /^(?:note|tip|caution|warning|important|remember|recommendation|restriction|example|hint|attention|sample code)s?:$/i;
+
 interface Section {
   level: number;
   heading: string | null;
@@ -171,6 +174,10 @@ export function parseDoc(path: string, markdown: string): ParsedDoc {
     const h = /^(#{1,6})\s+(.+?)\s*#*\s*$/.exec(line);
     if (h) {
       const heading = h[2].trim().slice(0, 200);
+      if (CALLOUT_LABEL.test(heading)) {
+        current.lines.push(heading); // a call-out label stays in the text
+        continue;
+      }
       if (h[1].length === 1 && !title) title = heading;
       sections.push({ level: h[1].length, heading, lines: [] });
       continue;

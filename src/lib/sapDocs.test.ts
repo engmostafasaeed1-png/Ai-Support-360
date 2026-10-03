@@ -187,6 +187,26 @@ describe('parseDoc', () => {
     expect(doc.chunks[2].body).toContain('short');
   });
 
+  it('keeps call-out labels such as Tip: and Remember: in the text and never uses them as headings', () => {
+    const md = `# Setting Up\n\n## Part one\n\n${'Part one text. '.repeat(20)}\n\n> ### Tip:\n>\n> Use directories to group your subaccounts.\n\n> ### Remember:\n> - A global account is a contract.\n\n> ### Sample Code:\n>\n> Call the function in the controller.\n\n## Part two\n\n${'Part two text. '.repeat(20)}\n`;
+    const doc = parseDoc('docs/setting-up.md', md);
+    expect(doc.chunks.map((c) => c.heading)).toEqual(['Part one', 'Part two']);
+    const first = doc.chunks[0].body;
+    expect(first).toContain('Tip:');
+    expect(first).toContain('Use directories to group your subaccounts.');
+    expect(first).toContain('Remember:');
+    expect(first).toContain('A global account is a contract.');
+    expect(first).toContain('Sample Code:');
+    expect(first).toContain('Call the function in the controller.');
+    expect(doc.chunks.some((c) => (c.heading ?? '').endsWith(':'))).toBe(false);
+  });
+
+  it('still starts a new chunk at ordinary headings such as Prerequisites and Example', () => {
+    const md = `# Task\n\n## Prerequisites\n\n${'You need an account. '.repeat(10)}\n\n## Example\n\n${'This shows it. '.repeat(15)}\n`;
+    const doc = parseDoc('docs/task.md', md);
+    expect(doc.chunks.map((c) => c.heading)).toEqual(['Prerequisites', 'Example']);
+  });
+
   it('keeps at most 40 chunks of a file', () => {
     const md = Array.from({ length: 100 }, (_, i) => `## Section ${i}\n\n${'Word '.repeat(30)}`).join('\n\n');
     const doc = parseDoc('docs/many.md', md);
