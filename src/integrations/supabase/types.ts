@@ -5645,6 +5645,7 @@ export type Database = {
           sap_module: string
           sap_module_other: string | null
           sap_modules: string[]
+          sap_notes_tried: string[]
           sla_breached: boolean | null
           sla_deadline: string | null
           sla_policy_id: string | null
@@ -5690,6 +5691,7 @@ export type Database = {
           sap_module: string
           sap_module_other?: string | null
           sap_modules?: string[]
+          sap_notes_tried?: string[]
           sla_breached?: boolean | null
           sla_deadline?: string | null
           sla_policy_id?: string | null
@@ -5735,6 +5737,7 @@ export type Database = {
           sap_module?: string
           sap_module_other?: string | null
           sap_modules?: string[]
+          sap_notes_tried?: string[]
           sla_breached?: boolean | null
           sla_deadline?: string | null
           sla_policy_id?: string | null
@@ -6791,6 +6794,7 @@ export type Database = {
         Args: { _consultant_ids: string[]; _session_id: string }
         Returns: number
       }
+      is_sap_note_list: { Args: { _v: string[] }; Returns: boolean }
       is_session_participant: {
         Args: { _session_id: string }
         Returns: boolean
