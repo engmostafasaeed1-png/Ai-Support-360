@@ -99,3 +99,25 @@ export function communitySearchUrl(terms: readonly string[]): string | null {
   if (t.length === 0) return null;
   return `https://community.sap.com/t5/forums/searchpage/tab/message?q=${encodeURIComponent(t.join(' '))}`;
 }
+
+/** A link to one of SAP's own free websites. The reader opens it in the browser; nothing from the site is copied or stored. */
+export interface FreeSourceLink {
+  id: 'help' | 'community' | 'learning' | 'developers';
+  url: string;
+}
+
+// The official SAP websites that anyone can open without an SAP login (SAP Learning shows its free content first and includes the openSAP courses),
+// each with the address of its own search page and of its home page.
+const FREE_SOURCES: ReadonlyArray<{ id: FreeSourceLink['id']; search: string; home: string }> = [
+  { id: 'help', search: 'https://help.sap.com/docs/search?q=', home: 'https://help.sap.com/docs' },
+  { id: 'community', search: 'https://community.sap.com/t5/forums/searchpage/tab/message?q=', home: 'https://community.sap.com/' },
+  { id: 'learning', search: 'https://learning.sap.com/search?query=', home: 'https://learning.sap.com/' },
+  { id: 'developers', search: 'https://developers.sap.com/tutorial-navigator/?q=', home: 'https://developers.sap.com/tutorial-navigator/' },
+];
+
+/** Links to the search pages of the official free SAP websites for the given words, or to their home pages when there is no usable word. */
+export function freeSourceLinks(terms: readonly string[]): FreeSourceLink[] {
+  const t = terms.filter((x) => /^[\p{L}\p{N}_]{2,30}$/u.test(x)).slice(0, 5);
+  const query = encodeURIComponent(t.join(' '));
+  return FREE_SOURCES.map((s) => ({ id: s.id, url: t.length > 0 ? `${s.search}${query}` : s.home }));
+}

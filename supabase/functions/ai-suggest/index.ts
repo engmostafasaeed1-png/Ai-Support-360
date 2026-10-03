@@ -2,8 +2,9 @@
 // Sources: only knowledge that an administrator has published (anonymised articles and solved cases, admin-written playbooks),
 // found by the database function search_knowledge. Nothing from another client's ticket, chat or session ever reaches this prompt or the answer.
 // When nothing published fits, the answer is clearly marked as general SAP guidance.
-// SAP references: an SAP Note number is shown only when a reviewed source cites it (the model may not invent one). The link to SAP Community's own
-// search carries a few generic words. When an administrator switches it on, up to 3 matching SAP Community discussions are looked up and shown as links.
+// SAP references: an SAP Note number is shown only when a reviewed source cites it (the model may not invent one). The links to SAP's own free
+// websites (Help Portal, Community, Learning, Developer tutorials) carry a few generic words. When an administrator switches it on, up to 3 matching
+// SAP Community discussions are looked up and shown as links.
 // SAP's open documentation (github.com/SAP-docs, CC BY 4.0): pages that an administrator imported and switched on are found by search_sap_docs and
 // may be used as one more source. They are public, not from any client, and every suggestion that uses one carries its source link and licence.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -17,6 +18,7 @@ import {
   cleanSearchTerms,
   communitySearchUrl,
   extractNoteNumbers,
+  freeSourceLinks,
   MAX_NOTES,
   noteUrl,
   pickSearchTerms,
@@ -431,7 +433,7 @@ Rules:
       sources,
       note,
       notes,
-      references: { community_search_url: communitySearchUrl(terms), community },
+      references: { community_search_url: communitySearchUrl(terms), free_sources: freeSourceLinks(terms), community },
     });
   } catch (e) {
     console.error("ai-suggest error:", e instanceof Error ? e.message : String(e));

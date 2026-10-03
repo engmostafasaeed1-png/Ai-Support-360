@@ -7,6 +7,7 @@ import {
   cleanSearchTerms,
   blockedWords,
   communitySearchUrl,
+  freeSourceLinks,
 } from '../../supabase/functions/_shared/sapRefs.ts';
 
 describe('extractNoteNumbers', () => {
@@ -143,5 +144,38 @@ describe('communitySearchUrl', () => {
   it('uses at most five words', () => {
     const url = communitySearchUrl(['aa', 'bb', 'cc', 'dd', 'ee', 'ff']) ?? '';
     expect(url.endsWith('aa%20bb%20cc%20dd%20ee')).toBe(true);
+  });
+});
+
+describe('freeSourceLinks', () => {
+  it('opens the search page of each official free SAP website with the words', () => {
+    expect(freeSourceLinks(['fb60', 'posting', 'period'])).toEqual([
+      { id: 'help', url: 'https://help.sap.com/docs/search?q=fb60%20posting%20period' },
+      { id: 'community', url: 'https://community.sap.com/t5/forums/searchpage/tab/message?q=fb60%20posting%20period' },
+      { id: 'learning', url: 'https://learning.sap.com/search?query=fb60%20posting%20period' },
+      { id: 'developers', url: 'https://developers.sap.com/tutorial-navigator/?q=fb60%20posting%20period' },
+    ]);
+  });
+
+  it('gives the same SAP Community link as communitySearchUrl', () => {
+    const terms = ['fb60', 'posting'];
+    expect(freeSourceLinks(terms).find((l) => l.id === 'community')?.url).toBe(communitySearchUrl(terms));
+  });
+
+  it('opens the home pages when there is no usable word, and never puts an unsafe word into a link', () => {
+    const home = freeSourceLinks([]);
+    expect(home.map((l) => l.id)).toEqual(['help', 'community', 'learning', 'developers']);
+    expect(home.every((l) => !l.url.includes('?q=') && !l.url.includes('query='))).toBe(true);
+    expect(freeSourceLinks(['a b', "x'y", '<script>'])).toEqual(home);
+  });
+
+  it('uses https links on SAP websites only and at most five words', () => {
+    const links = freeSourceLinks(['aa', 'bb', 'cc', 'dd', 'ee', 'ff']);
+    for (const l of links) {
+      const u = new URL(l.url);
+      expect(u.protocol).toBe('https:');
+      expect(u.hostname.endsWith('.sap.com')).toBe(true);
+      expect(decodeURIComponent(u.search).includes('ff')).toBe(false);
+    }
   });
 });
