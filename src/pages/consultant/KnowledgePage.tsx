@@ -1,49 +1,72 @@
+import { useState } from 'react';
+import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Search, PenSquare } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { BookOpenCheck, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-
-const articles = [
-  { id: '1', title: 'SAP FI Best Practices for Month-End', module: 'FI', status: 'published' },
-  { id: '2', title: 'Troubleshooting SAP MM Posting Errors', module: 'MM', status: 'draft' },
-  { id: '3', title: 'SAP Basis Transport Management Guide', module: 'Basis', status: 'published' },
-];
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import KnowledgeArticleDialog from '@/components/knowledge/KnowledgeArticleDialog';
+import { useMyArticles } from '@/hooks/useKnowledgeReview';
+import { ARTICLE_STATUS_LABEL } from '@/lib/knowledgeReview';
 
 export default function ConsultantKnowledgePage() {
   const { t } = useTranslation();
+  const [writing, setWriting] = useState(false);
+  const articles = useMyArticles();
+  const list = articles.data ?? [];
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{t('sidebar.knowledge', 'Knowledge Base')}</h1>
-          <p className="text-muted-foreground text-sm">Your published articles and guides</p>
+          <p className="text-sm text-muted-foreground">
+            Write articles that help clients. An administrator reads each one before anyone else sees it.
+          </p>
         </div>
-        <Button size="sm" className="gap-1.5"><PenSquare className="w-4 h-4" /> New Article</Button>
+        <Button size="sm" className="gap-1.5" onClick={() => setWriting(true)}>
+          <Pencil className="h-4 w-4" /> Write an article
+        </Button>
       </div>
-      <div className="relative max-w-md">
-        <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search articles..." className="ps-9" />
-      </div>
-      <div className="space-y-3">
-        {articles.map((a) => (
-          <Card key={a.id} className="border-border/40 hover:border-primary/30 transition-colors cursor-pointer">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <BookOpen className="w-5 h-5 text-primary" />
+
+      {articles.isLoading ? (
+        <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 rounded-2xl" />)}</div>
+      ) : articles.error ? (
+        <p className="text-sm text-destructive">Could not load your articles.</p>
+      ) : list.length === 0 ? (
+        <Card className="rounded-2xl border-border/50">
+          <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            You have not written an article yet. Use "Write an article" to share a fix or a checklist. Describe it in your own words and, if you like, name the SAP Notes that belong to it by number.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {list.map((a) => (
+            <Card key={a.id} className="rounded-2xl border-border/50">
+              <CardContent className="flex items-center justify-between gap-3 p-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                    <BookOpenCheck className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0 space-y-1">
+                    <p className="truncate text-sm font-semibold">{a.title}</p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {a.sap_modules.slice(0, 4).map((m) => <Badge key={m} variant="outline" className="text-[10px]">{m}</Badge>)}
+                      <span className="text-[11px] text-muted-foreground">{format(new Date(a.created_at), 'MMM d, yyyy')}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-sm">{a.title}</p>
-                  <Badge variant="secondary" className="text-[10px] mt-1">{a.module}</Badge>
-                </div>
-              </div>
-              <Badge variant={a.status === 'published' ? 'default' : 'secondary'}>{a.status}</Badge>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <Badge variant={a.status === 'published' ? 'default' : 'secondary'} className="shrink-0">
+                  {ARTICLE_STATUS_LABEL[a.status] ?? a.status}
+                </Badge>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <KnowledgeArticleDialog open={writing} onOpenChange={setWriting} />
     </div>
   );
 }

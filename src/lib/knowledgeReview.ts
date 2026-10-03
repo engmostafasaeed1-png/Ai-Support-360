@@ -55,3 +55,44 @@ export function validateReview(f: ReviewFields): string | null {
   if (f.solution.trim().length > MAX_SOLUTION) return `The solution is longer than ${MAX_SOLUTION} characters.`;
   return null;
 }
+
+// ---------------------------------------------------------------- articles written by hand
+
+export const MIN_TITLE = 5;
+export const MIN_TEXT = 20;
+export const MAX_NOTE_NUMBERS = 8;
+
+/** "SAP Note 2270407, 2345678; KBA 3012345" becomes ["2270407", "2345678", "3012345"]: numbers of 5 to 8 digits, no duplicates. */
+export function parseNoteNumbers(input: string): string[] {
+  const out: string[] = [];
+  for (const m of input.matchAll(/\b\d{5,8}\b/g)) {
+    if (!out.includes(m[0])) out.push(m[0]);
+    if (out.length >= MAX_NOTE_NUMBERS) break;
+  }
+  return out;
+}
+
+export interface ArticleFields extends ReviewFields {
+  areas: readonly string[];
+  confirmed: boolean;
+}
+
+/** The first thing wrong with an article before it is sent, or null when it can be sent. */
+export function validateArticle(f: ArticleFields): string | null {
+  if (f.title.trim().length < MIN_TITLE) return `The title needs at least ${MIN_TITLE} characters.`;
+  if (f.title.trim().length > MAX_TITLE) return `The title is longer than ${MAX_TITLE} characters.`;
+  if (f.problem.trim().length < MIN_TEXT) return `Describe the problem in at least ${MIN_TEXT} characters.`;
+  if (f.problem.trim().length > MAX_PROBLEM) return `The problem description is longer than ${MAX_PROBLEM} characters.`;
+  if (f.solution.trim().length < MIN_TEXT) return `Describe the solution in at least ${MIN_TEXT} characters.`;
+  if (f.solution.trim().length > MAX_SOLUTION - 200) return `The solution is longer than ${MAX_SOLUTION - 200} characters.`;
+  if (f.areas.length === 0) return 'Choose at least one area.';
+  if (f.areas.length > 12) return 'Choose at most 12 areas.';
+  if (!f.confirmed) return 'Please confirm the statement at the end.';
+  return null;
+}
+
+export const ARTICLE_STATUS_LABEL: Record<string, string> = {
+  draft: 'Waiting for review',
+  published: 'Published',
+  archived: 'Archived',
+};
