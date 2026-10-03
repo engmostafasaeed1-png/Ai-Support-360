@@ -39,12 +39,16 @@ export default function ShareRemoteConfigDialog({
   const [shareMode, setShareMode] = useState<'consultant' | 'email'>('consultant');
   const [recipientEmail, setRecipientEmail] = useState('');
 
+  // Depend on the two values, not on the defaultConfig object: when the prop is omitted the default `{}` is a new object on every render,
+  // which made this effect run after every keystroke and wipe the alias and the connection ID that were being typed.
+  const defaultAlias = (defaultConfig?.alias as string) || '';
+  const defaultConnectionId = (defaultConfig?.connectionId as string) || '';
   useEffect(() => {
     if (open) {
-      setAlias((defaultConfig?.alias as string) || '');
-      setConnectionId((defaultConfig?.connectionId as string) || '');
+      setAlias(defaultAlias);
+      setConnectionId(defaultConnectionId);
     }
-  }, [open, defaultConfig]);
+  }, [open, defaultAlias, defaultConnectionId]);
 
   const handleShare = async () => {
     const cleanId = normalizeConnectionId(toolType, connectionId);
