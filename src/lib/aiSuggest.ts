@@ -191,12 +191,14 @@ export interface SuggestInput {
   other: string;
   details: string;
   language: string;
+  /** SAP Note numbers the client already tried. */
+  notes?: readonly string[];
 }
 
 /** The same draft gives the same key, so the card does not ask twice. */
 export function suggestSignature(input: SuggestInput): string {
   const norm = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase();
-  return JSON.stringify([norm(input.title), norm(input.description), input.areas.map(norm), norm(input.other), norm(input.details), input.language]);
+  return JSON.stringify([norm(input.title), norm(input.description), input.areas.map(norm), norm(input.other), norm(input.details), input.language, [...(input.notes ?? [])].sort()]);
 }
 
 export function canSuggest(description: string): boolean {

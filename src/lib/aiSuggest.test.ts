@@ -160,6 +160,13 @@ describe('suggestSignature and canSuggest', () => {
     expect(suggestSignature({ ...base, language: 'ar' })).not.toBe(key);
   });
 
+  it('gives another key when the SAP Notes already tried change, whatever their order', () => {
+    const key = suggestSignature({ ...base, notes: ['2270407', '3012345'] });
+    expect(suggestSignature({ ...base, notes: ['3012345', '2270407'] })).toBe(key);
+    expect(suggestSignature({ ...base, notes: ['2270407'] })).not.toBe(key);
+    expect(suggestSignature(base)).toBe(suggestSignature({ ...base, notes: [] }));
+  });
+
   it('asks only for a description of at least 20 characters', () => {
     expect(canSuggest('too short')).toBe(false);
     expect(canSuggest('   ' + 'x'.repeat(19) + '   ')).toBe(false);

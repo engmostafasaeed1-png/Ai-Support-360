@@ -102,6 +102,22 @@ describe('SolutionSuggestions', () => {
     expect(mocks.insert).toHaveBeenCalledTimes(1);
   });
 
+  it('sends the SAP Notes the client already tried', async () => {
+    mocks.invoke.mockResolvedValue({ data: knowledgeAnswer, error: null });
+    renderCard({ notesTried: ['2270407', '3012345'] });
+    await screen.findByText('Open the posting period');
+    const [, options] = mocks.invoke.mock.calls[0];
+    expect(options.body.sap_notes_tried).toEqual(['2270407', '3012345']);
+  });
+
+  it('sends no list when the client tried no SAP Note', async () => {
+    mocks.invoke.mockResolvedValue({ data: knowledgeAnswer, error: null });
+    renderCard();
+    await screen.findByText('Open the posting period');
+    const [, options] = mocks.invoke.mock.calls[0];
+    expect(options.body.sap_notes_tried).toBeUndefined();
+  });
+
   it('shows nothing when the administrator switched suggestions off', async () => {
     mocks.invoke.mockResolvedValue({ data: { enabled: false, mode: 'general', suggestions: [], sources: [] }, error: null });
     renderCard();

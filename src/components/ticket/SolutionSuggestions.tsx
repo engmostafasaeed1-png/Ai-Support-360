@@ -27,6 +27,8 @@ interface Props {
   urgency: string;
   language: string;
   model?: string;
+  /** SAP Note numbers the client already tried: the AI does not suggest them again. */
+  notesTried?: string[];
   /** The client says the suggestions solved the problem: the screen stops and no ticket is created. */
   onSolved: () => void;
 }
@@ -94,8 +96,8 @@ function SapLinks({ result }: { result: SuggestResult }) {
   );
 }
 
-export default function SolutionSuggestions({ title, description, areas, other, details, urgency, language, model, onSolved }: Props) {
-  const signature = suggestSignature({ title, description, areas, other, details, language });
+export default function SolutionSuggestions({ title, description, areas, other, details, urgency, language, model, notesTried, onSolved }: Props) {
+  const signature = suggestSignature({ title, description, areas, other, details, language, notes: notesTried });
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>(() => (cache.has(signature) ? 'done' : 'idle'));
   const [result, setResult] = useState<SuggestResult | null>(() => cache.get(signature) ?? null);
   const [verdicts, setVerdicts] = useState<Record<number, 'helpful' | 'not_helpful'>>({});
@@ -121,6 +123,7 @@ export default function SolutionSuggestions({ title, description, areas, other, 
           sap_modules: areas,
           sap_module_other: other || undefined,
           area_details: details || undefined,
+          sap_notes_tried: notesTried && notesTried.length > 0 ? notesTried : undefined,
           urgency,
           preferred_language: language,
           model,
@@ -137,7 +140,7 @@ export default function SolutionSuggestions({ title, description, areas, other, 
       console.error('Suggestions failed:', err);
       setStatus('error');
     }
-  }, [signature, title, description, areas, other, details, urgency, language, model]);
+  }, [signature, title, description, areas, other, details, urgency, language, model, notesTried]);
 
   // ask once when the card is shown for a draft that is long enough and not asked yet
   useEffect(() => {
