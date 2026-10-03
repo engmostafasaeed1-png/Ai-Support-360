@@ -1,7 +1,15 @@
 // Types and helpers for the "possible solutions" card on the New Request screen (edge function ai-suggest).
 
-export type SuggestionBasis = 'knowledge_base' | 'past_case' | 'playbook' | 'general';
+export type SuggestionBasis = 'knowledge_base' | 'past_case' | 'playbook' | 'sap_docs' | 'general';
 export type SuggestionConfidence = 'high' | 'medium' | 'low';
+
+/** A page of SAP's open documentation (licence CC BY 4.0) that a suggestion is based on. */
+export interface DocRef {
+  title: string;
+  url: string;
+  source: string;
+  license: string;
+}
 
 export interface Suggestion {
   title: string;
@@ -11,6 +19,7 @@ export interface Suggestion {
   confidence: SuggestionConfidence;
   basis: SuggestionBasis;
   source_ids: string[];
+  docs: DocRef[];
 }
 
 export interface SuggestSource {
@@ -54,15 +63,20 @@ export const BASIS_LABEL: Record<SuggestionBasis, string> = {
   knowledge_base: 'Knowledge base article',
   past_case: 'Solved case (anonymous)',
   playbook: 'Playbook',
+  sap_docs: 'SAP documentation',
   general: 'General SAP guidance',
 };
 
 export const MIN_DESCRIPTION_FOR_SUGGESTIONS = 20;
 
-const BASES: SuggestionBasis[] = ['knowledge_base', 'past_case', 'playbook', 'general'];
+/** Where the licence of SAP's open documentation is written down. */
+export const SAP_DOCS_LICENSE_URL = 'https://creativecommons.org/licenses/by/4.0/';
+
+const BASES: SuggestionBasis[] = ['knowledge_base', 'past_case', 'playbook', 'sap_docs', 'general'];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NOTE_NUMBER = /^\d{5,8}$/;
 const COMMUNITY_LINK = /^https:\/\/community\.sap\.com\/[^\s"'<>]*$/;
+const DOC_LINK = /^https:\/\/github\.com\/SAP-docs\/[A-Za-z0-9][A-Za-z0-9._-]{0,79}\/blob\/[^\s"'<>]*$/;
 
 function text(value: unknown, max: number): string {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
@@ -81,6 +95,11 @@ export function sapNoteLink(number: string): string {
   return `https://me.sap.com/notes/${number}`;
 }
 
+/** "CC-BY-4.0" is shown as "CC BY 4.0". */
+export function licenseLabel(license: string): string {
+  return license.replace(/^CC-BY-/, 'CC BY ').trim() || 'CC BY 4.0';
+}
+
 /** Reads whatever the server sent and returns a bounded, safe shape. It never throws. */
 export function normalizeSuggestResult(raw: unknown): SuggestResult {
   const r = obj(raw);
@@ -90,6 +109,16 @@ export function normalizeSuggestResult(raw: unknown): SuggestResult {
     const title = text(o.title, 140);
     const steps = list(o.steps, 8, 300);
     if (!title || steps.length === 0) continue;
+    const docs: DocRef[] = [];
+    for (const d of (Array.isArray(o.docs) ? o.docs : []).slice(0, 10)) {
+      if (docs.length >= 3) break;
+      const r = obj(d);
+      const docTitle = text(r.title, 200);
+      const url = typeof r.url === 'string' ? r.url : '';
+      if (docTitle && url.length <= 600 && DOC_LINK.test(url) && !docs.some(x => x.url === url)) {
+        docs.push({ title: docTitle, url, source: text(r.source, 120), license: text(r.license, 30) || 'CC-BY-4.0' });
+      }
+    }
     suggestions.push({
       title,
       summary: text(o.summary, 600),
@@ -98,6 +127,7 @@ export function normalizeSuggestResult(raw: unknown): SuggestResult {
       confidence: o.confidence === 'high' || o.confidence === 'low' ? o.confidence : 'medium',
       basis: BASES.includes(o.basis as SuggestionBasis) ? (o.basis as SuggestionBasis) : 'general',
       source_ids: (Array.isArray(o.source_ids) ? o.source_ids : []).filter((x): x is string => typeof x === 'string' && UUID.test(x)).slice(0, 10),
+      docs,
     });
   }
   const sources: SuggestSource[] = [];
@@ -141,6 +171,17 @@ export function normalizeSuggestResult(raw: unknown): SuggestResult {
 /** True when the card has at least one link to an SAP website to show. */
 export function hasReferences(result: SuggestResult): boolean {
   return result.notes.length > 0 || result.references.community.length > 0 || !!result.references.communitySearchUrl;
+}
+
+/** The line under the card's title: where the suggestions come from. */
+export function shieldText(result: SuggestResult): string {
+  const shared = 'No company or consultant data is shared.';
+  if (result.mode !== 'knowledge') return `General SAP guidance. It is not taken from past cases, so please check it before you apply it. ${shared}`;
+  const docs = result.suggestions.filter(s => s.basis === 'sap_docs').length;
+  const anyDocs = result.suggestions.some(s => s.docs.length > 0);
+  if (result.suggestions.length > 0 && docs === result.suggestions.length) return `Taken from SAP's open documentation (CC BY 4.0) and reworded. ${shared}`;
+  if (anyDocs) return `Taken from published, anonymised knowledge and from SAP's open documentation (CC BY 4.0). ${shared}`;
+  return `Taken from published, anonymised knowledge. ${shared}`;
 }
 
 export interface SuggestInput {

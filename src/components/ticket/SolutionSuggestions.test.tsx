@@ -146,6 +146,48 @@ describe('SolutionSuggestions', () => {
     expect(screen.queryByText(/We do not copy SAP content/)).not.toBeNull();
   });
 
+  it('shows the source, the licence and the change notice for a suggestion from SAP documentation', async () => {
+    const page = 'https://github.com/SAP-docs/btp-best-practices-guide/blob/main/docs/set-up-and-plan/setting-up-authorization-cb9f0ac.md';
+    mocks.invoke.mockResolvedValue({
+      data: {
+        enabled: true,
+        mode: 'knowledge',
+        note: '',
+        suggestions: [{
+          title: 'Assign the role collection',
+          summary: 'The user lacks the role.',
+          steps: ['Open the cockpit', 'Assign the role collection to the user'],
+          tcodes: [],
+          confidence: 'medium',
+          basis: 'sap_docs',
+          source_ids: [],
+          docs: [{ title: 'Setting Up Authorization', url: page, source: 'SAP BTP best practices guide', license: 'CC-BY-4.0' }],
+        }],
+        sources: [],
+      },
+      error: null,
+    });
+    renderCard();
+    await screen.findByText('Assign the role collection');
+    expect(screen.queryByText('SAP documentation')).not.toBeNull();
+    expect(screen.queryByText(/Taken from SAP's open documentation/)).not.toBeNull();
+    const source = screen.getByText('Setting Up Authorization').closest('a') as HTMLAnchorElement;
+    expect(source.getAttribute('href')).toBe(page);
+    expect(source.getAttribute('target')).toBe('_blank');
+    expect(source.getAttribute('rel')).toContain('noopener');
+    const licence = screen.getByText('CC BY 4.0').closest('a') as HTMLAnchorElement;
+    expect(licence.getAttribute('href')).toBe('https://creativecommons.org/licenses/by/4.0/');
+    expect(screen.queryByTestId('sap-docs-source')?.textContent).toContain('Shortened and reworded');
+    expect(screen.queryByTestId('sap-docs-source')?.textContent).toContain('SAP SE');
+  });
+
+  it('shows no source block for a suggestion that does not come from SAP documentation', async () => {
+    mocks.invoke.mockResolvedValue({ data: knowledgeAnswer, error: null });
+    renderCard();
+    await screen.findByText('Open the posting period');
+    expect(screen.queryByTestId('sap-docs-source')).toBeNull();
+  });
+
   it('shows no SAP block when there is no link to show', async () => {
     mocks.invoke.mockResolvedValue({ data: knowledgeAnswer, error: null });
     renderCard();

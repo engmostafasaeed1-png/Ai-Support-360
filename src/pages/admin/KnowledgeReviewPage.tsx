@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import KnowledgeArticleDialog from '@/components/knowledge/KnowledgeArticleDialog';
+import SapDocsCard from '@/components/knowledge/SapDocsCard';
 import {
   useAiSwitches, useKnowledgeCounts, useKnowledgeItems, useLearnFromTickets, useSetAiSwitch, useUpdateKnowledge,
   type AiSwitchKey, type KnowledgeItem, type KnowledgeStatus,
@@ -225,6 +226,8 @@ export default function KnowledgeReviewPage() {
           )}
         </CardContent>
       </Card>
+
+      <SapDocsCard />
 
       <Tabs value={status} onValueChange={(v) => setStatus(v as KnowledgeStatus)}>
         <TabsList>
