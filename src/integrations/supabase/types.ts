@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_suggestion_feedback: {
+        Row: {
+          areas: string[]
+          created_at: string
+          id: string
+          item_ids: string[]
+          mode: string | null
+          user_id: string
+          verdict: string
+        }
+        Insert: {
+          areas?: string[]
+          created_at?: string
+          id?: string
+          item_ids?: string[]
+          mode?: string | null
+          user_id?: string
+          verdict: string
+        }
+        Update: {
+          areas?: string[]
+          created_at?: string
+          id?: string
+          item_ids?: string[]
+          mode?: string | null
+          user_id?: string
+          verdict?: string
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           created_at: string
@@ -2274,6 +2304,61 @@ export type Database = {
           },
         ]
       }
+      knowledge_solution_meta: {
+        Row: {
+          created_at: string
+          origin_kind: string
+          privacy_flags: string[]
+          reviewed_at: string | null
+          reviewed_by: string | null
+          solution_id: string
+          source_consultant_id: string | null
+          source_ticket_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          origin_kind: string
+          privacy_flags?: string[]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          solution_id: string
+          source_consultant_id?: string | null
+          source_ticket_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          origin_kind?: string
+          privacy_flags?: string[]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          solution_id?: string
+          source_consultant_id?: string | null
+          source_ticket_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_solution_meta_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: true
+            referencedRelation: "knowledge_solutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_solution_meta_source_consultant_id_fkey"
+            columns: ["source_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_solution_meta_source_ticket_id_fkey"
+            columns: ["source_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_solutions: {
         Row: {
           created_at: string
@@ -2282,6 +2367,7 @@ export type Database = {
           id: string
           problem_description: string | null
           sap_module: string | null
+          sap_modules: string[]
           solution: string | null
           source_ticket_id: string | null
           status: string
@@ -2298,6 +2384,7 @@ export type Database = {
           id?: string
           problem_description?: string | null
           sap_module?: string | null
+          sap_modules?: string[]
           solution?: string | null
           source_ticket_id?: string | null
           status?: string
@@ -2314,6 +2401,7 @@ export type Database = {
           id?: string
           problem_description?: string | null
           sap_module?: string | null
+          sap_modules?: string[]
           solution?: string | null
           source_ticket_id?: string | null
           status?: string
@@ -6462,6 +6550,19 @@ export type Database = {
         Args: { _status: string; _ticket_id: string }
         Returns: undefined
       }
+      consultants_solved_similar: {
+        Args: {
+          _areas: string[]
+          _limit?: number
+          _query: string
+          _tenant: string
+        }
+        Returns: {
+          consultant_id: string
+          resolved_in_areas: number
+          solved_similar: number
+        }[]
+      }
       consume_remote_share_quota: { Args: never; Returns: boolean }
       get_demo_request_by_token: {
         Args: { _token: string }
@@ -6573,6 +6674,8 @@ export type Database = {
       }
       is_ticket_participant: { Args: { _ticket_id: string }; Returns: boolean }
       is_untrusted_writer: { Args: never; Returns: boolean }
+      knowledge_terms: { Args: { _query: string }; Returns: string[] }
+      knowledge_tsquery: { Args: { _query: string }; Returns: unknown }
       log_client_event: {
         Args: {
           _action: string
@@ -6710,6 +6813,24 @@ export type Database = {
           _user_id: string
         }
         Returns: string
+      }
+      search_knowledge: {
+        Args: {
+          _areas: string[]
+          _limit?: number
+          _query: string
+          _tenant: string
+        }
+        Returns: {
+          id: string
+          kind: string
+          problem: string
+          rank: number
+          sap_module: string
+          solution: string
+          tags: string[]
+          title: string
+        }[]
       }
       send_emergency_alert: { Args: { _ticket_id: string }; Returns: boolean }
       set_environment_consultants: {
