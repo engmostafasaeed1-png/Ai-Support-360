@@ -4,6 +4,8 @@
 // When nothing published fits, the answer is clearly marked as general SAP guidance.
 // SAP references: an SAP Note number is shown only when a reviewed source cites it (the model may not invent one). The link to SAP Community's own
 // search carries a few generic words. When an administrator switches it on, up to 3 matching SAP Community discussions are looked up and shown as links.
+// SAP's open documentation (github.com/SAP-docs, CC BY 4.0): pages that an administrator imported and switched on are found by search_sap_docs and
+// may be used as one more source. They are public, not from any client, and every suggestion that uses one carries its source link and licence.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://esm.sh/zod@3.23.8";
@@ -21,6 +23,7 @@ import {
   redactUnverifiedNotes,
 } from "../_shared/sapRefs.ts";
 import { searchCommunity, type CommunityHit } from "../_shared/sapCommunity.ts";
+import { docUrl, isBranchName, isSapDocsRepo } from "../_shared/sapDocs.ts";
 
 const VALID_MODELS = ["openai/gpt-6-astra"];
 const DEFAULT_MODEL = "openai/gpt-6-astra";
@@ -37,15 +40,24 @@ const BodySchema = z.object({
   model: z.string().max(100).optional(),
 }).passthrough();
 
+/** Where a page of SAP's open documentation comes from (shown with every suggestion that uses it). */
+interface DocRef {
+  title: string;
+  url: string;
+  source: string;
+  license: string;
+}
+
 interface KnowledgeItem {
-  kind: "article" | "solution" | "playbook";
+  kind: "article" | "solution" | "playbook" | "doc";
   id: string;
   title: string;
   problem: string | null;
   solution: string | null;
+  doc?: DocRef;
 }
 
-type Basis = "knowledge_base" | "past_case" | "playbook" | "general";
+type Basis = "knowledge_base" | "past_case" | "playbook" | "sap_docs" | "general";
 
 interface Suggestion {
   title: string;
@@ -55,6 +67,7 @@ interface Suggestion {
   confidence: "high" | "medium" | "low";
   basis: Basis;
   source_ids: string[];
+  docs: DocRef[];
 }
 
 const SUGGEST_TOOL = {
@@ -163,7 +176,7 @@ function languageName(code: string | undefined): string {
 }
 
 function basisOf(kind: KnowledgeItem["kind"]): Basis {
-  return kind === "article" ? "knowledge_base" : kind === "playbook" ? "playbook" : "past_case";
+  return kind === "article" ? "knowledge_base" : kind === "playbook" ? "playbook" : kind === "doc" ? "sap_docs" : "past_case";
 }
 
 /** The SAP Note numbers that our reviewed items cite. */
@@ -190,14 +203,21 @@ function normalise(raw: any, items: KnowledgeItem[], grounded: boolean): Suggest
     const tcodes = [...new Set<string>((Array.isArray(s?.tcodes) ? s.tcodes : [])
       .map((x: unknown) => String(x ?? "").trim().toUpperCase())
       .filter((x: string) => /^[A-Z0-9_\/]{2,20}$/.test(x)))].slice(0, 8);
+    // the pages of SAP's documentation have no id in our tables: they are named by their source link, and the basis follows the first own source
+    const own = used.filter((u) => u.kind !== "doc");
+    const docs: DocRef[] = [];
+    for (const u of used) {
+      if (u.doc && !docs.some((d) => d.url === u.doc!.url)) docs.push(u.doc);
+    }
     out.push({
       title: guard(title),
       summary: guard(clean(s?.summary, 600)),
       steps: steps.map(guard),
       tcodes,
       confidence: s?.confidence === "high" || s?.confidence === "low" ? s.confidence : "medium",
-      basis: grounded ? basisOf(used[0].kind) : "general",
-      source_ids: used.map((u) => u.id),
+      basis: grounded ? basisOf((own[0] ?? used[0]).kind) : "general",
+      source_ids: own.map((u) => u.id),
+      docs,
     });
   }
   return out;
@@ -291,6 +311,31 @@ serve(async (req) => {
       solution: r.solution ?? null,
     }));
 
+    // 1b. SAP's open documentation: only imported and switched-on sources take part (the database function returns nothing when there is none)
+    const blocked = blockedWords(deny);
+    const docTerms = cleanSearchTerms(pickSearchTerms(problemText, 6), blocked, 6);
+    if (docTerms.length >= 2) {
+      try {
+        const { data: docRows, error: docError } = await admin.rpc("search_sap_docs", { _terms: docTerms, _limit: 3 });
+        if (docError) console.warn("search_sap_docs failed:", docError.message);
+        for (const d of Array.isArray(docRows) ? docRows : []) {
+          if (!isSapDocsRepo(d.repo) || !isBranchName(d.branch) || typeof d.path !== "string") continue;
+          const heading = typeof d.heading === "string" && d.heading ? ` - ${d.heading}` : "";
+          const title = clean(`${d.doc_title ?? ""}${heading}`, 200);
+          items.push({
+            kind: "doc",
+            id: `doc:${d.source_id}:${d.path}`,
+            title,
+            problem: null,
+            solution: String(d.body ?? "").slice(0, 1800),
+            doc: { title, url: docUrl(d.repo, d.branch, d.path), source: clean(d.source_title, 120), license: clean(d.license, 30) || "CC-BY-4.0" },
+          });
+        }
+      } catch (e) {
+        console.warn("SAP documentation look-up failed:", e instanceof Error ? e.message : String(e)); // the suggestions work without it
+      }
+    }
+
     let suggestions: Suggestion[] = [];
     let note = "";
     let mode: "knowledge" | "general" = "knowledge";
@@ -299,8 +344,8 @@ serve(async (req) => {
     if (items.length > 0) {
       const context = items
         .map((it, i) => {
-          const label = it.kind === "article" ? "Knowledge article" : it.kind === "playbook" ? "Playbook" : "Solved case, anonymised";
-          return `[${i + 1}] (${label}) ${it.title}\n${it.problem ? `Problem: ${it.problem.slice(0, 1200)}\n` : ""}Solution:\n${(it.solution ?? "").slice(0, 2500)}`;
+          const label = it.kind === "article" ? "Knowledge article" : it.kind === "playbook" ? "Playbook" : it.kind === "doc" ? "SAP documentation, public" : "Solved case, anonymised";
+          return `[${i + 1}] (${label}) ${it.title}\n${it.problem ? `Problem: ${it.problem.slice(0, 1200)}\n` : ""}${it.kind === "doc" ? "Text" : "Solution"}:\n${(it.solution ?? "").slice(0, 2500)}`;
         })
         .join("\n\n---\n\n");
       const response = await aiRequest(
@@ -308,6 +353,7 @@ serve(async (req) => {
         `You help an SAP client BEFORE they open a support ticket. You get the client's draft ticket and numbered knowledge items that an administrator has published (anonymised articles, solved cases and playbooks). Suggest solutions the client can try now.
 Rules:
 - Use ONLY the numbered items. Do not add steps that are not in them. You may reorder, shorten and match them to the ticket.
+- Items labelled "SAP documentation, public" are pages of SAP's own documentation, not cases of this platform. Use one only when it really fits the ticket, write the steps in your own words and do not copy long passages.
 - Suggest an item only when it genuinely fits the ticket. If none fits, return an empty list.
 - At most 4 suggestions, best first. Every suggestion lists the numbers of the items it comes from.
 - Never write a company name, a person name, an e-mail address, a host name, a system ID or a document number. Leave such details out.
@@ -358,14 +404,15 @@ Rules:
 
     const usedIds = new Set(suggestions.flatMap((s) => s.source_ids));
     const usedItems = items.filter((it) => usedIds.has(it.id));
+    const usedDocUrls = new Set(suggestions.flatMap((s) => s.docs.map((d) => d.url)));
+    const usedDocs = items.filter((it) => it.doc && usedDocUrls.has(it.doc.url));
     const sources = usedItems.map((it) => ({ id: it.id, kind: it.kind, title: clean(it.title, 160) }));
 
-    // SAP references: note numbers cited by the reviewed items that were used, and words for SAP Community
-    const notes = noteNumbersOf(usedItems).slice(0, MAX_NOTES).flatMap((number) => {
+    // SAP references: note numbers cited by the reviewed items and the documentation pages that were used, and words for SAP Community
+    const notes = noteNumbersOf([...usedItems, ...usedDocs]).slice(0, MAX_NOTES).flatMap((number) => {
       const url = noteUrl(number);
       return url ? [{ number, url }] : [];
     });
-    const blocked = blockedWords(deny);
     const fromModel = cleanSearchTerms(rawTerms, blocked);
     const terms = fromModel.length >= 2 ? fromModel : cleanSearchTerms(pickSearchTerms(problemText, 5), blocked);
     const community: { enabled: boolean; items: CommunityHit[] } = { enabled: communityOn, items: [] };
