@@ -8,6 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import AvatarUpload from './AvatarUpload';
+import { normalizeLinkedinUrl, LINKEDIN_HINT } from '@/lib/consultantLinks';
+import { cityPoint } from '@/lib/geo';
 
 interface ProfileData {
   display_name: string;
@@ -106,12 +108,22 @@ export default function ProfileEditDialog({ open, onOpenChange, role }: Props) {
       if (pErr) throw pErr;
 
       if (role === 'consultant') {
+        // The database rejects a LinkedIn text that is not a profile link; check first so the save is not half done.
+        const linkedin = normalizeLinkedinUrl(data.linkedin_url);
+        if (data.linkedin_url.trim() && !linkedin) {
+          toast.error(LINKEDIN_HINT);
+          return;
+        }
+        // Keep the stored map point in step with the city, so clients do not see the old city's pin.
+        const point = data.city && data.country ? cityPoint(data.country, data.city) : null;
         const { error: cErr } = await supabase.from('consultants').update({
           bio: data.bio || null,
           hourly_rate: data.hourly_rate ? parseFloat(data.hourly_rate) : 0,
           city: data.city || null,
           country: data.country || null,
-          linkedin_url: data.linkedin_url || null,
+          latitude: point?.lat ?? null,
+          longitude: point?.lng ?? null,
+          linkedin_url: linkedin,
           github_url: data.github_url || null,
           personal_website: data.personal_website || null,
         }).eq('user_id', uid);
