@@ -64,6 +64,13 @@
       "when": 1791066970152,
       "tag": "0008_client_cycle_m25_consultant_trust_place",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791090998008,
+      "tag": "0009_m26_notify_admins_consultant_applied",
+      "breakpoints": true
     }
   ]
 }
