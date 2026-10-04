@@ -71,6 +71,13 @@
       "when": 1791090998008,
       "tag": "0009_m26_notify_admins_consultant_applied",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791091921556,
+      "tag": "0010_m27_link_change_clears_checked",
+      "breakpoints": true
     }
   ]
 }
