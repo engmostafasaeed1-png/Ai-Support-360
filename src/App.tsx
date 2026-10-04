@@ -20,7 +20,6 @@ import GuestBanner from "./components/guest/GuestBanner.tsx";
 import AIChatbot from "./components/chatbot/AIChatbot.tsx";
 import MaintenanceBanner from "./components/MaintenanceBanner.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
-import ConsultantPresenceTracker from "./components/consultant/ConsultantPresenceTracker.tsx";
 import RouteSeo from "./components/RouteSeo";
 import { HelmetProvider } from "react-helmet-async";
 import Watermark from "./components/Watermark.tsx";
@@ -239,7 +238,6 @@ const App = () => (
         <TenantProvider>
           <RTLSync />
           <RealtimeStatusSync />
-          <ConsultantPresenceTracker />
           <a href="#main-content" className="skip-to-main">Skip to main content</a>
           <ScrollToTop />
           <RouteSeo />

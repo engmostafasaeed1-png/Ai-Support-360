@@ -14,6 +14,8 @@ import {
 import CredlyBadgesSection from '@/components/consultant/CredlyBadgesSection';
 import AddCertificateDialog from '@/components/consultant/AddCertificateDialog';
 import RemoveCertificateButton from '@/components/consultant/RemoveCertificateButton';
+import RemoveSkillButton from '@/components/consultant/RemoveSkillButton';
+import RemoveDuplicateSkills from '@/components/consultant/RemoveDuplicateSkills';
 import { linkState, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 import InterviewHistory from '@/components/consultant/InterviewHistory';
 import AIInterviewFlow from '@/components/consultant/AIInterviewFlow';
@@ -83,12 +85,12 @@ export default function VerificationPage() {
   });
 
   // Fetch skills and certifications from DB
-  const { data: skills = [], isLoading: skillsLoading } = useQuery({
+  const { data: skills = [], isLoading: skillsLoading, refetch: refetchSkills } = useQuery({
     queryKey: ['consultant-skills', consultantId],
     queryFn: async () => {
       if (!consultantId) return [];
-      const { data } = await supabase.from('consultant_skills').select('sap_module, proficiency_level, years_experience, certified').eq('consultant_id', consultantId);
-      return (data || []).map(s => ({ module: s.sap_module, proficiency: s.proficiency_level || 1, years: s.years_experience || 0, certified: s.certified || false }));
+      const { data } = await supabase.from('consultant_skills').select('id, sap_module, proficiency_level, years_experience, certified').eq('consultant_id', consultantId);
+      return (data || []).map(s => ({ id: s.id, module: s.sap_module, proficiency: s.proficiency_level || 1, years: s.years_experience || 0, certified: s.certified || false }));
     },
     enabled: !!consultantId,
   });
@@ -319,12 +321,13 @@ export default function VerificationPage() {
             </div>
           </div>
 
+          <RemoveDuplicateSkills skills={skills} onRemoved={() => void refetchSkills()} />
           <div className="space-y-3">
             {skills.map((skill) => (
-              <div key={skill.module} className="flex items-center gap-4">
+              <div key={skill.id} className="flex items-center gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-foreground truncate">{skill.module}</span>
+                    <span className="text-sm font-medium text-foreground truncate">{skill.module || 'Empty skill'}</span>
                     <div className="flex items-center gap-2">
                       {skill.certified && (
                         <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">Certified</Badge>
@@ -334,6 +337,7 @@ export default function VerificationPage() {
                   </div>
                   <Progress value={skill.proficiency * 20} className="h-1.5" />
                 </div>
+                <RemoveSkillButton skill={skill} onRemoved={() => void refetchSkills()} />
               </div>
             ))}
           </div>
