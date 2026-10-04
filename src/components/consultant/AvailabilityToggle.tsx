@@ -177,7 +177,7 @@ function StatusMenu({ status, onSelect }: { status: Status; onSelect: (s: Status
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
       <Item s="available" icon={<Power className="w-4 h-4 text-white" strokeWidth={2.75} />} hint="Go online — receive new requests" />
-      <Item s="busy" icon={<Coffee className="w-4 h-4 text-white" strokeWidth={2.5} />} hint="On a session — hide from search" />
+      <Item s="busy" icon={<Coffee className="w-4 h-4 text-white" strokeWidth={2.5} />} hint="On a session — clients see you as busy" />
       <Item s="offline" icon={<Power className="w-4 h-4 text-white" strokeWidth={2.75} />} hint="Stop receiving requests" />
     </DropdownMenuContent>
   );
