@@ -22,6 +22,7 @@ import { fireConfetti } from '@/lib/confetti';
 import { safeFileName } from '@/lib/storagePath';
 import { cityPoint } from '@/lib/geo';
 import { CREDLY_HINT, LINKEDIN_HINT, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
+import { certificateKey, jobKey, onlyNew, projectKey, skillKey, slotKey, studyKey } from '@/lib/onboardingDedupe';
 
 export interface WorkHistoryEntry {
   companyName: string;
@@ -188,10 +189,21 @@ export default function ConsultantOnboarding() {
       if (consultantErr || !consultant) throw consultantErr;
       setConsultantId(consultant.id);
 
+      // What the consultant already has: running the onboarding again must not add the same rows a second time (nothing that is saved is changed or removed).
+      const [haveSkills, haveCertificates, haveJobs, haveStudies, haveProjects, haveSlots] = await Promise.all([
+        supabase.from('consultant_skills').select('sap_module').eq('consultant_id', consultant.id),
+        supabase.from('certifications').select('name, issuer, issue_date').eq('consultant_id', consultant.id),
+        supabase.from('consultant_work_history').select('company_name, job_title, start_date').eq('consultant_id', consultant.id),
+        supabase.from('consultant_education').select('institution, degree, field_of_study, start_year').eq('consultant_id', consultant.id),
+        supabase.from('consultant_projects').select('project_name').eq('consultant_id', consultant.id),
+        supabase.from('availability_slots').select('day_of_week, start_time, end_time').eq('consultant_id', consultant.id),
+      ]);
+
       // Insert skills
-      if (data.skills.length > 0) {
+      const newSkills = onlyNew(data.skills, haveSkills.data ?? [], s => skillKey(s.sapModule), x => skillKey(x.sap_module));
+      if (newSkills.length > 0) {
         await supabase.from('consultant_skills').insert(
-          data.skills.map(s => ({
+          newSkills.map(s => ({
             consultant_id: consultant.id,
             sap_module: s.sapModule,
             proficiency_level: s.proficiencyLevel,
@@ -201,10 +213,9 @@ export default function ConsultantOnboarding() {
         );
       }
 
-      // Upload certifications
-      for (const cert of data.certifications) {
-        // An empty form row (no certificate chosen) is not saved.
-        if (!cert.name.trim()) continue;
+      // Upload certifications (an empty form row and a certificate that the consultant already has are not saved)
+      const newCertificates = onlyNew(data.certifications, haveCertificates.data ?? [], c => certificateKey(c.name, c.issuer, c.issueDate), x => certificateKey(x.name, x.issuer, x.issue_date));
+      for (const cert of newCertificates) {
         let docUrl: string | null = null;
         if (cert.file) {
           // Private bucket; the stored value is the storage path (first folder = user id, as the storage policy requires).
@@ -228,9 +239,10 @@ export default function ConsultantOnboarding() {
       }
 
       // Insert work history
-      if (data.workHistory.length > 0) {
+      const newJobs = onlyNew(data.workHistory, haveJobs.data ?? [], w => jobKey(w.companyName, w.jobTitle, w.startDate), x => jobKey(x.company_name, x.job_title, x.start_date));
+      if (newJobs.length > 0) {
         await supabase.from('consultant_work_history').insert(
-          data.workHistory.map(w => ({
+          newJobs.map(w => ({
             consultant_id: consultant.id,
             company_name: w.companyName,
             job_title: w.jobTitle,
@@ -243,9 +255,10 @@ export default function ConsultantOnboarding() {
       }
 
       // Insert education
-      if (data.education.length > 0) {
+      const newStudies = onlyNew(data.education, haveStudies.data ?? [], e => studyKey(e.institution, e.degree, e.fieldOfStudy, e.startYear), x => studyKey(x.institution, x.degree, x.field_of_study, x.start_year));
+      if (newStudies.length > 0) {
         await supabase.from('consultant_education').insert(
-          data.education.map(e => ({
+          newStudies.map(e => ({
             consultant_id: consultant.id,
             institution: e.institution,
             degree: e.degree || null,
@@ -257,9 +270,10 @@ export default function ConsultantOnboarding() {
       }
 
       // Insert projects
-      if (data.projects.length > 0) {
+      const newProjects = onlyNew(data.projects, haveProjects.data ?? [], p => projectKey(p.projectName), x => projectKey(x.project_name));
+      if (newProjects.length > 0) {
         await supabase.from('consultant_projects').insert(
-          data.projects.map(p => ({
+          newProjects.map(p => ({
             consultant_id: consultant.id,
             project_name: p.projectName,
             client_industry: p.clientIndustry || null,
@@ -272,9 +286,10 @@ export default function ConsultantOnboarding() {
       }
 
       // Insert availability slots
-      if (data.availability.length > 0) {
+      const newSlots = onlyNew(data.availability, haveSlots.data ?? [], a => slotKey(a.dayOfWeek, a.startTime, a.endTime), x => slotKey(x.day_of_week, x.start_time, x.end_time));
+      if (newSlots.length > 0) {
         await supabase.from('availability_slots').insert(
-          data.availability.map(a => ({
+          newSlots.map(a => ({
             consultant_id: consultant.id,
             day_of_week: a.dayOfWeek,
             start_time: a.startTime,
