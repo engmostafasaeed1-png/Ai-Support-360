@@ -2,12 +2,23 @@ import confetti from 'canvas-confetti';
 
 const colors = ['#3B82F6', '#1B2559', '#60A5FA', '#93C5FD', '#FBBF24', '#F59E0B', '#10B981', '#8B5CF6'];
 
+// The default instance of canvas-confetti draws in a web worker that is made from a blob: address. The content security policy of the site does not allow that,
+// so the confetti never showed and every use was reported to the administrators as an error. This instance draws on the page itself.
+let cannon: ReturnType<typeof confetti.create> | null = null;
+function getCannon() {
+  if (!cannon) {
+    cannon = confetti.create(null as unknown as HTMLCanvasElement, { resize: true, useWorker: false });
+  }
+  return cannon;
+}
+
 export function fireConfetti() {
+  const fire = getCannon();
   const duration = 4500;
   const end = Date.now() + duration;
 
   // Big center burst
-  confetti({
+  fire({
     particleCount: 150,
     spread: 120,
     startVelocity: 45,
@@ -18,7 +29,7 @@ export function fireConfetti() {
 
   // Delayed secondary bursts from sides
   setTimeout(() => {
-    confetti({
+    fire({
       particleCount: 80,
       angle: 60,
       spread: 80,
@@ -26,7 +37,7 @@ export function fireConfetti() {
       origin: { x: 0, y: 0.65 },
       colors,
     });
-    confetti({
+    fire({
       particleCount: 80,
       angle: 120,
       spread: 80,
@@ -38,7 +49,7 @@ export function fireConfetti() {
 
   // Star-shaped burst from top
   setTimeout(() => {
-    confetti({
+    fire({
       particleCount: 60,
       spread: 360,
       startVelocity: 30,
@@ -51,7 +62,7 @@ export function fireConfetti() {
 
   // Continuous streams from both sides
   const frame = () => {
-    confetti({
+    fire({
       particleCount: 4,
       angle: 60,
       spread: 60,
@@ -60,7 +71,7 @@ export function fireConfetti() {
       colors,
       ticks: 150,
     });
-    confetti({
+    fire({
       particleCount: 4,
       angle: 120,
       spread: 60,
@@ -79,7 +90,7 @@ export function fireConfetti() {
 
   // Final big burst at the end
   setTimeout(() => {
-    confetti({
+    fire({
       particleCount: 100,
       spread: 160,
       startVelocity: 35,

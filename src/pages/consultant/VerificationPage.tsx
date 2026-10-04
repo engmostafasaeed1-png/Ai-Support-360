@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import CredlyBadgesSection from '@/components/consultant/CredlyBadgesSection';
 import AddCertificateDialog from '@/components/consultant/AddCertificateDialog';
+import RemoveCertificateButton from '@/components/consultant/RemoveCertificateButton';
 import { linkState, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 import InterviewHistory from '@/components/consultant/InterviewHistory';
 import AIInterviewFlow from '@/components/consultant/AIInterviewFlow';
@@ -96,7 +97,7 @@ export default function VerificationPage() {
     queryKey: ['consultant-certs', consultantId],
     queryFn: async () => {
       if (!consultantId) return [];
-      const { data } = await supabase.from('certifications').select('name, issuer, issue_date, verified').eq('consultant_id', consultantId);
+      const { data } = await supabase.from('certifications').select('id, name, issuer, issue_date, verified, document_url').eq('consultant_id', consultantId);
       return data || [];
     },
     enabled: !!consultantId,
@@ -372,19 +373,24 @@ export default function VerificationPage() {
                   <FileText className="w-5 h-5 text-accent" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">{cert.name}</p>
-                  <p className="text-xs text-muted-foreground">{cert.issuer} · Issued {cert.issue_date ? new Date(cert.issue_date).toLocaleDateString() : 'N/A'}</p>
+                  <p className="text-sm font-medium text-foreground">{cert.name || 'Untitled certificate'}</p>
+                  <p className="text-xs text-muted-foreground">{[cert.issuer, `Issued ${cert.issue_date ? new Date(cert.issue_date).toLocaleDateString() : 'N/A'}`].filter(Boolean).join(' · ')}</p>
                 </div>
               </div>
-              {cert.verified ? (
-                <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">
-                  <CheckCircle className="w-3 h-3 me-1" /> Verified
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="text-[10px] bg-yellow-100 text-yellow-700">
-                  <Clock className="w-3 h-3 me-1" /> Pending
-                </Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {cert.verified ? (
+                  <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">
+                    <CheckCircle className="w-3 h-3 me-1" /> Verified
+                  </Badge>
+                ) : (
+                  <>
+                    <Badge variant="secondary" className="text-[10px] bg-yellow-100 text-yellow-700">
+                      <Clock className="w-3 h-3 me-1" /> Pending
+                    </Badge>
+                    <RemoveCertificateButton certificate={cert} onRemoved={() => void refetchCerts()} />
+                  </>
+                )}
+              </div>
             </div>
           ))}
         </CardContent>
