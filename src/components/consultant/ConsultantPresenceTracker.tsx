@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
-import { PRESENCE_CHANNEL } from '@/lib/presence';
+import { PRESENCE_CHANNEL, presentIds } from '@/lib/presence';
+import { presenceStore } from '@/lib/presenceStore';
 
 /**
- * While the app is open in the browser of a consultant, the consultant is "present": the browser joins the presence channel with the id of the consultant as the key,
- * and leaves it when the window is closed or the consultant signs out. Clients see Online or Busy only for a consultant who is present.
- * It renders nothing and is mounted once in App. Somebody who is not a consultant never joins.
+ * The only place in the app that opens the presence channel (the Realtime library gives the same channel object to everybody who asks for the same name in one tab,
+ * so a page that opened it again would break). Mounted once in App. For everybody who is signed in it listens and saves who is present in presenceStore,
+ * where the pages read it. A consultant also joins with the id of the consultant as the key and says that the consultant is there, and leaves when the window
+ * is closed or the consultant signs out. Nobody else is ever listed as present.
  */
 export default function ConsultantPresenceTracker() {
   const { isGuest } = useGuestMode();
@@ -16,22 +18,24 @@ export default function ConsultantPresenceTracker() {
     let cancelled = false;
     let joined: { userId: string; channel: ReturnType<typeof supabase.channel> } | null = null;
 
-    const leave = () => {
-      if (joined) {
-        void supabase.removeChannel(joined.channel);
-        joined = null;
-      }
+    const leave = async () => {
+      const old = joined;
+      joined = null;
+      presenceStore.set(null);
+      if (old) await supabase.removeChannel(old.channel);
     };
 
     const follow = async (userId: string | null) => {
       if (cancelled || (userId && joined?.userId === userId)) return;
-      leave();
+      await leave();
       if (!userId) return;
       const { data } = await supabase.from('consultants').select('id').eq('user_id', userId).maybeSingle();
-      if (cancelled || !data?.id) return;
-      const channel = supabase.channel(PRESENCE_CHANNEL, { config: { presence: { key: data.id } } });
+      if (cancelled) return;
+      const consultantId: string | null = data?.id ?? null;
+      const channel = supabase.channel(PRESENCE_CHANNEL, consultantId ? { config: { presence: { key: consultantId } } } : undefined);
+      channel.on('presence', { event: 'sync' }, () => presenceStore.set(presentIds(channel.presenceState())));
       channel.subscribe(status => {
-        if (status === 'SUBSCRIBED') void channel.track({ at: new Date().toISOString() });
+        if (status === 'SUBSCRIBED' && consultantId) void channel.track({ at: new Date().toISOString() });
       });
       joined = { userId, channel };
     };
@@ -51,7 +55,7 @@ export default function ConsultantPresenceTracker() {
     return () => {
       cancelled = true;
       listener.subscription.unsubscribe();
-      leave();
+      void leave();
     };
   }, [isGuest]);
 
