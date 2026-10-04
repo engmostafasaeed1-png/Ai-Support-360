@@ -1,31 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, act } from '@testing-library/react';
-
-const mocks = vi.hoisted(() => ({
-  channel: vi.fn(),
-  removeChannel: vi.fn(),
-  state: { current: {} as Record<string, unknown[]> },
-  sync: { current: null as null | (() => void) },
-}));
-
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    channel: (name: string) => {
-      mocks.channel(name);
-      const fake = {
-        on: (_type: string, _filter: unknown, callback: () => void) => {
-          mocks.sync.current = callback;
-          return fake;
-        },
-        subscribe: () => fake,
-        presenceState: () => mocks.state.current,
-      };
-      return fake;
-    },
-    removeChannel: mocks.removeChannel,
-  },
-}));
-
+import { presenceStore } from '@/lib/presenceStore';
 import { useConsultantPresence } from './useConsultantPresence';
 
 function Probe({ enabled = true }: { enabled?: boolean }) {
@@ -34,10 +9,7 @@ function Probe({ enabled = true }: { enabled?: boolean }) {
 }
 
 beforeEach(() => {
-  mocks.channel.mockReset();
-  mocks.removeChannel.mockReset();
-  mocks.state.current = {};
-  mocks.sync.current = null;
+  presenceStore.set(null);
 });
 afterEach(() => cleanup());
 
@@ -45,32 +17,33 @@ describe('useConsultantPresence', () => {
   it('does not know who is present before the channel has answered', () => {
     render(<Probe />);
     expect(screen.getByTestId('probe').textContent).toBe('unknown');
-    expect(mocks.channel).toHaveBeenCalledWith('consultant-presence');
   });
 
-  it('knows who is present once the channel has answered, and follows the changes', () => {
+  it('knows who is present once the answer is saved, and follows the changes', () => {
     render(<Probe />);
-    act(() => {
-      mocks.state.current = { 'c-2': [{ at: 'x' }], 'c-1': [{ at: 'y' }] };
-      mocks.sync.current?.();
-    });
+    act(() => presenceStore.set(new Set(['c-2', 'c-1'])));
     expect(screen.getByTestId('probe').textContent).toBe('c-1,c-2');
-    act(() => {
-      mocks.state.current = {};
-      mocks.sync.current?.();
-    });
+    act(() => presenceStore.set(new Set()));
     expect(screen.getByTestId('probe').textContent).toBe('nobody');
-  });
-
-  it('leaves the channel when the page is left', () => {
-    const { unmount } = render(<Probe />);
-    unmount();
-    expect(mocks.removeChannel).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not join the channel when it is not enabled', () => {
-    render(<Probe enabled={false} />);
-    expect(mocks.channel).not.toHaveBeenCalled();
+    act(() => presenceStore.set(null));
     expect(screen.getByTestId('probe').textContent).toBe('unknown');
+  });
+
+  it('shows what is already known when a page opens later', () => {
+    presenceStore.set(new Set(['c-3']));
+    render(<Probe />);
+    expect(screen.getByTestId('probe').textContent).toBe('c-3');
+  });
+
+  it('says it does not know when it is not enabled, whatever is saved', () => {
+    presenceStore.set(new Set(['c-1']));
+    render(<Probe enabled={false} />);
+    expect(screen.getByTestId('probe').textContent).toBe('unknown');
+  });
+
+  it('can be used by two pages at the same time', () => {
+    render(<><Probe /><Probe /></>);
+    act(() => presenceStore.set(new Set(['c-1'])));
+    expect(screen.getAllByTestId('probe').map(element => element.textContent)).toEqual(['c-1', 'c-1']);
   });
 });

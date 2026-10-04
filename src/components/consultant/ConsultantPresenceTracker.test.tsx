@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, cleanup, waitFor, act } from '@testing-library/react';
+import { presenceStore } from '@/lib/presenceStore';
 
 const mocks = vi.hoisted(() => ({
   channel: vi.fn(),
@@ -7,8 +8,11 @@ const mocks = vi.hoisted(() => ({
   removeChannel: vi.fn(),
   unsubscribe: vi.fn(),
   getSession: vi.fn(),
+  order: [] as string[],
   session: { current: null as null | { user: { id: string } } },
-  consultant: { current: null as null | { id: string } },
+  consultants: { current: {} as Record<string, { id: string } | undefined> },
+  state: { current: {} as Record<string, unknown[]> },
+  sync: { current: null as null | (() => void) },
   authCallback: { current: null as null | ((event: string, session: unknown) => void) },
   isGuest: { current: false },
 }));
@@ -28,17 +32,24 @@ vi.mock('@/integrations/supabase/client', () => ({
     },
     from: () => ({
       select: () => ({
-        eq: () => ({ maybeSingle: () => Promise.resolve({ data: mocks.consultant.current }) }),
+        eq: (_column: string, userId: string) => ({ maybeSingle: () => Promise.resolve({ data: mocks.consultants.current[userId] ?? null }) }),
       }),
     }),
-    channel: (name: string, options: unknown) => {
+    channel: (name: string, options?: unknown) => {
       mocks.channel(name, options);
       const fake = {
+        on: (_type: string, _filter: unknown, callback: () => void) => {
+          mocks.order.push('on');
+          mocks.sync.current = callback;
+          return fake;
+        },
         subscribe: (callback: (status: string) => void) => {
+          mocks.order.push('subscribe');
           callback('SUBSCRIBED');
           return fake;
         },
         track: mocks.track,
+        presenceState: () => mocks.state.current,
       };
       return fake;
     },
@@ -54,39 +65,61 @@ beforeEach(() => {
   mocks.channel.mockReset();
   mocks.track.mockReset();
   mocks.removeChannel.mockReset();
+  mocks.removeChannel.mockResolvedValue('ok');
   mocks.unsubscribe.mockReset();
   mocks.getSession.mockReset();
+  mocks.order.length = 0;
   mocks.session.current = { user: { id: 'u-1' } };
-  mocks.consultant.current = { id: 'c-1' };
+  mocks.consultants.current = { 'u-1': { id: 'c-1' } };
+  mocks.state.current = {};
+  mocks.sync.current = null;
   mocks.authCallback.current = null;
   mocks.isGuest.current = false;
+  presenceStore.set(null);
 });
 afterEach(() => cleanup());
 
 describe('ConsultantPresenceTracker', () => {
-  it('joins the presence channel with the id of the consultant as the key and says that the consultant is there', async () => {
+  it('joins with the id of the consultant as the key, listens first and says that the consultant is there', async () => {
     render(<ConsultantPresenceTracker />);
     await waitFor(() => expect(mocks.channel).toHaveBeenCalledTimes(1));
     expect(mocks.channel).toHaveBeenCalledWith('consultant-presence', { config: { presence: { key: 'c-1' } } });
+    expect(mocks.order).toEqual(['on', 'subscribe']);
     expect(mocks.track).toHaveBeenCalledTimes(1);
   });
 
-  it('never joins for somebody who is not a consultant', async () => {
-    mocks.consultant.current = null;
+  it('saves who is present when the channel answers', async () => {
     render(<ConsultantPresenceTracker />);
-    await settle();
-    expect(mocks.getSession).toHaveBeenCalled();
-    expect(mocks.channel).not.toHaveBeenCalled();
+    await waitFor(() => expect(mocks.channel).toHaveBeenCalledTimes(1));
+    act(() => {
+      mocks.state.current = { 'c-1': [{ at: 'x' }], 'c-7': [{ at: 'y' }] };
+      mocks.sync.current?.();
+    });
+    expect(Array.from(presenceStore.get() ?? []).sort()).toEqual(['c-1', 'c-7']);
   });
 
-  it('never joins when nobody is signed in', async () => {
+  it('only listens, without a key and without saying anything, for somebody who is signed in but is not a consultant', async () => {
+    mocks.consultants.current = {};
+    render(<ConsultantPresenceTracker />);
+    await waitFor(() => expect(mocks.channel).toHaveBeenCalledTimes(1));
+    expect(mocks.channel).toHaveBeenCalledWith('consultant-presence', undefined);
+    expect(mocks.track).not.toHaveBeenCalled();
+    act(() => {
+      mocks.state.current = { 'c-9': [{ at: 'x' }] };
+      mocks.sync.current?.();
+    });
+    expect(Array.from(presenceStore.get() ?? [])).toEqual(['c-9']);
+  });
+
+  it('does nothing when nobody is signed in', async () => {
     mocks.session.current = null;
     render(<ConsultantPresenceTracker />);
     await settle();
     expect(mocks.channel).not.toHaveBeenCalled();
+    expect(presenceStore.get()).toBeNull();
   });
 
-  it('never joins in the demo for guests', async () => {
+  it('does nothing in the demo for guests', async () => {
     mocks.isGuest.current = true;
     render(<ConsultantPresenceTracker />);
     await settle();
@@ -94,19 +127,25 @@ describe('ConsultantPresenceTracker', () => {
     expect(mocks.channel).not.toHaveBeenCalled();
   });
 
-  it('leaves the channel and stops listening when it is removed', async () => {
+  it('leaves the channel, stops listening and forgets who is present when it is removed', async () => {
     const { unmount } = render(<ConsultantPresenceTracker />);
     await waitFor(() => expect(mocks.channel).toHaveBeenCalledTimes(1));
+    act(() => {
+      mocks.state.current = { 'c-1': [{ at: 'x' }] };
+      mocks.sync.current?.();
+    });
     unmount();
     expect(mocks.removeChannel).toHaveBeenCalledTimes(1);
     expect(mocks.unsubscribe).toHaveBeenCalledTimes(1);
+    expect(presenceStore.get()).toBeNull();
   });
 
-  it('leaves the channel when the consultant signs out', async () => {
+  it('leaves the channel when the person signs out', async () => {
     render(<ConsultantPresenceTracker />);
     await waitFor(() => expect(mocks.channel).toHaveBeenCalledTimes(1));
     mocks.authCallback.current?.('SIGNED_OUT', null);
     await waitFor(() => expect(mocks.removeChannel).toHaveBeenCalledTimes(1));
+    expect(presenceStore.get()).toBeNull();
   });
 
   it('does not join a second time when the session of the same person is refreshed', async () => {
@@ -116,5 +155,15 @@ describe('ConsultantPresenceTracker', () => {
     await settle();
     expect(mocks.channel).toHaveBeenCalledTimes(1);
     expect(mocks.removeChannel).not.toHaveBeenCalled();
+  });
+
+  it('leaves the old channel and joins with the other key when somebody else signs in', async () => {
+    mocks.consultants.current = { 'u-1': { id: 'c-1' }, 'u-2': { id: 'c-2' } };
+    render(<ConsultantPresenceTracker />);
+    await waitFor(() => expect(mocks.channel).toHaveBeenCalledTimes(1));
+    mocks.authCallback.current?.('SIGNED_IN', { user: { id: 'u-2' } });
+    await waitFor(() => expect(mocks.channel).toHaveBeenCalledTimes(2));
+    expect(mocks.channel).toHaveBeenLastCalledWith('consultant-presence', { config: { presence: { key: 'c-2' } } });
+    expect(mocks.removeChannel).toHaveBeenCalledTimes(1);
   });
 });
