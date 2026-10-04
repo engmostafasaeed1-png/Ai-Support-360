@@ -5341,6 +5341,69 @@ export type Database = {
           },
         ]
       }
+      ticket_rates: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          currency: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          hourly_rate: number
+          id: string
+          proposed_by: string | null
+          source: string
+          status: string
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          currency?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          hourly_rate: number
+          id?: string
+          proposed_by?: string | null
+          source?: string
+          status?: string
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          currency?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          hourly_rate?: number
+          id?: string
+          proposed_by?: string | null
+          source?: string
+          status?: string
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_rates_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_rates_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_satisfaction_surveys: {
         Row: {
           client_id: string
@@ -5468,10 +5531,51 @@ export type Database = {
           },
         ]
       }
+      ticket_timesheet_comments: {
+        Row: {
+          author_id: string
+          author_role: string
+          body: string
+          created_at: string
+          id: string
+          kind: string
+          submission_id: string
+        }
+        Insert: {
+          author_id: string
+          author_role: string
+          body: string
+          created_at?: string
+          id?: string
+          kind?: string
+          submission_id: string
+        }
+        Update: {
+          author_id?: string
+          author_role?: string
+          body?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_timesheet_comments_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_timesheet_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_timesheet_submissions: {
         Row: {
+          billable_hours: number
           cost_currency: string | null
           created_at: string
+          grand_total: number | null
+          hourly_rate: number | null
           id: string
           notes: string | null
           pdf_url: string | null
@@ -5481,15 +5585,22 @@ export type Database = {
           signed_at: string | null
           signed_by_name: string | null
           status: string
+          submit_count: number
+          submitted_at: string | null
           submitted_by: string
           ticket_id: string
           total_cost: number | null
           total_hours: number | null
           updated_at: string
+          vat_amount: number | null
+          vat_percent: number | null
         }
         Insert: {
+          billable_hours?: number
           cost_currency?: string | null
           created_at?: string
+          grand_total?: number | null
+          hourly_rate?: number | null
           id?: string
           notes?: string | null
           pdf_url?: string | null
@@ -5499,15 +5610,22 @@ export type Database = {
           signed_at?: string | null
           signed_by_name?: string | null
           status?: string
+          submit_count?: number
+          submitted_at?: string | null
           submitted_by: string
           ticket_id: string
           total_cost?: number | null
           total_hours?: number | null
           updated_at?: string
+          vat_amount?: number | null
+          vat_percent?: number | null
         }
         Update: {
+          billable_hours?: number
           cost_currency?: string | null
           created_at?: string
+          grand_total?: number | null
+          hourly_rate?: number | null
           id?: string
           notes?: string | null
           pdf_url?: string | null
@@ -5517,11 +5635,15 @@ export type Database = {
           signed_at?: string | null
           signed_by_name?: string | null
           status?: string
+          submit_count?: number
+          submitted_at?: string | null
           submitted_by?: string
           ticket_id?: string
           total_cost?: number | null
           total_hours?: number | null
           updated_at?: string
+          vat_amount?: number | null
+          vat_percent?: number | null
         }
         Relationships: [
           {
@@ -5572,6 +5694,7 @@ export type Database = {
           hourly_rate: number | null
           hours: number
           id: string
+          submission_id: string | null
           ticket_id: string
           total_cost: number | null
           updated_at: string
@@ -5586,6 +5709,7 @@ export type Database = {
           hourly_rate?: number | null
           hours?: number
           id?: string
+          submission_id?: string | null
           ticket_id: string
           total_cost?: number | null
           updated_at?: string
@@ -5600,6 +5724,7 @@ export type Database = {
           hourly_rate?: number | null
           hours?: number
           id?: string
+          submission_id?: string | null
           ticket_id?: string
           total_cost?: number | null
           updated_at?: string
@@ -5611,6 +5736,13 @@ export type Database = {
             columns: ["consultant_id"]
             isOneToOne: false
             referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_work_logs_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_timesheet_submissions"
             referencedColumns: ["id"]
           },
           {
@@ -6552,6 +6684,10 @@ export type Database = {
       }
     }
     Functions: {
+      add_timesheet_comment: {
+        Args: { _body: string; _submission_id: string }
+        Returns: string
+      }
       admin_confirm_payment: {
         Args: {
           _bank_reference: string
@@ -6872,6 +7008,10 @@ export type Database = {
       payment_commission_percent: { Args: never; Returns: number }
       payment_vat_percent: { Args: never; Returns: number }
       plan_limits_enforced: { Args: never; Returns: boolean }
+      propose_ticket_rate: {
+        Args: { _hourly_rate: number; _ticket_id: string }
+        Returns: string
+      }
       recompute_consultant_rating: {
         Args: { _consultant_id: string }
         Returns: undefined
@@ -6919,6 +7059,10 @@ export type Database = {
       }
       respond_to_company_invitation: {
         Args: { _accept: boolean; _tenant_id: string }
+        Returns: undefined
+      }
+      respond_to_ticket_rate: {
+        Args: { _approve: boolean; _note?: string; _rate_id: string }
         Returns: undefined
       }
       respond_to_timesheet: {
@@ -7028,13 +7172,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      submit_timesheet: {
+        Args: { _message?: string; _ticket_id: string }
+        Returns: string
+      }
       ticket_consultant_id: { Args: { _ticket_id: string }; Returns: string }
       ticket_in_my_company: { Args: { _ticket_id: string }; Returns: boolean }
       ticket_owned_by: {
         Args: { _client_id: string; _ticket_id: string }
         Returns: boolean
       }
+      timesheet_vat_percent: { Args: never; Returns: number }
       try_timestamptz: { Args: { _t: string }; Returns: string }
+      ts_num: { Args: { _n: number }; Returns: string }
       users_share_engagement: {
         Args: { _user_a: string; _user_b: string }
         Returns: boolean
