@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 
 const mocks = vi.hoisted(() => ({ update: vi.fn(), eq: vi.fn(), invoke: vi.fn() }));
+const fetchMock = vi.fn();
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
@@ -29,7 +30,9 @@ beforeEach(() => {
   mocks.eq.mockResolvedValue({ error: null });
   mocks.invoke.mockReset();
   mocks.invoke.mockResolvedValue({ data: null, error: null });
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ badges: [] }) }));
+  fetchMock.mockReset();
+  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ badges: [] }) });
+  vi.stubGlobal('fetch', fetchMock);
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -83,5 +86,29 @@ describe('CredlyBadgesSection', () => {
   it('says "linked" while the platform team has not checked the profile', () => {
     render(<CredlyBadgesSection initialUsername="jane-doe" consultantUserId="u-1" checkedAt={null} />);
     expect(screen.getByTestId('link-linked').textContent).toContain('Credly linked');
+  });
+
+  it('shows the name that was saved earlier when the page around only has it after the first draw', () => {
+    const { rerender } = render(<CredlyBadgesSection consultantUserId="u-1" />);
+    expect(screen.getByPlaceholderText('Enter your Credly username')).toBeTruthy();
+    rerender(<CredlyBadgesSection initialUsername="jane-doe.1a2b3c4d" consultantUserId="u-1" checkedAt={null} />);
+    expect(screen.getByText('@jane-doe.1a2b3c4d')).toBeTruthy();
+    expect(screen.queryByPlaceholderText('Enter your Credly username')).toBeNull();
+    expect(screen.getByTestId('link-linked').textContent).toContain('Credly linked');
+  });
+
+  it('does not bring the saved name back after the consultant removed the link', () => {
+    render(<CredlyBadgesSection initialUsername="jane-doe" consultantUserId="u-1" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Unlink' }));
+    expect(screen.getByPlaceholderText('Enter your Credly username')).toBeTruthy();
+    expect(screen.queryByText(/Linked as/)).toBeNull();
+  });
+
+  it('loads the badges with one request', async () => {
+    render(<CredlyBadgesSection consultantUserId="u-1" />);
+    typeName('jane-doe');
+    link();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(mocks.invoke).not.toHaveBeenCalled();
   });
 });

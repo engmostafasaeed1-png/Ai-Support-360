@@ -203,6 +203,8 @@ export default function ConsultantOnboarding() {
 
       // Upload certifications
       for (const cert of data.certifications) {
+        // An empty form row (no certificate chosen) is not saved.
+        if (!cert.name.trim()) continue;
         let docUrl: string | null = null;
         if (cert.file) {
           // Private bucket; the stored value is the storage path (first folder = user id, as the storage policy requires).
