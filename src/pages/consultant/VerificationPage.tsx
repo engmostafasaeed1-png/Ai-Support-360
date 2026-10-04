@@ -12,6 +12,8 @@ import {
   FileText, Award, Brain, Play,
 } from 'lucide-react';
 import CredlyBadgesSection from '@/components/consultant/CredlyBadgesSection';
+import AddCertificateDialog from '@/components/consultant/AddCertificateDialog';
+import { linkState, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 import InterviewHistory from '@/components/consultant/InterviewHistory';
 import AIInterviewFlow from '@/components/consultant/AIInterviewFlow';
 import { supabase } from '@/integrations/supabase/client';
@@ -71,6 +73,13 @@ export default function VerificationPage() {
   const [pendingInterview, setPendingInterview] = useState<{ id: string } | null>(null);
   const [showInterviewFlow, setShowInterviewFlow] = useState(false);
   const [consultantId, setConsultantId] = useState<string | undefined>(undefined);
+  const [addCertOpen, setAddCertOpen] = useState(false);
+  const [links, setLinks] = useState<{ linkedin_url: string | null; linkedin_checked_at: string | null; credly_username: string | null; credly_checked_at: string | null }>({
+    linkedin_url: null,
+    linkedin_checked_at: null,
+    credly_username: null,
+    credly_checked_at: null,
+  });
 
   // Fetch skills and certifications from DB
   const { data: skills = [], isLoading: skillsLoading } = useQuery({
@@ -83,7 +92,7 @@ export default function VerificationPage() {
     enabled: !!consultantId,
   });
 
-  const { data: certifications = [], isLoading: certsLoading } = useQuery({
+  const { data: certifications = [], isLoading: certsLoading, refetch: refetchCerts } = useQuery({
     queryKey: ['consultant-certs', consultantId],
     queryFn: async () => {
       if (!consultantId) return [];
@@ -100,13 +109,19 @@ export default function VerificationPage() {
       setUserId(user.id);
       supabase
         .from('consultants')
-        .select('id, credly_username')
+        .select('id, credly_username, linkedin_url, linkedin_checked_at, credly_checked_at')
         .eq('user_id', user.id)
         .maybeSingle()
         .then(({ data }) => {
           if (!data) return;
           setConsultantId(data.id);
           if ((data as any).credly_username) setCredlyUsername((data as any).credly_username);
+          setLinks({
+            linkedin_url: (data as any).linkedin_url ?? null,
+            linkedin_checked_at: (data as any).linkedin_checked_at ?? null,
+            credly_username: (data as any).credly_username ?? null,
+            credly_checked_at: (data as any).credly_checked_at ?? null,
+          });
           
           // Check for pending AI interviews
           supabase
@@ -132,6 +147,10 @@ export default function VerificationPage() {
   const verifiedCerts = certifications.filter((c: any) => c.verified).length;
   const hasAiInterview = !!profile.ai_interview_completed_at;
   const aiScore = hasAiInterview ? Math.round(Number(profile.ai_skills_score) || 0) : null;
+  const linkedinLinkState = linkState(normalizeLinkedinUrl(links.linkedin_url), links.linkedin_checked_at);
+  const credlyLinkState = linkState(normalizeCredlyUsername(links.credly_username), links.credly_checked_at);
+  const linksChecked = linkedinLinkState === 'checked' || credlyLinkState === 'checked';
+  const linksGiven = linkedinLinkState !== 'none' || credlyLinkState !== 'none';
   const reviewStatus: StepStatus =
     verificationStatus === 'verified' ? 'completed'
     : verificationStatus === 'rejected' || verificationStatus === 'suspended' ? 'failed'
@@ -149,6 +168,12 @@ export default function VerificationPage() {
       label: 'SAP certifications',
       desc: verifiedCerts > 0 ? 'Verified by the platform team' : 'Add your certificates; the platform team verifies them',
       status: verifiedCerts > 0 ? 'completed' : certifications.length > 0 ? 'in_progress' : 'pending',
+    },
+    {
+      key: 'links',
+      label: 'LinkedIn and Credly',
+      desc: linksChecked ? 'Checked by the platform team' : linksGiven ? 'Linked; the platform team checks that the profiles are yours' : 'Link your profiles: LinkedIn on your Profile page, Credly below',
+      status: linksChecked ? 'completed' : linksGiven ? 'in_progress' : 'pending',
     },
     {
       key: 'skills',
@@ -318,7 +343,12 @@ export default function VerificationPage() {
       <InterviewHistory consultantId={consultantId} />
 
       {/* Credly Badges */}
-      <CredlyBadgesSection initialUsername={credlyUsername} consultantUserId={userId} />
+      <CredlyBadgesSection
+        initialUsername={credlyUsername}
+        consultantUserId={userId}
+        checkedAt={links.credly_checked_at}
+        onSaved={(name) => setLinks(l => ({ ...l, credly_username: name, credly_checked_at: null }))}
+      />
 
       {/* Certifications */}
       <Card className="rounded-2xl border-border/50">
@@ -327,11 +357,14 @@ export default function VerificationPage() {
             <Award className="w-4 h-4 text-accent" />
             Certifications
           </CardTitle>
-          <Button variant="outline" size="sm" className="text-xs">
-            <Upload className="w-3 h-3 me-1" /> Upload New
+          <Button variant="outline" size="sm" className="text-xs" onClick={() => setAddCertOpen(true)} disabled={!consultantId || !userId}>
+            <Upload className="w-3 h-3 me-1" /> Add certificate
           </Button>
         </CardHeader>
         <CardContent className="space-y-3">
+          {certifications.length === 0 && (
+            <p className="text-sm text-muted-foreground">No certificates yet. Add one: the platform team opens the file and verifies it.</p>
+          )}
           {certifications.map((cert, i) => (
             <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-border/30">
               <div className="flex items-center gap-3">
@@ -356,6 +389,16 @@ export default function VerificationPage() {
           ))}
         </CardContent>
       </Card>
+
+      {consultantId && userId && (
+        <AddCertificateDialog
+          open={addCertOpen}
+          onOpenChange={setAddCertOpen}
+          consultantId={consultantId}
+          userId={userId}
+          onAdded={() => void refetchCerts()}
+        />
+      )}
     </div>
   );
 }
