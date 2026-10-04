@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Award, ExternalLink, CheckCircle, Link2, Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import LinkStatus from '@/components/consultant/LinkStatus';
+import { CREDLY_HINT, credlyProfileUrl, linkState, normalizeCredlyUsername } from '@/lib/consultantLinks';
 
 interface CredlyBadge {
   id: string;
@@ -23,9 +25,13 @@ interface CredlyBadge {
 interface Props {
   initialUsername?: string;
   consultantUserId?: string;
+  /** When the platform team checked the profile (null: not checked yet). */
+  checkedAt?: string | null;
+  /** Called after the Credly name was saved (the name) or removed (null), so that the page around can show it at once. */
+  onSaved?: (username: string | null) => void;
 }
 
-export default function CredlyBadgesSection({ initialUsername, consultantUserId }: Props) {
+export default function CredlyBadgesSection({ initialUsername, consultantUserId, checkedAt, onSaved }: Props) {
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
   const [username, setUsername] = useState(initialUsername || '');
@@ -75,20 +81,30 @@ export default function CredlyBadgesSection({ initialUsername, consultantUserId 
   };
 
   const handleLink = async () => {
-    const trimmed = inputValue.trim();
-    if (!trimmed) return;
+    // The name or the address of the Credly profile, with the same rules as the database.
+    const trimmed = normalizeCredlyUsername(inputValue);
+    if (!trimmed) {
+      setError(CREDLY_HINT);
+      return;
+    }
 
-    setUsername(trimmed);
-    await fetchBadges(trimmed);
-
-    // Save username to consultants table
+    // Save the username first: when the database does not accept it, nothing is shown as linked.
     if (!isGuest && consultantUserId) {
-      await supabase
+      const { error: saveError } = await supabase
         .from('consultants')
         .update({ credly_username: trimmed } as any)
         .eq('user_id', consultantUserId);
+      if (saveError) {
+        setError(saveError.code === '22023' && saveError.message ? saveError.message : t('credly.error_save', 'Could not save your Credly profile. Please try again.'));
+        return;
+      }
     }
+    setError(null);
+    setUsername(trimmed);
+    setInputValue(trimmed);
     setLinked(true);
+    onSaved?.(trimmed);
+    await fetchBadges(trimmed);
   };
 
   const handleUnlink = async () => {
@@ -104,6 +120,7 @@ export default function CredlyBadgesSection({ initialUsername, consultantUserId 
         .update({ credly_username: null } as any)
         .eq('user_id', consultantUserId);
     }
+    onSaved?.(null);
   };
 
   return (
@@ -123,7 +140,7 @@ export default function CredlyBadgesSection({ initialUsername, consultantUserId 
         {!linked ? (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              {t('credly.description', 'Link your Credly profile to automatically verify and display your digital badges.')}
+              Link your Credly profile to show your digital badges to clients. The platform team checks that the profile is yours; until then clients see it as "linked".
             </p>
             <div className="flex gap-2">
               <Input
@@ -142,11 +159,11 @@ export default function CredlyBadgesSection({ initialUsername, consultantUserId 
         ) : (
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm">
-              <CheckCircle className="w-4 h-4 text-green-500" />
+              <Link2 className="w-4 h-4 text-muted-foreground" />
               <span className="text-muted-foreground">
                 {t('credly.linked_as', 'Linked as')}{' '}
                 <a
-                  href={`https://www.credly.com/users/${username}`}
+                  href={credlyProfileUrl(username) ?? undefined}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium text-accent hover:underline"
@@ -155,6 +172,7 @@ export default function CredlyBadgesSection({ initialUsername, consultantUserId 
                   <ExternalLink className="w-3 h-3 inline ml-1" />
                 </a>
               </span>
+              <LinkStatus state={linkState(username, checkedAt)} label="Credly" />
             </div>
 
             {loading && (
