@@ -29,8 +29,6 @@ import { STATE_META, availabilityState } from '@/lib/mapMarkers';
 import { credlyProfileUrl, linkState, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 import { placeLabel } from '@/lib/geo';
 import { consultantPoint } from '@/lib/consultantDirectory';
-import { useConsultantPresence } from '@/hooks/useConsultantPresence';
-import { applyPresence } from '@/lib/presence';
 
 export default function ConsultantProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -155,10 +153,7 @@ export default function ConsultantProfilePage() {
     enabled: !isGuest && !!id,
   });
 
-  // Online and Busy are shown only while the consultant's app is open; before the first answer of the presence channel the status that the consultant set is shown.
-  const present = useConsultantPresence(!isGuest);
-  const storedConsultant: any = isGuest ? mockRecommendedConsultants.find(c => c.id === id) : liveProfile?.consultant;
-  const consultant: any = storedConsultant ? applyPresence(storedConsultant, present) : storedConsultant;
+  const consultant: any = isGuest ? mockRecommendedConsultants.find(c => c.id === id) : liveProfile?.consultant;
   const detail: any = isGuest ? mockConsultantDetailData : (liveProfile?.detail || mockConsultantDetailData);
 
   // Try to fetch real verification_status; fall back to mock badge
@@ -187,6 +182,8 @@ export default function ConsultantProfilePage() {
         { event: 'UPDATE', schema: 'public', table: 'consultants', filter: `id=eq.${id}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ['consultant-verification', id] });
+          // The status that the consultant sets (Online, Busy, Offline), the place and the links are shown on this page too: show a change at once.
+          queryClient.invalidateQueries({ queryKey: ['consultant-profile-detail', id] });
         }
       )
       .subscribe();

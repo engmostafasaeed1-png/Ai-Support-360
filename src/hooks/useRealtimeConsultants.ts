@@ -1,11 +1,9 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { mockRecommendedConsultants } from '@/data/clientMockData';
 import { toConsultantLive, type ConsultantLive } from '@/lib/consultantDirectory';
-import { useConsultantPresence } from '@/hooks/useConsultantPresence';
-import { applyPresence } from '@/lib/presence';
 
 export type { ConsultantLive } from '@/lib/consultantDirectory';
 
@@ -84,9 +82,5 @@ export function useRealtimeConsultants() {
 
   const realtimeConnected = !isGuest;
 
-  // Online and Busy are shown only for a consultant whose app is open now; before the first answer of the presence channel the status that the consultant set is shown.
-  const present = useConsultantPresence(!isGuest);
-  const shown = useMemo(() => consultants.map(c => applyPresence(c, present)), [consultants, present]);
-
-  return { consultants: shown, realtimeConnected, isLoading };
+  return { consultants, realtimeConnected, isLoading };
 }
