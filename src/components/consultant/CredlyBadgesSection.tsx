@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,19 +41,20 @@ export default function CredlyBadgesSection({ initialUsername, consultantUserId,
   const [error, setError] = useState<string | null>(null);
   const [linked, setLinked] = useState(!!initialUsername);
 
+  // The page around reads the saved name after the first draw: take it when it arrives, so that a name that was saved shows as linked and not as the empty form.
+  useEffect(() => {
+    if (!initialUsername) return;
+    setUsername(initialUsername);
+    setInputValue(initialUsername);
+    setLinked(true);
+  }, [initialUsername]);
+
   const fetchBadges = async (user: string) => {
     setLoading(true);
     setError(null);
     setBadges([]);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('credly-badges', {
-        body: undefined,
-        headers: { 'Content-Type': 'application/json' },
-        method: 'GET',
-      });
-
-      // Since functions.invoke doesn't support query params well, use fetch directly
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/credly-badges?username=${encodeURIComponent(user)}`,
