@@ -78,6 +78,13 @@
       "when": 1791091921556,
       "tag": "0010_m27_link_change_clears_checked",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791140142570,
+      "tag": "0011_m30_timesheet_rates_comments",
+      "breakpoints": true
     }
   ]
 }
