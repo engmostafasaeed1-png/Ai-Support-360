@@ -4,7 +4,7 @@
 
 import { STATE_META, availabilityState, type AvailabilityState } from './mapMarkers';
 import { linkState, normalizeCredlyUsername, normalizeLinkedinUrl, type LinkState } from './consultantLinks';
-import { placeLabel } from './geo';
+import { cityPoint, placeLabel } from './geo';
 
 export interface ConsultantLive {
   id: string;
@@ -62,10 +62,16 @@ export interface DirectoryRow {
   ai_interview_badge?: string | null;
 }
 
-function point(row: DirectoryRow): { lat: number; lng: number } | null {
+/**
+ * The place of a consultant on the map: the point that is stored; when there is none, the centre of the stored city if that city is in the list of places
+ * (consultants who gave their city before the map existed have a city but no point). No city in the list: null, and the consultant is not on the map.
+ */
+export function consultantPoint(row: Pick<DirectoryRow, 'latitude' | 'longitude' | 'city' | 'country'>): { lat: number; lng: number } | null {
   const { latitude, longitude } = row;
-  if (typeof latitude !== 'number' || typeof longitude !== 'number') return null;
-  return Number.isFinite(latitude) && Number.isFinite(longitude) ? { lat: latitude, lng: longitude } : null;
+  if (typeof latitude === 'number' && typeof longitude === 'number' && Number.isFinite(latitude) && Number.isFinite(longitude)) {
+    return { lat: latitude, lng: longitude };
+  }
+  return row.city && row.country ? cityPoint(row.country, row.city) : null;
 }
 
 /** The first letters of the first two words of a name. */
@@ -82,7 +88,7 @@ export function initialsOf(name: string): string {
 export function toConsultantLive(row: DirectoryRow, displayName: string | null | undefined, skills: string[]): ConsultantLive {
   const name = displayName || 'Consultant';
   const status = availabilityState(row.availability_status);
-  const where = point(row);
+  const where = consultantPoint(row);
   const linkedin = normalizeLinkedinUrl(row.linkedin_url);
   const credly = normalizeCredlyUsername(row.credly_username);
   const rating = Number(row.rating) || 0;

@@ -64,10 +64,31 @@ describe('toConsultantLive: place', () => {
     expect(c.place).toBe('');
   });
 
-  it('has no point when only one of the two numbers is there or a number is not valid', () => {
-    expect(live({ latitude: 30.04, longitude: null }).lat).toBeNull();
-    expect(live({ latitude: null, longitude: 31.24 }).lng).toBeNull();
-    expect(live({ latitude: NaN, longitude: 31.24 }).lat).toBeNull();
+  it('has no point when there is no city and only one of the two numbers is there or a number is not valid', () => {
+    const noCity = { city: null, country: null };
+    expect(live({ ...noCity, latitude: 30.04, longitude: null }).lat).toBeNull();
+    expect(live({ ...noCity, latitude: null, longitude: 31.24 }).lng).toBeNull();
+    expect(live({ ...noCity, latitude: NaN, longitude: 31.24 }).lat).toBeNull();
+  });
+
+  it('uses the centre of the stored city when there is no point yet (a consultant who gave the city before the map existed)', () => {
+    const c = live({ latitude: null, longitude: null });
+    expect(c.lat).toBe(30.04);
+    expect(c.lng).toBe(31.24);
+    expect(live({ latitude: 30.04, longitude: null }).lng).toBe(31.24);
+    expect(live({ latitude: NaN, longitude: 31.24 }).lat).toBe(30.04);
+  });
+
+  it('keeps the stored point and does not replace it by the centre of the city', () => {
+    const c = live({ latitude: 30.1, longitude: 31.3 });
+    expect(c.lat).toBe(30.1);
+    expect(c.lng).toBe(31.3);
+  });
+
+  it('has no point for a city that is not in the list of places', () => {
+    const c = live({ city: 'Atlantis', latitude: null, longitude: null });
+    expect(c.lat).toBeNull();
+    expect(c.lng).toBeNull();
   });
 });
 

@@ -28,6 +28,7 @@ import ConsultantLocationMap from '@/components/client/ConsultantLocationMap';
 import { STATE_META, availabilityState } from '@/lib/mapMarkers';
 import { credlyProfileUrl, linkState, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 import { placeLabel } from '@/lib/geo';
+import { consultantPoint } from '@/lib/consultantDirectory';
 
 export default function ConsultantProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -119,8 +120,8 @@ export default function ConsultantProfilePage() {
           status: availabilityState(c.availability_status),
           badges: c.verification_status === 'verified' ? ['verified'] : [],
           city: placeLabel(c.city, c.country),
-          lat: typeof c.latitude === 'number' && typeof c.longitude === 'number' ? c.latitude : null,
-          lng: typeof c.latitude === 'number' && typeof c.longitude === 'number' ? c.longitude : null,
+          lat: consultantPoint(c)?.lat ?? null,
+          lng: consultantPoint(c)?.lng ?? null,
           credly_username: normalizeCredlyUsername(c.credly_username),
           linkedin_url: normalizeLinkedinUrl(c.linkedin_url),
           linkedin_state: linkState(normalizeLinkedinUrl(c.linkedin_url), c.linkedin_checked_at),

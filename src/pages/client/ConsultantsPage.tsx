@@ -129,7 +129,7 @@ export default function ConsultantsPage() {
     }
 
     return result;
-  }, [consultants, search, industryFilter, availabilityFilter, moduleFilter, minRating, priceRange, languageFilter, verifiedOnly, credlyOnly, sortBy]);
+  }, [consultants, debouncedSearch, industryFilter, availabilityFilter, moduleFilter, minRating, priceRange, languageFilter, verifiedOnly, credlyOnly, sortBy]);
 
   const notOnMapCount = filtered.filter(c => c.lat === null || c.lng === null).length;
 
