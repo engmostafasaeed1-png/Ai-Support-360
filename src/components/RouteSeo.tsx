@@ -9,7 +9,7 @@ type Meta = { title: string; description: string; noindex?: boolean };
 const DEFAULT: Meta = {
   title: `AI Support Now — Expert On-Demand Support`,
   description:
-    'AI-powered enterprise SAP support platform. Connect with verified SAP experts for S/4HANA, BTP, SuccessFactors, and 20+ modules. Bilingual Arabic & English.',
+    'AI-powered enterprise support platform. Connect with verified experts for S/4HANA, BTP, SuccessFactors, and 20+ modules. Bilingual Arabic & English.',
 };
 
 const ROUTES: Record<string, Meta> = {
@@ -60,6 +60,15 @@ function resolve(pathname: string): Meta {
     return { title: `Join your support session — ${BRAND}`, description: DEFAULT.description, noindex: true };
   if (pathname.startsWith('/demo/confirmation/'))
     return { title: `Demo request status — ${BRAND}`, description: DEFAULT.description, noindex: true };
+  if (pathname.startsWith('/interview/respond/'))
+    return { title: `Consultant interview — ${BRAND}`, description: `Answer your consultant interview questions on ${BRAND}.`, noindex: true };
+  const parts = pathname.split('/').filter(Boolean)
+    .filter((p) => !/^[0-9a-f-]{16,}$/i.test(p) && !p.startsWith('.'))
+    .map((p) => p.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()));
+  if (parts.length) {
+    const label = parts.reverse().join(' · ');
+    return { title: `${label} — ${BRAND}`, description: `${label} in your ${BRAND} workspace.`, noindex: true };
+  }
   return { ...DEFAULT, noindex: true };
 }
 
