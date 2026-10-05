@@ -121,7 +121,7 @@ serve(async (req) => {
   "projects": [
     { "project_name": "", "client_industry": "", "sap_modules": ["SAP FI/CO"], "description": "", "duration_months": null, "role": "" }
   ],
-  "matching_summary": "A dense 120-200 word third-person summary of the consultant's expertise for matching to support tickets: SAP modules, sub-areas, processes, industries, typical problems solved, versions (ECC/S/4HANA), integrations. No personal contact details, no employer names.",
+  "matching_summary": "A dense 120-200 word third-person summary of the consultant's expertise for matching to support tickets: SAP modules, sub-areas, processes, industries, typical problems solved, versions (ECC/S/4HANA), integrations. Use ONLY facts stated in the CV, never invent experience. No personal contact details, no employer names.",
   "expertise_keywords": ["up to 40 short keywords: modules, t-codes, processes, technologies"],
   "plain_text": ${pdfDataUrl ? '"The CV plain text with contact details (email, phone, address) removed, max 8000 characters"' : "null"}
 }
