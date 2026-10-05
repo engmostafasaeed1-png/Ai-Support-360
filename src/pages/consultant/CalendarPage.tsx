@@ -16,6 +16,7 @@ const statusStyle: Record<string, string> = {
 };
 
 const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const fullDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 function getWeekDates() {
   const today = new Date();
@@ -60,6 +61,7 @@ export default function CalendarPage() {
         .eq('consultant_id', consultant.id)
         .order('scheduled_at', { ascending: true });
       if (error) throw error;
+      setConsultantId(consultant.id);
 
       // Get client names
       const clientIds = [...new Set((data || []).map(s => s.client_id))];
