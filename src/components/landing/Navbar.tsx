@@ -41,7 +41,7 @@ export default function Navbar() {
       <div className={`container mx-auto flex items-center justify-between h-16 sm:h-20 md:h-24 px-3 sm:px-4 gap-2`}>
         <Link
           to="/"
-          aria-label="AI SAP Support Now — go to home"
+          aria-label="AI Support Now — go to home"
           title="Go to home"
           className="flex items-center gap-2 sm:gap-3 group rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background -ml-1 px-1 py-1 min-h-[44px] cursor-pointer min-w-0 shrink active:bg-foreground/5"
         >
@@ -54,7 +54,7 @@ export default function Navbar() {
           >
             <img
               src={logo}
-              alt="AI SAP Support Now logo"
+              alt="AI Support Now logo"
               width={96}
               height={96}
               className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg sm:rounded-xl object-contain"
@@ -62,11 +62,11 @@ export default function Navbar() {
           </span>
           <span className={`font-black leading-tight tracking-tight transition-colors duration-500 whitespace-nowrap ${scrolled ? 'text-foreground group-hover:text-primary' : 'text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] group-hover:text-white/90'}`}>
             {/* ≤640px: short brand */}
-            <span className="inline sm:hidden text-sm">AI SAP Support</span>
+            <span className="inline sm:hidden text-sm">AI Support</span>
             {/* 640–1023px: short brand */}
-            <span className="hidden sm:inline lg:hidden text-lg md:text-xl">AI SAP Support</span>
+            <span className="hidden sm:inline lg:hidden text-lg md:text-xl">AI Support</span>
             {/* ≥1024px: full brand */}
-            <span className="hidden lg:inline text-2xl">AI SAP Support Now</span>
+            <span className="hidden lg:inline text-2xl">AI Support Now</span>
           </span>
         </Link>
 
