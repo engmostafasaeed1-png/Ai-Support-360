@@ -9,4 +9,4 @@ Disallow: /join/
 Disallow: /reset-password
 Disallow: /unsubscribe
 
-Sitemap: https://www.aisapsupportnow.com/sitemap.xml
+Sitemap: https://www.aisupport360.com/sitemap.xml

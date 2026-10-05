@@ -115,7 +115,7 @@ export default function PricingPage() {
         priceCurrency: 'USD',
         description: 'Pay per session for ad-hoc SAP support.',
         availability: 'https://schema.org/InStock',
-        url: 'https://www.aisapsupportnow.com/pricing',
+        url: 'https://www.aisupport360.com/pricing',
       },
       {
         '@type': 'Offer',
@@ -124,7 +124,7 @@ export default function PricingPage() {
         priceCurrency: 'USD',
         description: 'Monthly retainer with 20 support hours, SLA guarantees, and a dedicated consultant pool.',
         availability: 'https://schema.org/InStock',
-        url: 'https://www.aisapsupportnow.com/pricing',
+        url: 'https://www.aisupport360.com/pricing',
       },
     ],
   };

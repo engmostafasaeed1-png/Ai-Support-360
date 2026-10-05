@@ -29,7 +29,7 @@ Secrets (Project settings, Edge Functions, Secrets):
 |---|---|
 | `CREDENTIALS_ENCRYPTION_KEY` | Master secret for credential encryption. Rotating it requires re-encrypting stored credentials. |
 | `ALLOWED_ORIGINS` (optional) | Extra comma-separated CORS origins (production and preview domains are built in). |
-| `SITE_URL` (optional) | Canonical site URL used in e-mailed links; default `https://www.aisapsupportnow.com`. |
+| `SITE_URL` (optional) | Canonical site URL used in e-mailed links; default `https://www.aisupport360.com`. |
 | `INTEGRATION_EXTRA_ALLOWED_HOSTS` (optional) | Extra host suffixes for self-hosted Jira / ServiceNow / Zendesk instances (SSRF allow-list). |
 | `ANYDESK_API_KEY` (optional) | Enables the admin-only AnyDesk directory. |
 
@@ -43,7 +43,7 @@ Notes:
 
 - The published site is served by Lovable hosting, which does not apply `public/_headers`. The effective protections are the `<meta>` CSP in `index.html` (no `unsafe-eval`) and `public/anti-clickjack.js`, which hides the app when it is framed by an origin that is not on the allow-list. `frame-ancestors` cannot be set through a meta tag.
 - Next CSP step (needs a host or CDN rule that can send real headers): serve the CSP as a header with `frame-ancestors`, remove `'unsafe-inline'` from `script-src` and start with `Content-Security-Policy-Report-Only`.
-- Set the primary domain in Lovable so that the canonical link injected into the static HTML matches `https://www.aisapsupportnow.com`.
+- Set the primary domain in Lovable so that the canonical link injected into the static HTML matches `https://www.aisupport360.com`.
 
 ## 5. Manual settings outside the code base
 

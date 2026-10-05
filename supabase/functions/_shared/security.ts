@@ -14,7 +14,7 @@ export type AdminClient = any;
 const BASE_ALLOWED_ORIGINS = [
   'https://www.aisupport360.com',
   'https://aisupport360.com',
-  'https://www.aisapsupportnow.com',
+  'https://www.aisupport360.com',
   'https://aisapsupportnow.com',
   'https://smartsapsupport.qurtubatalks.com',
   'https://www.qurtubatalks.com',
@@ -177,4 +177,4 @@ export function maskEmail(email: string): string {
   return local.slice(0, 1) + "***@" + domain;
 }
 
-export const SITE_URL = (Deno.env.get('SITE_URL') ?? 'https://www.aisapsupportnow.com').replace(/\/+$/, '');
+export const SITE_URL = (Deno.env.get('SITE_URL') ?? 'https://www.aisupport360.com').replace(/\/+$/, '');

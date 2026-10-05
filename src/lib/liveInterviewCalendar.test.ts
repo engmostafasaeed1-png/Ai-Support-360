@@ -14,7 +14,7 @@ const ev: LiveInterviewEvent = {
   start: new Date('2026-10-08T06:00:00Z'),
   durationMinutes: 45,
   meetingUrl: 'https://meet.jit.si/qurtuba-interview-56920ab0050e4640b975c945514cc591',
-  roomUrl: 'https://www.aisapsupportnow.com/interview/live/56920ab0-050e-4640-b975-c945514cc591',
+  roomUrl: 'https://www.aisupport360.com/interview/live/56920ab0-050e-4640-b975-c945514cc591',
   attendees: ['Mostafa', 'M 2'],
 };
 
@@ -35,7 +35,7 @@ describe('live interview calendar helpers', () => {
 
   it('builds an .ics with the link in location, description and the conference fields', () => {
     const unfolded = buildLiveInterviewIcs(ev).replace(/\r\n /g, '');
-    expect(unfolded).toContain('UID:live-interview-56920ab0-050e-4640-b975-c945514cc591@aisapsupportnow.com');
+    expect(unfolded).toContain('UID:live-interview-56920ab0-050e-4640-b975-c945514cc591@aisupport360.com');
     expect(unfolded).toContain('DTSTART:20261008T060000Z');
     expect(unfolded).toContain('DTEND:20261008T064500Z');
     expect(unfolded).toContain(`LOCATION:${ev.meetingUrl}`);
