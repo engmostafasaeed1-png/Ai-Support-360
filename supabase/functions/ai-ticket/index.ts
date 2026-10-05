@@ -245,7 +245,7 @@ serve(async (req) => {
           id, user_id, bio, hourly_rate, currency, timezone, languages, industries,
           availability_status, rating, total_reviews, response_time_minutes,
           verification_status, ai_skills_score, country,
-          sap_role, seniority_level, total_sap_years, sap_technologies, localization_countries, project_types
+          sap_role, sap_roles, seniority_level, total_sap_years, sap_technologies, localization_countries, project_types
         `)
         .eq("verification_status", "verified")
         .limit(50);
@@ -368,7 +368,7 @@ serve(async (req) => {
           verification_status: c.verification_status,
           ai_skills_score: c.ai_skills_score,
           total_sap_years: c.total_sap_years ?? totalSapYears,
-          sap_role: c.sap_role,
+          sap_roles: (c as any).sap_roles?.length ? (c as any).sap_roles : (c.sap_role ? [c.sap_role] : []),
           seniority_level: c.seniority_level,
           technologies: c.sap_technologies,
           localization_countries: c.localization_countries,
@@ -430,7 +430,7 @@ SCORING CRITERIA (total = 100%):
    - Direct skill in the required module (proficiency 1-5, years of experience)
    - Certified in the module = strong bonus
    - Cross-module knowledge relevant to the issue
-   - sap_role fit (functional vs technical/ABAP vs basis vs integration) for the kind of problem; seniority_level and total_sap_years for complexity and urgency
+   - sap_roles fit (functional vs technical/ABAP vs basis vs integration) for the kind of problem; seniority_level and total_sap_years for complexity and urgency
    - technologies matching the ticket (e.g. Fiori, CPI, RAP); localization_countries matching the client's country or country-specific issues (tax, e-invoicing, payroll, legal reporting); project_types for migration/rollout tickets
    - CV evidence: cv_summary, cv_keywords, cv_excerpt and work_experience (titles, years, descriptions) that mention the same modules, processes, t-codes or problem type
 
