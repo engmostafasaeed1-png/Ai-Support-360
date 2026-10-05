@@ -156,7 +156,7 @@ export default function HeroSection() {
               <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 shadow-xl sm:shadow-2xl aspect-[3/2] sm:aspect-[16/10]">
                 <img
                   src={introCollab}
-                  alt="SAP consulting team collaborating with AI dashboards"
+                  alt="Consulting team collaborating with AI dashboards"
                   loading="lazy"
                   decoding="async"
                   width={1280}
@@ -181,7 +181,7 @@ export default function HeroSection() {
                 {/* Bottom caption */}
                 <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:bottom-4 sm:left-4 sm:right-4 flex items-end justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-white/70 text-[9px] sm:text-[11px] uppercase tracking-widest font-semibold">SAP S/4HANA</p>
+                    <p className="text-white/70 text-[9px] sm:text-[11px] uppercase tracking-widest font-semibold">S/4HANA</p>
                     <p className="text-white text-sm sm:text-base md:text-lg font-semibold leading-tight truncate">Real consultants. Real outcomes.</p>
                   </div>
                   <div className="hidden sm:flex shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 backdrop-blur-md border border-white/15">
@@ -198,7 +198,7 @@ export default function HeroSection() {
               <div className="relative group rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 shadow-lg sm:shadow-xl aspect-square sm:aspect-[4/3] md:aspect-auto md:flex-1 md:min-h-[180px]">
                 <img
                   src={introAiPortal}
-                  alt="AI-powered SAP support portal"
+                  alt="AI-powered support portal"
                   loading="lazy"
                   decoding="async"
                   width={1024}
@@ -221,7 +221,7 @@ export default function HeroSection() {
               <div className="relative group rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 shadow-lg sm:shadow-xl aspect-square sm:aspect-[4/3] md:aspect-auto md:flex-1 md:min-h-[180px]">
                 <img
                   src={introConsultant}
-                  alt="Certified SAP consultant on call"
+                  alt="Certified consultant on call"
                   loading="lazy"
                   decoding="async"
                   width={1024}
@@ -235,7 +235,7 @@ export default function HeroSection() {
                   Vetted
                 </div>
                 <div className="absolute bottom-2 left-2 right-2 sm:bottom-3 sm:left-3 sm:right-3">
-                  <p className="text-white text-xs sm:text-sm font-semibold leading-tight">On-demand SAP talent</p>
+                  <p className="text-white text-xs sm:text-sm font-semibold leading-tight">On-demand expert talent</p>
                   <p className="hidden sm:block text-white/70 text-[11px]">500+ certified consultants</p>
                 </div>
               </div>

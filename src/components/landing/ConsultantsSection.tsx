@@ -33,7 +33,7 @@ export default function ConsultantsSection() {
             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
               <Search className="w-6 h-6 text-primary" aria-hidden="true" />
             </div>
-            <h3 className="font-bold text-lg text-foreground mb-2">Need SAP help?</h3>
+            <h3 className="font-bold text-lg text-foreground mb-2">Need expert help?</h3>
             <p className="text-sm text-muted-foreground mb-6 flex-1">
               Every consultant is interviewed and verified before they can take your case. Create an account to browse experts and get matched.
             </p>
@@ -46,7 +46,7 @@ export default function ConsultantsSection() {
               <UserPlus className="w-6 h-6 text-accent" aria-hidden="true" />
             </div>
             <h3 className="font-bold text-lg text-foreground mb-2 flex items-center gap-2">
-              Are you an SAP expert? <BadgeCheck className="w-5 h-5 text-accent" aria-hidden="true" />
+              Are you an expert? <BadgeCheck className="w-5 h-5 text-accent" aria-hidden="true" />
             </h3>
             <p className="text-sm text-muted-foreground mb-6 flex-1">
               Join our verified network, complete your interview, and start receiving matched support requests.
