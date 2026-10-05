@@ -211,7 +211,7 @@ export default function NDASigningModal({
         : typedName.trim();
 
     const ndaContentForRecord = hasCustomNDA
-      ? `[Custom NDA Document: ${customNdaFilename}] ${customNdaPublicUrl}`
+      ? `Custom NDA document provided by ${clientCompany || clientDisplayName || 'the client'}: "${customNdaFilename || 'NDA document'}".\nThe consultant ${consultantName || ''} confirms having read and agreed to all terms of that document.${filledTemplate.trim().length >= 20 ? `\n\n${filledTemplate}` : ''}`
       : filledTemplate;
     const success = await signNDA(sigData, sigType, ndaContentForRecord);
     setSubmitting(false);
