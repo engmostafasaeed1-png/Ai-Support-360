@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Cpu, Loader2, Plus, Save, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,23 +46,44 @@ const PROJECT_TYPES = ['Greenfield implementation', 'Brownfield conversion', 'Se
 
 type Skill = { id: string; sap_module: string; proficiency_level: number | null; years_experience: number | null };
 
-function Chips({ options, value, onChange }: { options: string[]; value: string[]; onChange: (v: string[]) => void }) {
+function Chips({ options, value, onChange, otherPlaceholder = 'Add another…' }: { options: readonly string[]; value: string[]; onChange: (v: string[]) => void; otherPlaceholder?: string }) {
+  const [custom, setCustom] = useState('');
+  const extras = value.filter((v) => !options.includes(v));
+  const add = () => {
+    const parts = custom.split(',').map((x) => x.trim().slice(0, 80)).filter(Boolean);
+    const next = [...value];
+    for (const p of parts) if (!next.some((v) => v.toLowerCase() === p.toLowerCase())) next.push(p);
+    onChange(next);
+    setCustom('');
+  };
+  const chip = (o: string, on: boolean) => (
+    <button
+      key={o}
+      type="button"
+      aria-pressed={on}
+      onClick={() => onChange(on ? value.filter((x) => x !== o) : [...value, o])}
+      className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${on ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground hover:border-primary/50'}`}
+    >
+      {o}{on && extras.includes(o) && <X className="inline h-3 w-3 ms-1" />}
+    </button>
+  );
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {options.map((o) => {
-        const on = value.includes(o);
-        return (
-          <button
-            key={o}
-            type="button"
-            aria-pressed={on}
-            onClick={() => onChange(on ? value.filter((x) => x !== o) : [...value, o])}
-            className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${on ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground hover:border-primary/50'}`}
-          >
-            {o}
-          </button>
-        );
-      })}
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((o) => chip(o, value.includes(o)))}
+        {extras.map((o) => chip(o, true))}
+      </div>
+      <div className="flex gap-2 max-w-md">
+        <Input
+          value={custom}
+          onChange={(e) => setCustom(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+          placeholder={otherPlaceholder}
+          className="h-8 text-xs"
+          maxLength={300}
+        />
+        <Button type="button" size="sm" variant="outline" className="h-8" onClick={add} disabled={!custom.trim()}><Plus className="h-3.5 w-3.5 me-1" />Add</Button>
+      </div>
     </div>
   );
 }
@@ -70,14 +92,16 @@ export default function SapExpertiseCard() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [role, setRole] = useState<string>('');
+  const [roles, setRoles] = useState<string[]>([]);
   const [seniority, setSeniority] = useState<string>('');
   const [years, setYears] = useState<string>('');
   const [tech, setTech] = useState<string[]>([]);
   const [loc, setLoc] = useState<string[]>([]);
   const [types, setTypes] = useState<string[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
-  const [newModule, setNewModule] = useState('');
+  const [picked, setPicked] = useState<string[]>([]);
+  const [moduleQuery, setModuleQuery] = useState('');
+  const [customModule, setCustomModule] = useState('');
   const [newLevel, setNewLevel] = useState('3');
   const [newYears, setNewYears] = useState('');
 
@@ -93,11 +117,13 @@ export default function SapExpertiseCard() {
       setUserId(uid);
       const { data } = await supabase
         .from('consultants')
-        .select('sap_role, seniority_level, total_sap_years, sap_technologies, localization_countries, project_types')
+        .select('sap_role, sap_roles, seniority_level, total_sap_years, sap_technologies, localization_countries, project_types')
         .eq('id', uid)
         .maybeSingle();
       if (data) {
-        setRole(data.sap_role ?? '');
+        const labelOf = (k: string) => SAP_ROLES.find(([v]) => v === k)?.[1] ?? k;
+        const r = data.sap_roles?.length ? data.sap_roles : data.sap_role ? [data.sap_role] : [];
+        setRoles(r.map(labelOf));
         setSeniority(data.seniority_level ?? '');
         setYears(data.total_sap_years != null ? String(data.total_sap_years) : '');
         setTech(data.sap_technologies ?? []);
@@ -111,8 +137,9 @@ export default function SapExpertiseCard() {
 
   const moduleOptions = useMemo(() => {
     const have = new Set(skills.map((s) => s.sap_module.toLowerCase()));
-    return ALL_SAP_AREAS.map((a) => a.name).filter((n) => !have.has(n.toLowerCase()));
-  }, [skills]);
+    const q = moduleQuery.trim().toLowerCase();
+    return ALL_SAP_AREAS.map((a) => a.name).filter((n) => !have.has(n.toLowerCase()) && (!q || n.toLowerCase().includes(q)));
+  }, [skills, moduleQuery]);
 
   const save = async () => {
     if (!userId) return;
@@ -120,7 +147,8 @@ export default function SapExpertiseCard() {
     if (y !== null && (!Number.isInteger(y) || y < 0 || y > 50)) return toast.error('Years of SAP experience must be 0–50');
     setSaving(true);
     const { error } = await supabase.from('consultants').update({
-      sap_role: role || null,
+      sap_roles: roles,
+      sap_role: SAP_ROLES.find(([, l]) => l === roles[0])?.[0] ?? null,
       seniority_level: seniority || null,
       total_sap_years: y,
       sap_technologies: tech,
@@ -132,12 +160,20 @@ export default function SapExpertiseCard() {
     toast.success('SAP expertise saved');
   };
 
-  const addSkill = async () => {
-    if (!userId || !newModule) return;
+  const addSkills = async () => {
+    if (!userId) return;
+    const have = new Set(skills.map((s) => s.sap_module.toLowerCase()));
+    const names = [...picked, ...customModule.split(',').map((x) => x.trim().slice(0, 120))]
+      .filter(Boolean)
+      .filter((n, i, a) => a.findIndex((m) => m.toLowerCase() === n.toLowerCase()) === i && !have.has(n.toLowerCase()));
+    if (!names.length) return;
     const yrs = newYears === '' ? null : Math.max(0, Math.min(50, Math.round(Number(newYears))));
-    const { error } = await supabase.from('consultant_skills').insert({ consultant_id: userId, sap_module: newModule, proficiency_level: Number(newLevel), years_experience: yrs });
+    const { error } = await supabase.from('consultant_skills').insert(
+      names.map((n) => ({ consultant_id: userId, sap_module: n, proficiency_level: Number(newLevel), years_experience: yrs })),
+    );
     if (error) return toast.error(error.message);
-    setNewModule(''); setNewYears(''); setNewLevel('3');
+    toast.success(`${names.length} module${names.length > 1 ? 's' : ''} added`);
+    setPicked([]); setCustomModule(''); setNewYears(''); setNewLevel('3'); setModuleQuery('');
     loadSkills(userId);
   };
 
@@ -159,14 +195,12 @@ export default function SapExpertiseCard() {
         <Button size="sm" onClick={save} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Save className="h-4 w-4 me-1" />}Save</Button>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid sm:grid-cols-3 gap-4">
-          <div>
-            <Label>Role</Label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger><SelectValue placeholder="Choose role" /></SelectTrigger>
-              <SelectContent>{SAP_ROLES.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-2">
+          <Label>Roles (choose all that apply)</Label>
+          <Chips options={SAP_ROLES.map(([, l]) => l)} value={roles} onChange={setRoles} otherPlaceholder="Other role, e.g. Test manager" />
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <Label>Seniority level</Label>
             <Select value={seniority} onValueChange={setSeniority}>
@@ -193,38 +227,50 @@ export default function SapExpertiseCard() {
               ))}
             </div>
           ) : <p className="text-xs text-muted-foreground">No modules yet.</p>}
-          <div className="flex flex-wrap gap-2 items-end">
-            <div className="flex-1 min-w-[200px]">
-              <Select value={newModule} onValueChange={setNewModule}>
-                <SelectTrigger><SelectValue placeholder="Add a module" /></SelectTrigger>
-                <SelectContent className="max-h-72">{moduleOptions.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
-              </Select>
+          <div className="rounded-xl border border-border/60 p-3 space-y-3">
+            <Input value={moduleQuery} onChange={(e) => setModuleQuery(e.target.value)} placeholder="Search modules (e.g. FI, payroll, EWM)" className="h-8 text-xs" />
+            <div className="max-h-48 overflow-y-auto grid sm:grid-cols-2 gap-1">
+              {moduleOptions.map((m) => {
+                const on = picked.includes(m);
+                return (
+                  <label key={m} className="flex items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-muted cursor-pointer">
+                    <Checkbox checked={on} onCheckedChange={(v) => setPicked(v ? [...picked, m] : picked.filter((x) => x !== m))} />
+                    {m}
+                  </label>
+                );
+              })}
+              {moduleOptions.length === 0 && <p className="text-xs text-muted-foreground px-2">No match — add it below.</p>}
             </div>
-            <Select value={newLevel} onValueChange={setNewLevel}>
-              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {['1 Beginner', '2 Basic', '3 Proficient', '4 Advanced', '5 Expert'].map((l) => <SelectItem key={l} value={l[0]}>{l}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Input className="w-24" type="number" min={0} max={50} placeholder="Years" value={newYears} onChange={(e) => setNewYears(e.target.value)} />
-            <Button variant="outline" onClick={addSkill} disabled={!newModule}><Plus className="h-4 w-4 me-1" />Add</Button>
+            <Input value={customModule} onChange={(e) => setCustomModule(e.target.value)} placeholder="Other modules not in the list (comma-separated)" className="h-8 text-xs" maxLength={500} />
+            <div className="flex flex-wrap gap-2 items-center">
+              <Select value={newLevel} onValueChange={setNewLevel}>
+                <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {['1 Beginner', '2 Basic', '3 Proficient', '4 Advanced', '5 Expert'].map((l) => <SelectItem key={l} value={l[0]}>{l}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Input className="w-24 h-8 text-xs" type="number" min={0} max={50} placeholder="Years" value={newYears} onChange={(e) => setNewYears(e.target.value)} />
+              <Button size="sm" variant="outline" onClick={addSkills} disabled={!picked.length && !customModule.trim()}>
+                <Plus className="h-4 w-4 me-1" />Add {picked.length + (customModule.trim() ? customModule.split(',').filter((x) => x.trim()).length : 0) || ''} module(s)
+              </Button>
+            </div>
           </div>
         </div>
 
         <div className="space-y-2">
           <Label>Technologies</Label>
-          <Chips options={TECHNOLOGIES} value={tech} onChange={setTech} />
+          <Chips options={TECHNOLOGIES} value={tech} onChange={setTech} otherPlaceholder="Other technologies (comma-separated)" />
         </div>
 
         <div className="space-y-2">
           <Label>Localization experience (country versions)</Label>
           <p className="text-xs text-muted-foreground">Countries whose SAP localization you configured — tax, e-invoicing, payroll, legal reporting.</p>
-          <Chips options={LOCALIZATIONS} value={loc} onChange={setLoc} />
+          <Chips options={LOCALIZATIONS} value={loc} onChange={setLoc} otherPlaceholder="Other countries" />
         </div>
 
         <div className="space-y-2">
           <Label>Project types</Label>
-          <Chips options={PROJECT_TYPES} value={types} onChange={setTypes} />
+          <Chips options={PROJECT_TYPES} value={types} onChange={setTypes} otherPlaceholder="Other project types" />
         </div>
       </CardContent>
     </Card>
