@@ -2,7 +2,7 @@ import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 
 const BASE_URL = 'https://www.aisapsupportnow.com';
-const BRAND = 'AI SAP Support Now';
+const BRAND = 'AI Support Now';
 
 type Meta = { title: string; description: string; noindex?: boolean };
 

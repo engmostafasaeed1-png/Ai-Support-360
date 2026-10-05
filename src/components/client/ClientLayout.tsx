@@ -38,8 +38,8 @@ export default function ClientLayout() {
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-muted-foreground" />
               <Link to="/" className="flex items-center gap-2 md:hidden">
-                <img src={logo} alt="AI SAP Support Now" className="w-8 h-8 rounded-lg object-contain" />
-                <span className="font-bold text-sm text-foreground">AI SAP Support Now</span>
+                <img src={logo} alt="AI Support Now" className="w-8 h-8 rounded-lg object-contain" />
+                <span className="font-bold text-sm text-foreground">AI Support Now</span>
               </Link>
               <div className="hidden md:flex items-center relative">
                 <Search className="w-4 h-4 absolute start-3 text-muted-foreground" />
