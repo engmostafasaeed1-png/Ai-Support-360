@@ -37,6 +37,8 @@ export interface ConsultantLive {
   verification_status: string;
   credibility_credits?: number;
   ai_interview_badge?: string | null;
+  /** Weekly working hours, e.g. "Mon 09:00–17:00". */
+  hours?: string[];
 }
 
 /** The columns of `consultants` that the directory reads. */
@@ -138,4 +140,17 @@ export function compareRecommended(a: Rankable, b: Rankable): number {
     b.reviews - a.reviews ||
     a.name.localeCompare(b.name)
   );
+}
+
+export interface WeeklySlot { day_of_week: number; start_time: string; end_time: string }
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/** One line per weekday: "Mon 09:00–12:00, 13:00–17:00", Monday first. */
+export function formatWeeklyHours(slots: WeeklySlot[]): string[] {
+  const order = [1, 2, 3, 4, 5, 6, 0];
+  return order.flatMap(d => {
+    const day = slots.filter(s => s.day_of_week === d).sort((a, b) => a.start_time.localeCompare(b.start_time));
+    if (day.length === 0) return [];
+    return [`${DAYS[d]} ${day.map(s => `${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}`).join(', ')}`];
+  });
 }

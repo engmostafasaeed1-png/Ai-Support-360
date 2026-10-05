@@ -21,6 +21,7 @@ export interface MapConsultant {
   status: AvailabilityState;
   linkedin_state: LinkState;
   credly_state: LinkState;
+  hours?: string[];
 }
 
 interface ConsultantMapProps {
@@ -43,6 +44,7 @@ const toView = (c: MapConsultant): PinView => ({
   status: c.status,
   linkedinState: c.linkedin_state,
   credlyState: c.credly_state,
+  hours: c.hours,
 });
 
 /** The consultants on a map: one pin for every consultant who chose a city, coloured by Online, Busy or Offline. The pins show the area of the city, never an address. */

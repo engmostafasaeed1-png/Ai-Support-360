@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { mockRecommendedConsultants } from '@/data/clientMockData';
-import { toConsultantLive, type ConsultantLive } from '@/lib/consultantDirectory';
+import { toConsultantLive, formatWeeklyHours, type ConsultantLive, type WeeklySlot } from '@/lib/consultantDirectory';
 
 export type { ConsultantLive } from '@/lib/consultantDirectory';
 
@@ -17,6 +17,9 @@ export function useRealtimeConsultants() {
     const channel = supabase
       .channel('consultants-availability')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'consultants' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['realtime-consultants'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'availability_slots' }, () => {
         queryClient.invalidateQueries({ queryKey: ['realtime-consultants'] });
       })
       .subscribe();
@@ -60,8 +63,19 @@ export function useRealtimeConsultants() {
         skillsMap.set(s.consultant_id, existing);
       });
 
+      const { data: slotRows } = await supabase
+        .from('availability_slots')
+        .select('consultant_id, day_of_week, start_time, end_time')
+        .in('consultant_id', consultantIds);
+      const hoursMap = new Map<string, WeeklySlot[]>();
+      (slotRows || []).forEach(s => {
+        const list = hoursMap.get(s.consultant_id) || [];
+        list.push(s as WeeklySlot);
+        hoursMap.set(s.consultant_id, list);
+      });
+
       // The place, the availability and the links come from the database as they are: nothing is invented here.
-      return consultantRows.map(c => toConsultantLive(c, profileMap.get(c.user_id)?.display_name, skillsMap.get(c.id) || []));
+      return consultantRows.map(c => ({ ...toConsultantLive(c, profileMap.get(c.user_id)?.display_name, skillsMap.get(c.id) || []), hours: formatWeeklyHours(hoursMap.get(c.id) || []) }));
     },
     enabled: !isGuest,
     placeholderData: isGuest ? mockRecommendedConsultants.map((c, i): ConsultantLive => ({

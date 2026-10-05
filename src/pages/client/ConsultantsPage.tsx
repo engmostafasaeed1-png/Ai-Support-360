@@ -535,6 +535,15 @@ export default function ConsultantsPage() {
                       </div>
                     </div>
 
+                    <div className="mt-3 rounded-lg bg-muted/40 px-2.5 py-2" data-testid={`hours-${c.id}`}>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Weekly availability</p>
+                      {c.hours && c.hours.length > 0 ? (
+                        <ul className="space-y-0.5">{c.hours.map(h => <li key={h} className="text-xs text-foreground">{h}</li>)}</ul>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">No hours set yet</p>
+                      )}
+                    </div>
+
                     <div className="flex gap-2 mt-3">
                       <Button size="sm" className="gradient-primary border-0 flex-1 text-xs" onClick={() => setBookingConsultant({ id: c.id, name: c.name, rate: c.rate })}>{t('consultants_page.book_session')}</Button>
                       <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => navigate(`/client/consultants/${c.id}`)}>{t('consultants_page.view_profile')}</Button>
