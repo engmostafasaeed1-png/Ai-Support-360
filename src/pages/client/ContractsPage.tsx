@@ -9,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileSignature, Download, Eye, Calendar, User, ShieldCheck, ShieldOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import jsPDF from 'jspdf';
+import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 
 interface NDAContract {
   id: string;
