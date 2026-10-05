@@ -24,7 +24,8 @@ const BASE_ALLOWED_ORIGINS = [
 // Lovable preview / editor hosts for THIS project only.
 const PREVIEW_ORIGIN_PATTERNS: RegExp[] = [
   /^https:\/\/id-preview--2b30b1db-ed1c-4d7b-8706-596c66fe5232\.lovable\.app$/,
-  /^https:\/\/2b30b1db-ed1c-4d7b-8706-596c66fe5232\.lovableproject\.com$/,
+  /^https:\/\/2b30b1db-ed1c-4d7b-8706-596c66fe5232(-[a-z0-9-]+)?\.lovableproject\.com$/,
+  /^https:\/\/[a-z0-9-]+--2b30b1db-ed1c-4d7b-8706-596c66fe5232\.lovable\.app$/,
 ];
 
 export function allowedOrigins(): string[] {
