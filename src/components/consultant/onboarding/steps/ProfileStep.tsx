@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { X, Globe, Linkedin, Github, Award, MapPin } from 'lucide-react';
 import { COUNTRIES, citiesOf } from '@/lib/geo';
 import { CREDLY_HINT, LINKEDIN_HINT, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
@@ -83,9 +83,9 @@ export default function ProfileStep({ data, onChange }: Props) {
           onChange={e => onChange({ bio: e.target.value })}
           placeholder={t('onboarding.bio_placeholder')}
           rows={4}
-          maxLength={1000}
+          maxLength={8000}
         />
-        <p className="text-[10px] text-muted-foreground text-end">{data.bio.length}/1000</p>
+        <p className="text-[10px] text-muted-foreground text-end">{data.bio.length}/8000</p>
       </div>
 
       {/* Location & Personal */}
@@ -133,14 +133,7 @@ export default function ProfileStep({ data, onChange }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="hourlyRate">{t('onboarding.hourly_rate')}</Label>
-          <Select value={data.hourlyRate ? String(data.hourlyRate) : ''} onValueChange={v => onChange({ hourlyRate: Number(v) })}>
-            <SelectTrigger><SelectValue placeholder="Select rate" /></SelectTrigger>
-            <SelectContent>
-              {[25, 50, 75, 100, 125, 150, 175, 200, 250, 300, 350, 400, 500].map(r => (
-                <SelectItem key={r} value={String(r)}>{r}/hr</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Input id="hourlyRate" type="number" min={0} step="0.01" value={data.hourlyRate} onChange={e => onChange({ hourlyRate: Number(e.target.value) })} />
         </div>
         <div className="space-y-1.5">
           <Label>{t('onboarding.currency')}</Label>
@@ -217,15 +210,15 @@ export default function ProfileStep({ data, onChange }: Props) {
         <Label>{t('onboarding.languages')}</Label>
         <div className="flex flex-wrap gap-2">
           {allLanguages.map(lang => (
-            <Badge
+            <Button type="button"
               key={lang.code}
-              variant={data.languages.includes(lang.code) ? 'default' : 'outline'}
+              variant={data.languages.includes(lang.code) ? 'default' : 'outline'} size="sm" aria-pressed={data.languages.includes(lang.code)}
               className="cursor-pointer"
               onClick={() => toggleLang(lang.code)}
             >
               {lang.label}
               {data.languages.includes(lang.code) && <X className="w-3 h-3 ms-1" />}
-            </Badge>
+            </Button>
           ))}
         </div>
       </div>

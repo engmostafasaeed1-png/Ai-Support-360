@@ -31,7 +31,7 @@ function fmt(d: string | null) {
   return new Date(d).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
 
-export default function ExperienceCvCard() {
+export default function ExperienceCvCard({ onProfileChanged }: { onProfileChanged?: () => void }) {
   // userId = consultants.id (row key for consultant tables); authId = auth user id (storage folder).
   const [userId, setUserId] = useState<string | null>(null);
   const [authId, setAuthId] = useState<string | null>(null);
@@ -196,7 +196,7 @@ export default function ExperienceCvCard() {
                   </div>
                   <div className="flex gap-1">
                     <Button size="icon" variant="ghost" aria-label="Edit experience" onClick={() => setEditing({ ...j, description: j.description ?? '' })}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" aria-label="Remove experience" onClick={() => removeJob(j.id!)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <Button size="icon" variant="ghost" aria-label="Remove experience" onClick={() => { if (j.id) void removeJob(j.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
                 </div>
                 {j.description && <p className="text-sm text-foreground/80 mt-2 whitespace-pre-line">{j.description}</p>}
@@ -207,7 +207,7 @@ export default function ExperienceCvCard() {
       </CardContent>
 
       {userId && (
-        <CvImportDialog open={!!parsed} onOpenChange={(o) => !o && setParsed(null)} userId={userId} data={parsed} onApplied={() => load(userId)} />
+        <CvImportDialog open={!!parsed} onOpenChange={(o) => !o && setParsed(null)} userId={userId} data={parsed} onApplied={() => { void load(userId); onProfileChanged?.(); }} />
       )}
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>

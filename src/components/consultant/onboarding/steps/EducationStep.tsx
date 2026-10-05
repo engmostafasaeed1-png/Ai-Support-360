@@ -99,7 +99,7 @@ export default function EducationStep({ data, onChange }: Props) {
               <Select value={item.institution} onValueChange={v => update(i, { institution: v })}>
                 <SelectTrigger><SelectValue placeholder="Select institution" /></SelectTrigger>
                 <SelectContent>
-                  {institutions.map(inst => (
+                  {[...new Set([...institutions, ...(item.institution ? [item.institution] : [])])].map(inst => (
                     <SelectItem key={inst} value={inst}>{inst}</SelectItem>
                   ))}
                 </SelectContent>
@@ -110,7 +110,7 @@ export default function EducationStep({ data, onChange }: Props) {
               <Select value={item.degree} onValueChange={v => update(i, { degree: v })}>
                 <SelectTrigger><SelectValue placeholder="Select degree" /></SelectTrigger>
                 <SelectContent>
-                  {degrees.map(d => (
+                  {[...new Set([...degrees, ...(item.degree ? [item.degree] : [])])].map(d => (
                     <SelectItem key={d} value={d}>{d}</SelectItem>
                   ))}
                 </SelectContent>
@@ -121,7 +121,7 @@ export default function EducationStep({ data, onChange }: Props) {
               <Select value={item.fieldOfStudy} onValueChange={v => update(i, { fieldOfStudy: v })}>
                 <SelectTrigger><SelectValue placeholder="Select field" /></SelectTrigger>
                 <SelectContent>
-                  {fieldsOfStudy.map(f => (
+                  {[...new Set([...fieldsOfStudy, ...(item.fieldOfStudy ? [item.fieldOfStudy] : [])])].map(f => (
                     <SelectItem key={f} value={f}>{f}</SelectItem>
                   ))}
                 </SelectContent>

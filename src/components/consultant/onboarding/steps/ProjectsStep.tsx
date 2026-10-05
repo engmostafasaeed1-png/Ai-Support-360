@@ -105,7 +105,7 @@ export default function ProjectsStep({ data, onChange }: Props) {
               <Select value={item.projectName} onValueChange={v => update(i, { projectName: v })}>
                 <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                 <SelectContent>
-                  {projectTypes.map(pt => (
+                  {[...new Set([...projectTypes, ...(item.projectName ? [item.projectName] : [])])].map(pt => (
                     <SelectItem key={pt} value={pt}>{pt}</SelectItem>
                   ))}
                 </SelectContent>
@@ -116,7 +116,7 @@ export default function ProjectsStep({ data, onChange }: Props) {
               <Select value={item.role} onValueChange={v => update(i, { role: v })}>
                 <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
                 <SelectContent>
-                  {roles.map(r => (
+                  {[...new Set([...roles, ...(item.role ? [item.role] : [])])].map(r => (
                     <SelectItem key={r} value={r}>{r}</SelectItem>
                   ))}
                 </SelectContent>
@@ -127,7 +127,7 @@ export default function ProjectsStep({ data, onChange }: Props) {
               <Select value={item.clientIndustry} onValueChange={v => update(i, { clientIndustry: v })}>
                 <SelectTrigger><SelectValue placeholder="Select industry" /></SelectTrigger>
                 <SelectContent>
-                  {industries.map(ind => <SelectItem key={ind} value={ind}>{ind}</SelectItem>)}
+                  {[...new Set([...industries, ...(item.clientIndustry ? [item.clientIndustry] : [])])].map(ind => <SelectItem key={ind} value={ind}>{ind}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -146,7 +146,7 @@ export default function ProjectsStep({ data, onChange }: Props) {
           <div className="space-y-1">
             <Label className="text-xs">SAP Modules Used</Label>
             <div className="flex flex-wrap gap-1.5">
-              {sapModules.slice(0, 12).map(mod => (
+              {[...new Set([...sapModules, ...item.sapModules])].map(mod => (
                 <Badge
                   key={mod}
                   variant={item.sapModules.includes(mod) ? 'default' : 'outline'}

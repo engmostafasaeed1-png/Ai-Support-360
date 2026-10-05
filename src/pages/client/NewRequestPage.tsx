@@ -1,3 +1,4 @@
+import MatchScoreBreakdown, { type MatchCriterion } from '@/components/client/MatchScoreBreakdown';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
 import { useTranslation } from 'react-i18next';
@@ -72,6 +73,7 @@ interface AiMatch {
 interface ConsultantRecommendation {
   consultant_id: string;
   match_score: number;
+  score_breakdown?: MatchCriterion[];
   match_reason: string;
   strengths: string[];
   skill_match_score?: number;
@@ -297,6 +299,7 @@ export default function NewRequestPage() {
           sap_module: form.sap_module,
           sap_modules: form.sap_modules,
           sap_module_other: form.sap_module_other || undefined,
+          area_details: form.area_details,
           urgency: form.urgency,
           preferred_language: form.preferred_language,
           model: selectedModel,
@@ -311,7 +314,7 @@ export default function NewRequestPage() {
     } finally {
       setAiLoading(null);
     }
-  }, [form.title, form.description, form.sap_module, form.sap_modules, form.sap_module_other, form.urgency, form.preferred_language, selectedModel]);
+  }, [form.title, form.description, form.sap_module, form.sap_modules, form.sap_module_other, form.area_details, form.urgency, form.preferred_language, selectedModel]);
 
   const validateStep = (currentStep: number): boolean => {
     const result = ticketSchema.safeParse(form);
@@ -1254,6 +1257,8 @@ function RecommendationCard({ rec, rank, navigate, picked, pickDisabled, onToggl
 
           {/* Match reason */}
           <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{rec.match_reason}</p>
+
+          <MatchScoreBreakdown breakdown={rec.score_breakdown} />
 
           {/* Experience on similar issues: counts only, no names and no tickets */}
           {((rec.solved_similar ?? 0) > 0 || (rec.resolved_in_areas ?? 0) > 0) && (

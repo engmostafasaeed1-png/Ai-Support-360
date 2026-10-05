@@ -1,3 +1,4 @@
+import MatchScoreBreakdown, { type MatchCriterion } from '@/components/client/MatchScoreBreakdown';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ type AvailabilityFilter = 'all' | 'available' | 'busy' | 'offline';
 interface AIRecommendation {
   consultant_id: string;
   match_score: number;
+  score_breakdown?: MatchCriterion[];
   match_reason: string;
   strengths: string[];
 }
@@ -134,6 +136,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
       const { data, error } = await supabase.functions.invoke('ai-ticket', {
         body: {
           action: 'match_consultants',
+          ticket_id: ticketId,
           title: ticketTitle || 'Untitled',
           description: ticketDescription || '',
           sap_module: sapModule,
@@ -428,6 +431,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
                               {c.modules.length > 4 && <Badge variant="secondary" className="text-[9px]">+{c.modules.length - 4}</Badge>}
                             </div>
                           )}
+                          {rec && <MatchScoreBreakdown breakdown={rec.score_breakdown} />}
                           {rec && (
                             <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2 italic">
                               {rec.match_reason}
