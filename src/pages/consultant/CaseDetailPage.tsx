@@ -22,6 +22,7 @@ import TicketPlanApproval from '@/components/client/TicketPlanApproval';
 import TicketStatusActions from '@/components/consultant/TicketStatusActions';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 import TicketAreasNotes from '@/components/ticket/TicketAreasNotes';
+import TicketTimesheet from '@/components/client/TicketTimesheet';
 import { areasOf, areaLabel } from '@/lib/sapAreas';
 import { cleanNoteList } from '@/lib/sapNotes';
 
@@ -275,6 +276,21 @@ export default function CaseDetailPage() {
       {/* The assigned consultant hands the ticket back to the client, resumes work or marks it resolved */}
       {ticket.consultant_id && !!consultantData?.id && consultantData.id === ticket.consultant_id && (
         <TicketStatusActions ticketId={ticket.id} status={ticket.status} />
+      )}
+
+      {/* The timesheet of this case: the hourly rate, the activities and the timesheets that the client approves */}
+      {!!consultantData?.id && (
+        <Card className="rounded-2xl border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" />
+              Timesheet &amp; Work Log
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TicketTimesheet ticketId={ticket.id} ticketTitle={ticket.title} isReadOnly={false} canApprove={false} />
+          </CardContent>
+        </Card>
       )}
 
       {/* Inline Schedule Meeting Dialog */}
