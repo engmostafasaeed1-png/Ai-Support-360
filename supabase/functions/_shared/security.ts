@@ -12,6 +12,8 @@ export type AdminClient = any;
 // CORS
 // ---------------------------------------------------------------------------
 const BASE_ALLOWED_ORIGINS = [
+  'https://www.aisupport360.com',
+  'https://aisupport360.com',
   'https://www.aisapsupportnow.com',
   'https://aisapsupportnow.com',
   'https://smartsapsupport.qurtubatalks.com',
