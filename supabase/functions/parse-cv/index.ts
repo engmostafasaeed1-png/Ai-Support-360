@@ -184,8 +184,9 @@ ${cv_text.substring(0, 15000)}`}`;
       const keywords = Array.isArray(aiParsed.expertise_keywords)
         ? aiParsed.expertise_keywords.map((k: unknown) => String(k).slice(0, 60)).filter(Boolean).slice(0, 40)
         : [];
-      const { error: saveErr } = await adminClient().from("consultant_cv_profiles").upsert({
-        consultant_id: authUser.id,
+      const { data: me } = await adminClient().from("consultants").select("id").eq("user_id", authUser.id).maybeSingle();
+      const { error: saveErr } = !me ? { error: { message: "no consultant row" } } : await adminClient().from("consultant_cv_profiles").upsert({
+        consultant_id: me.id,
         cv_text: text,
         matching_summary: aiParsed.matching_summary ? stripContacts(String(aiParsed.matching_summary)).slice(0, 2000) : null,
         expertise_keywords: keywords,

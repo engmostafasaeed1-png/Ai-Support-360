@@ -32,7 +32,9 @@ function fmt(d: string | null) {
 }
 
 export default function ExperienceCvCard() {
+  // userId = consultants.id (row key for consultant tables); authId = auth user id (storage folder).
   const [userId, setUserId] = useState<string | null>(null);
+  const [authId, setAuthId] = useState<string | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [cvPath, setCvPath] = useState<string | null>(null);
@@ -77,21 +79,24 @@ export default function ExperienceCvCard() {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) return setLoading(false);
-      setUserId(session.user.id);
-      load(session.user.id);
+      setAuthId(session.user.id);
+      const { data: c } = await supabase.from('consultants').select('id').eq('user_id', session.user.id).maybeSingle();
+      if (!c) return setLoading(false);
+      setUserId(c.id);
+      load(c.id);
     });
   }, []);
 
   const uploadCv = async (file: File) => {
-    if (!userId) return;
+    if (!userId || !authId) return;
     if (!OK_TYPES.includes(file.type)) return toast.error('Please choose a PDF or Word file');
     if (file.size > MAX) return toast.error('CV must be under 10 MB');
     setUploading(true);
     try {
       const ext = file.name.split('.').pop()?.toLowerCase() || 'pdf';
-      const path = `${userId}/cv/cv-${Date.now()}.${ext}`;
+      const path = `${authId}/cv/cv-${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type });
       if (error) throw error;
       const { error: upErr } = await supabase.from('consultants').update({ cv_url: path }).eq('id', userId);

@@ -120,6 +120,13 @@
       "when": 1791210543924,
       "tag": "0016_consultant_sap_roles_multi",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791231874762,
+      "tag": "0017_fix_cv_profiles_policy",
+      "breakpoints": true
     }
   ]
 }
