@@ -20,7 +20,7 @@ export default function TicketNDAStatus({ consultantId, clientId, consultantName
     queryFn: async () => {
       const { data } = await supabase
         .from('nda_agreements')
-        .select('id, signed_at, signature_data, signature_type, nda_content, revoked_at')
+        .select('id, signed_at, signature_data, signature_type, nda_content, revoked_at, client_signature_data, client_signature_type, client_signer_name, client_signed_at')
         .eq('consultant_id', consultantId)
         .eq('client_id', clientId)
         .order('signed_at', { ascending: false })
@@ -45,6 +45,11 @@ export default function TicketNDAStatus({ consultantId, clientId, consultantName
       signedAt: nda.signed_at,
       consultantName,
       clientName,
+      clientSignatureData: nda.client_signature_data,
+      clientSignatureType: nda.client_signature_type,
+      clientSignerName: nda.client_signer_name,
+      clientSignedAt: nda.client_signed_at,
+      agreementId: nda.id,
     });
   };
 

@@ -2915,6 +2915,10 @@ export type Database = {
       nda_agreements: {
         Row: {
           client_id: string
+          client_signature_data: string | null
+          client_signature_type: string | null
+          client_signed_at: string | null
+          client_signer_name: string | null
           consultant_id: string
           created_at: string
           id: string
@@ -2928,6 +2932,10 @@ export type Database = {
         }
         Insert: {
           client_id: string
+          client_signature_data?: string | null
+          client_signature_type?: string | null
+          client_signed_at?: string | null
+          client_signer_name?: string | null
           consultant_id: string
           created_at?: string
           id?: string
@@ -2941,6 +2949,10 @@ export type Database = {
         }
         Update: {
           client_id?: string
+          client_signature_data?: string | null
+          client_signature_type?: string | null
+          client_signed_at?: string | null
+          client_signer_name?: string | null
           consultant_id?: string
           created_at?: string
           id?: string
@@ -6900,6 +6912,15 @@ export type Database = {
           _payment_id: string
           _transfer_date: string
           _transfer_reference: string
+        }
+        Returns: undefined
+      }
+      client_sign_nda: {
+        Args: {
+          _nda_id: string
+          _signature: string
+          _signature_type: string
+          _signer_name: string
         }
         Returns: undefined
       }

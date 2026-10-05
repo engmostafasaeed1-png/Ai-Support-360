@@ -115,7 +115,7 @@ export default function CaseDetailPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from('nda_agreements')
-        .select('id, revoked_at, signed_at, signature_data, signature_type, nda_content')
+        .select('id, revoked_at, signed_at, signature_data, signature_type, nda_content, client_signature_data, client_signature_type, client_signer_name, client_signed_at')
         .eq('consultant_id', consultantData!.id)
         .eq('client_id', ticket!.client_id)
         .is('revoked_at', null)
@@ -411,6 +411,11 @@ export default function CaseDetailPage() {
                       signedAt: (ndaStatus as any).signed_at,
                       consultantName: profile?.display_name || 'Consultant',
                       clientName: clientProfile?.company_name || 'Client',
+      clientSignatureData: (ndaStatus as any).client_signature_data,
+      clientSignatureType: (ndaStatus as any).client_signature_type,
+      clientSignerName: (ndaStatus as any).client_signer_name,
+      clientSignedAt: (ndaStatus as any).client_signed_at,
+      agreementId: (ndaStatus as any).id,
                     });
                   }
                 }}
