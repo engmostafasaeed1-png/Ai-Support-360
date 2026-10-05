@@ -37,7 +37,7 @@ export async function exportNDAAsPDF(data: NDAExportData) {
     105, y, { align: 'center' },
   );
   y += 5;
-  doc.text(`${data.consultantName || 'Consultant'} → ${data.clientName || 'Client'}`, 105, y, { align: 'center' });
+  doc.text(`${data.consultantName || 'Consultant'}  and  ${data.clientName || 'Client'}`, 105, y, { align: 'center' });
   y += 8;
   doc.setDrawColor(200);
   doc.line(14, y, 196, y);
