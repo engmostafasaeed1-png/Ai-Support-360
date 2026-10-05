@@ -1208,6 +1208,7 @@ export type Database = {
           id: string
           kind: string
           label: string
+          reminder_sent_at: string | null
           status: string
           updated_at: string
         }
@@ -1221,6 +1222,7 @@ export type Database = {
           id?: string
           kind?: string
           label: string
+          reminder_sent_at?: string | null
           status?: string
           updated_at?: string
         }
@@ -1234,6 +1236,7 @@ export type Database = {
           id?: string
           kind?: string
           label?: string
+          reminder_sent_at?: string | null
           status?: string
           updated_at?: string
         }

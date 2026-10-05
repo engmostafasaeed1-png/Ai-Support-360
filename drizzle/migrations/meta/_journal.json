@@ -134,6 +134,13 @@
       "when": 1791236738975,
       "tag": "0018_consultant_pending_verification_items",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791236890525,
+      "tag": "0019_verification_item_reminder",
+      "breakpoints": true
     }
   ]
 }

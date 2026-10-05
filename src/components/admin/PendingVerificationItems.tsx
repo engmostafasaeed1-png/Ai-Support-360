@@ -93,6 +93,8 @@ export function ApproveWithItemsDialog({
         .eq('consultant_id', target.id).eq('new_status', 'verified' as any)
         .order('created_at', { ascending: false }).limit(1).maybeSingle();
       if (latest?.id) await supabase.from('consultant_verification_audit').update({ reason: reason.slice(0, 1000) }).eq('id', latest.id);
+      supabase.functions.invoke('verification-items-notify', { body: { action: 'assigned', consultant_id: target.id } })
+        .catch(() => toast.warning('Approved, but the email to the consultant could not be sent.'));
       toast.success(`${target.name} is approved and now shows in the consultant list.`);
       onDone();
       onClose();
