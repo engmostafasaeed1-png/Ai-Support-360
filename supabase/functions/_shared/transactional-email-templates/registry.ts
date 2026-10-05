@@ -14,6 +14,7 @@ import { template as demoRescheduleConfirmed } from './demo-reschedule-confirmed
 import { template as interviewInvitation } from './interview-invitation.tsx'
 import { template as interviewInvitationCopy } from './interview-invitation-copy.tsx'
 import { template as interviewResponse } from './interview-response.tsx'
+import { template as verificationItems } from './verification-items.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'demo-reschedule-received': demoRescheduleReceived,
@@ -21,4 +22,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'interview-invitation': interviewInvitation,
   'interview-invitation-copy': interviewInvitationCopy,
   'interview-response': interviewResponse,
+  'verification-items': verificationItems,
 }
