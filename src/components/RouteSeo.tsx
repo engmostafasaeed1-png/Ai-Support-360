@@ -1,7 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 
-const BASE_URL = 'https://www.aisapsupportnow.com';
+const BASE_URL = 'https://www.aisupport360.com';
 const BRAND = 'AI Support Now';
 
 type Meta = { title: string; description: string; noindex?: boolean };

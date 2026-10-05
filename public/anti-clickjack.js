@@ -4,7 +4,7 @@
 (function () {
   try {
     if (window.top === window.self) return;
-    var allowed = /^https:\/\/([a-z0-9-]+\.)*(lovable\.dev|lovable\.app|lovableproject\.com|aisapsupportnow\.com)$/i;
+    var allowed = /^https:\/\/([a-z0-9-]+\.)*(lovable\.dev|lovable\.app|lovableproject\.com|aisapsupportnow\.com|aisupport360\.com)$/i;
     var parents = [];
     var ancestors = window.location.ancestorOrigins;
     if (ancestors && ancestors.length) {

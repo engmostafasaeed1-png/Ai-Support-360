@@ -74,7 +74,7 @@ async function ask(doFetch: typeof fetch, terms: readonly string[], timeoutMs: n
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await doFetch(`${API}?q=${encodeURIComponent(buildQuery(terms))}`, {
-      headers: { Accept: "application/json", "User-Agent": "AI-SAP-Support-Now/1.0 (support portal; https://www.aisapsupportnow.com)" },
+      headers: { Accept: "application/json", "User-Agent": "AI-SAP-Support-Now/1.0 (support portal; https://www.aisupport360.com)" },
       signal: controller.signal,
     });
     if (!res.ok) {

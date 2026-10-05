@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://www.aisapsupportnow.com/</loc>
+    <loc>https://www.aisupport360.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.aisapsupportnow.com/pricing</loc>
+    <loc>https://www.aisupport360.com/pricing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.aisapsupportnow.com/services/s4hana-support</loc>
+    <loc>https://www.aisupport360.com/services/s4hana-support</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.aisapsupportnow.com/services/btp-support</loc>
+    <loc>https://www.aisupport360.com/services/btp-support</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.aisapsupportnow.com/login</loc>
+    <loc>https://www.aisupport360.com/login</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://www.aisapsupportnow.com/signup</loc>
+    <loc>https://www.aisupport360.com/signup</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>

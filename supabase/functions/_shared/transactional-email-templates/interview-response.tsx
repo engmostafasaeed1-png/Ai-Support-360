@@ -98,7 +98,7 @@ export const template = {
     whenUtc: 'Thursday 8 October 2026 at 06:00 UTC',
     proposedSlots: ['Friday 9 October 2026 at 07:00 UTC', 'Monday 12 October 2026 at 08:00 UTC'],
     note: 'I have a client call at that time.',
-    roomUrl: 'https://www.aisapsupportnow.com/interview/live/00000000-0000-0000-0000-000000000000',
+    roomUrl: 'https://www.aisupport360.com/interview/live/00000000-0000-0000-0000-000000000000',
   },
 } satisfies TemplateEntry
 

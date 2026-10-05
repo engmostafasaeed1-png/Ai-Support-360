@@ -69,7 +69,7 @@ export function buildLiveInterviewIcs(ev: LiveInterviewEvent): string {
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
-    `UID:live-interview-${ev.sessionId}@aisapsupportnow.com`,
+    `UID:live-interview-${ev.sessionId}@aisupport360.com`,
     `DTSTAMP:${utc(new Date())}`,
     `DTSTART:${utc(ev.start)}`,
     `DTEND:${utc(endOf(ev))}`,

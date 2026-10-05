@@ -19,7 +19,7 @@ const SITE_NAME = "AI SAP Support now"
 const SENDER_DOMAIN = "notify.aisapsupportnow.com"
 const ROOT_DOMAIN = "aisapsupportnow.com"
 const FROM_DOMAIN = "aisapsupportnow.com"
-const SITE_URL = `https://${ROOT_DOMAIN}`
+const SITE_URL = "https://www.aisupport360.com"
 
 // Template mapping for preview mode
 const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {

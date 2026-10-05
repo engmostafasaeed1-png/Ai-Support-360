@@ -17,7 +17,7 @@ const PARALLEL = 6;
 const STALE_MS = 5 * 60 * 1000;
 const DELETE_BATCH = 1500;
 const INSERT_BATCH = 100;
-const USER_AGENT = "AI-SAP-Support-Now/1.0 (documentation import; https://www.aisapsupportnow.com)";
+const USER_AGENT = "AI-SAP-Support-Now/1.0 (documentation import; https://www.aisupport360.com)";
 
 const BodySchema = z.object({
   action: z.enum(["start", "step", "remove"]),
