@@ -141,7 +141,7 @@ ${cv_text.substring(0, 15000)}`}`;
           {
             role: "user",
             content: pdfDataUrl
-              ? [{ type: "text", text: userPrompt }, { type: "image_url", image_url: { url: pdfDataUrl } }]
+              ? [{ type: "text", text: userPrompt }, { type: "file", file: { filename: "cv.pdf", file_data: pdfDataUrl } }]
               : userPrompt,
           },
         ],
