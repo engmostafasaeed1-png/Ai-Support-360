@@ -165,8 +165,17 @@ export default function ExploreServicesSection() {
                 return (
                   <div
                     key={key}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={t('explore.learn_more', { industry: t(`industries.${key}`) })}
                     onClick={() => navigate(`/client/consultants?industry=${key}`)}
-                    className="group relative rounded-3xl p-[1px] bg-gradient-to-br from-border/60 via-border/30 to-transparent cursor-pointer transition-all duration-500"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        navigate(`/client/consultants?industry=${key}`);
+                      }
+                    }}
+                    className="group relative rounded-3xl p-[1px] bg-gradient-to-br from-border/60 via-border/30 to-transparent cursor-pointer focus-visible:outline-2 focus-visible:outline-accent transition-all duration-500"
                   >
                     <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${s.ring} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
@@ -194,7 +203,7 @@ export default function ExploreServicesSection() {
                         </p>
 
                         <div className={`flex items-center gap-1.5 text-xs font-semibold ${s.icon} opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-x-1 group-hover:translate-x-0`}>
-                          {t('explore.learn_more')}
+                          {t('explore.learn_more', { industry: t(`industries.${key}`) })}
                           <ArrowUpRight className="w-3.5 h-3.5" />
                         </div>
                       </div>

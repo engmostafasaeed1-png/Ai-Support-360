@@ -993,7 +993,7 @@
     "subtitle": "Comprehensive expertise across 20+ modules and key industry verticals in Saudi Arabia and the GCC",
     "tab_solutions": "Solutions",
     "tab_industries": "Industries",
-    "learn_more": "Learn more",
+    "learn_more": "View {{industry}} consultants",
     "sol_s4hana_desc": "End-to-end S/4HANA implementation, migration & optimization",
     "sol_fi_co_desc": "Financial accounting, controlling & reporting",
     "sol_mm_desc": "Materials management & procurement processes",
