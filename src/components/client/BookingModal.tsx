@@ -9,11 +9,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Video, MessageSquare, Monitor, Clock, Loader2, CalendarDays, CheckCircle2, Zap, CalendarClock } from 'lucide-react';
+import { Video, MessageSquare, Monitor, Clock, Loader2, CalendarDays, CheckCircle2, Zap, CalendarClock, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { openExternal } from '@/lib/safeUrl';
+import {
+  downloadLiveInterviewIcs, googleCalendarUrl, outlookCalendarUrl, type LiveInterviewEvent,
+} from '@/lib/liveInterviewCalendar';
 
 interface BookingModalProps {
   open: boolean;
@@ -39,35 +42,12 @@ const SESSION_TYPES = [
   { value: 'screen_share', icon: Monitor, labelKey: 'consultant_profile.screen_share' },
 ] as const;
 
-const VIDEO_PLATFORMS = [
-  { value: 'jitsi', label: 'Jitsi Meet (Free)', description: 'Instant video call, no account needed' },
-  { value: 'zoom', label: 'Zoom', description: 'Zoom meeting link' },
-  { value: 'google_meet', label: 'Google Meet', description: 'Google Meet video call' },
-  { value: 'ms_teams', label: 'Microsoft Teams', description: 'Microsoft Teams meeting' },
-] as const;
-
-function generateMeetingUrl(platform: string, sessionId: string): string {
-  const roomName = `qurtuba-session-${sessionId.slice(0, 8)}`;
-  switch (platform) {
-    case 'jitsi':
-      return `https://meet.jit.si/${roomName}`;
-    case 'zoom':
-      // Placeholder — real Zoom links require API integration
-      return `https://zoom.us/j/${roomName}`;
-    case 'google_meet':
-      // Placeholder — real Meet links require Calendar API
-      return `https://meet.google.com/${roomName}`;
-    case 'ms_teams':
-      // Placeholder — real Teams links require Graph API
-      return `https://teams.microsoft.com/l/meetup-join/${roomName}`;
-    default:
-      return `https://meet.jit.si/${roomName}`;
-  }
+/** Free Jitsi Meet room, unique per session. */
+function generateMeetingUrl(sessionId: string): string {
+  return `https://meet.jit.si/aisupportnow-${sessionId.replace(/-/g, '')}`;
 }
 
-const FALLBACK_SLOTS = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'];
-
-const DAY_MAP: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6 };
+const isValidUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
 export default function BookingModal({ open, onOpenChange, consultantName, consultantId, rate }: BookingModalProps) {
   const { t } = useTranslation();
@@ -80,8 +60,9 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-  const [videoPlatform, setVideoPlatform] = useState('jitsi');
   const [meetingUrl, setMeetingUrl] = useState('');
+  const [booked, setBooked] = useState<[number, number][]>([]);
+  const [calendarEvent, setCalendarEvent] = useState<LiveInterviewEvent | null>(null);
 
   // Fetch availability slots from database
   useEffect(() => {
@@ -105,6 +86,21 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
     fetchSlots();
   }, [open, consultantId]);
 
+  // Times already booked with this consultant on the selected date
+  useEffect(() => {
+    if (!selectedDate || !isValidUUID(consultantId)) { setBooked([]); return; }
+    const from = new Date(selectedDate); from.setHours(0, 0, 0, 0);
+    const to = new Date(from); to.setDate(to.getDate() + 1);
+    supabase.rpc('consultant_booked_times', {
+      _consultant_id: consultantId, _from: from.toISOString(), _to: to.toISOString(),
+    }).then(({ data }) => {
+      setBooked((data || []).map((b: any) => {
+        const s = new Date(b.scheduled_at).getTime();
+        return [s, s + (b.duration_minutes || 60) * 60_000] as [number, number];
+      }));
+    });
+  }, [selectedDate, consultantId]);
+
   // Compute available time slots for selected date
   const timeSlotsForDate = useMemo(() => {
     if (!selectedDate) return [];
@@ -112,39 +108,35 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
     const dayOfWeek = selectedDate.getDay();
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
-    // Find matching slots
     const matching = slots.filter(s => {
       if (s.specific_date === dateStr) return true;
-      if (s.is_recurring && s.day_of_week === dayOfWeek) return true;
+      if ((s.is_recurring ?? true) && s.day_of_week === dayOfWeek && !s.specific_date) return true;
       return false;
     });
 
-    if (matching.length === 0) {
-      // Return fallback slots if no availability data exists
-      return slots.length === 0 ? FALLBACK_SLOTS : [];
-    }
-
-    // Generate hourly time slots from each matching range
+    const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); };
     const timeSet = new Set<string>();
+    const now = Date.now();
     matching.forEach(s => {
-      const startHour = parseInt(s.start_time.split(':')[0], 10);
-      const endHour = parseInt(s.end_time.split(':')[0], 10);
-      for (let h = startHour; h < endHour; h++) {
-        timeSet.add(`${String(h).padStart(2, '0')}:00`);
+      for (let m = toMin(s.start_time); m + 60 <= toMin(s.end_time); m += 60) {
+        const start = new Date(selectedDate); start.setHours(Math.floor(m / 60), m % 60, 0, 0);
+        const st = start.getTime(), en = st + 60 * 60_000;
+        if (st <= now) continue;
+        if (booked.some(([bs, be]) => st < be && en > bs)) continue;
+        timeSet.add(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
       }
     });
 
     return Array.from(timeSet).sort();
-  }, [selectedDate, slots]);
+  }, [selectedDate, slots, booked]);
 
   // Check if a date has available slots
   const dateHasSlots = (date: Date) => {
-    if (slots.length === 0) return true; // No data = assume all available
     const dayOfWeek = date.getDay();
     const dateStr = format(date, 'yyyy-MM-dd');
     return slots.some(s =>
       (s.specific_date === dateStr) ||
-      (s.is_recurring && s.day_of_week === dayOfWeek)
+      ((s.is_recurring ?? true) && s.day_of_week === dayOfWeek && !s.specific_date)
     );
   };
 
@@ -154,12 +146,11 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
     setSelectedDate(undefined);
     setSelectedTime('');
     setSessionType('video');
-    setVideoPlatform('jitsi');
     setMeetingUrl('');
+    setCalendarEvent(null);
     setConfirmed(false);
   };
 
-  const isValidUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
   const handleConfirm = async () => {
     setIsSubmitting(true);
@@ -185,11 +176,11 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
         scheduledAt.setHours(hours, minutes, 0, 0);
         timeLabel = selectedTime;
       }
-      const dateLabel = format(scheduledAt, 'MMM d, yyyy');
+      void timeLabel;
 
       const sessionId = crypto.randomUUID();
       const realConsultantId = isValidUUID(consultantId) ? consultantId : null;
-      const generatedMeetingUrl = sessionType === 'video' ? generateMeetingUrl(videoPlatform, sessionId) : null;
+      const generatedMeetingUrl = sessionType === 'video' ? generateMeetingUrl(sessionId) : null;
 
       const { error } = await supabase.from('sessions').insert({
         id: sessionId,
@@ -200,11 +191,20 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
         status: 'scheduled',
         duration_minutes: 60,
         meeting_url: generatedMeetingUrl,
-        video_platform: sessionType === 'video' ? videoPlatform : null,
+        video_platform: sessionType === 'video' ? 'jitsi' : null,
       } as any);
 
       if (error) throw error;
       if (generatedMeetingUrl) setMeetingUrl(generatedMeetingUrl);
+      const roomUrl = `${window.location.origin}/client/sessions/${sessionId}`;
+      setCalendarEvent({
+        sessionId,
+        title: `Consultation with ${consultantName}`,
+        start: scheduledAt,
+        durationMinutes: 60,
+        meetingUrl: generatedMeetingUrl || roomUrl,
+        roomUrl,
+      });
 
       // Both people are notified by the database ("Session Confirmed").
 
@@ -271,6 +271,19 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
                 <Video className="w-4 h-4" />
                 Open Video Call
               </Button>
+            )}
+            {calendarEvent && (
+              <div className="space-y-2 text-start">
+                <p className="text-xs font-medium text-muted-foreground">Add to your calendar and send the invitation</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button variant="outline" size="sm" onClick={() => openExternal(googleCalendarUrl(calendarEvent))}>Google</Button>
+                  <Button variant="outline" size="sm" onClick={() => openExternal(outlookCalendarUrl(calendarEvent))}>Outlook</Button>
+                  <Button variant="outline" size="sm" className="gap-1" onClick={() => downloadLiveInterviewIcs(calendarEvent)}>
+                    <Download className="w-3 h-3" /> .ics
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">{consultantName} has also been notified in the app.</p>
+              </div>
             )}
             <Button className="gradient-primary border-0 w-full" onClick={() => { onOpenChange(false); reset(); }}>
               Done
@@ -451,29 +464,12 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
                 </RadioGroup>
 
                 {sessionType === 'video' && (
-                  <>
-                    <p className="text-sm font-medium text-foreground mt-4">Video Platform</p>
-                    <RadioGroup value={videoPlatform} onValueChange={setVideoPlatform} className="space-y-2">
-                      {VIDEO_PLATFORMS.map(({ value, label, description }) => (
-                        <Label
-                          key={value}
-                          htmlFor={`platform-${value}`}
-                          className={cn(
-                            'flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors',
-                            videoPlatform === value
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border/50 hover:border-primary/30'
-                          )}
-                        >
-                          <RadioGroupItem value={value} id={`platform-${value}`} />
-                          <div>
-                            <span className="text-sm font-medium text-foreground">{label}</span>
-                            <p className="text-xs text-muted-foreground">{description}</p>
-                          </div>
-                        </Label>
-                      ))}
-                    </RadioGroup>
-                  </>
+                  <div className="flex items-start gap-3 p-3 rounded-xl border border-border/50 bg-muted/30 mt-2">
+                    <Video className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <p className="text-xs text-muted-foreground">
+                      Free video call with Jitsi Meet — opens in the browser, no account or download needed.
+                    </p>
+                  </div>
                 )}
 
                 <div className="flex justify-between">
