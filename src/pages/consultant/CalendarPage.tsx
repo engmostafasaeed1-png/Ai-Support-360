@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Video, MessageSquare, Monitor, CheckCircle, Clock } from 'lucide-react';
+import { Video, MessageSquare, Monitor, CheckCircle, Clock, CalendarClock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
