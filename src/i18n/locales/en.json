@@ -466,7 +466,9 @@
     "chat_desc": "Real-time text messaging with file sharing",
     "screen_share": "Screen Share",
     "screen_desc": "Remote access for hands-on SAP support",
-    "client_reviews": "Client Reviews"
+    "client_reviews": "Client Reviews",
+    "weekly_availability": "Weekly availability",
+    "no_hours_set": "No hours set yet"
   },
   "payments_page": {
     "title": "Payments",
