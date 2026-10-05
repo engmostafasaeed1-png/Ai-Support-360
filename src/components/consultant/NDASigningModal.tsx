@@ -211,7 +211,7 @@ export default function NDASigningModal({
         : typedName.trim();
 
     const ndaContentForRecord = hasCustomNDA
-      ? `[Custom NDA Document: ${customNdaFilename}] ${customNdaPublicUrl}`
+      ? `Custom NDA document provided by ${clientCompany || clientDisplayName || 'the client'}: "${customNdaFilename || 'NDA document'}".\nThe consultant ${consultantName || ''} confirms having read and agreed to all terms of that document.${filledTemplate.trim().length >= 20 ? `\n\n${filledTemplate}` : ''}`
       : filledTemplate;
     const success = await signNDA(sigData, sigType, ndaContentForRecord);
     setSubmitting(false);
@@ -411,6 +411,37 @@ export default function NDASigningModal({
                 </Button>
               </TabsContent>
             </Tabs>
+
+            {/* Official signature block as it will appear in the document */}
+            <div className="border rounded-lg p-3 bg-muted/20 space-y-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {t('nda.signature_block', 'Signature in the document')}
+              </p>
+              <div className="h-14 flex items-end border-b border-border">
+                {sigType === 'type' && typedName.trim() ? (
+                  <span className="text-2xl font-serif italic text-primary">{typedName.trim()}</span>
+                ) : sigType === 'draw' && hasDrawn ? (
+                  <span className="text-xs text-muted-foreground">{t('nda.drawn_attached', 'Your drawn signature will be placed here')}</span>
+                ) : null}
+              </div>
+              <p className="text-xs text-foreground">
+                {t('nda.name_label', 'Name')}: <strong>{consultantName || typedName.trim() || '—'}</strong>
+                {' · '}{t('nda.date_label', 'Date')}: {new Date().toLocaleDateString()}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {t('nda.sent_to_client', 'After signing, the client is notified and can download the signed NDA from Contracts.')}
+              </p>
+            </div>
+
+            {!canSubmit && !submitting && (
+              <p className="text-xs text-destructive">
+                {!agreed
+                  ? t('nda.need_agree', 'Tick "I have read and agree" to enable signing.')
+                  : sigType === 'type'
+                    ? t('nda.need_name', 'Type your full name (at least 2 letters).')
+                    : t('nda.need_draw', 'Draw your signature in the box.')}
+              </p>
+            )}
 
             <DialogFooter className="gap-2">
               <Button variant="ghost" className="gap-1.5" onClick={() => setStep('preview')}>

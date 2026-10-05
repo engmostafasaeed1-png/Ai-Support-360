@@ -9,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileSignature, Download, Eye, Calendar, User, ShieldCheck, ShieldOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import jsPDF from 'jspdf';
+import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 
 interface NDAContract {
   id: string;
@@ -94,50 +94,24 @@ export default function ContractsPage() {
     fetchContracts();
   };
 
-  const downloadPDF = (contract: NDAContract) => {
+  const downloadPDF = async (contract: NDAContract) => {
     try {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      let y = 20;
-
-      doc.setFontSize(18);
-      doc.text('Non-Disclosure Agreement', pageWidth / 2, y, { align: 'center' });
-      y += 15;
-
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text(`Date Signed: ${new Date(contract.signed_at).toLocaleDateString()}`, 20, y);
-      y += 7;
-      doc.text(`Consultant: ${contract.consultant_name}`, 20, y);
-      y += 7;
-      doc.text(`Status: ${contract.revoked_at ? 'Revoked' : 'Active'}`, 20, y);
-      y += 12;
-
-      doc.setTextColor(0);
-      doc.setFontSize(11);
-      const lines = doc.splitTextToSize(contract.nda_content, pageWidth - 40);
-      doc.text(lines, 20, y);
-      y += lines.length * 6 + 15;
-
-      // Add signature
-      doc.setFontSize(10);
-      doc.text('Signature:', 20, y);
-      y += 8;
-
-      if (contract.signature_type === 'draw' && contract.signature_data.startsWith('data:')) {
-        try {
-          doc.addImage(contract.signature_data, 'PNG', 20, y, 60, 25);
-        } catch {
-          doc.setFont('times', 'italic');
-          doc.text('[Drawn signature on file]', 20, y);
-        }
-      } else {
-        doc.setFont('times', 'italic');
-        doc.setFontSize(16);
-        doc.text(contract.signature_data, 20, y);
+      const { data: { user } } = await supabase.auth.getUser();
+      let clientName = '';
+      if (user) {
+        const { data: cp } = await supabase.from('client_profiles').select('company_name').eq('user_id', user.id).maybeSingle();
+        clientName = cp?.company_name || user.user_metadata?.display_name || user.email || '';
       }
-
-      doc.save(`NDA-${contract.consultant_name.replace(/\s+/g, '-')}-${contract.id.slice(0, 8)}.pdf`);
+      await exportNDAAsPDF({
+        ndaContent: contract.nda_content,
+        signatureData: contract.signature_data,
+        signatureType: contract.signature_type,
+        signedAt: contract.signed_at,
+        consultantName: contract.consultant_name,
+        clientName,
+        agreementId: contract.id,
+        revokedAt: contract.revoked_at,
+      });
       toast({ title: 'Downloaded', description: 'NDA PDF downloaded successfully' });
     } catch {
       toast({ title: 'Error', description: 'Failed to generate PDF', variant: 'destructive' });
