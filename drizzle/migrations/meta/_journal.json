@@ -127,6 +127,13 @@
       "when": 1791231874762,
       "tag": "0017_fix_cv_profiles_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791236738975,
+      "tag": "0018_consultant_pending_verification_items",
+      "breakpoints": true
     }
   ]
 }
