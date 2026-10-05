@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Video, MessageSquare, Monitor, CheckCircle, Clock } from 'lucide-react';
+import { Video, MessageSquare, Monitor, CheckCircle, Clock, CalendarClock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,6 +17,7 @@ const statusStyle: Record<string, string> = {
 };
 
 const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const fullDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 function getWeekDates() {
   const today = new Date();
@@ -40,6 +42,21 @@ interface SessionData {
 export default function CalendarPage() {
   const weekDates = getWeekDates();
   const today = new Date();
+  const [consultantId, setConsultantId] = useState<string | null>(null);
+
+  const { data: slots = [] } = useQuery({
+    queryKey: ['my-availability-slots', consultantId],
+    enabled: !!consultantId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('availability_slots')
+        .select('id, day_of_week, start_time, end_time')
+        .eq('consultant_id', consultantId!)
+        .order('day_of_week').order('start_time');
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const { data: sessions = [], isLoading } = useQuery({
     queryKey: ['consultant-calendar-sessions'],
@@ -60,6 +77,7 @@ export default function CalendarPage() {
         .eq('consultant_id', consultant.id)
         .order('scheduled_at', { ascending: true });
       if (error) throw error;
+      setConsultantId(consultant.id);
 
       // Get client names
       const clientIds = [...new Set((data || []).map(s => s.client_id))];
@@ -128,6 +146,34 @@ export default function CalendarPage() {
               );
             })}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* My Availability */}
+      <Card className="rounded-2xl border-border/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <CalendarClock className="w-4 h-4 text-accent" />
+            My Availability ({slots.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {slots.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No time slots yet. Click "Set Availability" to add your weekly hours.
+            </p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {slots.map((s) => (
+                <div key={s.id} className="flex items-center justify-between rounded-xl border border-border/50 px-3 py-2">
+                  <span className="text-sm">
+                    <span className="font-semibold">{s.day_of_week != null ? fullDays[s.day_of_week] : 'One-off'}</span>{' '}
+                    {s.start_time.slice(0, 5)} – {s.end_time.slice(0, 5)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
