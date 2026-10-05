@@ -140,7 +140,7 @@ export const consultantNavGroups: NavGroup[] = [
     defaultOpen: true,
     items: [
       { key: 'dashboard', icon: Gauge, path: '/consultant', required: true },
-      { key: 'onboarding', icon: Rocket, path: '/consultant/onboarding' },
+      { key: 'profile', icon: UserCircle, path: '/consultant/profile', required: true },
     ],
   },
   {
@@ -194,7 +194,6 @@ export const consultantNavGroups: NavGroup[] = [
     labelKey: 'sidebar.account',
     fallback: 'Account',
     items: [
-      { key: 'profile', icon: UserCircle, path: '/consultant/profile' },
       { key: 'verification', icon: Fingerprint, path: '/consultant/verification' },
       { key: 'notifications', icon: BellRing, path: '/consultant/notifications' },
       { key: 'settings', icon: SlidersHorizontal, path: '/consultant/settings' },

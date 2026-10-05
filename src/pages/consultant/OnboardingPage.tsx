@@ -1,5 +1,8 @@
-import ConsultantOnboarding from '@/components/consultant/onboarding/ConsultantOnboarding';
+import { Navigate, useSearchParams } from 'react-router-dom';
 
 export default function OnboardingPage() {
-  return <ConsultantOnboarding />;
+  const [searchParams] = useSearchParams();
+  const params = new URLSearchParams(searchParams);
+  params.set('section', 'setup');
+  return <Navigate to={`/consultant/profile?${params.toString()}`} replace />;
 }

@@ -1,4 +1,9 @@
 {
+  "consultant_profile_hub": {
+    "title": "الملف الشخصي",
+    "details": "تفاصيل الملف الشخصي",
+    "setup": "إكمال الملف الشخصي"
+  },
   "nav": {
     "home": "الرئيسية",
     "services": "الخدمات",

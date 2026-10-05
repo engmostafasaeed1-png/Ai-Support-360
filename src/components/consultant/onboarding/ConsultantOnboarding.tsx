@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Check, ChevronLeft, ChevronRight, Upload, User, Cpu, Award, Clock, Briefcase, GraduationCap, FolderKanban, Brain } from 'lucide-react';
@@ -106,7 +106,7 @@ const STEP_COUNT = 9;
 
 const stepIcons = [Upload, User, Cpu, Award, Briefcase, GraduationCap, FolderKanban, Clock, Brain];
 
-export default function ConsultantOnboarding() {
+export default function ConsultantOnboarding({ embedded = false }: { embedded?: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isGuest } = useGuestMode();
@@ -117,6 +117,67 @@ export default function ConsultantOnboarding() {
   const [submitting, setSubmitting] = useState(false);
   const [interviewDone, setInterviewDone] = useState(false);
   const [consultantId, setConsultantId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(!isGuest);
+
+  useEffect(() => {
+    if (isGuest) return;
+    let active = true;
+    const prefill = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const [profileResult, consultantResult] = await Promise.all([
+          supabase.from('profiles').select('display_name').eq('user_id', user.id).maybeSingle(),
+          supabase.from('consultants').select('*').eq('user_id', user.id).maybeSingle(),
+        ]);
+        if (profileResult.error) throw profileResult.error;
+        if (consultantResult.error) throw consultantResult.error;
+        const c = consultantResult.data;
+        if (!active) return;
+        if (!c) {
+          setData(prev => ({ ...prev, displayName: profileResult.data?.display_name || '' }));
+          return;
+        }
+        const [skills, certificates, jobs, studies, projects, slots] = await Promise.all([
+          supabase.from('consultant_skills').select('*').eq('consultant_id', c.id),
+          supabase.from('certifications').select('*').eq('consultant_id', c.id),
+          supabase.from('consultant_work_history').select('*').eq('consultant_id', c.id),
+          supabase.from('consultant_education').select('*').eq('consultant_id', c.id),
+          supabase.from('consultant_projects').select('*').eq('consultant_id', c.id),
+          supabase.from('availability_slots').select('*').eq('consultant_id', c.id),
+        ]);
+        for (const result of [skills, certificates, jobs, studies, projects, slots]) {
+          if (result.error) throw result.error;
+        }
+        if (!active) return;
+        setConsultantId(c.id);
+        setData({
+          displayName: profileResult.data?.display_name || '', bio: c.bio || '',
+          hourlyRate: Number(c.hourly_rate) || 0, currency: c.currency || 'USD',
+          timezone: c.timezone || 'Asia/Riyadh', languages: c.languages || ['en'],
+          nationality: c.nationality || '', city: c.city || '', country: c.country || '',
+          linkedinUrl: c.linkedin_url || '', githubUrl: c.github_url || '',
+          personalWebsite: c.personal_website || '', credlyUsername: c.credly_username || '',
+          skills: (skills.data || []).map(s => ({ sapModule: s.sap_module, proficiencyLevel: s.proficiency_level || 1, yearsExperience: s.years_experience || 0, certified: Boolean(s.certified) })),
+          certifications: (certificates.data || []).map(s => ({ name: s.name, issuer: s.issuer || '', issueDate: s.issue_date || '', expiryDate: s.expiry_date || '' })),
+          workHistory: (jobs.data || []).map(s => ({ companyName: s.company_name, jobTitle: s.job_title, startDate: s.start_date || '', endDate: s.end_date || '', description: s.description || '', isCurrent: Boolean(s.is_current) })),
+          education: (studies.data || []).map(s => ({ institution: s.institution, degree: s.degree || '', fieldOfStudy: s.field_of_study || '', startYear: s.start_year, endYear: s.end_year })),
+          projects: (projects.data || []).map(s => ({ projectName: s.project_name, clientIndustry: s.client_industry || '', sapModules: s.sap_modules || [], description: s.description || '', durationMonths: s.duration_months, role: s.role || '' })),
+          availability: (slots.data || []).flatMap(s => s.day_of_week === null ? [] : [{ dayOfWeek: s.day_of_week, startTime: s.start_time, endTime: s.end_time }]),
+        });
+      } catch {
+        toast.error(t('onboarding.error_generic'));
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void prefill();
+    return () => { active = false; };
+  }, [isGuest, t]);
+
+  useEffect(() => {
+    setCurrentStep(Math.min(Math.max(Number(searchParams.get('step')) || 0, 0), STEP_COUNT - 1));
+  }, [searchParams]);
 
   const steps = [
     { key: 'import', label: 'Import' },
@@ -324,12 +385,14 @@ export default function ConsultantOnboarding() {
   const isLastContentStep = currentStep === STEP_COUNT - 2; // Availability is last before interview
   const isInterviewStep = currentStep === STEP_COUNT - 1;
 
+  if (loading) return <div role="status" className="py-8 text-center text-muted-foreground">{t('common.loading')}</div>;
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 px-1 pb-36 md:pb-6">
-      <div className="text-center space-y-2">
+      {!embedded && <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold">{t('onboarding.title')}</h1>
         <p className="text-muted-foreground text-sm">{t('onboarding.subtitle')}</p>
-      </div>
+      </div>}
 
       {/* Skip onboarding */}
       <div className="flex justify-end">
@@ -344,7 +407,7 @@ export default function ConsultantOnboarding() {
                 await supabase.from('profiles').update({ onboarding_completed: true }).eq('user_id', user.id);
               }
             } catch {}
-            navigate('/consultant');
+             navigate(embedded ? '/consultant/profile' : '/consultant');
           }}
         >
           Skip for now
@@ -359,7 +422,7 @@ export default function ConsultantOnboarding() {
           const isActive = i === currentStep;
           return (
             <div key={step.key} className="flex items-center shrink-0">
-              <button
+              <Button variant="ghost" size="sm"
                 onClick={() => i < currentStep && setCurrentStep(i)}
                 className={cn(
                   'flex items-center gap-1 px-2 py-1.5 rounded-xl text-[10px] font-medium transition-all',
@@ -374,7 +437,7 @@ export default function ConsultantOnboarding() {
                   <Icon className="w-3 h-3 shrink-0" />
                 )}
                 <span className="hidden sm:inline whitespace-nowrap">{step.label}</span>
-              </button>
+              </Button>
               {i < steps.length - 1 && (
                 <div className={cn('w-4 h-0.5 mx-0.5', i < currentStep ? 'bg-primary' : 'bg-border')} />
               )}
@@ -447,7 +510,7 @@ export default function ConsultantOnboarding() {
               } catch {}
               fireConfetti();
               toast.success('Profile setup complete!');
-              setTimeout(() => navigate('/consultant?welcome=true'), 1200);
+               setTimeout(() => navigate(embedded ? '/consultant/profile' : '/consultant?welcome=true'), 1200);
             }}
             className="gap-1.5"
           >

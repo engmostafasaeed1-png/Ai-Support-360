@@ -113,7 +113,7 @@ export default function OnboardingProgressCard({ role }: Props) {
 
   const doneCount = checklist.filter(c => c.done).length;
   const progress = checklist.length > 0 ? Math.round((doneCount / checklist.length) * 100) : 0;
-  const onboardingPath = role === 'client' ? '/client/onboarding' : '/consultant/onboarding';
+  const onboardingPath = role === 'client' ? '/client/onboarding' : '/consultant/profile?section=setup';
 
   return (
     <Card className="rounded-2xl border-accent/30 bg-accent/5">
@@ -153,7 +153,7 @@ export default function OnboardingProgressCard({ role }: Props) {
                   <Tooltip key={item.labelKey}>
                     <TooltipTrigger asChild>
                       <Link
-                        to={`${onboardingPath}?step=${item.step}`}
+                        to={`${onboardingPath}${role === 'client' ? '?' : '&'}step=${role === 'consultant' ? item.step + 1 : item.step}`}
                         className={`flex items-center gap-2 rounded-md px-1.5 py-0.5 -mx-1.5 transition-colors ${item.done ? 'hover:bg-muted/50' : 'hover:bg-accent/10'}`}
                       >
                         {item.done ? (

@@ -18,9 +18,15 @@ import { useConsultantProfile } from '@/hooks/useConsultantProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ConsultantOnboarding from '@/components/consultant/onboarding/ConsultantOnboarding';
+import OnboardingProgressCard from '@/components/onboarding/OnboardingProgressCard';
 
 export default function ProfilePage() {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const section = searchParams.get('section') === 'setup' ? 'setup' : 'details';
   const { data: profile, isLoading } = useConsultantProfile();
   const queryClient = useQueryClient();
   const [reinterviewOpen, setReinterviewOpen] = useState(false);
@@ -97,23 +103,37 @@ export default function ProfilePage() {
   return (
     <>
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Profile Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">Keep your profile up to date to attract more clients.</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('consultant_profile_hub.title')}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <AvailabilityToggle variant="pill" />
           <Button variant="outline" size="sm" onClick={() => setReinterviewOpen(true)}>
             <RotateCcw className="w-4 h-4 me-1" /> {t('interview.request_reinterview', 'Request Re-Interview')}
           </Button>
-          <Button className="gradient-primary border-0" size="sm" onClick={handleSave} disabled={saving}>
+          {section === 'details' && <Button className="gradient-primary border-0" size="sm" onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 className="w-4 h-4 me-1 animate-spin" /> : <Save className="w-4 h-4 me-1" />}
             Save Changes
-          </Button>
+          </Button>}
         </div>
       </div>
 
+      <Tabs value={section} onValueChange={(value) => {
+        const params = new URLSearchParams(searchParams);
+        if (value === 'setup') params.set('section', 'setup');
+        else { params.delete('section'); params.delete('step'); }
+        setSearchParams(params);
+      }}>
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="details">{t('consultant_profile_hub.details')}</TabsTrigger>
+          <TabsTrigger value="setup">{t('consultant_profile_hub.setup')}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="setup" className="mt-6">
+          <ConsultantOnboarding embedded />
+        </TabsContent>
+        <TabsContent value="details" className="mt-6 space-y-6">
+      <OnboardingProgressCard role="consultant" />
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="rounded-2xl border-border/50">
           <CardContent className="p-6 text-center">
@@ -290,6 +310,8 @@ export default function ProfilePage() {
         </h2>
         <InterviewTranscript consultantId={profile?.id || ''} viewMode="consultant" />
       </div>
+        </TabsContent>
+      </Tabs>
     </div>
 
     <ReinterviewDialog
