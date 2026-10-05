@@ -277,6 +277,8 @@ serve(async (req) => {
         { data: ndaAgreements },
         { data: sessionStats },
         { data: solvedBefore },
+        { data: cvProfiles },
+        { data: workHistory },
       ] = await Promise.all([
         supabase.from("consultant_skills")
           .select("consultant_id, sap_module, proficiency_level, years_experience, certified")
@@ -308,6 +310,13 @@ serve(async (req) => {
           _tenant: member?.tenant_id ?? null,
           _limit: 50,
         }),
+        supabase.from("consultant_cv_profiles")
+          .select("consultant_id, matching_summary, expertise_keywords, cv_text")
+          .in("consultant_id", consultantIds),
+        supabase.from("consultant_work_history")
+          .select("consultant_id, job_title, start_date, end_date, is_current, description")
+          .in("consultant_id", consultantIds)
+          .order("start_date", { ascending: false }),
       ]);
       const solvedMap = new Map<string, { solved_similar: number; resolved_in_areas: number }>();
       for (const r of (solvedBefore ?? []) as any[]) {
@@ -323,6 +332,8 @@ serve(async (req) => {
         const hasActiveNDA = (ndaAgreements || []).some(n => n.consultant_id === c.id);
         const cSessions = (sessionStats || []).filter(s => s.consultant_id === c.id);
         const solved = solvedMap.get(c.id);
+        const cv = (cvProfiles || []).find((x: any) => x.consultant_id === c.id) as any;
+        const cJobs = (workHistory || []).filter((w: any) => w.consultant_id === c.id) as any[];
 
         // Compute session completion rate
         const totalSessions = cSessions.length;
@@ -380,6 +391,20 @@ serve(async (req) => {
             soft_skills_score: latestInterview.soft_skills_score,
             type: latestInterview.interview_type,
           } : null,
+          // CV and experience: job titles, durations and scrubbed descriptions only — employer names are never sent.
+          cv_summary: cv?.matching_summary ? scrubText(String(cv.matching_summary)).text.slice(0, 1200) : null,
+          cv_keywords: Array.isArray(cv?.expertise_keywords) ? cv.expertise_keywords.slice(0, 40) : [],
+          cv_excerpt: cv?.cv_text ? scrubText(String(cv.cv_text)).text.slice(0, 1500) : null,
+          work_experience: cJobs.slice(0, 6).map((w) => {
+            const start = w.start_date ? new Date(w.start_date) : null;
+            const end = w.is_current || !w.end_date ? new Date() : new Date(w.end_date);
+            return {
+              title: w.job_title,
+              years: start ? Math.max(0, Math.round(((end.getTime() - start.getTime()) / 31_557_600_000) * 10) / 10) : null,
+              current: !!w.is_current,
+              description: w.description ? scrubText(String(w.description)).text.slice(0, 350) : null,
+            };
+          }),
           project_history: cProjects.slice(0, 5).map(p => ({
             modules: p.sap_modules,
             industry: p.client_industry,
@@ -399,6 +424,7 @@ SCORING CRITERIA (total = 100%):
    - Direct skill in the required module (proficiency 1-5, years of experience)
    - Certified in the module = strong bonus
    - Cross-module knowledge relevant to the issue
+   - CV evidence: cv_summary, cv_keywords, cv_excerpt and work_experience (titles, years, descriptions) that mention the same modules, processes, t-codes or problem type
 
 2. Track Record on Similar Issues (20%):
    - solved_similar_issues: how many published solutions for similar problems came from this consultant's tickets
