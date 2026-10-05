@@ -28,8 +28,9 @@ import ConsultantLocationMap from '@/components/client/ConsultantLocationMap';
 import { STATE_META, availabilityState } from '@/lib/mapMarkers';
 import { credlyProfileUrl, linkState, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 import { placeLabel } from '@/lib/geo';
-import { consultantPoint, formatWeeklyHours } from '@/lib/consultantDirectory';
+import { consultantPoint, formatWeeklyHours, type WeeklySlot } from '@/lib/consultantDirectory';
 import WeeklyAvailability from '@/components/client/WeeklyAvailability';
+
 
 
 export default function ConsultantProfilePage() {
@@ -212,7 +213,7 @@ export default function ConsultantProfilePage() {
         .eq('consultant_id', id)
         .order('day_of_week')
         .order('start_time');
-      return formatWeeklyHours(data || []);
+      return formatWeeklyHours((data || []).filter((s): s is WeeklySlot => s.day_of_week != null));
     },
     enabled: !isGuest && !!id,
   });
