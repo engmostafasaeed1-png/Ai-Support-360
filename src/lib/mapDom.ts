@@ -16,6 +16,7 @@ export interface PinView {
   status: AvailabilityState;
   linkedinState: LinkState;
   credlyState: LinkState;
+  hours?: string[];
 }
 
 export interface PopupLabels {
@@ -135,6 +136,14 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
     for (const text of links) row.append(make('span', { fontSize: '10px', padding: '2px 8px', borderRadius: '999px', backgroundColor: '#f3f4f6', color: '#374151' }, text));
     root.append(row);
   }
+
+  const hoursBox = make('div', { marginBottom: '8px', padding: '6px 8px', borderRadius: '8px', backgroundColor: '#f8fafc' });
+  hoursBox.dataset.part = 'hours';
+  hoursBox.append(make('div', { fontSize: '10px', fontWeight: '600', color: '#6b7280', marginBottom: '2px' }, 'Weekly availability'));
+  const hours = view.hours ?? [];
+  if (hours.length === 0) hoursBox.append(make('div', { fontSize: '11px', color: '#9ca3af' }, 'No hours set yet'));
+  for (const h of hours) hoursBox.append(make('div', { fontSize: '11px', color: '#374151' }, h));
+  root.append(hoursBox);
 
   const actions = make('div', { display: 'flex', gap: '6px' });
   const open = make('button', { flex: '1', fontSize: '10px', fontWeight: '500', padding: '6px 12px', borderRadius: '8px', backgroundColor: 'white', border: '1px solid #e5e7eb', cursor: 'pointer' }, labels.viewProfile);
