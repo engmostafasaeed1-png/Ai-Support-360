@@ -126,14 +126,14 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
   }
 
   const isOnClientSetupPage = location.pathname === '/client/companies' || location.pathname === '/client/onboarding';
-  const isOnConsultantOnboardingPage = location.pathname === '/consultant/onboarding';
+  const isOnConsultantOnboardingPage = location.pathname === '/consultant/onboarding' || location.pathname === '/consultant/profile';
 
   if (requiredRole === 'client' && !state.hasTenant && !isOnClientSetupPage) {
     return <Navigate to="/client/companies" replace />;
   }
 
   if (state.needsOnboarding && !isOnClientSetupPage && !isOnConsultantOnboardingPage) {
-    const onboardingPath = requiredRole === 'client' ? '/client/onboarding' : '/consultant/onboarding';
+    const onboardingPath = requiredRole === 'client' ? '/client/onboarding' : '/consultant/profile?section=setup';
     return <Navigate to={onboardingPath} replace />;
   }
 
