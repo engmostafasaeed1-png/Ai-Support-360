@@ -11,6 +11,7 @@ import InterviewTranscript from '@/components/consultant/InterviewTranscript';
 import AvatarUpload from '@/components/profile/AvatarUpload';
 import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
 import ConsultantLinksCard from '@/components/consultant/ConsultantLinksCard';
+import ExperienceCvCard from '@/components/consultant/ExperienceCvCard';
 import AvailabilityToggle from '@/components/consultant/AvailabilityToggle';
 import { useConsultantProfile } from '@/hooks/useConsultantProfile';
 import { supabase } from '@/integrations/supabase/client';
@@ -214,6 +215,8 @@ export default function ProfilePage() {
       </div>
 
       <ConsultantLinksCard />
+
+      <ExperienceCvCard />
 
       {/* AI Skills Score + Credibility Credits */}
       {(p.ai_skills_score || 0) > 0 || (p.credibility_credits || 0) > 0 ? (
