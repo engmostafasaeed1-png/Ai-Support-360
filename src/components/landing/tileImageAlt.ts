@@ -21,8 +21,8 @@
  *   <img alt={tileImageAlt({ tileLabel: feature.title, fallback: feature.title })} … />
  *   //          ↑ tile shows the title visibly → returns "" (decorative)
  *
- *   <img alt={tileImageAlt({ tileLabel: undefined, fallback: 'SAP dashboard' })} … />
- *   //          ↑ no visible label → returns "SAP dashboard" (descriptive)
+ *   <img alt={tileImageAlt({ tileLabel: undefined, fallback: 'support dashboard' })} … />
+ *   //          ↑ no visible label → returns "support dashboard" (descriptive)
  */
 export type TileImageAltInput = {
   /**

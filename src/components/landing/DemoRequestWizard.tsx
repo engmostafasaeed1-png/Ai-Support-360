@@ -47,7 +47,7 @@ const demoTypes: DemoType[] = [
   {
     id: 'ai-triage',
     title: 'AI triage demo',
-    description: 'See AI classify, route, and pre-solve a real SAP ticket.',
+    description: 'See AI classify, route, and pre-solve a real support ticket.',
     duration: '20 min',
     Icon: BrainCircuit,
     accent: 'cyan',
@@ -62,7 +62,7 @@ const demoTypes: DemoType[] = [
   },
   {
     id: 'module-deep-dive',
-    title: 'Custom SAP module deep-dive',
+    title: 'Custom module deep-dive',
     description: 'Pick a module (FI, MM, BTP…) — we demo the workflow end-to-end.',
     duration: '45 min',
     Icon: Layers,
@@ -387,7 +387,7 @@ function DemoRequestWizard({
             <DialogDescription className="text-sm text-muted-foreground mt-1.5 max-w-md">
               {submitted
                 ? 'A specialist will reach out within one business hour.'
-                : 'Pick the demo that matches your goal — every option is tailored to SAP teams.'}
+                : 'Pick the demo that matches your goal — every option is tailored to enterprise teams.'}
             </DialogDescription>
 
             {!submitted && <Stepper step={step} />}

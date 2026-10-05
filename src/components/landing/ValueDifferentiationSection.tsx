@@ -26,7 +26,7 @@ const valuePillars: Pillar[] = [
   {
     Icon: BrainCircuit,
     title: 'AI-native triage',
-    desc: 'Every ticket is parsed, classified, and pre-solved by AI tuned for SAP — before a human even reads it.',
+    desc: 'Every ticket is parsed, classified, and pre-solved by AI tuned for enterprise systems — before a human even reads it.',
     accent: 'violet',
     image: aiTriageImg,
     imageAlt: 'Glowing neural network nodes representing AI triage',
@@ -36,7 +36,7 @@ const valuePillars: Pillar[] = [
   {
     Icon: Zap,
     title: 'On-demand experts',
-    desc: 'Match with vetted SAP specialists in minutes, not weeks.',
+    desc: 'Match with vetted specialists in minutes, not weeks.',
     accent: 'amber',
     image: expertsImg,
     imageAlt: 'Amber lightning bolt suggesting fast expert matching',
@@ -68,11 +68,11 @@ const valuePillars: Pillar[] = [
   },
   {
     Icon: Bot,
-    title: 'SAP-specific by design',
+    title: 'Enterprise-specific by design',
     desc: 'Tuned for S/4HANA, ECC, BTP & every module — not generic IT.',
     accent: 'cyan',
     image: sapNativeImg,
-    imageAlt: 'Modular cyan cubes representing SAP module architecture',
+    imageAlt: 'Modular cyan cubes representing enterprise module architecture',
   },
 ];
 
@@ -122,7 +122,7 @@ const comparison: CompareRow[] = [
   },
   {
     category: 'Expertise',
-    feature: 'On-demand vetted SAP specialists',
+    feature: 'On-demand vetted specialists',
     us: true, them: false,
     usValue: 'Minutes',  themValue: 'Weeks',
     usDetail: 'Vetted bench of S/4HANA, FI/CO, MM, BTP and Basis experts on standby.',
@@ -130,9 +130,9 @@ const comparison: CompareRow[] = [
   },
   {
     category: 'Expertise',
-    feature: 'SAP-native taxonomy & module routing',
+    feature: 'Module-native taxonomy & routing',
     us: true, them: 'Generic',
-    usDetail: 'Routing keys mirror SAP component hierarchy (FI-AA-MD, MM-PUR-RFQ…).',
+    usDetail: 'Routing keys mirror the component hierarchy (FI-AA-MD, MM-PUR-RFQ…).',
     themDetail: 'Free-text categories like "ERP Issue" or "Other".',
   },
   {
@@ -181,7 +181,7 @@ const comparison: CompareRow[] = [
 const metrics: { Icon: typeof Clock; label: string; value: string; sub: string; accent: AccentName }[] = [
   { Icon: Clock,        label: 'Median first response',  value: '< 10 min', sub: 'vs 4–24 hr industry norm', accent: 'violet' },
   { Icon: TrendingDown, label: 'Resolution time saved',  value: '−68%',      sub: 'vs traditional helpdesks', accent: 'amber'  },
-  { Icon: Layers,       label: 'SAP modules covered',    value: '40+',       sub: 'S/4HANA, ECC, BTP, Basis', accent: 'sky'    },
+  { Icon: Layers,       label: 'Modules covered',    value: '40+',       sub: 'S/4HANA, ECC, BTP, Basis', accent: 'sky'    },
   { Icon: Activity,     label: 'Issues auto-classified', value: '92%',       sub: 'before human review',      accent: 'emerald'},
 ];
 
@@ -206,7 +206,7 @@ export default function ValueDifferentiationSection() {
             Not another <span className="text-muted-foreground/60 line-through decoration-primary/40">support portal</span>
             <br />
             <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
-              An SAP operating layer.
+              An enterprise operating layer.
             </span>
           </h2>
           <p className="text-muted-foreground mt-6 text-base md:text-lg leading-relaxed">

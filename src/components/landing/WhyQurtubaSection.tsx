@@ -79,7 +79,7 @@ export default function WhyQurtubaSection() {
           <h2 className="text-4xl md:text-6xl font-black text-foreground tracking-tight leading-[1.05]">
             Built for the way{' '}
             <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-              modern SAP teams
+              modern enterprise teams
             </span>{' '}
             actually work
           </h2>
