@@ -34,6 +34,14 @@ export default function ContractsPage() {
   const [loading, setLoading] = useState(true);
   const [viewContract, setViewContract] = useState<NDAContract | null>(null);
   const [revokeContract, setRevokeContract] = useState<NDAContract | null>(null);
+  const [signContract, setSignContract] = useState<NDAContract | null>(null);
+  const [signerDefault, setSignerDefault] = useState('');
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user;
+      setSignerDefault((u?.user_metadata?.display_name as string) || (u?.user_metadata?.full_name as string) || '');
+    });
+  }, []);
   const [revoking, setRevoking] = useState(false);
 
   useEffect(() => {
