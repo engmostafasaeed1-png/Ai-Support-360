@@ -90,7 +90,7 @@ export default function AvailabilityToggle({ variant = 'switch', className }: Pr
     const { error } = await supabase
       .from('consultants')
       .update({ availability_status: next })
-      .eq('id', consultant.id);
+      .eq('id', consultantId);
     setSaving(false);
     if (error) {
       setStatus(prev);
@@ -130,7 +130,7 @@ export default function AvailabilityToggle({ variant = 'switch', className }: Pr
       <DropdownMenuTrigger asChild>
         <button
           aria-label="Toggle availability"
-          disabled={saving || !consultant}
+          disabled={saving}
           className={cn(
             'group relative inline-flex items-center gap-3 pl-1.5 pr-4 py-1.5 rounded-full border-2 shadow-sm hover:shadow-md transition-all',
             meta.bg,
