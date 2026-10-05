@@ -54,7 +54,7 @@ export default function RequestsPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from('nda_agreements')
-        .select('client_id, id, signed_at, signature_data, signature_type, nda_content, revoked_at')
+        .select('client_id, id, signed_at, signature_data, signature_type, nda_content, revoked_at, client_signature_data, client_signature_type, client_signer_name, client_signed_at')
         .eq('consultant_id', consultantData!.id)
         .is('revoked_at', null)
         .order('signed_at', { ascending: false });
@@ -143,6 +143,11 @@ export default function RequestsPage() {
       signedAt: nda.signed_at,
       consultantName: profile?.display_name || 'Consultant',
       clientName: clientInfo.client_name,
+      clientSignatureData: nda.client_signature_data,
+      clientSignatureType: nda.client_signature_type,
+      clientSignerName: nda.client_signer_name,
+      clientSignedAt: nda.client_signed_at,
+      agreementId: nda.id,
     });
   };
 
