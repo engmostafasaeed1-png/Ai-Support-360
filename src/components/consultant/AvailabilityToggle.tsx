@@ -48,18 +48,21 @@ export default function AvailabilityToggle({ variant = 'switch', className }: Pr
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
 
-  const { data: consultant } = useQuery({
+  const { data: consultant, refetch } = useQuery({
     queryKey: ['my-consultant-availability'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-      const { data } = await supabase
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) throw new Error('Not signed in yet');
+      const { data, error } = await supabase
         .from('consultants')
         .select('id, availability_status')
         .eq('user_id', user.id)
         .maybeSingle();
+      if (error) throw error;
       return data;
     },
+    retry: 3,
   });
 
   const [status, setStatus] = useState<Status>('offline');
@@ -68,14 +71,26 @@ export default function AvailabilityToggle({ variant = 'switch', className }: Pr
   }, [consultant?.availability_status]);
 
   const update = async (next: Status) => {
-    if (!consultant?.id || saving || next === status) return;
+    if (saving || next === status) return;
+    if (!consultant?.id) {
+      const { data: fresh } = await refetch();
+      if (!fresh?.id) {
+        toast.error('Could not load your consultant profile. Please refresh the page.');
+        return;
+      }
+      return updateWith(fresh.id, next);
+    }
+    return updateWith(consultant.id, next);
+  };
+
+  const updateWith = async (consultantId: string, next: Status) => {
     setSaving(true);
     const prev = status;
     setStatus(next);
     const { error } = await supabase
       .from('consultants')
       .update({ availability_status: next })
-      .eq('id', consultant.id);
+      .eq('id', consultantId);
     setSaving(false);
     if (error) {
       setStatus(prev);
@@ -115,7 +130,7 @@ export default function AvailabilityToggle({ variant = 'switch', className }: Pr
       <DropdownMenuTrigger asChild>
         <button
           aria-label="Toggle availability"
-          disabled={saving || !consultant}
+          disabled={saving}
           className={cn(
             'group relative inline-flex items-center gap-3 pl-1.5 pr-4 py-1.5 rounded-full border-2 shadow-sm hover:shadow-md transition-all',
             meta.bg,
