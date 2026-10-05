@@ -1,0 +1,1 @@
+ALTER TABLE public.consultant_verification_items ADD COLUMN reminder_sent_at timestamptz;
