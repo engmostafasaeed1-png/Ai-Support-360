@@ -1276,6 +1276,7 @@ export type Database = {
           rating: number | null
           response_time_minutes: number | null
           sap_role: string | null
+          sap_roles: string[]
           sap_technologies: string[]
           seniority_level: string | null
           timezone: string | null
@@ -1321,6 +1322,7 @@ export type Database = {
           rating?: number | null
           response_time_minutes?: number | null
           sap_role?: string | null
+          sap_roles?: string[]
           sap_technologies?: string[]
           seniority_level?: string | null
           timezone?: string | null
@@ -1366,6 +1368,7 @@ export type Database = {
           rating?: number | null
           response_time_minutes?: number | null
           sap_role?: string | null
+          sap_roles?: string[]
           sap_technologies?: string[]
           seniority_level?: string | null
           timezone?: string | null
