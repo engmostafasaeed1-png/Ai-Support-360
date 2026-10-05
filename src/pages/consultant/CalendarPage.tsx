@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Video, MessageSquare, Monitor, CheckCircle, Clock, CalendarClock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +42,21 @@ interface SessionData {
 export default function CalendarPage() {
   const weekDates = getWeekDates();
   const today = new Date();
+  const [consultantId, setConsultantId] = useState<string | null>(null);
+
+  const { data: slots = [] } = useQuery({
+    queryKey: ['my-availability-slots', consultantId],
+    enabled: !!consultantId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('availability_slots')
+        .select('id, day_of_week, start_time, end_time')
+        .eq('consultant_id', consultantId!)
+        .order('day_of_week').order('start_time');
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const { data: sessions = [], isLoading } = useQuery({
     queryKey: ['consultant-calendar-sessions'],
