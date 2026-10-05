@@ -293,24 +293,6 @@ serve(async (req) => {
       // Fetch all enrichment data in parallel. Other clients' review comments and a consultant's former employers are NOT read:
       // the answer is shown to the client and must not repeat private details.
       const enrichmentResults = await Promise.all([
-        supabase.from("consultant_skills").select("consultant_id").in("consultant_id", consultantIds).limit(1),
-        supabase.from("consultant_cv_profiles").select("consultant_id").in("consultant_id", consultantIds).limit(1),
-      ]);
-      for (const result of enrichmentResults) if (result.error) throw result.error;
-      const [
-        { data: skills },
-        { data: certs },
-        { data: profiles },
-        { data: interviews },
-        { data: projects },
-        { data: ndaAgreements },
-        { data: sessionStats },
-        { data: solvedBefore },
-        { data: cvProfiles },
-        { data: workHistory },
-        { data: education },
-        { data: availabilitySlots },
-      ] = await Promise.all([
         supabase.from("consultant_skills")
           .select("consultant_id, sap_module, proficiency_level, years_experience, certified")
           .in("consultant_id", consultantIds),
@@ -351,6 +333,12 @@ serve(async (req) => {
         supabase.from("consultant_education").select("consultant_id, degree, field_of_study, start_year, end_year").in("consultant_id", consultantIds),
         supabase.from("availability_slots").select("consultant_id, day_of_week, start_time, end_time, specific_date, is_recurring").in("consultant_id", consultantIds),
       ]);
+      for (const result of enrichmentResults) if (result.error) throw result.error;
+      const [
+        { data: skills }, { data: certs }, { data: profiles }, { data: interviews },
+        { data: projects }, { data: ndaAgreements }, { data: sessionStats }, { data: solvedBefore },
+        { data: cvProfiles }, { data: workHistory }, { data: education }, { data: availabilitySlots },
+      ] = enrichmentResults;
       const solvedMap = new Map<string, { solved_similar: number; resolved_in_areas: number }>();
       for (const r of (solvedBefore ?? []) as any[]) {
         solvedMap.set(r.consultant_id, { solved_similar: r.solved_similar ?? 0, resolved_in_areas: r.resolved_in_areas ?? 0 });
