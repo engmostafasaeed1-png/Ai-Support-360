@@ -466,7 +466,9 @@
     "chat_desc": "رسائل نصية فورية مع مشاركة الملفات",
     "screen_share": "مشاركة الشاشة",
     "screen_desc": "وصول عن بُعد لدعم SAP المباشر",
-    "client_reviews": "تقييمات العملاء"
+    "client_reviews": "تقييمات العملاء",
+    "weekly_availability": "ساعات العمل الأسبوعية",
+    "no_hours_set": "لم يتم تحديد ساعات بعد"
   },
   "payments_page": {
     "title": "المدفوعات",
