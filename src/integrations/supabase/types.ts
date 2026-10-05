@@ -1266,15 +1266,21 @@ export type Database = {
           latitude: number | null
           linkedin_checked_at: string | null
           linkedin_url: string | null
+          localization_countries: string[]
           location: unknown
           longitude: number | null
           nationality: string | null
           personal_website: string | null
           profile_video_url: string | null
+          project_types: string[]
           rating: number | null
           response_time_minutes: number | null
+          sap_role: string | null
+          sap_technologies: string[]
+          seniority_level: string | null
           timezone: string | null
           total_reviews: number | null
+          total_sap_years: number | null
           updated_at: string
           user_id: string
           verification_status:
@@ -1305,15 +1311,21 @@ export type Database = {
           latitude?: number | null
           linkedin_checked_at?: string | null
           linkedin_url?: string | null
+          localization_countries?: string[]
           location?: unknown
           longitude?: number | null
           nationality?: string | null
           personal_website?: string | null
           profile_video_url?: string | null
+          project_types?: string[]
           rating?: number | null
           response_time_minutes?: number | null
+          sap_role?: string | null
+          sap_technologies?: string[]
+          seniority_level?: string | null
           timezone?: string | null
           total_reviews?: number | null
+          total_sap_years?: number | null
           updated_at?: string
           user_id: string
           verification_status?:
@@ -1344,15 +1356,21 @@ export type Database = {
           latitude?: number | null
           linkedin_checked_at?: string | null
           linkedin_url?: string | null
+          localization_countries?: string[]
           location?: unknown
           longitude?: number | null
           nationality?: string | null
           personal_website?: string | null
           profile_video_url?: string | null
+          project_types?: string[]
           rating?: number | null
           response_time_minutes?: number | null
+          sap_role?: string | null
+          sap_technologies?: string[]
+          seniority_level?: string | null
           timezone?: string | null
           total_reviews?: number | null
+          total_sap_years?: number | null
           updated_at?: string
           user_id?: string
           verification_status?:
