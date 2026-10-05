@@ -1197,6 +1197,56 @@ export type Database = {
           },
         ]
       }
+      consultant_verification_items: {
+        Row: {
+          completed_at: string | null
+          consultant_id: string
+          consultant_note: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string
+          id: string
+          kind: string
+          label: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          consultant_id: string
+          consultant_note?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_at?: string
+          id?: string
+          kind?: string
+          label: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          consultant_id?: string
+          consultant_note?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_at?: string
+          id?: string
+          kind?: string
+          label?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_verification_items_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultant_work_history: {
         Row: {
           company_name: string
