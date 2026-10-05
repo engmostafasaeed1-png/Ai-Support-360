@@ -945,6 +945,41 @@ export type Database = {
         }
         Relationships: []
       }
+      consultant_cv_profiles: {
+        Row: {
+          consultant_id: string
+          cv_text: string | null
+          expertise_keywords: string[]
+          matching_summary: string | null
+          parsed_at: string
+          source_path: string | null
+        }
+        Insert: {
+          consultant_id: string
+          cv_text?: string | null
+          expertise_keywords?: string[]
+          matching_summary?: string | null
+          parsed_at?: string
+          source_path?: string | null
+        }
+        Update: {
+          consultant_id?: string
+          cv_text?: string | null
+          expertise_keywords?: string[]
+          matching_summary?: string | null
+          parsed_at?: string
+          source_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_cv_profiles_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultant_education: {
         Row: {
           consultant_id: string
