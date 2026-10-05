@@ -6804,6 +6804,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      consultant_booked_times: {
+        Args: { _consultant_id: string; _from: string; _to: string }
+        Returns: {
+          duration_minutes: number
+          scheduled_at: string
+        }[]
+      }
       consultant_has_environment_for_client: {
         Args: { _client_id: string; _consultant_id: string }
         Returns: boolean
