@@ -113,7 +113,9 @@ export default function SapExpertiseCard() {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) return setLoading(false);
-      const uid = session.user.id;
+      const { data: me } = await supabase.from('consultants').select('id').eq('user_id', session.user.id).maybeSingle();
+      if (!me) return setLoading(false);
+      const uid = me.id;
       setUserId(uid);
       const { data } = await supabase
         .from('consultants')
