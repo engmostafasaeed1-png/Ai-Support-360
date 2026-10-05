@@ -292,6 +292,11 @@ serve(async (req) => {
 
       // Fetch all enrichment data in parallel. Other clients' review comments and a consultant's former employers are NOT read:
       // the answer is shown to the client and must not repeat private details.
+      const enrichmentResults = await Promise.all([
+        supabase.from("consultant_skills").select("consultant_id").in("consultant_id", consultantIds).limit(1),
+        supabase.from("consultant_cv_profiles").select("consultant_id").in("consultant_id", consultantIds).limit(1),
+      ]);
+      for (const result of enrichmentResults) if (result.error) throw result.error;
       const [
         { data: skills },
         { data: certs },
