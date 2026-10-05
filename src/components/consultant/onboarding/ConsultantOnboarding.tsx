@@ -5,6 +5,11 @@ import { Check, ChevronLeft, ChevronRight, Upload, User, Cpu, Award, Clock, Brie
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useQueryClient } from '@tanstack/react-query';
+import SapExpertiseCard from '@/components/consultant/SapExpertiseCard';
+import ExperienceCvCard from '@/components/consultant/ExperienceCvCard';
+import SetAvailabilityDialog from '@/components/consultant/SetAvailabilityDialog';
+import ProfileAvailability from '@/components/consultant/ProfileAvailability';
 import { cn } from '@/lib/utils';
 import ImportStep from './steps/ImportStep';
 import ProfileStep from './steps/ProfileStep';
@@ -34,6 +39,7 @@ export interface WorkHistoryEntry {
 }
 
 export interface EducationEntry {
+  id?: string;
   institution: string;
   degree: string;
   fieldOfStudy: string;
@@ -42,6 +48,7 @@ export interface EducationEntry {
 }
 
 export interface ProjectEntry {
+  id?: string;
   projectName: string;
   clientIndustry: string;
   sapModules: string[];
@@ -69,7 +76,7 @@ export interface OnboardingData {
   // Skills
   skills: { sapModule: string; proficiencyLevel: number; yearsExperience: number; certified: boolean }[];
   // Certifications
-  certifications: { name: string; issuer: string; issueDate: string; expiryDate: string; file?: File }[];
+  certifications: { id?: string; name: string; issuer: string; issueDate: string; expiryDate: string; file?: File }[];
   // Work History
   workHistory: WorkHistoryEntry[];
   // Education
@@ -109,6 +116,9 @@ const stepIcons = [Upload, User, Cpu, Award, Briefcase, GraduationCap, FolderKan
 export default function ConsultantOnboarding({ embedded = false }: { embedded?: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [loadedRevision, setLoadedRevision] = useState(0);
+  const [savedRows, setSavedRows] = useState({ certifications: [] as string[], education: [] as string[], projects: [] as string[] });
   const { isGuest } = useGuestMode();
   const [searchParams] = useSearchParams();
   const initialStep = Math.min(Math.max(Number(searchParams.get('step')) || 0, 0), STEP_COUNT - 1);
@@ -151,6 +161,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
         }
         if (!active) return;
         setConsultantId(c.id);
+        setSavedRows({ certifications: (certificates.data || []).map(x => x.id), education: (studies.data || []).map(x => x.id), projects: (projects.data || []).map(x => x.id) });
         setData({
           displayName: profileResult.data?.display_name || '', bio: c.bio || '',
           hourlyRate: Number(c.hourly_rate) || 0, currency: c.currency || 'USD',
@@ -159,10 +170,10 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           linkedinUrl: c.linkedin_url || '', githubUrl: c.github_url || '',
           personalWebsite: c.personal_website || '', credlyUsername: c.credly_username || '',
           skills: (skills.data || []).map(s => ({ sapModule: s.sap_module, proficiencyLevel: s.proficiency_level || 1, yearsExperience: s.years_experience || 0, certified: Boolean(s.certified) })),
-          certifications: (certificates.data || []).map(s => ({ name: s.name, issuer: s.issuer || '', issueDate: s.issue_date || '', expiryDate: s.expiry_date || '' })),
+          certifications: (certificates.data || []).map(s => ({ id: s.id, name: s.name, issuer: s.issuer || '', issueDate: s.issue_date || '', expiryDate: s.expiry_date || '' })),
           workHistory: (jobs.data || []).map(s => ({ companyName: s.company_name, jobTitle: s.job_title, startDate: s.start_date || '', endDate: s.end_date || '', description: s.description || '', isCurrent: Boolean(s.is_current) })),
-          education: (studies.data || []).map(s => ({ institution: s.institution, degree: s.degree || '', fieldOfStudy: s.field_of_study || '', startYear: s.start_year, endYear: s.end_year })),
-          projects: (projects.data || []).map(s => ({ projectName: s.project_name, clientIndustry: s.client_industry || '', sapModules: s.sap_modules || [], description: s.description || '', durationMonths: s.duration_months, role: s.role || '' })),
+          education: (studies.data || []).map(s => ({ id: s.id, institution: s.institution, degree: s.degree || '', fieldOfStudy: s.field_of_study || '', startYear: s.start_year, endYear: s.end_year })),
+          projects: (projects.data || []).map(s => ({ id: s.id, projectName: s.project_name, clientIndustry: s.client_industry || '', sapModules: s.sap_modules || [], description: s.description || '', durationMonths: s.duration_months, role: s.role || '' })),
           availability: (slots.data || []).flatMap(s => s.day_of_week === null ? [] : [{ dayOfWeek: s.day_of_week, startTime: s.start_time, endTime: s.end_time }]),
         });
       } catch {
@@ -173,11 +184,17 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     };
     void prefill();
     return () => { active = false; };
-  }, [isGuest, t]);
+  }, [isGuest, t, loadedRevision]);
 
   useEffect(() => {
     setCurrentStep(Math.min(Math.max(Number(searchParams.get('step')) || 0, 0), STEP_COUNT - 1));
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!embedded || loading || !searchParams.has('step')) return;
+    const targets = ['profile-details', 'profile-details', 'expertise', 'certifications', 'experience', 'education', 'projects', 'availability', 'interview-history'];
+    document.getElementById(targets[Number(searchParams.get('step'))] || 'profile-details')?.scrollIntoView({ block: 'start' });
+  }, [embedded, loading, searchParams]);
 
   const steps = [
     { key: 'import', label: 'Import' },
@@ -235,7 +252,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           timezone: data.timezone,
           languages: data.languages,
           linkedin_url: linkedinUrl,
-          ...(credlyUsername ? { credly_username: credlyUsername } : {}),
+          credly_username: credlyUsername,
           github_url: data.githubUrl || null,
           personal_website: data.personalWebsite || null,
           nationality: data.nationality || null,
@@ -249,6 +266,51 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
 
       if (consultantErr || !consultant) throw consultantErr;
       setConsultantId(consultant.id);
+
+      if (embedded) {
+        // Existing rows are edited by their stable row IDs; new duplicates are skipped, not appended.
+        const syncRows = async (table: 'certifications' | 'consultant_education' | 'consultant_projects', rows: { id?: string; [key: string]: unknown }[], original: string[], key: (row: any) => string) => {
+          const { data: existing, error: readError } = await supabase.from(table).select('*').eq('consultant_id', consultant.id);
+          if (readError) throw readError;
+          const seen = new Set((existing || []).map(key));
+          for (const row of rows) {
+            const { id, ...values } = row;
+            if (!key(row)) continue;
+            if (id) {
+              const { error } = await supabase.from(table).update(values).eq('id', id).eq('consultant_id', consultant.id);
+              if (error) throw error;
+            } else if (!seen.has(key(row))) {
+              const { error } = await supabase.from(table).insert({ ...values, consultant_id: consultant.id } as any);
+              if (error) throw error;
+              seen.add(key(row));
+            }
+          }
+          const removed = original.filter(id => !rows.some(row => row.id === id));
+          if (removed.length) {
+            const { error } = await supabase.from(table).delete().in('id', removed).eq('consultant_id', consultant.id);
+            if (error) throw error;
+          }
+        };
+        const certificates = [];
+        for (const cert of data.certifications.filter(c => c.name.trim())) {
+          let document_url: string | undefined;
+          if (cert.file) {
+            const path = `${user.id}/certifications/${Date.now()}-${safeFileName(cert.file.name)}`;
+            const { error } = await supabase.storage.from('consultant-documents').upload(path, cert.file);
+            if (error) throw error;
+            document_url = path;
+          }
+          certificates.push({ id: cert.id, name: cert.name.trim(), issuer: cert.issuer || null, issue_date: cert.issueDate || null,
+            expiry_date: cert.expiryDate || null, ...(document_url ? { document_url } : {}) });
+        }
+        await syncRows('certifications', certificates, savedRows.certifications, r => certificateKey(r.name, r.issuer, r.issue_date));
+        await syncRows('consultant_education', data.education.filter(e => e.institution.trim()).map(e => ({ id: e.id, institution: e.institution.trim(), degree: e.degree || null, field_of_study: e.fieldOfStudy || null, start_year: e.startYear, end_year: e.endYear })), savedRows.education, r => studyKey(r.institution, r.degree, r.field_of_study, r.start_year));
+        await syncRows('consultant_projects', data.projects.filter(p => p.projectName.trim()).map(p => ({ id: p.id, project_name: p.projectName.trim(), client_industry: p.clientIndustry || null, sap_modules: [...new Set(p.sapModules)], description: p.description || null, duration_months: p.durationMonths, role: p.role || null })), savedRows.projects, r => projectKey(r.project_name));
+        await queryClient.invalidateQueries({ queryKey: ['consultant-profile'] });
+        setLoadedRevision(r => r + 1);
+        toast.success(t('common.saved', 'Profile saved'));
+        return;
+      }
 
       // What the consultant already has: running the onboarding again must not add the same rows a second time (nothing that is saved is changed or removed).
       const [haveSkills, haveCertificates, haveJobs, haveStudies, haveProjects, haveSlots] = await Promise.all([
@@ -386,6 +448,31 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
   const isInterviewStep = currentStep === STEP_COUNT - 1;
 
   if (loading) return <div role="status" className="py-8 text-center text-muted-foreground">{t('common.loading')}</div>;
+
+  if (embedded) return (
+    <div className="space-y-8">
+      <section id="profile-details" className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">{t('consultant_profile_hub.details')}</h2>
+          <Button onClick={handleSaveAndContinue} disabled={submitting || isGuest}>{submitting ? t('common.loading') : t('common.save', 'Save')}</Button>
+        </div>
+        <ProfileStep data={data} onChange={updateData} />
+      </section>
+      <section id="expertise"><SapExpertiseCard key={`skills-${loadedRevision}`} /></section>
+      <section id="experience"><ExperienceCvCard onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section>
+      <section id="certifications"><CertificationsStep data={data} onChange={updateData} /></section>
+      <section id="education"><EducationStep data={data} onChange={updateData} /></section>
+      <section id="projects"><ProjectsStep data={data} onChange={updateData} /></section>
+      <div className="flex justify-end"><Button onClick={handleSaveAndContinue} disabled={submitting || isGuest}>{submitting ? t('common.loading') : t('common.save', 'Save')}</Button></div>
+      <section id="availability" className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">{t('onboarding.availability')}</h2>
+          <SetAvailabilityDialog trigger={<Button variant="outline">{t('onboarding.step_availability')}</Button>} />
+        </div>
+        {consultantId && <ProfileAvailability consultantId={consultantId} />}
+      </section>
+    </div>
+  );
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 px-1 pb-36 md:pb-6">

@@ -1,3 +1,4 @@
 # Architecture rules
 
-- Use the consultant Profile page as the single destination for profile editing and embedded setup; redirect legacy onboarding links there to preserve bookmarks and checklist navigation.
+- Use the consultant Profile page as the single consolidated editor, reusing existing field controls without a duplicate setup tab; legacy onboarding links must land there.
+- Compute match totals server-side from bounded criterion scores and fixed weights; rank all eligible consultants before selecting the best, and expose the breakdown without private CV content.

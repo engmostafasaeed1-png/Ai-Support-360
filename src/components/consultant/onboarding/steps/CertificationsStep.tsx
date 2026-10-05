@@ -106,7 +106,7 @@ export default function CertificationsStep({ data, onChange }: Props) {
                     <Select value={cert.name} onValueChange={v => updateCert(idx, { name: v })}>
                       <SelectTrigger><SelectValue placeholder="Select certification" /></SelectTrigger>
                       <SelectContent>
-                        {certNames.map(n => (
+                        {[...new Set([...certNames, ...(cert.name ? [cert.name] : [])])].map(n => (
                           <SelectItem key={n} value={n}>{n}</SelectItem>
                         ))}
                       </SelectContent>
@@ -117,7 +117,7 @@ export default function CertificationsStep({ data, onChange }: Props) {
                     <Select value={cert.issuer} onValueChange={v => updateCert(idx, { issuer: v })}>
                       <SelectTrigger><SelectValue placeholder="Select issuer" /></SelectTrigger>
                       <SelectContent>
-                        {issuers.map(i => (
+                        {[...new Set([...issuers, ...(cert.issuer ? [cert.issuer] : [])])].map(i => (
                           <SelectItem key={i} value={i}>{i}</SelectItem>
                         ))}
                       </SelectContent>
