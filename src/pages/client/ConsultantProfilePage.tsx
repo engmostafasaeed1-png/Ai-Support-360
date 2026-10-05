@@ -28,7 +28,9 @@ import ConsultantLocationMap from '@/components/client/ConsultantLocationMap';
 import { STATE_META, availabilityState } from '@/lib/mapMarkers';
 import { credlyProfileUrl, linkState, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 import { placeLabel } from '@/lib/geo';
-import { consultantPoint } from '@/lib/consultantDirectory';
+import { consultantPoint, formatWeeklyHours } from '@/lib/consultantDirectory';
+import WeeklyAvailability from '@/components/client/WeeklyAvailability';
+
 
 export default function ConsultantProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -186,9 +188,35 @@ export default function ConsultantProfilePage() {
           queryClient.invalidateQueries({ queryKey: ['consultant-profile-detail', id] });
         }
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'availability_slots', filter: `consultant_id=eq.${id}` },
+        () => {
+          // The consultant edits their hours in the Session Calendar: show them at once.
+          queryClient.invalidateQueries({ queryKey: ['consultant-weekly-hours', id] });
+        }
+      )
       .subscribe();
+
     return () => { supabase.removeChannel(channel); };
   }, [id, queryClient]);
+
+  // Weekly working hours the consultant set in their Session Calendar
+  const { data: weeklyHours } = useQuery({
+    queryKey: ['consultant-weekly-hours', id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data } = await supabase
+        .from('availability_slots')
+        .select('day_of_week, start_time, end_time')
+        .eq('consultant_id', id)
+        .order('day_of_week')
+        .order('start_time');
+      return formatWeeklyHours(data || []);
+    },
+    enabled: !isGuest && !!id,
+  });
+
 
   const verificationStatus: VerificationStatus =
     (liveConsultant?.verification_status as VerificationStatus) ||
@@ -302,6 +330,8 @@ export default function ConsultantProfilePage() {
                       </Badge>
                     ))}
                   </div>
+                  {!isGuest && <WeeklyAvailability hours={weeklyHours} className="mt-3" />}
+
                 </div>
 
                 {/* Stats + CTA */}
@@ -505,7 +535,9 @@ export default function ConsultantProfilePage() {
 
         {/* Availability Tab */}
         <TabsContent value="availability" className="space-y-6">
+          {!isGuest && <WeeklyAvailability hours={weeklyHours} className="w-full" />}
           <div className="grid md:grid-cols-2 gap-6">
+
             <Card className="rounded-2xl border-border/50">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
