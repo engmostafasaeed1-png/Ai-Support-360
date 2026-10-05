@@ -19,6 +19,7 @@ import RemoveDuplicateSkills from '@/components/consultant/RemoveDuplicateSkills
 import { linkState, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 import InterviewHistory from '@/components/consultant/InterviewHistory';
 import AIInterviewFlow from '@/components/consultant/AIInterviewFlow';
+import { ConsultantVerificationItemsCard } from '@/components/admin/PendingVerificationItems';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { useConsultantProfile } from '@/hooks/useConsultantProfile';
@@ -216,6 +217,9 @@ export default function VerificationPage() {
         <h1 className="text-2xl font-bold text-foreground">Verification Status</h1>
         <p className="text-sm text-muted-foreground mt-1">Manage your verification and credentials.</p>
       </div>
+
+      {!isGuest && consultantId && <ConsultantVerificationItemsCard consultantId={consultantId} />}
+
 
       {/* Pending AI Interview Banner */}
       {pendingInterview && (

@@ -21,6 +21,7 @@ import InterviewHistory from '@/components/consultant/InterviewHistory';
 import ConsultantVerificationAuditLog from '@/components/admin/ConsultantVerificationAuditLog';
 import ConsultantTrustPanel from '@/components/admin/ConsultantTrustPanel';
 import CertificateReview from '@/components/admin/CertificateReview';
+import { ApproveWithItemsDialog, AdminVerificationItemsPanel, OverdueItemsBanner } from '@/components/admin/PendingVerificationItems';
 import { placeLabel } from '@/lib/geo';
 import {
   STATE_LABELS, STATE_TONES, STATUS_FILTERS, countByStatus, countForFilter, decisionOptions, isVerificationState,
@@ -33,6 +34,7 @@ export default function ConsultantApprovalsPage() {
   const [reinterviewTarget, setReinterviewTarget] = useState<{ id: string; name: string } | null>(null);
   const [liveTarget, setLiveTarget] = useState<{ id: string; userId: string; name: string } | null>(null);
   const [decisionTarget, setDecisionTarget] = useState<{ id: string; name: string; option: DecisionOption } | null>(null);
+  const [conditionalTarget, setConditionalTarget] = useState<{ id: string; name: string } | null>(null);
   const [decisionReason, setDecisionReason] = useState('');
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
@@ -184,6 +186,10 @@ export default function ConsultantApprovalsPage() {
         <p className="text-sm text-muted-foreground">{isError ? '' : `${list.length} ${filter.label.toLowerCase()}`}</p>
       </div>
 
+      {!isGuest && <OverdueItemsBanner />}
+      <ApproveWithItemsDialog target={conditionalTarget} onClose={() => setConditionalTarget(null)} onDone={refreshList} />
+
+
       <div className="flex flex-wrap gap-2" role="group" aria-label="Consultant status">
         {STATUS_FILTERS.map(f => (
           <button
@@ -267,6 +273,8 @@ export default function ConsultantApprovalsPage() {
                         </div>
                       </div>
 
+                      <AdminVerificationItemsPanel consultantId={c.id} readOnly={isGuest} />
+
                       <div className="mb-4">
                         <ConsultantTrustPanel
                           consultant={{
@@ -323,6 +331,11 @@ export default function ConsultantApprovalsPage() {
                         {!isGuest && c.user_id && (
                           <Button variant="outline" size="sm" onClick={() => setLiveTarget({ id: c.id, userId: c.user_id, name: c.name })}>
                             <Users className="w-3.5 h-3.5 me-1" /> Live interview
+                          </Button>
+                        )}
+                        {!isGuest && ['pending', 'under_review', 'on_hold'].includes(status) && (
+                          <Button variant="outline" size="sm" onClick={() => setConditionalTarget({ id: c.id, name: c.name })}>
+                            Approve with items to verify
                           </Button>
                         )}
                         {decisionOptions(status).map(option => (
