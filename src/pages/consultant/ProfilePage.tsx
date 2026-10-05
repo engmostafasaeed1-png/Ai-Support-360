@@ -105,7 +105,7 @@ export default function ProfilePage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('consultant_profile.title')}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('consultant_profile_hub.title')}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <AvailabilityToggle variant="pill" />
@@ -126,8 +126,8 @@ export default function ProfilePage() {
         setSearchParams(params);
       }}>
         <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="details">{t('consultant_profile.details')}</TabsTrigger>
-          <TabsTrigger value="setup">{t('consultant_profile.setup')}</TabsTrigger>
+          <TabsTrigger value="details">{t('consultant_profile_hub.details')}</TabsTrigger>
+          <TabsTrigger value="setup">{t('consultant_profile_hub.setup')}</TabsTrigger>
         </TabsList>
         <TabsContent value="setup" className="mt-6">
           <ConsultantOnboarding embedded />
