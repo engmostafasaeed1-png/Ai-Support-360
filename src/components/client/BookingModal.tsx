@@ -151,7 +151,6 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
     setConfirmed(false);
   };
 
-  const isValidUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
   const handleConfirm = async () => {
     setIsSubmitting(true);
