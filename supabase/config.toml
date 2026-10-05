@@ -33,3 +33,5 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = true
   [functions.sap-docs-import]
     verify_jwt = true
+  [functions.verification-items-notify]
+    verify_jwt = false
