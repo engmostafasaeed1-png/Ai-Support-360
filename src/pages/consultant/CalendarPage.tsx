@@ -149,6 +149,34 @@ export default function CalendarPage() {
         </CardContent>
       </Card>
 
+      {/* My Availability */}
+      <Card className="rounded-2xl border-border/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <CalendarClock className="w-4 h-4 text-accent" />
+            My Availability ({slots.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {slots.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No time slots yet. Click "Set Availability" to add your weekly hours.
+            </p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {slots.map((s) => (
+                <div key={s.id} className="flex items-center justify-between rounded-xl border border-border/50 px-3 py-2">
+                  <span className="text-sm">
+                    <span className="font-semibold">{s.day_of_week != null ? fullDays[s.day_of_week] : 'One-off'}</span>{' '}
+                    {s.start_time.slice(0, 5)} – {s.end_time.slice(0, 5)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {isLoading ? (
         <div className="grid lg:grid-cols-2 gap-6">
           <Skeleton className="h-64 rounded-2xl" />
