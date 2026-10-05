@@ -1,34 +1,28 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { toast } from 'sonner';
+import { Download, FileText, Lock, Pencil, Plus, Send, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import TimesheetRateCard from '@/components/timesheet/TimesheetRateCard';
+import TimesheetSummary, { type PlanInfo } from '@/components/timesheet/TimesheetSummary';
+import TimesheetSubmissions from '@/components/timesheet/TimesheetSubmissions';
+import WorkLogDialog from '@/components/timesheet/WorkLogDialog';
+import SubmitTimesheetDialog from '@/components/timesheet/SubmitTimesheetDialog';
+import StatusBadge from '@/components/timesheet/StatusBadge';
+import { buildCsv, downloadText, type ExportRow } from '@/lib/timesheetExport';
+import { downloadTimesheetPdf } from '@/lib/timesheetPdf';
 import {
-  Plus, Trash2, Clock, DollarSign, Download, Mail, FileSignature,
-  Loader2, User, Calendar, CheckCircle2, Send, FileText, BarChart3,
-} from 'lucide-react';
-import jsPDF from 'jspdf';
-
-const CATEGORIES = [
-  { value: 'analysis', label: 'Analysis' },
-  { value: 'development', label: 'Development' },
-  { value: 'testing', label: 'Testing' },
-  { value: 'meeting', label: 'Meeting' },
-  { value: 'documentation', label: 'Documentation' },
-  { value: 'support', label: 'Support' },
-  { value: 'other', label: 'Other' },
-];
+  categoryLabel, entriesToSubmit, entryAmount, entryStatus, formatDuration, formatHours, formatMoney, isLocked, num, planUsage, rateStateFor, rateText,
+  splitBySubmission, statusInfo, submitBlockReason, summarise,
+  type CommentRow, type InvoiceRow, type RateRow, type SubmissionRow, type WorkLogRow,
+} from '@/lib/timesheet';
 
 const categoryColors: Record<string, string> = {
   analysis: 'bg-violet-100 text-violet-700',
@@ -40,685 +34,472 @@ const categoryColors: Record<string, string> = {
   other: 'bg-muted text-muted-foreground',
 };
 
-interface WorkLog {
-  id: string;
-  ticket_id: string;
-  consultant_id: string;
-  work_date: string;
-  hours: number;
-  description: string | null;
-  category: string;
-  billable: boolean;
-  hourly_rate: number;
-  total_cost: number;
-  created_at: string;
-  consultant_name?: string;
-}
+const unique = (values: (string | null | undefined)[]): string[] => Array.from(new Set(values.filter((v): v is string => !!v)));
+// a day without a time is read as that day in the time zone of the viewer
+const parseDay = (day: string) => new Date(`${day}T00:00:00`);
 
 interface Props {
   ticketId: string;
   ticketTitle: string;
+  /** true for the client (and the colleagues of the client): the client does not log work */
   isReadOnly?: boolean;
+  /** the client who owns the ticket: approves the hourly rate and the timesheets */
   canApprove?: boolean;
 }
 
+/**
+ * The timesheet of a ticket. The consultant proposes the hourly rate, logs the activities (day, duration, kind of work, what was done, billable or not),
+ * and submits them; the client approves the rate and the timesheet or asks for changes with a comment. Every amount is billable hours x the approved rate.
+ */
 export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = false, canApprove = false }: Props) {
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
-  const [sendOpen, setSendOpen] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [respondFor, setRespondFor] = useState<string | null>(null);
-  const [note, setNote] = useState('');
-  const [responding, setResponding] = useState(false);
+  const [editEntry, setEditEntry] = useState<WorkLogRow | null>(null);
+  const [deleteEntry, setDeleteEntry] = useState<WorkLogRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [submitOpen, setSubmitOpen] = useState(false);
+  const [tab, setTab] = useState('entries');
+  const [tabChosen, setTabChosen] = useState(false);
 
-  // Fetch work logs
+  const { data: viewer } = useQuery({
+    queryKey: ['timesheet-viewer'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { userId: null as string | null, consultantId: null as string | null, profileRate: null as number | null };
+      const { data: consultant } = await supabase.from('consultants').select('id, hourly_rate').eq('user_id', user.id).maybeSingle();
+      return { userId: user.id as string | null, consultantId: (consultant?.id ?? null) as string | null, profileRate: (consultant?.hourly_rate ?? null) as number | null };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // true for the client of the ticket, its consultant and the consultants assigned to it (the database decides)
+  const { data: participant = false } = useQuery({
+    queryKey: ['timesheet-participant', ticketId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc('is_ticket_participant', { _ticket_id: ticketId });
+      if (error) return false;
+      return data === true;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: ticket } = useQuery({
+    queryKey: ['timesheet-ticket', ticketId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tickets')
+        .select('consultant_id, planned_hours, planned_cost, cost_currency, plan_approved_at')
+        .eq('id', ticketId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['ticket-work-logs', ticketId],
-    queryFn: async () => {
+    queryFn: async (): Promise<WorkLogRow[]> => {
       const { data, error } = await supabase
         .from('ticket_work_logs')
         .select('*')
         .eq('ticket_id', ticketId)
-        .order('work_date', { ascending: false });
+        .order('work_date', { ascending: false })
+        .order('created_at', { ascending: false });
       if (error) throw error;
-
-      // Resolve consultant names
-      const consultantIds = [...new Set((data || []).map((d: any) => d.consultant_id))];
-      const nameMap: Record<string, string> = {};
-      if (consultantIds.length > 0) {
-        const { data: consultants } = await supabase
-          .from('consultants')
-          .select('id, user_id')
-          .in('id', consultantIds);
-        const userIds = (consultants || []).map((c: any) => c.user_id);
-        const { data: profiles } = await supabase
-          .from('profile_directory')
-          .select('user_id, display_name')
-          .in('user_id', userIds);
-        const profileMap = Object.fromEntries((profiles || []).map((p: any) => [p.user_id, p.display_name || 'Unknown']));
-        for (const c of consultants || []) {
-          nameMap[c.id] = profileMap[c.user_id] || 'Unknown';
-        }
-      }
-
-      return (data || []).map((d: any) => ({
-        ...d,
-        consultant_name: nameMap[d.consultant_id] || 'Unknown',
-      })) as WorkLog[];
+      return (data || []) as unknown as WorkLogRow[];
     },
   });
 
-  // Fetch submissions
   const { data: submissions = [] } = useQuery({
     queryKey: ['ticket-timesheet-submissions', ticketId],
-    queryFn: async () => {
+    queryFn: async (): Promise<SubmissionRow[]> => {
       const { data, error } = await supabase
         .from('ticket_timesheet_submissions')
         .select('*')
         .eq('ticket_id', ticketId)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data || [];
+      return (data || []) as unknown as SubmissionRow[];
     },
   });
 
-  const totalHours = logs.reduce((sum, l) => sum + (l.hours || 0), 0);
-  const billableHours = logs.filter(l => l.billable).reduce((sum, l) => sum + (l.hours || 0), 0);
-  const totalCost = logs.reduce((sum, l) => sum + (l.total_cost || 0), 0);
-
-  // Group by consultant
-  const byConsultant = logs.reduce((acc, l) => {
-    const name = l.consultant_name || 'Unknown';
-    if (!acc[name]) acc[name] = { hours: 0, cost: 0, entries: 0 };
-    acc[name].hours += l.hours || 0;
-    acc[name].cost += l.total_cost || 0;
-    acc[name].entries += 1;
-    return acc;
-  }, {} as Record<string, { hours: number; cost: number; entries: number }>);
-
-  // Group by category
-  const byCategory = logs.reduce((acc, l) => {
-    if (!acc[l.category]) acc[l.category] = { hours: 0, cost: 0 };
-    acc[l.category].hours += l.hours || 0;
-    acc[l.category].cost += l.total_cost || 0;
-    return acc;
-  }, {} as Record<string, { hours: number; cost: number }>);
-
-  const handleDelete = async (logId: string) => {
-    const { error } = await supabase.from('ticket_work_logs').delete().eq('id', logId);
-    if (error) { toast.error('Failed to delete'); return; }
-    toast.success('Entry removed');
-    queryClient.invalidateQueries({ queryKey: ['ticket-work-logs', ticketId] });
-  };
-
-  const generatePDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Timesheet Report', 14, 22);
-    doc.setFontSize(10);
-    doc.text(`Ticket: ${ticketTitle}`, 14, 32);
-    doc.text(`Generated: ${format(new Date(), 'MMM d, yyyy HH:mm')}`, 14, 38);
-    doc.text(`Total Hours: ${totalHours.toFixed(1)}h | Billable: ${billableHours.toFixed(1)}h | Cost: ${totalCost.toFixed(2)}`, 14, 44);
-
-    let y = 56;
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    ['Date', 'Consultant', 'Category', 'Hours', 'Rate', 'Cost', 'Description'].forEach((h, i) => {
-      doc.text(h, 14 + i * 27, y);
-    });
-    y += 6;
-    doc.setFont('helvetica', 'normal');
-
-    for (const log of logs) {
-      if (y > 270) { doc.addPage(); y = 20; }
-      doc.text(format(new Date(log.work_date), 'MMM d'), 14, y);
-      doc.text((log.consultant_name || '').substring(0, 12), 41, y);
-      doc.text(log.category, 68, y);
-      doc.text(String(log.hours), 95, y);
-      doc.text(String(log.hourly_rate || 0), 122, y);
-      doc.text(String(log.total_cost || 0), 149, y);
-      doc.text((log.description || '').substring(0, 20), 176, y);
-      y += 5;
-    }
-
-    // Consultant summary
-    y += 10;
-    doc.setFontSize(12);
-    doc.text('Consultant Summary', 14, y);
-    y += 8;
-    doc.setFontSize(8);
-    Object.entries(byConsultant).forEach(([name, data]) => {
-      if (y > 270) { doc.addPage(); y = 20; }
-      doc.text(`${name}: ${data.hours.toFixed(1)}h, ${data.entries} entries, ${data.cost.toFixed(2)} total`, 14, y);
-      y += 5;
-    });
-
-    doc.save(`timesheet-${ticketId.substring(0, 8)}.pdf`);
-    toast.success('PDF downloaded');
-  };
-
-  const exportCSV = () => {
-    const headers = ['Date', 'Consultant', 'Category', 'Hours', 'Billable', 'Rate', 'Cost', 'Description'];
-    const rows = logs.map(l => [
-      l.work_date, l.consultant_name, l.category, l.hours,
-      l.billable ? 'Yes' : 'No', l.hourly_rate, l.total_cost, `"${(l.description || '').replace(/"/g, '""')}"`,
-    ]);
-    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `timesheet-${ticketId.substring(0, 8)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('CSV exported');
-  };
-
-  const handleSendForSignature = async (method: string, email?: string) => {
-    setSending(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { error } = await supabase.from('ticket_timesheet_submissions').insert({
-        ticket_id: ticketId,
-        submitted_by: user.id,
-        status: method === 'email' ? 'submitted' : 'draft',
-        total_hours: totalHours,
-        total_cost: totalCost,
-        signature_method: method,
-        sent_to_email: email || null,
-        notes: `Timesheet for "${ticketTitle}" — ${logs.length} entries, ${totalHours.toFixed(1)}h total`,
-      } as any);
+  const { data: rates = [] } = useQuery({
+    queryKey: ['ticket-rates', ticketId],
+    queryFn: async (): Promise<RateRow[]> => {
+      const { data, error } = await supabase.from('ticket_rates').select('*').eq('ticket_id', ticketId).order('created_at', { ascending: false });
       if (error) throw error;
+      return (data || []) as unknown as RateRow[];
+    },
+  });
 
-      toast.success(
-        method === 'email'
-          ? `Timesheet recorded as submitted for ${email}. E-mail delivery is not connected yet, so please share the PDF with them yourself.`
-          : method === 'docusign'
-          ? 'Timesheet prepared for DocuSign (integration pending)'
-          : method === 'adobe_sign'
-          ? 'Timesheet prepared for Adobe Sign (integration pending)'
-          : 'Timesheet submitted for manual signature'
-      );
-      setSendOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['ticket-timesheet-submissions', ticketId] });
-    } catch {
-      toast.error('Failed to submit timesheet');
-    } finally {
-      setSending(false);
+  const submissionIds = submissions.map(s => s.id);
+  const { data: comments = [] } = useQuery({
+    queryKey: ['ticket-timesheet-comments', ticketId, submissionIds.join(',')],
+    enabled: submissionIds.length > 0,
+    queryFn: async (): Promise<CommentRow[]> => {
+      const { data, error } = await supabase.from('ticket_timesheet_comments').select('*').in('submission_id', submissionIds).order('created_at', { ascending: true });
+      if (error) throw error;
+      return (data || []) as unknown as CommentRow[];
+    },
+  });
+
+  const { data: invoices = [] } = useQuery({
+    queryKey: ['ticket-timesheet-invoices', ticketId],
+    queryFn: async (): Promise<InvoiceRow[]> => {
+      const { data, error } = await supabase
+        .from('payments')
+        .select('id, timesheet_id, invoice_number, status, amount, currency, due_date, paid_at')
+        .eq('ticket_id', ticketId)
+        .not('timesheet_id', 'is', null);
+      if (error) return [];
+      return (data || []) as unknown as InvoiceRow[];
+    },
+  });
+
+  const { data: vatPercent = 0 } = useQuery({
+    queryKey: ['timesheet-vat-percent'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('timesheet_vat_percent');
+      if (error) return 0;
+      return num(data);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const consultantIds = unique([ticket?.consultant_id, ...rates.map(r => r.consultant_id), ...logs.map(l => l.consultant_id)]);
+  const userIds = unique([...submissions.map(s => s.submitted_by), ...comments.map(c => c.author_id)]);
+  const { data: names } = useQuery({
+    queryKey: ['timesheet-names', ticketId, consultantIds.join(','), userIds.join(',')],
+    enabled: consultantIds.length + userIds.length > 0,
+    queryFn: async () => {
+      const byConsultant: Record<string, string> = {};
+      const byUser: Record<string, string> = {};
+      let consultants: { id: string; user_id: string }[] = [];
+      if (consultantIds.length > 0) {
+        const { data } = await supabase.from('consultants').select('id, user_id').in('id', consultantIds);
+        consultants = (data || []) as { id: string; user_id: string }[];
+      }
+      const allUsers = unique([...consultants.map(c => c.user_id), ...userIds]);
+      if (allUsers.length > 0) {
+        const { data: profiles } = await supabase.from('profile_directory').select('user_id, display_name').in('user_id', allUsers);
+        for (const p of profiles || []) byUser[p.user_id as string] = (p.display_name as string | null) || 'Unknown';
+      }
+      for (const c of consultants) byConsultant[c.id] = byUser[c.user_id] || 'Unknown';
+      return { byConsultant, byUser };
+    },
+  });
+  const byConsultant = names?.byConsultant ?? {};
+  const byUser = names?.byUser ?? {};
+
+  const refresh = () => {
+    for (const key of ['ticket-work-logs', 'ticket-timesheet-submissions', 'ticket-rates', 'ticket-timesheet-comments', 'ticket-timesheet-invoices', 'timesheet-ticket', 'timesheet-names']) {
+      queryClient.invalidateQueries({ queryKey: [key, ticketId] });
     }
   };
 
-  const respond = async (id: string, approve: boolean, noteText?: string) => {
-    setResponding(true);
-    const { error } = await supabase.rpc('respond_to_timesheet', {
-      _submission_id: id,
-      _approve: approve,
-      _note: noteText?.trim() || undefined,
-    });
-    setResponding(false);
-    if (error) {
-      toast.error(approve ? 'Could not approve the timesheet' : 'Could not send the timesheet back', { description: error.message });
-      return;
+  const namedLogs = useMemo(() => logs.map(l => ({ ...l, consultant_name: byConsultant[l.consultant_id] ?? 'Consultant' })), [logs, byConsultant]);
+
+  // the consultant view is for a consultant who works on this ticket (an administrator who looks at a ticket sees the read-only view)
+  const myConsultantId = !isReadOnly && participant ? viewer?.consultantId ?? null : null;
+  const isConsultantView = !!myConsultantId;
+  const waitingForClient = submissions.some(s => s.status === 'submitted');
+
+  // the client lands on the timesheets when one waits for an answer
+  useEffect(() => {
+    if (!tabChosen && canApprove && waitingForClient) {
+      setTab('timesheets');
+      setTabChosen(true);
     }
-    toast.success(approve ? 'Timesheet approved' : 'Timesheet sent back');
-    setRespondFor(null);
-    setNote('');
-    queryClient.invalidateQueries({ queryKey: ['ticket-timesheet-submissions', ticketId] });
-  };
+  }, [canApprove, waitingForClient, tabChosen]);
 
   if (isLoading) return <Skeleton className="h-48 rounded-2xl" />;
 
+  const knownIds = new Set(submissions.map(s => s.id));
+  const { bySubmission } = splitBySubmission(namedLogs);
+  const openLogs = namedLogs.filter(l => !l.submission_id || !knownIds.has(l.submission_id));
+  const entryCounts: Record<string, number> = {};
+  for (const s of submissions) entryCounts[s.id] = bySubmission[s.id]?.length ?? 0;
+
+  const myOpenEntries = entriesToSubmit(namedLogs, submissions, myConsultantId);
+  const myWaiting = submissions.some(s => s.status === 'submitted' && s.submitted_by === viewer?.userId);
+  const resubmit = submissions.some(s => s.status === 'changes_requested' && s.submitted_by === viewer?.userId);
+  const blockReason = submitBlockReason(myOpenEntries, myWaiting);
+
+  const myRates = rateStateFor(rates, myConsultantId);
+  const approvedRates = rates.filter(r => r.status === 'approved');
+  const currency = (myConsultantId ? myRates.approved?.currency : approvedRates[0]?.currency) ?? approvedRates[0]?.currency ?? ticket?.cost_currency ?? 'USD';
+  const rateLabel = myConsultantId ? (myRates.approved ? rateText(myRates.approved) : null) : approvedRates.length === 1 ? rateText(approvedRates[0]) : null;
+
+  const plan: PlanInfo | null = ticket && num(ticket.planned_hours) > 0
+    ? { plannedHours: num(ticket.planned_hours), plannedCost: num(ticket.planned_cost), currency: ticket.cost_currency || currency, approved: !!ticket.plan_approved_at }
+    : null;
+  const totals = summarise(namedLogs, vatPercent);
+  const planOverBy = plan ? planUsage(plan.plannedHours, totals.totalHours)?.overBy ?? 0 : 0;
+
+  const byCategory: Record<string, { hours: number; amount: number }> = {};
+  for (const l of namedLogs) {
+    const row = (byCategory[l.category] ||= { hours: 0, amount: 0 });
+    row.hours += num(l.hours);
+    row.amount += entryAmount(l) ?? 0;
+  }
+
+  const entryStatusLabel = (l: WorkLogRow) => {
+    const status = entryStatus(l, submissions);
+    return status === 'open' ? 'Not sent yet' : statusInfo(status).label;
+  };
+  const exportRows = (): ExportRow[] =>
+    namedLogs.map(l => ({
+      date: l.work_date,
+      consultant: l.consultant_name ?? '',
+      category: categoryLabel(l.category),
+      hours: num(l.hours),
+      billable: l.billable,
+      rate: l.hourly_rate,
+      amount: entryAmount(l),
+      currency,
+      timesheet: entryStatusLabel(l),
+      description: l.description ?? '',
+    }));
+
+  const exportCsv = () => {
+    downloadText(`timesheet-${ticketId.substring(0, 8)}.csv`, buildCsv(exportRows()));
+    toast.success('CSV exported');
+  };
+
+  const exportPdf = async () => {
+    try {
+      await downloadTimesheetPdf({
+        ticketTitle,
+        ticketId,
+        currency,
+        vatPercent,
+        rates: approvedRates.map(r => {
+          const when = r.decided_at ? ` on ${format(new Date(r.decided_at), 'MMM d, yyyy')}` : '';
+          return `${byConsultant[r.consultant_id] ?? 'Consultant'}: ${rateText(r)} (approved${r.source === 'proposal' ? ' with the accepted bid' : ' by the client'}${when})`;
+        }),
+        rows: exportRows(),
+        totals,
+        timesheets: submissions.map(s => {
+          const who = byUser[s.submitted_by] ?? 'Consultant';
+          const approved = s.status === 'signed' && s.signed_by_name ? ` - approved by ${s.signed_by_name}${s.signed_at ? ` on ${format(new Date(s.signed_at), 'MMM d, yyyy')}` : ''}` : '';
+          return `${statusInfo(s.status).label} - ${who} - ${formatHours(s.billable_hours ?? s.total_hours)} billable, ${formatMoney(s.total_cost, s.cost_currency)} without VAT${approved}`;
+        }),
+      });
+      toast.success('PDF downloaded');
+    } catch {
+      toast.error('The PDF could not be made.');
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteEntry) return;
+    setDeleting(true);
+    const { data, error } = await supabase.from('ticket_work_logs').delete().eq('id', deleteEntry.id).select('id');
+    setDeleting(false);
+    if (error || !data || data.length === 0) {
+      toast.error(error?.message || 'The entry could not be deleted.');
+      return;
+    }
+    toast.success('Entry deleted');
+    setDeleteEntry(null);
+    refresh();
+  };
+
+  const canEdit = (l: WorkLogRow) => isConsultantView && l.consultant_id === myConsultantId && !isLocked(l, submissions);
+
+  const renderEntry = (l: WorkLogRow & { consultant_name?: string }) => {
+    const amount = entryAmount(l);
+    const locked = isLocked(l, submissions);
+    const amountText = !l.billable
+      ? 'Not billable: 0.00'
+      : l.hourly_rate == null
+        ? 'Rate pending approval'
+        : `${formatMoney(l.hourly_rate, currency)} per hour x ${formatDuration(l.hours)} = ${formatMoney(amount, currency)}`;
+    return (
+      <Card key={l.id} className="rounded-xl border-border/30" data-testid="timesheet-entry">
+        <CardContent className="p-3">
+          <div className="flex items-start gap-3">
+            <div className="w-16 shrink-0 rounded-lg bg-primary/10 px-1 py-1.5 text-center text-[11px] font-bold text-primary">{formatDuration(l.hours)}</div>
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold text-foreground">{l.consultant_name}</span>
+                <Badge variant="secondary" className={`text-[10px] ${categoryColors[l.category] || ''}`}>{categoryLabel(l.category)}</Badge>
+                {l.billable ? (
+                  <Badge variant="secondary" className="bg-green-100 text-[10px] text-green-700">Billable</Badge>
+                ) : (
+                  <Badge variant="outline" className="text-[10px]">Not billable</Badge>
+                )}
+                {locked && <Lock className="h-3 w-3 text-muted-foreground" aria-label="Locked: part of a timesheet that was sent to the client or approved" />}
+                {canEdit(l) && (
+                  <span className="ms-auto flex gap-1">
+                    <button type="button" onClick={() => setEditEntry(l)} className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Change this entry">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button type="button" onClick={() => setDeleteEntry(l)} className="text-muted-foreground transition-colors hover:text-destructive" aria-label="Delete this entry">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {format(parseDay(l.work_date), 'MMM d, yyyy')} - {amountText}
+              </p>
+              {l.description && <p className="whitespace-pre-wrap text-xs text-foreground">{l.description}</p>}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const orderedSubmissions = [...submissions].sort((a, b) => b.created_at.localeCompare(a.created_at));
+
   return (
     <div className="space-y-4">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-3">
-        <SummaryCard icon={Clock} label="Total Hours" value={`${totalHours.toFixed(1)}h`} sub={`${billableHours.toFixed(1)}h billable`} />
-        <SummaryCard icon={DollarSign} label="Total Cost" value={`${totalCost.toLocaleString()}`} sub={`${logs.length} entries`} />
-        <SummaryCard icon={User} label="Consultants" value={String(Object.keys(byConsultant).length)} sub={`${Object.keys(byCategory).length} categories`} />
-      </div>
+      <TimesheetRateCard
+        ticketId={ticketId}
+        currency={currency}
+        rates={rates}
+        consultantIds={consultantIds}
+        names={byConsultant}
+        myConsultantId={myConsultantId}
+        suggestedRate={viewer?.profileRate ?? null}
+        canApprove={canApprove}
+        onChanged={refresh}
+      />
 
-      {/* Actions */}
-      <div className="flex flex-wrap gap-2">
-        {!isReadOnly && (
-          <Button size="sm" className="gap-1.5 gradient-primary border-0 text-xs h-8" onClick={() => setAddOpen(true)}>
-            <Plus className="w-3.5 h-3.5" /> Add Entry
+      <TimesheetSummary logs={namedLogs} submissions={submissions} vatPercent={vatPercent} currency={currency} rateLabel={rateLabel} plan={plan} />
+
+      <div className="flex flex-wrap items-center gap-2">
+        {isConsultantView && (
+          <Button size="sm" className="h-8 gap-1.5 border-0 text-xs gradient-primary" onClick={() => setAddOpen(true)}>
+            <Plus className="h-3.5 w-3.5" /> Add activity
           </Button>
         )}
-        <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={generatePDF}>
-          <Download className="w-3.5 h-3.5" /> Export PDF
+        {isConsultantView && (
+          <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => setSubmitOpen(true)} disabled={!!blockReason} title={blockReason ?? undefined}>
+            <Send className="h-3.5 w-3.5" /> {resubmit ? 'Submit again' : 'Submit for approval'}
+          </Button>
+        )}
+        <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => void exportPdf()}>
+          <Download className="h-3.5 w-3.5" /> Export PDF
         </Button>
-        <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={exportCSV}>
-          <FileText className="w-3.5 h-3.5" /> Export CSV
-        </Button>
-        <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={() => setSendOpen(true)}>
-          <FileSignature className="w-3.5 h-3.5" /> Send for Signature
+        <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={exportCsv}>
+          <FileText className="h-3.5 w-3.5" /> Export CSV
         </Button>
       </div>
+      {isConsultantView && blockReason && <p className="text-xs text-muted-foreground">{blockReason}</p>}
 
-      {/* Tabs: Entries / By Consultant / By Category / Submissions */}
-      <Tabs defaultValue="entries" className="w-full">
-        <TabsList className="w-full grid grid-cols-4 h-9">
-          <TabsTrigger value="entries" className="text-xs">Entries</TabsTrigger>
-          <TabsTrigger value="consultants" className="text-xs">By Consultant</TabsTrigger>
-          <TabsTrigger value="categories" className="text-xs">By Category</TabsTrigger>
-          <TabsTrigger value="submissions" className="text-xs">Submissions</TabsTrigger>
+      <Tabs value={tab} onValueChange={value => { setTab(value); setTabChosen(true); }} className="w-full">
+        <TabsList className="grid h-9 w-full grid-cols-3">
+          <TabsTrigger value="entries" className="text-xs">Activities</TabsTrigger>
+          <TabsTrigger value="timesheets" className="text-xs">
+            Timesheets
+            {waitingForClient && <span className="ms-1 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" role="img" aria-label="A timesheet waits for approval" />}
+          </TabsTrigger>
+          <TabsTrigger value="categories" className="text-xs">By category</TabsTrigger>
         </TabsList>
 
-        {/* Entries Tab */}
-        <TabsContent value="entries" className="mt-3">
-          {logs.length === 0 ? (
+        <TabsContent value="entries" className="mt-3 space-y-4">
+          {namedLogs.length === 0 && (
             <Card className="rounded-2xl border-border/50">
               <CardContent className="py-8 text-center">
-                <Clock className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                <FileText className="mx-auto mb-2 h-8 w-8 text-muted-foreground/30" />
                 <p className="text-sm text-muted-foreground">No work logged yet</p>
               </CardContent>
             </Card>
-          ) : (
+          )}
+          {openLogs.length > 0 && (
             <div className="space-y-2">
-              {logs.map(log => (
-                <Card key={log.id} className="rounded-xl border-border/30 hover:shadow-sm transition-shadow">
-                  <CardContent className="p-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-[10px] font-bold text-primary">
-                        {log.hours}h
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                          <span className="text-sm font-semibold text-foreground">{log.consultant_name}</span>
-                          <Badge variant="secondary" className={`text-[10px] ${categoryColors[log.category] || ''}`}>
-                            {log.category}
-                          </Badge>
-                          {log.billable && (
-                            <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">
-                              Billable
-                            </Badge>
-                          )}
-                          {!isReadOnly && (
-                            <button onClick={() => handleDelete(log.id)} className="ms-auto text-muted-foreground hover:text-destructive transition-colors">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(log.work_date), 'MMM d, yyyy')}
-                          {log.hourly_rate > 0 && ` · ${log.hourly_rate}/hr · ${(log.total_cost || 0).toFixed(2)} total`}
-                        </p>
-                        {log.description && (
-                          <p className="text-xs text-muted-foreground mt-1">{log.description}</p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              <p className="text-xs font-semibold text-muted-foreground">{isReadOnly ? 'Not sent to you yet' : 'Not submitted yet'}</p>
+              {openLogs.map(renderEntry)}
             </div>
           )}
-        </TabsContent>
-
-        {/* By Consultant Tab */}
-        <TabsContent value="consultants" className="mt-3">
-          <div className="space-y-2">
-            {Object.entries(byConsultant).map(([name, data]) => (
-              <Card key={name} className="rounded-xl border-border/30">
-                <CardContent className="p-3 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <User className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{name}</p>
-                    <p className="text-xs text-muted-foreground">{data.entries} entries</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-sm font-bold text-foreground">{data.hours.toFixed(1)}h</p>
-                    <p className="text-[10px] text-muted-foreground">{data.cost.toFixed(2)}</p>
-                  </div>
-                </CardContent>
-              </Card>
+          {orderedSubmissions
+            .filter(s => (bySubmission[s.id]?.length ?? 0) > 0)
+            .map(s => (
+              <div key={s.id} className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge status={s.status} />
+                  <span className="text-xs text-muted-foreground">
+                    {byUser[s.submitted_by] || 'Consultant'} - {formatHours(s.total_hours)} - {formatMoney(s.total_cost, s.cost_currency)} without VAT
+                  </span>
+                </div>
+                {bySubmission[s.id].map(renderEntry)}
+              </div>
             ))}
-            {Object.keys(byConsultant).length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">No data</p>
-            )}
-          </div>
         </TabsContent>
 
-        {/* By Category Tab */}
+        <TabsContent value="timesheets" className="mt-3">
+          <TimesheetSubmissions
+            submissions={orderedSubmissions}
+            comments={comments}
+            invoices={invoices}
+            entryCounts={entryCounts}
+            names={byUser}
+            vatPercent={vatPercent}
+            canApprove={canApprove}
+            isConsultantView={isConsultantView}
+            viewerUserId={viewer?.userId ?? null}
+            planOverBy={planOverBy}
+            onChanged={refresh}
+            onResubmit={() => setSubmitOpen(true)}
+          />
+        </TabsContent>
+
         <TabsContent value="categories" className="mt-3">
           <div className="space-y-2">
-            {Object.entries(byCategory).map(([cat, data]) => {
-              const pct = totalHours > 0 ? (data.hours / totalHours * 100) : 0;
+            {Object.entries(byCategory).map(([category, data]) => {
+              const percent = totals.totalHours > 0 ? (data.hours / totals.totalHours) * 100 : 0;
               return (
-                <Card key={cat} className="rounded-xl border-border/30">
+                <Card key={category} className="rounded-xl border-border/30">
                   <CardContent className="p-3">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Badge variant="secondary" className={`text-[10px] capitalize ${categoryColors[cat] || ''}`}>
-                        {cat}
-                      </Badge>
-                      <span className="text-sm font-semibold text-foreground ms-auto">{data.hours.toFixed(1)}h</span>
-                      <span className="text-[10px] text-muted-foreground">{pct.toFixed(0)}%</span>
+                    <div className="mb-2 flex items-center gap-3">
+                      <Badge variant="secondary" className={`text-[10px] ${categoryColors[category] || ''}`}>{categoryLabel(category)}</Badge>
+                      <span className="ms-auto text-sm font-semibold text-foreground">{formatHours(data.hours)}</span>
+                      <span className="text-[10px] text-muted-foreground">{formatMoney(data.amount, currency)}</span>
+                      <span className="text-[10px] text-muted-foreground">{percent.toFixed(0)}%</span>
                     </div>
-                    <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary/60 rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
+                    <div className="h-1.5 overflow-hidden rounded-full bg-muted/30">
+                      <div className="h-full rounded-full bg-primary/60 transition-all" style={{ width: `${percent}%` }} />
                     </div>
                   </CardContent>
                 </Card>
               );
             })}
-            {Object.keys(byCategory).length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">No data</p>
-            )}
-          </div>
-        </TabsContent>
-
-        {/* Submissions Tab */}
-        <TabsContent value="submissions" className="mt-3">
-          <div className="space-y-2">
-            {submissions.map((sub: any) => (
-              <Card key={sub.id} className="rounded-xl border-border/30">
-                <CardContent className="p-3 flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                    sub.status === 'signed' ? 'bg-green-100' :
-                    sub.status === 'submitted' ? 'bg-amber-100' : 'bg-muted/30'
-                  }`}>
-                    {sub.status === 'signed' ? <CheckCircle2 className="w-4 h-4 text-green-700" /> :
-                     sub.status === 'submitted' ? <Send className="w-4 h-4 text-amber-700" /> :
-                     <FileText className="w-4 h-4 text-muted-foreground" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-[10px] capitalize">{sub.status === 'signed' ? 'approved' : sub.status}</Badge>
-                      {sub.signature_method && (
-                        <Badge variant="outline" className="text-[10px] capitalize">{sub.signature_method.replace(/_/g, ' ')}</Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {format(new Date(sub.created_at), 'MMM d, yyyy h:mm a')}
-                      {sub.sent_to_email && ` · ${sub.sent_to_email}`}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {sub.total_hours?.toFixed(1)}h · {sub.total_cost?.toFixed(2)} {sub.cost_currency}
-                    </p>
-                    {sub.status === 'signed' && sub.signed_by_name && (
-                      <p className="text-xs text-green-700">
-                        Approved by {sub.signed_by_name}{sub.signed_at ? ` on ${format(new Date(sub.signed_at), 'MMM d, yyyy')}` : ''}
-                      </p>
-                    )}
-                    {sub.status === 'draft' && typeof sub.notes === 'string' && sub.notes.includes('Sent back by the client') && (
-                      <p className="text-xs text-amber-700">
-                        {sub.notes.split('\n').filter((l: string) => l.startsWith('Sent back by the client')).pop()}
-                      </p>
-                    )}
-                  </div>
-                  {canApprove && sub.status === 'submitted' && (
-                    <div className="flex gap-1 shrink-0">
-                      <Button size="sm" className="h-7 text-xs gradient-primary border-0" disabled={responding} onClick={() => respond(sub.id, true)}>
-                        Approve
-                      </Button>
-                      <Button size="sm" variant="outline" className="h-7 text-xs" disabled={responding} onClick={() => setRespondFor(sub.id)}>
-                        Send back
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-            {submissions.length === 0 && (
-              <Card className="rounded-2xl border-border/50">
-                <CardContent className="py-8 text-center">
-                  <FileSignature className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No submissions yet</p>
-                </CardContent>
-              </Card>
-            )}
+            {Object.keys(byCategory).length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">No data</p>}
           </div>
         </TabsContent>
       </Tabs>
 
-<Dialog open={!!respondFor} onOpenChange={(o) => { if (!o) { setRespondFor(null); setNote(''); } }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Send the timesheet back</DialogTitle></DialogHeader>
-          <div className="space-y-2 py-2">
-            <Label className="text-xs">Note for the consultant (optional)</Label>
-            <Textarea value={note} onChange={e => setNote(e.target.value)} rows={3} maxLength={500} placeholder="What should be corrected..." />
-          </div>
+      <WorkLogDialog ticketId={ticketId} consultantId={myConsultantId} open={addOpen} onOpenChange={setAddOpen} rateLabel={rateLabel} onSaved={refresh} />
+      <WorkLogDialog ticketId={ticketId} consultantId={myConsultantId} open={!!editEntry} onOpenChange={open => { if (!open) setEditEntry(null); }} entry={editEntry} rateLabel={rateLabel} onSaved={refresh} />
+      <SubmitTimesheetDialog
+        open={submitOpen}
+        onOpenChange={setSubmitOpen}
+        ticketId={ticketId}
+        entries={myOpenEntries}
+        vatPercent={vatPercent}
+        currency={currency}
+        blockReason={blockReason}
+        resubmit={resubmit}
+        onSubmitted={() => { refresh(); setTab('timesheets'); }}
+      />
+      <Dialog open={!!deleteEntry} onOpenChange={open => { if (!deleting && !open) setDeleteEntry(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete this entry?</DialogTitle>
+            <DialogDescription>
+              {deleteEntry ? `${formatDuration(deleteEntry.hours)} on ${format(parseDay(deleteEntry.work_date), 'MMM d, yyyy')}: ` : ''}
+              {deleteEntry?.description ?? ''}
+            </DialogDescription>
+          </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setRespondFor(null); setNote(''); }}>Cancel</Button>
-            <Button disabled={responding} onClick={() => respondFor && respond(respondFor, false, note)}>Send back</Button>
+            <Button variant="ghost" onClick={() => setDeleteEntry(null)} disabled={deleting}>Cancel</Button>
+            <Button variant="destructive" onClick={() => void confirmDelete()} disabled={deleting}>Delete the entry</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Add Entry Dialog */}
-      <AddWorkLogDialog ticketId={ticketId} open={addOpen} onOpenChange={setAddOpen} />
-
-      {/* Send for Signature Dialog */}
-      <SendForSignatureDialog
-        open={sendOpen}
-        onOpenChange={setSendOpen}
-        onSend={handleSendForSignature}
-        sending={sending}
-        totalHours={totalHours}
-        totalCost={totalCost}
-        entryCount={logs.length}
-      />
     </div>
-  );
-}
-
-/* ─── Summary Card ─── */
-function SummaryCard({ icon: Icon, label, value, sub }: { icon: typeof Clock; label: string; value: string; sub: string }) {
-  return (
-    <Card className="rounded-xl border-border/50">
-      <CardContent className="p-3 text-center">
-        <Icon className="w-4 h-4 text-primary mx-auto mb-1" />
-        <p className="text-lg font-bold text-foreground">{value}</p>
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
-        <p className="text-[10px] text-muted-foreground">{sub}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-/* ─── Add Work Log Dialog ─── */
-function AddWorkLogDialog({ ticketId, open, onOpenChange }: { ticketId: string; open: boolean; onOpenChange: (v: boolean) => void }) {
-  const queryClient = useQueryClient();
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    work_date: format(new Date(), 'yyyy-MM-dd'),
-    hours: '1',
-    description: '',
-    category: 'support',
-    billable: true,
-    hourly_rate: '0',
-  });
-
-  const handleSave = async () => {
-    const hours = parseFloat(form.hours);
-    if (!hours || hours <= 0) { toast.error('Hours must be greater than 0'); return; }
-    setSaving(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Get consultant id
-      const { data: consultant } = await supabase
-        .from('consultants')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!consultant) {
-        toast.error('Only consultants can log work');
-        setSaving(false);
-        return;
-      }
-
-      const { error } = await supabase.from('ticket_work_logs').insert({
-        ticket_id: ticketId,
-        consultant_id: consultant.id,
-        work_date: form.work_date,
-        hours,
-        description: form.description.trim() || null,
-        category: form.category,
-        billable: form.billable,
-        hourly_rate: parseFloat(form.hourly_rate) || 0,
-      } as any);
-      if (error) throw error;
-
-      toast.success('Work entry logged');
-      queryClient.invalidateQueries({ queryKey: ['ticket-work-logs', ticketId] });
-      onOpenChange(false);
-      setForm({ work_date: format(new Date(), 'yyyy-MM-dd'), hours: '1', description: '', category: 'support', billable: true, hourly_rate: '0' });
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to log work');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /> Log Work Entry</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 py-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Date</Label>
-              <Input type="date" value={form.work_date} onChange={e => setForm(f => ({ ...f, work_date: e.target.value }))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Hours</Label>
-              <Input type="number" step="0.25" min="0.25" max="24" value={form.hours} onChange={e => setForm(f => ({ ...f, hours: e.target.value }))} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Category</Label>
-              <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map(c => (
-                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Hourly Rate</Label>
-              <Input type="number" min="0" value={form.hourly_rate} onChange={e => setForm(f => ({ ...f, hourly_rate: e.target.value }))} />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Description</Label>
-            <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} placeholder="What was done..." />
-          </div>
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input type="checkbox" checked={form.billable} onChange={e => setForm(f => ({ ...f, billable: e.target.checked }))} className="rounded" />
-            Billable hours
-          </label>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving} className="gradient-primary border-0">
-            {saving && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
-            Log Entry
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/* ─── Send for Signature Dialog ─── */
-function SendForSignatureDialog({
-  open, onOpenChange, onSend, sending, totalHours, totalCost, entryCount,
-}: {
-  open: boolean; onOpenChange: (v: boolean) => void;
-  onSend: (method: string, email?: string) => void;
-  sending: boolean; totalHours: number; totalCost: number; entryCount: number;
-}) {
-  const [method, setMethod] = useState('email');
-  const [email, setEmail] = useState('');
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><FileSignature className="w-4 h-4 text-primary" /> Send Timesheet for Signature</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 py-2">
-          {/* Summary */}
-          <Card className="rounded-xl border-border/50">
-            <CardContent className="p-3 grid grid-cols-3 gap-3 text-center">
-              <div>
-                <p className="text-lg font-bold text-foreground">{totalHours.toFixed(1)}h</p>
-                <p className="text-[10px] text-muted-foreground">Total Hours</p>
-              </div>
-              <div>
-                <p className="text-lg font-bold text-foreground">{totalCost.toFixed(2)}</p>
-                <p className="text-[10px] text-muted-foreground">Total Cost</p>
-              </div>
-              <div>
-                <p className="text-lg font-bold text-foreground">{entryCount}</p>
-                <p className="text-[10px] text-muted-foreground">Entries</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Method */}
-          <div className="space-y-1.5">
-            <Label className="text-xs">Signature Method</Label>
-            <Select value={method} onValueChange={setMethod}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="email">
-                  <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" /> Record as e-mailed</div>
-                </SelectItem>
-                <SelectItem value="docusign">
-                  <div className="flex items-center gap-2"><FileSignature className="w-3.5 h-3.5" /> DocuSign</div>
-                </SelectItem>
-                <SelectItem value="adobe_sign">
-                  <div className="flex items-center gap-2"><FileSignature className="w-3.5 h-3.5" /> Adobe Sign</div>
-                </SelectItem>
-                <SelectItem value="manual">
-                  <div className="flex items-center gap-2"><FileText className="w-3.5 h-3.5" /> Manual Signature</div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {method === 'email' && (
-            <div className="space-y-1.5">
-              <Label className="text-xs">Recipient Email</Label>
-              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="client@company.com" />
-            </div>
-          )}
-
-          {(method === 'docusign' || method === 'adobe_sign') && (
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-700">
-              <p className="font-medium mb-1">Integration Setup Required</p>
-              <p>To use {method === 'docusign' ? 'DocuSign' : 'Adobe Sign'}, you'll need to configure the integration in Settings. The timesheet will be saved as a draft and can be sent once the integration is connected.</p>
-            </div>
-          )}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button
-            onClick={() => onSend(method, method === 'email' ? email : undefined)}
-            disabled={sending || (method === 'email' && !email)}
-            className="gradient-primary border-0 gap-1.5"
-          >
-            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            {method === 'email' ? 'Record' : method === 'manual' ? 'Submit' : 'Prepare'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
