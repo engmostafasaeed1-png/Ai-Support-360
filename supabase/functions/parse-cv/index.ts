@@ -4,8 +4,38 @@ import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit } from "../_shared/security.ts";
 
 const BodySchema = z.object({
-  cv_text: z.string().trim().min(20).max(100_000),
-});
+  cv_text: z.string().trim().min(20).max(100_000).optional(),
+  file_base64: z.string().max(14_000_000).optional(),
+  mime_type: z.enum([
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+  ]).optional(),
+  source_path: z.string().max(300).optional(),
+  save: z.boolean().optional(),
+}).refine((b) => !!b.cv_text || (!!b.file_base64 && !!b.mime_type), { message: "cv_text or file required" });
+
+function b64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+async function docxText(bytes: Uint8Array): Promise<string> {
+  const JSZip = (await import("https://esm.sh/jszip@3.10.1")).default;
+  const zip = await JSZip.loadAsync(bytes);
+  const xml = await zip.file("word/document.xml")?.async("string");
+  if (!xml) return "";
+  return xml
+    .replace(/<\/w:p>/g, "\n")
+    .replace(/<w:tab\/>/g, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
@@ -44,7 +74,19 @@ serve(async (req) => {
         status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
-    const { cv_text } = parsed.data;
+    const body = parsed.data;
+    let cv_text = body.cv_text ?? "";
+    let pdfDataUrl: string | null = null;
+    if (!cv_text && body.file_base64) {
+      if (body.mime_type === "application/pdf") pdfDataUrl = `data:application/pdf;base64,${body.file_base64}`;
+      else if (body.mime_type === "text/plain") cv_text = new TextDecoder().decode(b64ToBytes(body.file_base64));
+      else cv_text = await docxText(b64ToBytes(body.file_base64));
+      if (!pdfDataUrl && cv_text.trim().length < 20) {
+        return new Response(JSON.stringify({ error: "Could not read text from this file." }), {
+          status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        });
+      }
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
@@ -78,11 +120,13 @@ serve(async (req) => {
   ],
   "projects": [
     { "project_name": "", "client_industry": "", "sap_modules": ["SAP FI/CO"], "description": "", "duration_months": null, "role": "" }
-  ]
+  ],
+  "matching_summary": "A dense 120-200 word third-person summary of the consultant's expertise for matching to support tickets: SAP modules, sub-areas, processes, industries, typical problems solved, versions (ECC/S/4HANA), integrations. Use ONLY facts stated in the CV, never invent experience. No personal contact details, no employer names.",
+  "expertise_keywords": ["up to 40 short keywords: modules, t-codes, processes, technologies"],
+  "plain_text": ${pdfDataUrl ? '"The CV plain text with contact details (email, phone, address) removed, max 8000 characters"' : "null"}
 }
-
-CV Text:
-${cv_text.substring(0, 15000)}`;
+${pdfDataUrl ? "The CV is attached as a PDF." : `CV Text:
+${cv_text.substring(0, 15000)}`}`;
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -94,7 +138,12 @@ ${cv_text.substring(0, 15000)}`;
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+          {
+            role: "user",
+            content: pdfDataUrl
+              ? [{ type: "text", text: userPrompt }, { type: "file", file: { filename: "cv.pdf", file_data: pdfDataUrl } }]
+              : userPrompt,
+          },
         ],
       }),
     });
@@ -126,6 +175,26 @@ ${cv_text.substring(0, 15000)}`;
       console.error("Failed to parse AI response:", rawContent);
       throw new Error("Failed to parse CV data");
     }
+
+    if (body.save) {
+      const stripContacts = (t: string) => t
+        .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "[email]")
+        .replace(/\+?\d[\d\s().-]{7,}\d/g, "[phone]");
+      const text = stripContacts(String(pdfDataUrl ? aiParsed.plain_text ?? "" : cv_text)).slice(0, 20000) || null;
+      const keywords = Array.isArray(aiParsed.expertise_keywords)
+        ? aiParsed.expertise_keywords.map((k: unknown) => String(k).slice(0, 60)).filter(Boolean).slice(0, 40)
+        : [];
+      const { error: saveErr } = await adminClient().from("consultant_cv_profiles").upsert({
+        consultant_id: authUser.id,
+        cv_text: text,
+        matching_summary: aiParsed.matching_summary ? stripContacts(String(aiParsed.matching_summary)).slice(0, 2000) : null,
+        expertise_keywords: keywords,
+        source_path: body.source_path ?? null,
+        parsed_at: new Date().toISOString(),
+      });
+      if (saveErr) console.error("CV profile save failed:", saveErr.message);
+    }
+    delete aiParsed.plain_text;
 
     return new Response(JSON.stringify({ profile: aiParsed }), {
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },

@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Briefcase, FileText, Loader2, Pencil, Plus, Trash2, Upload, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import CvImportDialog, { type ParsedCv } from './CvImportDialog';
 
 type Job = {
   id?: string;
@@ -39,6 +40,31 @@ export default function ExperienceCvCard() {
   const [editing, setEditing] = useState<Job | null>(null);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [reading, setReading] = useState(false);
+  const [parsed, setParsed] = useState<ParsedCv | null>(null);
+
+  const readCv = async (file: File, path: string) => {
+    if (file.type === 'application/msword') {
+      toast.info('CV saved. To fill your profile automatically, upload it as PDF or .docx.');
+      return;
+    }
+    setReading(true);
+    try {
+      const buf = new Uint8Array(await file.arrayBuffer());
+      let bin = '';
+      for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+      const { data, error } = await supabase.functions.invoke('parse-cv', {
+        body: { file_base64: btoa(bin), mime_type: file.type, source_path: path, save: true },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(typeof data.error === 'string' ? data.error : 'Could not read CV');
+      setParsed(data.profile);
+    } catch (e: any) {
+      toast.error(e.message || 'Could not read your CV');
+    } finally {
+      setReading(false);
+    }
+  };
 
   const load = async (uid: string) => {
     const [{ data: wh }, { data: c }] = await Promise.all([
@@ -75,7 +101,8 @@ export default function ExperienceCvCard() {
       }
       if (cvPath && !cvPath.startsWith('http')) await supabase.storage.from(BUCKET).remove([cvPath]);
       setCvPath(path);
-      toast.success('CV uploaded');
+      toast.success('CV uploaded — reading it now…');
+      readCv(file, path);
     } catch (e: any) {
       toast.error(e.message || 'Could not upload CV');
     } finally {
@@ -135,8 +162,9 @@ export default function ExperienceCvCard() {
           <FileText className="h-5 w-5 text-primary" />
           <div className="flex-1 min-w-[160px]">
             <p className="text-sm font-medium text-foreground">Your CV</p>
-            <p className="text-xs text-muted-foreground">{cvPath ? 'CV attached — visible to the platform team' : 'PDF or Word, up to 10 MB'}</p>
+            <p className="text-xs text-muted-foreground">{cvPath ? 'CV attached — visible to the platform team' : 'PDF or Word, up to 10 MB — we read it and fill your profile for you'}</p>
           </div>
+          {reading && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Reading CV…</span>}
           {cvPath && <Button variant="outline" size="sm" onClick={viewCv}><Download className="h-4 w-4 me-1" /> View</Button>}
           <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => e.target.files?.[0] && uploadCv(e.target.files[0])} />
           <Button size="sm" variant={cvPath ? 'outline' : 'default'} disabled={uploading || !userId} onClick={() => fileRef.current?.click()}>
@@ -172,6 +200,10 @@ export default function ExperienceCvCard() {
           </ul>
         )}
       </CardContent>
+
+      {userId && (
+        <CvImportDialog open={!!parsed} onOpenChange={(o) => !o && setParsed(null)} userId={userId} data={parsed} onApplied={() => load(userId)} />
+      )}
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-lg">
