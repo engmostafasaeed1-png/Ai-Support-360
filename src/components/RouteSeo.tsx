@@ -2,12 +2,12 @@ import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 
 const BASE_URL = 'https://www.aisapsupportnow.com';
-const BRAND = 'AI SAP Support Now';
+const BRAND = 'AI Support Now';
 
 type Meta = { title: string; description: string; noindex?: boolean };
 
 const DEFAULT: Meta = {
-  title: `Smart SAP Support Portal — ${BRAND}`,
+  title: `AI Support Now — Expert On-Demand Support`,
   description:
     'AI-powered enterprise SAP support platform. Connect with verified SAP experts for S/4HANA, BTP, SuccessFactors, and 20+ modules. Bilingual Arabic & English.',
 };
@@ -15,7 +15,7 @@ const DEFAULT: Meta = {
 const ROUTES: Record<string, Meta> = {
   '/': DEFAULT,
   '/pricing': {
-    title: `SAP Support Plans & Pricing — ${BRAND}`,
+    title: `Support Plans & Pricing — ${BRAND}`,
     description:
       'Compare SAP support plans: pay-per-session, monthly retainers and enterprise coverage with verified S/4HANA, BTP and SuccessFactors experts.',
   },
@@ -57,7 +57,7 @@ const ROUTES: Record<string, Meta> = {
 function resolve(pathname: string): Meta {
   if (ROUTES[pathname]) return ROUTES[pathname];
   if (pathname.startsWith('/join/'))
-    return { title: `Join your SAP support session — ${BRAND}`, description: DEFAULT.description, noindex: true };
+    return { title: `Join your support session — ${BRAND}`, description: DEFAULT.description, noindex: true };
   if (pathname.startsWith('/demo/confirmation/'))
     return { title: `Demo request status — ${BRAND}`, description: DEFAULT.description, noindex: true };
   return { ...DEFAULT, noindex: true };

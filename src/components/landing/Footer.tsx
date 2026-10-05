@@ -43,13 +43,13 @@ export default function Footer() {
               <span className="inline-flex items-center justify-center bg-white rounded-2xl p-1.5 ring-1 ring-border/60 shadow-md shrink-0">
                 <img
                   src={logo}
-                  alt="AI SAP Support Now"
+                  alt="AI Support Now"
                   width={56}
                   height={56}
                   className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-contain"
                 />
               </span>
-              <span className="font-black text-lg sm:text-xl text-foreground tracking-tight">AI SAP Support Now</span>
+              <span className="font-black text-lg sm:text-xl text-foreground tracking-tight">AI Support Now</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
               {t('footer.description')}
@@ -80,7 +80,7 @@ export default function Footer() {
 
         <div className="mt-14 pt-6 border-t border-border/30 text-center">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} AI SAP Support Now. {t('footer.rights')}
+            © {new Date().getFullYear()} AI Support Now. {t('footer.rights')}
           </p>
         </div>
       </div>

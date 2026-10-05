@@ -26,8 +26,8 @@ const SECTIONS: SectionConfig[] = [
     label: 'Hero Section',
     icon: Layout,
     fields: [
-      { name: 'badge', label: 'Badge Text', type: 'text', placeholder: 'AI-Powered SAP Support Platform' },
-      { name: 'title1', label: 'Title Line 1', type: 'text', placeholder: 'Smart SAP Support' },
+      { name: 'badge', label: 'Badge Text', type: 'text', placeholder: 'AI-Powered Support Platform' },
+      { name: 'title1', label: 'Title Line 1', type: 'text', placeholder: 'AI Support Now' },
       { name: 'title2', label: 'Title Line 2', type: 'text', placeholder: 'For Enterprise Excellence' },
       { name: 'subtitle', label: 'Subtitle', type: 'textarea', placeholder: 'Connect with verified SAP experts...' },
       { name: 'cta_primary', label: 'Primary CTA Text', type: 'text', placeholder: 'Request Support' },

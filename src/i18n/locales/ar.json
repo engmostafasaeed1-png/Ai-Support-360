@@ -10,8 +10,8 @@
     "language": "English"
   },
   "hero": {
-    "badge": "منصة دعم SAP المدعومة بالذكاء الاصطناعي",
-    "title1": "دعم SAP الذكي",
+    "badge": "منصة الدعم المدعومة بالذكاء الاصطناعي",
+    "title1": "الدعم الذكي",
     "title2": "للتميز المؤسسي",
     "subtitle": "تواصل مع خبراء SAP المعتمدين فوراً. مطابقة ذكية، تعاون فوري، ودعم مؤسسي لـ S/4HANA و BTP و SuccessFactors وأكثر من 20 وحدة SAP.",
     "cta_support": "طلب دعم",
@@ -23,7 +23,7 @@
     "stat_response": "متوسط وقت الاستجابة"
   },
   "categories": {
-    "title": "فئات دعم SAP",
+    "title": "فئات الدعم",
     "subtitle": "تغطية شاملة عبر منظومة SAP بالكامل",
     "s4hana": "SAP S/4HANA",
     "mm": "SAP MM",
@@ -162,7 +162,7 @@
     "success": "شكراً! سنتواصل معك قريباً."
   },
   "footer": {
-    "description": "AI SAP Support Now — دعم SAP مؤسسي مدعوم بالذكاء الاصطناعي لمنطقة الخليج.",
+    "description": "AI Support Now — دعم مؤسسي من الجيل التالي مدعوم بالذكاء الاصطناعي لمنطقة الخليج.",
     "platform": "المنصة",
     "company": "الشركة",
     "support": "الدعم",
@@ -1064,14 +1064,14 @@
     "resend_error": "فشل في إعادة الإرسال. يرجى المحاولة مرة أخرى."
   },
   "chatbot": {
-    "title": "AI SAP Support Now",
-    "subtitle": "مساعد دعم SAP",
+    "title": "AI Support Now",
+    "subtitle": "مساعد الدعم",
     "history_title": "سجل المحادثات",
     "no_history": "لا توجد محادثات سابقة",
     "how_can_i_help": "كيف يمكنني مساعدتك في SAP؟",
     "description": "دعم SAP يعني المساعدة في وحدات SAP ERP (FI، CO، MM، SD، HR، Basis، إلخ) — الإعدادات، الأخطاء، النقل، الأداء، والتذاكر. صِف مشكلتك وسأقوم بفرزها أو البحث في قاعدة المعرفة أو فتح تذكرة لك.",
     "placeholder": "صِف مشكلتك في SAP...",
-    "powered_by": "مدعوم من AI SAP Support Now · قد تكون الإجابات غير دقيقة",
+    "powered_by": "مدعوم من AI Support Now · قد تكون الإجابات غير دقيقة",
     "create_ticket": "إنشاء تذكرة",
     "prompt_fi": "ترحيل SAP FI الخاص بي يفشل",
     "prompt_mm": "أمر شراء MM عالق",

@@ -10,8 +10,8 @@
     "language": "العربية"
   },
   "hero": {
-    "badge": "AI-Powered SAP Support Platform",
-    "title1": "Smart SAP Support",
+    "badge": "AI-Powered Support Platform",
+    "title1": "AI Support Now",
     "title2": "For Enterprise Excellence",
     "subtitle": "Connect with verified SAP experts instantly. AI-powered matching, real-time collaboration, and enterprise-grade support for S/4HANA, BTP, SuccessFactors, and 20+ SAP modules.",
     "cta_support": "Request Support",
@@ -23,7 +23,7 @@
     "stat_response": "Avg Response Time"
   },
   "categories": {
-    "title": "SAP Support Categories",
+    "title": "Support Categories",
     "subtitle": "Comprehensive coverage across the entire SAP ecosystem",
     "s4hana": "SAP S/4HANA",
     "mm": "SAP MM",
@@ -138,7 +138,7 @@
   },
   "faq": {
     "title": "Frequently Asked Questions",
-    "subtitle": "Everything you need to know about Smart SAP Support",
+    "subtitle": "Everything you need to know about AI Support Now",
     "q1": "How does the AI matching work?",
     "a1": "Our AI engine analyzes your support request, identifies the required SAP module expertise, and matches you with consultants based on their skills, ratings, availability, language preferences, and hourly rates.",
     "q2": "Are consultants verified?",
@@ -152,7 +152,7 @@
   },
   "contact": {
     "title": "Request a Demo",
-    "subtitle": "See how Smart SAP Support can transform your enterprise operations",
+    "subtitle": "See how AI Support Now can transform your enterprise operations",
     "name": "Full Name",
     "email": "Business Email",
     "company": "Company Name",
@@ -162,7 +162,7 @@
     "success": "Thank you! We'll be in touch shortly."
   },
   "footer": {
-    "description": "AI SAP Support Now — Next-generation enterprise SAP support powered by AI for the GCC region.",
+    "description": "AI Support Now — Next-generation enterprise support powered by AI for the GCC region.",
     "platform": "Platform",
     "company": "Company",
     "support": "Support",
@@ -1064,14 +1064,14 @@
     "resend_error": "Failed to resend. Please try again."
   },
   "chatbot": {
-    "title": "AI SAP Support Now",
-    "subtitle": "SAP Support Assistant",
+    "title": "AI Support Now",
+    "subtitle": "Support Assistant",
     "history_title": "Chat History",
     "no_history": "No previous chats",
     "how_can_i_help": "How can I help with SAP?",
     "description": "SAP support means help with SAP ERP modules (FI, CO, MM, SD, HR, Basis, etc.) — configuration, errors, transports, performance, and tickets. Describe your issue and I'll triage it, search the knowledge base, or open a ticket for you.",
     "placeholder": "Describe your SAP issue...",
-    "powered_by": "Powered by AI SAP Support Now · Responses may be inaccurate",
+    "powered_by": "Powered by AI Support Now · Responses may be inaccurate",
     "create_ticket": "Create Ticket",
     "prompt_fi": "My SAP FI posting is failing",
     "prompt_mm": "MM purchase order stuck",
