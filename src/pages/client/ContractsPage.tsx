@@ -10,6 +10,8 @@ import { FileSignature, Download, Eye, Calendar, User, ShieldCheck, ShieldOff } 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
+import ClientSignNDADialog from '@/components/client/ClientSignNDADialog';
+import { PenTool } from 'lucide-react';
 
 interface NDAContract {
   id: string;
@@ -18,6 +20,10 @@ interface NDAContract {
   signature_data: string;
   signed_at: string;
   nda_content: string;
+  client_signature_data: string | null;
+  client_signature_type: string | null;
+  client_signer_name: string | null;
+  client_signed_at: string | null;
   revoked_at: string | null;
 }
 
@@ -42,7 +48,7 @@ export default function ContractsPage() {
     // Get NDAs where the user is the client
     const { data, error } = await supabase
       .from('nda_agreements')
-      .select('id, consultant_id, signature_type, signature_data, signed_at, nda_content, revoked_at')
+      .select('id, consultant_id, signature_type, signature_data, signed_at, nda_content, revoked_at, client_signature_data, client_signature_type, client_signer_name, client_signed_at')
       .eq('client_id', user.id)
       .order('signed_at', { ascending: false });
 
@@ -72,6 +78,10 @@ export default function ContractsPage() {
       signed_at: n.signed_at,
       nda_content: n.nda_content,
       revoked_at: n.revoked_at,
+      client_signature_data: n.client_signature_data,
+      client_signature_type: n.client_signature_type,
+      client_signer_name: n.client_signer_name,
+      client_signed_at: n.client_signed_at,
     })));
     setLoading(false);
   };
@@ -111,6 +121,10 @@ export default function ContractsPage() {
         clientName,
         agreementId: contract.id,
         revokedAt: contract.revoked_at,
+        clientSignatureData: contract.client_signature_data,
+        clientSignatureType: contract.client_signature_type,
+        clientSignerName: contract.client_signer_name,
+        clientSignedAt: contract.client_signed_at,
       });
       toast({ title: 'Downloaded', description: 'NDA PDF downloaded successfully' });
     } catch {
@@ -205,6 +219,9 @@ export default function ContractsPage() {
                       <span className="text-[10px] text-muted-foreground capitalize">
                         {contract.signature_type === 'draw' ? 'Drawn signature' : 'Typed signature'}
                       </span>
+                      <Badge variant={contract.client_signed_at ? 'secondary' : 'outline'} className="text-[10px]">
+                        {contract.client_signed_at ? 'Signed by both' : 'Awaiting your signature'}
+                      </Badge>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -214,6 +231,11 @@ export default function ContractsPage() {
                     <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => downloadPDF(contract)}>
                       <Download className="w-3.5 h-3.5" /> PDF
                     </Button>
+                    {!contract.revoked_at && !contract.client_signed_at && (
+                      <Button size="sm" className="gap-1 text-xs" onClick={() => setSignContract(contract)}>
+                        <PenTool className="w-3.5 h-3.5" /> Sign
+                      </Button>
+                    )}
                     {!contract.revoked_at && (
                       <Button variant="outline" size="sm" className="gap-1 text-xs text-destructive" onClick={() => setRevokeContract(contract)}>
                         <ShieldOff className="w-3.5 h-3.5" /> Revoke
@@ -272,6 +294,18 @@ export default function ContractsPage() {
                 )}
               </div>
 
+              <div className="border rounded-lg p-4">
+                <p className="text-xs text-muted-foreground mb-2">Client signature</p>
+                {!viewContract.client_signed_at ? (
+                  <p className="text-sm text-muted-foreground">Not signed yet.</p>
+                ) : viewContract.client_signature_type === 'draw' ? (
+                  <img src={viewContract.client_signature_data || ''} alt="Client signature" className="max-h-24 border rounded" />
+                ) : (
+                  <p className="text-xl font-serif italic text-foreground">{viewContract.client_signature_data}</p>
+                )}
+                {viewContract.client_signer_name && <p className="text-xs text-muted-foreground mt-1">{viewContract.client_signer_name} · {new Date(viewContract.client_signed_at!).toLocaleString()}</p>}
+              </div>
+
               <div className="flex justify-end">
                 <Button variant="outline" className="gap-2" onClick={() => downloadPDF(viewContract)}>
                   <Download className="w-4 h-4" /> Download PDF
@@ -281,6 +315,18 @@ export default function ContractsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {signContract && (
+        <ClientSignNDADialog
+          open={!!signContract}
+          onOpenChange={(o) => { if (!o) setSignContract(null); }}
+          ndaId={signContract.id}
+          ndaContent={signContract.nda_content}
+          consultantName={signContract.consultant_name}
+          defaultName={signerDefault}
+          onSigned={fetchContracts}
+        />
+      )}
 
       {/* Revoke NDA confirmation */}
       <Dialog open={!!revokeContract} onOpenChange={(open) => { if (!open && !revoking) setRevokeContract(null); }}>

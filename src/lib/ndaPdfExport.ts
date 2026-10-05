@@ -9,6 +9,10 @@ interface NDAExportData {
   clientName?: string;
   agreementId?: string;
   revokedAt?: string | null;
+  clientSignatureData?: string | null;
+  clientSignatureType?: string | null;
+  clientSignerName?: string | null;
+  clientSignedAt?: string | null;
 }
 
 /**
@@ -77,6 +81,15 @@ export async function exportNDAAsPDF(data: NDAExportData) {
     doc.setTextColor(20, 30, 80);
     doc.text(data.signatureData, colL + 2, sigTop + 15);
   }
+  const cSigned = !!data.clientSignatureData;
+  if (cSigned && data.clientSignatureType === 'draw' && data.clientSignatureData!.startsWith('data:image')) {
+    try { doc.addImage(data.clientSignatureData!, 'PNG', colR, sigTop, 70, 21); } catch { /* ignore */ }
+  } else if (cSigned) {
+    doc.setFont('times', 'bolditalic');
+    doc.setFontSize(22);
+    doc.setTextColor(20, 30, 80);
+    doc.text(data.clientSignatureData!, colR + 2, sigTop + 15);
+  }
   y = sigTop + 24;
   doc.setDrawColor(120);
   doc.setLineWidth(0.3);
@@ -96,17 +109,19 @@ export async function exportNDAAsPDF(data: NDAExportData) {
     doc.text(right, colR + 18, y);
     y += 6;
   };
-  row('Name:', data.consultantName || '________________', data.clientName || '________________');
-  row('Role:', 'Consultant', 'Client');
-  row('Date:', signed ? format(new Date(data.signedAt), 'PPP p') : '________________', 'Accepted via platform');
-  row('Method:', signed ? (data.signatureType === 'draw' ? 'Hand-drawn e-signature' : 'Typed e-signature') : '—', '—');
+  row('Name:', data.consultantName || '________________', data.clientSignerName || data.clientName || '________________');
+  row('Role:', 'Consultant', data.clientName && data.clientSignerName ? `Client — ${data.clientName}` : 'Client');
+  row('Date:', signed ? format(new Date(data.signedAt), 'PPP p') : '________________',
+    cSigned && data.clientSignedAt ? format(new Date(data.clientSignedAt), 'PPP p') : 'Awaiting client signature');
+  row('Method:', signed ? (data.signatureType === 'draw' ? 'Hand-drawn e-signature' : 'Typed e-signature') : '—',
+    cSigned ? (data.clientSignatureType === 'draw' ? 'Hand-drawn e-signature' : 'Typed e-signature') : '—');
 
   y += 4;
   doc.setFontSize(7.5);
   doc.setTextColor(128);
   const footer = [
     data.agreementId ? `Agreement ID: ${data.agreementId}` : null,
-    signed ? 'Electronically signed on AI Support Now. The signer agreed to the terms above before signing.' : null,
+    signed ? `Electronically signed on AI Support Now by ${cSigned ? 'both parties' : 'the consultant'}. Each signer agreed to the terms above before signing.` : null,
     data.revokedAt ? `Revoked on ${format(new Date(data.revokedAt), 'PPP')}` : null,
   ].filter(Boolean) as string[];
   for (const f of footer) { doc.text(f, colL, y); y += 4; }
