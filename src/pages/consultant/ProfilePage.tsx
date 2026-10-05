@@ -12,6 +12,7 @@ import AvatarUpload from '@/components/profile/AvatarUpload';
 import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
 import ConsultantLinksCard from '@/components/consultant/ConsultantLinksCard';
 import ExperienceCvCard from '@/components/consultant/ExperienceCvCard';
+import SapExpertiseCard from '@/components/consultant/SapExpertiseCard';
 import AvailabilityToggle from '@/components/consultant/AvailabilityToggle';
 import { useConsultantProfile } from '@/hooks/useConsultantProfile';
 import { supabase } from '@/integrations/supabase/client';
@@ -215,6 +216,8 @@ export default function ProfilePage() {
       </div>
 
       <ConsultantLinksCard />
+
+      <SapExpertiseCard />
 
       <ExperienceCvCard />
 
