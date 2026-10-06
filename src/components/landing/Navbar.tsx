@@ -10,6 +10,7 @@ export default function Navbar() {
   const { t } = useTranslation();
   const { toggleLanguage } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   // Close mobile menu on Esc
   useEffect(() => {
@@ -21,6 +22,14 @@ export default function Navbar() {
     return () => window.removeEventListener('keydown', onKey);
   }, [mobileOpen]);
 
+  // Deepen the banner's elevation once the page is scrolled
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const navItems = [
     { label: t('nav.home'), href: '/' },
     { label: t('nav.services'), href: '#categories' },
@@ -30,57 +39,70 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-border/60 shadow-md">
-      <div className={`container mx-auto flex items-center justify-between h-16 sm:h-20 md:h-24 px-3 sm:px-4 gap-2`}>
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-white via-white/95 to-white/90 backdrop-blur-xl transition-shadow duration-300 ${
+        scrolled
+          ? 'shadow-[0_14px_44px_-18px_hsl(var(--primary)/0.35)]'
+          : 'shadow-[0_8px_28px_-22px_hsl(var(--foreground)/0.45)]'
+      }`}
+    >
+      <div className="container mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 h-[76px] sm:h-[96px] lg:h-[112px]">
         <Link
           to="/"
           aria-label="AI Support 360 — go to home"
           title="Go to home"
-          className="flex items-center gap-2 sm:gap-3 group rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background -ml-1 px-1 py-1 min-h-[44px] cursor-pointer min-w-0 shrink active:bg-foreground/5"
+          className="group flex shrink-0 items-center rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-white"
         >
           <img
             src={horizontalLogo.url}
             alt="AI Support 360"
-            width={240}
-            height={56}
-            className="w-40 sm:w-44 lg:w-52 h-12 object-contain rounded-md transition-transform group-hover:scale-105"
+            width={1920}
+            height={698}
+            className="h-[46px] sm:h-[66px] lg:h-[84px] w-auto max-w-full object-contain motion-safe:transition-transform motion-safe:duration-300 group-hover:scale-[1.03]"
           />
         </Link>
 
-        <div className="hidden md:flex items-center gap-0.5">
+        <div className="hidden md:flex items-center gap-1">
           {navItems.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="text-sm font-semibold px-3.5 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+              className="rounded-full px-4 py-2.5 text-sm font-semibold text-muted-foreground outline-none transition-colors duration-200 hover:bg-primary/[0.06] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
             >
               {item.label}
             </a>
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2.5">
           <button
             onClick={toggleLanguage}
-            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+            className="flex items-center gap-1.5 rounded-full border border-border/70 px-3.5 py-2 text-sm font-semibold text-muted-foreground outline-none transition-colors duration-200 hover:border-primary/40 hover:bg-primary/[0.05] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Globe className="w-4 h-4" />
             {t('nav.language')}
           </button>
           <Link to="/login">
-            <Button variant="ghost" size="sm" className="rounded-xl font-semibold">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full px-4 text-sm font-semibold text-foreground hover:bg-primary/[0.06]"
+            >
               {t('nav.login')}
             </Button>
           </Link>
           <Link to="/signup">
-            <Button size="sm" className="gradient-primary border-0 shadow-lg rounded-xl font-semibold px-5">
+            <Button
+              size="sm"
+              className="gradient-primary rounded-full border-0 px-6 py-5 text-sm font-semibold shadow-[0_12px_30px_-12px_hsl(var(--primary)/0.75)] outline-none transition-all duration-200 hover:shadow-[0_18px_40px_-12px_hsl(var(--primary)/0.85)] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5"
+            >
               {t('nav.signup')}
             </Button>
           </Link>
         </div>
 
         <button
-          className="md:hidden inline-flex items-center justify-center -mr-1.5 h-11 w-11 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors active:scale-95 hover:bg-muted/60 active:bg-muted"
+          className="md:hidden inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border/70 text-foreground outline-none transition-colors duration-200 hover:border-primary/40 hover:bg-primary/[0.05] focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileOpen}
@@ -96,6 +118,12 @@ export default function Navbar() {
           </span>
         </button>
       </div>
+
+      {/* Hairline accent along the bottom of the banner */}
+      <div
+        aria-hidden="true"
+        className="h-px w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent"
+      />
 
       {/* Backdrop */}
       <div
@@ -123,7 +151,7 @@ export default function Navbar() {
               role="menuitem"
               tabIndex={mobileOpen ? 0 : -1}
               style={{ transitionDelay: mobileOpen ? `${60 + i * 35}ms` : '0ms' }}
-              className={`block text-sm font-medium text-muted-foreground hover:text-foreground px-3 py-3 rounded-xl hover:bg-muted/60 transition-all duration-300 ${
+              className={`block rounded-full px-4 py-3 text-sm font-medium text-muted-foreground outline-none transition-all duration-300 hover:bg-primary/[0.06] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary ${
                 mobileOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
               }`}
               onClick={() => setMobileOpen(false)}
@@ -135,7 +163,7 @@ export default function Navbar() {
             <button
               onClick={toggleLanguage}
               tabIndex={mobileOpen ? 0 : -1}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground px-3 py-2 rounded-xl hover:bg-muted/60 transition-colors"
+              className="flex items-center gap-1.5 rounded-full border border-border/70 px-3.5 py-2 text-sm font-semibold text-muted-foreground outline-none transition-colors hover:border-primary/40 hover:bg-primary/[0.05] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
             >
               <Globe className="w-4 h-4" />
               {t('nav.language')}
@@ -143,10 +171,14 @@ export default function Navbar() {
           </div>
           <div className="flex gap-2 pt-1">
             <Link to="/login" className="flex-1" tabIndex={mobileOpen ? 0 : -1}>
-              <Button variant="outline" size="sm" className="w-full rounded-xl">{t('nav.login')}</Button>
+              <Button variant="outline" size="sm" className="w-full rounded-full font-semibold">
+                {t('nav.login')}
+              </Button>
             </Link>
             <Link to="/signup" className="flex-1" tabIndex={mobileOpen ? 0 : -1}>
-              <Button size="sm" className="w-full gradient-primary border-0 shadow-lg rounded-xl">{t('nav.signup')}</Button>
+              <Button size="sm" className="gradient-primary w-full rounded-full border-0 font-semibold shadow-[0_12px_30px_-12px_hsl(var(--primary)/0.75)]">
+                {t('nav.signup')}
+              </Button>
             </Link>
           </div>
         </div>
