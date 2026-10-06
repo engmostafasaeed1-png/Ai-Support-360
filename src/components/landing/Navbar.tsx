@@ -62,22 +62,22 @@ export default function Navbar() {
           />
         </Link>
 
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden xl:flex items-center gap-0.5">
           {navItems.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="rounded-full px-3.5 py-2.5 text-sm font-semibold text-muted-foreground outline-none transition-colors duration-200 hover:bg-primary/[0.06] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
+              className="rounded-full px-3 py-2.5 text-sm font-semibold text-muted-foreground outline-none transition-colors duration-200 hover:bg-primary/[0.06] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
             >
               {item.label}
             </a>
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-2.5">
+        <div className="hidden xl:flex items-center gap-2">
           <button
             onClick={toggleLanguage}
-            className="flex items-center gap-1.5 rounded-full border border-border/70 px-3.5 py-2 text-sm font-semibold text-muted-foreground outline-none transition-colors duration-200 hover:border-primary/40 hover:bg-primary/[0.05] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
+            className="flex items-center gap-1.5 rounded-full border border-border/70 px-3 py-2 text-sm font-semibold text-muted-foreground outline-none transition-colors duration-200 hover:border-primary/40 hover:bg-primary/[0.05] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Globe className="w-4 h-4" />
             {t('nav.language')}
@@ -94,7 +94,7 @@ export default function Navbar() {
           <Link to="/signup">
             <Button
               size="sm"
-              className="gradient-primary rounded-full border-0 px-6 py-5 text-sm font-semibold shadow-[0_12px_30px_-12px_hsl(var(--primary)/0.75)] outline-none transition-all duration-200 hover:shadow-[0_18px_40px_-12px_hsl(var(--primary)/0.85)] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5"
+              className="gradient-primary rounded-full border-0 px-5 py-5 text-sm font-semibold shadow-[0_12px_30px_-12px_hsl(var(--primary)/0.75)] outline-none transition-all duration-200 hover:shadow-[0_18px_40px_-12px_hsl(var(--primary)/0.85)] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5"
             >
               {t('nav.signup')}
             </Button>
@@ -102,7 +102,7 @@ export default function Navbar() {
         </div>
 
         <button
-          className="md:hidden inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border/70 text-foreground outline-none transition-colors duration-200 hover:border-primary/40 hover:bg-primary/[0.05] focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
+          className="xl:hidden inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border/70 text-foreground outline-none transition-colors duration-200 hover:border-primary/40 hover:bg-primary/[0.05] focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileOpen}
@@ -129,7 +129,7 @@ export default function Navbar() {
       <div
         onClick={() => setMobileOpen(false)}
         aria-hidden="true"
-        className={`md:hidden fixed inset-0 top-full bg-foreground/30 backdrop-blur-sm transition-opacity duration-300 ${mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        className={`xl:hidden fixed inset-0 top-full bg-foreground/30 backdrop-blur-sm transition-opacity duration-300 ${mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
       />
 
       {/* Slide-down panel — absolute so navbar height never shifts */}
@@ -137,7 +137,7 @@ export default function Navbar() {
         id="mobile-menu"
         role="menu"
         aria-hidden={!mobileOpen}
-        className={`md:hidden absolute left-0 right-0 top-full origin-top border-t border-border/30 bg-background/95 backdrop-blur-xl shadow-2xl will-change-transform transition-[opacity,transform] duration-300 ease-out ${
+        className={`xl:hidden absolute left-0 right-0 top-full origin-top border-t border-border/30 bg-background/95 backdrop-blur-xl shadow-2xl will-change-transform transition-[opacity,transform] duration-300 ease-out ${
           mobileOpen
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 -translate-y-3 pointer-events-none'
