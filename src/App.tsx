@@ -225,7 +225,6 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     {import.meta.env.DEV && (
       <Suspense fallback={null}>
-        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
       </Suspense>
     )}
     <TooltipProvider>
