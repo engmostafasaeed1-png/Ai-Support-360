@@ -4,20 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, Globe } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import navyLogo from '@/assets/brand/horizontal.webp.asset.json';
-import domainLogo from '@/assets/brand/horizontal.webp.asset.json';
+import horizontalLogo from '@/assets/brand/horizontal.webp.asset.json';
 
 export default function Navbar() {
   const { t } = useTranslation();
-  const { toggleLanguage, currentLang } = useLanguage();
+  const { toggleLanguage } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   // Close mobile menu on Esc
   useEffect(() => {
@@ -38,7 +30,7 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-white/95 backdrop-blur-xl border-b border-border/60 shadow-md' : 'bg-gradient-to-b from-black/60 via-black/30 to-transparent backdrop-blur-md'}`}>
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-border/60 shadow-md">
       <div className={`container mx-auto flex items-center justify-between h-16 sm:h-20 md:h-24 px-3 sm:px-4 gap-2`}>
         <Link
           to="/"
@@ -47,7 +39,7 @@ export default function Navbar() {
           className="flex items-center gap-2 sm:gap-3 group rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background -ml-1 px-1 py-1 min-h-[44px] cursor-pointer min-w-0 shrink active:bg-foreground/5"
         >
           <img
-            src={scrolled ? domainLogo.url : navyLogo.url}
+            src={horizontalLogo.url}
             alt="AI Support 360"
             width={240}
             height={56}
@@ -60,7 +52,7 @@ export default function Navbar() {
             <a
               key={item.href}
               href={item.href}
-              className={`text-sm font-semibold px-3.5 py-2 rounded-xl transition-all ${scrolled ? 'text-muted-foreground hover:text-foreground hover:bg-muted/50' : 'text-white/90 hover:text-white hover:bg-white/15 drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]'}`}
+              className="text-sm font-semibold px-3.5 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
             >
               {item.label}
             </a>
@@ -70,13 +62,13 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-2">
           <button
             onClick={toggleLanguage}
-            className={`flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl transition-all ${scrolled ? 'text-muted-foreground hover:text-foreground hover:bg-muted/50' : 'text-white/90 hover:text-white hover:bg-white/15 drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]'}`}
+            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
           >
             <Globe className="w-4 h-4" />
             {t('nav.language')}
           </button>
           <Link to="/login">
-            <Button variant={scrolled ? 'ghost' : 'outline'} size="sm" className={`rounded-xl font-semibold ${scrolled ? '' : 'bg-white/10 border-white/40 text-white hover:bg-white/20 hover:text-white backdrop-blur-md'}`}>
+            <Button variant="ghost" size="sm" className="rounded-xl font-semibold">
               {t('nav.login')}
             </Button>
           </Link>
@@ -88,7 +80,7 @@ export default function Navbar() {
         </div>
 
         <button
-          className={`md:hidden inline-flex items-center justify-center -mr-1.5 h-11 w-11 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors active:scale-95 ${scrolled ? 'hover:bg-muted/60 active:bg-muted' : 'hover:bg-white/15 active:bg-white/20'}`}
+          className="md:hidden inline-flex items-center justify-center -mr-1.5 h-11 w-11 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors active:scale-95 hover:bg-muted/60 active:bg-muted"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileOpen}
@@ -96,10 +88,10 @@ export default function Navbar() {
         >
           <span className="relative w-6 h-6 inline-flex items-center justify-center">
             <Menu
-              className={`absolute w-6 h-6 transition-all duration-300 ${scrolled ? 'text-foreground' : 'text-white drop-shadow-md'} ${mobileOpen ? 'opacity-0 -rotate-90 scale-75' : 'opacity-100 rotate-0 scale-100'}`}
+              className={`absolute w-6 h-6 text-foreground transition-all duration-300 ${mobileOpen ? 'opacity-0 -rotate-90 scale-75' : 'opacity-100 rotate-0 scale-100'}`}
             />
             <X
-              className={`absolute w-6 h-6 transition-all duration-300 ${scrolled ? 'text-foreground' : 'text-white drop-shadow-md'} ${mobileOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-90 scale-75'}`}
+              className={`absolute w-6 h-6 text-foreground transition-all duration-300 ${mobileOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-90 scale-75'}`}
             />
           </span>
         </button>
