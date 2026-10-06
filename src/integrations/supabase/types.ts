@@ -801,6 +801,7 @@ export type Database = {
           sap_version: string | null
           timezone: string | null
           updated_at: string
+          use_custom_nda: boolean
           user_id: string
         }
         Insert: {
@@ -838,6 +839,7 @@ export type Database = {
           sap_version?: string | null
           timezone?: string | null
           updated_at?: string
+          use_custom_nda?: boolean
           user_id: string
         }
         Update: {
@@ -875,6 +877,7 @@ export type Database = {
           sap_version?: string | null
           timezone?: string | null
           updated_at?: string
+          use_custom_nda?: boolean
           user_id?: string
         }
         Relationships: []

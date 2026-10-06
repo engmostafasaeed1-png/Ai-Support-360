@@ -148,6 +148,13 @@
       "when": 1791240845014,
       "tag": "0020_nda_client_signature",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791256225051,
+      "tag": "0021_client_nda_choice",
+      "breakpoints": true
     }
   ]
 }
