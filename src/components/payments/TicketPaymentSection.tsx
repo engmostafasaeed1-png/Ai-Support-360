@@ -76,7 +76,7 @@ export default function TicketPaymentSection({ ticketId, role, currency = 'USD' 
     <Card className="rounded-2xl border-border/50 shadow-sm" data-testid="ticket-payment-section">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base"><Wallet className="h-4 w-4 text-primary" /> Payment</CardTitle>
-        <p className="text-xs text-muted-foreground">The hourly rate is agreed in the Timesheet section below. Payment terms and invoices are handled here.</p>
+        <p className="text-xs text-muted-foreground">The hourly rate is agreed in the Timesheet section. Payment terms and invoices are handled here.</p>
       </CardHeader>
       <CardContent className="space-y-5">
         {loading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : (

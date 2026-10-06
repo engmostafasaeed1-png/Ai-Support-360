@@ -33,6 +33,7 @@ import SendMatchRequestDialog from '@/components/client/SendMatchRequestDialog';
 import RequestBidDialog from '@/components/client/RequestBidDialog';
 import TicketPlanApproval from '@/components/client/TicketPlanApproval';
 import TicketTimesheet from '@/components/client/TicketTimesheet';
+import TicketPaymentSection from '@/components/payments/TicketPaymentSection';
 import TicketStatusStepper from '@/components/client/TicketStatusStepper';
 import TicketInternalNotes from '@/components/client/TicketInternalNotes';
 import TicketTagsWatchers from '@/components/client/TicketTagsWatchers';
@@ -497,6 +498,8 @@ export default function TicketDetailPage() {
       <SectionWrapper icon={ClipboardList} title="Timesheet & Work Log" defaultOpen>
         <TicketTimesheet ticketId={ticket.id} ticketTitle={ticket.title} isReadOnly={isClient} canApprove={isClient && !isColleague} />
       </SectionWrapper>
+
+      <TicketPaymentSection ticketId={ticket.id} role={isClient && !isColleague ? 'client' : 'viewer'} />
 
       {/* ─── Internal Notes ─── */}
       {!isClient && (

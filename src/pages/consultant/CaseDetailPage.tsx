@@ -23,6 +23,7 @@ import TicketStatusActions from '@/components/consultant/TicketStatusActions';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 import TicketAreasNotes from '@/components/ticket/TicketAreasNotes';
 import TicketTimesheet from '@/components/client/TicketTimesheet';
+import TicketPaymentSection from '@/components/payments/TicketPaymentSection';
 import { areasOf, areaLabel } from '@/lib/sapAreas';
 import { cleanNoteList } from '@/lib/sapNotes';
 
@@ -291,6 +292,7 @@ export default function CaseDetailPage() {
             <TicketTimesheet ticketId={ticket.id} ticketTitle={ticket.title} isReadOnly={false} canApprove={false} />
           </CardContent>
         </Card>
+        <TicketPaymentSection ticketId={ticket.id} role="consultant" />
       )}
 
       {/* Inline Schedule Meeting Dialog */}
