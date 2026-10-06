@@ -1,0 +1,1 @@
+ALTER TABLE public.client_profiles ADD COLUMN IF NOT EXISTS use_custom_nda boolean NOT NULL DEFAULT true;

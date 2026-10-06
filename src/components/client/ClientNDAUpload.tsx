@@ -21,7 +21,7 @@ export default function ClientNDAUpload() {
       if (!session) return null;
       const { data } = await supabase
         .from('client_profiles')
-        .select('custom_nda_url, custom_nda_filename')
+        .select('custom_nda_url, custom_nda_filename, use_custom_nda')
         .eq('user_id', session.user.id)
         .maybeSingle();
       return data;
@@ -113,7 +113,23 @@ export default function ClientNDAUpload() {
     openExternal(data.signedUrl);
   };
 
-  const hasCustomNDA = !!clientProfile?.custom_nda_url;
+  const hasFile = !!clientProfile?.custom_nda_url;
+  const useCustom = clientProfile?.use_custom_nda !== false;
+  const hasCustomNDA = hasFile;
+
+  const setChoice = async (value: boolean) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { error } = await supabase
+      .from('client_profiles')
+      .update({ use_custom_nda: value })
+      .eq('user_id', session.user.id);
+    if (error) { toast.error(error.message); return; }
+    qc.invalidateQueries({ queryKey: ['client-nda-doc'] });
+    toast.success(value
+      ? t('nda.choice_custom_saved', 'Consultants will now sign your own NDA')
+      : t('nda.choice_portal_saved', 'Consultants will now sign the portal NDA'));
+  };
 
   return (
     <Card className="rounded-2xl shadow-sm">
@@ -128,6 +144,29 @@ export default function ClientNDAUpload() {
           {t('nda.custom_nda_desc', 'Upload your own NDA document that consultants must sign before working on your tickets. If not uploaded, the platform default NDA will be used.')}
         </p>
 
+        <div role="radiogroup" aria-label={t('nda.choice_label', 'Which NDA should consultants sign?')} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {[
+            { v: false, title: t('nda.choice_portal', 'Portal NDA'), desc: t('nda.choice_portal_desc', 'Use the standard agreement provided by the portal') },
+            { v: true, title: t('nda.choice_custom', 'My company NDA'), desc: hasFile ? t('nda.choice_custom_desc', 'Replace the portal NDA with your uploaded document') : t('nda.choice_custom_need_file', 'Upload your document below to use it') },
+          ].map((o) => {
+            const selected = hasFile ? useCustom === o.v : o.v === false;
+            return (
+              <button
+                key={String(o.v)}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                disabled={o.v && !hasFile}
+                onClick={() => !selected && setChoice(o.v)}
+                className={`text-start p-3 rounded-xl border transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${selected ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40'}`}
+              >
+                <p className="text-sm font-medium">{o.title}</p>
+                <p className="text-xs text-muted-foreground">{o.desc}</p>
+              </button>
+            );
+          })}
+        </div>
+
         {hasCustomNDA ? (
           <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40 border border-border/50">
             <div className="flex items-center gap-3 min-w-0">
@@ -136,7 +175,7 @@ export default function ClientNDAUpload() {
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{clientProfile?.custom_nda_filename || 'custom-nda'}</p>
-                <p className="text-xs text-muted-foreground">{t('nda.custom_active', 'Active — consultants will sign this NDA')}</p>
+                <p className="text-xs text-muted-foreground">{useCustom ? t('nda.custom_active', 'Active — consultants will sign this NDA') : t('nda.custom_inactive', 'Saved — not used while Portal NDA is selected')}</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
