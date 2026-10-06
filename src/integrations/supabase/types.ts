@@ -5372,6 +5372,87 @@ export type Database = {
           },
         ]
       }
+      ticket_invoices: {
+        Row: {
+          client_id: string
+          consultant_id: string
+          created_at: string
+          currency: string
+          decided_at: string | null
+          id: string
+          invoice_number: string
+          lines: Json
+          note: string | null
+          payment_id: string | null
+          rejection_reason: string | null
+          status: string
+          subtotal: number
+          ticket_id: string
+          timesheet_id: string | null
+          total: number
+          updated_at: string
+          vat_amount: number
+          vat_percent: number
+        }
+        Insert: {
+          client_id: string
+          consultant_id: string
+          created_at?: string
+          currency?: string
+          decided_at?: string | null
+          id?: string
+          invoice_number?: string
+          lines?: Json
+          note?: string | null
+          payment_id?: string | null
+          rejection_reason?: string | null
+          status?: string
+          subtotal?: number
+          ticket_id: string
+          timesheet_id?: string | null
+          total?: number
+          updated_at?: string
+          vat_amount?: number
+          vat_percent?: number
+        }
+        Update: {
+          client_id?: string
+          consultant_id?: string
+          created_at?: string
+          currency?: string
+          decided_at?: string | null
+          id?: string
+          invoice_number?: string
+          lines?: Json
+          note?: string | null
+          payment_id?: string | null
+          rejection_reason?: string | null
+          status?: string
+          subtotal?: number
+          ticket_id?: string
+          timesheet_id?: string | null
+          total?: number
+          updated_at?: string
+          vat_amount?: number
+          vat_percent?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_invoices_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_invoices_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_links: {
         Row: {
           created_at: string
@@ -5460,6 +5541,66 @@ export type Database = {
             foreignKeyName: "ticket_match_requests_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_payment_terms: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          decided_at: string | null
+          decision_note: string | null
+          deposit_percent: number
+          id: string
+          milestones: Json
+          net_days: number
+          status: string
+          term_type: string
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          decided_at?: string | null
+          decision_note?: string | null
+          deposit_percent?: number
+          id?: string
+          milestones?: Json
+          net_days?: number
+          status?: string
+          term_type?: string
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decision_note?: string | null
+          deposit_percent?: number
+          id?: string
+          milestones?: Json
+          net_days?: number
+          status?: string
+          term_type?: string
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_payment_terms_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_payment_terms_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
@@ -7197,6 +7338,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      respond_ticket_invoice: {
+        Args: { _approve: boolean; _invoice_id: string; _reason: string }
+        Returns: string
+      }
+      respond_ticket_payment_terms: {
+        Args: { _accept: boolean; _note: string; _ticket_id: string }
+        Returns: undefined
+      }
       respond_to_company_invitation: {
         Args: { _accept: boolean; _tenant_id: string }
         Returns: undefined
@@ -7277,9 +7426,30 @@ export type Database = {
         }[]
       }
       send_emergency_alert: { Args: { _ticket_id: string }; Returns: boolean }
+      send_ticket_invoice: {
+        Args: {
+          _currency: string
+          _lines: Json
+          _note: string
+          _ticket_id: string
+          _timesheet_id: string
+          _vat_percent: number
+        }
+        Returns: string
+      }
       set_environment_consultants: {
         Args: { _consultant_ids: string[]; _environment_id: string }
         Returns: undefined
+      }
+      set_ticket_payment_terms: {
+        Args: {
+          _deposit_percent: number
+          _milestones: Json
+          _net_days: number
+          _term_type: string
+          _ticket_id: string
+        }
+        Returns: string
       }
       share_a_company: {
         Args: { _user_a: string; _user_b: string }
@@ -7314,6 +7484,10 @@ export type Database = {
       }
       submit_timesheet: {
         Args: { _message?: string; _ticket_id: string }
+        Returns: string
+      }
+      ticket_consultant_for_me: {
+        Args: { _ticket_id: string }
         Returns: string
       }
       ticket_consultant_id: { Args: { _ticket_id: string }; Returns: string }
