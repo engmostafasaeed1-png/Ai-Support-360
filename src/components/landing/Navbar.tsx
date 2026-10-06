@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, Globe } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import horizontalLogo from '@/assets/brand/horizontal.webp.asset.json';
+import horizontalLogo from '@/assets/brand/horizontal-tight.webp.asset.json';
 
 export default function Navbar() {
   const { t } = useTranslation();
@@ -46,7 +46,7 @@ export default function Navbar() {
           : 'shadow-[0_8px_28px_-22px_hsl(var(--foreground)/0.45)]'
       }`}
     >
-      <div className="container mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 h-[76px] sm:h-[96px] lg:h-[112px]">
+      <div className="container mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 h-[72px] sm:h-[92px] lg:h-[108px] xl:h-[116px]">
         <Link
           to="/"
           aria-label="AI Support 360 — go to home"
@@ -56,9 +56,9 @@ export default function Navbar() {
           <img
             src={horizontalLogo.url}
             alt="AI Support 360"
-            width={1920}
-            height={698}
-            className="h-[46px] sm:h-[66px] lg:h-[84px] w-auto max-w-full object-contain motion-safe:transition-transform motion-safe:duration-300 group-hover:scale-[1.03]"
+            width={1711}
+            height={429}
+            className="h-[42px] sm:h-[60px] lg:h-[74px] xl:h-[82px] w-auto max-w-full object-contain object-left motion-safe:transition-transform motion-safe:duration-300 group-hover:scale-[1.03]"
           />
         </Link>
 
@@ -67,7 +67,7 @@ export default function Navbar() {
             <a
               key={item.href}
               href={item.href}
-              className="rounded-full px-4 py-2.5 text-sm font-semibold text-muted-foreground outline-none transition-colors duration-200 hover:bg-primary/[0.06] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
+              className="rounded-full px-3.5 py-2.5 text-sm font-semibold text-muted-foreground outline-none transition-colors duration-200 hover:bg-primary/[0.06] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
             >
               {item.label}
             </a>
