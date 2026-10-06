@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
-import { Send, CheckCircle2, CalendarPlus } from 'lucide-react';
+import { Send, CheckCircle2, CalendarPlus, Mail } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 import { useDemoWizard } from './DemoRequestWizard';
 import { supabase } from '@/integrations/supabase/client';
@@ -107,16 +107,34 @@ export default function ContactSection() {
                 <div className="flex-1 h-px bg-border/50" />
               </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                onClick={() => demoWizard.open(undefined, { source: 'contact-section' })}
-                className="w-full h-12 rounded-2xl font-semibold border-primary/30 hover:border-primary/60 hover:bg-primary/5"
-              >
-                <CalendarPlus size={16} className="me-2" aria-hidden="true" />
-                Request a tailored demo
-              </Button>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={() => demoWizard.open(undefined, { source: 'contact-section' })}
+                  className="w-full h-12 rounded-2xl font-semibold border-primary/30 hover:border-primary/60 hover:bg-primary/5"
+                >
+                  <CalendarPlus size={16} className="me-2" aria-hidden="true" />
+                  Request a tailored demo
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  asChild
+                  className="w-full h-12 rounded-2xl font-semibold border-primary/30 hover:border-primary/60 hover:bg-primary/5"
+                >
+                  <a href="mailto:info@qurtubatalks.com?subject=AI%20Support%20360%20request">
+                    <Mail size={16} className="me-2" aria-hidden="true" />
+                    Email us directly
+                  </a>
+                </Button>
+              </div>
+              <p className="text-center text-xs text-muted-foreground">
+                Prefer email? Write to us any time at{' '}
+                <a href="mailto:info@qurtubatalks.com" className="text-primary underline">info@qurtubatalks.com</a>
+              </p>
             </form>
           )}
         </div>

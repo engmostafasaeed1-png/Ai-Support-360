@@ -2,7 +2,7 @@
 
 Effective date: [EFFECTIVE DATE]
 
-AI Support 360 is operated by [LEGAL BUSINESS NAME], located at [BUSINESS ADDRESS], [BUSINESS COUNTRY]. This policy explains how we collect, use, share, and retain personal information when you visit our website or use our services.
+AI Support 360 is operated by Qurtuba Software Programming, located at [BUSINESS ADDRESS], [BUSINESS COUNTRY]. This policy explains how we collect, use, share, and retain personal information when you visit our website or use our services.
 
 ## Information we collect
 
@@ -54,7 +54,7 @@ Retention may vary according to the purpose of processing, contractual requireme
 
 Depending on applicable law, you may have rights to access, correct, delete, or obtain a copy of your personal information, object to certain processing, or withdraw consent.
 
-Contact [PRIVACY EMAIL] to make a request. We may need to verify your identity. Some information may need to be retained for legal or other permitted purposes.
+Contact info@qurtubatalks.com to make a request. We may need to verify your identity. Some information may need to be retained for legal or other permitted purposes.
 
 ## Security
 
@@ -62,19 +62,19 @@ We use measures appropriate to protect the information we process. No online ser
 
 ## Children
 
-The service is intended for business users and adults. If you believe a child has provided personal information without appropriate authorization, contact [PRIVACY EMAIL].
+The service is intended for business users and adults. If you believe a child has provided personal information without appropriate authorization, contact info@qurtubatalks.com.
 
 ## Updates and contact
 
 We may update this policy as our service or obligations change. We will provide notice where required.
 
-Privacy questions: [PRIVACY EMAIL].
+Privacy questions: info@qurtubatalks.com.
 
 # Terms & Conditions
 
 Effective date: [EFFECTIVE DATE]
 
-These terms govern your use of AI Support 360, operated by [LEGAL BUSINESS NAME], [BUSINESS ADDRESS], [BUSINESS COUNTRY].
+These terms govern your use of AI Support 360, operated by Qurtuba Software Programming, [BUSINESS ADDRESS], [BUSINESS COUNTRY].
 
 By accepting these terms or using the service, you agree to them. If you use the service on behalf of an organization, you confirm that you have authority to bind that organization.
 
@@ -150,14 +150,14 @@ Nothing in these terms excludes liability or customer rights that cannot lawfull
 
 These terms are governed by the laws of [BUSINESS COUNTRY], subject to any mandatory protections that apply to you.
 
-Contact [SUPPORT EMAIL] first so we can try to resolve a concern. Where resolution is not possible, disputes may be brought before the courts with jurisdiction under applicable law.
+Contact info@qurtubatalks.com first so we can try to resolve a concern. Where resolution is not possible, disputes may be brought before the courts with jurisdiction under applicable law.
 
 ## Contact
 
-[LEGAL BUSINESS NAME]  
+Qurtuba Software Programming  
 [BUSINESS ADDRESS]  
 Registration number: [BUSINESS REGISTRATION NUMBER, IF APPLICABLE]  
-Email: [SUPPORT EMAIL]
+Email: info@qurtubatalks.com
 
 # Refund Policy
 
@@ -167,7 +167,7 @@ This policy explains how refund requests for AI Support 360 are handled.
 
 ## Requesting a refund
 
-Send your request to [SUPPORT EMAIL] within [REFUND REQUEST WINDOW]. Include your account email, transaction reference, purchase date, and the reason for your request. Do not send full card details.
+Send your request to info@qurtubatalks.com within [REFUND REQUEST WINDOW]. Include your account email, transaction reference, purchase date, and the reason for your request. Do not send full card details.
 
 ## Refund eligibility
 
@@ -192,7 +192,7 @@ Cancellation stops future renewals according to our Subscription & Cancellation 
 
 This policy does not restrict refund or other rights granted by applicable law.
 
-Contact: [SUPPORT EMAIL].
+Contact: info@qurtubatalks.com.
 
 # Subscription & Cancellation Policy
 
@@ -212,7 +212,7 @@ If a trial automatically becomes a paid subscription, this must be clearly discl
 
 ## How to cancel
 
-Cancel through [CANCELLATION METHOD]. If you need help, contact [SUPPORT EMAIL].
+Cancel through [CANCELLATION METHOD]. If you need help, contact info@qurtubatalks.com.
 
 Cancellation takes effect as follows: [STATE WHEN CANCELLATION STOPS RENEWAL AND WHETHER ACCESS CONTINUES UNTIL THE END OF THE PAID PERIOD].
 
@@ -238,7 +238,7 @@ Account deletion and subscription cancellation are handled as follows: [EXPLAIN 
 
 Refund eligibility is described in our Refund Policy. Mandatory legal rights continue to apply.
 
-Contact: [SUPPORT EMAIL].
+Contact: info@qurtubatalks.com.
 
 # Service Delivery & Activation Policy
 
@@ -258,7 +258,7 @@ Provide an accurate email address and any information or permissions needed for 
 
 ## Activation problems
 
-If payment succeeds but access is not available within the stated timeframe, contact [SUPPORT EMAIL] with your account email and transaction reference.
+If payment succeeds but access is not available within the stated timeframe, contact info@qurtubatalks.com with your account email and transaction reference.
 
 We will investigate and arrange access or review the issue under our Refund Policy.
 
@@ -305,7 +305,7 @@ Payment providers, embedded tools, and integrations may use their own cookies. T
 
 ## Contact
 
-For questions, contact [PRIVACY EMAIL].
+For questions, contact info@qurtubatalks.com.
 
 Implementation requirement: inspect the actual website integrations before creating a cookie banner. Where consent is required, provide clear accept, reject, and settings controls, and prevent optional technologies from loading until the appropriate choice is made. Do not display a consent banner that fails to control the technologies it describes.
 
@@ -330,5 +330,5 @@ Business customers are responsible for configuring appropriate permissions, revi
 
 We may investigate misuse and take proportionate action, including restricting or suspending access. Where appropriate, we will notify the account owner.
 
-Report suspected misuse to [SUPPORT EMAIL].
+Report suspected misuse to info@qurtubatalks.com.
 
