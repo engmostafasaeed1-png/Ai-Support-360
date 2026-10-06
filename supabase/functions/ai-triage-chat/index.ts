@@ -289,26 +289,50 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Conversation we'll grow across tool-calling rounds.
+    // Prior turns, sanitized: client-supplied history never becomes a real assistant turn.
+    const history = toSafeHistory(messages.slice(-20));
+    // Plain messages, used for the final answer the UI reads as chat-completions SSE.
     const convo: Array<Record<string, unknown>> = [
       { role: "system", content: SYSTEM_PROMPT },
-      ...toSafeHistory(messages.slice(-20)),
+      ...history,
     ];
+    // Responses API items: prior turns, then every function_call with its output.
+    const responsesInput: Array<Record<string, unknown>> = history.map((m) =>
+      userTextItem(String(m.content ?? ""))
+    );
 
     const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
-    // -------- Tool-calling loop (max 3 rounds, then force final answer) --------
-    for (let round = 0; round < 3; round++) {
-      const planResp = await fetch(GATEWAY, {
+    // Streams the final answer token-by-token so the existing UI renders as before.
+    const streamFinalAnswer = async (): Promise<Response> => {
+      const finalResp = await fetch(GATEWAY, {
         method: "POST",
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model: selectedModel,
           messages: convo,
-          tools: TOOLS,
-          tool_choice: "auto",
-          stream: false,
+          reasoning_effort: "low",
+          stream: true,
         }),
+      });
+      if (!finalResp.ok || !finalResp.body) {
+        const t = await finalResp.text();
+        console.error("AI final stream error:", finalResp.status, t);
+        return new Response(JSON.stringify({ error: "AI service unavailable" }),
+          { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
+      }
+      return new Response(finalResp.body, { headers: { ...getCorsHeaders(req), "Content-Type": "text/event-stream" } });
+    };
+
+    // -------- Tool-calling loop (max 3 rounds, then force final answer) --------
+    for (let round = 0; round < 3; round++) {
+      const planResp = await responsesRequest({
+        apiKey: LOVABLE_API_KEY,
+        model: selectedModel,
+        instructions: SYSTEM_PROMPT,
+        input: responsesInput,
+        tools: TOOLS,
+        toolChoice: "auto",
       });
       if (!planResp.ok) {
         if (planResp.status === 429) return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
@@ -321,54 +345,30 @@ serve(async (req) => {
           { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
       }
       const planJson = await planResp.json();
-      const choice = planJson.choices?.[0];
-      const msg = choice?.message;
-      const toolCalls = msg?.tool_calls as Array<any> | undefined;
-      if (!toolCalls || toolCalls.length === 0) {
-        // No tool needed — re-issue the same prompt with stream=true so the
-        // client gets token-by-token rendering (consistent with the existing UI).
-        const finalResp = await fetch(GATEWAY, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ model: selectedModel, messages: convo, stream: true }),
-        });
-        if (!finalResp.ok || !finalResp.body) {
-          const t = await finalResp.text();
-          console.error("AI final stream error:", finalResp.status, t);
-          return new Response(JSON.stringify({ error: "AI service unavailable" }),
-            { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
-        }
-        return new Response(finalResp.body, { headers: { ...getCorsHeaders(req), "Content-Type": "text/event-stream" } });
+      const toolCalls = extractFunctionCalls(planJson);
+      if (toolCalls.length === 0) {
+        // No tool needed — stream the answer token-by-token for the existing UI.
+        return await streamFinalAnswer();
       }
 
-      // Append assistant tool-call message verbatim (preserves IDs)
-      convo.push(msg);
+      // Replay this step's reasoning and function_call items verbatim; each
+      // function_call_output below must follow its matching function_call.
+      appendResponseItems(responsesInput, planJson);
 
-      // Execute each tool and append its result
+      // Execute each tool and hand its result back to the model
       for (const call of toolCalls) {
         let parsedArgs: Record<string, unknown> = {};
-        try { parsedArgs = JSON.parse(call.function?.arguments || "{}"); } catch { /* ignore */ }
-        const result = await execTool(call.function?.name || "", parsedArgs, sbUser, authUser.id);
-        convo.push({
-          role: "tool",
-          tool_call_id: call.id,
-          content: JSON.stringify(result).slice(0, 12_000),
-        });
+        try { parsedArgs = JSON.parse(call.arguments || "{}"); } catch { /* ignore */ }
+        const result = await execTool(call.name, parsedArgs, sbUser, authUser.id);
+        const output = JSON.stringify(result).slice(0, 12_000);
+        responsesInput.push(functionCallOutputItem(call.callId, output));
+        convo.push({ role: "user", content: `Tool "${call.name}" returned: ${output}` });
       }
       // loop — model now has tool results; ask it again
     }
 
     // Safety: after 3 rounds, force a non-tool streaming reply
-    const safetyResp = await fetch(GATEWAY, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: selectedModel, messages: convo, stream: true }),
-    });
-    if (!safetyResp.ok || !safetyResp.body) {
-      return new Response(JSON.stringify({ error: "AI service unavailable" }),
-        { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
-    }
-    return new Response(safetyResp.body, { headers: { ...getCorsHeaders(req), "Content-Type": "text/event-stream" } });
+    return await streamFinalAnswer();
   } catch (e) {
     console.error("ai-triage-chat error:", e);
     return new Response(JSON.stringify({ error: "Request failed. Please try again." }),
