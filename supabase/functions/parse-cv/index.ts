@@ -135,7 +135,8 @@ ${cv_text.substring(0, 15000)}`}`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "openai/gpt-6-astra",
+        reasoning_effort: "low",
         messages: [
           { role: "system", content: systemPrompt },
           {

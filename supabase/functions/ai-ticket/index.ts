@@ -4,32 +4,22 @@ import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit, getUserRoles, hasAnyRole, ADMIN_ROLES } from "../_shared/security.ts";
 import { weightedMatch } from "../_shared/matchScoring.ts";
 import { scrubText } from "../_shared/scrub.ts";
+import { responsesRequest, userTextItem, extractFirstFunctionCall } from "../_shared/aiResponses.ts";
 
-const VALID_MODELS = [
-  "google/gemini-2.5-flash-lite",
-  "google/gemini-2.5-flash",
-  "google/gemini-2.5-pro",
-  "openai/gpt-4o-mini",
-  "openai/gpt-4o",
-];
+const VALID_MODELS = ["openai/gpt-6-astra"];
 
-const DEFAULT_MODEL = "google/gemini-2.5-flash";
+const DEFAULT_MODEL = "openai/gpt-6-astra";
 
 const MAX_BODY_SIZE = 50 * 1024;
 
 function aiRequest(apiKey: string, systemPrompt: string, userPrompt: string, tools: any[], toolChoice: any, model: string) {
-  return fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      tools,
-      tool_choice: toolChoice,
-    }),
+  return responsesRequest({
+    apiKey,
+    model,
+    instructions: systemPrompt,
+    input: [userTextItem(userPrompt)],
+    tools,
+    toolChoice,
   });
 }
 
@@ -40,8 +30,13 @@ function handleAiError(req: Request, status: number) {
 }
 
 function parseToolResult(data: any) {
-  const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-  return toolCall ? JSON.parse(toolCall.function.arguments) : null;
+  const call = extractFirstFunctionCall(data);
+  if (!call) return null;
+  try {
+    return JSON.parse(call.arguments);
+  } catch {
+    return null;
+  }
 }
 
 serve(async (req) => {

@@ -216,7 +216,8 @@ Return ONLY valid JSON.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "openai/gpt-6-astra",
+        reasoning_effort: "low",
         messages: [
           { role: "system", content: "You are an expert SAP consulting session analyst. Always respond with valid JSON only." },
           { role: "user", content: prompt },
