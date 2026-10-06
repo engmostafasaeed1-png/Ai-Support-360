@@ -312,6 +312,15 @@ export default function SignupPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
+            <label className="flex items-start gap-2 text-xs text-muted-foreground w-full">
+              <input type="checkbox" required className="mt-0.5 accent-[hsl(var(--primary))]" aria-label="I agree to the Terms & Conditions and Privacy Policy" />
+              <span>
+                I agree to the{' '}
+                <a href="/terms-and-conditions" target="_blank" rel="noopener" className="text-primary underline">Terms &amp; Conditions</a>
+                {' '}and{' '}
+                <a href="/privacy-policy" target="_blank" rel="noopener" className="text-primary underline">Privacy Policy</a>.
+              </span>
+            </label>
             <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" disabled={loading}>
               {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {t('auth.signup_btn')}

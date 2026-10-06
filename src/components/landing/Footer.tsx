@@ -28,8 +28,13 @@ export default function Footer() {
       { label: t('footer.contact'), href: '#contact' },
     ],
     legal: [
-      { label: t('footer.privacy'), href: '#contact' },
-      { label: t('footer.terms'), href: '#contact' },
+      { label: t('footer.privacy'), href: '/privacy-policy' },
+      { label: t('footer.terms'), href: '/terms-and-conditions' },
+      { label: 'Refund Policy', href: '/refund-policy' },
+      { label: 'Subscription & Cancellation', href: '/subscription-and-cancellation' },
+      { label: 'Service Delivery', href: '/service-delivery' },
+      { label: 'Cookie Policy', href: '/cookie-policy' },
+      { label: 'Acceptable Use', href: '/acceptable-use' },
     ],
   };
 

@@ -43,6 +43,7 @@ const Index = React.lazy(() => import("./pages/Index.tsx"));
 const NotFound = React.lazy(() => import("./pages/NotFound.tsx"));
 const MeetingHandoffPage = React.lazy(() => import("./pages/MeetingHandoffPage.tsx"));
 const PricingPage = React.lazy(() => import("./pages/PricingPage.tsx"));
+const LegalPage = React.lazy(() => import("./pages/LegalPage.tsx"));
 const ServiceModulePage = React.lazy(() => import("./pages/ServiceModulePage.tsx"));
 const DemoRequestConfirmationPage = React.lazy(() => import("./pages/DemoRequestConfirmationPage.tsx"));
 const UnsubscribePage = React.lazy(() => import("./pages/UnsubscribePage.tsx"));
@@ -246,6 +247,9 @@ const App = () => (
             <Route path="/join/:sessionId" element={<MeetingHandoffPage />} />
             <Route path="/index" element={<Navigate to="/" replace />} />
             <Route path="/pricing" element={<PricingPage />} />
+            {['privacy-policy', 'terms-and-conditions', 'refund-policy', 'subscription-and-cancellation', 'service-delivery', 'cookie-policy', 'acceptable-use'].map((slug) => (
+              <Route key={slug} path={`/${slug}`} element={<LegalPage slug={slug} />} />
+            ))}
             <Route path="/services/s4hana-support" element={<ServiceModulePage moduleSlug="s4hana-support" />} />
             <Route path="/services/btp-support" element={<ServiceModulePage moduleSlug="btp-support" />} />
             <Route path="/demo/confirmation/:token" element={<DemoRequestConfirmationPage />} />
