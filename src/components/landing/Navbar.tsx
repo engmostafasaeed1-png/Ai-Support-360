@@ -4,20 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, Globe } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import navyLogo from '@/assets/brand/horizontal.webp.asset.json';
-import domainLogo from '@/assets/brand/horizontal.webp.asset.json';
+import horizontalLogo from '@/assets/brand/horizontal.webp.asset.json';
 
 export default function Navbar() {
   const { t } = useTranslation();
-  const { toggleLanguage, currentLang } = useLanguage();
+  const { toggleLanguage } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   // Close mobile menu on Esc
   useEffect(() => {
