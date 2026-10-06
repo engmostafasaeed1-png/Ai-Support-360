@@ -62,13 +62,13 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-2">
           <button
             onClick={toggleLanguage}
-            className={`flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl transition-all ${scrolled ? 'text-muted-foreground hover:text-foreground hover:bg-muted/50' : 'text-white/90 hover:text-white hover:bg-white/15 drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]'}`}
+            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
           >
             <Globe className="w-4 h-4" />
             {t('nav.language')}
           </button>
           <Link to="/login">
-            <Button variant={scrolled ? 'ghost' : 'outline'} size="sm" className={`rounded-xl font-semibold ${scrolled ? '' : 'bg-white/10 border-white/40 text-white hover:bg-white/20 hover:text-white backdrop-blur-md'}`}>
+            <Button variant="ghost" size="sm" className="rounded-xl font-semibold">
               {t('nav.login')}
             </Button>
           </Link>
@@ -80,7 +80,7 @@ export default function Navbar() {
         </div>
 
         <button
-          className={`md:hidden inline-flex items-center justify-center -mr-1.5 h-11 w-11 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors active:scale-95 ${scrolled ? 'hover:bg-muted/60 active:bg-muted' : 'hover:bg-white/15 active:bg-white/20'}`}
+          className="md:hidden inline-flex items-center justify-center -mr-1.5 h-11 w-11 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors active:scale-95 hover:bg-muted/60 active:bg-muted"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileOpen}
