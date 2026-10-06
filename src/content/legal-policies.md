@@ -42,7 +42,7 @@ We may update the model used to provide the service and will update material pri
 
 Payments are processed through Paymob. Paymob’s own privacy policy applies to information it processes.
 
-[BEFORE PUBLICATION: CONFIRM AND DESCRIBE WHETHER AI SUPPORT 360 STORES ONLY BILLING RECORDS, PAYMENT STATUS, TRANSACTION REFERENCES, AND ANY PAYMENT TOKENS, OR ALSO RECEIVES OTHER PAYMENT INFORMATION.]
+AI Support 360 stores only billing records: invoice amounts, payment status, transaction references, and payment dates. Card numbers, card security codes, and bank account details are entered directly into Paymob's secure payment page and are never sent to or stored on our servers.
 
 Do not send full card numbers or card security codes to our support email.
 
@@ -54,7 +54,14 @@ Our company is registered in Egypt, so using the service involves hosting inform
 
 Information sent to OpenAI, Paymob, or other providers is processed separately from our application hosting. AWS hosting in Germany does not establish where those providers process information.
 
-[BEFORE PUBLICATION: LIST ANY OTHER PROVIDERS RECEIVING PERSONAL INFORMATION, THEIR PURPOSES, AND RELEVANT PROCESSING LOCATIONS.]
+The providers that receive personal information through the service are:
+
+- **Amazon Web Services** — application hosting, database, and file storage (Frankfurt, Germany).
+- **OpenAI** — AI features such as expert matching, interview assistance, and support suggestions. Names, employers, email addresses, and phone numbers are removed before content is sent.
+- **Paymob** — card payment processing (Egypt).
+- **Our email delivery provider** — sending account, invitation, and notification emails from notify.aisapsupportnow.com.
+- **Jitsi Meet** — video meetings booked through the platform. Joining a video call shares your display name and media with the meeting service.
+- **Cloudflare** — delivering website pages quickly and securely to visitors worldwide.
 
 Where applicable, we meet the requirements for international transfers and processing of personal information.
 
@@ -312,7 +319,14 @@ Cookies and similar technologies store information on your device or help a webs
 
 Essential technologies support functions such as authentication, security, account sessions, and checkout.
 
-[BEFORE PUBLICATION: INSERT THE ACTUAL COOKIE OR TECHNOLOGY NAMES, PROVIDERS, PURPOSES, AND DURATIONS.]
+AI Support 360 does not use tracking cookies. It uses your browser's built-in local storage for the following essential items:
+
+- **Sign-in session** (our authentication service) — keeps you signed in; lasts for your session and refreshes while you use the site.
+- **Language preference** — remembers English or Arabic; kept until you change it.
+- **Currency and display preferences** — remembers your chosen currency and interface settings.
+- **Guest and form drafts** — remembers progress on sign-up and ticket forms so you do not lose your work.
+
+These items stay on your own device and are not used for advertising.
 
 ## Optional Technologies
 
