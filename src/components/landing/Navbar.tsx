@@ -39,7 +39,7 @@ export default function Navbar() {
           className="flex items-center gap-2 sm:gap-3 group rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background -ml-1 px-1 py-1 min-h-[44px] cursor-pointer min-w-0 shrink active:bg-foreground/5"
         >
           <img
-            src={scrolled ? domainLogo.url : navyLogo.url}
+            src={horizontalLogo.url}
             alt="AI Support 360"
             width={240}
             height={56}
@@ -52,7 +52,7 @@ export default function Navbar() {
             <a
               key={item.href}
               href={item.href}
-              className={`text-sm font-semibold px-3.5 py-2 rounded-xl transition-all ${scrolled ? 'text-muted-foreground hover:text-foreground hover:bg-muted/50' : 'text-white/90 hover:text-white hover:bg-white/15 drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]'}`}
+              className="text-sm font-semibold px-3.5 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
             >
               {item.label}
             </a>
