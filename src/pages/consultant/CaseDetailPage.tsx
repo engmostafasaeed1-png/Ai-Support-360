@@ -280,7 +280,7 @@ export default function CaseDetailPage() {
       )}
 
       {/* The timesheet of this case: the hourly rate, the activities and the timesheets that the client approves */}
-      {!!consultantData?.id && (
+      {!!consultantData?.id && (<>
         <Card className="rounded-2xl border-border/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -293,7 +293,7 @@ export default function CaseDetailPage() {
           </CardContent>
         </Card>
         <TicketPaymentSection ticketId={ticket.id} role="consultant" />
-      )}
+      </>)}
 
       {/* Inline Schedule Meeting Dialog */}
       <ScheduleMeetingDialog
