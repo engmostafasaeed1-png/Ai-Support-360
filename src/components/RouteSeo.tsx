@@ -56,6 +56,13 @@ const ROUTES: Record<string, Meta> = {
 
 function resolve(pathname: string): Meta {
   if (ROUTES[pathname]) return ROUTES[pathname];
+  const legal: Record<string, string> = {
+    '/privacy-policy': 'Privacy Policy', '/terms-and-conditions': 'Terms & Conditions', '/refund-policy': 'Refund Policy',
+    '/subscription-and-cancellation': 'Subscription & Cancellation Policy', '/service-delivery': 'Service Delivery & Activation Policy',
+    '/cookie-policy': 'Cookie Policy', '/acceptable-use': 'Acceptable Use Policy',
+  };
+  // Kept out of search results until the owner fills in the placeholders.
+  if (legal[pathname]) return { title: `${legal[pathname]} — ${BRAND}`, description: `${legal[pathname]} for ${BRAND}.`, noindex: true };
   if (pathname.startsWith('/join/'))
     return { title: `Join your support session — ${BRAND}`, description: DEFAULT.description, noindex: true };
   if (pathname.startsWith('/demo/confirmation/'))

@@ -51,6 +51,7 @@ export function PayInvoiceCard({ payment }: { payment: any }) {
   const [reference, setReference] = useState('');
   const [date, setDate] = useState(today);
   const [note, setNote] = useState('');
+  const [agreed, setAgreed] = useState(false);
 
   if (!open) return null;
 
@@ -90,7 +91,22 @@ export function PayInvoiceCard({ payment }: { payment: any }) {
                 </span>
               </div>
             )}
-            <Button className="w-full gap-1.5" disabled={startCard.isPending} onClick={() => startCard.mutate(payment.id)}>
+            <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs rounded-md bg-muted/40 p-2">
+              <dt className="text-muted-foreground">Total</dt><dd className="font-semibold text-end">{money(payment.amount, payment.currency)}</dd>
+              <dt className="text-muted-foreground">Currency</dt><dd className="text-end">{payment.currency}</dd>
+              <dt className="text-muted-foreground">Taxes</dt><dd className="text-end">{payment.vat_amount != null ? `${money(payment.vat_amount, payment.currency)} VAT included` : 'Included as shown on invoice'}</dd>
+              <dt className="text-muted-foreground">Billing</dt><dd className="text-end">One-time payment</dd>
+              <dt className="text-muted-foreground">Renews automatically</dt><dd className="text-end">No</dd>
+            </dl>
+            <label className="flex items-start gap-2 text-xs text-muted-foreground">
+              <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5" />
+              <span>
+                I agree to the <a href="/terms-and-conditions" target="_blank" rel="noopener" className="text-primary underline">Terms &amp; Conditions</a>,{' '}
+                <a href="/refund-policy" target="_blank" rel="noopener" className="text-primary underline">Refund Policy</a> and{' '}
+                <a href="/privacy-policy" target="_blank" rel="noopener" className="text-primary underline">Privacy Policy</a>.
+              </span>
+            </label>
+            <Button className="w-full gap-1.5" disabled={startCard.isPending || !agreed} onClick={() => startCard.mutate(payment.id)}>
               {startCard.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
               Pay {money(payment.amount, payment.currency)} by card
             </Button>
