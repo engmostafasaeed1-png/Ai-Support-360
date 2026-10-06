@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 import ClientSignNDADialog from '@/components/client/ClientSignNDADialog';
+import ClientNDAUpload from '@/components/client/ClientNDAUpload';
 import { PenTool } from 'lucide-react';
 
 interface NDAContract {
@@ -158,6 +159,8 @@ export default function ContractsPage() {
         </h1>
         <p className="text-sm text-muted-foreground mt-1">View and download your signed Non-Disclosure Agreements with consultants</p>
       </div>
+
+      <ClientNDAUpload />
 
       <div className="grid grid-cols-3 gap-4">
         {stats.map((s) => (

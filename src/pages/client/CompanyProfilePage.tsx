@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useClientProfileData, useUpdateClientProfile, type ClientProfile } from '@/hooks/useClientProfile';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import ClientNDAUpload from '@/components/client/ClientNDAUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -773,6 +774,9 @@ export default function CompanyProfilePage() {
           )}
         </CardContent>
       </Card>
+
+      {/* NDA choice: portal NDA vs company NDA */}
+      <ClientNDAUpload />
 
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={updateProfile.isPending} className="gradient-primary border-0 gap-2">
