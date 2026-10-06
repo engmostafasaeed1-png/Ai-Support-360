@@ -7,16 +7,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit } from "../_shared/security.ts";
+import {
+  responsesRequest,
+  userTextItem,
+  extractFunctionCalls,
+  appendResponseItems,
+  functionCallOutputItem,
+} from "../_shared/aiResponses.ts";
 
-const VALID_MODELS = [
-  "google/gemini-3-flash-preview",
-  "google/gemini-2.5-flash-lite",
-  "google/gemini-2.5-flash",
-  "google/gemini-2.5-pro",
-  "openai/gpt-5-mini",
-  "openai/gpt-5",
-];
-const DEFAULT_MODEL = "google/gemini-3-flash-preview";
+const VALID_MODELS = ["openai/gpt-6-astra"];
+const DEFAULT_MODEL = "openai/gpt-6-astra";
 
 const MAX_BODY_SIZE = 50 * 1024;
 
