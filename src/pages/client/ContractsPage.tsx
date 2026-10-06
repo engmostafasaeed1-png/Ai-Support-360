@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 import ClientSignNDADialog from '@/components/client/ClientSignNDADialog';
+import ClientNDAUpload from '@/components/client/ClientNDAUpload';
 import { PenTool } from 'lucide-react';
 
 interface NDAContract {

@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useClientProfileData, useUpdateClientProfile, type ClientProfile } from '@/hooks/useClientProfile';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import ClientNDAUpload from '@/components/client/ClientNDAUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
