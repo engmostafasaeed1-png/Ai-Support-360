@@ -16,6 +16,7 @@ import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimelin
 import { PayInvoiceCard } from '@/components/invoice/PayInvoiceCard';
 import { PaymobReturnHandler } from '@/components/invoice/PaymobReturnHandler';
 import { InvoiceDisputeSection } from '@/components/invoice/InvoiceDisputeSection';
+import { InvoiceDueCalendar } from '@/components/invoice/InvoiceDueCalendar';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
 import { useCurrency, formatMoney } from '@/contexts/CurrencyContext';
@@ -117,6 +118,11 @@ export default function PaymentsPage() {
           <CurrencySelector />
         </div>
       </div>
+
+      {/* Invoice due-date calendar */}
+      {!isLoading && allPayments.some((p: any) => p.due_date) && (
+        <InvoiceDueCalendar payments={allPayments} onSelectPayment={setSelectedPayment} />
+      )}
 
       {/* Payment List */}
       <Card className="rounded-2xl border-border/50">
