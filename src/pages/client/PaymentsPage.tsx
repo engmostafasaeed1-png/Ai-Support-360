@@ -16,6 +16,7 @@ import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimelin
 import { PayInvoiceCard } from '@/components/invoice/PayInvoiceCard';
 import { PaymobReturnHandler } from '@/components/invoice/PaymobReturnHandler';
 import { InvoiceDisputeSection } from '@/components/invoice/InvoiceDisputeSection';
+import { InvoiceDueCalendar } from '@/components/invoice/InvoiceDueCalendar';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
 import { useCurrency, formatMoney } from '@/contexts/CurrencyContext';
