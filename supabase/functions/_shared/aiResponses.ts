@@ -8,7 +8,7 @@ const RESPONSES_URL = "https://ai.gateway.lovable.dev/v1/responses";
 
 /** Chat-completions style tool declaration, as the app's functions already declare them. */
 export type ChatTool = {
-  type: "function";
+  type: string;
   function: { name: string; description?: string; parameters?: Record<string, unknown> };
 };
 
