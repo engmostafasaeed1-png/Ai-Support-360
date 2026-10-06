@@ -1,334 +1,363 @@
 # Privacy Policy
 
-Effective date: [EFFECTIVE DATE]
+Effective date: 6 October 2026
 
-AI Support 360 is operated by Qurtuba Software Programming, located at [BUSINESS ADDRESS], [BUSINESS COUNTRY]. This policy explains how we collect, use, share, and retain personal information when you visit our website or use our services.
+## Who We Are
 
-## Information we collect
+AI Support 360 is operated by Qurtuba Tech for Software (قرطبة تك للبرمجيات), a single-member limited liability company registered in Egypt under Commercial Registration Number 226435.
 
-Depending on how you use the service, we may collect:
+Registered address: Apartment 301, Third Floor, Building 301, Gardenia Compound, Suez Road, First Settlement, New Cairo, Cairo, Egypt.
 
-- Account information, such as your name, email address, company details, and login information.
-- Content you submit, including messages, support conversations, documents, feedback, and other information provided to the service.
-- Billing information, including billing details, subscription status, payment status, and transaction references.
-- Technical and usage information, such as IP address, browser type, device information, service activity, and cookies.
-- Communications you send to our support team.
+For privacy enquiries, contact [info@qurtubatalks.com](mailto:info@qurtubatalks.com).
 
-Payments are processed through [PAYMENT GATEWAY NAME]. The payment provider’s own privacy policy also applies to information it processes. [CONFIRM WHAT PAYMENT INFORMATION AI SUPPORT 360 RECEIVES AND WHETHER IT STORES ANY CARD DETAILS.]
+## Information We Collect
 
-## How we use information
+Depending on your use of the service, we collect:
 
-We use information to provide and operate the service, manage accounts, process payments, respond to support requests, maintain security, prevent misuse, improve the service, and meet applicable legal obligations.
+- Account information, including your name, email address, business information, and login credentials.
+- Messages, conversation context, documents, and other content you submit to AI features.
+- Billing information, subscription status, payment status, and transaction references.
+- Technical information, including IP address, browser and device information, and service activity.
+- Support requests and other communications you send us.
 
-Where required, we obtain consent before sending marketing communications. You can unsubscribe using the instructions in those communications.
+Submit information only where you have the necessary permission to share it.
 
-## AI processing and customer content
+## How We Use Information
 
-To provide AI features, content you submit may be processed by [AI PROVIDERS AND OTHER RELEVANT SERVICE PROVIDERS].
+We use information to provide AI features, maintain accounts, process payments, respond to support requests, troubleshoot problems, maintain security, prevent misuse, and meet applicable legal obligations.
 
-Customer content is handled for AI training as follows: [WHETHER CUSTOMER CONTENT IS USED FOR AI TRAINING, BY WHOM, AND AVAILABLE CUSTOMER CONTROLS].
+Where required, we obtain consent for optional processing. Marketing messages include a way to unsubscribe.
 
-Do not submit personal or confidential information unless you are authorized to share it and its processing is appropriate for your intended use.
+## AI Processing
 
-## How we share information
+AI Support 360 uses OpenAI to power its AI features. Our current model is OpenAI GPT‑6 Astra.
 
-We may share information with providers that support hosting, AI processing, payments, analytics, security, and customer support, as needed to operate the service.
+Messages, relevant conversation context, and files submitted to AI features may be sent to OpenAI to generate responses.
 
-We may also disclose information when required by law, to protect legal rights or safety, or in connection with a business transfer, subject to applicable requirements.
+[BEFORE PUBLICATION: INSERT VERIFIED INFORMATION ABOUT OPENAI’S TRAINING USE, RETENTION, PROCESSING LOCATIONS, AND AVAILABLE CUSTOMER CONTROLS FOR THIS INTEGRATION.]
 
-## Business customer data
+We may update the model used to provide the service and will update material privacy disclosures where necessary.
 
-When a business customer submits information about its own customers or employees, our role and responsibilities depend on the service agreement and applicable law. Where required, these responsibilities are covered by a separate data processing agreement.
+## Payments
 
-## Storage and international transfers
+Payments are processed through Paymob. Paymob’s own privacy policy applies to information it processes.
 
-Information may be stored or processed in [DATA STORAGE LOCATIONS]. Where applicable, we use the safeguards required for transfers of personal information across borders.
+[BEFORE PUBLICATION: CONFIRM AND DESCRIBE WHETHER AI SUPPORT 360 STORES ONLY BILLING RECORDS, PAYMENT STATUS, TRANSACTION REFERENCES, AND ANY PAYMENT TOKENS, OR ALSO RECEIVES OTHER PAYMENT INFORMATION.]
 
-## Retention
+Do not send full card numbers or card security codes to our support email.
 
-We retain information for the periods described here: [DATA RETENTION PERIODS FOR ACCOUNTS, CONVERSATIONS, SUPPORT RECORDS, BILLING RECORDS, AND BACKUPS].
+## Hosting and International Processing
 
-Retention may vary according to the purpose of processing, contractual requirements, and applicable law.
+Our hosted application data is stored on Amazon Web Services infrastructure in Frankfurt, Germany, in the eu-central-1 region.
 
-## Your privacy choices and rights
+Our company is registered in Egypt, so using the service involves hosting information outside Egypt.
 
-Depending on applicable law, you may have rights to access, correct, delete, or obtain a copy of your personal information, object to certain processing, or withdraw consent.
+Information sent to OpenAI, Paymob, or other providers is processed separately from our application hosting. AWS hosting in Germany does not establish where those providers process information.
 
-Contact info@qurtubatalks.com to make a request. We may need to verify your identity. Some information may need to be retained for legal or other permitted purposes.
+[BEFORE PUBLICATION: LIST ANY OTHER PROVIDERS RECEIVING PERSONAL INFORMATION, THEIR PURPOSES, AND RELEVANT PROCESSING LOCATIONS.]
+
+Where applicable, we meet the requirements for international transfers and processing of personal information.
+
+## Sharing Information
+
+We share information with providers as needed to deliver hosting, AI processing, payments, security, and other service functions.
+
+We may disclose information where legally required, to protect legal rights or safety, or in connection with a business transfer, subject to applicable requirements.
+
+## Business Customer Data
+
+Business customers are responsible for having an appropriate basis to collect and submit information about their customers, employees, or other individuals.
+
+Our processing responsibilities may be further described in a service agreement or data processing agreement.
+
+## Data Retention
+
+We retain:
+
+- Account information while the account is active and ordinarily for up to 90 days after account deletion.
+- Conversations and uploaded files for up to 90 days, unless deleted earlier.
+- Support correspondence for up to 12 months.
+- Billing records for the applicable statutory retention period.
+- Backup copies according to a rolling retention period of up to 30 days.
+
+When you request account deletion, personal content is removed from active systems within 30 days. Residual backup copies expire within a further 30 days.
+
+Limited information may be retained where necessary to comply with legal obligations, prevent fraud, or resolve disputes.
+
+These periods describe our systems. Any separate provider retention must be disclosed in the relevant provider-processing section.
+
+## Your Rights
+
+Depending on applicable law, you may request access, correction, deletion, or a copy of your personal information, withdraw consent, or exercise other privacy rights.
+
+Email [info@qurtubatalks.com](mailto:info@qurtubatalks.com). We may verify your identity before responding.
 
 ## Security
 
-We use measures appropriate to protect the information we process. No online service or transmission method can guarantee absolute security.
+We use appropriate technical and organizational measures to protect information. No online service can guarantee absolute security.
 
 ## Children
 
-The service is intended for business users and adults. If you believe a child has provided personal information without appropriate authorization, contact info@qurtubatalks.com.
+The service is intended for adult and business users. Contact us if you believe a child has submitted information without appropriate authorization.
 
-## Updates and contact
+## Updates
 
-We may update this policy as our service or obligations change. We will provide notice where required.
-
-Privacy questions: info@qurtubatalks.com.
+We may update this policy as the service or our obligations change. We provide notice where required.
 
 # Terms & Conditions
 
-Effective date: [EFFECTIVE DATE]
+Effective date: 6 October 2026
 
-These terms govern your use of AI Support 360, operated by Qurtuba Software Programming, [BUSINESS ADDRESS], [BUSINESS COUNTRY].
+## Service Operator
 
-By accepting these terms or using the service, you agree to them. If you use the service on behalf of an organization, you confirm that you have authority to bind that organization.
+AI Support 360 is operated by Qurtuba Tech for Software (قرطبة تك للبرمجيات), a single-member limited liability company registered in Egypt under Commercial Registration Number 226435.
 
-## Our service
+Registered address: Apartment 301, Third Floor, Building 301, Gardenia Compound, Suez Road, First Settlement, New Cairo, Cairo, Egypt.
 
-AI Support 360 provides the AI support features described on our website and in your selected plan or service agreement.
+Contact: [info@qurtubatalks.com](mailto:info@qurtubatalks.com).
 
-Features, usage limits, integrations, support availability, and charges depend on your plan. Any separately agreed written contract takes precedence where it expressly conflicts with these terms.
+## Acceptance
+
+By accepting these terms, you agree to follow them. If you act on behalf of an organization, you confirm that you have authority to accept them for that organization.
+
+## Our Service
+
+AI Support 360 provides the AI support features described on our website.
+
+Your selected plan determines included features, usage limits, integrations, and support. A separately signed agreement takes precedence where it expressly conflicts with these terms.
 
 ## Accounts
 
-Provide accurate account information, keep your credentials secure, and notify us promptly of suspected unauthorized access.
+Provide accurate information, protect your credentials, and notify us promptly of suspected unauthorized access.
 
-You are responsible for activity under your account to the extent permitted by applicable law.
+## Customer Content
 
-## Customer content
+You retain your rights in submitted content. You authorize us to process it as necessary to provide the service, consistent with our Privacy Policy and applicable agreements.
 
-You retain your rights in content you submit. You grant us permission to process that content as necessary to provide the service, consistent with our Privacy Policy and any applicable service agreement.
+You are responsible for having the necessary rights and permissions to submit information and connect third-party systems.
 
-You are responsible for having the necessary rights and permissions to submit content, connect third-party systems, and process information through the service.
+## AI Limitations
 
-## AI limitations
+AI-generated responses may contain errors, omissions, or unsuitable recommendations. Review outputs before relying on them or sharing them.
 
-AI-generated responses may be incomplete, inaccurate, or unsuitable for a particular situation. Review outputs before relying on them or sharing them with others.
+The service does not replace qualified professional advice. Arrange human review and escalation where appropriate.
 
-AI outputs are not a substitute for qualified professional advice. You are responsible for deciding when human review or escalation is needed.
+## Payments
 
-## Prices and payments
+Prices, currency, applicable taxes, billing frequency, and any additional usage charges are displayed before purchase.
 
-Prices, currency, applicable taxes, billing frequency, and usage limits are shown before purchase.
+Payments are processed through Paymob. You authorize charges for the purchase or subscription you expressly select.
 
-Payments are processed through [PAYMENT GATEWAY NAME]. You authorize charges for the purchase or subscription you explicitly select.
+No additional paid service or charge applies without disclosure and agreement.
 
-Any usage-based charges, additional fees, or overage arrangements must be disclosed and agreed before they apply.
+## Subscriptions and Refunds
 
-## Subscriptions and refunds
+Recurring billing and cancellation are governed by our Subscription & Cancellation Policy. Refunds are governed by our Refund Policy.
 
-Subscriptions are governed by our Subscription & Cancellation Policy. Refunds are governed by our Refund Policy. These policies do not limit rights that cannot legally be excluded.
+## Acceptable Use
 
-## Acceptable use
+You must comply with applicable law and our Acceptable Use Policy.
 
-You must comply with our Acceptable Use Policy and applicable law. You must not use the service to infringe others’ rights, commit fraud, distribute harmful content, or compromise systems.
+## Intellectual Property
 
-## Third-party services
+We and our licensors retain rights in our software, branding, and service materials. Your plan grants permission to use the service within its agreed scope.
 
-Integrations and third-party services may have separate terms and privacy policies. Their availability and behavior may affect features that depend on them.
+## Third-Party Services
 
-## Intellectual property
+Connected services may have separate terms and privacy policies. Their availability may affect features that depend on them.
 
-We or our licensors retain rights in the AI Support 360 software, branding, and other materials, excluding customer content.
+## Availability
 
-These terms permit you to use the service within your plan. They do not transfer ownership of our intellectual property.
+Maintenance, technical problems, and supplier interruptions may affect availability. Any guaranteed uptime or response time must be expressly stated in your plan or written agreement.
 
-## Availability and changes
+## Suspension and Termination
 
-The service may experience interruptions, maintenance, or technical issues. Any contractual uptime or support commitment must be stated in a separate agreement or the applicable plan.
+We may restrict or suspend access where reasonably necessary to address security threats, unlawful use, material breaches, or overdue payments.
 
-We may update the service and will provide notice of material changes where required.
-
-## Suspension and termination
-
-We may restrict or suspend access where reasonably necessary to address security threats, unlawful use, material breaches, or overdue payments. Where practical and appropriate, we will provide notice and an opportunity to resolve the issue.
-
-You may stop using the service and cancel according to our Subscription & Cancellation Policy. Data after termination is handled according to our Privacy Policy and any applicable agreement.
+Where appropriate, we provide notice and an opportunity to resolve the issue. You may cancel according to our cancellation policy.
 
 ## Liability
 
 To the extent permitted by law, we are not responsible for indirect or consequential losses arising from use of the service.
 
-Nothing in these terms excludes liability or customer rights that cannot lawfully be excluded.
+Nothing in these terms excludes rights or liability that cannot legally be excluded.
 
-## Governing law and disputes
+## Governing Law
 
-These terms are governed by the laws of [BUSINESS COUNTRY], subject to any mandatory protections that apply to you.
+These terms are governed by the laws of the Arab Republic of Egypt, subject to mandatory protections applicable to you.
 
-Contact info@qurtubatalks.com first so we can try to resolve a concern. Where resolution is not possible, disputes may be brought before the courts with jurisdiction under applicable law.
+Contact us first so we can attempt to resolve a concern. Unresolved disputes may be brought before the courts with jurisdiction under applicable law.
 
-## Contact
+## Changes
 
-Qurtuba Software Programming  
-[BUSINESS ADDRESS]  
-Registration number: [BUSINESS REGISTRATION NUMBER, IF APPLICABLE]  
-Email: info@qurtubatalks.com
+We provide notice of material changes where required.
 
 # Refund Policy
 
-Effective date: [EFFECTIVE DATE]
+Effective date: 6 October 2026
 
-This policy explains how refund requests for AI Support 360 are handled.
+## First Subscription Payment
 
-## Requesting a refund
+You may request a full refund within 14 calendar days of your first subscription payment.
 
-Send your request to info@qurtubatalks.com within [REFUND REQUEST WINDOW]. Include your account email, transaction reference, purchase date, and the reason for your request. Do not send full card details.
+## Other Refund Requests
 
-## Refund eligibility
+We review renewal charges, duplicate payments, billing errors, unauthorized charges, and material service failures individually.
 
-We review requests involving duplicate charges, billing errors, failure to activate a paid service, or a material failure to provide the purchased service.
+Cancelling a subscription does not automatically refund an earlier payment. This does not affect mandatory legal rights.
 
-Other refund requests are assessed according to the offer presented at purchase, the service delivered, and applicable law.
+Any separately agreed custom service must disclose its refund terms before purchase.
 
-The following rules apply to our products:
+## How to Request a Refund
 
-- Subscription payments: [STATE REFUND ELIGIBILITY AND WHETHER PARTIAL REFUNDS APPLY].
-- Setup or onboarding fees: [STATE REFUND ELIGIBILITY AND HOW WORK ALREADY COMPLETED IS HANDLED].
-- Purchased credits or usage packages: [STATE RULES FOR USED AND UNUSED CREDITS].
-- Trial conversions: [STATE THE REFUND RULE FOR CHARGES AFTER A TRIAL].
+Email [info@qurtubatalks.com](mailto:info@qurtubatalks.com) with your account email, transaction reference, payment date, and reason for the request.
 
-## Processing approved refunds
+Do not include full card details or card security codes.
 
-Approved refunds are generally returned to the original payment method. We process them within [REFUND PROCESSING TIME]. Your payment provider or bank may require additional time to make the funds available.
+## Processing
 
-## Cancellation and legal rights
+We issue approved refunds to the original payment method within five business days, or sooner where legally required.
 
-Cancellation stops future renewals according to our Subscription & Cancellation Policy. It does not automatically create a refund for an earlier payment.
+Your bank or payment provider may require additional time to make the funds available.
 
-This policy does not restrict refund or other rights granted by applicable law.
+## Consumer Rights
 
-Contact: info@qurtubatalks.com.
+This policy does not limit rights under applicable Egyptian consumer protection law or other mandatory protections. Where mandatory requirements differ, those requirements apply.
 
 # Subscription & Cancellation Policy
 
-Effective date: [EFFECTIVE DATE]
+Effective date: 6 October 2026
 
-## Billing and renewal
+## Plans and Billing
 
-Available billing periods are displayed on the pricing and checkout pages.
+We offer monthly and annual subscriptions. Prices, included usage, taxes, and billing frequency are displayed before purchase.
 
-A subscription renews automatically only where this is clearly disclosed and agreed at purchase. The displayed subscription price is charged at the beginning of each billing period, subject to any disclosed usage-based arrangement.
+Automatic renewal applies only where it is clearly disclosed and expressly accepted at checkout.
 
-## Trials and promotions
+## Free Trial
 
-Any trial or promotional offer must state its duration, included features, whether a payment method is required, and the price and billing frequency that apply afterward.
+Our standard free trial lasts seven days. No payment card is required, and the trial does not automatically create a paid subscription.
 
-If a trial automatically becomes a paid subscription, this must be clearly disclosed before enrollment.
+Trial features and usage limits are displayed before signup. To continue after the trial, select and purchase a paid plan.
 
-## How to cancel
+## Cancellation
 
-Cancel through [CANCELLATION METHOD]. If you need help, contact info@qurtubatalks.com.
+Cancel through Account → Billing. If you need assistance, email [info@qurtubatalks.com](mailto:info@qurtubatalks.com).
 
-Cancellation takes effect as follows: [STATE WHEN CANCELLATION STOPS RENEWAL AND WHETHER ACCESS CONTINUES UNTIL THE END OF THE PAID PERIOD].
+Cancellation stops the next renewal. Access continues until the end of the current paid period.
 
-We provide confirmation once cancellation is completed.
+We provide confirmation when cancellation is completed.
 
-## Plan changes
+## Upgrades and Downgrades
 
-Upgrade and downgrade options, their effective dates, and any prorated charges or credits are explained before you confirm the change.
+Upgrades take effect immediately after you accept any displayed prorated charge.
 
-## Failed payments
+Downgrades take effect at the next renewal. The revised price and included features are shown before confirmation.
 
-If a payment fails, we may notify you and request an updated payment method. Continued nonpayment may result in restricted or suspended access, subject to applicable requirements and your service agreement.
+## Failed Payments
 
-## Price changes
+We may request an updated payment method if payment fails. Continued nonpayment may result in restricted or suspended access, subject to applicable requirements.
 
-We will communicate subscription price changes before they take effect, with any notice or cancellation options required by applicable law.
+## Price Changes
 
-## Account deletion
+We notify you before a subscription price change takes effect, with any notice or cancellation options required by law.
 
-Account deletion and subscription cancellation are handled as follows: [EXPLAIN WHETHER DELETION ALSO CANCELS BILLING AND HOW USERS COMPLETE BOTH ACTIONS].
+## Account Deletion
 
-## Refunds
+Account deletion also cancels future subscription billing. Access ends when the account is deleted.
 
-Refund eligibility is described in our Refund Policy. Mandatory legal rights continue to apply.
+Refunds are handled according to our Refund Policy. Personal information is handled according to our Privacy Policy.
 
-Contact: info@qurtubatalks.com.
+## Legal Rights
+
+This policy does not limit mandatory consumer rights.
 
 # Service Delivery & Activation Policy
 
-Effective date: [EFFECTIVE DATE]
+Effective date: 6 October 2026
 
-AI Support 360 is delivered digitally.
+## Digital Delivery
+
+AI Support 360 is delivered online. Physical shipping is not required.
 
 ## Activation
 
-After successful payment, access is provided through [DESCRIBE ACCOUNT ACTIVATION OR EMAIL DELIVERY] within [ACTIVATION TIMEFRAME].
+Standard subscriptions activate automatically after successful payment is verified, normally within 15 minutes.
 
-Some purchases may require onboarding, configuration, or integration work. Any separate setup requirements and delivery schedule will be communicated before purchase or agreed in writing.
+Custom integrations, configuration, and onboarding follow a separately agreed delivery schedule.
 
-## Customer responsibilities
+## Customer Responsibilities
 
-Provide an accurate email address and any information or permissions needed for setup. Delays in providing required information may affect the delivery schedule.
+Provide an accurate email address and any information or authorized access needed for setup. Missing information may delay delivery.
 
-## Activation problems
+## Activation Problems
 
-If payment succeeds but access is not available within the stated timeframe, contact info@qurtubatalks.com with your account email and transaction reference.
+If access is unavailable after the stated activation period, email [info@qurtubatalks.com](mailto:info@qurtubatalks.com) with your account email and transaction reference.
 
-We will investigate and arrange access or review the issue under our Refund Policy.
+We investigate and arrange access or assess the issue under our Refund Policy and applicable law.
 
-## What is delivered
+## Included Services
 
-Your purchase includes the features, usage limits, and support described in the selected plan or written agreement.
-
-## Physical shipping
-
-Our online service does not require physical shipping.
+Your purchase includes the features, usage limits, and support described in your selected plan or written agreement.
 
 # Cookie Policy
 
-Effective date: [EFFECTIVE DATE]
+Effective date: 6 October 2026
 
-This policy explains how AI Support 360 uses cookies and similar technologies.
+## About Cookies
 
-## What cookies do
+Cookies and similar technologies store information on your device or help a website recognize your browser.
 
-Cookies are small files stored on your device. Similar technologies may also store information or help a website recognize a browser.
+## Essential Technologies
 
-## Technologies we use
+Essential technologies support functions such as authentication, security, account sessions, and checkout.
 
-Our website uses [COOKIE AND ANALYTICS TOOLS].
+[BEFORE PUBLICATION: INSERT THE ACTUAL COOKIE OR TECHNOLOGY NAMES, PROVIDERS, PURPOSES, AND DURATIONS.]
 
-Before publication, include an accurate list describing each tool’s purpose, provider, and duration. Remove categories that the website does not use.
+## Optional Technologies
 
-Cookies may support:
+Optional analytics and advertising technologies remain disabled unless enabled with appropriate disclosures and any required consent.
 
-- Essential functions, such as login, security, and checkout.
-- Saved preferences.
-- Analytics that help us understand website usage.
-- Advertising or marketing, if enabled.
+Where consent is required, these technologies do not load until you agree. You can change your choice through Cookie Settings.
 
-## Your choices
+## Browser Controls
 
-Where required, we request consent before activating optional cookies. You can change your choices through the website’s cookie settings.
+You can manage cookies through your browser. Blocking essential cookies may affect website functionality.
 
-You can also manage cookies in your browser. Blocking some cookies may affect website functionality.
+## Third Parties
 
-## Third parties
+Payment and embedded services may use their own technologies. Their policies explain their processing.
 
-Payment providers, embedded tools, and integrations may use their own cookies. Their policies explain how they handle information.
-
-## Contact
-
-For questions, contact info@qurtubatalks.com.
-
-Implementation requirement: inspect the actual website integrations before creating a cookie banner. Where consent is required, provide clear accept, reject, and settings controls, and prevent optional technologies from loading until the appropriate choice is made. Do not display a consent banner that fails to control the technologies it describes.
+Contact: [info@qurtubatalks.com](mailto:info@qurtubatalks.com).
 
 # Acceptable Use Policy
 
-Effective date: [EFFECTIVE DATE]
+Effective date: 6 October 2026
 
-Use AI Support 360 responsibly and in accordance with applicable law.
+## Responsible Use
+
+Use AI Support 360 lawfully and respect the rights of others.
 
 You must not use the service to:
 
-- Commit fraud, impersonate others deceptively, or send unlawful spam.
-- Upload or process information you are not authorized to share.
-- Infringe intellectual property, privacy, or other legal rights.
-- Create or distribute unlawful threats, exploitation, or harassment.
-- Distribute malware, interfere with systems, or attempt unauthorized access.
+- Commit fraud or deceptively impersonate others.
+- Send unlawful spam, threats, or harassment.
+- Submit information without the necessary permission.
+- Infringe privacy, intellectual property, or other rights.
+- Create or distribute unlawful content.
+- Distribute malware or obtain unauthorized system access.
 - Bypass security controls or agreed usage limits.
-- Misrepresent AI-generated responses as verified facts or professional advice.
-- Automate decisions where doing so would violate applicable law.
+- Automate activities or decisions in violation of applicable law.
 
-Business customers are responsible for configuring appropriate permissions, reviewing AI behavior, and providing human escalation where their use case requires it.
+## Human Oversight
 
-We may investigate misuse and take proportionate action, including restricting or suspending access. Where appropriate, we will notify the account owner.
+Review AI outputs and configure appropriate permissions and human oversight.
 
-Report suspected misuse to info@qurtubatalks.com.
+Do not represent AI-generated responses as verified facts or qualified professional advice without appropriate review.
+
+## Enforcement
+
+We may investigate suspected misuse and take proportionate action, including restricting or suspending access. Where appropriate, we notify the account owner.
+
+Report suspected misuse to [info@qurtubatalks.com](mailto:info@qurtubatalks.com).
 
