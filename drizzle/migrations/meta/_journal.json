@@ -155,6 +155,13 @@
       "when": 1791256225051,
       "tag": "0021_client_nda_choice",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791256653049,
+      "tag": "0022_ticket_payment_terms_invoices",
+      "breakpoints": true
     }
   ]
 }

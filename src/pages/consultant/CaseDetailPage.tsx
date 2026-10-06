@@ -23,6 +23,7 @@ import TicketStatusActions from '@/components/consultant/TicketStatusActions';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 import TicketAreasNotes from '@/components/ticket/TicketAreasNotes';
 import TicketTimesheet from '@/components/client/TicketTimesheet';
+import TicketPaymentSection from '@/components/payments/TicketPaymentSection';
 import { areasOf, areaLabel } from '@/lib/sapAreas';
 import { cleanNoteList } from '@/lib/sapNotes';
 
@@ -279,7 +280,7 @@ export default function CaseDetailPage() {
       )}
 
       {/* The timesheet of this case: the hourly rate, the activities and the timesheets that the client approves */}
-      {!!consultantData?.id && (
+      {!!consultantData?.id && (<>
         <Card className="rounded-2xl border-border/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -291,7 +292,8 @@ export default function CaseDetailPage() {
             <TicketTimesheet ticketId={ticket.id} ticketTitle={ticket.title} isReadOnly={false} canApprove={false} />
           </CardContent>
         </Card>
-      )}
+        <TicketPaymentSection ticketId={ticket.id} role="consultant" />
+      </>)}
 
       {/* Inline Schedule Meeting Dialog */}
       <ScheduleMeetingDialog
