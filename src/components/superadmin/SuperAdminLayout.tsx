@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Crown } from 'lucide-react';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
 import HeaderNav from '@/components/HeaderNav';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/brand/mark.png.asset.json';
 import { Link } from 'react-router-dom';
 
 export default function SuperAdminLayout() {
@@ -27,8 +27,8 @@ export default function SuperAdminLayout() {
             <div className="flex items-center gap-3">
               <SidebarTrigger />
               <Link to="/" className="flex items-center gap-2 md:hidden">
-                <img src={logo} alt="AI Support Now" className="w-8 h-8 rounded-lg object-contain" />
-                <span className="font-bold text-sm text-foreground">AI Support Now</span>
+                <img src={logo.url} alt="AI Support 360" className="w-8 h-8 rounded-lg object-contain" />
+                <span className="font-bold text-sm text-foreground">AI Support 360</span>
               </Link>
               <Badge className="bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0 text-[10px] gap-1 shadow-sm">
                 <Crown className="w-3 h-3" />

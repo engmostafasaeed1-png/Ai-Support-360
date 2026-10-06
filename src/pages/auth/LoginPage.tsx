@@ -14,6 +14,7 @@ import VerificationTimeline from '@/components/auth/VerificationTimeline';
 import PasswordInput from '@/components/auth/PasswordInput';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
+import logo from '@/assets/brand/domain.png.asset.json';
 import { logAudit } from '@/lib/auditLog';
 import { runSignInPreflight } from '@/lib/authPreflight';
 import {
@@ -378,8 +379,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md relative z-10 shadow-2xl border-border/30 backdrop-blur-sm bg-card/95 animate-fade-in">
         <CardHeader className="text-center">
           <Link to="/" className="inline-flex items-center gap-2 justify-center mb-4 group">
-            <img src="/assets/logo.png" alt="AI SAP Support Now" className="w-9 h-9 rounded-xl object-contain shadow-sm group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-xl text-foreground">AI SAP Support Now</span>
+            <img src={logo.url} alt="AI Support 360" width={288} height={64} className="w-72 max-w-full h-16 object-contain transition-transform group-hover:scale-105" />
           </Link>
           <h1 className="font-semibold leading-none tracking-tight text-2xl">{t('auth.login_title')}</h1>
           <CardDescription>{t('auth.login_desc')}</CardDescription>
