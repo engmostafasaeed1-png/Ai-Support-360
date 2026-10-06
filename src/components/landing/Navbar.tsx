@@ -88,10 +88,10 @@ export default function Navbar() {
         >
           <span className="relative w-6 h-6 inline-flex items-center justify-center">
             <Menu
-              className={`absolute w-6 h-6 transition-all duration-300 ${scrolled ? 'text-foreground' : 'text-white drop-shadow-md'} ${mobileOpen ? 'opacity-0 -rotate-90 scale-75' : 'opacity-100 rotate-0 scale-100'}`}
+              className={`absolute w-6 h-6 text-foreground transition-all duration-300 ${mobileOpen ? 'opacity-0 -rotate-90 scale-75' : 'opacity-100 rotate-0 scale-100'}`}
             />
             <X
-              className={`absolute w-6 h-6 transition-all duration-300 ${scrolled ? 'text-foreground' : 'text-white drop-shadow-md'} ${mobileOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-90 scale-75'}`}
+              className={`absolute w-6 h-6 text-foreground transition-all duration-300 ${mobileOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-90 scale-75'}`}
             />
           </span>
         </button>
