@@ -119,6 +119,11 @@ export default function PaymentsPage() {
         </div>
       </div>
 
+      {/* Invoice due-date calendar */}
+      {!isLoading && allPayments.some((p: any) => p.due_date) && (
+        <InvoiceDueCalendar payments={allPayments} onSelectPayment={setSelectedPayment} />
+      )}
+
       {/* Payment List */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader className="pb-2">
