@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, Globe } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import navyLogo from '@/assets/brand/navy.png.asset.json';
-import domainLogo from '@/assets/brand/domain.png.asset.json';
+import navyLogo from '@/assets/brand/horizontal.webp.asset.json';
+import domainLogo from '@/assets/brand/horizontal.webp.asset.json';
 
 export default function Navbar() {
   const { t } = useTranslation();

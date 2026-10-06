@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import logo from '@/assets/brand/domain.png.asset.json';
+import logo from '@/assets/brand/horizontal.webp.asset.json';
 import { useDemoWizard } from './DemoRequestWizard';
 
 export default function Footer() {
