@@ -774,6 +774,9 @@ export default function CompanyProfilePage() {
         </CardContent>
       </Card>
 
+      {/* NDA choice: portal NDA vs company NDA */}
+      <ClientNDAUpload />
+
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={updateProfile.isPending} className="gradient-primary border-0 gap-2">
           {updateProfile.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

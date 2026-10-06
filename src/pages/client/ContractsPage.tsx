@@ -159,6 +159,8 @@ export default function ContractsPage() {
         <p className="text-sm text-muted-foreground mt-1">View and download your signed Non-Disclosure Agreements with consultants</p>
       </div>
 
+      <ClientNDAUpload />
+
       <div className="grid grid-cols-3 gap-4">
         {stats.map((s) => (
           <Card key={s.label} className="rounded-2xl border-border/50">
