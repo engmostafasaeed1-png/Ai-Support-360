@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, Globe } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import logo from '@/assets/logo.png';
+import navyLogo from '@/assets/brand/navy.png.asset.json';
+import domainLogo from '@/assets/brand/domain.png.asset.json';
 
 export default function Navbar() {
   const { t } = useTranslation();
@@ -41,33 +42,17 @@ export default function Navbar() {
       <div className={`container mx-auto flex items-center justify-between h-16 sm:h-20 md:h-24 px-3 sm:px-4 gap-2`}>
         <Link
           to="/"
-          aria-label="AI Support Now — go to home"
+          aria-label="AI Support 360 — go to home"
           title="Go to home"
           className="flex items-center gap-2 sm:gap-3 group rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background -ml-1 px-1 py-1 min-h-[44px] cursor-pointer min-w-0 shrink active:bg-foreground/5"
         >
-          <span
-            className={`inline-flex items-center justify-center shrink-0 rounded-xl sm:rounded-2xl bg-white p-1 sm:p-1.5 transition-all duration-500 group-hover:scale-105 group-active:scale-95 ${
-              scrolled
-                ? 'ring-1 ring-border/60 shadow-md'
-                : 'ring-2 ring-white/70 shadow-xl drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)]'
-            }`}
-          >
-            <img
-              src={logo}
-              alt="AI Support Now logo"
-              width={96}
-              height={96}
-              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg sm:rounded-xl object-contain"
-            />
-          </span>
-          <span className={`font-black leading-tight tracking-tight transition-colors duration-500 whitespace-nowrap ${scrolled ? 'text-foreground group-hover:text-primary' : 'text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] group-hover:text-white/90'}`}>
-            {/* ≤640px: short brand */}
-            <span className="inline sm:hidden text-sm">AI Support</span>
-            {/* 640–1023px: short brand */}
-            <span className="hidden sm:inline lg:hidden text-lg md:text-xl">AI Support</span>
-            {/* ≥1024px: full brand */}
-            <span className="hidden lg:inline text-2xl">AI Support Now</span>
-          </span>
+          <img
+            src={scrolled ? domainLogo.url : navyLogo.url}
+            alt="AI Support 360"
+            width={240}
+            height={56}
+            className="w-40 sm:w-44 lg:w-52 h-12 object-contain rounded-md transition-transform group-hover:scale-105"
+          />
         </Link>
 
         <div className="hidden md:flex items-center gap-0.5">

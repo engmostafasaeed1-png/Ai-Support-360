@@ -8,7 +8,7 @@ import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
 import HeaderNav from '@/components/HeaderNav';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/brand/mark.png.asset.json';
 import { Link } from 'react-router-dom';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 
@@ -29,8 +29,8 @@ export default function AdminLayout() {
             <div className="flex items-center gap-3">
               <SidebarTrigger />
               <Link to="/" className="flex items-center gap-2 md:hidden">
-                <img src={logo} alt="AI SAP Support Now" className="w-8 h-8 rounded-lg object-contain" />
-                <span className="font-bold text-sm text-foreground">AI SAP Support Now</span>
+                <img src={logo.url} alt="AI Support 360" className="w-8 h-8 rounded-lg object-contain" />
+                <span className="font-bold text-sm text-foreground">AI Support 360</span>
               </Link>
               <div className="relative hidden sm:block">
                 <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/brand/domain.png.asset.json';
 import { useDemoWizard } from './DemoRequestWizard';
 
 export default function Footer() {
@@ -40,16 +40,7 @@ export default function Footer() {
         <div className="grid md:grid-cols-5 gap-10">
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-5">
-              <span className="inline-flex items-center justify-center bg-white rounded-2xl p-1.5 ring-1 ring-border/60 shadow-md shrink-0">
-                <img
-                  src={logo}
-                  alt="AI Support Now"
-                  width={56}
-                  height={56}
-                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-contain"
-                />
-              </span>
-              <span className="font-black text-lg sm:text-xl text-foreground tracking-tight">AI Support Now</span>
+              <img src={logo.url} alt="AI Support 360 — aisupport360.com" width={288} height={64} className="w-72 max-w-full h-16 object-contain object-left" />
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
               {t('footer.description')}

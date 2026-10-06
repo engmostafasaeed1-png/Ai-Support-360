@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Replace existing logo placements and browser icons with the uploaded AI Support 360 artwork; verify rendering.
+
 - [x] Combine consultant onboarding and profile under one Profile destination and verify navigation.
 - [x] Consolidate duplicate profile editors without losing unique fields.
 - [x] Match tickets against complete saved expertise and show ranked weighted scores; verify signed-in flow.

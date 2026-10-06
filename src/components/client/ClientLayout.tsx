@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
 import HeaderNav from '@/components/HeaderNav';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/brand/mark.png.asset.json';
 
 export default function ClientLayout() {
   const portalMargin = usePortalMargin();
@@ -38,8 +38,8 @@ export default function ClientLayout() {
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-muted-foreground" />
               <Link to="/" className="flex items-center gap-2 md:hidden">
-                <img src={logo} alt="AI Support Now" className="w-8 h-8 rounded-lg object-contain" />
-                <span className="font-bold text-sm text-foreground">AI Support Now</span>
+                <img src={logo.url} alt="AI Support 360" className="w-8 h-8 rounded-lg object-contain" />
+                <span className="font-bold text-sm text-foreground">AI Support 360</span>
               </Link>
               <div className="hidden md:flex items-center relative">
                 <Search className="w-4 h-4 absolute start-3 text-muted-foreground" />
