@@ -46,7 +46,7 @@ export default function Navbar() {
           : 'shadow-[0_8px_28px_-22px_hsl(var(--foreground)/0.45)]'
       }`}
     >
-      <div className="container mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 h-[72px] sm:h-[92px] lg:h-[108px] xl:h-[116px]">
+      <div className="container mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 h-[84px] sm:h-[100px] lg:h-[112px] xl:h-[116px]">
         <Link
           to="/"
           aria-label="AI Support 360 — go to home"
@@ -58,7 +58,7 @@ export default function Navbar() {
             alt="AI Support 360"
             width={1711}
             height={429}
-            className="h-[42px] sm:h-[60px] lg:h-[74px] xl:h-[82px] w-auto max-w-full object-contain object-left motion-safe:transition-transform motion-safe:duration-300 group-hover:scale-[1.03]"
+            className="h-[58px] sm:h-[72px] lg:h-[80px] xl:h-[82px] w-auto max-w-full object-contain object-left motion-safe:transition-transform motion-safe:duration-300 group-hover:scale-[1.03]"
           />
         </Link>
 
