@@ -14,8 +14,10 @@ export const LEGAL_PAGES = [
   { slug: 'acceptable-use', title: 'Acceptable Use', heading: 'Acceptable Use Policy' },
 ] as const;
 
+const normalized = raw.replace(/\r\n/g, '\n');
+
 function sectionFor(heading: string): string {
-  const parts = raw.split(/^# /m);
+  const parts = normalized.split(/^# /m);
   const part = parts.find((p) => p.startsWith(heading + '\n')) ?? '';
   // Show unresolved placeholders as highlighted chips so they are easy to spot.
   return part.slice(heading.length + 1).replace(/\[([A-Z][^\]]*)\]/g, '`[$1]`');
