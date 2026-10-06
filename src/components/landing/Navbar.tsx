@@ -129,7 +129,7 @@ export default function Navbar() {
       <div
         onClick={() => setMobileOpen(false)}
         aria-hidden="true"
-        className={`xl:hidden fixed inset-0 top-full bg-foreground/30 backdrop-blur-sm transition-opacity duration-300 ${mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        className={`xl:hidden fixed inset-0 top-full bg-foreground/45 backdrop-blur-sm transition-opacity duration-300 ${mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
       />
 
       {/* Slide-down panel — absolute so navbar height never shifts */}
@@ -137,7 +137,7 @@ export default function Navbar() {
         id="mobile-menu"
         role="menu"
         aria-hidden={!mobileOpen}
-        className={`xl:hidden absolute left-0 right-0 top-full origin-top border-t border-border/30 bg-background/95 backdrop-blur-xl shadow-2xl will-change-transform transition-[opacity,transform] duration-300 ease-out ${
+        className={`xl:hidden absolute left-0 right-0 top-full origin-top border-t border-border/30 bg-background shadow-2xl will-change-transform transition-[opacity,transform] duration-300 ease-out ${
           mobileOpen
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 -translate-y-3 pointer-events-none'
