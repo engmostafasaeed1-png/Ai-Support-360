@@ -74,15 +74,16 @@ export default function NDASigningModal({
 
     supabase
       .from('client_profiles')
-      .select('company_name, industry, sap_modules, custom_nda_url, custom_nda_filename')
+      .select('company_name, industry, sap_modules, custom_nda_url, custom_nda_filename, use_custom_nda')
       .eq('user_id', clientId)
       .maybeSingle()
       .then(({ data }) => {
         setClientCompany(data?.company_name || '');
         setClientIndustry(data?.industry || '');
         setClientSapModules((data?.sap_modules || []).join(', '));
-        setCustomNdaUrl(data?.custom_nda_url || null);
-        setCustomNdaFilename(data?.custom_nda_filename || null);
+        const useCustom = data?.use_custom_nda !== false;
+        setCustomNdaUrl(useCustom ? data?.custom_nda_url || null : null);
+        setCustomNdaFilename(useCustom ? data?.custom_nda_filename || null : null);
       });
   }, [open, consultantId, clientId, clientName]);
 
