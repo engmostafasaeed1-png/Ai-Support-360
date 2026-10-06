@@ -39,7 +39,7 @@ export default function SignupPage() {
 
   const [role, setRole] = useState<Role>(initialRole);
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => (searchParams.get('email') || '').slice(0, 254));
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);

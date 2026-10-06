@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, MoreHorizontal, UserPlus } from 'lucide-react';
 import { useAdminUsers } from '@/hooks/useAdminData';
+import InviteUserDialog from '@/components/admin/InviteUserDialog';
 
 const roleColors: Record<string, string> = {
   client: 'bg-accent/10 text-accent border-accent/20',
@@ -24,6 +25,7 @@ const statusColors: Record<string, string> = {
 export default function UsersPage() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const { t } = useTranslation();
   const { data: users, isLoading } = useAdminUsers();
@@ -43,11 +45,12 @@ export default function UsersPage() {
           <h1 className="text-2xl font-bold text-foreground">{t('users_page.title')}</h1>
           <p className="text-sm text-muted-foreground">{allUsers.length} {t('users_page.subtitle')}</p>
         </div>
-        <Button className="gradient-primary border-0">
+        <Button className="gradient-primary border-0" onClick={() => setInviteOpen(true)}>
           <UserPlus className="w-4 h-4 me-1" /> {t('users_page.invite_user')}
         </Button>
       </div>
 
+      <InviteUserDialog open={inviteOpen} onOpenChange={setInviteOpen} />
       <Card className="border-border/50">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row gap-3">
