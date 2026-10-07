@@ -41,7 +41,7 @@ export default function TicketKanbanPage() {
       {isLoading ? (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {columns.map((col) => (
-            <div key={col.key} className="min-w-[280px] flex-shrink-0 space-y-3">
+            <div key={col.key} className="min-w-[260px] flex-1 space-y-3">
               <Skeleton className="h-6 w-32" />
               {[1, 2].map(i => <Skeleton key={i} className="h-32" />)}
             </div>
@@ -52,7 +52,7 @@ export default function TicketKanbanPage() {
           {columns.map((col) => {
             const tickets = (ticketData as any)[col.key] || [];
             return (
-              <div key={col.key} className="min-w-[280px] flex-shrink-0">
+              <div key={col.key} className="min-w-[260px] flex-1">
                 <div className="flex items-center gap-2 mb-3 px-1">
                   <span className={`w-2.5 h-2.5 rounded-full ${col.color}`} />
                   <h3 className="font-semibold text-sm text-foreground">{t(col.labelKey)}</h3>
