@@ -391,8 +391,8 @@ export default function ConsultantDashboard() {
             <div className="space-y-2 stagger-fade">
               {activeCases.map((ticket: any) => (
                 <Link key={ticket.id} to={`/consultant/cases/${ticket.id}`} className="block">
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-border/30 card-interactive">
-                  <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 p-4 rounded-xl bg-muted/20 border border-border/30 card-interactive sm:flex-nowrap">
+                  <div className="w-full min-w-0 sm:w-auto sm:flex-1">
                     <h4 className="text-sm font-medium text-foreground truncate">{ticket.title}</h4>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                       <span>{ticket.sap_module}</span>
@@ -414,7 +414,7 @@ export default function ConsultantDashboard() {
                       {(ticket.status || '').replace('_', ' ')}
                     </Badge>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <ChevronRight className="ms-auto h-4 w-4 shrink-0 text-muted-foreground sm:ms-0" />
                 </div>
                 </Link>
               ))}

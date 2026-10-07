@@ -288,7 +288,7 @@ export default function ClientDashboard() {
               <div className="stagger-fade space-y-2">
                 {tickets.slice(0, 5).map((ticket: any) => (
                   <Link key={ticket.id} to={`/client/tickets/${ticket.id}`} className="block">
-                    <div className="flex items-center gap-4 p-3 rounded-xl bg-muted/20 border border-border/30 card-interactive group">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 p-3 rounded-xl bg-muted/20 border border-border/30 card-interactive group sm:flex-nowrap">
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{
                         background: ticket.urgency === 'critical' ? 'hsl(0, 84%, 60%, 0.1)' :
                           ticket.urgency === 'high' ? 'hsl(25, 95%, 53%, 0.1)' :
@@ -307,7 +307,7 @@ export default function ClientDashboard() {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex w-full items-center gap-2 ps-[3.25rem] sm:w-auto sm:shrink-0 sm:ps-0">
                         <Badge variant="secondary" className={`text-[10px] ${urgencyColors[ticket.urgency]}`}>
                           {ticket.urgency}
                         </Badge>
