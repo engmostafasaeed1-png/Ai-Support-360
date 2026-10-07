@@ -339,7 +339,7 @@ const App = () => (
               <Route path="satisfaction" element={<SatisfactionPage />} />
             </Route>
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><ErrorBoundary><AdminLayout /></ErrorBoundary></ProtectedRoute>}>
-              <Route index element={<AdminConsolePage />} />
+              <Route index element={<AdminDashboard />} />
               <Route path="console" element={<AdminConsolePage />}>
                 <Route index element={<OverviewSection />} />
                 <Route path="users" element={<UserManagementSection />} />

@@ -7,20 +7,23 @@ import { usePortalMargin } from '@/hooks/usePortalMargin';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import { useIsConsultant } from '@/hooks/useIsConsultant';
 import SecurityAlert from '@/components/SecurityAlert';
-import { Search, AlertTriangle, Briefcase, Building2 } from 'lucide-react';
+import { AlertTriangle, Briefcase, Building2 } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Input } from '@/components/ui/input';
+import HeaderSearchButton from '@/components/layout/HeaderSearchButton';
 import { Link } from 'react-router-dom';
 import HeaderNav from '@/components/HeaderNav';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import logo from '@/assets/brand/mark.png.asset.json';
 
 export default function ClientLayout() {
   const portalMargin = usePortalMargin();
   const navigate = useNavigate();
   const isConsultant = useIsConsultant();
+  const { profile } = useUserProfile();
   useSessionTimeout();
   return (
     <SidebarProvider>
@@ -35,13 +38,7 @@ export default function ClientLayout() {
                 <img src={logo.url} alt="AI Support 360" className="w-8 h-8 rounded-lg object-contain" />
                 <span className="font-bold text-sm text-foreground">AI Support 360</span>
               </Link>
-              <div className="hidden md:flex items-center relative">
-                <Search className="w-4 h-4 absolute start-3 text-muted-foreground" />
-                <Input
-                  placeholder="Search tickets, consultants..."
-                  className="ps-9 h-9 w-64 rounded-xl bg-muted/40 border-border/40 focus-visible:ring-accent/50 transition-all focus:w-80"
-                />
-              </div>
+              <HeaderSearchButton placeholder="Search tickets, consultants..." />
             </div>
             <div className="flex items-center gap-3">
               <Badge className="bg-accent/10 text-accent border border-accent/30 px-3 py-1 text-xs font-semibold gap-1.5">
@@ -67,15 +64,20 @@ export default function ClientLayout() {
                 </Tooltip>
               )}
               <Link to="/client/new-request">
-                <Button size="sm" variant="destructive" className="text-xs gap-1.5 shadow-sm hover:shadow-md transition-shadow">
+                <Button size="sm" variant="outline" className="text-xs gap-1.5 border-destructive/30 bg-destructive/10 text-destructive shadow-none hover:bg-destructive hover:text-destructive-foreground">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Emergency</span>
                 </Button>
               </Link>
               <NotificationBell basePath="/client" />
-              <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold shadow-premium">
-                KO
-              </div>
+              <Link to="/client/settings" className="group flex items-center gap-2" aria-label="Account settings">
+                <Avatar className="h-8 w-8 ring-2 ring-border transition-all group-hover:ring-accent/50">
+                  {profile?.avatarUrl && <AvatarImage src={profile.avatarUrl} alt={profile.displayName} />}
+                  <AvatarFallback className="bg-gradient-to-br from-accent to-primary text-xs font-bold text-primary-foreground">
+                    {profile?.initials || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
             </div>
           </FixedHeader>
           <FixedSubHeader>
