@@ -2,12 +2,12 @@ import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 
 const BASE_URL = 'https://www.aisupport360.com';
-const BRAND = 'AI Support Now';
+const BRAND = 'AI Support 360';
 
 type Meta = { title: string; description: string; noindex?: boolean };
 
 const DEFAULT: Meta = {
-  title: `AI Support Now — Expert On-Demand Support`,
+  title: `AI Support 360 — Expert On-Demand Support`,
   description:
     'AI-powered enterprise support platform. Connect with verified experts for S/4HANA, BTP, SuccessFactors, and 20+ modules. Bilingual Arabic & English.',
 };
