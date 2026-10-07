@@ -16,9 +16,9 @@ const corsHeaders = {
 
 // Configuration
 const SITE_NAME = "AI SAP Support now"
-const SENDER_DOMAIN = "notify.aisapsupportnow.com"
-const ROOT_DOMAIN = "aisapsupportnow.com"
-const FROM_DOMAIN = "aisapsupportnow.com"
+const SENDER_DOMAIN = "notify.aisupport360.com"
+const ROOT_DOMAIN = "aisupport360.com"
+const FROM_DOMAIN = "aisupport360.com"
 const SITE_URL = "https://www.aisupport360.com"
 
 // Template mapping for preview mode
