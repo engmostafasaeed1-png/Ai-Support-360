@@ -73,7 +73,8 @@ function resolve(pathname: string): Meta {
     .filter((p) => !/^[0-9a-f-]{16,}$/i.test(p) && !p.startsWith('.'))
     .map((p) => p.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()));
   if (parts.length) {
-    const label = parts.reverse().join(' · ');
+    const portalRoots = ['Client', 'Consultant', 'Admin', 'Super Admin'];
+    const label = parts.length === 1 && portalRoots.includes(parts[0]) ? `Dashboard · ${parts[0]}` : parts.reverse().join(' · ');
     return { title: `${label} — ${BRAND}`, description: `${label} in your ${BRAND} workspace.`, noindex: true };
   }
   return { ...DEFAULT, noindex: true };
