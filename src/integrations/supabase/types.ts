@@ -765,6 +765,33 @@ export type Database = {
           },
         ]
       }
+      client_approval_events: {
+        Row: {
+          actor_id: string | null
+          client_user_id: string
+          created_at: string
+          event_type: string
+          id: string
+          note: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          client_user_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          note?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          client_user_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          note?: string | null
+        }
+        Relationships: []
+      }
       client_plan_subscriptions: {
         Row: {
           base_monthly_price: number
@@ -834,6 +861,11 @@ export type Database = {
       }
       client_profiles: {
         Row: {
+          approval_comment: string | null
+          approval_reviewed_at: string | null
+          approval_reviewed_by: string | null
+          approval_status: string
+          approval_submitted_at: string | null
           communication_preference: string | null
           company_description: string | null
           company_logo_url: string | null
@@ -872,6 +904,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approval_comment?: string | null
+          approval_reviewed_at?: string | null
+          approval_reviewed_by?: string | null
+          approval_status?: string
+          approval_submitted_at?: string | null
           communication_preference?: string | null
           company_description?: string | null
           company_logo_url?: string | null
@@ -910,6 +947,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approval_comment?: string | null
+          approval_reviewed_at?: string | null
+          approval_reviewed_by?: string | null
+          approval_status?: string
+          approval_submitted_at?: string | null
           communication_preference?: string | null
           company_description?: string | null
           company_logo_url?: string | null
@@ -7082,6 +7124,7 @@ export type Database = {
         Args: { _body: string; _submission_id: string }
         Returns: string
       }
+      admin_client_approval_counts: { Args: never; Returns: Json }
       admin_confirm_payment: {
         Args: {
           _bank_reference: string
@@ -7136,8 +7179,16 @@ export type Database = {
         }
         Returns: string
       }
+      admin_list_client_approvals: {
+        Args: { p_limit?: number; p_status?: string }
+        Returns: Json
+      }
       admin_reject_payment_report: {
         Args: { _note: string; _payment_id: string }
+        Returns: undefined
+      }
+      admin_review_client: {
+        Args: { p_comment?: string; p_decision: string; p_user_id: string }
         Returns: undefined
       }
       admin_set_payout_status: {
@@ -7179,6 +7230,17 @@ export type Database = {
         Args: { _bucket: string; _limit: number; _window_seconds: number }
         Returns: boolean
       }
+      client_approval_required: { Args: never; Returns: boolean }
+      client_basics_complete: {
+        Args: {
+          _company_name: string
+          _company_size: string
+          _industry: string
+          _phone: string
+          _sap_modules: string[]
+        }
+        Returns: boolean
+      }
       client_report_payment: {
         Args: {
           _note?: string
@@ -7186,6 +7248,10 @@ export type Database = {
           _transfer_date: string
           _transfer_reference: string
         }
+        Returns: undefined
+      }
+      client_resubmit_for_approval: {
+        Args: { p_message?: string }
         Returns: undefined
       }
       client_sign_nda: {
@@ -7378,6 +7444,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      my_client_approval: { Args: never; Returns: Json }
       my_company_invitations: {
         Args: never
         Returns: {
