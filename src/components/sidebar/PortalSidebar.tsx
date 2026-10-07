@@ -137,7 +137,7 @@ export default function PortalSidebar({
               asChild
               isActive={activePath === primaryAction.path}
               tooltip={labelOf(primaryAction)}
-              className="h-9 justify-center gap-2 rounded-md bg-blue-600 px-3 text-[13px] font-semibold text-white shadow-sm hover:bg-blue-500 hover:text-white data-[active=true]:bg-blue-600 data-[active=true]:text-white"
+              className="h-9 justify-center gap-2 rounded-lg bg-accent px-3 text-[13px] font-semibold text-accent-foreground shadow-sm hover:bg-accent/90 hover:text-accent-foreground data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
             >
               <Link
                 to={primaryAction.path}

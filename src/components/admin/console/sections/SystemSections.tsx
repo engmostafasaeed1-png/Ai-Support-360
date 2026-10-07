@@ -197,7 +197,7 @@ export function PlatformSettingsSection() {
     <SectionShell icon={Settings} title="Platform Settings" description="General platform configuration">
       <div className="grid gap-4 md:grid-cols-2">
         <SettingCard title="General" items={[
-          { label: 'Platform Name', value: 'Qurtuba SAP Hub' },
+          { label: 'Platform Name', value: 'AI Support 360' },
           { label: 'Support Email', value: 'support@qurtuba.com' },
           { label: 'Default Currency', value: 'USD' },
         ]} />

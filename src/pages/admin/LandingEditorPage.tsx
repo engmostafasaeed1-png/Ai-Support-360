@@ -27,7 +27,7 @@ const SECTIONS: SectionConfig[] = [
     icon: Layout,
     fields: [
       { name: 'badge', label: 'Badge Text', type: 'text', placeholder: 'AI-Powered Support Platform' },
-      { name: 'title1', label: 'Title Line 1', type: 'text', placeholder: 'AI Support Now' },
+      { name: 'title1', label: 'Title Line 1', type: 'text', placeholder: 'AI Support 360' },
       { name: 'title2', label: 'Title Line 2', type: 'text', placeholder: 'For Enterprise Excellence' },
       { name: 'subtitle', label: 'Subtitle', type: 'textarea', placeholder: 'Connect with verified SAP experts...' },
       { name: 'cta_primary', label: 'Primary CTA Text', type: 'text', placeholder: 'Request Support' },
@@ -51,10 +51,10 @@ const SECTIONS: SectionConfig[] = [
   },
   {
     key: 'why_qurtuba',
-    label: 'Why Qurtuba',
+    label: 'Why AI Support 360',
     icon: Type,
     fields: [
-      { name: 'title', label: 'Section Title', type: 'text', placeholder: 'Why Choose Qurtuba?' },
+      { name: 'title', label: 'Section Title', type: 'text', placeholder: 'Why Choose AI Support 360?' },
       { name: 'subtitle', label: 'Section Subtitle', type: 'textarea', placeholder: 'Description text...' },
     ],
   },

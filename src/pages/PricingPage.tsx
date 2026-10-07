@@ -103,10 +103,10 @@ export default function PricingPage() {
   const productJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: 'AI Support Now — Support Plans',
+    name: 'AI Support 360 — Support Plans',
     description:
       'AI-powered enterprise SAP support: pay-per-session, monthly retainer, and enterprise managed support plans with verified SAP experts.',
-    brand: { '@type': 'Brand', name: 'AI Support Now' },
+    brand: { '@type': 'Brand', name: 'AI Support 360' },
     offers: [
       {
         '@type': 'Offer',

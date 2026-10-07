@@ -68,7 +68,7 @@ export default function OAuthConsentPage() {
               <ShieldCheck className="w-10 h-10 mx-auto text-primary" />
               <h1 className="text-xl font-bold">Connect {clientName} to your account</h1>
               <p className="text-sm text-muted-foreground">
-                {clientName} will be able to view and create support tickets in AI SAP Support Now as you.
+                {clientName} will be able to view and create support tickets in AI Support 360 as you.
               </p>
               <div className="flex gap-3 justify-center">
                 <Button variant="outline" disabled={busy} onClick={() => decide(false)}>Deny</Button>

@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 
 
 const emailTemplates = [
-  { id: 'welcome', name: 'Welcome Email', subject: 'Welcome to Qurtuba Talks!', lastEdited: '2 days ago' },
+  { id: 'welcome', name: 'Welcome Email', subject: 'Welcome to AI Support 360!', lastEdited: '2 days ago' },
   { id: 'ticket_created', name: 'Ticket Created', subject: 'Your ticket has been created', lastEdited: '5 days ago' },
   { id: 'ticket_resolved', name: 'Ticket Resolved', subject: 'Your ticket has been resolved', lastEdited: '1 week ago' },
   { id: 'consultant_assigned', name: 'Consultant Assigned', subject: 'A consultant has been assigned', lastEdited: '1 week ago' },
@@ -214,7 +214,7 @@ export default function ConfigPage() {
                       <Textarea
                         rows={10}
                         className="mt-1 font-mono text-xs"
-                        defaultValue={`<h1>Hello {{name}}</h1>\n<p>Your {{entity}} has been {{action}}.</p>\n<p>Thank you for using Qurtuba Talks!</p>`}
+                        defaultValue={`<h1>Hello {{name}}</h1>\n<p>Your {{entity}} has been {{action}}.</p>\n<p>Thank you for using AI Support 360!</p>`}
                       />
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">

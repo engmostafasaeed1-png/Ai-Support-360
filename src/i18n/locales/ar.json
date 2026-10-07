@@ -167,7 +167,7 @@
     "success": "شكراً! سنتواصل معك قريباً."
   },
   "footer": {
-    "description": "AI Support Now — دعم مؤسسي من الجيل التالي مدعوم بالذكاء الاصطناعي لمنطقة الخليج.",
+    "description": "AI Support 360 — دعم مؤسسي من الجيل التالي مدعوم بالذكاء الاصطناعي لمنطقة الخليج.",
     "platform": "المنصة",
     "company": "الشركة",
     "support": "الدعم",
@@ -1071,14 +1071,14 @@
     "resend_error": "فشل في إعادة الإرسال. يرجى المحاولة مرة أخرى."
   },
   "chatbot": {
-    "title": "AI Support Now",
+    "title": "AI Support 360",
     "subtitle": "مساعد الدعم",
     "history_title": "سجل المحادثات",
     "no_history": "لا توجد محادثات سابقة",
     "how_can_i_help": "كيف يمكنني مساعدتك في SAP؟",
     "description": "دعم SAP يعني المساعدة في وحدات SAP ERP (FI، CO، MM، SD، HR، Basis، إلخ) — الإعدادات، الأخطاء، النقل، الأداء، والتذاكر. صِف مشكلتك وسأقوم بفرزها أو البحث في قاعدة المعرفة أو فتح تذكرة لك.",
     "placeholder": "صِف مشكلتك في SAP...",
-    "powered_by": "مدعوم من AI Support Now · قد تكون الإجابات غير دقيقة",
+    "powered_by": "مدعوم من AI Support 360 · قد تكون الإجابات غير دقيقة",
     "create_ticket": "إنشاء تذكرة",
     "prompt_fi": "ترحيل SAP FI الخاص بي يفشل",
     "prompt_mm": "أمر شراء MM عالق",

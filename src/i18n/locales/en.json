@@ -16,7 +16,7 @@
   },
   "hero": {
     "badge": "AI-Powered Support Platform",
-    "title1": "AI Support Now",
+    "title1": "AI Support 360",
     "title2": "For Enterprise Excellence",
     "subtitle": "Connect with verified enterprise experts instantly. AI-powered matching, real-time collaboration, and enterprise-grade support for S/4HANA, BTP, SuccessFactors, and 20+ modules.",
     "cta_support": "Request Support",
@@ -143,7 +143,7 @@
   },
   "faq": {
     "title": "Frequently Asked Questions",
-    "subtitle": "Everything you need to know about AI Support Now",
+    "subtitle": "Everything you need to know about AI Support 360",
     "q1": "How does the AI matching work?",
     "a1": "Our AI engine analyzes your support request, identifies the required module expertise, and matches you with consultants based on their skills, ratings, availability, language preferences, and hourly rates.",
     "q2": "Are consultants verified?",
@@ -157,7 +157,7 @@
   },
   "contact": {
     "title": "Request a Demo",
-    "subtitle": "See how AI Support Now can transform your enterprise operations",
+    "subtitle": "See how AI Support 360 can transform your enterprise operations",
     "name": "Full Name",
     "email": "Business Email",
     "company": "Company Name",
@@ -167,7 +167,7 @@
     "success": "Thank you! We'll be in touch shortly."
   },
   "footer": {
-    "description": "AI Support Now — Next-generation enterprise support powered by AI for the GCC region.",
+    "description": "AI Support 360 — Next-generation enterprise support powered by AI for the GCC region.",
     "platform": "Platform",
     "company": "Company",
     "support": "Support",
@@ -936,9 +936,9 @@
   },
   "auth": {
     "login_title": "Welcome Back",
-    "login_desc": "Sign in to your Qurtuba account",
+    "login_desc": "Sign in to your AI Support 360 account",
     "signup_title": "Create Account",
-    "signup_desc": "Join Qurtuba as a client or consultant",
+    "signup_desc": "Join AI Support 360 as a client or consultant",
     "email": "Email",
     "password": "Password",
     "name": "Full Name",
@@ -1071,14 +1071,14 @@
     "resend_error": "Failed to resend. Please try again."
   },
   "chatbot": {
-    "title": "AI Support Now",
+    "title": "AI Support 360",
     "subtitle": "Support Assistant",
     "history_title": "Chat History",
     "no_history": "No previous chats",
     "how_can_i_help": "How can I help with SAP?",
     "description": "SAP support means help with SAP ERP modules (FI, CO, MM, SD, HR, Basis, etc.) — configuration, errors, transports, performance, and tickets. Describe your issue and I'll triage it, search the knowledge base, or open a ticket for you.",
     "placeholder": "Describe your SAP issue...",
-    "powered_by": "Powered by AI Support Now · Responses may be inaccurate",
+    "powered_by": "Powered by AI Support 360 · Responses may be inaccurate",
     "create_ticket": "Create Ticket",
     "prompt_fi": "My SAP FI posting is failing",
     "prompt_mm": "MM purchase order stuck",

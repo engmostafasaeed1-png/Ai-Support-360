@@ -1,9 +1,9 @@
 {
-  "name": "Smart SAP Support — Qurtuba Talks",
-  "short_name": "SAP Support",
+  "name": "AI Support 360",
+  "short_name": "AI Support 360",
   "description": "AI-powered enterprise SAP support platform",
-  "theme_color": "#0f172a",
-  "background_color": "#0f172a",
+  "theme_color": "#032A5E",
+  "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait",
   "scope": "/",
