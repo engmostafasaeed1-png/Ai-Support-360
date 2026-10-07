@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Check, Sparkles } from 'lucide-react';
+import PlanTermsNote from '@/components/pricing/PlanTermsNote';
 import SectionHeader from './SectionHeader';
 import { useDemoWizard } from './DemoRequestWizard';
 
@@ -122,6 +123,7 @@ export default function PricingSection() {
             </article>
           ))}
         </div>
+        <PlanTermsNote />
       </div>
     </section>
   );

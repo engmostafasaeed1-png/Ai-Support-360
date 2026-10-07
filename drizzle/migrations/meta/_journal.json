@@ -169,6 +169,13 @@
       "when": 1791362448054,
       "tag": "0023_plan_tiers_and_vouchers",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791362857488,
+      "tag": "0024_plan_rate_discount_rollover",
+      "breakpoints": true
     }
   ]
 }

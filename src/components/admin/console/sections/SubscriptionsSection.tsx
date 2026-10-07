@@ -18,6 +18,7 @@ type Tier = { min: number; max: number | null; price: number };
 type Plan = {
   id: string; name: string; description: string | null; price_monthly: number; price_yearly: number | null;
   currency: string | null; is_active: boolean; ticket_tiers: Tier[] | null;
+  rate_discount_percent: number; tickets_roll_over: boolean;
 };
 type Voucher = {
   id: string; code: string; discount_type: 'percent' | 'fixed' | 'free_months'; value: number;
@@ -57,6 +58,8 @@ function PlanDialog({ plan, onClose }: { plan: Plan | null; onClose: () => void 
     name: plan?.name ?? '', description: plan?.description ?? '',
     price_monthly: String(plan?.price_monthly ?? ''), price_yearly: String(plan?.price_yearly ?? ''),
     is_active: plan?.is_active ?? true,
+    rate_discount_percent: String(plan?.rate_discount_percent ?? 0),
+    tickets_roll_over: plan?.tickets_roll_over ?? false,
   }));
   const [tiers, setTiers] = useState<Tier[]>(plan?.ticket_tiers ?? []);
   const [saving, setSaving] = useState(false);
@@ -73,12 +76,15 @@ function PlanDialog({ plan, onClose }: { plan: Plan | null; onClose: () => void 
       const next = sorted[i + 1];
       if (next && (t.max == null || next.min <= t.max)) return toast.error('Ticket ranges overlap');
     }
+    const disc = Number(form.rate_discount_percent || 0);
+    if (disc < 0 || disc > 100) return toast.error('Rate discount must be 0–100%');
     setSaving(true);
     const { error } = await db.from('subscription_plans').update({
       name: form.name.trim(), description: form.description.trim() || null,
       price_monthly: Number(form.price_monthly),
       price_yearly: form.price_yearly === '' ? null : Number(form.price_yearly),
-      is_active: form.is_active, ticket_tiers: sorted, updated_at: new Date().toISOString(),
+      is_active: form.is_active, ticket_tiers: sorted,
+      rate_discount_percent: disc, tickets_roll_over: form.tickets_roll_over, updated_at: new Date().toISOString(),
     }).eq('id', plan!.id);
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -100,6 +106,11 @@ function PlanDialog({ plan, onClose }: { plan: Plan | null; onClose: () => void 
             <div><Label>Yearly price</Label><Input type="number" min={0} value={form.price_yearly} onChange={(e) => setForm({ ...form, price_yearly: e.target.value })} /></div>
           </div>
           <div className="flex items-center justify-between"><Label>Active</Label><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /></div>
+          <div><Label>Discount on consultant hourly rates (%)</Label><Input type="number" min={0} max={100} value={form.rate_discount_percent} onChange={(e) => setForm({ ...form, rate_discount_percent: e.target.value })} /></div>
+          <div className="flex items-center justify-between gap-3">
+            <div><Label>Unused tickets carry over</Label><p className="text-xs text-muted-foreground">When off, the pricing pages say unused tickets are not carried to the next month.</p></div>
+            <Switch checked={form.tickets_roll_over} onCheckedChange={(v) => setForm({ ...form, tickets_roll_over: v })} />
+          </div>
 
           <div className="space-y-2 pt-2 border-t">
             <div className="flex items-center justify-between">
@@ -246,6 +257,10 @@ export default function SubscriptionsSection() {
                   ${plan.price_monthly}<span className="text-sm font-normal text-muted-foreground">/mo</span>
                 </p>
                 <p className="text-xs text-muted-foreground text-center">{plan.description || 'No description'}</p>
+                <div className="flex flex-wrap justify-center gap-1">
+                  {Number(plan.rate_discount_percent) > 0 && <Badge variant="secondary" className="text-xs">{plan.rate_discount_percent}% off consultant rates</Badge>}
+                  <Badge variant="outline" className="text-xs">{plan.tickets_roll_over ? 'Unused tickets carry over' : 'No ticket carry-over'}</Badge>
+                </div>
                 {(plan.ticket_tiers ?? []).length > 0 && (
                   <ul className="text-xs space-y-1 border-t pt-2">
                     {plan.ticket_tiers!.map((t, i) => (
