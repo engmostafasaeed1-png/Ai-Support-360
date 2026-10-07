@@ -15,7 +15,7 @@ const corsHeaders = {
 }
 
 // Configuration
-const SITE_NAME = "AI SAP Support now"
+const SITE_NAME = "AI Support 360"
 const SENDER_DOMAIN = "notify.aisupport360.com"
 const ROOT_DOMAIN = "aisupport360.com"
 const FROM_DOMAIN = "aisupport360.com"
