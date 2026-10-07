@@ -176,6 +176,13 @@
       "when": 1791362857488,
       "tag": "0024_plan_rate_discount_rollover",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1791362992044,
+      "tag": "0025_client_plan_checkout",
+      "breakpoints": true
     }
   ]
 }
