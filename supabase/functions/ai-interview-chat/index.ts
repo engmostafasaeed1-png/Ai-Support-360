@@ -12,7 +12,43 @@ const BodySchema = z.object({
   tone: z.enum(["friendly", "formal", "strict"]).optional(),
 });
 
+// Fixed first message of the interview. It does not need the model, so it is sent at once (the model needed 10-15 s to think about it).
+const GREETINGS: Record<string, (name: string, consultant: string, tone: string) => string> = {
+  en: (name, consultant, tone) =>
+    tone === "formal"
+      ? `Good day, I am ${name} from AI Support 360. Welcome, ${consultant}. Could you please introduce yourself?`
+      : tone === "strict"
+        ? `I am ${name} from AI Support 360. Welcome, ${consultant}. Please introduce yourself, briefly and specifically.`
+        : `Hello, I am ${name} from AI Support 360. Welcome ${consultant} — could you please introduce yourself?`,
+  fr: (name, consultant) => `Bonjour, je suis ${name} d'AI Support 360. Bienvenue ${consultant} — pourriez-vous vous présenter, s'il vous plaît ?`,
+  ar: (name, consultant) => `مرحبًا، أنا ${name} من AI Support 360. أهلًا بك ${consultant} — هل يمكنك أن تعرّف بنفسك من فضلك؟`,
+  "ar-SA": (name, consultant) => `هلا والله، أنا ${name} من AI Support 360. حياك الله ${consultant} — تفضل عرّفنا بنفسك لو سمحت.`,
+  es: (name, consultant) => `Hola, soy ${name} de AI Support 360. Bienvenido/a, ${consultant} — ¿podría presentarse, por favor?`,
+  de: (name, consultant) => `Hallo, ich bin ${name} von AI Support 360. Willkommen, ${consultant} — könnten Sie sich bitte kurz vorstellen?`,
+};
+
+function buildGreeting(name: string, consultant: string, tone: string, lang: string | undefined, style: string): string {
+  const text = ((lang && GREETINGS[lang]) || GREETINGS.en)(name, consultant, tone);
+  return style === "panel" ? `[[speaker: ${name}|Functional Lead]] ${text}` : text;
+}
+
+// The same server-sent-events shape that the gateway sends, so the screen reads it like any other answer.
+function textStream(text: string): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+  return new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\n`));
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  });
+}
+
+// Remembers, while this function instance lives, which reasoning effort the gateway accepted for the interview chat.
+let chatEffort: string | null = null;
+
 serve(async (req) => {
+  const t0 = Date.now();
   const corsHeaders = sharedCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -313,6 +349,13 @@ Include one question_scores entry per candidate answer, in the same order the an
       });
     }
 
+    // The first message is a fixed greeting: send it at once, without asking the model.
+    if (isFirstTurn) {
+      return new Response(textStream(buildGreeting(interviewerName, consultantName, interviewerTone, lang, style)), {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
+    }
+
     // Fetch admin training configs for relevant modules
     const consultantModules = (skills || []).map(s => s.sap_module);
     const { data: trainingConfigs } = await supabase
@@ -345,7 +388,7 @@ Include one question_scores entry per candidate answer, in the same order the an
         .filter((q: any) => typeof q?.question === "string" && q.question.trim())
         .sort((a: any, b: any) => (b.weight || 1) - (a.weight || 1));
       const allQuestions = bank.map((q: any, i: number) => {
-        const author = cleanAuthor(q.author_name) || "AI SAP Support Now expert panel";
+        const author = cleanAuthor(q.author_name) || "AI Support 360 expert panel";
         return `${i + 1}. [AUTHOR: ${author}] ${q.question.trim()}${q.expected_topics ? ` (look for: ${q.expected_topics})` : ''}`;
       });
       if (allQuestions.length > 0) {
@@ -426,7 +469,7 @@ Match depth to level: junior = fundamentals and configuration basics; mid = end-
 - Wrap up after about 12 exchanges.`;
     }
 
-    const systemPrompt = `You are ${interviewerName}, a professional SAP technical interviewer from "AI SAP Support Now", conducting a video-call interview with ${consultantName}.
+    const systemPrompt = `You are ${interviewerName}, a professional SAP technical interviewer from "AI Support 360", conducting a video-call interview with ${consultantName}.
 
 INTERVIEWER TONE (${interviewerTone.toUpperCase()}): ${toneInstruction}
 You MUST maintain this tone consistently across the entire interview — in greetings, follow-ups, transitions, and closing.
@@ -437,7 +480,7 @@ Certifications: ${certList || "None listed"}
 INTERVIEW GUIDELINES:
 - Have a natural, conversational interview — NOT a rigid Q&A
 - Your VERY FIRST message MUST be exactly this greeting (translated into ${interviewLang} if not English), then ask them to introduce themselves:
-  "Hello, I am ${interviewerName} from AI SAP Support Now. Welcome ${consultantName} — could you please introduce yourself?"
+  "Hello, I am ${interviewerName} from AI Support 360. Welcome ${consultantName} — could you please introduce yourself?"
   (Adapt the warmth/formality of the wording to match the ${interviewerTone} tone described above, but keep the same meaning.)
 - Never use placeholders like "[Your Name]" — you ARE ${interviewerName}.
 - Ask follow-up questions based on their responses
@@ -458,22 +501,39 @@ CRITICAL LANGUAGE INSTRUCTION: You MUST conduct this entire interview in ${inter
       ...(messages || []),
     ];
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-6-astra",
-        reasoning_effort: "low",
-        messages: chatMessages,
-        stream: true,
-        max_completion_tokens: style === "scenario" ? 450 : 300,
-      }),
-    });
+    // Every turn is a person waiting for the answer, so ask for the lowest reasoning effort that the gateway accepts (the first one that works is remembered).
+    const efforts = [...new Set([chatEffort, "none", "minimal", "low"].filter((e): e is string => !!e))];
+    const tCall = Date.now();
+    let response: Response | null = null;
+    let usedEffort = "";
+    for (let i = 0; i < efforts.length; i++) {
+      usedEffort = efforts[i];
+      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-6-astra",
+          reasoning_effort: usedEffort,
+          messages: chatMessages,
+          stream: true,
+          // reasoning tokens count against this limit, so it has to leave room for the visible answer
+          max_completion_tokens: style === "scenario" ? 1000 : 800,
+        }),
+      });
+      if ((response.status === 400 || response.status === 422) && i < efforts.length - 1) {
+        console.error("ai-interview-chat: effort not accepted", usedEffort, response.status, (await response.text()).slice(0, 300));
+        continue;
+      }
+      break;
+    }
+    if (!response) throw new Error("AI gateway error");
+    if (response.ok) chatEffort = usedEffort;
 
     if (!response.ok) {
+      console.error("ai-interview-chat: gateway error", response.status, (await response.text()).slice(0, 300));
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limited, please try again later" }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -486,8 +546,25 @@ CRITICAL LANGUAGE INSTRUCTION: You MUST conduct this entire interview in ${inter
       }
       throw new Error("AI gateway error");
     }
+    if (!response.body) throw new Error("AI gateway error");
 
-    return new Response(response.body, {
+    // Log how long each part took: preparation, wait for the first words, the whole answer.
+    const tHeaders = Date.now();
+    let tFirst = 0;
+    const timed = response.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        if (!tFirst) tFirst = Date.now();
+        controller.enqueue(chunk);
+      },
+      flush() {
+        console.log(JSON.stringify({
+          tag: "interview-chat-timing", style, lang: interviewLang, effort: usedEffort, turn: (messages || []).length,
+          prepMs: tCall - t0, headersMs: tHeaders - tCall, firstChunkMs: tFirst ? tFirst - tCall : null, totalMs: Date.now() - tCall,
+        }));
+      },
+    }));
+
+    return new Response(timed, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
