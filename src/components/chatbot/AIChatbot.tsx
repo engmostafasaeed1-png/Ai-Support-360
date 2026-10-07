@@ -141,7 +141,7 @@ export default function AIChatbot() {
     if (isPublicPage) return;
     const interval = setInterval(() => {
       if (!isOpen) setShowPulse(true);
-    }, 60_000);
+    }, 300_000);
     return () => clearInterval(interval);
   }, [isOpen]);
 
@@ -153,6 +153,13 @@ export default function AIChatbot() {
     if (isOpen && !showHistory) inputRef.current?.focus();
     if (isOpen) setShowPulse(false);
   }, [isOpen, showHistory]);
+
+  // The "Need help?" bubble is only a nudge: it hides itself after a few seconds.
+  useEffect(() => {
+    if (!showPulse) return undefined;
+    const id = setTimeout(() => setShowPulse(false), 10_000);
+    return () => clearTimeout(id);
+  }, [showPulse]);
 
   const handleSend = () => {
     const text = input.trim();
