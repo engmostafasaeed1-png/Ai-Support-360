@@ -131,7 +131,7 @@ export default function ClientDashboard() {
     },
     {
       labelKey: 'client_dashboard.resolved', value: resolvedCount, prefix: '',
-      icon: CheckCircle, sparkData: [2, 4, 3, 5, 7, 6, resolvedCount], link: '/client/tickets',
+      icon: CheckCircle, sparkData: [] as number[], link: '/client/tickets',
       color: 'hsl(142, 71%, 45%)', trend: 'up', trendValue: `${resolutionRate}% rate`,
       description: 'Successfully closed tickets',
     },

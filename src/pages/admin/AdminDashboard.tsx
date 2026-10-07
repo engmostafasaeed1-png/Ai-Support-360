@@ -123,7 +123,7 @@ export default function AdminDashboard() {
                   formatter={(v: number) => `$${v.toLocaleString()}`}
                   contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px', background: 'hsl(var(--card))' }}
                 />
-                <Bar dataKey="revenue" fill="hsl(217, 91%, 60%)" radius={[4, 4, 0, 0]} name="Revenue" />
+                <Bar dataKey="revenue" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} name="Revenue" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -171,7 +171,7 @@ export default function AdminDashboard() {
               <XAxis type="number" tick={{ fontSize: 12 }} />
               <YAxis dataKey="module" type="category" tick={{ fontSize: 12 }} width={70} />
               <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px', background: 'hsl(var(--card))' }} />
-              <Bar dataKey="count" fill="hsl(226, 53%, 22%)" radius={[0, 4, 4, 0]} name="Tickets" />
+              <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Tickets" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
