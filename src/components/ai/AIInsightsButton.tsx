@@ -3,14 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sparkles, Loader2, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 
 interface AIInsightsButtonProps {
   role: 'admin' | 'client' | 'consultant';
   metrics: Record<string, unknown>;
+  /** extra classes for the trigger button, for example to restyle it on a dark banner */
+  className?: string;
 }
 
-export default function AIInsightsButton({ role, metrics }: AIInsightsButtonProps) {
+export default function AIInsightsButton({ role, metrics, className }: AIInsightsButtonProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState('');
@@ -96,7 +99,7 @@ export default function AIInsightsButton({ role, metrics }: AIInsightsButtonProp
 
   return (
     <>
-      <Button onClick={handleOpen} variant="outline" size="sm" className="gap-1.5">
+      <Button onClick={handleOpen} variant="outline" size="sm" className={cn('gap-1.5', className)}>
         <Sparkles className="w-4 h-4" />
         <span className="hidden sm:inline">AI Insights</span>
       </Button>
