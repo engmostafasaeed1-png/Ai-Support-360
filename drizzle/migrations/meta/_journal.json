@@ -183,6 +183,13 @@
       "when": 1791362992044,
       "tag": "0025_client_plan_checkout",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791373336151,
+      "tag": "0026_m31_client_approval_workflow",
+      "breakpoints": true
     }
   ]
 }
