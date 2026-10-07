@@ -11,14 +11,14 @@ export default function OverviewSection() {
   const s = stats || { totalUsers: 0, activeConsultants: 0, openTickets: 0, revenue: 0, avgResolutionTime: '—', satisfaction: 0, ticketsThisMonth: 0, pendingApprovals: 0 };
 
   const kpis = [
-    { label: 'Total Users', value: s.totalUsers, icon: Users, sparkData: [50, 80, 100, 130, 160, 190, s.totalUsers], color: 'hsl(var(--accent))' },
-    { label: 'Active Consultants', value: s.activeConsultants, icon: UserCheck, sparkData: [5, 8, 10, 12, 15, 18, s.activeConsultants], color: 'hsl(142, 71%, 45%)' },
-    { label: 'Open Tickets', value: s.openTickets, icon: Ticket, sparkData: [10, 15, 12, 18, 20, 16, s.openTickets], color: 'hsl(38, 92%, 50%)' },
-    { label: 'Revenue', value: Math.round(s.revenue / 1000), prefix: '$', suffix: 'K', icon: DollarSign, sparkData: [20, 30, 25, 35, 40, 38, Math.round(s.revenue / 1000)], color: 'hsl(262, 83%, 58%)' },
-    { label: 'Avg Resolution', value: 0, displayValue: s.avgResolutionTime, icon: TrendingUp, sparkData: [5, 4.5, 4, 3.5, 3, 2.5, 2], color: 'hsl(var(--accent))' },
-    { label: 'Satisfaction', value: s.satisfaction, suffix: '/5', icon: Star, sparkData: [3.8, 4.0, 4.2, 4.1, 4.3, 4.5, s.satisfaction], color: 'hsl(38, 92%, 50%)' },
-    { label: 'Tickets This Month', value: s.ticketsThisMonth, icon: TrendingUp, sparkData: [20, 25, 30, 28, 35, 32, s.ticketsThisMonth], color: 'hsl(142, 71%, 45%)' },
-    { label: 'Pending Approvals', value: s.pendingApprovals, icon: AlertTriangle, sparkData: [3, 5, 4, 6, 3, 4, s.pendingApprovals], color: 'hsl(0, 84%, 60%)' },
+    { label: 'Total Users', value: s.totalUsers, icon: Users, sparkData: [] as number[], color: 'hsl(var(--accent))' },
+    { label: 'Active Consultants', value: s.activeConsultants, icon: UserCheck, sparkData: [] as number[], color: 'hsl(142, 71%, 45%)' },
+    { label: 'Open Tickets', value: s.openTickets, icon: Ticket, sparkData: [] as number[], color: 'hsl(38, 92%, 50%)' },
+    { label: 'Revenue', value: Math.round(s.revenue / 1000), prefix: '$', suffix: 'K', icon: DollarSign, sparkData: [] as number[], color: 'hsl(262, 83%, 58%)' },
+    { label: 'Avg Resolution', value: 0, displayValue: s.avgResolutionTime, icon: TrendingUp, sparkData: [] as number[], color: 'hsl(var(--accent))' },
+    { label: 'Satisfaction', value: s.satisfaction, suffix: '/5', icon: Star, sparkData: [] as number[], color: 'hsl(38, 92%, 50%)' },
+    { label: 'Tickets This Month', value: s.ticketsThisMonth, icon: TrendingUp, sparkData: [] as number[], color: 'hsl(142, 71%, 45%)' },
+    { label: 'Pending Approvals', value: s.pendingApprovals, icon: AlertTriangle, sparkData: [] as number[], color: 'hsl(0, 84%, 60%)' },
   ];
 
   return (
