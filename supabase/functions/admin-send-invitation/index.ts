@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
   try {
     const res = await sendTemplateEmail('platform-invitation', email, {
       templateData: { name, role, message, url },
-      idempotencyKey: `invite-${role}-${email}-${new Date().toISOString().slice(0, 10)}`,
+      idempotencyKey: `invite-${role}-${email}-${crypto.randomUUID()}`,
     });
     return jsonResponse(req, res.sent ? { sent: true } : { sent: false, reason: res.reason });
   } catch (e) {
