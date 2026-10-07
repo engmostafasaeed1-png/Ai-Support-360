@@ -4700,7 +4700,9 @@ export type Database = {
           name: string
           price_monthly: number
           price_yearly: number
+          rate_discount_percent: number
           ticket_tiers: Json
+          tickets_roll_over: boolean
           tier: Database["public"]["Enums"]["subscription_tier"]
           updated_at: string
         }
@@ -4715,7 +4717,9 @@ export type Database = {
           name: string
           price_monthly?: number
           price_yearly?: number
+          rate_discount_percent?: number
           ticket_tiers?: Json
+          tickets_roll_over?: boolean
           tier: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
         }
@@ -4730,7 +4734,9 @@ export type Database = {
           name?: string
           price_monthly?: number
           price_yearly?: number
+          rate_discount_percent?: number
           ticket_tiers?: Json
+          tickets_roll_over?: boolean
           tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
         }
