@@ -78,6 +78,28 @@
     "faq_step4_q": "Support session — how does the live session work?",
     "faq_step4_a": "Join the session via secure chat, video, or screen sharing. Time is tracked automatically, every action is auditable, and a recap with action items + invoice is generated the moment the session ends."
   },
+  "audience": {
+    "eyebrow": "Who it's for",
+    "title_a": "Two sides of",
+    "title_highlight": "one support workflow",
+    "subtitle": "Every function the platform gives each side, stated plainly.",
+    "clients_title": "For Clients",
+    "clients_subtitle": "For teams that need SAP support and want to see exactly what they approve and pay for.",
+    "client1": "Describe SAP support requirements and review AI suggestions and relevant knowledge articles.",
+    "client2": "Find consultants based on expertise, experience, language, availability, and rates.",
+    "client3": "Review proposals and agree on rates and estimated effort.",
+    "client4": "Schedule consultations using the available communication options.",
+    "client5": "Review work records, approve timesheets, and track invoices.",
+    "client6": "Manage NDAs and access to case information.",
+    "consultants_title": "For Consultants",
+    "consultants_subtitle": "For specialists who deliver the support and manage their own availability, workload, and earnings.",
+    "consultant1": "Create a professional profile with skills, certifications, experience, and project history.",
+    "consultant2": "Set availability and proposed hourly rates.",
+    "consultant3": "Receive relevant support invitations and accept or decline them.",
+    "consultant4": "Submit proposals with estimated effort and delivery timelines.",
+    "consultant5": "Record work, submit timesheets, and communicate with clients.",
+    "consultant6": "View recorded earnings, platform fees, and payout status."
+  },
   "whyQurtuba": {
     "title": "Why Choose Us",
     "subtitle": "Enterprise-grade support built for the GCC market",
