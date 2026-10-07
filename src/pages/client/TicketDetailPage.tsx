@@ -273,12 +273,12 @@ export default function TicketDetailPage() {
 
       <Tabs value={activeTab} onValueChange={changeTab} className="space-y-4">
         <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto bg-muted/60 p-1">
-          <TabsTrigger value="overview" className="gap-1.5"><Tag className="h-3.5 w-3.5" />Overview</TabsTrigger>
-          <TabsTrigger value="work" className="gap-1.5"><Users className="h-3.5 w-3.5" />Work &amp; plan</TabsTrigger>
-          <TabsTrigger value="sessions" className="gap-1.5"><Video className="h-3.5 w-3.5" />Sessions &amp; chat</TabsTrigger>
-          <TabsTrigger value="billing" className="gap-1.5"><Calculator className="h-3.5 w-3.5" />Time &amp; billing</TabsTrigger>
-          <TabsTrigger value="files" className="gap-1.5"><FileText className="h-3.5 w-3.5" />Files &amp; links</TabsTrigger>
-          <TabsTrigger value="activity" className="gap-1.5"><History className="h-3.5 w-3.5" />Activity</TabsTrigger>
+          <TabsTrigger value="overview" className="shrink-0 gap-1.5"><Tag className="h-3.5 w-3.5" />Overview</TabsTrigger>
+          <TabsTrigger value="work" className="shrink-0 gap-1.5"><Users className="h-3.5 w-3.5" />Work &amp; plan</TabsTrigger>
+          <TabsTrigger value="sessions" className="shrink-0 gap-1.5"><Video className="h-3.5 w-3.5" />Sessions &amp; chat</TabsTrigger>
+          <TabsTrigger value="billing" className="shrink-0 gap-1.5"><Calculator className="h-3.5 w-3.5" />Time &amp; billing</TabsTrigger>
+          <TabsTrigger value="files" className="shrink-0 gap-1.5"><FileText className="h-3.5 w-3.5" />Files &amp; links</TabsTrigger>
+          <TabsTrigger value="activity" className="shrink-0 gap-1.5"><History className="h-3.5 w-3.5" />Activity</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-0 space-y-5">

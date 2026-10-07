@@ -36,12 +36,12 @@ export default function ClientLayout() {
               <SidebarTrigger className="text-muted-foreground" />
               <Link to="/" className="flex items-center gap-2 md:hidden">
                 <img src={logo.url} alt="AI Support 360" className="w-8 h-8 rounded-lg object-contain" />
-                <span className="font-bold text-sm text-foreground">AI Support 360</span>
+                <span className="hidden font-bold text-sm text-foreground sm:inline">AI Support 360</span>
               </Link>
               <HeaderSearchButton placeholder="Search tickets, consultants..." />
             </div>
             <div className="flex items-center gap-3">
-              <Badge className="bg-accent/10 text-accent border border-accent/30 px-3 py-1 text-xs font-semibold gap-1.5">
+              <Badge className="hidden xl:inline-flex bg-accent/10 text-accent border border-accent/30 px-3 py-1 text-xs font-semibold gap-1.5">
                 <Building2 className="w-3.5 h-3.5" />
                 Client
               </Badge>
@@ -55,7 +55,7 @@ export default function ClientLayout() {
                       onClick={() => navigate('/consultant')}
                     >
                       <Briefcase className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Switch to Consultant</span>
+                      <span className="hidden xl:inline">Switch to Consultant</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
@@ -64,9 +64,9 @@ export default function ClientLayout() {
                 </Tooltip>
               )}
               <Link to="/client/new-request">
-                <Button size="sm" variant="outline" className="text-xs gap-1.5 border-destructive/30 bg-destructive/10 text-destructive shadow-none hover:bg-destructive hover:text-destructive-foreground">
+                <Button size="sm" variant="outline" aria-label="Emergency" title="Emergency" className="text-xs gap-1.5 border-destructive/30 bg-destructive/10 text-destructive shadow-none hover:bg-destructive hover:text-destructive-foreground">
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Emergency</span>
+                  <span className="hidden xl:inline">Emergency</span>
                 </Button>
               </Link>
               <NotificationBell basePath="/client" />

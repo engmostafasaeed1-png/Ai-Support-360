@@ -36,12 +36,12 @@ export default function ConsultantLayout() {
               <SidebarTrigger className="text-muted-foreground" />
               <Link to="/" className="flex items-center gap-2 md:hidden">
                 <img src={logo.url} alt="AI Support 360" className="w-8 h-8 rounded-lg object-contain" />
-                <span className="font-bold text-sm text-foreground">AI Support 360</span>
+                <span className="hidden font-bold text-sm text-foreground sm:inline">AI Support 360</span>
               </Link>
               <HeaderSearchButton placeholder="Search cases, clients..." />
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              <Badge className="bg-primary/10 text-primary border border-primary/30 px-3 py-1 text-xs font-semibold gap-1.5">
+              <Badge className="hidden xl:inline-flex bg-primary/10 text-primary border border-primary/30 px-3 py-1 text-xs font-semibold gap-1.5">
                 <Briefcase className="w-3.5 h-3.5" />
                 Consultant
               </Badge>
@@ -54,7 +54,7 @@ export default function ConsultantLayout() {
                     onClick={() => navigate('/client')}
                   >
                     <Building2 className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Switch to Client</span>
+                    <span className="hidden xl:inline">Switch to Client</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
