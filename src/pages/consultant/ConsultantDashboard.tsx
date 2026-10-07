@@ -267,7 +267,7 @@ export default function ConsultantDashboard() {
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid gap-6 lg:grid-cols-3 [&>*]:min-w-0">
         {/* Earnings Chart */}
         <Card className="lg:col-span-2 rounded-2xl border-border/50">
           <CardHeader className="flex-row items-center justify-between pb-2">
