@@ -16,7 +16,7 @@ export default function SuperAdminLayout() {
       <div className="min-h-screen flex w-full bg-canvas relative">
 
         <SuperAdminSidebar />
-        <div className="flex-1 flex flex-col relative z-[1]">
+        <div className="flex-1 flex flex-col min-w-0 relative z-[1]">
           <FixedHeader>
             <div className="flex items-center gap-3">
               <SidebarTrigger />

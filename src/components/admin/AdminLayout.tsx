@@ -3,10 +3,10 @@ import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import PageTransition from '@/components/PageTransition';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
-import { Search } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 import HeaderNav from '@/components/HeaderNav';
+import HeaderSearchButton from '@/components/layout/HeaderSearchButton';
 import logo from '@/assets/brand/mark.png.asset.json';
 import { Link } from 'react-router-dom';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
@@ -18,7 +18,7 @@ export default function AdminLayout() {
       <div className="min-h-screen flex w-full bg-canvas relative">
 
         <AdminSidebar />
-        <div className="flex-1 flex flex-col relative z-[1]">
+        <div className="flex-1 flex flex-col min-w-0 relative z-[1]">
           <FixedHeader>
             <div className="flex items-center gap-3">
               <SidebarTrigger />
@@ -26,13 +26,7 @@ export default function AdminLayout() {
                 <img src={logo.url} alt="AI Support 360" className="w-8 h-8 rounded-lg object-contain" />
                 <span className="font-bold text-sm text-foreground">AI Support 360</span>
               </Link>
-              <div className="relative hidden sm:block">
-                <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  placeholder="Search users, tickets..."
-                  className="ps-9 pe-4 py-2 text-sm rounded-xl bg-muted/40 border border-border/40 focus:outline-none focus:ring-2 focus:ring-accent/50 w-64 transition-all focus:w-80"
-                />
-              </div>
+              <HeaderSearchButton placeholder="Search users, tickets..." />
             </div>
             <div className="flex items-center gap-3">
               <NotificationBell basePath="/admin" />

@@ -4,9 +4,9 @@ import PageTransition from '@/components/PageTransition';
 import MatchRequestPopup from '@/components/consultant/MatchRequestPopup';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Outlet } from 'react-router-dom';
-import { Search, Briefcase, Building2, Zap } from 'lucide-react';
+import { Briefcase, Building2, Zap } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
-import { Input } from '@/components/ui/input';
+import HeaderSearchButton from '@/components/layout/HeaderSearchButton';
 import HeaderNav from '@/components/HeaderNav';
 import logo from '@/assets/brand/mark.png.asset.json';
 import { Link, useNavigate } from 'react-router-dom';
@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function ConsultantLayout() {
+  const navigate = useNavigate();
   useSessionTimeout();
   const { profile } = useUserProfile();
   const { data: consultantProfile } = useConsultantProfile();
@@ -37,13 +38,7 @@ export default function ConsultantLayout() {
                 <img src={logo.url} alt="AI Support 360" className="w-8 h-8 rounded-lg object-contain" />
                 <span className="font-bold text-sm text-foreground">AI Support 360</span>
               </Link>
-              <div className="hidden md:flex items-center relative">
-                <Search className="w-4 h-4 absolute start-3 text-muted-foreground" />
-                <Input
-                  placeholder="Search cases, clients..."
-                  className="ps-9 h-9 w-64 rounded-xl bg-muted/40 border-border/40 focus-visible:ring-accent/50 transition-all focus:w-80"
-                />
-              </div>
+              <HeaderSearchButton placeholder="Search cases, clients..." />
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
               <Badge className="bg-primary/10 text-primary border border-primary/30 px-3 py-1 text-xs font-semibold gap-1.5">
@@ -56,7 +51,7 @@ export default function ConsultantLayout() {
                     size="sm"
                     variant="outline"
                     className="h-7 px-2.5 text-xs gap-1.5 border-border/50 hover:bg-accent/10"
-                    onClick={() => window.location.href = '/client'}
+                    onClick={() => navigate('/client')}
                   >
                     <Building2 className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">Switch to Client</span>
