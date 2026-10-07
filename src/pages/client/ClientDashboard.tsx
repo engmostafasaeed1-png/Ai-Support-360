@@ -66,8 +66,8 @@ export default function ClientDashboard() {
   const { t } = useTranslation();
 
   useEffect(() => {
-    document.title = "Dashboard — Qurtuba Talks";
-    return () => { document.title = "Qurtuba Talks"; };
+    document.title = "Dashboard — AI Support 360";
+    return () => { document.title = "AI Support 360"; };
   }, []);
   const { isGuest } = useGuestMode();
   const { profile: userProfile } = useUserProfile();
@@ -163,14 +163,14 @@ export default function ClientDashboard() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2 shrink-0">
-            <AIInsightsButton role="client" metrics={{ openTickets: openTickets.length, resolvedTickets: resolvedCount, activeSessions: activeSessions.length, pendingPayments: pendingTotal, totalTickets: tickets.length }} />
+            <AIInsightsButton role="client" metrics={{ openTickets: openTickets.length, resolvedTickets: resolvedCount, activeSessions: activeSessions.length, pendingPayments: pendingTotal, totalTickets: tickets.length }} className="bg-white/10 border-white/25 text-white hover:bg-white/20 hover:text-white" />
             <Link to="/client/new-request">
               <Button className="bg-white/20 backdrop-blur-sm border border-white/20 text-white hover:bg-white/30 shadow-lg" size="sm">
                 <TicketPlus className="w-4 h-4 me-1" /> {t('client_dashboard.new_request')}
               </Button>
             </Link>
             <Link to="/client/consultants">
-              <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
+              <Button variant="outline" size="sm" className="bg-white/10 border-white/25 text-white hover:bg-white/20 hover:text-white">
                 <Users className="w-4 h-4 me-1" /> {t('consultants_page.title')}
               </Button>
             </Link>

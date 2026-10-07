@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 interface SparklineProps {
   data: number[];
   width?: number;
@@ -7,6 +9,8 @@ interface SparklineProps {
 }
 
 export function Sparkline({ data, width = 80, height = 24, color = 'hsl(var(--accent))', className = '' }: SparklineProps) {
+  // The id must be a plain token: colour text such as hsl(...) breaks the url(#id) reference and the area was painted black.
+  const gradientId = `spark-grad-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   if (data.length < 2) return null;
 
   const min = Math.min(...data);
@@ -22,14 +26,14 @@ export function Sparkline({ data, width = 80, height = 24, color = 'hsl(var(--ac
   const areaPoints = `0,${height} ${points} ${width},${height}`;
 
   return (
-    <svg width={width} height={height} className={className} viewBox={`0 0 ${width} ${height}`}>
+    <svg width={width} height={height} className={className} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
       <defs>
-        <linearGradient id={`spark-grad-${color}`} x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.2" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <polygon points={areaPoints} fill={`url(#spark-grad-${color})`} />
+      <polygon points={areaPoints} fill={`url(#${gradientId})`} />
       <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
