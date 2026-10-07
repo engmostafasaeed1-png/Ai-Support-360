@@ -5,7 +5,7 @@ import {
 } from 'npm:@lovable.dev/email-js@0.1.0'
 import { corsHeaders as sharedCorsHeaders, clientIp, withinRateLimit } from '../_shared/security.ts'
 
-const SENDER_DOMAIN = 'notify.aisapsupportnow.com'
+const SENDER_DOMAIN = 'notify.aisupport360.com'
 
 Deno.serve(async (req) => {
   const corsHeaders = sharedCorsHeaders(req)
