@@ -129,7 +129,7 @@ const GlobalSearch = () => {
               .map((item) => (
                 <CommandItem
                   key={`${group}-${item.href}`}
-                  value={`${item.label} ${group}`}
+                  value={item.label}
                   onSelect={() => handleSelect(item.href)}
                   className="gap-2"
                 >
