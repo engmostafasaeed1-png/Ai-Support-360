@@ -45,7 +45,7 @@ export default function Footer() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-5">
-              <img src={logo.url} alt="AI Support 360 — aisupport360.com" width={288} height={64} className="w-72 max-w-full h-16 object-contain object-left" />
+              <img src={logo.url} alt="AI Support 360 — aisupport360.com" width={576} height={128} className="w-[36rem] max-w-full h-32 object-contain object-left" />
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
               {t('footer.description')}
