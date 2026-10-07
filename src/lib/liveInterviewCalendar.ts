@@ -65,7 +65,7 @@ export function buildLiveInterviewIcs(ev: LiveInterviewEvent): string {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//AI Support Now//Live interview//EN',
+    'PRODID:-//AI Support 360//Live interview//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',

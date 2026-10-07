@@ -829,7 +829,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
               Hi, I'm {interviewerName} 👋
             </h2>
             <p className="text-sm text-gray-400">
-              I'm from <strong className="text-white">AI Support Hub</strong>. I'm here to help you increase your credibility score through a quick skills assessment. Let me walk you through a few things before we begin.
+              I'm from <strong className="text-white">AI Support 360</strong>. I'm here to help you increase your credibility score through a quick skills assessment. Let me walk you through a few things before we begin.
             </p>
           </div>
 
@@ -1007,7 +1007,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             <DynamicAvatar src={avatarImg} isSpeaking={isSpeaking} isListening={isListening} isThinking={isStreaming && !isSpeaking} />
             <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/50 rounded-lg px-3 py-1.5">
               <Brain className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-medium text-white">{voiceGender === 'female' ? 'Mariam' : 'Ezz'} — AI Support Hub</span>
+              <span className="text-xs font-medium text-white">{voiceGender === 'female' ? 'Mariam' : 'Ezz'} — AI Support 360</span>
             </div>
 
             {/* User webcam preview */}
@@ -1078,7 +1078,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                           <>
                             {msg.role === 'assistant' && (
                               <div className="text-[10px] font-semibold text-primary/90 mb-1">
-                                {interviewerLabel} <span className="text-white/40 font-normal">· {sp?.role || 'AI Support Now'}</span>
+                                {interviewerLabel} <span className="text-white/40 font-normal">· {sp?.role || 'AI Support 360'}</span>
                               </div>
                             )}
                             {author && (

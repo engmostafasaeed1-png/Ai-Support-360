@@ -558,7 +558,7 @@ function downloadICS(start: Date, durationMin: number, title: string, url: strin
   const ics = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Qurtuba//EN',
+    'PRODID:-//AI Support 360//EN',
     'METHOD:REQUEST',
     'BEGIN:VEVENT',
     `DTSTART:${fmt(start)}`,

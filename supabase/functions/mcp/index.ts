@@ -141,9 +141,9 @@ var create_ticket_default = defineTool3({
 var projectRef = "ozzgsfsnlejfuexikwrm";
 var mcp_default = defineMcp({
   name: "ai-sap-support-now",
-  title: "AI SAP Support now",
+  title: "AI Support 360",
   version: "0.1.0",
-  instructions: "Tools for AI Support Now, an SAP support portal. Use `list_my_tickets` to see the user's tickets, `get_ticket` for details, and `create_ticket` to open a new SAP support request.",
+  instructions: "Tools for AI Support 360, an SAP support portal. Use `list_my_tickets` to see the user's tickets, `get_ticket` for details, and `create_ticket` to open a new SAP support request.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"

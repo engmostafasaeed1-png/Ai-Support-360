@@ -340,7 +340,7 @@ export default function ValueDifferentiationSection() {
               </span>
               <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] font-semibold tracking-widest uppercase text-primary/70">Ours</span>
-                <span className="text-sm md:text-base font-black text-foreground">AI Support Now</span>
+                <span className="text-sm md:text-base font-black text-foreground">AI Support 360</span>
               </div>
               <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/70">Theirs</span>

@@ -43,7 +43,7 @@ export default function HeroSection() {
           <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black leading-[0.95] tracking-tight animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <span className="text-primary-foreground">{t('hero.title1')}</span>
             <br />
-            <span className="bg-gradient-to-r from-accent via-accent-foreground/80 to-primary-foreground bg-clip-text text-transparent drop-shadow-lg">{t('hero.title2')}</span>
+            <span className="bg-gradient-to-r from-blue-400 via-blue-100 to-white bg-clip-text text-transparent drop-shadow-lg">{t('hero.title2')}</span>
           </h1>
 
           {/* Subtitle */}

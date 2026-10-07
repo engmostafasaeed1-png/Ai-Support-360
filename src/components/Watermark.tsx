@@ -14,7 +14,7 @@ export default function Watermark() {
 
     const drawWatermark = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      const label = user?.email || 'Qurtuba Talks — Confidential';
+      const label = user?.email || 'AI Support 360 — Confidential';
       const timestamp = new Date().toISOString().slice(0, 10);
       const text = `${label} · ${timestamp} · CONFIDENTIAL`;
 

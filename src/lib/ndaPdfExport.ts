@@ -121,7 +121,7 @@ export async function exportNDAAsPDF(data: NDAExportData) {
   doc.setTextColor(128);
   const footer = [
     data.agreementId ? `Agreement ID: ${data.agreementId}` : null,
-    signed ? `Electronically signed on AI Support Now by ${cSigned ? 'both parties' : 'the consultant'}. Each signer agreed to the terms above before signing.` : null,
+    signed ? `Electronically signed on AI Support 360 by ${cSigned ? 'both parties' : 'the consultant'}. Each signer agreed to the terms above before signing.` : null,
     data.revokedAt ? `Revoked on ${format(new Date(data.revokedAt), 'PPP')}` : null,
   ].filter(Boolean) as string[];
   for (const f of footer) { doc.text(f, colL, y); y += 4; }
