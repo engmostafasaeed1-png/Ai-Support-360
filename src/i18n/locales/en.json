@@ -342,7 +342,7 @@
     "satisfaction": "Satisfaction",
     "tickets_this_month": "Tickets This Month",
     "pending_approvals": "Pending Approvals",
-    "revenue_vs_expenses": "Revenue vs Expenses",
+    "revenue_vs_expenses": "Revenue (last 6 months)",
     "tickets_by_status": "Tickets by Status",
     "tickets_by_module": "Tickets by SAP Module"
   },

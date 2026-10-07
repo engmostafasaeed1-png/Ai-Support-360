@@ -1,5 +1,6 @@
 import React, { Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { DirectionProvider } from '@radix-ui/react-direction';
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
 import { logger } from '@/lib/logger';
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
@@ -199,6 +200,12 @@ const PageLoader = () => (
   </div>
 );
 
+// Radix components (tabs, menus, selects, sliders) read their direction from this provider; without it they stay left-to-right inside the Arabic layout.
+const RadixDirection = ({ children }: { children: React.ReactNode }) => {
+  const { i18n } = useTranslation();
+  return <DirectionProvider dir={i18n.language?.startsWith('ar') ? 'rtl' : 'ltr'}>{children}</DirectionProvider>;
+};
+
 const RTLSync = () => {
   const { i18n } = useTranslation();
   useEffect(() => {
@@ -221,6 +228,7 @@ const App = () => (
       <Suspense fallback={null}>
       </Suspense>
     )}
+    <RadixDirection>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -418,6 +426,7 @@ const App = () => (
       </BrowserRouter>
       </HelmetProvider>
     </TooltipProvider>
+    </RadixDirection>
   </QueryClientProvider>
 );
 

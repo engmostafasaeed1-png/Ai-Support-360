@@ -118,7 +118,7 @@ export default function AdminDashboard() {
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={revenueData}>
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v / 1000}K`} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => (v >= 1000 ? `$${v / 1000}K` : `$${v}`)} />
                 <Tooltip
                   formatter={(v: number) => `$${v.toLocaleString()}`}
                   contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px', background: 'hsl(var(--card))' }}
@@ -171,7 +171,7 @@ export default function AdminDashboard() {
               <XAxis type="number" tick={{ fontSize: 12 }} />
               <YAxis dataKey="module" type="category" tick={{ fontSize: 12 }} width={70} />
               <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px', background: 'hsl(var(--card))' }} />
-              <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Tickets" />
+              <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Tickets" maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>

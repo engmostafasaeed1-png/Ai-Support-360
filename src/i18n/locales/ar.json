@@ -342,7 +342,7 @@
     "satisfaction": "الرضا",
     "tickets_this_month": "تذاكر هذا الشهر",
     "pending_approvals": "موافقات معلقة",
-    "revenue_vs_expenses": "الإيرادات مقابل المصروفات",
+    "revenue_vs_expenses": "الإيرادات (آخر 6 أشهر)",
     "tickets_by_status": "التذاكر حسب الحالة",
     "tickets_by_module": "التذاكر حسب وحدة SAP"
   },
