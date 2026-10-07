@@ -6,7 +6,6 @@ import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Search } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
-import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
 import HeaderNav from '@/components/HeaderNav';
 import logo from '@/assets/brand/mark.png.asset.json';
 import { Link } from 'react-router-dom';
@@ -16,12 +15,7 @@ export default function AdminLayout() {
   useSessionTimeout();
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background relative">
-        <div className="fixed inset-0 z-0 pointer-events-none">
-          <video autoPlay muted loop playsInline className="w-full h-full object-cover opacity-[0.03]">
-            <source src={dashboardBgAsset.url} type="video/mp4" />
-          </video>
-        </div>
+      <div className="min-h-screen flex w-full bg-canvas relative">
 
         <AdminSidebar />
         <div className="flex-1 flex flex-col relative z-[1]">
