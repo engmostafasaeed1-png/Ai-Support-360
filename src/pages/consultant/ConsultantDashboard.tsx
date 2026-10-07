@@ -103,12 +103,23 @@ export default function ConsultantDashboard() {
         .eq('consultant_id', consultant.id);
       const { data: payouts } = await supabase
         .from('payouts')
-        .select('amount, status')
+        .select('amount, status, created_at')
         .eq('consultant_id', consultant.id);
 
       const totalEarned = (payouts || [])
         .filter(p => p.status !== 'failed')
         .reduce((sum, p) => sum + Number(p.amount), 0);
+      const earnedPayouts = (payouts || []).filter(p => p.status !== 'failed' && p.created_at);
+      const monthKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}`;
+      const now = new Date();
+      const sumForMonth = (d: Date) => earnedPayouts
+        .filter(p => monthKey(new Date(p.created_at)) === monthKey(d))
+        .reduce((sum, p) => sum + Number(p.amount), 0);
+      const thisMonthEarned = sumForMonth(now);
+      const monthlyTrend = Array.from({ length: 6 }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+        return { month: format(d, 'MMM'), amount: sumForMonth(d) };
+      });
       const pending = (payments || [])
         .filter(p => p.status === 'pending')
         .reduce((sum, p) => sum + Number(p.amount) - Number(p.vat_amount || 0), 0);
@@ -124,6 +135,8 @@ export default function ConsultantDashboard() {
         consultant,
         sessions: (sessions || []).map(s => ({ ...s, client_name: clientMap[s.client_id] || 'Client' })),
         tickets: tickets || [],
+        thisMonthEarned,
+        monthlyTrend,
         totalEarned,
         pending,
         ratings: ratings || [],
@@ -134,21 +147,22 @@ export default function ConsultantDashboard() {
   const profile: any = liveData?.consultant || {};
   const earnings = {
     total: liveData?.totalEarned ?? 0,
-    thisMonth: liveData?.totalEarned ?? 0,
+    thisMonth: liveData?.thisMonthEarned ?? 0,
     pending: liveData?.pending ?? 0,
-    monthlyTrend: [] as { month: string; amount: number }[],
+    monthlyTrend: liveData?.monthlyTrend ?? ([] as { month: string; amount: number }[]),
   };
+  const hasEarningsTrend = earnings.monthlyTrend.some((m) => m.amount > 0);
   const activeCases = liveData ? liveData.tickets : [];
   const upcomingSessions = liveData?.sessions || [];
 
   const kpis = [
     {
       labelKey: 'consultant_dashboard.this_month',
-      value: liveData?.totalEarned ?? earnings.thisMonth,
+      value: earnings.thisMonth,
       prefix: '$',
       icon: DollarSign,
-      trend: liveData ? `$${liveData.pending.toLocaleString()} pending` : '+12%',
-      sparkData: [800, 1200, 950, 1400, 1100, 1600, liveData?.totalEarned ?? earnings.thisMonth],
+      trend: `$${(liveData?.pending ?? 0).toLocaleString()} pending`,
+      sparkData: hasEarningsTrend ? earnings.monthlyTrend.map((m) => m.amount) : ([] as number[]),
       link: '/consultant/earnings',
       color: 'hsl(var(--accent))',
     },
@@ -158,7 +172,7 @@ export default function ConsultantDashboard() {
       prefix: '',
       icon: Briefcase,
       trend: `${upcomingSessions.length} ${t('consultant_dashboard.upcoming')}`,
-      sparkData: [2, 3, 4, 3, 5, 4, activeCases.length],
+      sparkData: [] as number[],
       link: '/consultant/cases',
       color: 'hsl(262, 83%, 58%)',
     },
@@ -168,7 +182,7 @@ export default function ConsultantDashboard() {
       prefix: '',
       icon: Clock,
       trend: t('consultant_dashboard.avg'),
-      sparkData: [30, 25, 28, 22, 20, 18, (profile as any).response_time_minutes ?? 0],
+      sparkData: [] as number[],
       link: '/consultant/profile',
       color: 'hsl(38, 92%, 50%)',
     },
@@ -178,7 +192,7 @@ export default function ConsultantDashboard() {
       prefix: '',
       icon: Star,
       trend: `${(profile as any).total_reviews ?? 0} ${t('consultant_dashboard.reviews_label')}`,
-      sparkData: [4.2, 4.5, 4.3, 4.6, 4.8, 4.7, (profile as any).rating ?? 0],
+      sparkData: [] as number[],
       link: '/consultant/reviews',
       color: 'hsl(142, 71%, 45%)',
     },
@@ -283,18 +297,25 @@ export default function ConsultantDashboard() {
                 </div>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={earnings.monthlyTrend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
-                <Tooltip
-                  formatter={(value: number) => [`$${value.toLocaleString()}`, t('consultant_dashboard.earnings_label')]}
-                  contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px', background: 'hsl(var(--card))' }}
-                />
-                <Bar dataKey="amount" fill="hsl(217, 91%, 60%)" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {hasEarningsTrend ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={earnings.monthlyTrend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+                  <Tooltip
+                    formatter={(value: number) => [`$${value.toLocaleString()}`, t('consultant_dashboard.earnings_label')]}
+                    contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', fontSize: '12px', background: 'hsl(var(--card))' }}
+                  />
+                  <Bar dataKey="amount" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-[200px] flex-col items-center justify-center rounded-xl border border-dashed border-border/60 text-center">
+                <DollarSign className="mb-2 h-8 w-8 text-muted-foreground/40" />
+                <p className="text-sm text-muted-foreground">No earnings yet. Your payouts will appear here month by month.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

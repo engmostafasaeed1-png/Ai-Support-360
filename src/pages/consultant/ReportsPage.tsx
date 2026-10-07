@@ -160,12 +160,12 @@ export default function ConsultantReportsPage() {
   };
 
   const kpis = [
-    { label: 'Total Earned', value: d.totalEarned, prefix: '$', icon: DollarSign, sparkData: [800, 1200, 950, 1400, 1100, 1600, d.totalEarned || 100], color: 'hsl(var(--accent))' },
-    { label: 'Cases', value: d.totalCases, prefix: '', icon: Briefcase, sparkData: [2, 3, 4, 3, 5, 4, d.totalCases], color: 'hsl(262, 83%, 58%)' },
-    { label: 'Resolved', value: d.resolvedCases, prefix: '', icon: CheckCircle2, sparkData: [1, 2, 3, 2, 4, 3, d.resolvedCases], color: 'hsl(142, 71%, 45%)' },
-    { label: 'Avg Resolution', value: d.avgResHours, prefix: '', suffix: 'h', icon: Clock, sparkData: [8, 6, 7, 5, 4, 3, d.avgResHours], color: 'hsl(38, 92%, 50%)' },
-    { label: 'Rating', value: Number(d.rating), prefix: '', suffix: '/5', icon: Star, sparkData: [4, 4.2, 4.3, 4.5, 4.4, 4.6, Number(d.rating)], color: 'hsl(45, 93%, 47%)' },
-    { label: 'Billable Hours', value: d.totalHours, prefix: '', suffix: 'h', icon: TrendingUp, sparkData: [10, 15, 12, 18, 20, 16, d.totalHours], color: 'hsl(190, 80%, 42%)' },
+    { label: 'Total Earned', value: d.totalEarned, prefix: '$', icon: DollarSign, sparkData: [] as number[], color: 'hsl(var(--accent))' },
+    { label: 'Cases', value: d.totalCases, prefix: '', icon: Briefcase, sparkData: [] as number[], color: 'hsl(262, 83%, 58%)' },
+    { label: 'Resolved', value: d.resolvedCases, prefix: '', icon: CheckCircle2, sparkData: [] as number[], color: 'hsl(142, 71%, 45%)' },
+    { label: 'Avg Resolution', value: d.avgResHours, prefix: '', suffix: 'h', icon: Clock, sparkData: [] as number[], color: 'hsl(38, 92%, 50%)' },
+    { label: 'Rating', value: Number(d.rating), prefix: '', suffix: '/5', icon: Star, sparkData: [] as number[], color: 'hsl(45, 93%, 47%)' },
+    { label: 'Billable Hours', value: d.totalHours, prefix: '', suffix: 'h', icon: TrendingUp, sparkData: [] as number[], color: 'hsl(190, 80%, 42%)' },
   ];
 
   return (

@@ -149,12 +149,12 @@ export default function ReportsPage() {
   };
 
   const kpis = [
-    { label: 'Total Tickets', value: d.totalTickets, prefix: '', icon: Ticket, sparkData: [3, 5, 4, 7, 6, 8, d.totalTickets], color: 'hsl(var(--accent))' },
-    { label: 'Resolved', value: d.resolvedCount, prefix: '', icon: CheckCircle2, sparkData: [2, 4, 3, 5, 7, 6, d.resolvedCount], color: 'hsl(142, 71%, 45%)' },
-    { label: 'Avg Resolution', value: d.avgResHours, prefix: '', suffix: 'h', icon: Clock, sparkData: [8, 6, 7, 5, 4, 3, d.avgResHours], color: 'hsl(38, 92%, 50%)' },
-    { label: 'Total Spent', value: d.totalSpent, prefix: '$', icon: DollarSign, sparkData: [500, 800, 600, 1200, 900, 1400, d.totalSpent || 100], color: 'hsl(262, 83%, 58%)' },
-    { label: 'Sessions', value: d.totalSessions, prefix: '', icon: Users, sparkData: [1, 3, 2, 4, 3, 5, d.totalSessions], color: 'hsl(190, 80%, 42%)' },
-    { label: 'Resolution Rate', value: d.totalTickets > 0 ? Math.round(d.resolvedCount / d.totalTickets * 100) : 0, prefix: '', suffix: '%', icon: TrendingUp, sparkData: [60, 65, 70, 72, 75, 80, d.totalTickets > 0 ? Math.round(d.resolvedCount / d.totalTickets * 100) : 0], color: 'hsl(142, 71%, 45%)' },
+    { label: 'Total Tickets', value: d.totalTickets, prefix: '', icon: Ticket, sparkData: [] as number[], color: 'hsl(var(--accent))' },
+    { label: 'Resolved', value: d.resolvedCount, prefix: '', icon: CheckCircle2, sparkData: [] as number[], color: 'hsl(142, 71%, 45%)' },
+    { label: 'Avg Resolution', value: d.avgResHours, prefix: '', suffix: 'h', icon: Clock, sparkData: [] as number[], color: 'hsl(38, 92%, 50%)' },
+    { label: 'Total Spent', value: d.totalSpent, prefix: '$', icon: DollarSign, sparkData: [] as number[], color: 'hsl(262, 83%, 58%)' },
+    { label: 'Sessions', value: d.totalSessions, prefix: '', icon: Users, sparkData: [] as number[], color: 'hsl(190, 80%, 42%)' },
+    { label: 'Resolution Rate', value: d.totalTickets > 0 ? Math.round(d.resolvedCount / d.totalTickets * 100) : 0, prefix: '', suffix: '%', icon: TrendingUp, sparkData: [] as number[], color: 'hsl(142, 71%, 45%)' },
   ];
 
   const handleExportCSV = () => {
