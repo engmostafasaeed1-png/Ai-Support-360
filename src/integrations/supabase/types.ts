@@ -7231,14 +7231,8 @@ export type Database = {
         Returns: boolean
       }
       client_approval_required: { Args: never; Returns: boolean }
-      client_basics_complete: {
-        Args: {
-          _company_name: string
-          _company_size: string
-          _industry: string
-          _phone: string
-          _sap_modules: string[]
-        }
+      client_info_ready: {
+        Args: { _company_name: string; _sap_modules: string[] }
         Returns: boolean
       }
       client_report_payment: {
