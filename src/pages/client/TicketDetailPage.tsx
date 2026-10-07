@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -110,10 +111,24 @@ const sessionStatusIcons: Record<string, typeof Circle> = {
   cancelled: Circle,
 };
 
+const TICKET_TABS = ['overview', 'work', 'sessions', 'billing', 'files', 'activity'] as const;
+type TicketTab = (typeof TICKET_TABS)[number];
+// Older links name a section instead of a tab (the Documents quick action uses ?tab=documents).
+const TAB_ALIASES: Record<string, TicketTab> = { documents: 'files' };
+
 export default function TicketDetailPage() {
   const { t } = useTranslation();
   const { ticketId } = useParams<{ ticketId: string }>();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get('tab') ?? '';
+  const requestedTab = TAB_ALIASES[rawTab] ?? rawTab;
+  const activeTab: TicketTab = (TICKET_TABS as readonly string[]).includes(requestedTab) ? (requestedTab as TicketTab) : 'overview';
+  const changeTab = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', value);
+    setSearchParams(next, { replace: true });
+  };
   const isAdmin = location.pathname.startsWith('/admin');
   const isConsultant = location.pathname.startsWith('/consultant');
   const isClient = !isAdmin && !isConsultant;
@@ -256,295 +271,319 @@ export default function TicketDetailPage() {
         <RemoteAccessStatusPanel ticketId={ticket.id} role="client" />
       )}
 
-      {/* ─── Info Cards ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <InfoCard
-          icon={Tag}
-          label={ticketAreas.length > 1 ? 'SAP Areas' : 'SAP Module'}
-          value={ticketAreas.length > 1 ? `${areaLabel(ticketAreas[0], ticket.sap_module_other)} +${ticketAreas.length - 1}` : areaLabel(ticket.sap_module, ticket.sap_module_other)}
-        />
-        <InfoCard icon={User} label="Consultant" value={ticket.consultant_name || 'Unassigned'} />
-        <InfoCard icon={Calendar} label="Created" value={format(new Date(ticket.created_at), 'MMM d, yyyy')} />
-        <InfoCard icon={Clock} label="Last Updated" value={formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })} />
-      </div>
+      <Tabs value={activeTab} onValueChange={changeTab} className="space-y-4">
+        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto bg-muted/60 p-1">
+          <TabsTrigger value="overview" className="gap-1.5"><Tag className="h-3.5 w-3.5" />Overview</TabsTrigger>
+          <TabsTrigger value="work" className="gap-1.5"><Users className="h-3.5 w-3.5" />Work &amp; plan</TabsTrigger>
+          <TabsTrigger value="sessions" className="gap-1.5"><Video className="h-3.5 w-3.5" />Sessions &amp; chat</TabsTrigger>
+          <TabsTrigger value="billing" className="gap-1.5"><Calculator className="h-3.5 w-3.5" />Time &amp; billing</TabsTrigger>
+          <TabsTrigger value="files" className="gap-1.5"><FileText className="h-3.5 w-3.5" />Files &amp; links</TabsTrigger>
+          <TabsTrigger value="activity" className="gap-1.5"><History className="h-3.5 w-3.5" />Activity</TabsTrigger>
+        </TabsList>
 
-      {(ticketAreas.length > 1 || ticket.sap_module_other || ticket.area_details) && (
-        <Card className="rounded-2xl border-border/50">
-          <CardContent className="p-4 space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">SAP areas</p>
-            <div className="flex flex-wrap gap-1.5">
-              {ticketAreas.map((name, i) => (
-                <Badge key={name} variant="secondary" className="text-xs gap-1">
-                  {i === 0 && ticketAreas.length > 1 && <Star className="w-3 h-3 text-accent fill-accent" aria-label="Main area" />}
-                  {areaLabel(name, ticket.sap_module_other)}
-                </Badge>
-              ))}
-            </div>
-            {ticket.area_details && (
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">More details about the areas</p>
-                <p className="text-sm text-foreground whitespace-pre-wrap">{ticket.area_details}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* SAP Notes the client already tried */}
-      {triedNotes.length > 0 && (
-        <Card className="rounded-2xl border-border/50" data-testid="notes-tried">
-          <CardContent className="p-4 space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">SAP Notes already tried</p>
-            <SapNoteLinks notes={triedNotes} />
-            <p className="text-[11px] text-muted-foreground">Each note opens in SAP for Me. You need your own SAP login to read it.</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ─── Description & Extra Details ─── */}
-      {(ticket.description || ticket.preferred_language || ticket.sla_deadline || ticket.ai_suggested_category) && (
-        <Card className="rounded-2xl border-border/50">
-          <CardContent className="p-4 space-y-3">
-            {ticket.description && (
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Description</p>
-                <p className="text-sm text-foreground whitespace-pre-wrap">{ticket.description}</p>
-              </div>
-            )}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-              {ticket.preferred_language && (
-                <DetailItem label="Language" value={ticket.preferred_language === 'ar' ? 'Arabic' : 'English'} />
-              )}
-              {ticket.preferred_session_type && (
-                <DetailItem label="Session Type" value={ticket.preferred_session_type.replace(/_/g, ' ')} />
-              )}
-              {ticket.sla_deadline && (
-                <DetailItem label="SLA Deadline" value={format(new Date(ticket.sla_deadline), 'MMM d, yyyy HH:mm')} />
-              )}
-              {ticket.resolved_at && (
-                <DetailItem label="Resolved" value={format(new Date(ticket.resolved_at), 'MMM d, yyyy')} />
-              )}
-              {ticket.ai_suggested_category && (
-                <DetailItem label="AI Category" value={ticket.ai_suggested_category} />
-              )}
-              {ticket.ai_suggested_priority && (
-                <DetailItem label="AI Priority" value={ticket.ai_suggested_priority} />
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ─── Resolution Notes ─── */}
-      {(ticket.status === 'resolved' || ticket.status === 'closed') && (
-        <Card className="rounded-2xl border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wider flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Resolution Notes
-              </p>
-              {!resolutionEditing && !isColleague && (
-                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setResolutionEditing(true); setResolutionDraft((ticket as any).resolution_notes || ''); }}>
-                  <Pencil className="w-3 h-3" /> {(ticket as any).resolution_notes ? 'Edit' : 'Add Notes'}
-                </Button>
-              )}
-            </div>
-            {resolutionEditing ? (
-              <div className="space-y-2">
-                <textarea
-                  className="w-full min-h-[100px] rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  placeholder="Describe how this issue was resolved. An administrator may review these notes before anything is added to the playbook library..."
-                  value={resolutionDraft}
-                  onChange={e => setResolutionDraft(e.target.value)}
-                />
-                <div className="flex gap-2">
-                  <Button size="sm" className="text-xs" onClick={async () => {
-                    const { error } = await supabase.from('tickets').update({ resolution_notes: resolutionDraft } as any).eq('id', ticket.id);
-                    if (error) { toast.error('Failed to save'); return; }
-                    toast.success('Resolution notes saved');
-                    setResolutionEditing(false);
-                    queryClient.invalidateQueries({ queryKey: ['ticket-detail'] });
-                  }}>Save</Button>
-                  <Button size="sm" variant="ghost" className="text-xs" onClick={() => setResolutionEditing(false)}>Cancel</Button>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-foreground whitespace-pre-wrap">
-                {(ticket as any).resolution_notes || 'No resolution notes yet. Add notes to document how this issue was resolved.'}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ─── NDA Status (when consultant assigned) ─── */}
-      {ticket.consultant_id && (
-        <TicketNDAStatus
-          consultantId={ticket.consultant_id}
-          clientId={ticket.client_id}
-          consultantName={ticket.consultant_name || undefined}
-          clientName="Your Company"
-        />
-      )}
-
-      {/* ─── SLA Tracking ─── */}
-      <TicketSLATracker
-        ticketId={ticket.id}
-        urgency={ticket.urgency}
-        status={ticket.status}
-        createdAt={ticket.created_at}
-        slaDeadline={ticket.sla_deadline}
-        firstResponseAt={(ticket as any).first_response_at}
-        slaBreach={(ticket as any).sla_breached || false}
-      />
-
-      {/* ─── Tags & Watchers ─── */}
-      <SectionWrapper icon={Tags} title="Tags & Watchers" defaultOpen>
-        <TicketTagsWatchers ticketId={ticket.id} isReadOnly={isColleague} />
-      </SectionWrapper>
-
-      {/* ─── Pre-Work Interview ─── */}
-      <SectionWrapper icon={Video} title="Pre-Work Interview" defaultOpen>
-        <TicketInterview
-          ticketId={ticket.id}
-          consultantId={ticket.consultant_id}
-          clientId={ticket.client_id}
-          isClient={isClient && !isColleague}
-          isConsultant={isConsultant}
-          consultantName={ticket.consultant_name || undefined}
-        />
-      </SectionWrapper>
-
-      {/* ─── Cost & Effort Plan ─── */}
-      <SectionWrapper icon={Calculator} title="Cost & Effort Plan" defaultOpen>
-        <TicketPlanApproval ticket={ticket} isClient={isClient && !isColleague} />
-      </SectionWrapper>
-
-      {/* ─── Available Consultants (Acceptors) ─── */}
-      {isClient && <TicketMatchRequests ticketId={ticket.id} clientId={ticket.client_id} />}
-
-      <TicketAcceptors ticketId={ticket.id} currentConsultantId={ticket.consultant_id} />
-
-      {/* ─── Multi-Consultant Assignments ─── */}
-      <SectionWrapper icon={Users} title="Consultant Assignments" defaultOpen>
-        <TicketAssignments ticketId={ticket.id} isReadOnly={isConsultant || isColleague} />
-      </SectionWrapper>
-
-      {/* ─── Bids Section ─── */}
-      <SectionWrapper icon={Gavel} title="Bids & Proposals" defaultOpen>
-        <TicketBids ticketId={ticket.id} />
-      </SectionWrapper>
-
-      {/* ─── Ticket Hierarchy Tree ─── */}
-      <SectionWrapper icon={Network} title="Ticket Hierarchy" defaultOpen>
-        <TicketHierarchyTree ticketId={ticket.id} onEditTicket={(id) => { if (id === ticket.id) setEditOpen(true); }} />
-      </SectionWrapper>
-
-      {/* ─── Child Tickets (Sub-tickets) ─── */}
-      <SectionWrapper icon={GitBranch} title="Sub-Tickets" defaultOpen>
-        <ChildTickets
-          ticketId={ticket.id}
-          ticketSapModule={ticket.sap_module}
-          ticketClientId={ticket.client_id}
-          tenantId={(ticket as any).tenant_id}
-        />
-      </SectionWrapper>
-
-      {/* ─── Sessions Section ─── */}
-      <SectionWrapper icon={Video} title="Sessions" count={sessions?.length} defaultOpen>
-        <SessionsList sessions={sessions || []} isLoading={sessionsLoading} />
-      </SectionWrapper>
-
-      {/* ─── Meetings List with AI Insights ─── */}
-      <SectionWrapper icon={CalendarDays} title="Meetings" defaultOpen>
-        <TicketMeetingsList ticketId={ticket.id} onSchedule={() => setMeetingOpen(true)} />
-      </SectionWrapper>
-
-      {/* ─── Recorded Sessions ─── */}
-      {recordedSessions.length > 0 && (
-        <SectionWrapper icon={Play} title="Recorded Sessions" count={recordedSessions.length} defaultOpen={false}>
-          <div className="space-y-2">
-            {recordedSessions.map(s => (
-              <Card key={s.id} className="rounded-xl border-border/30">
-                <CardContent className="p-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <Play className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground capitalize">
-                      {s.session_type?.replace(/_/g, ' ')} — {s.consultant_name}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {s.scheduled_at && format(new Date(s.scheduled_at), 'MMM d, yyyy h:mm a')}
-                      {s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}
-                    </p>
-                  </div>
-                  <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">
-                    <CheckCircle2 className="w-3 h-3 me-1" /> Completed
-                  </Badge>
-                </CardContent>
-              </Card>
-            ))}
+        <TabsContent value="overview" className="mt-0 space-y-5">
+          {/* ─── Info Cards ─── */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <InfoCard
+              icon={Tag}
+              label={ticketAreas.length > 1 ? 'SAP Areas' : 'SAP Module'}
+              value={ticketAreas.length > 1 ? `${areaLabel(ticketAreas[0], ticket.sap_module_other)} +${ticketAreas.length - 1}` : areaLabel(ticket.sap_module, ticket.sap_module_other)}
+            />
+            <InfoCard icon={User} label="Consultant" value={ticket.consultant_name || 'Unassigned'} />
+            <InfoCard icon={Calendar} label="Created" value={format(new Date(ticket.created_at), 'MMM d, yyyy')} />
+            <InfoCard icon={Clock} label="Last Updated" value={formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })} />
           </div>
-        </SectionWrapper>
-      )}
 
-      {/* ─── Chat / Messages ─── */}
-      <SectionWrapper icon={MessageSquare} title="Chat History" count={messages?.length} defaultOpen>
-        <ChatInline messages={messages || []} isLoading={messagesLoading} />
-      </SectionWrapper>
+          {(ticketAreas.length > 1 || ticket.sap_module_other || ticket.area_details) && (
+            <Card className="rounded-2xl border-border/50">
+              <CardContent className="p-4 space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">SAP areas</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {ticketAreas.map((name, i) => (
+                    <Badge key={name} variant="secondary" className="text-xs gap-1">
+                      {i === 0 && ticketAreas.length > 1 && <Star className="w-3 h-3 text-accent fill-accent" aria-label="Main area" />}
+                      {areaLabel(name, ticket.sap_module_other)}
+                    </Badge>
+                  ))}
+                </div>
+                {ticket.area_details && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">More details about the areas</p>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{ticket.area_details}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-      {/* ─── Timesheet / Work Log ─── */}
-      <SectionWrapper icon={ClipboardList} title="Timesheet & Work Log" defaultOpen>
-        <TicketTimesheet ticketId={ticket.id} ticketTitle={ticket.title} isReadOnly={isClient} canApprove={isClient && !isColleague} />
-      </SectionWrapper>
+          {/* SAP Notes the client already tried */}
+          {triedNotes.length > 0 && (
+            <Card className="rounded-2xl border-border/50" data-testid="notes-tried">
+              <CardContent className="p-4 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">SAP Notes already tried</p>
+                <SapNoteLinks notes={triedNotes} />
+                <p className="text-[11px] text-muted-foreground">Each note opens in SAP for Me. You need your own SAP login to read it.</p>
+              </CardContent>
+            </Card>
+          )}
 
-      <TicketPaymentSection ticketId={ticket.id} role={isClient && !isColleague ? 'client' : 'viewer'} />
+          {/* ─── Description & Extra Details ─── */}
+          {(ticket.description || ticket.preferred_language || ticket.sla_deadline || ticket.ai_suggested_category) && (
+            <Card className="rounded-2xl border-border/50">
+              <CardContent className="p-4 space-y-3">
+                {ticket.description && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Description</p>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{ticket.description}</p>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                  {ticket.preferred_language && (
+                    <DetailItem label="Language" value={ticket.preferred_language === 'ar' ? 'Arabic' : 'English'} />
+                  )}
+                  {ticket.preferred_session_type && (
+                    <DetailItem label="Session Type" value={ticket.preferred_session_type.replace(/_/g, ' ')} />
+                  )}
+                  {ticket.sla_deadline && (
+                    <DetailItem label="SLA Deadline" value={format(new Date(ticket.sla_deadline), 'MMM d, yyyy HH:mm')} />
+                  )}
+                  {ticket.resolved_at && (
+                    <DetailItem label="Resolved" value={format(new Date(ticket.resolved_at), 'MMM d, yyyy')} />
+                  )}
+                  {ticket.ai_suggested_category && (
+                    <DetailItem label="AI Category" value={ticket.ai_suggested_category} />
+                  )}
+                  {ticket.ai_suggested_priority && (
+                    <DetailItem label="AI Priority" value={ticket.ai_suggested_priority} />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-      {/* ─── Internal Notes ─── */}
-      {!isClient && (
-        <SectionWrapper icon={MessageSquareText} title="Internal Notes" defaultOpen>
-          <TicketInternalNotes ticketId={ticket.id} />
-        </SectionWrapper>
-      )}
+          {/* ─── Resolution Notes ─── */}
+          {(ticket.status === 'resolved' || ticket.status === 'closed') && (
+            <Card className="rounded-2xl border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Resolution Notes
+                  </p>
+                  {!resolutionEditing && !isColleague && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setResolutionEditing(true); setResolutionDraft((ticket as any).resolution_notes || ''); }}>
+                      <Pencil className="w-3 h-3" /> {(ticket as any).resolution_notes ? 'Edit' : 'Add Notes'}
+                    </Button>
+                  )}
+                </div>
+                {resolutionEditing ? (
+                  <div className="space-y-2">
+                    <textarea
+                      className="w-full min-h-[100px] rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      placeholder="Describe how this issue was resolved. An administrator may review these notes before anything is added to the playbook library..."
+                      value={resolutionDraft}
+                      onChange={e => setResolutionDraft(e.target.value)}
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" className="text-xs" onClick={async () => {
+                        const { error } = await supabase.from('tickets').update({ resolution_notes: resolutionDraft } as any).eq('id', ticket.id);
+                        if (error) { toast.error('Failed to save'); return; }
+                        toast.success('Resolution notes saved');
+                        setResolutionEditing(false);
+                        queryClient.invalidateQueries({ queryKey: ['ticket-detail'] });
+                      }}>Save</Button>
+                      <Button size="sm" variant="ghost" className="text-xs" onClick={() => setResolutionEditing(false)}>Cancel</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-foreground whitespace-pre-wrap">
+                    {(ticket as any).resolution_notes || 'No resolution notes yet. Add notes to document how this issue was resolved.'}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-      {/* ─── Linked Tickets ─── */}
-      <SectionWrapper icon={Link2} title="Linked Tickets" defaultOpen={false}>
-        <TicketLinks ticketId={ticket.id} isReadOnly={isConsultant || isColleague} />
-      </SectionWrapper>
+          {/* ─── NDA Status (when consultant assigned) ─── */}
+          {ticket.consultant_id && (
+            <TicketNDAStatus
+              consultantId={ticket.consultant_id}
+              clientId={ticket.client_id}
+              consultantName={ticket.consultant_name || undefined}
+              clientName="Your Company"
+            />
+          )}
 
-      {/* ─── Business Processes ─── */}
-      <SectionWrapper icon={Network} title="Business Processes" defaultOpen={false}>
-        <TicketBusinessProcesses ticketId={ticket.id} isReadOnly={isConsultant || isColleague} />
-      </SectionWrapper>
-
-      {/* ─── CSAT Satisfaction ─── */}
-      <SectionWrapper icon={Star} title="Satisfaction" defaultOpen>
-        <TicketCSAT ticketId={ticket.id} ticketTitle={ticket.title} ticketStatus={ticket.status} clientId={ticket.client_id} consultantId={ticket.consultant_id} />
-      </SectionWrapper>
-
-      {/* ─── Documents ─── */}
-      <SectionWrapper icon={FileText} title="Documents" defaultOpen>
-        <TicketDocuments ticketId={ticket.id} />
-      </SectionWrapper>
-
-      {/* ─── Activity Timeline ─── */}
-      <SectionWrapper icon={History} title="Full Activity Timeline" defaultOpen={false}>
-        <TicketTimeline ticketId={ticket.id} ticket={ticket} />
-      </SectionWrapper>
-
-      {/* ─── Emergency Contact ─── */}
-      {ticket.consultant_id && (
-        <SectionWrapper icon={Phone} title="Quick Contact" defaultOpen>
-          <EmergencyContactPanel
-            consultantId={ticket.consultant_id}
-            consultantName={ticket.consultant_name || undefined}
+          {/* ─── SLA Tracking ─── */}
+          <TicketSLATracker
             ticketId={ticket.id}
-            ticketTitle={ticket.title}
             urgency={ticket.urgency}
+            status={ticket.status}
+            createdAt={ticket.created_at}
+            slaDeadline={ticket.sla_deadline}
+            firstResponseAt={(ticket as any).first_response_at}
+            slaBreach={(ticket as any).sla_breached || false}
           />
-        </SectionWrapper>
-      )}
+
+          {/* ─── Emergency Contact ─── */}
+          {ticket.consultant_id && (
+            <SectionWrapper icon={Phone} title="Quick Contact" defaultOpen>
+              <EmergencyContactPanel
+                consultantId={ticket.consultant_id}
+                consultantName={ticket.consultant_name || undefined}
+                ticketId={ticket.id}
+                ticketTitle={ticket.title}
+                urgency={ticket.urgency}
+              />
+            </SectionWrapper>
+          )}
+        </TabsContent>
+
+        <TabsContent value="work" className="mt-0 space-y-5">
+          {/* ─── Pre-Work Interview ─── */}
+          <SectionWrapper icon={Video} title="Pre-Work Interview" defaultOpen>
+            <TicketInterview
+              ticketId={ticket.id}
+              consultantId={ticket.consultant_id}
+              clientId={ticket.client_id}
+              isClient={isClient && !isColleague}
+              isConsultant={isConsultant}
+              consultantName={ticket.consultant_name || undefined}
+            />
+          </SectionWrapper>
+
+          {/* ─── Cost & Effort Plan ─── */}
+          <SectionWrapper icon={Calculator} title="Cost & Effort Plan" defaultOpen>
+            <TicketPlanApproval ticket={ticket} isClient={isClient && !isColleague} />
+          </SectionWrapper>
+
+          {/* ─── Available Consultants (Acceptors) ─── */}
+          {isClient && <TicketMatchRequests ticketId={ticket.id} clientId={ticket.client_id} />}
+
+          <TicketAcceptors ticketId={ticket.id} currentConsultantId={ticket.consultant_id} />
+
+          {/* ─── Multi-Consultant Assignments ─── */}
+          <SectionWrapper icon={Users} title="Consultant Assignments" defaultOpen>
+            <TicketAssignments ticketId={ticket.id} isReadOnly={isConsultant || isColleague} />
+          </SectionWrapper>
+
+          {/* ─── Bids Section ─── */}
+          <SectionWrapper icon={Gavel} title="Bids & Proposals" defaultOpen>
+            <TicketBids ticketId={ticket.id} />
+          </SectionWrapper>
+
+          {/* ─── Ticket Hierarchy Tree ─── */}
+          <SectionWrapper icon={Network} title="Ticket Hierarchy" defaultOpen>
+            <TicketHierarchyTree ticketId={ticket.id} onEditTicket={(id) => { if (id === ticket.id) setEditOpen(true); }} />
+          </SectionWrapper>
+
+          {/* ─── Child Tickets (Sub-tickets) ─── */}
+          <SectionWrapper icon={GitBranch} title="Sub-Tickets" defaultOpen>
+            <ChildTickets
+              ticketId={ticket.id}
+              ticketSapModule={ticket.sap_module}
+              ticketClientId={ticket.client_id}
+              tenantId={(ticket as any).tenant_id}
+            />
+          </SectionWrapper>
+        </TabsContent>
+
+        <TabsContent value="sessions" className="mt-0 space-y-5">
+          {/* ─── Sessions Section ─── */}
+          <SectionWrapper icon={Video} title="Sessions" count={sessions?.length} defaultOpen>
+            <SessionsList sessions={sessions || []} isLoading={sessionsLoading} />
+          </SectionWrapper>
+
+          {/* ─── Meetings List with AI Insights ─── */}
+          <SectionWrapper icon={CalendarDays} title="Meetings" defaultOpen>
+            <TicketMeetingsList ticketId={ticket.id} onSchedule={() => setMeetingOpen(true)} />
+          </SectionWrapper>
+
+          {/* ─── Recorded Sessions ─── */}
+          {recordedSessions.length > 0 && (
+            <SectionWrapper icon={Play} title="Recorded Sessions" count={recordedSessions.length} defaultOpen={false}>
+              <div className="space-y-2">
+                {recordedSessions.map(s => (
+                  <Card key={s.id} className="rounded-xl border-border/30">
+                    <CardContent className="p-3 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Play className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground capitalize">
+                          {s.session_type?.replace(/_/g, ' ')} — {s.consultant_name}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {s.scheduled_at && format(new Date(s.scheduled_at), 'MMM d, yyyy h:mm a')}
+                          {s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">
+                        <CheckCircle2 className="w-3 h-3 me-1" /> Completed
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </SectionWrapper>
+          )}
+
+          {/* ─── Chat / Messages ─── */}
+          <SectionWrapper icon={MessageSquare} title="Chat History" count={messages?.length} defaultOpen>
+            <ChatInline messages={messages || []} isLoading={messagesLoading} />
+          </SectionWrapper>
+        </TabsContent>
+
+        <TabsContent value="billing" className="mt-0 space-y-5">
+          {/* ─── Timesheet / Work Log ─── */}
+          <SectionWrapper icon={ClipboardList} title="Timesheet & Work Log" defaultOpen>
+            <TicketTimesheet ticketId={ticket.id} ticketTitle={ticket.title} isReadOnly={isClient} canApprove={isClient && !isColleague} />
+          </SectionWrapper>
+
+          <TicketPaymentSection ticketId={ticket.id} role={isClient && !isColleague ? 'client' : 'viewer'} />
+
+          {/* ─── CSAT Satisfaction ─── */}
+          <SectionWrapper icon={Star} title="Satisfaction" defaultOpen>
+            <TicketCSAT ticketId={ticket.id} ticketTitle={ticket.title} ticketStatus={ticket.status} clientId={ticket.client_id} consultantId={ticket.consultant_id} />
+          </SectionWrapper>
+        </TabsContent>
+
+        <TabsContent value="files" className="mt-0 space-y-5">
+          {/* ─── Documents ─── */}
+          <SectionWrapper icon={FileText} title="Documents" defaultOpen>
+            <TicketDocuments ticketId={ticket.id} />
+          </SectionWrapper>
+
+          {/* ─── Linked Tickets ─── */}
+          <SectionWrapper icon={Link2} title="Linked Tickets" defaultOpen={false}>
+            <TicketLinks ticketId={ticket.id} isReadOnly={isConsultant || isColleague} />
+          </SectionWrapper>
+
+          {/* ─── Business Processes ─── */}
+          <SectionWrapper icon={Network} title="Business Processes" defaultOpen={false}>
+            <TicketBusinessProcesses ticketId={ticket.id} isReadOnly={isConsultant || isColleague} />
+          </SectionWrapper>
+        </TabsContent>
+
+        <TabsContent value="activity" className="mt-0 space-y-5">
+          {/* ─── Tags & Watchers ─── */}
+          <SectionWrapper icon={Tags} title="Tags & Watchers" defaultOpen>
+            <TicketTagsWatchers ticketId={ticket.id} isReadOnly={isColleague} />
+          </SectionWrapper>
+
+          {/* ─── Internal Notes ─── */}
+          {!isClient && (
+            <SectionWrapper icon={MessageSquareText} title="Internal Notes" defaultOpen>
+              <TicketInternalNotes ticketId={ticket.id} />
+            </SectionWrapper>
+          )}
+
+          {/* ─── Activity Timeline ─── */}
+          <SectionWrapper icon={History} title="Full Activity Timeline" defaultOpen={false}>
+            <TicketTimeline ticketId={ticket.id} ticket={ticket} />
+          </SectionWrapper>
+        </TabsContent>
+
+      </Tabs>
 
       {/* ─── Dialogs ─── */}
       <TicketEditDialog ticket={ticket} open={editOpen} onOpenChange={setEditOpen} />
