@@ -5,6 +5,7 @@ import Footer from '@/components/landing/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, X, Zap, Shield, Users, HeadphonesIcon, ArrowRight } from 'lucide-react';
+import PlanTermsNote from '@/components/pricing/PlanTermsNote';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const plans = [
@@ -241,6 +242,7 @@ export default function PricingPage() {
               </TabsContent>
             ))}
           </Tabs>
+          <PlanTermsNote />
         </div>
       </section>
 
