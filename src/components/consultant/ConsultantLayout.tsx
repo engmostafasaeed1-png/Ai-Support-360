@@ -7,7 +7,6 @@ import { Outlet } from 'react-router-dom';
 import { Search, Briefcase, Building2, Zap } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Input } from '@/components/ui/input';
-import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
 import HeaderNav from '@/components/HeaderNav';
 import logo from '@/assets/brand/mark.png.asset.json';
 import { Link, useNavigate } from 'react-router-dom';
@@ -27,12 +26,7 @@ export default function ConsultantLayout() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background relative">
-        <div className="fixed inset-0 z-0 pointer-events-none">
-          <video autoPlay muted loop playsInline className="w-full h-full object-cover opacity-[0.03]">
-            <source src={dashboardBgAsset.url} type="video/mp4" />
-          </video>
-        </div>
+      <div className="min-h-screen flex w-full bg-canvas relative">
 
         <ConsultantSidebar />
         <div className="flex-1 flex flex-col min-w-0 relative z-[1]">

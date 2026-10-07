@@ -14,7 +14,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
-import dashboardBgAsset from '@/assets/videos/dashboard-bg.mp4.asset.json';
 import HeaderNav from '@/components/HeaderNav';
 import logo from '@/assets/brand/mark.png.asset.json';
 
@@ -25,12 +24,7 @@ export default function ClientLayout() {
   useSessionTimeout();
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background relative">
-        <div className="fixed inset-0 z-0 pointer-events-none">
-          <video autoPlay muted loop playsInline className="w-full h-full object-cover opacity-[0.03]">
-            <source src={dashboardBgAsset.url} type="video/mp4" />
-          </video>
-        </div>
+      <div className="min-h-screen flex w-full bg-canvas relative">
 
         <ClientSidebar />
         <div className="flex-1 flex flex-col min-w-0 relative z-[1]">
