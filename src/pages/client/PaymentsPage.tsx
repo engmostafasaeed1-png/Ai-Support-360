@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PlanCheckoutDialog } from '@/components/client/PlanCheckoutDialog';
 import { useClientPayments } from '@/hooks/useClientPayments';
 import { Download, CreditCard, DollarSign, FileText, Clock, Search, ArrowRight, Ticket, AlertCircle, CheckCircle2, XCircle, ReceiptText, Calendar, User, Tag, Video, MessageSquare, Monitor, PlayCircle, Receipt } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -72,11 +73,14 @@ export default function PaymentsPage() {
   return (
     <div className="space-y-6">
       <PaymobReturnHandler />
+      <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
           <ReceiptText className="w-6 h-6 text-primary" /> Payments & Invoices
         </h1>
         <p className="text-xs md:text-sm text-muted-foreground mt-1">Track payments linked to your tickets and download invoices.</p>
+      </div>
+        <PlanCheckoutDialog />
       </div>
 
       {/* Summary Cards */}

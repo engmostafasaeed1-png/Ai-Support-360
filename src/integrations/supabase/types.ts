@@ -765,6 +765,73 @@ export type Database = {
           },
         ]
       }
+      client_plan_subscriptions: {
+        Row: {
+          base_monthly_price: number
+          client_id: string
+          created_at: string
+          discount_amount: number
+          final_monthly_price: number
+          free_until: string | null
+          id: string
+          payment_id: string | null
+          plan_id: string
+          status: string
+          tickets_per_month: number
+          voucher_id: string | null
+        }
+        Insert: {
+          base_monthly_price: number
+          client_id: string
+          created_at?: string
+          discount_amount?: number
+          final_monthly_price: number
+          free_until?: string | null
+          id?: string
+          payment_id?: string | null
+          plan_id: string
+          status?: string
+          tickets_per_month: number
+          voucher_id?: string | null
+        }
+        Update: {
+          base_monthly_price?: number
+          client_id?: string
+          created_at?: string
+          discount_amount?: number
+          final_monthly_price?: number
+          free_until?: string | null
+          id?: string
+          payment_id?: string | null
+          plan_id?: string
+          status?: string
+          tickets_per_month?: number
+          voucher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_plan_subscriptions_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_plan_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_plan_subscriptions_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_profiles: {
         Row: {
           communication_preference: string | null
@@ -7130,6 +7197,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      client_subscribe_plan: {
+        Args: { _plan_id: string; _tickets: number; _voucher_code?: string }
+        Returns: string
+      }
       complete_live_interview: {
         Args: {
           _overall: number
@@ -7354,6 +7425,10 @@ export type Database = {
       propose_ticket_rate: {
         Args: { _hourly_rate: number; _ticket_id: string }
         Returns: string
+      }
+      quote_plan_price: {
+        Args: { _plan_id: string; _tickets: number; _voucher_code?: string }
+        Returns: Json
       }
       recompute_consultant_rating: {
         Args: { _consultant_id: string }
