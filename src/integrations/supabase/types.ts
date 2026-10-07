@@ -4692,6 +4692,7 @@ export type Database = {
         Row: {
           created_at: string
           currency: string
+          description: string | null
           features: Json
           id: string
           is_active: boolean
@@ -4699,12 +4700,14 @@ export type Database = {
           name: string
           price_monthly: number
           price_yearly: number
+          ticket_tiers: Json
           tier: Database["public"]["Enums"]["subscription_tier"]
           updated_at: string
         }
         Insert: {
           created_at?: string
           currency?: string
+          description?: string | null
           features?: Json
           id?: string
           is_active?: boolean
@@ -4712,12 +4715,14 @@ export type Database = {
           name: string
           price_monthly?: number
           price_yearly?: number
+          ticket_tiers?: Json
           tier: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
         }
         Update: {
           created_at?: string
           currency?: string
+          description?: string | null
           features?: Json
           id?: string
           is_active?: boolean
@@ -4725,6 +4730,7 @@ export type Database = {
           name?: string
           price_monthly?: number
           price_yearly?: number
+          ticket_tiers?: Json
           tier?: Database["public"]["Enums"]["subscription_tier"]
           updated_at?: string
         }
@@ -6570,6 +6576,56 @@ export type Database = {
             columns: ["environment_id"]
             isOneToOne: false
             referencedRelation: "remote_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          discount_type: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          plan_id: string | null
+          updated_at: string
+          used_count: number
+          value: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_type: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          plan_id?: string | null
+          updated_at?: string
+          used_count?: number
+          value: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_type?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          plan_id?: string | null
+          updated_at?: string
+          used_count?: number
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vouchers_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
             referencedColumns: ["id"]
           },
         ]
