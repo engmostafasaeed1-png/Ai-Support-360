@@ -1,9 +1,7 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Users, CheckCircle, Clock, Eye, Zap, ShieldCheck, Bot, Activity, LogIn, Rocket, CalendarPlus } from 'lucide-react';
+import { ArrowRight, Sparkles, Users, CheckCircle, Clock, Zap, ShieldCheck, Bot, Activity, LogIn, Rocket, CalendarPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import GuestExploreModal from '@/components/guest/GuestExploreModal';
 import { useDemoWizard } from './DemoRequestWizard';
 import VideoBackground from '@/components/VideoBackground';
 import heroBgAsset from '@/assets/videos/hero-bg.mp4.asset.json';
@@ -13,7 +11,6 @@ import introConsultant from '@/assets/intro-consultant.jpg';
 
 export default function HeroSection() {
   const { t } = useTranslation();
-  const [exploreOpen, setExploreOpen] = useState(false);
   const demoWizard = useDemoWizard();
 
   const stats = [
@@ -127,17 +124,8 @@ export default function HeroSection() {
                 <CalendarPlus className="w-4 h-4" />
                 Request a demo
               </button>
-              <span className="text-primary-foreground/30">•</span>
-              <button
-                onClick={() => setExploreOpen(true)}
-                className="inline-flex items-center gap-1.5 text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-              >
-                <Eye className="w-4 h-4" />
-                {t('guest.explore_btn')}
-              </button>
             </div>
           </div>
-          <GuestExploreModal open={exploreOpen} onOpenChange={setExploreOpen} />
         </div>
 
         {/* Modern image showcase */}

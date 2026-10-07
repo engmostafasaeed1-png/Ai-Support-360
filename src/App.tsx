@@ -10,7 +10,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { GuestModeProvider } from "./contexts/GuestModeContext.tsx";
 import { CurrencyProvider } from "./contexts/CurrencyContext.tsx";
 import { TenantProvider } from "./contexts/TenantContext.tsx";
-import GuestBanner from "./components/guest/GuestBanner.tsx";
 import AIChatbot from "./components/chatbot/AIChatbot.tsx";
 import MaintenanceBanner from "./components/MaintenanceBanner.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
@@ -245,7 +244,7 @@ const App = () => (
           <Watermark />
           <GlobalSearch />
           <MaintenanceBanner />
-          <GuestBanner />
+          
           <AIChatbot />
           <WhatsAppButton />
           <ErrorBoundary>

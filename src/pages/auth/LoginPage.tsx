@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import GuestExploreModal from '@/components/guest/GuestExploreModal';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
@@ -9,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Eye, MailCheck, Inbox, ShieldAlert } from 'lucide-react';
+import { Loader2, MailCheck, Inbox, ShieldAlert } from 'lucide-react';
 import VerificationTimeline from '@/components/auth/VerificationTimeline';
 import PasswordInput from '@/components/auth/PasswordInput';
 import VideoBackground from '@/components/VideoBackground';
@@ -38,7 +37,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [exploreOpen, setExploreOpen] = useState(false);
   const [checking, setChecking] = useState(true);
   const [failedAttempts, setFailedAttempts] = useState(() => parseInt(sessionStorage.getItem('login_attempts') || '0'));
   const [lockoutUntil, setLockoutUntil] = useState<number | null>(() => {
@@ -536,17 +534,8 @@ export default function LoginPage() {
               {t('auth.no_account')}{' '}
               <Link to="/signup" className="text-primary font-medium hover:underline">{t('auth.signup_link')}</Link>
             </p>
-            <button
-              type="button"
-              onClick={() => setExploreOpen(true)}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Eye className="w-4 h-4" />
-              {t('guest.explore_btn')}
-            </button>
           </CardFooter>
         </form>
-        <GuestExploreModal open={exploreOpen} onOpenChange={setExploreOpen} />
       </Card>
     </div>
   );

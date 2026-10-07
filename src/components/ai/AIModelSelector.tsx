@@ -8,17 +8,14 @@ import {
 } from '@/components/ui/select';
 import { Brain } from 'lucide-react';
 
+// One model for the whole platform: GPT Astra 6 (the servers enforce it as well).
 export const AI_MODELS = [
-  { id: 'google/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite', provider: 'Google', tier: 'fast' },
-  { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash', provider: 'Google', tier: 'balanced' },
-  { id: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro', provider: 'Google', tier: 'premium' },
-  { id: 'openai/gpt-4o-mini', label: 'GPT-4o Mini', provider: 'OpenAI', tier: 'fast' },
-  { id: 'openai/gpt-4o', label: 'GPT-4o', provider: 'OpenAI', tier: 'premium' },
+  { id: 'openai/gpt-6-astra', label: 'GPT Astra 6', provider: 'OpenAI', tier: 'premium' },
 ] as const;
 
 export type AIModelId = typeof AI_MODELS[number]['id'];
 
-export const DEFAULT_MODEL: AIModelId = 'google/gemini-2.5-flash';
+export const DEFAULT_MODEL: AIModelId = 'openai/gpt-6-astra';
 
 const tierColors: Record<string, string> = {
   fast: 'text-green-500',
@@ -35,6 +32,19 @@ interface AIModelSelectorProps {
 
 export default function AIModelSelector({ value, onChange, compact = false, className = '' }: AIModelSelectorProps) {
   const { t } = useTranslation();
+
+  // One model for everything: show it as a label instead of a drop-down with a single choice.
+  if (AI_MODELS.length === 1) {
+    return (
+      <div
+        className={`inline-flex items-center gap-1.5 rounded-md border border-border/30 bg-muted/30 px-2 py-1 text-[11px] text-muted-foreground ${className}`}
+        title="All AI features use this model"
+      >
+        <Brain className="h-3 w-3 shrink-0" aria-hidden="true" />
+        <span>{AI_MODELS[0].label}</span>
+      </div>
+    );
+  }
 
   if (compact) {
     return (

@@ -7,12 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Users, Briefcase, Eye, MailCheck, Inbox, ShieldAlert } from 'lucide-react';
+import { Loader2, Users, Briefcase, MailCheck, Inbox, ShieldAlert } from 'lucide-react';
 import PasswordInput from '@/components/auth/PasswordInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 import { cn } from '@/lib/utils';
 import { MIN_PASSWORD_LENGTH } from '@/lib/passwordPolicy';
-import GuestExploreModal from '@/components/guest/GuestExploreModal';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
 import logo from '@/assets/brand/domain.png.asset.json';
@@ -42,7 +41,6 @@ export default function SignupPage() {
   const [email, setEmail] = useState(() => (searchParams.get('email') || '').slice(0, 254));
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [exploreOpen, setExploreOpen] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(() => {
     try { return localStorage.getItem(PENDING_EMAIL_KEY); } catch { return null; }
   });
@@ -329,17 +327,8 @@ export default function SignupPage() {
               {t('auth.have_account')}{' '}
               <Link to="/login" className="text-primary font-medium hover:underline">{t('auth.login_link')}</Link>
             </p>
-            <button
-              type="button"
-              onClick={() => setExploreOpen(true)}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Eye className="w-4 h-4" />
-              {t('guest.explore_btn')}
-            </button>
           </CardFooter>
         </form>
-        <GuestExploreModal open={exploreOpen} onOpenChange={setExploreOpen} />
       </Card>
     </div>
   );
