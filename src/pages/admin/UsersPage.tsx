@@ -13,13 +13,17 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MoreHorizontal, UserPlus, Shield, Ban, CheckCircle2, KeyRound, Trash2, Pencil, Download, Copy, RefreshCw } from 'lucide-react';
+import { Search, MoreHorizontal, UserPlus, Shield, Ban, CheckCircle2, KeyRound, Trash2, Pencil, Download, Copy, RefreshCw, BadgeCheck } from 'lucide-react';
 import InviteUserDialog from '@/components/admin/InviteUserDialog';
+import { Link, useNavigate } from 'react-router-dom';
+import { APPROVAL_STATUS_LABEL, STATUS_BADGE_CLASS, type ClientApprovalStatus } from '@/lib/clientApproval';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 type AdminUser = {
   id: string; email: string; name: string; avatar_url: string | null; roles: string[];
   created_at: string; last_sign_in_at: string | null; status: 'active' | 'pending' | 'suspended'; is_self: boolean;
+  client_approval?: ClientApprovalStatus | null;
 };
 const ALL_ROLES = ['client', 'consultant', 'admin', 'super_admin'] as const;
 const roleLabel: Record<string, string> = { client: 'Client', consultant: 'Consultant', admin: 'Admin', super_admin: 'Super admin' };
@@ -38,6 +42,7 @@ async function call(action: string, payload: Record<string, unknown> = {}) {
 
 export default function UsersPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const q = useDebounce(search, 250).toLowerCase();
   const [roleFilter, setRoleFilter] = useState('all');
@@ -57,7 +62,7 @@ export default function UsersPage() {
 
   const filtered = useMemo(() => {
     const list = users.filter((u) =>
-      (!q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)) &&
+      (!q || (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)) &&
       (roleFilter === 'all' || (roleFilter === 'none' ? u.roles.length === 0 : u.roles.includes(roleFilter))) &&
       (statusFilter === 'all' || u.status === statusFilter));
     return [...list].sort((a, b) =>
@@ -71,6 +76,7 @@ export default function UsersPage() {
     active: users.filter((u) => u.status === 'active').length,
     pending: users.filter((u) => u.status === 'pending').length,
     suspended: users.filter((u) => u.status === 'suspended').length,
+    waitingApproval: users.filter((u) => u.roles.includes('client') && u.client_approval === 'awaiting_confirmation').length,
   }), [users]);
 
   const run = async (action: string, user: AdminUser, payload: Record<string, unknown> = {}, ok = 'Done') => {
@@ -116,6 +122,17 @@ export default function UsersPage() {
       </div>
       <InviteUserDialog open={inviteOpen} onOpenChange={setInviteOpen} />
 
+      {counts.waitingApproval > 0 && (
+        <Card className="rounded-2xl border-info/30 bg-info/10">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-foreground">
+              {counts.waitingApproval} {counts.waitingApproval === 1 ? 'client is' : 'clients are'} waiting for your approval.
+            </p>
+            <Button asChild size="sm"><Link to="/admin/client-approvals">Review clients</Link></Button>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {([['Total', counts.total, 'all'], ['Active', counts.active, 'active'], ['Awaiting email confirmation', counts.pending, 'pending'], ['Suspended', counts.suspended, 'suspended']] as const).map(([l, n, s]) => (
           <button key={l} type="button" onClick={() => setStatusFilter(s)} className="text-start">
@@ -146,7 +163,7 @@ export default function UsersPage() {
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="pending">Awaiting confirmation</SelectItem>
+                <SelectItem value="pending">Awaiting email confirmation</SelectItem>
                 <SelectItem value="suspended">Suspended</SelectItem>
               </SelectContent>
             </Select>
@@ -191,7 +208,14 @@ export default function UsersPage() {
                         </button>
                       </td>
                       <td className="py-3 px-4"><div className="flex flex-wrap gap-1">{u.roles.length ? u.roles.map((r) => <Badge key={r} variant="outline" className="text-[10px]">{roleLabel[r] ?? r}</Badge>) : <span className="text-xs text-muted-foreground">None</span>}</div></td>
-                      <td className="py-3 px-4"><Badge variant={statusVariant[u.status]} className="text-[10px] capitalize">{u.status === 'pending' ? 'Awaiting confirmation' : u.status}</Badge></td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col items-start gap-1">
+                          <Badge variant={statusVariant[u.status]} className="text-[10px]">{u.status === 'pending' ? 'Awaiting email confirmation' : u.status.charAt(0).toUpperCase() + u.status.slice(1)}</Badge>
+                          {u.roles.includes('client') && u.client_approval && u.client_approval !== 'approved' ? (
+                            <Badge variant="outline" className={cn('text-[10px]', STATUS_BADGE_CLASS[u.client_approval])}>Client: {APPROVAL_STATUS_LABEL[u.client_approval]}</Badge>
+                          ) : null}
+                        </div>
+                      </td>
                       <td className="py-3 px-4 text-muted-foreground">{fmt(u.created_at)}</td>
                       <td className="py-3 px-4 text-muted-foreground">{fmt(u.last_sign_in_at)}</td>
                       <td className="py-3 px-4 text-end">
@@ -199,6 +223,9 @@ export default function UsersPage() {
                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Actions for ${u.email}`}><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => setDetails(u)}>View details</DropdownMenuItem>
+                            {u.roles.includes('client') && u.client_approval ? (
+                              <DropdownMenuItem onClick={() => navigate(`/admin/client-approvals?user=${u.id}`)}><BadgeCheck className="w-4 h-4 me-2" /> Review client</DropdownMenuItem>
+                            ) : null}
                             <DropdownMenuItem onClick={() => setNameFor(u)}><Pencil className="w-4 h-4 me-2" /> Edit name</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setRolesFor(u)}><Shield className="w-4 h-4 me-2" /> Change roles</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setConfirm({ user: u, action: 'password_reset' })}><KeyRound className="w-4 h-4 me-2" /> Send password reset</DropdownMenuItem>
@@ -234,7 +261,12 @@ export default function UsersPage() {
           {details && (
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
               <dt className="text-muted-foreground">Roles</dt><dd>{details.roles.map((r) => roleLabel[r] ?? r).join(', ') || 'None'}</dd>
-              <dt className="text-muted-foreground">Status</dt><dd className="capitalize">{details.status}</dd>
+              <dt className="text-muted-foreground">Status</dt><dd className="capitalize">{details.status === 'pending' ? 'Awaiting email confirmation' : details.status}</dd>
+              {details.client_approval ? (
+                <>
+                  <dt className="text-muted-foreground">Client approval</dt><dd>{APPROVAL_STATUS_LABEL[details.client_approval]}</dd>
+                </>
+              ) : null}
               <dt className="text-muted-foreground">Joined</dt><dd>{new Date(details.created_at).toLocaleString()}</dd>
               <dt className="text-muted-foreground">Last sign-in</dt><dd>{details.last_sign_in_at ? new Date(details.last_sign_in_at).toLocaleString() : 'Never'}</dd>
               <dt className="text-muted-foreground">User ID</dt><dd className="font-mono text-xs break-all">{details.id}</dd>

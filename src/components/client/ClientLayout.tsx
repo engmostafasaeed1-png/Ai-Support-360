@@ -16,6 +16,7 @@ import HeaderSearchButton from '@/components/layout/HeaderSearchButton';
 import { Link } from 'react-router-dom';
 import HeaderNav from '@/components/HeaderNav';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import ClientApprovalBanner from '@/components/client/ClientApprovalBanner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import logo from '@/assets/brand/mark.png.asset.json';
 
@@ -85,6 +86,7 @@ export default function ClientLayout() {
           </FixedSubHeader>
           <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-6 mt-14 md:mt-24 protected-content" style={{ marginLeft: `${portalMargin}%`, marginRight: `${portalMargin}%` }}>
             <SecurityAlert />
+            <ClientApprovalBanner />
             <PageTransition>
               <Outlet />
             </PageTransition>

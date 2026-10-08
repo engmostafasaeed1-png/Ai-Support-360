@@ -1,6 +1,6 @@
 import {
   LayoutTemplate,
-  Activity, AlertOctagon, BarChart3, BellRing, BookMarked, BookOpenCheck, Blocks, Brain, Building,
+  Activity, AlertOctagon, BadgeCheck, BarChart3, BellRing, BookMarked, BookOpenCheck, Blocks, Brain, Building,
   CalendarClock, ClipboardList, Crown, Database, DollarSign, FileSignature, FileText, Fingerprint,
   Flag, Gauge, GitPullRequestArrow, Gift, Headset, HelpCircle, Inbox, Kanban, Layers3, LayoutDashboard,
   ListChecks, MessagesSquare, Monitor, MonitorSmartphone, PanelTop, PieChart, Plug, Plus, Radio, Receipt,
@@ -222,6 +222,7 @@ export const adminNavGroups: NavGroup[] = [
     items: [
       { key: 'users', icon: Users, path: '/admin/users' },
       { key: 'approvals', icon: UserCheck, path: '/admin/approvals' },
+      { key: 'client_approvals', icon: BadgeCheck, path: '/admin/client-approvals', fallback: 'Client approvals' },
       { key: 'interview_training', icon: Brain, path: '/admin/interview-training' },
       { key: 'question_library', icon: BookMarked, path: '/admin/question-library', fallback: 'Question library' },
       { key: 'interview_templates', icon: LayoutTemplate, path: '/admin/interview-templates', fallback: 'Interview templates' },
