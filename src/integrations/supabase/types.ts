@@ -6371,6 +6371,7 @@ export type Database = {
           created_at: string
           description: string | null
           disk_price_per_gb: number | null
+          external_url: string | null
           features: Json | null
           hourly_rate: number | null
           id: string
@@ -6380,6 +6381,7 @@ export type Database = {
           is_active: boolean | null
           monthly_rate: number | null
           name: string
+          provider_name: string | null
           ram_price_per_gb: number | null
           sort_order: number | null
           tier: string
@@ -6390,6 +6392,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           disk_price_per_gb?: number | null
+          external_url?: string | null
           features?: Json | null
           hourly_rate?: number | null
           id?: string
@@ -6399,6 +6402,7 @@ export type Database = {
           is_active?: boolean | null
           monthly_rate?: number | null
           name: string
+          provider_name?: string | null
           ram_price_per_gb?: number | null
           sort_order?: number | null
           tier?: string
@@ -6409,6 +6413,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           disk_price_per_gb?: number | null
+          external_url?: string | null
           features?: Json | null
           hourly_rate?: number | null
           id?: string
@@ -6418,6 +6423,7 @@ export type Database = {
           is_active?: boolean | null
           monthly_rate?: number | null
           name?: string
+          provider_name?: string | null
           ram_price_per_gb?: number | null
           sort_order?: number | null
           tier?: string
@@ -7191,6 +7197,7 @@ export type Database = {
         Args: { p_comment?: string; p_decision: string; p_user_id: string }
         Returns: undefined
       }
+      admin_rls_overview: { Args: never; Returns: Json }
       admin_set_payout_status: {
         Args: {
           _bank_reference?: string
@@ -7200,6 +7207,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_storage_overview: { Args: never; Returns: Json }
       apply_provider_payment: {
         Args: {
           _amount: number
@@ -7504,6 +7512,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      registration_is_open: { Args: never; Returns: boolean }
       request_demo_reschedule: {
         Args: { _proposed_slots: Json; _reason?: string; _token: string }
         Returns: {
@@ -7535,6 +7544,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      request_vmware_plan: {
+        Args: { p_billing_cycle?: string; p_plan_id: string }
+        Returns: string
       }
       respond_ticket_invoice: {
         Args: { _approve: boolean; _invoice_id: string; _reason: string }

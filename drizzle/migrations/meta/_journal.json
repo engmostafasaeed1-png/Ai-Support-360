@@ -197,6 +197,20 @@
       "when": 1791373834180,
       "tag": "0027_m31b_client_approval_fixes",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1791418212264,
+      "tag": "0028_m32_vmware_pricing",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1791418229807,
+      "tag": "0029_m33_honest_admin_console",
+      "breakpoints": true
     }
   ]
 }
