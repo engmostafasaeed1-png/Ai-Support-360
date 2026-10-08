@@ -7197,6 +7197,7 @@ export type Database = {
         Args: { p_comment?: string; p_decision: string; p_user_id: string }
         Returns: undefined
       }
+      admin_rls_overview: { Args: never; Returns: Json }
       admin_set_payout_status: {
         Args: {
           _bank_reference?: string
@@ -7206,6 +7207,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_storage_overview: { Args: never; Returns: Json }
       apply_provider_payment: {
         Args: {
           _amount: number
@@ -7510,6 +7512,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      registration_is_open: { Args: never; Returns: boolean }
       request_demo_reschedule: {
         Args: { _proposed_slots: Json; _reason?: string; _token: string }
         Returns: {
