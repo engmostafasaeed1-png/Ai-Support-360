@@ -31,11 +31,13 @@ Deno.serve(async (req) => {
         if (data.users.length < 200) break;
       }
       const ids = users.map((u) => u.id);
-      const [{ data: profiles }, { data: roles }] = await Promise.all([
+      const [{ data: profiles }, { data: roles }, { data: clientRows }] = await Promise.all([
         admin.from('profiles').select('user_id, display_name, avatar_url').in('user_id', ids),
         admin.from('user_roles').select('user_id, role').in('user_id', ids),
+        admin.from('client_profiles').select('user_id, approval_status').in('user_id', ids),
       ]);
       const pMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
+      const cMap = new Map((clientRows ?? []).map((c: any) => [c.user_id, c.approval_status as string]));
       const rMap = new Map<string, string[]>();
       (roles ?? []).forEach((r: any) => rMap.set(r.user_id, [...(rMap.get(r.user_id) ?? []), r.role]));
       return jsonResponse(req, {
@@ -47,6 +49,7 @@ Deno.serve(async (req) => {
             created_at: u.created_at, last_sign_in_at: u.last_sign_in_at ?? null,
             status: banned ? 'suspended' : u.email_confirmed_at ? 'active' : 'pending',
             is_self: u.id === caller.id,
+            client_approval: cMap.get(u.id) ?? null,
           };
         }),
       });

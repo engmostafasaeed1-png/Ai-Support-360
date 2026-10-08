@@ -28,6 +28,7 @@ import {
 import { useClientProfileData, useUpdateClientProfile, type ClientProfile } from '@/hooks/useClientProfile';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import ClientNDAUpload from '@/components/client/ClientNDAUpload';
+import ClientApprovalCard from '@/components/client/ClientApprovalCard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -386,6 +387,8 @@ export default function CompanyProfilePage() {
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Manage your company details, SAP landscape, and team contacts</p>
       </div>
+
+      <ClientApprovalCard />
 
       {/* Company Overview */}
       <Card className="rounded-2xl border-border/50">

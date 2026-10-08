@@ -41,9 +41,10 @@ interface NavRowProps {
   active: boolean;
   collapsed: boolean;
   done?: boolean;
+  badge?: number;
 }
 
-function NavRow({ item, label, active, collapsed, done }: NavRowProps) {
+function NavRow({ item, label, active, collapsed, done, badge }: NavRowProps) {
   const Icon = done ? CheckCircle2 : item.icon;
   return (
     <SidebarMenuItem>
@@ -61,6 +62,14 @@ function NavRow({ item, label, active, collapsed, done }: NavRowProps) {
         <Link to={item.path} aria-current={active ? 'page' : undefined} aria-label={collapsed ? label : undefined}>
           <Icon aria-hidden="true" focusable="false" className={done ? 'text-emerald-400' : undefined} />
           {!collapsed && <span>{label}</span>}
+          {!collapsed && badge ? (
+            <span className="ms-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-accent-foreground">
+              {badge > 99 ? '99+' : badge}
+            </span>
+          ) : null}
+          {collapsed && badge ? (
+            <span aria-hidden="true" className="absolute end-1 top-1 h-2 w-2 rounded-full bg-accent" />
+          ) : null}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -76,7 +85,7 @@ interface SidebarNavProps {
   loading: boolean;
   labelOf: (item: NavItem) => string;
   groupLabelOf: (group: NavGroup) => string;
-  itemState?: Record<string, { done?: boolean }>;
+  itemState?: Record<string, { done?: boolean; badge?: number }>;
   showSearch: boolean;
 }
 
@@ -154,7 +163,7 @@ export default function SidebarNav({
                       label={labelOf(item)}
                       active={item.path === activePath}
                       collapsed
-                      done={itemState?.[item.key]?.done}
+                      done={itemState?.[item.key]?.done} badge={itemState?.[item.key]?.badge}
                     />
                   ))}
                 </SidebarMenu>
@@ -262,7 +271,7 @@ export default function SidebarNav({
                           label={labelOf(item)}
                           active={item.path === activePath}
                           collapsed={false}
-                          done={itemState?.[item.key]?.done}
+                          done={itemState?.[item.key]?.done} badge={itemState?.[item.key]?.badge}
                         />
                       ))}
                     </SidebarMenu>

@@ -27,6 +27,7 @@ import ClientLayout from "./components/client/ClientLayout.tsx";
 import AdminLayout from "./components/admin/AdminLayout.tsx";
 import SuperAdminLayout from "./components/superadmin/SuperAdminLayout.tsx";
 import ProtectedRoute from "./components/auth/ProtectedRoute.tsx";
+import ApprovalGate from "./components/client/ApprovalGate.tsx";
 
 // Admin console sections (eagerly loaded since they're small)
 import OverviewSection from "./components/admin/console/sections/OverviewSection.tsx";
@@ -146,6 +147,7 @@ const AdminVMwareSettingsPage = React.lazy(() => import("./pages/admin/VMwareSet
 const AdminErrorsPage = React.lazy(() => import("./pages/admin/AdminErrorsPage.tsx"));
 const AdminPaymentsPage = React.lazy(() => import("./pages/admin/PaymentsAdminPage.tsx"));
 const AdminKnowledgeReviewPage = React.lazy(() => import("./pages/admin/KnowledgeReviewPage.tsx"));
+const AdminClientApprovalsPage = React.lazy(() => import("./pages/admin/ClientApprovalsPage.tsx"));
 
 // Super admin pages
 const SuperAdminOverview = React.lazy(() => import("./pages/superadmin/SuperAdminOverview.tsx"));
@@ -302,7 +304,7 @@ const App = () => (
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ErrorBoundary><ClientLayout /></ErrorBoundary></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
               <Route path="timeline" element={<TimelinePage />} />
-              <Route path="new-request" element={<NewRequestPage />} />
+              <Route path="new-request" element={<ApprovalGate><NewRequestPage /></ApprovalGate>} />
               <Route path="tickets" element={<TicketsPage />} />
               <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
               <Route path="consultants" element={<ConsultantsPage />} />
@@ -400,6 +402,7 @@ const App = () => (
               <Route path="errors" element={<AdminErrorsPage />} />
               <Route path="payments" element={<AdminPaymentsPage />} />
               <Route path="knowledge-review" element={<AdminKnowledgeReviewPage />} />
+              <Route path="client-approvals" element={<AdminClientApprovalsPage />} />
             </Route>
             <Route path="/super-admin" element={<ProtectedRoute requiredRole="super-admin"><ErrorBoundary><SuperAdminLayout /></ErrorBoundary></ProtectedRoute>}>
               <Route index element={<SuperAdminOverview />} />

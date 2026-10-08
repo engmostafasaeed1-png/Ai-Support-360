@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Briefcase, Calendar, MessageSquare, CreditCard,
   Star, User, ShieldCheck, BookOpen, Bell, Settings, TicketPlus,
   Users, FileText, Plug, Kanban, UserCheck, BarChart3, Monitor,
-  ScrollText, Crown, Shield, Activity, Workflow, ClipboardList,
+  ScrollText, Crown, Shield, Activity, Workflow, ClipboardList, BadgeCheck,
   Building2,
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -47,6 +47,7 @@ const adminNavItems: NavItem[] = [
   { label: 'Users', path: '/admin/users', icon: Users },
   { label: 'Tickets', path: '/admin/tickets', icon: Kanban },
   { label: 'Approvals', path: '/admin/approvals', icon: UserCheck },
+  { label: 'Client approvals', path: '/admin/client-approvals', icon: BadgeCheck },
   { label: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
   { label: 'Environments', path: '/admin/environments', icon: Monitor },
   { label: 'Env Logs', path: '/admin/environment-logs', icon: ScrollText },

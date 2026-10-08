@@ -42,7 +42,7 @@ export interface PortalSidebarProps {
   /** Company switcher row (client portal). */
   workspace?: { name: string; subtitle?: string; to: string } | null;
   /** Per-item runtime state, e.g. a finished onboarding. */
-  itemState?: Record<string, { done?: boolean }>;
+  itemState?: Record<string, { done?: boolean; badge?: number }>;
   /** Enables "Edit profile" in the account menu. */
   profileRole?: 'client' | 'consultant';
 }
