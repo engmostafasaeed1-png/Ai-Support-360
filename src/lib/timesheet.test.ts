@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   statusInfo, num, round2, formatMoney, formatHours, formatDuration, splitDuration, toHours, durationError,
   entryAmount, summarise, planUsage, splitBySubmission, entryStatus, isLocked, rateStateFor, rateText,
-  submitBlockReason, entriesToSubmit, commentLabel, invoiceInfo, categoryLabel,
+  submitBlockReason, entriesToSubmit, commentLabel, invoiceInfo, categoryLabel, submissionPrice,
   type WorkLogRow, type SubmissionRow, type RateRow,
 } from './timesheet';
 
@@ -103,14 +103,39 @@ describe('amounts and the summary', () => {
       log({ id: 'd', hours: 1, hourly_rate: null, total_cost: null }),
     ];
     expect(summarise(logs, 14)).toEqual({
-      entries: 4, totalHours: 5.5, billableHours: 4.5, nonBillableHours: 1, pendingRateHours: 1, subtotal: 175, vat: 24.5, total: 199.5,
+      entries: 4, totalHours: 5.5, billableHours: 4.5, nonBillableHours: 1, pendingRateHours: 1, subtotal: 175, serviceFee: 0, processingFee: 0, fees: 0, vat: 24.5, total: 199.5,
     });
   });
   it('is all zero for no entries', () => {
-    expect(summarise([], 14)).toEqual({ entries: 0, totalHours: 0, billableHours: 0, nonBillableHours: 0, pendingRateHours: 0, subtotal: 0, vat: 0, total: 0 });
+    expect(summarise([], 14)).toEqual({ entries: 0, totalHours: 0, billableHours: 0, nonBillableHours: 0, pendingRateHours: 0, subtotal: 0, serviceFee: 0, processingFee: 0, fees: 0, vat: 0, total: 0 });
   });
   it('rounds the VAT to cents', () => {
     expect(summarise([log({ hours: 1, hourly_rate: 33.33, total_cost: 33.33 })], 14).vat).toBe(4.67);
+  });
+  it('adds the platform service fee and the payment processing fee before the VAT', () => {
+    const s = summarise([log({ hours: 3, hourly_rate: 100, total_cost: 300 })], 15, { serviceFeePercent: 10, processingFeePercent: 5 });
+    expect(s).toMatchObject({ subtotal: 300, serviceFee: 30, processingFee: 15, fees: 45, vat: 51.75, total: 396.75 });
+  });
+});
+
+describe('the price of a timesheet', () => {
+  const terms = { serviceFeePercent: 10, processingFeePercent: 5, vatPercent: 15, plansEnabled: false, cardsEnabled: false };
+  it('is calculated with the percentages of today while the timesheet waits', () => {
+    const p = submissionPrice(sub({ total_cost: 300 }), terms, 14);
+    expect([p.base, p.serviceFee, p.processingFee, p.vat, p.total]).toEqual([300, 30, 15, 51.75, 396.75]);
+  });
+  it('shows the numbers saved with the approval, even when the percentages changed since', () => {
+    const approved = sub({ status: 'signed', total_cost: 300, service_fee_percent: 10, service_fee_amount: 30, processing_fee_percent: 5, processing_fee_amount: 15, vat_percent: 15, vat_amount: 51.75, grand_total: 396.75 });
+    const p = submissionPrice(approved, { ...terms, serviceFeePercent: 20 }, 14);
+    expect([p.serviceFee, p.processingFee, p.vat, p.total]).toEqual([30, 15, 51.75, 396.75]);
+  });
+  it('shows only the VAT for a timesheet that was approved before the fees existed', () => {
+    const p = submissionPrice(sub({ status: 'signed', total_cost: 200, vat_percent: 14, vat_amount: 28, grand_total: 228 }), terms, 15);
+    expect([p.fees, p.vat, p.total]).toEqual([0, 28, 228]);
+  });
+  it('uses the VAT that is passed in when the percentages are not loaded', () => {
+    const p = submissionPrice(sub({ total_cost: 100 }), null, 14);
+    expect([p.fees, p.vat, p.total]).toEqual([0, 14, 114]);
   });
 });
 
