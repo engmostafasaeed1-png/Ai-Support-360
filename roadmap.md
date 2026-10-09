@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Align all legal policies with current hourly pricing and verify all seven policy pages.
+- [x] Align all legal policies with current hourly pricing and verify all seven policy pages.
 
 - [x] Replace existing logo placements and browser icons with the uploaded AI Support 360 artwork; verify rendering.
 
