@@ -302,7 +302,7 @@ export function usePaymentSettings() {
     queryKey: ['payment-settings'],
     queryFn: async () => {
       const { data, error } = await db.from('platform_settings').select('key, value')
-        .in('key', ['commission_percent', 'vat_percent', 'platform_bank_details', 'card_payments_enabled']);
+        .in('key', ['commission_percent', 'vat_percent', 'service_fee_percent', 'processing_fee_percent', 'subscription_plans_enabled', 'platform_bank_details', 'card_payments_enabled']);
       if (error) throw new Error(error.message);
       const map: Record<string, any> = {};
       (data ?? []).forEach((r: any) => { map[r.key] = r.value; });
@@ -312,6 +312,9 @@ export function usePaymentSettings() {
         vat: num(map.vat_percent),
         bank: (map.platform_bank_details && typeof map.platform_bank_details === 'object' ? map.platform_bank_details : {}) as BankDetails,
         cards: map.card_payments_enabled === true,
+        serviceFee: num(map.service_fee_percent),
+        processingFee: num(map.processing_fee_percent),
+        plans: map.subscription_plans_enabled === true,
       };
     },
   });
@@ -320,17 +323,42 @@ export function usePaymentSettings() {
 export function useSavePaymentSetting() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (v: { key: 'commission_percent' | 'vat_percent' | 'platform_bank_details' | 'card_payments_enabled'; value: unknown }) => {
+    mutationFn: async (v: { key: 'commission_percent' | 'vat_percent' | 'service_fee_percent' | 'processing_fee_percent' | 'subscription_plans_enabled' | 'platform_bank_details' | 'card_payments_enabled'; value: unknown }) => {
       const { error } = await db.from('platform_settings').upsert({ key: v.key, value: v.value }, { onConflict: 'key' });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       toast.success('Saved');
       qc.invalidateQueries({ queryKey: ['payment-settings'] });
+      qc.invalidateQueries({ queryKey: ['pricing-terms'] });
       qc.invalidateQueries({ queryKey: ['payment-instructions'] });
       qc.invalidateQueries({ queryKey: ['card-payments-enabled'] });
     },
     onError: fail('Could not save'),
+  });
+}
+
+/** Saves the three percentages of the price (platform service fee, payment processing fee, VAT) in one step. */
+export function useSavePricing() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { service: number; processing: number; vat: number }) => {
+      const { error } = await db.from('platform_settings').upsert(
+        [
+          { key: 'service_fee_percent', value: v.service },
+          { key: 'processing_fee_percent', value: v.processing },
+          { key: 'vat_percent', value: v.vat },
+        ],
+        { onConflict: 'key' },
+      );
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success('Pricing saved. It applies to the timesheets that are approved from now on.');
+      qc.invalidateQueries({ queryKey: ['payment-settings'] });
+      qc.invalidateQueries({ queryKey: ['pricing-terms'] });
+    },
+    onError: fail('Could not save the pricing'),
   });
 }
 

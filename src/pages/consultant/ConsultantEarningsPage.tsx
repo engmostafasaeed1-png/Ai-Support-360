@@ -107,7 +107,7 @@ export default function ConsultantEarningsPage() {
 
       const sum = (rows: any[], pick: (r: any) => number) => rows.reduce((s, r) => s + pick(r), 0);
       const totalEarned = sum(allPayouts.filter(p => p.status !== 'failed'), p => Number(p.amount));
-      const awaitingClient = sum(allPayments.filter((p: any) => p.status === 'pending'), (p: any) => Number(p.amount) - Number(p.vat_amount || 0));
+      const awaitingClient = sum(allPayments.filter((p: any) => p.status === 'pending'), (p: any) => (p.pricing_model === 'v2' && p.base_amount != null ? Number(p.base_amount) : Number(p.amount) - Number(p.vat_amount || 0)));
       const inProgress = sum(allPayouts.filter(p => p.status === 'pending' || p.status === 'processing'), p => Number(p.amount));
       const paidOut = sum(allPayouts.filter(p => p.status === 'completed'), p => Number(p.amount));
 
@@ -140,7 +140,7 @@ export default function ConsultantEarningsPage() {
   };
 
   const kpis = [
-    { label: 'Earned (after commission)', value: money(e.totalEarned, e.currency), icon: DollarSign, color: 'bg-accent/10 text-accent' },
+    { label: 'Earned (your fees)', value: money(e.totalEarned, e.currency), icon: DollarSign, color: 'bg-accent/10 text-accent' },
     { label: 'Invoices awaiting the client', value: money(e.awaitingClient, e.currency), icon: Clock, color: 'bg-yellow-100 text-yellow-600' },
     { label: 'Payout in progress', value: money(e.inProgress, e.currency), icon: Receipt, color: 'bg-purple-100 text-purple-600' },
     { label: 'Paid to your bank', value: money(e.paidOut, e.currency), icon: Wallet, color: 'bg-green-100 text-green-600' },
@@ -152,7 +152,7 @@ export default function ConsultantEarningsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">{t('earnings.title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            When a client's payment is confirmed, the platform keeps its commission and transfers the rest to your bank account.
+            When a client pays an invoice, the platform transfers your whole fee to your bank account: the platform service fee, the payment processing fee and the VAT are paid by the client on top of your fee. (Invoices from before the new pricing had a platform commission.)
             Add your bank details in the "Bank details" tab.
           </p>
         </div>
@@ -161,7 +161,7 @@ export default function ConsultantEarningsPage() {
             title={t('earnings.title')}
             text="Earnings Report"
             details={[
-              { label: 'Earned (after commission)', value: money(e.totalEarned, e.currency) },
+              { label: 'Earned (your fees)', value: money(e.totalEarned, e.currency) },
               { label: 'Awaiting the client', value: money(e.awaitingClient, e.currency) },
               { label: 'Payout in progress', value: money(e.inProgress, e.currency) },
               { label: 'Paid to your bank', value: money(e.paidOut, e.currency) },
@@ -238,7 +238,7 @@ export default function ConsultantEarningsPage() {
                       <TableHead>{t('earnings.client')}</TableHead>
                       <TableHead>{t('earnings.date')}</TableHead>
                       <TableHead>{t('earnings.invoice')}</TableHead>
-                      <TableHead className="text-end">Invoice (without VAT)</TableHead>
+                      <TableHead className="text-end">Your fee</TableHead>
                       <TableHead className="text-end">{t('earnings.status')}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -253,7 +253,7 @@ export default function ConsultantEarningsPage() {
                           {p.invoice_number || '—'}
                         </TableCell>
                         <TableCell className="text-end font-semibold text-foreground">
-                          {money(Number(p.amount) - Number(p.vat_amount || 0), p.currency || e.currency)}
+                          {money(p.pricing_model === 'v2' && p.base_amount != null ? Number(p.base_amount) : Number(p.amount) - Number(p.vat_amount || 0), p.currency || e.currency)}
                         </TableCell>
                         <TableCell className="text-end">
                           <Badge variant={paymentStatusVariant[p.status] || 'outline'} className="text-[10px]">
@@ -289,7 +289,7 @@ export default function ConsultantEarningsPage() {
                     <TableRow>
                       <TableHead>{t('earnings.date')}</TableHead>
                       <TableHead>Bank reference</TableHead>
-                      <TableHead className="text-end">Invoice (without VAT)</TableHead>
+                      <TableHead className="text-end">Your fee</TableHead>
                       <TableHead className="text-end">Platform commission</TableHead>
                       <TableHead className="text-end">You receive</TableHead>
                       <TableHead className="text-end">{t('earnings.status')}</TableHead>
@@ -309,7 +309,7 @@ export default function ConsultantEarningsPage() {
                           {p.gross_amount != null ? money(Number(p.gross_amount), p.currency) : '—'}
                         </TableCell>
                         <TableCell className="text-end text-sm text-muted-foreground">
-                          {p.commission_amount != null ? `${money(Number(p.commission_amount), p.currency)} (${p.commission_percent}%)` : '—'}
+                          {p.commission_amount != null ? (Number(p.commission_amount) === 0 ? 'none' : `${money(Number(p.commission_amount), p.currency)} (${p.commission_percent}%)`) : '—'}
                         </TableCell>
                         <TableCell className="text-end font-semibold text-foreground">
                           {money(Number(p.amount), p.currency)}

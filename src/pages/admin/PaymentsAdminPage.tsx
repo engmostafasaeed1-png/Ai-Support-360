@@ -18,6 +18,7 @@ import {
   useConsultantPayoutDetails, useCreateInvoice, usePaymentSettings, useRejectReport, useSavePaymentSetting,
   usePaymobStatus, useProviderEvents, useSetPayoutStatus, useVerifyPayoutDetails, type BankDetails, type ProviderEvent,
 } from '@/hooks/useBilling';
+import PricingSettingsCard from '@/components/admin/PricingSettingsCard';
 
 const money = (n: number | string | null | undefined, currency = 'USD') => {
   try {
@@ -69,7 +70,11 @@ export default function PaymentsAdminPage() {
   });
 
   const commissionNow = settingsQ.data?.commission;
-  const setupMissing = !!settingsQ.data && (settingsQ.data.commission === null || (!settingsQ.data.bank.iban && !settingsQ.data.bank.account_number));
+  const serviceFeesEarned = invoices
+    .filter((i) => i.status === 'completed' && i.pricing_model === 'v2')
+    .reduce((sum, i) => sum + Number(i.service_fee_amount || 0), 0);
+  const feeCurrency = invoices.find((i) => i.pricing_model === 'v2')?.currency || 'USD';
+  const setupMissing = !!settingsQ.data && (settingsQ.data.serviceFee === null || settingsQ.data.processingFee === null || settingsQ.data.vat === null || (!settingsQ.data.bank.iban && !settingsQ.data.bank.account_number));
 
   return (
     <div className="space-y-6">
@@ -79,7 +84,7 @@ export default function PaymentsAdminPage() {
             <Wallet className="w-6 h-6 text-primary" /> Payments & payouts
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Clients pay the platform by card (confirmed automatically) or by bank transfer (you confirm the money arrived), then you pay the consultant their share (invoice minus the platform commission).
+            Clients pay the platform by card (confirmed automatically) or by bank transfer (you confirm the money arrived), then you pay the consultant their whole fee (the platform service fee, the payment processing fee and the VAT are paid by the client on top of the fee).
           </p>
         </div>
         <Button className="gap-1.5" onClick={() => setNewInvoiceOpen(true)}>
@@ -92,7 +97,7 @@ export default function PaymentsAdminPage() {
           <CardContent className="p-4 flex items-start gap-3 text-sm text-amber-900">
             <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
             <span>
-              Finish the set-up in the Settings tab first: the platform commission {settingsQ.data?.commission === null ? '(not set, payments with a consultant can not be confirmed)' : ''}
+              Finish the set-up in the Settings tab first: the three percentages of the price (platform service fee, payment processing fee, VAT)
               {' '}and the bank details your clients should pay into.
             </span>
           </CardContent>
@@ -104,7 +109,7 @@ export default function PaymentsAdminPage() {
           { label: 'Invoices to confirm', value: toConfirm.length },
           { label: 'Reported by the client', value: toConfirm.filter((i) => i.client_reported_at).length },
           { label: 'Payouts to pay', value: payoutsOpen.length },
-          { label: 'Commission', value: commissionNow === null || commissionNow === undefined ? 'not set' : `${commissionNow}%` },
+          { label: 'Service fees earned', value: money(serviceFeesEarned, feeCurrency) },
         ].map((k) => (
           <Card key={k.label} className="rounded-2xl border-border/50">
             <CardContent className="p-5">
@@ -153,7 +158,14 @@ export default function PaymentsAdminPage() {
                         </TableCell>
                         <TableCell className="text-sm">{i.client_name}</TableCell>
                         <TableCell className="text-sm">{i.consultant_name || '-'}</TableCell>
-                        <TableCell className="text-end font-semibold">{money(i.amount, i.currency)}</TableCell>
+                        <TableCell className="text-end">
+                          <div className="font-semibold">{money(i.amount, i.currency)}</div>
+                          {i.pricing_model === 'v2' && i.base_amount != null && (
+                            <div className="text-[11px] font-normal text-muted-foreground">
+                              fee {money(i.base_amount, i.currency)} + service {money(i.service_fee_amount, i.currency)} + processing {money(i.processing_fee_amount, i.currency)} + VAT {money(i.vat_amount, i.currency)}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs">
                           {i.client_reported_at ? (
                             <div className="space-y-0.5">
@@ -236,7 +248,14 @@ export default function PaymentsAdminPage() {
                         <TableCell className="text-xs text-muted-foreground">
                           {i.paid_at ? <>{when(i.paid_at)}<div className="font-mono">{i.bank_reference}</div>{i.payment_method === 'card' && <Badge variant="outline" className="text-[10px] mt-0.5">Card</Badge>}</> : '-'}
                         </TableCell>
-                        <TableCell className="text-end font-semibold">{money(i.amount, i.currency)}</TableCell>
+                        <TableCell className="text-end">
+                          <div className="font-semibold">{money(i.amount, i.currency)}</div>
+                          {i.pricing_model === 'v2' && i.base_amount != null && (
+                            <div className="text-[11px] font-normal text-muted-foreground">
+                              fee {money(i.base_amount, i.currency)} + service {money(i.service_fee_amount, i.currency)} + processing {money(i.processing_fee_amount, i.currency)} + VAT {money(i.vat_amount, i.currency)}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="text-end">
                           <Badge variant={invoiceVariant[i.status] || 'outline'} className="text-[10px] capitalize">{i.status === 'completed' ? 'paid' : i.status}</Badge>
                           {(i.provider_status === 'refunded' || i.provider_status === 'voided') && (
@@ -265,7 +284,7 @@ export default function PaymentsAdminPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Consultant</TableHead>
-                      <TableHead className="text-end">Invoice (net of VAT)</TableHead>
+                      <TableHead className="text-end">Consultant fee (before commission)</TableHead>
                       <TableHead className="text-end">Commission</TableHead>
                       <TableHead className="text-end">To transfer</TableHead>
                       <TableHead>Bank details</TableHead>
@@ -282,7 +301,7 @@ export default function PaymentsAdminPage() {
                         </TableCell>
                         <TableCell className="text-end text-sm">{p.gross_amount != null ? money(p.gross_amount, p.currency) : '-'}</TableCell>
                         <TableCell className="text-end text-sm">
-                          {p.commission_amount != null ? `${money(p.commission_amount, p.currency)} (${p.commission_percent}%)` : '-'}
+                          {p.commission_amount != null ? (Number(p.commission_amount) === 0 ? 'none' : `${money(p.commission_amount, p.currency)} (${p.commission_percent}%)`) : '-'}
                         </TableCell>
                         <TableCell className="text-end font-semibold">{money(p.amount, p.currency)}</TableCell>
                         <TableCell>
@@ -322,7 +341,10 @@ export default function PaymentsAdminPage() {
 
         {/* ------------------------------------------------ settings */}
         <TabsContent value="settings">
-          <SettingsTab />
+          <div className="space-y-4">
+            <PricingSettingsCard />
+            <SettingsTab />
+          </div>
         </TabsContent>
       </Tabs>
 
@@ -622,11 +644,11 @@ function SettingsTab() {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <Card className="rounded-2xl border-border/50">
-        <CardHeader className="pb-2"><CardTitle className="text-base">Platform commission</CardTitle></CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-base">Commission on old-style invoices</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            The share of each paid invoice (without VAT) that the platform keeps. The consultant payout is the rest. Clients never see this number.
-            Payments with a consultant can not be confirmed until it is set.
+            Only for invoices that you create by hand and for invoices made before the new pricing: the share of the invoice (without VAT) that the platform keeps. Invoices made from an approved timesheet do not use it, the consultant gets the whole fee.
+            Old-style payments with a consultant can not be confirmed until it is set.
           </p>
           <div className="flex items-end gap-3">
             <div className="space-y-1.5">
@@ -637,12 +659,12 @@ function SettingsTab() {
           </div>
           <div className="flex items-end gap-3 pt-2 border-t border-border/40">
             <div className="space-y-1.5">
-              <Label className="text-xs">VAT on automatic invoices (%)</Label>
+              <Label className="text-xs">VAT (%) - the same value as in the card above</Label>
               <Input type="number" step="0.5" min="0" max="30" value={vat} onChange={(e) => setVat(e.target.value)} className="w-32" />
             </div>
             <Button variant="outline" disabled={vat === '' || save.isPending} onClick={() => save.mutate({ key: 'vat_percent', value: Number(vat) })}>Save</Button>
           </div>
-          <p className="text-[11px] text-muted-foreground">Ask your accountant which VAT applies. Leave it empty or 0 for none; it is added on top of the timesheet total.</p>
+          <p className="text-[11px] text-muted-foreground">Ask your accountant which VAT applies. It is added on top of the consultant fee plus the platform service fee and the payment processing fee.</p>
         </CardContent>
       </Card>
 
