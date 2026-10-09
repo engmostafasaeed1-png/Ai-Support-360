@@ -145,11 +145,20 @@ export default function LiveInterviewPage() {
       role: participants.find((p) => p.user_id === m.sender_id)?.role === 'candidate' ? 'user' : 'assistant',
       content: m.content,
     })).slice(-40);
-    const { data, error } = await supabase.functions.invoke('ai-interview-chat', {
-      body: { interview_id: id, messages: history, action: 'copilot' },
+    const { data, error } = await invokeWithAuth('ai-interview-chat', {
+      interview_id: id, messages: history, action: 'copilot',
     });
     setSuggesting(false);
-    if (error || data?.error) { toast.error(data?.error || 'Could not get suggestions'); return; }
+    if (error || data?.error) {
+      const msg = String(data?.error ?? error?.message ?? '');
+      if (msg.includes('Invalid or expired session') || msg.includes('Unauthorized')) {
+        toast.error('Your sign-in expired. Please sign in again.');
+        navigate('/login');
+        return;
+      }
+      toast.error(data?.error || 'Could not get suggestions');
+      return;
+    }
     setSuggestions(data?.suggestions || []);
   };
 
