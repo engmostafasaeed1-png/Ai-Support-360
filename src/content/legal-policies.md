@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Effective date: 6 October 2026
+Effective date: 9 October 2026
 
 ## Who We Are
 
@@ -16,7 +16,7 @@ Depending on your use of the service, we collect:
 
 - Account information, including your name, email address, business information, and login credentials.
 - Messages, conversation context, documents, and other content you submit to AI features.
-- Billing information, subscription status, payment status, and transaction references.
+- Billing information, approved hourly rates, timesheets, approval records, invoice fee and VAT breakdowns, payment status, and transaction references. Earlier subscription records may be retained where applicable.
 - Technical information, including IP address, browser and device information, and service activity.
 - Support requests and other communications you send us.
 
@@ -24,7 +24,7 @@ Submit information only where you have the necessary permission to share it.
 
 ## How We Use Information
 
-We use information to provide AI features, maintain accounts, process payments, respond to support requests, troubleshoot problems, maintain security, prevent misuse, and meet applicable legal obligations.
+We use information to provide AI features and consultant support, maintain accounts, record work and client approvals, calculate invoices and consultant payments, process payments, respond to support requests, troubleshoot problems, maintain security, prevent misuse, and meet applicable legal obligations.
 
 Where required, we obtain consent for optional processing. Marketing messages include a way to unsubscribe.
 
@@ -40,9 +40,11 @@ We may update the model used to provide the service and will update material pri
 
 ## Payments
 
-Payments are processed through Paymob. Paymob’s own privacy policy applies to information it processes.
+The current hourly pricing model uses invoices for approved consultant work, with separate platform service fees, payment processing fees, and VAT. Bank transfer is available; card payments through Paymob are available only when enabled and displayed in the payment screen. Paymob’s own privacy policy applies when you use that service.
 
-AI Support 360 stores only billing records: invoice amounts, payment status, transaction references, and payment dates. Card numbers, card security codes, and bank account details are entered directly into Paymob's secure payment page and are never sent to or stored on our servers.
+AI Support 360 stores billing and work records, including timesheets, client approvals, approved hourly rates, invoice amounts and saved fee and VAT rates, payment status, transaction references, and payment dates. For bank transfers, payment references and any proof of payment you submit may contain personal or banking information; share only what is necessary to verify the payment. Consultant payout details provided to the platform are also processed to arrange payment.
+
+When card payments are enabled, card numbers and card security codes are entered directly into Paymob's secure payment page, not into our platform. Do not include them in uploaded documents or payment evidence.
 
 Do not send full card numbers or card security codes to our support email.
 
@@ -58,8 +60,8 @@ The providers that receive personal information through the service are:
 
 - **Amazon Web Services** — application hosting, database, and file storage (Frankfurt, Germany).
 - **OpenAI** — AI features such as expert matching, interview assistance, and support suggestions. Names, employers, email addresses, and phone numbers are removed before content is sent.
-- **Paymob** — card payment processing (Egypt).
-- **Our email delivery provider** — sending account, invitation, and notification emails from notify.aisapsupportnow.com.
+- **Paymob** — card payment processing (Egypt), only when enabled and used. Banks process bank transfers under their own terms and privacy policies.
+- **Our email delivery provider** — sending account, invitation, and notification emails from notify.aisupport360.com.
 - **Jitsi Meet** — video meetings booked through the platform. Joining a video call shares your display name and media with the meeting service.
 - **Cloudflare** — delivering website pages quickly and securely to visitors worldwide.
 
@@ -84,7 +86,7 @@ We retain:
 - Account information while the account is active and ordinarily for up to 90 days after account deletion.
 - Conversations and uploaded files for up to 90 days, unless deleted earlier.
 - Support correspondence for up to 12 months.
-- Billing records for the applicable statutory retention period.
+- Billing records and related timesheet and approval evidence for the applicable statutory retention period.
 - Backup copies according to a rolling retention period of up to 30 days.
 
 When you request account deletion, personal content is removed from active systems within 30 days. Residual backup copies expire within a further 30 days.
@@ -113,7 +115,7 @@ We may update this policy as the service or our obligations change. We provide n
 
 # Terms & Conditions
 
-Effective date: 6 October 2026
+Effective date: 9 October 2026
 
 ## Service Operator
 
@@ -131,7 +133,7 @@ By accepting these terms, you agree to follow them. If you act on behalf of an o
 
 AI Support 360 provides the AI support features described on our website.
 
-Your selected plan determines included features, usage limits, integrations, and support. A separately signed agreement takes precedence where it expressly conflicts with these terms.
+The current service is billed for approved consultant work rather than a monthly or annual subscription. The agreed support scope and client-approved hourly rate determine the engagement. Subscription checkout and monthly ticket allowances are not offered under the current pricing model. A separately signed agreement takes precedence where it expressly conflicts with these terms, subject to mandatory legal rights.
 
 ## Accounts
 
@@ -151,15 +153,21 @@ The service does not replace qualified professional advice. Arrange human review
 
 ## Payments
 
-Prices, currency, applicable taxes, billing frequency, and any additional usage charges are displayed before purchase.
+The consultant fee is billable hours multiplied by the hourly rate approved by the client. A platform service fee and a payment processing fee are each calculated as a percentage of that consultant fee. VAT is calculated on the subtotal including both fees.
 
-Payments are processed through Paymob. You authorize charges for the purchase or subscription you expressly select.
+**Total payable = consultant fee + platform service fee + payment processing fee + VAT on that subtotal.**
+
+The consultant receives the whole consultant fee; the additional fees are client charges, not deductions from that fee. Current fee and VAT rates are shown on our [pricing page](/pricing) and in the relevant breakdown. Estimates are not invoices for work that has not been performed.
+
+Review submitted timesheets and request any changes before approval. Approval creates an invoice for the approved work, using the approved hourly rate and applicable fee and VAT rates. Each monetary component is rounded to two decimal places. The invoice retains those amounts and rates; later changes to pricing settings do not recalculate it. Consultants cannot issue separate free-form ticket invoices through the platform under this model.
+
+Invoices are payable within 14 days of issue, as shown on the invoice. Follow its payment instructions. Bank transfer is available; card payments through Paymob are available only when enabled and displayed. A payment processing fee shown in the breakdown is part of the price calculation, not a promise that card payment is available.
 
 No additional paid service or charge applies without disclosure and agreement.
 
-## Subscriptions and Refunds
+## Cancellation and Refunds
 
-Recurring billing and cancellation are governed by our Subscription & Cancellation Policy. Refunds are governed by our Refund Policy.
+Stopping work and cancellation are governed by our [subscription and cancellation policy](/subscription-and-cancellation). Cancellation does not automatically void approved invoices or refund payments. Refunds and billing disputes are governed by our [refund policy](/refund-policy). There is no automatic subscription renewal under the current hourly model; earlier subscriptions or separately agreed recurring services retain their applicable agreed terms and mandatory legal protections.
 
 ## Acceptable Use
 
@@ -167,7 +175,7 @@ You must comply with applicable law and our Acceptable Use Policy.
 
 ## Intellectual Property
 
-We and our licensors retain rights in our software, branding, and service materials. Your plan grants permission to use the service within its agreed scope.
+We and our licensors retain rights in our software, branding, and service materials. You may use the service within the scope of your agreed engagement and these terms.
 
 ## Third-Party Services
 
@@ -175,7 +183,7 @@ Connected services may have separate terms and privacy policies. Their availabil
 
 ## Availability
 
-Maintenance, technical problems, and supplier interruptions may affect availability. Any guaranteed uptime or response time must be expressly stated in your plan or written agreement.
+Maintenance, technical problems, and supplier interruptions may affect availability. Any guaranteed uptime, response time, or delivery schedule must be expressly stated in your written agreement; payment of an invoice alone does not establish such a guarantee.
 
 ## Suspension and Termination
 
@@ -201,23 +209,29 @@ We provide notice of material changes where required.
 
 # Refund Policy
 
-Effective date: 6 October 2026
+Effective date: 9 October 2026
 
-## First Subscription Payment
+## Approved Consultant Work
 
-You may request a full refund within 14 calendar days of your first subscription payment.
+Current payments cover approved consultant work, platform service fees, payment processing fees, and VAT on the combined subtotal, not a recurring subscription. Estimates are not charges for unperformed work. Review a submitted timesheet and request changes before approving it.
+
+Cancellation or stopping further work does not automatically refund an earlier payment or cancel an approved invoice. If you dispute an approved invoice or payment, contact us to review the hours, approved hourly rate, fees, VAT, and supporting records. This does not limit mandatory legal rights.
+
+## Earlier Subscriptions
+
+Subscription checkout is currently disabled. For an earlier subscription, the previously offered right to request a full refund within 14 calendar days of the first subscription payment remains applicable. Any separately agreed recurring service retains its agreed refund terms and mandatory legal protections.
 
 ## Other Refund Requests
 
-We review renewal charges, duplicate payments, billing errors, unauthorized charges, and material service failures individually.
+We review duplicate payments, billing errors, unauthorized charges, disputed approved work, and material service failures individually. We also review renewal charges from earlier subscriptions or separately agreed recurring services where applicable.
 
-Cancelling a subscription does not automatically refund an earlier payment. This does not affect mandatory legal rights.
+An approved refund identifies the amount and invoice components being refunded, including any applicable fee and VAT adjustments. The consultant fee and additional client fees are recorded separately; a refund request is not automatically an entitlement to reverse every component. Mandatory legal rights take precedence.
 
 Any separately agreed custom service must disclose its refund terms before purchase.
 
 ## How to Request a Refund
 
-Email [info@qurtubatalks.com](mailto:info@qurtubatalks.com) with your account email, transaction reference, payment date, and reason for the request.
+Email [info@qurtubatalks.com](mailto:info@qurtubatalks.com) with your account email, ticket and invoice reference, transaction reference, payment date, and reason for the request. Identify any disputed hours or charges and include relevant supporting information.
 
 Do not include full card details or card security codes.
 
@@ -295,35 +309,43 @@ This policy does not limit mandatory consumer rights.
 
 # Service Delivery & Activation Policy
 
-Effective date: 6 October 2026
+Effective date: 9 October 2026
 
 ## Digital Delivery
 
 AI Support 360 is delivered online. Physical shipping is not required.
 
-## Activation
+## Account Access and Starting Work
 
-Standard subscriptions activate automatically after successful payment is verified, normally within 15 minutes.
+The current service is billed for approved consultant work, not through subscription checkout. There is no automatic subscription activation or 15-minute activation promise under this pricing model. Account access and the ability to submit requests depend on completing any applicable registration, verification, and approval requirements.
 
-Custom integrations, configuration, and onboarding follow a separately agreed delivery schedule.
+Starting consultant work depends on the agreed scope, client-approved hourly rate, consultant availability, and any required access or arrangements. Booking a meeting or submitting a ticket does not itself guarantee that work will start or finish within a specific time.
+
+Custom integrations, configuration, onboarding, and support delivery follow the schedule agreed for the engagement.
+
+## Work Records and Invoicing
+
+Consultants submit timesheets for client review. Approval creates an invoice for billable hours at the approved hourly rate, plus the platform service fee, payment processing fee, and VAT on the combined subtotal. The consultant receives the whole consultant fee. Estimates do not represent work already delivered or amounts already invoiced.
+
+Invoices retain the amounts and rates used at approval and are payable within 14 days of issue. Bank transfer is available; card payment is available only when enabled and displayed. Payment settles the invoiced work and charges, not a recurring subscription, monthly ticket allowance, or a guarantee of future delivery.
 
 ## Customer Responsibilities
 
 Provide an accurate email address and any information or authorized access needed for setup. Missing information may delay delivery.
 
-## Activation Problems
+## Access or Delivery Problems
 
-If access is unavailable after the stated activation period, email [info@qurtubatalks.com](mailto:info@qurtubatalks.com) with your account email and transaction reference.
+If you cannot access the service or an agreed delivery commitment is not met, email [info@qurtubatalks.com](mailto:info@qurtubatalks.com) with your account email, ticket reference, and any relevant invoice or transaction reference. Do not send passwords, full card details, or unnecessary banking information.
 
 We investigate and arrange access or assess the issue under our Refund Policy and applicable law.
 
 ## Included Services
 
-Your purchase includes the features, usage limits, and support described in your selected plan or written agreement.
+Your engagement covers the work and support agreed for that ticket or in a written service agreement. No monthly ticket allowance, trial, or subscription benefit is included under the current hourly model unless separately agreed in writing. To stop further work, follow our [subscription and cancellation policy](/subscription-and-cancellation); payment disputes and refunds follow our [refund policy](/refund-policy).
 
 # Cookie Policy
 
-Effective date: 6 October 2026
+Effective date: 9 October 2026
 
 ## About Cookies
 
@@ -331,7 +353,7 @@ Cookies and similar technologies store information on your device or help a webs
 
 ## Essential Technologies
 
-Essential technologies support functions such as authentication, security, account sessions, and checkout.
+Essential technologies support functions such as authentication, security, account sessions, forms, and invoice payment. Current invoice payments relate to approved hourly consultant work; subscription checkout is disabled.
 
 AI Support 360 does not use tracking cookies. It uses your browser's built-in local storage for the following essential items:
 
@@ -354,13 +376,13 @@ You can manage cookies through your browser. Blocking essential cookies may affe
 
 ## Third Parties
 
-Payment and embedded services may use their own technologies. Their policies explain their processing.
+Payment and embedded services may use their own technologies. Card payment through Paymob is available only when enabled and displayed; using that payment page may involve Paymob's own cookies or similar technologies. Banks handle bank transfers separately from this website. Their policies explain their processing. Essential storage on this site does not itself authorize recurring charges or activate a subscription.
 
 Contact: [info@qurtubatalks.com](mailto:info@qurtubatalks.com).
 
 # Acceptable Use Policy
 
-Effective date: 6 October 2026
+Effective date: 9 October 2026
 
 ## Responsible Use
 
@@ -376,6 +398,14 @@ You must not use the service to:
 - Distribute malware or obtain unauthorized system access.
 - Bypass security controls or agreed usage limits.
 - Automate activities or decisions in violation of applicable law.
+
+## Work Records and Payment Integrity
+
+Provide accurate work records, timesheets, approvals, and payment evidence. Do not fabricate billable hours, misrepresent completed work, alter payment evidence, impersonate an approver, or attempt to bypass the client-approved hourly rate and timesheet approval process.
+
+Under the current hourly model, invoices are created from approved timesheets and include the consultant fee, platform service fee, payment processing fee, and VAT on their subtotal. Consultants cannot issue separate free-form ticket invoices through the platform. Do not misrepresent a payment as a subscription purchase or promise monthly ticket allowances that are not offered.
+
+Raise disagreements through the ticket and [info@qurtubatalks.com](mailto:info@qurtubatalks.com). Request changes before approving a disputed timesheet; report disputes about approved invoices for review. Legitimate disputes and requests to exercise legal rights are not prohibited by this policy.
 
 ## Human Oversight
 
