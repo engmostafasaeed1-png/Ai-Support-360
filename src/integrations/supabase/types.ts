@@ -3338,6 +3338,7 @@ export type Database = {
         Row: {
           amount: number
           bank_reference: string | null
+          base_amount: number | null
           card_started_at: string | null
           client_id: string
           client_note: string | null
@@ -3356,12 +3357,17 @@ export type Database = {
           milestone_id: string | null
           paid_at: string | null
           payment_method: string | null
+          pricing_model: string
+          processing_fee_amount: number | null
+          processing_fee_percent: number | null
           provider: string
           provider_status: string | null
           provider_transaction_id: string | null
           received_amount: number | null
           reference: string | null
           rejection_note: string | null
+          service_fee_amount: number | null
+          service_fee_percent: number | null
           session_id: string | null
           status: Database["public"]["Enums"]["payment_status"] | null
           stripe_payment_id: string | null
@@ -3370,10 +3376,12 @@ export type Database = {
           timesheet_id: string | null
           updated_at: string
           vat_amount: number | null
+          vat_percent: number | null
         }
         Insert: {
           amount: number
           bank_reference?: string | null
+          base_amount?: number | null
           card_started_at?: string | null
           client_id: string
           client_note?: string | null
@@ -3392,12 +3400,17 @@ export type Database = {
           milestone_id?: string | null
           paid_at?: string | null
           payment_method?: string | null
+          pricing_model?: string
+          processing_fee_amount?: number | null
+          processing_fee_percent?: number | null
           provider?: string
           provider_status?: string | null
           provider_transaction_id?: string | null
           received_amount?: number | null
           reference?: string | null
           rejection_note?: string | null
+          service_fee_amount?: number | null
+          service_fee_percent?: number | null
           session_id?: string | null
           status?: Database["public"]["Enums"]["payment_status"] | null
           stripe_payment_id?: string | null
@@ -3406,10 +3419,12 @@ export type Database = {
           timesheet_id?: string | null
           updated_at?: string
           vat_amount?: number | null
+          vat_percent?: number | null
         }
         Update: {
           amount?: number
           bank_reference?: string | null
+          base_amount?: number | null
           card_started_at?: string | null
           client_id?: string
           client_note?: string | null
@@ -3428,12 +3443,17 @@ export type Database = {
           milestone_id?: string | null
           paid_at?: string | null
           payment_method?: string | null
+          pricing_model?: string
+          processing_fee_amount?: number | null
+          processing_fee_percent?: number | null
           provider?: string
           provider_status?: string | null
           provider_transaction_id?: string | null
           received_amount?: number | null
           reference?: string | null
           rejection_note?: string | null
+          service_fee_amount?: number | null
+          service_fee_percent?: number | null
           session_id?: string | null
           status?: Database["public"]["Enums"]["payment_status"] | null
           stripe_payment_id?: string | null
@@ -3442,6 +3462,7 @@ export type Database = {
           timesheet_id?: string | null
           updated_at?: string
           vat_amount?: number | null
+          vat_percent?: number | null
         }
         Relationships: [
           {
@@ -5965,7 +5986,11 @@ export type Database = {
           id: string
           notes: string | null
           pdf_url: string | null
+          processing_fee_amount: number | null
+          processing_fee_percent: number | null
           sent_to_email: string | null
+          service_fee_amount: number | null
+          service_fee_percent: number | null
           signature_data: string | null
           signature_method: string | null
           signed_at: string | null
@@ -5990,7 +6015,11 @@ export type Database = {
           id?: string
           notes?: string | null
           pdf_url?: string | null
+          processing_fee_amount?: number | null
+          processing_fee_percent?: number | null
           sent_to_email?: string | null
+          service_fee_amount?: number | null
+          service_fee_percent?: number | null
           signature_data?: string | null
           signature_method?: string | null
           signed_at?: string | null
@@ -6015,7 +6044,11 @@ export type Database = {
           id?: string
           notes?: string | null
           pdf_url?: string | null
+          processing_fee_amount?: number | null
+          processing_fee_percent?: number | null
           sent_to_email?: string | null
+          service_fee_amount?: number | null
+          service_fee_percent?: number | null
           signature_data?: string | null
           signature_method?: string | null
           signed_at?: string | null
@@ -7489,8 +7522,12 @@ export type Database = {
         Returns: undefined
       }
       payment_commission_percent: { Args: never; Returns: number }
+      payment_processing_fee_percent: { Args: never; Returns: number }
+      payment_service_fee_percent: { Args: never; Returns: number }
       payment_vat_percent: { Args: never; Returns: number }
       plan_limits_enforced: { Args: never; Returns: boolean }
+      pricing_breakdown: { Args: { _base: number }; Returns: Json }
+      pricing_terms: { Args: never; Returns: Json }
       propose_ticket_rate: {
         Args: { _hourly_rate: number; _ticket_id: string }
         Returns: string
