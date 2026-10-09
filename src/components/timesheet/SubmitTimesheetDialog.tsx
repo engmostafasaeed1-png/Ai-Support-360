@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatHours, formatMoney, summarise, type WorkLogRow } from '@/lib/timesheet';
+import { usePricingTerms } from '@/hooks/usePricingTerms';
 
 interface Props {
   open: boolean;
@@ -27,7 +28,8 @@ interface Props {
 export default function SubmitTimesheetDialog({ open, onOpenChange, ticketId, entries, vatPercent, currency, blockReason, resubmit, onSubmitted }: Props) {
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
-  const s = summarise(entries, vatPercent);
+  const { data: pricingTerms } = usePricingTerms();
+  const s = summarise(entries, vatPercent, pricingTerms ?? undefined);
 
   useEffect(() => {
     if (open) setMessage('');
@@ -62,13 +64,14 @@ export default function SubmitTimesheetDialog({ open, onOpenChange, ticketId, en
             <span className="text-right">{s.entries}</span>
             <span className="text-muted-foreground">Hours</span>
             <span className="text-right">{formatHours(s.totalHours)} ({formatHours(s.billableHours)} billable)</span>
-            <span className="text-muted-foreground">Amount without VAT</span>
+            <span className="text-muted-foreground">Your fee (billable hours x hourly rate)</span>
             <span className="text-right">{formatMoney(s.subtotal, currency)}</span>
-            <span className="text-muted-foreground">VAT {String(Number(vatPercent) || 0)}% (estimate)</span>
-            <span className="text-right">{formatMoney(s.vat, currency)}</span>
-            <span className="font-semibold">Total</span>
+            <span className="text-muted-foreground">Platform service fee, payment processing fee and VAT, added for the client (estimate)</span>
+            <span className="text-right">{formatMoney(s.total - s.subtotal, currency)}</span>
+            <span className="font-semibold">The client pays</span>
             <span className="text-right font-semibold">{formatMoney(s.total, currency)}</span>
           </div>
+          <p className="text-[11px] text-muted-foreground">You receive your whole fee after the client has paid. The platform fees and the VAT are added for the client.</p>
           {blockReason && (
             <p className="rounded-lg bg-amber-50 p-2.5 text-xs text-amber-900" role="alert">{blockReason}</p>
           )}

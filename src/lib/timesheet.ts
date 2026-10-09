@@ -2,6 +2,8 @@
 // Pure functions without database access. The amounts of an entry are calculated by the database (hours x approved rate, 0 when not billable);
 // the functions here only add them up and write them down.
 
+import { priceBreakdown, type FeePercents, type PriceBreakdown, type PricingTerms } from '@/lib/pricing';
+
 export interface WorkLogRow {
   id: string;
   ticket_id: string;
@@ -31,6 +33,10 @@ export interface SubmissionRow {
   vat_percent: number | null;
   vat_amount: number | null;
   grand_total: number | null;
+  service_fee_percent?: number | null;
+  service_fee_amount?: number | null;
+  processing_fee_percent?: number | null;
+  processing_fee_amount?: number | null;
   submitted_at: string | null;
   submit_count: number | null;
   signed_at: string | null;
@@ -156,11 +162,15 @@ export interface Summary {
   /** billable hours that wait for an approved rate (not in the amounts yet) */
   pendingRateHours: number;
   subtotal: number;
+  /** the platform service fee, the payment processing fee and both together (0 until the percentages are known) */
+  serviceFee: number;
+  processingFee: number;
+  fees: number;
   vat: number;
   total: number;
 }
 
-export function summarise(logs: WorkLogRow[], vatPercent: number): Summary {
+export function summarise(logs: WorkLogRow[], vatPercent: number, feePercents?: FeePercents): Summary {
   let totalHours = 0;
   let billableHours = 0;
   let pendingRateHours = 0;
@@ -175,7 +185,13 @@ export function summarise(logs: WorkLogRow[], vatPercent: number): Summary {
     else subtotal += amount;
   }
   subtotal = round2(subtotal);
-  const vat = round2((subtotal * num(vatPercent)) / 100);
+  // the same calculation as the database: the fee, the service fee and the processing fee, then the VAT on the sum (without the fee percentages only the VAT is added)
+  const price = priceBreakdown(subtotal, {
+    serviceFeePercent: num(feePercents?.serviceFeePercent),
+    processingFeePercent: num(feePercents?.processingFeePercent),
+    vatPercent: num(vatPercent),
+  });
+  const vat = price.vat;
   return {
     entries: logs.length,
     totalHours: round2(totalHours),
@@ -184,8 +200,37 @@ export function summarise(logs: WorkLogRow[], vatPercent: number): Summary {
     pendingRateHours: round2(pendingRateHours),
     subtotal,
     vat,
-    total: round2(subtotal + vat),
+    serviceFee: price.serviceFee,
+    processingFee: price.processingFee,
+    fees: price.fees,
+    total: price.total,
   };
+}
+
+/** The price of a timesheet: the numbers saved with the approval, else the calculation of today (an estimate). A timesheet approved before the fees existed shows only its VAT. */
+export function submissionPrice(sub: SubmissionRow, terms: PricingTerms | null, vatFallback: number): PriceBreakdown {
+  const fee = round2(num(sub.total_cost));
+  if (sub.status === 'signed' && sub.grand_total != null) {
+    const serviceFee = round2(num(sub.service_fee_amount));
+    const processingFee = round2(num(sub.processing_fee_amount));
+    return {
+      base: fee,
+      serviceFeePercent: num(sub.service_fee_percent),
+      serviceFee,
+      processingFeePercent: num(sub.processing_fee_percent),
+      processingFee,
+      fees: round2(serviceFee + processingFee),
+      subtotal: round2(fee + serviceFee + processingFee),
+      vatPercent: num(sub.vat_percent),
+      vat: round2(num(sub.vat_amount)),
+      total: round2(num(sub.grand_total)),
+    };
+  }
+  return priceBreakdown(fee, {
+    serviceFeePercent: terms?.serviceFeePercent ?? 0,
+    processingFeePercent: terms?.processingFeePercent ?? 0,
+    vatPercent: terms?.vatPercent ?? num(vatFallback),
+  });
 }
 
 /** How much of the approved plan is used: null when there is no plan. */

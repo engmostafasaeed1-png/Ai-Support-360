@@ -9,7 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { rateStateFor, rateText, type RateRow, type RateState } from '@/lib/timesheet';
+import { formatMoney, rateStateFor, rateText, type RateRow, type RateState } from '@/lib/timesheet';
+import { usePricingTerms } from '@/hooks/usePricingTerms';
+import { formatPercent, priceBreakdown } from '@/lib/pricing';
 
 interface Props {
   ticketId: string;
@@ -60,6 +62,23 @@ export default function TimesheetRateCard({ ticketId, currency, rates, consultan
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/** What one hour costs the client in total (the rate plus the service fee, the processing fee and VAT), and that the consultant receives the whole rate. */
+function HourlyTotal({ rate, audience }: { rate: Pick<RateRow, 'hourly_rate' | 'currency'> | null; audience: 'client' | 'consultant' }) {
+  const { data: terms } = usePricingTerms();
+  if (!rate || !terms || !(Number(rate.hourly_rate) > 0)) return null;
+  const b = priceBreakdown(Number(rate.hourly_rate), terms);
+  const cur = rate.currency || 'USD';
+  return (
+    <p className="text-[11px] text-muted-foreground" data-testid="hourly-total">
+      {audience === 'client' ? (
+        <>With the platform service fee ({formatPercent(terms.serviceFeePercent)}), the payment processing fee ({formatPercent(terms.processingFeePercent)}) and VAT ({formatPercent(terms.vatPercent)}) one hour costs you <strong className="text-foreground">{formatMoney(b.total, cur)}</strong>.</>
+      ) : (
+        <>The client pays <strong className="text-foreground">{formatMoney(b.total, cur)}</strong> per hour including the platform service fee ({formatPercent(terms.serviceFeePercent)}), the payment processing fee ({formatPercent(terms.processingFeePercent)}) and VAT ({formatPercent(terms.vatPercent)}). You receive the whole {formatMoney(b.base, cur)} per hour.</>
+      )}
+    </p>
   );
 }
 
@@ -130,6 +149,7 @@ function ConsultantRate({ ticketId, state, currency, suggestedRate, onChanged }:
           </p>
         </div>
       )}
+      <HourlyTotal rate={proposed ?? approved} audience="consultant" />
       {!showForm ? (
         <Button variant="outline" size="sm" onClick={startEditing}>
           {proposed ? 'Change the proposal' : 'Propose a different rate'}
@@ -206,6 +226,7 @@ function ClientRate({ name, state, canApprove, onChanged }: { name: string; stat
           )}
         </div>
       )}
+      <HourlyTotal rate={proposed ?? approved} audience="client" />
       {!approved && !proposed && !declined && (
         <p className="text-xs text-muted-foreground">No hourly rate was proposed yet. The consultant can log hours, but can not send a timesheet before the client approved a rate.</p>
       )}

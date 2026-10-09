@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import StatusBadge, { ToneBadge } from '@/components/timesheet/StatusBadge';
-import { commentLabel, formatHours, formatMoney, invoiceInfo, num, rateText, round2, type CommentRow, type InvoiceRow, type SubmissionRow } from '@/lib/timesheet';
+import { commentLabel, formatHours, formatMoney, invoiceInfo, num, rateText, round2, submissionPrice, type CommentRow, type InvoiceRow, type SubmissionRow } from '@/lib/timesheet';
+import PriceBreakdown from '@/components/pricing/PriceBreakdown';
+import { usePricingTerms } from '@/hooks/usePricingTerms';
 
 interface Props {
   submissions: SubmissionRow[];
@@ -84,6 +86,7 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
   onResubmit: () => void;
 }) {
   const [dialog, setDialog] = useState<'approve' | 'changes' | null>(null);
+  const { data: pricingTerms } = usePricingTerms();
   const [note, setNote] = useState('');
   const [commentText, setCommentText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -91,9 +94,10 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
   const cur = sub.cost_currency || 'USD';
   const approved = sub.status === 'signed';
   const subtotal = round2(num(sub.total_cost));
-  const vatPct = approved && sub.vat_percent != null ? num(sub.vat_percent) : num(vatPercent);
-  const vat = approved && sub.vat_amount != null ? round2(num(sub.vat_amount)) : round2((subtotal * vatPct) / 100);
-  const total = approved && sub.grand_total != null ? round2(num(sub.grand_total)) : round2(subtotal + vat);
+  // an approved timesheet shows the numbers saved with the approval; the others show the calculation of today
+  const price = submissionPrice(sub, pricingTerms ?? null, vatPercent);
+  const vat = price.vat;
+  const total = price.total;
   const lastRequest = [...comments].reverse().find(c => c.kind === 'change_request') ?? null;
   const canComment = canApprove || mine;
 
@@ -156,15 +160,15 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
             <p className="font-medium text-foreground">{sub.hourly_rate != null ? rateText({ hourly_rate: sub.hourly_rate, currency: cur }) : subtotal > 0 ? 'more than one rate' : '-'}</p>
           </div>
           <div>
-            <p className="text-muted-foreground">Amount without VAT</p>
+            <p className="text-muted-foreground">{mine ? 'Your fee' : 'Consultant fee'}</p>
             <p className="font-medium text-foreground">{formatMoney(subtotal, cur)}</p>
           </div>
           <div>
-            <p className="text-muted-foreground">VAT {String(vatPct)}%{approved ? '' : ' (estimate)'}</p>
-            <p className="font-medium text-foreground">{formatMoney(vat, cur)}</p>
+            <p className="text-muted-foreground">Fees and VAT{approved ? '' : ' (estimate)'}</p>
+            <p className="font-medium text-foreground">{formatMoney(round2(price.fees + vat), cur)}</p>
           </div>
           <div>
-            <p className="text-muted-foreground">Total{approved ? '' : ' (estimate)'}</p>
+            <p className="text-muted-foreground">{mine ? 'The client pays' : 'Total'}{approved ? '' : ' (estimate)'}</p>
             <p className="font-semibold text-foreground">{formatMoney(total, cur)}</p>
           </div>
         </div>
@@ -264,10 +268,11 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
           <DialogHeader>
             <DialogTitle>Approve this timesheet?</DialogTitle>
             <DialogDescription>
-              {formatHours(sub.billable_hours ?? sub.total_hours)} billable, {formatMoney(subtotal, cur)} without VAT.
-              {subtotal > 0 ? ` An invoice of about ${formatMoney(total, cur)} (with VAT) is created.` : ''} The entries can not be changed afterwards.
+              {formatHours(sub.billable_hours ?? sub.total_hours)} billable, consultant fee {formatMoney(subtotal, cur)}.
+              {subtotal > 0 ? ` An invoice of ${formatMoney(total, cur)} is created: the fee plus the platform service fee and the payment processing fee, plus VAT.` : ''} The entries can not be changed afterwards.
             </DialogDescription>
           </DialogHeader>
+          {subtotal > 0 && <PriceBreakdown breakdown={price} currency={cur} estimate />}
           <Textarea value={note} onChange={e => setNote(e.target.value)} rows={3} maxLength={1000} placeholder="A note for the consultant (optional)" />
           <DialogFooter>
             <Button variant="ghost" onClick={closeDialog} disabled={busy}>Cancel</Button>

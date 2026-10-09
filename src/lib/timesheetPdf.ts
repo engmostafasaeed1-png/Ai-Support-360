@@ -3,12 +3,16 @@
 import { format } from 'date-fns';
 import { categoryLabel, formatDuration, formatHours, formatMoney, type Summary } from './timesheet';
 import type { ExportRow } from './timesheetExport';
+import { formatPercent } from './pricing';
 
 export interface PdfData {
   ticketTitle: string;
   ticketId: string;
   currency: string;
   vatPercent: number;
+  /** the percentages of the platform service fee and of the payment processing fee (no fee lines when they are missing) */
+  serviceFeePercent?: number;
+  processingFeePercent?: number;
   /** one text per consultant, for example "Mostaf Test: 50.00 USD per hour (approved by the client on Oct 3, 2026)" */
   rates: string[];
   rows: ExportRow[];
@@ -56,7 +60,11 @@ export async function downloadTimesheetPdf(data: PdfData): Promise<void> {
 
   write('Totals', 11, true, 6);
   write(`Hours: ${formatHours(data.totals.totalHours)} (${formatHours(data.totals.billableHours)} billable, ${formatHours(data.totals.nonBillableHours)} not billable)`);
-  write(`Amount without VAT (billable hours x hourly rate): ${formatMoney(data.totals.subtotal, data.currency)}`);
+  write(`Consultant fee (billable hours x hourly rate): ${formatMoney(data.totals.subtotal, data.currency)}`);
+  if (data.totals.fees > 0) {
+    write(`Platform service fee ${formatPercent(data.serviceFeePercent)}: ${formatMoney(data.totals.serviceFee, data.currency)}`);
+    write(`Payment processing fee ${formatPercent(data.processingFeePercent)}: ${formatMoney(data.totals.processingFee, data.currency)}`);
+  }
   write(`VAT ${String(Number(data.vatPercent) || 0)}%: ${formatMoney(data.totals.vat, data.currency)}`);
   write(`Total: ${formatMoney(data.totals.total, data.currency)}`, 10, true);
 

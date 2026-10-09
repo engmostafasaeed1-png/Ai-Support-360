@@ -15,10 +15,28 @@ import {
 import { format } from 'date-fns';
 import type { TicketDetail } from '@/hooks/useTicketDetail';
 import TicketPlanSubmitForm from '@/components/consultant/TicketPlanSubmitForm';
+import { usePricingTerms } from '@/hooks/usePricingTerms';
+import { formatPercent, priceBreakdown } from '@/lib/pricing';
+import { formatMoney } from '@/lib/timesheet';
 
 interface Props {
   ticket: TicketDetail;
   isClient: boolean;
+}
+
+/** What the planned cost means for the price: the client pays the fee plus the platform service fee and the payment processing fee, plus VAT. */
+function PlanClientTotal({ cost, currency, isClient }: { cost: number; currency: string; isClient: boolean }) {
+  const { data: terms } = usePricingTerms();
+  if (!terms || !(cost > 0)) return null;
+  const b = priceBreakdown(cost, terms);
+  return (
+    <p className="rounded-lg bg-muted/30 p-3 text-xs text-muted-foreground" data-testid="plan-client-total">
+      {isClient ? 'Estimated total you pay: ' : 'The client pays about '}
+      <strong className="text-foreground">{formatMoney(b.total, currency)}</strong>
+      {` = ${formatMoney(b.base, currency)} consultant fee + ${formatMoney(b.fees, currency)} platform service and payment processing fees (${formatPercent(b.serviceFeePercent + b.processingFeePercent)}) + ${formatMoney(b.vat, currency)} VAT (${formatPercent(b.vatPercent)}). `}
+      {isClient ? 'You only pay for the hours that you approve in the timesheet.' : 'You receive the whole fee.'}
+    </p>
+  );
 }
 
 export default function TicketPlanApproval({ ticket, isClient }: Props) {
@@ -128,6 +146,8 @@ export default function TicketPlanApproval({ ticket, isClient }: Props) {
             </p>
           </div>
         </div>
+
+        {(ticket.planned_cost || 0) > 0 && <PlanClientTotal cost={Number(ticket.planned_cost)} currency={ticket.cost_currency || 'USD'} isClient={isClient} />}
 
         {/* Cost Breakdown */}
         {breakdown.length > 0 && (
