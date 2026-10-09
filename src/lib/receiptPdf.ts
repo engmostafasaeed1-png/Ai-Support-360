@@ -22,6 +22,13 @@ export interface ReceiptPdfRecord {
   session_status?: string | null;
   session_scheduled_at?: string | null;
   session_duration_minutes?: number | null;
+  pricing_model?: string | null;
+  base_amount?: number | string | null;
+  service_fee_percent?: number | string | null;
+  service_fee_amount?: number | string | null;
+  processing_fee_percent?: number | string | null;
+  processing_fee_amount?: number | string | null;
+  vat_percent?: number | string | null;
 }
 
 export function generateReceiptPdf(rec: ReceiptPdfRecord, opts: { preview?: boolean } = {}): string | void {
@@ -142,13 +149,28 @@ export function generateReceiptPdf(rec: ReceiptPdfRecord, opts: { preview?: bool
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(80);
+  if (rec.pricing_model === 'v2' && rec.base_amount != null) {
+    const pct = (n: unknown) => `${Number(Number(n || 0).toFixed(2))}%`;
+    const feeRows: [string, number][] = [
+      ['Consultant fee', Number(rec.base_amount)],
+      [`Platform service fee (${pct(rec.service_fee_percent)})`, Number(rec.service_fee_amount || 0)],
+      [`Payment processing fee (${pct(rec.processing_fee_percent)})`, Number(rec.processing_fee_amount || 0)],
+    ];
+    for (const [label, value] of feeRows) {
+      doc.text(label, 20, yPos);
+      doc.setTextColor(0);
+      doc.text(fmt(value, rec.currency), w - 20, yPos, { align: 'right' });
+      doc.setTextColor(80);
+      yPos += 8;
+    }
+  }
   doc.text('Subtotal', 20, yPos);
   doc.setTextColor(0);
   doc.text(fmt(amount - vat, rec.currency), w - 20, yPos, { align: 'right' });
   yPos += 8;
 
   doc.setTextColor(80);
-  doc.text('VAT', 20, yPos);
+  doc.text(rec.pricing_model === 'v2' && rec.vat_percent != null ? `VAT (${Number(Number(rec.vat_percent).toFixed(2))}%)` : 'VAT', 20, yPos);
   doc.setTextColor(0);
   doc.text(fmt(vat, rec.currency), w - 20, yPos, { align: 'right' });
   yPos += 8;

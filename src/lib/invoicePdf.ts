@@ -31,6 +31,13 @@ export interface InvoicePdfRecord {
   session_status?: string | null;
   session_scheduled_at?: string | null;
   session_duration_minutes?: number | null;
+  pricing_model?: string | null;
+  base_amount?: number | string | null;
+  service_fee_percent?: number | string | null;
+  service_fee_amount?: number | string | null;
+  processing_fee_percent?: number | string | null;
+  processing_fee_amount?: number | string | null;
+  vat_percent?: number | string | null;
 }
 
 export function generateInvoicePdf(inv: InvoicePdfRecord, opts: { preview?: boolean } = {}): string | void {
@@ -136,9 +143,19 @@ export function generateInvoicePdf(inv: InvoicePdfRecord, opts: { preview?: bool
 
   const amount = Number(inv.amount) || 0;
   const vat = Number(inv.vat || 0);
+  const pct = (n: unknown) => `${Number(Number(n || 0).toFixed(2))}%`;
+  const feeRows: [string, string][] =
+    inv.pricing_model === 'v2' && inv.base_amount != null
+      ? [
+          ['Consultant fee (approved hours x hourly rate)', fmt(Number(inv.base_amount), inv.currency)],
+          [`Platform service fee (${pct(inv.service_fee_percent)})`, fmt(Number(inv.service_fee_amount || 0), inv.currency)],
+          [`Payment processing fee (${pct(inv.processing_fee_percent)})`, fmt(Number(inv.processing_fee_amount || 0), inv.currency)],
+        ]
+      : [];
   const tableData: [string, string][] = [
+    ...feeRows,
     ['Subtotal', fmt(amount - vat, inv.currency)],
-    ['VAT', fmt(vat, inv.currency)],
+    [inv.pricing_model === 'v2' && inv.vat_percent != null ? `VAT (${pct(inv.vat_percent)})` : 'VAT', fmt(vat, inv.currency)],
   ];
 
   doc.setFont('helvetica', 'normal');

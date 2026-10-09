@@ -13,7 +13,7 @@ export function useClientPayments() {
       if (!user) return [];
       const { data, error } = await supabase
         .from('payments')
-        .select('id, amount, currency, vat_amount, status, invoice_number, payment_method, description, due_date, created_at, updated_at, ticket_id, consultant_id, session_id, kind, reference, client_reported_at, client_transfer_reference, client_transfer_date, rejection_note, paid_at, provider_status, card_started_at')
+        .select('id, amount, currency, vat_amount, status, invoice_number, payment_method, description, due_date, created_at, updated_at, ticket_id, consultant_id, session_id, kind, reference, client_reported_at, client_transfer_reference, client_transfer_date, rejection_note, paid_at, provider_status, card_started_at, pricing_model, base_amount, service_fee_percent, service_fee_amount, processing_fee_percent, processing_fee_amount, vat_percent')
         .eq('client_id', user.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -97,6 +97,13 @@ export function useClientPayments() {
         paid_at: p.paid_at || null,
         provider_status: p.provider_status || null,
         card_started_at: p.card_started_at || null,
+        pricing_model: p.pricing_model || 'legacy',
+        base_amount: p.base_amount ?? null,
+        service_fee_percent: p.service_fee_percent ?? null,
+        service_fee_amount: p.service_fee_amount ?? null,
+        processing_fee_percent: p.processing_fee_percent ?? null,
+        processing_fee_amount: p.processing_fee_amount ?? null,
+        vat_percent: p.vat_percent ?? null,
         session_type: p.session_id ? sessionMap[p.session_id]?.session_type : null,
         session_status: p.session_id ? sessionMap[p.session_id]?.status : null,
         session_scheduled_at: p.session_id ? sessionMap[p.session_id]?.scheduled_at : null,

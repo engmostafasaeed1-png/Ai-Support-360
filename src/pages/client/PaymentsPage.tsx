@@ -21,6 +21,9 @@ import { InvoiceDueCalendar } from '@/components/invoice/InvoiceDueCalendar';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
 import { useCurrency, formatMoney } from '@/contexts/CurrencyContext';
+import PriceBreakdown from '@/components/pricing/PriceBreakdown';
+import { usePricingTerms } from '@/hooks/usePricingTerms';
+import { paymentBreakdown } from '@/lib/pricing';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   completed: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
@@ -32,6 +35,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
 
 export default function PaymentsPage() {
   const { data: payments, isLoading } = useClientPayments();
+  const { data: pricingTerms } = usePricingTerms();
   const [search, setSearch] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [tab, setTab] = useState('all');
@@ -80,7 +84,7 @@ export default function PaymentsPage() {
         </h1>
         <p className="text-xs md:text-sm text-muted-foreground mt-1">Track payments linked to your tickets and download invoices.</p>
       </div>
-        <PlanCheckoutDialog />
+        {pricingTerms?.plansEnabled && <PlanCheckoutDialog />}
       </div>
 
       {/* Summary Cards */}
@@ -312,6 +316,11 @@ export default function PaymentsPage() {
                   </Link>
                 </div>
               )}
+
+              {(() => {
+                const breakdown = paymentBreakdown(selectedPayment);
+                return breakdown && <PriceBreakdown breakdown={breakdown} currency={selectedPayment.currency} />;
+              })()}
 
               <PayInvoiceCard key={selectedPayment.id} payment={selectedPayment} />
 

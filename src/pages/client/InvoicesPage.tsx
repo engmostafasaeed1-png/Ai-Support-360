@@ -31,6 +31,8 @@ import { InvoiceDisputeSection } from '@/components/invoice/InvoiceDisputeSectio
 import { PaymentDetailsDrawer } from '@/components/invoice/PaymentDetailsDrawer';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
+import PriceBreakdown from '@/components/pricing/PriceBreakdown';
+import { paymentBreakdown } from '@/lib/pricing';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   completed: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
@@ -631,6 +633,11 @@ export default function InvoicesPage() {
                     </Link>
                   </div>
                 )}
+
+                {(() => {
+                  const breakdown = paymentBreakdown(selected);
+                  return breakdown && <PriceBreakdown breakdown={breakdown} currency={selected.currency} />;
+                })()}
 
                 <PayInvoiceCard key={selected.id} payment={selected} />
 
