@@ -233,45 +233,59 @@ This policy does not limit rights under applicable Egyptian consumer protection 
 
 # Subscription & Cancellation Policy
 
-Effective date: 6 October 2026
+Effective date: 9 October 2026
 
-## Plans and Billing
+## Hourly Billing, Not a Subscription
 
-We offer monthly and annual subscriptions. Prices, included usage, taxes, and billing frequency are displayed before purchase.
+AI Support 360's current pricing is based on approved consultant work, not a monthly or annual subscription. Subscription plan checkout is currently disabled. There is no automatic subscription renewal under this pricing model.
 
-Automatic renewal applies only where it is clearly disclosed and expressly accepted at checkout.
+The consultant fee is calculated from billable hours multiplied by the hourly rate approved by the client. A platform service fee and a payment processing fee are added, each calculated as a percentage of the consultant fee. VAT is then calculated on the combined subtotal.
 
-## Free Trial
+**Total payable = consultant fee + platform service fee + payment processing fee + VAT on that subtotal.**
 
-Our standard free trial lasts seven days. No payment card is required, and the trial does not automatically create a paid subscription.
+The consultant receives the whole consultant fee; the platform service fee and payment processing fee are additional client charges, not deductions from that fee.
 
-Trial features and usage limits are displayed before signup. To continue after the trial, select and purchase a paid plan.
+## Rates, Estimates and Approval
 
-## Cancellation
+The current service fee, processing fee and VAT rates are shown on our [pricing page](/pricing) and in the relevant price breakdown. The client's approved hourly rate determines the price of consultant work. Estimates depend on the expected billable hours and are not a charge for work that has not been performed.
 
-Cancel through Account → Billing. If you need assistance, email [info@qurtubatalks.com](mailto:info@qurtubatalks.com).
+Clients review submitted timesheets before approving them. Approval creates an invoice using the approved billable hours, approved hourly rate and applicable fee and VAT rates. Each monetary component is rounded to two decimal places. The invoice records the fee amounts and rates used for that approval; later changes to pricing settings do not recalculate that invoice.
 
-Cancellation stops the next renewal. Access continues until the end of the current paid period.
+Consultants cannot issue a separate free-form ticket invoice through the platform under this pricing model.
 
-We provide confirmation when cancellation is completed.
+## Payment
 
-## Upgrades and Downgrades
+Approved timesheet invoices are payable within 14 days of issue, as shown on the invoice. Use the payment instructions displayed for that invoice. Bank transfer is available; card payment is available only when enabled and shown in the payment screen.
 
-Upgrades take effect immediately after you accept any displayed prorated charge.
+Payment is for the invoiced consultant work and associated fees and VAT. It does not purchase a recurring subscription or a monthly ticket allowance.
 
-Downgrades take effect at the next renewal. The revised price and included features are shown before confirmation.
+## Cancelling or Stopping Work
+
+To request cancellation of a support engagement or stop further work, contact the assigned consultant through the ticket and email [info@qurtubatalks.com](mailto:info@qurtubatalks.com), identifying the ticket and the work you want stopped. Agree and confirm the remaining scope and any stopping arrangements in writing.
+
+Cancellation does not automatically void an approved timesheet or invoice, erase amounts owed for approved work, or refund a payment. If you disagree with a submitted timesheet, request changes before approving it. For an already approved invoice, contact us to review the disputed hours or charges.
+
+Any cancellation terms in a separately signed service agreement apply to that engagement, subject to mandatory legal rights.
+
+## Subscriptions, Trials and Ticket Allowances
+
+Monthly and annual subscription checkout, subscription upgrades and downgrades, and subscription vouchers are not offered under the current hourly pricing model. This policy does not promise a seven-day trial, automatic plan activation, or a self-service subscription cancellation screen.
+
+There is no monthly ticket allowance to carry forward under the current model. If subscription plans are offered again, their price, included tickets, carry-over rules, voucher conditions, billing frequency and cancellation terms must be disclosed before purchase. Automatic renewal applies only if clearly disclosed and expressly accepted.
+
+If you have an earlier subscription or a separately agreed recurring service, contact [info@qurtubatalks.com](mailto:info@qurtubatalks.com) about cancellation. Its agreed terms and your mandatory legal rights remain applicable.
 
 ## Failed Payments
 
-We may request an updated payment method if payment fails. Continued nonpayment may result in restricted or suspended access, subject to applicable requirements.
+If payment fails or an invoice remains unpaid, contact us to resolve the payment issue. Continued nonpayment may result in restricted or suspended access, subject to applicable requirements. It does not create an automatic subscription renewal charge.
 
 ## Price Changes
 
-We notify you before a subscription price change takes effect, with any notice or cancellation options required by law.
+The applicable rates and total are displayed for review before timesheet approval. Changes to the service fee, processing fee or VAT do not alter an already issued invoice. Any change to the consultant's hourly rate requires client approval. We provide any notice required by law or your agreement.
 
 ## Account Deletion
 
-Account deletion also cancels future subscription billing. Access ends when the account is deleted.
+Requesting account deletion does not itself settle an outstanding invoice, cancel a separate service agreement, or resolve ongoing work. Contact us to arrange closure of active engagements and review outstanding amounts.
 
 Refunds are handled according to our Refund Policy. Personal information is handled according to our Privacy Policy.
 
