@@ -189,7 +189,7 @@ export function summarise(logs: WorkLogRow[], vatPercent: number, feePercents?: 
   const price = priceBreakdown(subtotal, {
     serviceFeePercent: num(feePercents?.serviceFeePercent),
     processingFeePercent: num(feePercents?.processingFeePercent),
-    vatPercent: num(vatPercent),
+    vatPercent: feePercents?.vatPercent ?? num(vatPercent),
   });
   const vat = price.vat;
   return {

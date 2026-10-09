@@ -3,9 +3,11 @@ import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/re
 import { toast } from 'sonner';
 
 const mocks = vi.hoisted(() => ({ rpc: vi.fn() }));
+const terms = vi.hoisted(() => ({ value: null as unknown }));
 
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { rpc: mocks.rpc } }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
+vi.mock('@/hooks/usePricingTerms', () => ({ usePricingTerms: () => ({ data: terms.value }) }));
 
 import TimesheetSubmissions from './TimesheetSubmissions';
 import type { CommentRow, InvoiceRow, SubmissionRow } from '@/lib/timesheet';
@@ -29,6 +31,7 @@ const props = (over: Record<string, unknown> = {}) => ({
 beforeEach(() => {
   mocks.rpc.mockReset();
   mocks.rpc.mockResolvedValue({ data: null, error: null });
+  terms.value = null;
   onChanged.mockReset();
   onResubmit.mockReset();
   vi.mocked(toast.success).mockReset();
@@ -45,6 +48,15 @@ describe('TimesheetSubmissions as the client', () => {
     expect(screen.getByText('50.00 USD per hour')).toBeTruthy();
     expect(screen.getByText('175.00 USD')).toBeTruthy();
     expect(screen.getByText('199.50 USD')).toBeTruthy();
+  });
+
+  it('shows the fee, the added fees and the total that the client pays when the percentages are set', () => {
+    terms.value = { serviceFeePercent: 10, processingFeePercent: 5, vatPercent: 15, plansEnabled: false, cardsEnabled: false };
+    render(<TimesheetSubmissions {...props({ submissions: [sub({ total_cost: 300 })] })} />);
+    expect(screen.getByText('Consultant fee')).toBeTruthy();
+    expect(screen.getByText('300.00 USD')).toBeTruthy();
+    expect(screen.getByText('96.75 USD')).toBeTruthy();
+    expect(screen.getByText('396.75 USD')).toBeTruthy();
   });
 
   it('approves the timesheet with a note', async () => {
@@ -130,6 +142,14 @@ describe('TimesheetSubmissions as the consultant', () => {
     expect(screen.getByTestId('changes-banner').textContent).toContain('Please split the hours per day');
     fireEvent.click(screen.getByRole('button', { name: /Submit again/ }));
     expect(onResubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the fee as theirs and what the client pays', () => {
+    terms.value = { serviceFeePercent: 10, processingFeePercent: 5, vatPercent: 15, plansEnabled: false, cardsEnabled: false };
+    render(<TimesheetSubmissions {...props({ ...consultant, submissions: [sub({ total_cost: 300 })] })} />);
+    expect(screen.getByText('Your fee')).toBeTruthy();
+    expect(screen.getByText(/The client pays/)).toBeTruthy();
+    expect(screen.getByText('396.75 USD')).toBeTruthy();
   });
 
   it('has no answer buttons and says that the client has to answer', () => {

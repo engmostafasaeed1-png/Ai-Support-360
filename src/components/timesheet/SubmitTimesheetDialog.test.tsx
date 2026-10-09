@@ -3,9 +3,11 @@ import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/re
 import { toast } from 'sonner';
 
 const mocks = vi.hoisted(() => ({ rpc: vi.fn() }));
+const terms = vi.hoisted(() => ({ value: null as unknown }));
 
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { rpc: mocks.rpc } }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
+vi.mock('@/hooks/usePricingTerms', () => ({ usePricingTerms: () => ({ data: terms.value }) }));
 
 import SubmitTimesheetDialog from './SubmitTimesheetDialog';
 import type { WorkLogRow } from '@/lib/timesheet';
@@ -24,6 +26,7 @@ const props = (over: Record<string, unknown> = {}) => ({
 beforeEach(() => {
   mocks.rpc.mockReset();
   mocks.rpc.mockResolvedValue({ data: 'new-id', error: null });
+  terms.value = null;
   onOpenChange.mockReset();
   onSubmitted.mockReset();
   vi.mocked(toast.success).mockReset();
@@ -39,6 +42,15 @@ describe('SubmitTimesheetDialog', () => {
     expect(text).toContain('100.00 USD');
     expect(text).toContain('14.00 USD');
     expect(text).toContain('114.00 USD');
+  });
+
+  it('shows the consultant the fee, the fees and VAT added for the client, and what the client pays', () => {
+    terms.value = { serviceFeePercent: 10, processingFeePercent: 5, vatPercent: 15, plansEnabled: false, cardsEnabled: false };
+    render(<SubmitTimesheetDialog {...props()} />);
+    const text = screen.getByTestId('submit-totals').textContent ?? '';
+    expect(text).toContain('100.00 USD');
+    expect(text).toContain('32.25 USD');
+    expect(text).toContain('132.25 USD');
   });
 
   it('can not be sent while something blocks it and says why', () => {

@@ -3,9 +3,11 @@ import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/re
 import { toast } from 'sonner';
 
 const mocks = vi.hoisted(() => ({ rpc: vi.fn() }));
+const terms = vi.hoisted(() => ({ value: null as unknown }));
 
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { rpc: mocks.rpc } }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
+vi.mock('@/hooks/usePricingTerms', () => ({ usePricingTerms: () => ({ data: terms.value }) }));
 
 import TimesheetRateCard from './TimesheetRateCard';
 import type { RateRow } from '@/lib/timesheet';
@@ -24,6 +26,7 @@ const base = {
 beforeEach(() => {
   mocks.rpc.mockReset();
   mocks.rpc.mockResolvedValue({ data: 'x', error: null });
+  terms.value = null;
   onChanged.mockReset();
   vi.mocked(toast.success).mockReset();
   vi.mocked(toast.error).mockReset();
@@ -109,6 +112,20 @@ describe('TimesheetRateCard as the client', () => {
     expect(screen.getByText('55.00 USD per hour')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Approve this rate/ })).toBeNull();
     expect(screen.getByText(/The client has to approve it/)).toBeTruthy();
+  });
+
+  it('shows what one hour costs the client in total', () => {
+    terms.value = { serviceFeePercent: 10, processingFeePercent: 5, vatPercent: 15, plansEnabled: false, cardsEnabled: false };
+    render(<TimesheetRateCard {...base} canApprove rates={[rate({ status: 'proposed', hourly_rate: 100, decided_at: null })]} />);
+    expect(screen.getByTestId('hourly-total').textContent).toContain('132.25 USD');
+  });
+
+  it('shows the consultant what the client pays and that the whole rate is theirs', () => {
+    terms.value = { serviceFeePercent: 10, processingFeePercent: 5, vatPercent: 15, plansEnabled: false, cardsEnabled: false };
+    render(<TimesheetRateCard {...base} myConsultantId="c1" rates={[rate({ hourly_rate: 100 })]} />);
+    const text = screen.getByTestId('hourly-total').textContent ?? '';
+    expect(text).toContain('132.25 USD');
+    expect(text).toContain('whole 100.00 USD');
   });
 
   it('says when no consultant works on the ticket', () => {
