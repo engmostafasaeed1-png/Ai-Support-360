@@ -1,6 +1,8 @@
 import { AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { usePricingTerms } from '@/hooks/usePricingTerms';
+import { formatPercent } from '@/lib/pricing';
 import { entryStatus, formatHours, formatMoney, planUsage, statusInfo, summarise, type SubmissionRow, type WorkLogRow } from '@/lib/timesheet';
 
 export interface PlanInfo {
@@ -19,6 +21,8 @@ interface Props {
   /** "50.00 USD per hour" when one approved rate applies to all the entries shown, else null */
   rateLabel: string | null;
   plan: PlanInfo | null;
+  /** who looks at the numbers: the consultant sees the fee as their own, the client sees the total that is paid */
+  audience?: 'client' | 'consultant';
 }
 
 const GROUPS = [
@@ -40,14 +44,19 @@ function Stat({ label, value, sub }: { label: string; value: string; sub: string
 }
 
 /** The calculation of the timesheet: hours, billable hours, amount (billable hours x approved rate), VAT, total, the part of the approved plan that is used. */
-export default function TimesheetSummary({ logs, submissions, vatPercent, currency, rateLabel, plan }: Props) {
-  const all = summarise(logs, vatPercent);
+export default function TimesheetSummary({ logs, submissions, vatPercent, currency, rateLabel, plan, audience = 'client' }: Props) {
+  const { data: pricingTerms } = usePricingTerms();
+  const fees = pricingTerms ?? undefined;
+  const all = summarise(logs, vatPercent, fees);
   const rows = GROUPS.map(g => {
     const items = logs.filter(l => entryStatus(l, submissions) === g.key);
-    return { ...g, count: items.length, summary: summarise(items, vatPercent) };
+    return { ...g, count: items.length, summary: summarise(items, vatPercent, fees) };
   }).filter(r => r.count > 0);
   const usage = plan ? planUsage(plan.plannedHours, all.totalHours) : null;
   const vatLabel = String(Number(vatPercent) || 0);
+  const feeNote = pricingTerms
+    ? `fee + ${formatPercent(pricingTerms.serviceFeePercent)} service + ${formatPercent(pricingTerms.processingFeePercent)} payment fee + ${vatLabel}% VAT`
+    : `VAT ${vatLabel}%`;
 
   return (
     <Card className="rounded-2xl border-border/50" data-testid="timesheet-summary">
@@ -55,8 +64,12 @@ export default function TimesheetSummary({ logs, submissions, vatPercent, curren
         <p className="text-sm font-semibold text-foreground">Summary</p>
         <div className="grid grid-cols-3 gap-3">
           <Stat label="Hours" value={formatHours(all.totalHours)} sub={`${formatHours(all.billableHours)} billable`} />
-          <Stat label="Amount" value={formatMoney(all.subtotal, currency)} sub="without VAT" />
-          <Stat label={`Total with VAT (${vatLabel}%)`} value={formatMoney(all.total, currency)} sub={`VAT ${formatMoney(all.vat, currency)}`} />
+          <Stat
+            label={audience === 'consultant' ? 'Your fee' : 'Consultant fee'}
+            value={formatMoney(all.subtotal, currency)}
+            sub={audience === 'consultant' ? 'you receive this in full' : 'billable hours x hourly rate'}
+          />
+          <Stat label={audience === 'consultant' ? 'The client pays' : 'Total you pay'} value={formatMoney(all.total, currency)} sub={feeNote} />
         </div>
         {rateLabel && (
           <p className="text-xs text-muted-foreground">

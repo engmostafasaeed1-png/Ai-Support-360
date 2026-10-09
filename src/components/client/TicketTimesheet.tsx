@@ -16,6 +16,7 @@ import TimesheetSubmissions from '@/components/timesheet/TimesheetSubmissions';
 import WorkLogDialog from '@/components/timesheet/WorkLogDialog';
 import SubmitTimesheetDialog from '@/components/timesheet/SubmitTimesheetDialog';
 import StatusBadge from '@/components/timesheet/StatusBadge';
+import { usePricingTerms } from '@/hooks/usePricingTerms';
 import { buildCsv, downloadText, type ExportRow } from '@/lib/timesheetExport';
 import { downloadTimesheetPdf } from '@/lib/timesheetPdf';
 import {
@@ -166,6 +167,7 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: pricingTerms } = usePricingTerms();
   const consultantIds = unique([ticket?.consultant_id, ...rates.map(r => r.consultant_id), ...logs.map(l => l.consultant_id)]);
   const userIds = unique([...submissions.map(s => s.submitted_by), ...comments.map(c => c.author_id)]);
   const { data: names } = useQuery({
@@ -233,7 +235,7 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
   const plan: PlanInfo | null = ticket && num(ticket.planned_hours) > 0
     ? { plannedHours: num(ticket.planned_hours), plannedCost: num(ticket.planned_cost), currency: ticket.cost_currency || currency, approved: !!ticket.plan_approved_at }
     : null;
-  const totals = summarise(namedLogs, vatPercent);
+  const totals = summarise(namedLogs, vatPercent, pricingTerms ?? undefined);
   const planOverBy = plan ? planUsage(plan.plannedHours, totals.totalHours)?.overBy ?? 0 : 0;
 
   const byCategory: Record<string, { hours: number; amount: number }> = {};
@@ -273,6 +275,8 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
         ticketId,
         currency,
         vatPercent,
+        serviceFeePercent: pricingTerms?.serviceFeePercent,
+        processingFeePercent: pricingTerms?.processingFeePercent,
         rates: approvedRates.map(r => {
           const when = r.decided_at ? ` on ${format(new Date(r.decided_at), 'MMM d, yyyy')}` : '';
           return `${byConsultant[r.consultant_id] ?? 'Consultant'}: ${rateText(r)} (approved${r.source === 'proposal' ? ' with the accepted bid' : ' by the client'}${when})`;
@@ -368,7 +372,7 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
         onChanged={refresh}
       />
 
-      <TimesheetSummary logs={namedLogs} submissions={submissions} vatPercent={vatPercent} currency={currency} rateLabel={rateLabel} plan={plan} />
+      <TimesheetSummary logs={namedLogs} submissions={submissions} vatPercent={vatPercent} currency={currency} rateLabel={rateLabel} plan={plan} audience={isConsultantView ? 'consultant' : 'client'} />
 
       <div className="flex flex-wrap items-center gap-2">
         {isConsultantView && (
