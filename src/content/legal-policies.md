@@ -247,7 +247,7 @@ The consultant receives the whole consultant fee; the platform service fee and p
 
 ## Rates, Estimates and Approval
 
-The current service fee, processing fee and VAT rates are shown on our [Pricing page](/pricing) and in the relevant price breakdown. The client's approved hourly rate determines the price of consultant work. Estimates depend on the expected billable hours and are not a charge for work that has not been performed.
+The current service fee, processing fee and VAT rates are shown on our [pricing page](/pricing) and in the relevant price breakdown. The client's approved hourly rate determines the price of consultant work. Estimates depend on the expected billable hours and are not a charge for work that has not been performed.
 
 Clients review submitted timesheets before approving them. Approval creates an invoice using the approved billable hours, approved hourly rate and applicable fee and VAT rates. Each monetary component is rounded to two decimal places. The invoice records the fee amounts and rates used for that approval; later changes to pricing settings do not recalculate that invoice.
 
