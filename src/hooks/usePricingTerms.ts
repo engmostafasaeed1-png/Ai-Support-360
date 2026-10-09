@@ -11,7 +11,7 @@ export function usePricingTerms() {
     queryKey: ['pricing-terms'],
     staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<PricingTerms | null> => {
-      const { data, error } = await (supabase as any).rpc('pricing_terms');
+      const { data, error } = await supabase.rpc('pricing_terms');
       if (error) return null;
       return parseTerms(data);
     },
