@@ -91,15 +91,30 @@ export function useTriageChat() {
     abortRef.current = controller;
 
     try {
-      const resp = await fetch(CHAT_URL, {
+      // The assistant requires the signed-in user's token, not the public key.
+      let { data: { session } } = await supabase.auth.getSession();
+      if (!session || (session.expires_at ?? 0) * 1000 < Date.now() + 60_000) {
+        const { data: refreshed } = await supabase.auth.refreshSession().catch(() => ({ data: { session: null } as any }));
+        session = refreshed?.session ?? session;
+      }
+      if (!session?.access_token) {
+        throw new Error('Please sign in to use the AI assistant.');
+      }
+      const doFetch = (token: string) => fetch(CHAT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ messages: updatedMessages, model }),
         signal: controller.signal,
       });
+      let resp = await doFetch(session.access_token);
+      if (resp.status === 401) {
+        const { data: refreshed } = await supabase.auth.refreshSession().catch(() => ({ data: { session: null } as any }));
+        if (refreshed?.session?.access_token) resp = await doFetch(refreshed.session.access_token);
+      }
 
       if (!resp.ok || !resp.body) {
         const err = await resp.json().catch(() => ({ error: 'Request failed' }));
