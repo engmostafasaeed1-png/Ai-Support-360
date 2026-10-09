@@ -10,6 +10,8 @@
 export interface FeePercents {
   serviceFeePercent: number;
   processingFeePercent: number;
+  /** the VAT of today; when set it wins over the VAT that is passed to a calculation */
+  vatPercent?: number;
 }
 
 export interface PricingTerms extends FeePercents {
