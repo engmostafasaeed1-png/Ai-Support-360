@@ -131,7 +131,7 @@ export function useVMwareSubscriptions() {
 export function useRequestVMwarePlan() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { plan_id: string; billing_cycle?: string }) => {
+    mutationFn: async (params: { plan_id: string; billing_cycle?: string; environment_id?: string }) => {
       const { data, error } = await supabase.rpc('request_vmware_plan', {
         p_plan_id: params.plan_id,
         p_billing_cycle: params.billing_cycle ?? 'monthly',
