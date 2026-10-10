@@ -23,6 +23,14 @@ export interface CompiledDictionary {
 
 const LATIN = /[A-Za-z]/;
 const PLACEHOLDER = /\{(\d+)\}/g;
+// A placeholder of a source can be typed: {n0} matches only a number (12, 3.5, 1,000.00, 45%, $62K, +966 56 979 7197) and {d0} only a date or a day
+// (Oct 22, 2026, Mon, 12:30), so that a pattern like "{n0} active" or "Due {d0}" does not translate the words of a ticket title typed by a user.
+const TYPED_PLACEHOLDER = /^\{([nd]?)(\d+)\}$/;
+const PLACEHOLDER_REGEX: Record<string, string> = {
+  '': '(.+?)',
+  n: '([+-]?\\$?\\d[\\d.,:/% -]*[KkMm]?)',
+  d: '((?:\\d|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Mon|Tue|Wed|Thu|Fri|Sat|Sun)[^\\n]{0,40}?)',
+};
 
 export const normalizeText = (value: string): string => value.replace(/\s+/g, ' ').trim();
 
@@ -34,7 +42,7 @@ export function compileDictionary(dictionary: UiDictionary): CompiledDictionary 
   for (const [rawKey, target] of Object.entries(dictionary)) {
     const key = normalizeText(rawKey);
     if (!key || !target) continue;
-    if (!/\{\d+\}/.test(key)) {
+    if (!/\{[nd]?\d+\}/.test(key)) {
       exact.set(key, target);
       continue;
     }
@@ -42,11 +50,11 @@ export function compileDictionary(dictionary: UiDictionary): CompiledDictionary 
     let source = '';
     let weight = 0;
     let anchor = '';
-    for (const part of key.split(/(\{\d+\})/)) {
-      const placeholder = /^\{(\d+)\}$/.exec(part);
+    for (const part of key.split(/(\{[nd]?\d+\})/)) {
+      const placeholder = TYPED_PLACEHOLDER.exec(part);
       if (placeholder) {
-        source += '(.+?)';
-        order.push(Number(placeholder[1]));
+        source += PLACEHOLDER_REGEX[placeholder[1]];
+        order.push(Number(placeholder[2]));
       } else if (part) {
         source += escapeRegExp(part);
         weight += part.length;
