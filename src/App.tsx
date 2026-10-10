@@ -28,6 +28,8 @@ import ClientLayout from "./components/client/ClientLayout.tsx";
 import AdminLayout from "./components/admin/AdminLayout.tsx";
 import SuperAdminLayout from "./components/superadmin/SuperAdminLayout.tsx";
 import ProtectedRoute from "./components/auth/ProtectedRoute.tsx";
+import PublicLayout from "./components/layout/PublicLayout.tsx";
+import { DemoWizardProvider } from "./components/landing/DemoRequestWizard";
 import ApprovalGate from "./components/client/ApprovalGate.tsx";
 
 // Admin console sections (eagerly loaded since they're small)
@@ -255,6 +257,7 @@ const App = () => (
           <ErrorBoundary>
 <MaintenanceGate>
           <Suspense fallback={<PageLoader />}>
+<DemoWizardProvider>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/join/:sessionId" element={<MeetingHandoffPage />} />
@@ -265,14 +268,16 @@ const App = () => (
             ))}
             <Route path="/services/s4hana-support" element={<ServiceModulePage moduleSlug="s4hana-support" />} />
             <Route path="/services/btp-support" element={<ServiceModulePage moduleSlug="btp-support" />} />
-            <Route path="/demo/confirmation/:token" element={<DemoRequestConfirmationPage />} />
-            <Route path="/interview/respond/:token" element={<InterviewRespondPage />} />
-            <Route path="/unsubscribe" element={<UnsubscribePage />} />
-            <Route path="/login" element={<LoginPage />} />
+            <Route element={<PublicLayout />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/unsubscribe" element={<UnsubscribePage />} />
+              <Route path="/demo/confirmation/:token" element={<DemoRequestConfirmationPage />} />
+              <Route path="/interview/respond/:token" element={<InterviewRespondPage />} />
+            </Route>
             <Route path="/.lovable/oauth/consent" element={<OAuthConsentPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
             {import.meta.env.MODE !== 'production' && (
               <Route path="/dev/verification-timeline" element={<VerificationTimelineHarness />} />
             )}
@@ -425,8 +430,11 @@ const App = () => (
             </Route>
             <Route path="/interview/live/:id" element={<ProtectedRoute><ErrorBoundary><LiveInterviewPage /></ErrorBoundary></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<PublicLayout />}>
+              <Route index element={<NotFound />} />
+            </Route>
 </Routes>
+          </DemoWizardProvider>
           </Suspense>
           </MaintenanceGate>
           </ErrorBoundary>
