@@ -13,6 +13,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { buildProcessRows, countDescendants, describeSkipped, filterNewNames } from '@/lib/processImport';
 import { Plus, Upload, Eye, EyeOff, Trash2, Search, Network, ChevronRight, ChevronDown, CornerDownRight } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -73,6 +78,7 @@ export default function BusinessProcessesPage() {
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; subCount: number } | null>(null);
 
   const { data: processes = [], isLoading } = useQuery({
     queryKey: ['business-processes'],
@@ -132,7 +138,14 @@ export default function BusinessProcessesPage() {
       queryClient.invalidateQueries({ queryKey: ['business-processes'] });
       toast.success('Process deleted');
     },
+    onError: (e: any) => toast.error(e?.message || 'The process could not be deleted'),
   });
+
+  // deleting a process also deletes everything below it: ask first and say how much goes with it
+  const requestDelete = (id: string) => {
+    const node = processes.find((p: any) => p.id === id);
+    setDeleteTarget({ id, name: node?.name ?? 'this process', subCount: countDescendants(id, processes as any[]) });
+  };
 
   const handleAddSub = (parent: BPNode) => {
     if (parent.level >= 4) {
@@ -194,12 +207,38 @@ export default function BusinessProcessesPage() {
               expanded={expanded}
               onToggle={toggleExpand}
               onToggleVisibility={(id, v) => toggleVisibility.mutate({ id, visible: v })}
-              onDelete={(id) => deleteProcess.mutate(id)}
+              onDelete={requestDelete}
               onAddSub={handleAddSub}
             />
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{deleteTarget?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget && deleteTarget.subCount > 0
+                ? `This also deletes its ${deleteTarget.subCount} sub-process${deleteTarget.subCount === 1 ? '' : 'es'} (all levels below it). `
+                : ''}
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) deleteProcess.mutate(deleteTarget.id);
+                setDeleteTarget(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AddProcessDialog
         open={addOpen}
