@@ -26,7 +26,7 @@ jobs:
         run: bunx tsc --noEmit
 
       - name: Lint
-        run: bunx eslint . --max-warnings 996
+        run: bunx eslint . --max-warnings 995
 
       - name: Unit & component tests
         run: bunx vitest run --reporter=default
