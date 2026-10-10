@@ -7159,6 +7159,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_proposal: {
+        Args: { _client_notes?: string; _proposal_id: string }
+        Returns: undefined
+      }
       add_timesheet_comment: {
         Args: { _body: string; _submission_id: string }
         Returns: string
@@ -7262,6 +7266,7 @@ export type Database = {
         Args: { _tenant_id: string }
         Returns: boolean
       }
+      can_use_internal_notes: { Args: { _ticket_id: string }; Returns: boolean }
       card_payment_context: {
         Args: { _payment_id: string; _user_id: string }
         Returns: Json
@@ -7340,7 +7345,7 @@ export type Database = {
         Returns: boolean
       }
       consultant_set_ticket_status: {
-        Args: { _status: string; _ticket_id: string }
+        Args: { _resolution?: string; _status: string; _ticket_id: string }
         Returns: undefined
       }
       consultants_solved_similar: {
