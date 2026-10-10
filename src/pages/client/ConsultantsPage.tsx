@@ -23,7 +23,7 @@ import VerificationBadge from '@/components/consultant/VerificationBadge';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
 import LinkStatus from '@/components/consultant/LinkStatus';
 import { STATE_META } from '@/lib/mapMarkers';
-import { compareRecommended } from '@/lib/consultantDirectory';
+import { compareRecommended, hasModule, skillMatchesText } from '@/lib/consultantDirectory';
 import { credlyProfileUrl } from '@/lib/consultantLinks';
 
 const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
@@ -85,7 +85,7 @@ export default function ConsultantsPage() {
     const result = consultants.filter((c) => {
       const matchesSearch =
         c.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        c.specialty.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        skillMatchesText(c, debouncedSearch) ||
         c.place.toLowerCase().includes(debouncedSearch.toLowerCase());
       const matchesIndustry = !industryFilter || c.industries?.includes(industryFilter);
       const matchesAvailability =
@@ -93,14 +93,14 @@ export default function ConsultantsPage() {
         (availabilityFilter === 'online' && c.status === 'available') ||
         (availabilityFilter === 'busy' && c.status === 'busy') ||
         (availabilityFilter === 'offline' && c.status === 'offline');
-      const matchesModule =
-        moduleFilter === 'all' || c.specialty.toLowerCase().includes(moduleFilter.toLowerCase());
+      const matchesModule = moduleFilter === 'all' || hasModule(c, moduleFilter);
+      const matchesLanguage = languageFilter === 'all' || (c.languages || []).includes(languageFilter);
       const matchesRating = c.rating >= minRating;
       const matchesPrice = c.rate >= priceRange[0] && c.rate <= priceRange[1];
       const matchesVerified = !verifiedOnly || c.badges.includes('verified');
       const matchesCredly = !credlyOnly || !!c.credly_username;
 
-      return matchesSearch && matchesIndustry && matchesAvailability && matchesModule && matchesRating && matchesPrice && matchesVerified && matchesCredly;
+      return matchesSearch && matchesIndustry && matchesAvailability && matchesModule && matchesLanguage && matchesRating && matchesPrice && matchesVerified && matchesCredly;
     });
 
     // Sort
@@ -475,7 +475,7 @@ export default function ConsultantsPage() {
                         <Heart className="w-4 h-4" />
                       </Button>
                     </div>
-                    <p className="text-sm text-muted-foreground">{c.specialty}</p>
+                    <p className="text-sm text-muted-foreground">{c.skills && c.skills.length > 1 ? c.skills.slice(0, 4).join(' · ') + (c.skills.length > 4 ? ` +${c.skills.length - 4}` : '') : c.specialty}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <MapPin className="w-3 h-3 shrink-0" aria-hidden="true" />
                       {c.place || 'Location not set'}

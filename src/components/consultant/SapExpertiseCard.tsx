@@ -170,8 +170,10 @@ export default function SapExpertiseCard() {
       .filter((n, i, a) => a.findIndex((m) => m.toLowerCase() === n.toLowerCase()) === i && !have.has(n.toLowerCase()));
     if (!names.length) return;
     const yrs = newYears === '' ? null : Math.max(0, Math.min(50, Math.round(Number(newYears))));
-    const { error } = await supabase.from('consultant_skills').insert(
+    // one row per module: a module that exists already (a second click, another tab) is skipped, not an error
+    const { error } = await supabase.from('consultant_skills').upsert(
       names.map((n) => ({ consultant_id: userId, sap_module: n, proficiency_level: Number(newLevel), years_experience: yrs })),
+      { onConflict: 'consultant_id,sap_module', ignoreDuplicates: true },
     );
     if (error) return toast.error(error.message);
     toast.success(`${names.length} module${names.length > 1 ? 's' : ''} added`);

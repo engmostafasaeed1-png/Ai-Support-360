@@ -1,14 +1,17 @@
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Sparkles, Medal, ShieldCheck, Brain, Star, Gift, ArrowUpRight,
-  TrendingUp, Award, Zap, Users, CheckCircle2, Info,
+  Sparkles, Medal, ShieldCheck, Brain, Star, ArrowUpRight,
+  TrendingUp, Award, Zap, Users, CheckCircle2, Info, History,
 } from 'lucide-react';
 import { useConsultantProfile } from '@/hooks/useConsultantProfile';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Tier {
   name: string;
@@ -26,29 +29,94 @@ const TIERS: Tier[] = [
   { name: 'Verified', minScore: 0,  credits: 50,  color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300', ring: 'ring-emerald-300/60', icon: ShieldCheck },
 ];
 
+// What is awarded today: every award is written to the credit history by the database.
 const EARN_ACTIONS = [
   { icon: Brain,        title: 'Complete the AI Interview', credits: '50–150', detail: 'One-time award based on your overall score tier.', cta: { label: 'Start Interview', to: '/consultant/interviews' } },
-  { icon: ShieldCheck,  title: 'Get fully verified',         credits: '+40',   detail: 'Submit ID, certifications and pass admin review.', cta: { label: 'Verification', to: '/consultant/verification' } },
-  { icon: Star,         title: 'Earn a 5-star review',       credits: '+10',   detail: 'Each verified 5-star client review.',              cta: { label: 'My Reviews', to: '/consultant/reviews' } },
-  { icon: Award,        title: 'Link a Credly badge',        credits: '+25',   detail: 'One-time per certification, capped at 5 badges.',  cta: { label: 'Edit Profile', to: '/consultant/profile' } },
-  { icon: Zap,          title: 'Fast response time',         credits: '+5/wk', detail: 'Reply to match requests within 30 minutes.',       cta: { label: 'Open Requests', to: '/consultant/requests' } },
-  { icon: Gift,         title: 'Refer a consultant',         credits: '+50',   detail: 'When your referral completes their first ticket.', cta: { label: 'Referrals', to: '/consultant/referrals' } },
+  { icon: ShieldCheck,  title: 'Get fully verified',         credits: '+40',   detail: 'Awarded once, when the platform team verifies your profile.', cta: { label: 'Verification', to: '/consultant/verification' } },
+  { icon: Star,         title: 'Earn a 5-star review',       credits: '+10',   detail: 'Each 5-star client review. The 10 credits are taken back if the review is removed.', cta: { label: 'My Reviews', to: '/consultant/reviews' } },
 ];
 
-const SPEND_BENEFITS = [
-  { icon: TrendingUp, title: 'Higher match priority',       cost: '20 credits / boost', detail: 'Boosts you to the top of client recommendations for 7 days.' },
-  { icon: Users,      title: 'Featured on landing page',    cost: '100 credits / week', detail: 'Showcased in the public consultants section.' },
-  { icon: Zap,        title: 'Unlock open ticket bidding',  cost: '5 credits / bid',    detail: 'Submit a proposal on premium client tickets.' },
-  { icon: Award,      title: 'Premium badge on profile',    cost: '250 credits',        detail: 'Display a permanent “Premium” ribbon for 30 days.' },
+// Planned, not awarded yet.
+const COMING_SOON_EARN = [
+  { icon: Award, title: 'Link a Credly badge',  detail: 'A bonus for each linked certification.' },
+  { icon: Zap,   title: 'Fast response time',   detail: 'A weekly bonus for answering match requests quickly.' },
+];
+
+// Planned, not available yet.
+const PLANNED_PERKS = [
+  { icon: TrendingUp, title: 'Higher match priority',    detail: 'A boost to the top of client recommendations.' },
+  { icon: Users,      title: 'Featured on landing page', detail: 'Showcased in the public consultants section.' },
+  { icon: Zap,        title: 'Premium bidding',          detail: 'Submit a proposal on premium client tickets.' },
+  { icon: Award,      title: 'Premium badge on profile', detail: 'A permanent ribbon on your profile for a period.' },
 ];
 
 const RULES = [
   'Credits never expire while your account is active and in good standing.',
-  'Credits are non-transferable and have no cash value.',
+  'Credits are non-transferable and have no cash value. For now they are shown on your profile as a trust signal to clients.',
   'Re-taking the AI interview updates your tier and score, but the credit reward is granted only on first completion.',
-  'Credits can be revoked if the related action is reversed (e.g. a review is removed for policy violation).',
+  'Credits are taken back when the action behind them is reversed: the 10 credits of a 5-star review are removed if the review is removed.',
+  'Every change of your balance is listed in your credit history on this page.',
+  'Inviting a member earns a separate USD referral credit (see Referrals); it does not change your credibility credits.',
   'Abuse, spam, or fake activity may result in credit forfeiture and account review.',
 ];
+
+const REASONS: Record<string, string> = {
+  opening_balance: 'Balance before the credit history existed',
+  ai_interview: 'AI interview reward',
+  fully_verified: 'Fully verified',
+  five_star_review: '5-star review',
+  review_removed: '5-star review removed',
+  adjustment: 'Adjustment by the platform team',
+};
+
+function CreditHistory({ consultantId }: { consultantId: string }) {
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ['credit-ledger', consultantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('credit_ledger')
+        .select('id, amount, reason, note, created_at')
+        .eq('consultant_id', consultantId)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  return (
+    <Card className="rounded-2xl border-border/50">
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <History className="w-4 h-4 text-primary" /> Your credit history
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-16 rounded-xl" />
+        ) : rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No credits yet. Your first award appears here.</p>
+        ) : (
+          <ul className="divide-y divide-border/50">
+            {rows.map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">{REASONS[r.reason] || r.reason}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {new Date(r.created_at).toLocaleDateString()}{r.note ? ` · ${r.note}` : ''}
+                  </p>
+                </div>
+                <span className={`text-sm font-bold shrink-0 ${r.amount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}>
+                  {r.amount > 0 ? '+' : ''}{r.amount}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function CreditsRulesPage() {
   const { data: profile } = useConsultantProfile();
@@ -69,9 +137,9 @@ export default function CreditsRulesPage() {
                 How credibility credits work
               </h1>
               <p className="text-muted-foreground mt-2 max-w-2xl">
-                Credibility credits are the trust currency of the portal. Earn them by proving your skills,
-                serving clients well, and growing the community — then spend them on visibility boosts and
-                premium features that help you win more business.
+                Credibility credits are the trust score of the portal. You earn them by proving your skills and serving clients well,
+                and clients see them on your profile. The ways to earn credits that work today are listed below;
+                more ways and perks are planned.
               </p>
             </div>
 
@@ -129,6 +197,9 @@ export default function CreditsRulesPage() {
         </CardContent>
       </Card>
 
+      {/* Credit history */}
+      {profile?.id && <CreditHistory consultantId={profile.id} />}
+
       {/* Earn credits */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader>
@@ -136,7 +207,7 @@ export default function CreditsRulesPage() {
             <TrendingUp className="w-4 h-4 text-emerald-500" /> Ways to earn credits
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-3">
             {EARN_ACTIONS.map((a) => {
               const Icon = a.icon;
@@ -161,19 +232,38 @@ export default function CreditsRulesPage() {
               );
             })}
           </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            {COMING_SOON_EARN.map((a) => {
+              const Icon = a.icon;
+              return (
+                <div key={a.title} className="rounded-xl border border-dashed border-border/60 p-4 flex gap-3 bg-muted/20">
+                  <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                    <Icon className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-semibold text-sm text-foreground">{a.title}</h3>
+                      <Badge variant="outline" className="text-[10px] shrink-0">Coming soon</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{a.detail}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Spend credits */}
+      {/* Planned perks */}
       <Card className="rounded-2xl border-border/50">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-violet-500" /> What you can spend credits on
+            <Sparkles className="w-4 h-4 text-violet-500" /> Planned uses for credits
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 gap-3">
-            {SPEND_BENEFITS.map((b) => {
+            {PLANNED_PERKS.map((b) => {
               const Icon = b.icon;
               return (
                 <div key={b.title} className="rounded-xl border border-border/50 p-4 flex gap-3 bg-muted/20">
@@ -183,7 +273,7 @@ export default function CreditsRulesPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="font-semibold text-sm text-foreground">{b.title}</h3>
-                      <Badge variant="outline" className="text-[10px] shrink-0">{b.cost}</Badge>
+                      <Badge variant="outline" className="text-[10px] shrink-0">Coming soon</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{b.detail}</p>
                   </div>
@@ -193,7 +283,7 @@ export default function CreditsRulesPage() {
           </div>
           <p className="text-[11px] text-muted-foreground mt-4 flex items-start gap-1.5">
             <Info className="w-3 h-3 mt-0.5 shrink-0" />
-            Some perks roll out gradually. Available perks are listed in your profile and earnings pages.
+            None of these perks can be bought yet. For now your credits are shown on your profile as a trust signal to clients.
           </p>
         </CardContent>
       </Card>
