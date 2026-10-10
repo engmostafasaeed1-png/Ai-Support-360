@@ -3,7 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { reportError } from '@/lib/errorReporter';
-import { isStaleChunkError, reloadForNewVersion } from '@/lib/staleChunkReload';
+import { isStaleChunkError, reloadForNewVersion, reloadJustStarted } from '@/lib/staleChunkReload';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -27,7 +27,7 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // A page file that no longer exists after a new Publish: reload once instead of reporting a fatal error.
-    if (isStaleChunkError(error.message) && reloadForNewVersion()) return;
+    if (isStaleChunkError(error.message) && (reloadForNewVersion() || reloadJustStarted())) return;
     console.error('ErrorBoundary caught:', error, errorInfo);
     reportError({
       level: 'fatal',

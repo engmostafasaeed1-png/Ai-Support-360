@@ -41,6 +41,17 @@ describe('translateText', () => {
   it('translates a date inside a pattern', () => {
     expect(translateText('Due Oct 22, 2026', dict)).toBe('الاستحقاق 22 أكتوبر 2026');
   });
+
+  it('translates a list of messages joined with "; " when every message is known', () => {
+    const lines = compileDictionary({
+      'line {0}: "{1}" is repeated in the file': 'السطر {0}: "{1}" مكرر في الملف',
+      'line {0}: unknown category "{1}"': 'السطر {0}: فئة غير معروفة "{1}"',
+    });
+    expect(translateText('line 3: "A" is repeated in the file; line 4: unknown category "B"', lines)).toBe(
+      'السطر 3: "A" مكرر في الملف؛ السطر 4: فئة غير معروفة "B"',
+    );
+    expect(translateText('line 3: "A" is repeated in the file; something unknown', lines)).toBeNull();
+  });
 });
 
 describe('translateValue', () => {
