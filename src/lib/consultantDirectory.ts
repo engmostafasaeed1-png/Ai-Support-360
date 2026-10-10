@@ -10,6 +10,8 @@ export interface ConsultantLive {
   id: string;
   name: string;
   specialty: string;
+  /** Every module of the consultant (the specialty is the first one). */
+  skills?: string[];
   rating: number;
   reviews: number;
   rate: number;
@@ -105,6 +107,7 @@ export function toConsultantLive(row: DirectoryRow, displayName: string | null |
     id: row.id,
     name,
     specialty: skills[0] || 'SAP',
+    skills,
     rating,
     reviews: row.total_reviews || 0,
     rate: Number(row.hourly_rate) || 0,
@@ -128,6 +131,24 @@ export function toConsultantLive(row: DirectoryRow, displayName: string | null |
     credibility_credits: row.credibility_credits || 0,
     ai_interview_badge: row.ai_interview_badge || null,
   };
+}
+
+const moduleKey = (value: string) => value.toLowerCase().replace(/^sap\s+/, '').trim();
+
+/** True when the consultant has the module. Compared without case and without a leading "SAP ": "SAP FI" and "FI" are the same module. */
+export function hasModule(c: Pick<ConsultantLive, 'specialty' | 'skills'>, module: string): boolean {
+  const wanted = moduleKey(module);
+  if (!wanted) return true;
+  const all = c.skills && c.skills.length > 0 ? c.skills : [c.specialty];
+  return all.some(s => moduleKey(s) === wanted);
+}
+
+/** True when the text is found in the name of any module of the consultant. */
+export function skillMatchesText(c: Pick<ConsultantLive, 'specialty' | 'skills'>, text: string): boolean {
+  const q = text.trim().toLowerCase();
+  if (!q) return true;
+  const all = c.skills && c.skills.length > 0 ? c.skills : [c.specialty];
+  return all.some(s => s.toLowerCase().includes(q));
 }
 
 type Rankable = Pick<ConsultantLive, 'status' | 'rating' | 'reviews' | 'name'>;
