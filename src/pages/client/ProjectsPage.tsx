@@ -16,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { SamplePreviewNote } from '@/components/common/SamplePreview';
 import {
   FolderKanban, Plus, Clock, Users, CalendarDays, ChevronDown, ChevronRight,
   CheckCircle2, Circle, ListTodo, Activity, Ticket, Milestone as MilestoneIcon,
@@ -340,7 +341,7 @@ export default function ProjectsPage() {
       setNewTask({ title: '', description: '', priority: 'medium', planned_hours: '', due_date: '' });
       setSelectedAssignees([]);
       setAddTaskOpen(false);
-      toast.success('Task added successfully');
+      toast.info('Preview only: the task was added on this screen and is not saved.');
     });
   };
 
@@ -364,7 +365,7 @@ export default function ProjectsPage() {
       }));
       setSelectedTicketIds([]);
       setAssignTicketOpen(false);
-      toast.success(`${ticketsToAdd.length} ticket(s) assigned`);
+      toast.info('Preview only: the tickets were assigned on this screen and are not saved.');
     });
   };
 
@@ -397,7 +398,7 @@ export default function ProjectsPage() {
     }));
     setActualsForm({ hours: '', notes: '', status: '' });
     setActualsOpen(false);
-    toast.success('Actuals recorded');
+    toast.info('Preview only: the hours were added on this screen and are not saved.');
   };
 
   const handleApproveMilestone = (projectId: string, milestoneId: string) => {
@@ -410,7 +411,7 @@ export default function ProjectsPage() {
           activities: [{ id: `a-${Date.now()}`, text: `Milestone "${p.milestones.find(m => m.id === milestoneId)?.title}" approved`, time: 'Just now', type: 'milestone' }, ...p.activities],
         };
       }));
-      toast.success('Milestone approved');
+      toast.info('Preview only: the milestone was approved on this screen and is not saved.');
     });
   };
 
@@ -424,7 +425,7 @@ export default function ProjectsPage() {
       };
     }));
     setMilestoneDetailOpen(false);
-    toast.success('Milestone actual saved');
+    toast.info('Preview only: the amount was changed on this screen and is not saved.');
   };
 
   const totalTasks = projects.reduce((s, p) => s + p.tasks.length, 0);
@@ -459,10 +460,12 @@ export default function ProjectsPage() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Manage, track progress, and enter actuals</p>
         </div>
-        <Button className="gradient-primary border-0 gap-1.5">
+        <Button className="gradient-primary border-0 gap-1.5" onClick={() => toast.info('Projects cannot be created yet. This page is a preview with example data.')}>
           <Plus className="w-4 h-4" /> New Project
         </Button>
       </div>
+
+      <SamplePreviewNote what="The projects, tasks, milestones, hours and amounts below are examples, not your own." />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
