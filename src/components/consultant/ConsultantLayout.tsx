@@ -7,6 +7,7 @@ import { Outlet } from 'react-router-dom';
 import { Briefcase, Building2, Zap } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import HeaderSearchButton from '@/components/layout/HeaderSearchButton';
+import LanguageSwitchButton from '@/components/layout/LanguageSwitchButton';
 import HeaderNav from '@/components/HeaderNav';
 import logo from '@/assets/brand/mark.png.asset.json';
 import { Link, useNavigate } from 'react-router-dom';
@@ -78,6 +79,7 @@ export default function ConsultantLayout() {
                 </TooltipContent>
               </Tooltip>
 
+              <LanguageSwitchButton />
               <NotificationBell basePath="/consultant" />
 
               {/* Profile avatar with name */}

@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import HeaderSearchButton from '@/components/layout/HeaderSearchButton';
+import LanguageSwitchButton from '@/components/layout/LanguageSwitchButton';
 import { Link } from 'react-router-dom';
 import HeaderNav from '@/components/HeaderNav';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -70,6 +71,7 @@ export default function ClientLayout() {
                   <span className="hidden xl:inline">Emergency</span>
                 </Button>
               </Link>
+              <LanguageSwitchButton />
               <NotificationBell basePath="/client" />
               <Link to="/client/settings" className="group flex items-center gap-2" aria-label="Account settings">
                 <Avatar className="h-8 w-8 ring-2 ring-border transition-all group-hover:ring-accent/50">

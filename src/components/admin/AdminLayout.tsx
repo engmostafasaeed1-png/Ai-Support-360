@@ -7,6 +7,7 @@ import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 import HeaderNav from '@/components/HeaderNav';
 import HeaderSearchButton from '@/components/layout/HeaderSearchButton';
+import LanguageSwitchButton from '@/components/layout/LanguageSwitchButton';
 import logo from '@/assets/brand/mark.png.asset.json';
 import { Link } from 'react-router-dom';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
@@ -29,6 +30,7 @@ export default function AdminLayout() {
               <HeaderSearchButton placeholder="Search pages, features..." />
             </div>
             <div className="flex items-center gap-3">
+              <LanguageSwitchButton />
               <NotificationBell basePath="/admin" />
               <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary">Admin</Badge>
             </div>
