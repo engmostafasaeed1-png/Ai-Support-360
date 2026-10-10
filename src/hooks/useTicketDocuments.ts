@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { validateAttachment } from '@/lib/attachments';
+import { safeFileName } from '@/lib/storagePath';
 
 export interface TicketDocument {
   id: string;
@@ -52,6 +54,8 @@ export function useUploadTicketDocument(ticketId: string) {
     mutationFn: async ({ file, comment }: { file: File; comment?: string }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
+      const problem = validateAttachment(file);
+      if (problem) throw new Error(problem);
 
       // Get next version number for this file name
       const { data: existing } = await supabase
@@ -65,7 +69,7 @@ export function useUploadTicketDocument(ticketId: string) {
       const nextVersion = (existing && existing.length > 0) ? (existing[0] as any).version + 1 : 1;
 
       // Upload to storage: ticket-documents/{ticketId}/{userId}/{timestamp}_{filename}
-      const storagePath = `${ticketId}/${session.user.id}/${Date.now()}_${file.name}`;
+      const storagePath = `${ticketId}/${session.user.id}/${Date.now()}_${safeFileName(file.name)}`;
       const { error: uploadError } = await supabase.storage
         .from('ticket-documents')
         .upload(storagePath, file);
