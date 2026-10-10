@@ -260,6 +260,20 @@
       "when": 1791644265236,
       "tag": "0036_wire_admin_setting_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791647231496,
+      "tag": "0037_m40_consultant_private",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791647249337,
+      "tag": "0038_m41_guard_business_process",
+      "breakpoints": true
     }
   ]
 }
