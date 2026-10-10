@@ -62,7 +62,7 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
   const { isGuest } = useGuestMode();
 
   // AI-powered matching
-  const { data: aiMatch, isLoading: aiLoading } = useQuery({
+  const { data: aiMatch, isLoading: aiLoading, error: aiError, refetch: refetchAi } = useQuery({
     queryKey: ['ai-match-consultants', ticketId, sapModule],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('ai-ticket', {
@@ -170,6 +170,12 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
         <div className="space-y-3 py-2">
           {aiLoading ? (
             [1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)
+          ) : aiError ? (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-center space-y-2">
+              <p className="text-sm font-medium text-destructive">The AI match suggestions could not be loaded.</p>
+              <p className="text-xs text-muted-foreground">Nothing was sent to any consultant. Please try again in a moment.</p>
+              <Button type="button" size="sm" variant="outline" onClick={() => refetchAi()}>Try again</Button>
+            </div>
           ) : available.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">No matching consultants found.</p>
           ) : (
