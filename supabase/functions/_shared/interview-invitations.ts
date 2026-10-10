@@ -5,7 +5,7 @@ import { sendTemplateEmail } from './transactional-email-templates/send-email.ts
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const TOKEN_RE = /^[0-9a-f]{64}$/;
 
-const EMAIL_RE = /^[^\s@<>()\[\]\\,;:"]+@[^\s@<>()\[\]\\,;:"]+\.[^\s@<>()\[\]\\,;:"]{2,}$/;
+const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]{2,}$/;
 
 /** Clean, unique, lower-case addresses from an array or a comma / semicolon / space separated string. */
 export function cleanEmails(value: unknown, max: number): { emails: string[]; error: string | null } {

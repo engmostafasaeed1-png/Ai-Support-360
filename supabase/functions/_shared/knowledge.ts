@@ -73,7 +73,7 @@ export function cleanTags(raw: unknown): string[] {
 export function cleanTcodes(raw: unknown): string[] {
   return [...new Set<string>((Array.isArray(raw) ? raw : [])
     .map((x) => String(x ?? "").trim().toUpperCase())
-    .filter((x) => /^[A-Z0-9_\/]{2,20}$/.test(x)))].slice(0, 8);
+    .filter((x) => /^[A-Z0-9_/]{2,20}$/.test(x)))].slice(0, 8);
 }
 
 export interface DraftInput {

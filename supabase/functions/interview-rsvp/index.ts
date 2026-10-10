@@ -31,6 +31,7 @@ type Answer = (typeof RESPONSES)[number];
 
 function cleanNote(value: unknown): string | null {
   if (typeof value !== 'string') return null;
+  // eslint-disable-next-line no-control-regex
   const text = value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, 1000);
   return text || null;
 }

@@ -383,7 +383,7 @@ Include one question_scores entry per candidate answer, in the same order the an
 
     if ((trainingConfigs && trainingConfigs.length > 0) || libBank.length > 0) {
       const cleanAuthor = (s: unknown) =>
-        typeof s === "string" ? s.replace(/[\[\]\n\r]/g, " ").trim().slice(0, 120) : "";
+        typeof s === "string" ? s.replace(/[[\]\n\r]/g, " ").trim().slice(0, 120) : "";
       const bank = [...(trainingConfigs || []).flatMap((c: any) => c.custom_questions || []), ...libBank]
         .filter((q: any) => typeof q?.question === "string" && q.question.trim())
         .sort((a: any, b: any) => (b.weight || 1) - (a.weight || 1));
