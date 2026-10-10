@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Building2, Plus, ArrowRight, Crown, Sparkles, Briefcase, Users, Globe } from 'lucide-react';
 import { useTenant } from '@/contexts/TenantContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { usePricingTerms } from '@/hooks/usePricingTerms';
+import { COMPANY_INDUSTRIES, COMPANY_SIZES } from '@/lib/companyOptions';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import VideoBackground from '@/components/VideoBackground';
@@ -23,19 +25,18 @@ const tierConfig: Record<string, { icon: typeof Sparkles; color: string; bg: str
   enterprise: { icon: Crown, color: 'text-amber-600', bg: 'bg-amber-500/10' },
 };
 
-const industries = [
-  'oil_gas', 'petrochemical', 'banking', 'telecom', 'healthcare',
-  'retail', 'manufacturing', 'government', 'education', 'construction',
-  'logistics', 'utilities', 'technology', 'other',
-];
+const industries = COMPANY_INDUSTRIES;
 
-const companySizes = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
+const companySizes = COMPANY_SIZES;
 
 export default function CompanySelectorPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { tenants, memberships, switchTenant, refetch, loading: tenantsLoading } = useTenant();
   const { profile } = useUserProfile();
+  // the plan of a company is only shown while subscription plans are offered
+  const { data: terms } = usePricingTerms();
+  const plansOn = terms?.plansEnabled === true;
   const [newCompanyName, setNewCompanyName] = useState('');
   const [newCompanyIndustry, setNewCompanyIndustry] = useState('');
   const [newCompanySize, setNewCompanySize] = useState('');
@@ -53,30 +54,15 @@ export default function CompanySelectorPage() {
     if (!newCompanyName.trim()) return;
     setCreating(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const slug = newCompanyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now().toString(36);
-      const tenantId = crypto.randomUUID();
-      const { error } = await supabase
-        .from('tenants')
-        .insert({ id: tenantId, name: newCompanyName.trim(), slug });
-
-      if (error) throw error;
-
-      await supabase.from('tenant_members').insert({
-        tenant_id: tenantId,
-        user_id: user.id,
-        org_role: 'owner' as any,
+      // one server step: the company, the membership of the owner and, for the very first company only, the client profile.
+      // A further company never touches the details of the companies that exist already.
+      const { data: newId, error } = await supabase.rpc('create_company', {
+        _name: newCompanyName.trim(),
+        _industry: newCompanyIndustry || undefined,
+        _size: newCompanySize || undefined,
       });
-
-      // Update client profile with company details
-      await supabase.from('client_profiles' as any).upsert({
-        user_id: user.id,
-        company_name: newCompanyName.trim(),
-        industry: newCompanyIndustry || null,
-        company_size: newCompanySize || null,
-      }, { onConflict: 'user_id' });
+      if (error) throw error;
+      const tenantId = String(newId);
 
       await refetch();
       toast.success(t('company_selector.created_success', { name: newCompanyName }));
@@ -210,10 +196,12 @@ export default function CompanySelectorPage() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-foreground truncate">{tenant.name}</h3>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${tier.bg} ${tier.color}`}>
-                        <TierIcon className="w-3 h-3" />
-                        {tenant.subscription_tier}
-                      </span>
+                      {plansOn && (
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${tier.bg} ${tier.color}`}>
+                          <TierIcon className="w-3 h-3" />
+                          {tenant.subscription_tier}
+                        </span>
+                      )}
                       <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-accent/10 text-accent capitalize">{roleLabel}</span>
                     </div>
                   </div>

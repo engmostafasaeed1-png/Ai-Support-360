@@ -2,10 +2,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { mockClientSessions } from '@/data/clientMockData';
 
 export function useClientSessions() {
   const { isGuest } = useGuestMode();
+  const { tenant, loading: tenantLoading } = useTenant();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -20,15 +22,18 @@ export function useClientSessions() {
   }, [isGuest, queryClient]);
 
   return useQuery({
-    queryKey: ['client-sessions'],
+    queryKey: ['client-sessions', tenant?.id ?? null],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from('sessions')
         .select('id, session_type, status, scheduled_at, duration_minutes, ticket_id, consultant_id')
         .eq('client_id', user.id)
         .order('scheduled_at', { ascending: true });
+      // the sessions of the active company; a session that belongs to no company shows in every company
+      if (tenant?.id) query = query.or(`tenant_id.eq.${tenant.id},tenant_id.is.null`);
+      const { data, error } = await query;
       if (error) throw error;
 
       // Resolve consultant names
@@ -51,9 +56,17 @@ export function useClientSessions() {
         }
       }
 
+      // Resolve the ticket titles
+      const ticketIds = [...new Set((data || []).map((s: any) => s.ticket_id).filter(Boolean))];
+      const ticketTitles: Record<string, string> = {};
+      if (ticketIds.length > 0) {
+        const { data: tix } = await supabase.from('tickets').select('id, title').in('id', ticketIds as string[]);
+        (tix || []).forEach((tk: any) => { ticketTitles[tk.id] = tk.title; });
+      }
+
       return (data || []).map((s: any) => ({
         id: s.id,
-        ticket_title: '',
+        ticket_title: s.ticket_id ? (ticketTitles[s.ticket_id] || '') : '',
         consultant: s.consultant_id ? (consultantMap[s.consultant_id] || 'Consultant') : 'Unassigned',
         session_type: s.session_type || 'chat',
         status: s.status || 'scheduled',
@@ -61,7 +74,7 @@ export function useClientSessions() {
         duration_minutes: s.duration_minutes || 30,
       }));
     },
-    enabled: !isGuest,
+    enabled: !isGuest && !tenantLoading,
     placeholderData: isGuest ? mockClientSessions : undefined,
   });
 }
