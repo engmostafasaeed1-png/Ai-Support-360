@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,10 +13,10 @@ import { toast } from 'sonner';
 import {
   Cpu, Plus, FileText, Server, Database, Globe, Shield, Layers, ArrowRight,
   CheckCircle2, Clock, AlertTriangle, Eye, Download, MessageSquare, Users,
-  CalendarDays, Workflow, Boxes, Network, HardDrive, Lock, BarChart3, Zap,
+  CalendarDays, Workflow, Network, HardDrive, Lock, BarChart3, Zap,
   Target, Search, Filter, Link2, ExternalLink, GitBranch, BookOpen,
   PenTool, Map, MonitorSmartphone, Milestone, ChevronRight, ArrowUpDown,
-  Tag, Hash, Ticket, FileCheck, FilePlus, Activity, TrendingUp
+  Tag, Hash, Ticket, FileCheck, FilePlus, Activity
 } from 'lucide-react';
 import { useClientTickets } from '@/hooks/useClientTickets';
 import BlueprintDocuments from '@/components/architecture/BlueprintDocuments';
@@ -25,13 +24,7 @@ import DesignDocuments from '@/components/architecture/DesignDocuments';
 import SystemLandscape from '@/components/architecture/SystemLandscape';
 import TicketReferences from '@/components/architecture/TicketReferences';
 import ArchitectureTimeline from '@/components/architecture/ArchitectureTimeline';
-
-const stats = [
-  { label: 'Blueprints', value: '4', icon: Map, color: 'text-primary', delta: '+1 this month' },
-  { label: 'Design Documents', value: '8', icon: PenTool, color: 'text-accent', delta: '2 in review' },
-  { label: 'Linked Tickets', value: '23', icon: Ticket, color: 'text-emerald-500', delta: '5 open' },
-  { label: 'System Components', value: '12', icon: Boxes, color: 'text-purple-500', delta: '3 planned' },
-];
+import SamplePreview, { SamplePreviewNote } from '@/components/common/SamplePreview';
 
 export default function SolutionArchitecturePage() {
   const { t } = useTranslation();
@@ -61,36 +54,13 @@ export default function SolutionArchitecturePage() {
               className="pl-9 h-9 w-56"
             />
           </div>
-          <Button className="gradient-primary border-0 gap-1.5">
+          <Button className="gradient-primary border-0 gap-1.5" disabled title="Not available yet: this page is a preview">
             <Plus className="w-4 h-4" /> New Document
           </Button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => {
-          const Icon = s.icon;
-          return (
-            <Card key={s.label} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
-              <CardContent className="pt-4 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
-                    <Icon className={`w-5 h-5 ${s.color}`} />
-                  </div>
-                  <div>
-                    <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-                    <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                  </div>
-                </div>
-                <p className="text-[10px] text-muted-foreground/70 mt-2 flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" /> {s.delta}
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      <SamplePreviewNote what="The blueprints, design documents, system landscape and timeline are examples and cannot be edited yet. Only the Ticket References tab shows your own data: your real tickets." />
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -113,15 +83,15 @@ export default function SolutionArchitecturePage() {
         </TabsList>
 
         <TabsContent value="blueprints">
-          <BlueprintDocuments searchQuery={searchQuery} />
+          <SamplePreview><BlueprintDocuments searchQuery={searchQuery} /></SamplePreview>
         </TabsContent>
 
         <TabsContent value="design-docs">
-          <DesignDocuments searchQuery={searchQuery} />
+          <SamplePreview><DesignDocuments searchQuery={searchQuery} /></SamplePreview>
         </TabsContent>
 
         <TabsContent value="landscape">
-          <SystemLandscape />
+          <SamplePreview><SystemLandscape /></SamplePreview>
         </TabsContent>
 
         <TabsContent value="tickets">
@@ -129,7 +99,7 @@ export default function SolutionArchitecturePage() {
         </TabsContent>
 
         <TabsContent value="timeline">
-          <ArchitectureTimeline />
+          <SamplePreview><ArchitectureTimeline /></SamplePreview>
         </TabsContent>
       </Tabs>
     </div>
