@@ -5,8 +5,10 @@ import { Input } from '@/components/ui/input';
 import {
   LifeBuoy, Search, MessageCircle, BookOpen, FileText,
   Video, Mail, Phone, ArrowRight, Sparkles, Clock, Shield,
+  type LucideIcon,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_HREF } from '@/lib/contact';
 
 const quickActions = [
   {
@@ -47,9 +49,18 @@ const faqItems = [
   { q: 'Can I request a specific consultant?', a: 'Yes, browse the Consultants page and send a direct request to your preferred expert.' },
 ];
 
-const contactChannels = [
-  { icon: Mail, label: 'Email Support', value: 'support@aisapsupporthub.com', color: 'text-blue-500' },
-  { icon: Phone, label: 'Phone Support', value: '+966 11 234 5678', color: 'text-emerald-500' },
+interface ContactChannel {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  color: string;
+  href?: string;
+  ltr?: boolean;
+}
+
+const contactChannels: ContactChannel[] = [
+  { icon: Mail, label: 'Email Support', value: 'info@qurtubatalks.com', href: 'mailto:info@qurtubatalks.com', ltr: true, color: 'text-blue-500' },
+  { icon: Phone, label: 'Phone Support', value: CONTACT_PHONE_DISPLAY, href: CONTACT_PHONE_HREF, ltr: true, color: 'text-emerald-500' },
   { icon: Clock, label: 'Business Hours', value: 'Sun–Thu, 8 AM – 6 PM (AST)', color: 'text-amber-500' },
   { icon: Shield, label: 'Emergency', value: '24/7 for Critical Issues', color: 'text-destructive' },
 ];
@@ -115,7 +126,11 @@ export default function SupportPage() {
               <ch.icon className={`w-5 h-5 ${ch.color} shrink-0 mt-0.5`} />
               <div>
                 <p className="text-xs text-muted-foreground">{ch.label}</p>
-                <p className="text-sm font-medium text-foreground mt-0.5">{ch.value}</p>
+                {ch.href ? (
+                  <a href={ch.href} dir={ch.ltr ? 'ltr' : undefined} className="block text-sm font-medium text-foreground mt-0.5 hover:underline">{ch.value}</a>
+                ) : (
+                  <p className="text-sm font-medium text-foreground mt-0.5">{ch.value}</p>
+                )}
               </div>
             </CardContent>
           </Card>
