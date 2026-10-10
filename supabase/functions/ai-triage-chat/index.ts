@@ -1,7 +1,7 @@
 // AI Support Agent — tool-calling chat backend.
 // Streams a final answer to the client; if the model decides to call tools
 // (look up the user's own tickets/sessions/invoices, search the knowledge
-// base, or create a ticket), we execute them server-side using a Supabase
+// base), we execute them server-side using a Supabase
 // client scoped to the *caller's* JWT so RLS naturally enforces ownership.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -20,17 +20,22 @@ const DEFAULT_MODEL = "openai/gpt-6-astra";
 
 const MAX_BODY_SIZE = 50 * 1024;
 
-const SYSTEM_PROMPT = `You are AI SAP Support Now, the AI support agent for Qurtuba Talks — a premium SAP consulting platform.
+const SYSTEM_PROMPT = `You are the AI support agent of AI Support 360 — a premium SAP consulting platform.
 
 You can:
 - Answer general SAP questions (FI, MM, SD, BASIS, ABAP, BW, S/4HANA, SuccessFactors, etc.).
 - Look up the signed-in user's own tickets, sessions, and invoices via tools.
 - Search the platform's knowledge base and resolution playbooks.
-- Help draft and create a new support ticket on the user's behalf.
+- Help the user draft a new support ticket. You cannot create tickets yourself: the user reviews the draft in the request form and submits it there.
 
 Rules:
 - Use tools whenever the user asks about *their* data ("my tickets", "open invoices", "last session"). Never invent ticket IDs or amounts — call the tool.
-- Before calling \`create_ticket\`, confirm Title, SAP module, urgency, and a one-paragraph description with the user.
+- When the user wants a support ticket, first ask for what is missing (what happens, where, since when, how many users are affected). Then show the draft in exactly this format, each field on its own line:
+**Title**: a short title
+**SAP Module**: one name from the platform's list, for example SAP MM, SAP SD, SAP FI/CO, SAP Basis or SAP S/4HANA
+**Urgency**: low, medium, high or critical
+**Description**: one paragraph
+- After the draft, tell the user to press the "Create ticket" button under your message to review the draft in the request form and submit it there. Never say that a ticket was created, and never ask for a second confirmation.
 - When you cite knowledge-base or playbook content, mention the title.
 - Reply in the language the user writes in.
 - Use clear markdown (short paragraphs, **bold** for key fields, lists where helpful).
@@ -98,24 +103,6 @@ const TOOLS = [
           sap_module: { type: "string", description: "Optional SAP module filter, e.g. FI, MM, SD." },
         },
         required: ["query"],
-        additionalProperties: false,
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "create_ticket",
-      description: "Create a new support ticket on behalf of the signed-in user. Only call after the user has explicitly confirmed Title, SAP module, urgency, and description.",
-      parameters: {
-        type: "object",
-        properties: {
-          title: { type: "string", description: "Short ticket title (<=120 chars)." },
-          description: { type: "string", description: "Detailed description of the problem." },
-          sap_module: { type: "string", description: "SAP module, e.g. FI, MM, SD, BASIS." },
-          urgency: { type: "string", enum: ["low", "medium", "high", "critical"], description: "Default 'medium'." },
-        },
-        required: ["title", "description", "sap_module"],
         additionalProperties: false,
       },
     },
@@ -206,21 +193,6 @@ async function execTool(
     }));
 
     return { articles: trimmedArticles, playbooks: playbooks ?? [] };
-  }
-
-  if (name === "create_ticket") {
-    const title = String(args.title || "").slice(0, 200);
-    const description = String(args.description || "");
-    const sap_module = String(args.sap_module || "");
-    const urgency = String(args.urgency || "medium");
-    if (!title || !description || !sap_module) return { error: "title, description, sap_module are required" };
-    const { data, error } = await sbUser
-      .from("tickets")
-      .insert({ client_id: authUserId, title, description, sap_module, urgency, status: "new", ticket_type: "standard" })
-      .select("id, title, status")
-      .single();
-    if (error) return { error: error.message };
-    return { created: data, link: `/client/tickets/${data.id}` };
   }
 
   return { error: `Unknown tool: ${name}` };
