@@ -17,7 +17,28 @@ const FROM_DOMAIN = "aisupport360.com"
 
 export type SendTemplateEmailResult =
   | { sent: true }
-  | { sent: false; reason: 'recipient_suppressed' }
+  | { sent: false; reason: 'recipient_suppressed' | 'notifications_disabled' }
+
+/** Sends a person starts on purpose; they go out even when automatic email notifications are off. */
+const ALWAYS_SEND = new Set(['platform-invitation', 'interview-invitation', 'interview-invitation-copy'])
+
+/** Reads the admin switch email_notifications (default on). Fails open so a lookup error never blocks mail. */
+async function emailNotificationsOn(): Promise<boolean> {
+  const url = Deno.env.get('SUPABASE_URL')
+  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!url || !key) return true
+  try {
+    const res = await fetch(`${url}/rest/v1/platform_settings?key=eq.email_notifications&select=value`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    })
+    if (!res.ok) return true
+    const rows = await res.json()
+    const v = rows?.[0]?.value
+    return !(v === false || v === 'false')
+  } catch {
+    return true
+  }
+}
 
 export interface SendTemplateEmailOptions {
   templateData?: Record<string, any>
@@ -48,6 +69,10 @@ export async function sendTemplateEmail(
     throw new Error(
       `Template '${templateName}' not found. Available: ${Object.keys(TEMPLATES).join(', ')}`
     )
+  }
+
+  if (!ALWAYS_SEND.has(templateName) && !(await emailNotificationsOn())) {
+    return { sent: false, reason: 'notifications_disabled' }
   }
 
   // Template-level `to` takes precedence — notification templates always
