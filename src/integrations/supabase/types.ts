@@ -1189,6 +1189,38 @@ export type Database = {
           },
         ]
       }
+      consultant_private: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          cv_url: string | null
+          nationality: string | null
+          updated_at: string
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          cv_url?: string | null
+          nationality?: string | null
+          updated_at?: string
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          cv_url?: string | null
+          nationality?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_private_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultant_projects: {
         Row: {
           client_industry: string | null
