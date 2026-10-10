@@ -6438,6 +6438,30 @@ export type Database = {
           },
         ]
       }
+      ui_translations: {
+        Row: {
+          created_at: string
+          lang: string
+          source: string
+          target: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          lang: string
+          source: string
+          target: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          lang?: string
+          source?: string
+          target?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -7876,6 +7900,8 @@ export type Database = {
       timesheet_vat_percent: { Args: never; Returns: number }
       try_timestamptz: { Args: { _t: string }; Returns: string }
       ts_num: { Args: { _n: number }; Returns: string }
+      ui_translations_get: { Args: { _lang: string }; Returns: Json }
+      ui_translations_version: { Args: { _lang: string }; Returns: string }
       users_share_engagement: {
         Args: { _user_a: string; _user_b: string }
         Returns: boolean
