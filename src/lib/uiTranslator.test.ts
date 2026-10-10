@@ -52,6 +52,22 @@ describe('translateText', () => {
     );
     expect(translateText('line 3: "A" is repeated in the file; something unknown', lines)).toBeNull();
   });
+
+  it('lets a typed placeholder match only a number or a date, so that user text is left alone', () => {
+    const typed = compileDictionary({
+      '{n0} active': '{0} نشط',
+      '{n0} of {n1}': '{0} من {1}',
+      'Due {d0}': 'الاستحقاق {0}',
+      'Edit {0}': 'تعديل {0}',
+    });
+    expect(translateText('11 active', typed)).toBe('11 نشط');
+    expect(translateText('Batch job not active', typed)).toBeNull();
+    expect(translateText('1 of 12', typed)).toBe('1 من 12');
+    expect(translateText('QA child ticket of the attachment test', typed)).toBeNull();
+    expect(translateText('Due Oct 22, 2026', typed)).toBe('الاستحقاق 22 أكتوبر 2026');
+    expect(translateText('Due to a posting error', typed)).toBeNull();
+    expect(translateText('Edit anything', typed)).toBe('تعديل anything');
+  });
 });
 
 describe('translateValue', () => {
