@@ -180,38 +180,18 @@ export function useRespondToProposal() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ proposalId, status, client_notes }: { proposalId: string; status: 'accepted' | 'rejected'; client_notes?: string }) => {
-      // Fetch proposal so we know which ticket + consultant to auto-assign
-      const { data: proposal, error: fetchErr } = await supabase
-        .from('proposals')
-        .select('id, ticket_id, consultant_id')
-        .eq('id', proposalId)
-        .maybeSingle();
-      if (fetchErr) throw fetchErr;
-
+      if (status === 'accepted') {
+        // one server step: accept this bid, assign the consultant and reject the other pending bids
+        const { error: acceptError } = await supabase.rpc('accept_proposal', { _proposal_id: proposalId, _client_notes: client_notes ?? undefined });
+        if (acceptError) throw acceptError;
+        return;
+      }
+      // Rejecting is a plain status update (acceptance is handled by accept_proposal above)
       const { error } = await supabase
         .from('proposals')
         .update({ status: status as any, client_notes } as any)
         .eq('id', proposalId);
       if (error) throw error;
-
-      // Auto-assign consultant to ticket on accept (after client confirmation)
-      if (status === 'accepted' && proposal) {
-        await supabase
-          .from('tickets')
-          .update({
-            consultant_id: proposal.consultant_id,
-            status: 'in_progress' as any,
-          } as any)
-          .eq('id', proposal.ticket_id);
-
-        // Reject other pending bids on the same ticket
-        await supabase
-          .from('proposals')
-          .update({ status: 'rejected' as any } as any)
-          .eq('ticket_id', proposal.ticket_id)
-          .neq('id', proposalId)
-          .eq('status', 'pending' as any);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ticket-proposals'] });
