@@ -32,10 +32,10 @@ export default function Navbar() {
 
   const navItems = [
     { label: t('nav.home'), href: '/' },
-    { label: t('nav.services'), href: '#categories' },
-    { label: t('nav.consultants'), href: '#consultants' },
-    { label: t('nav.pricing'), href: '#pricing' },
-    { label: t('nav.knowledge'), href: '#faq' },
+    { label: t('nav.services'), href: '/#categories' },
+    { label: t('nav.consultants'), href: '/#consultants' },
+    { label: t('nav.pricing'), href: '/#pricing' },
+    { label: t('nav.knowledge'), href: '/#faq' },
   ];
 
   return (

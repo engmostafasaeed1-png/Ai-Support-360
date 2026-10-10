@@ -28,6 +28,8 @@ import ClientLayout from "./components/client/ClientLayout.tsx";
 import AdminLayout from "./components/admin/AdminLayout.tsx";
 import SuperAdminLayout from "./components/superadmin/SuperAdminLayout.tsx";
 import ProtectedRoute from "./components/auth/ProtectedRoute.tsx";
+import PublicLayout from "./components/layout/PublicLayout.tsx";
+import { DemoWizardProvider } from "./components/landing/DemoRequestWizard";
 import ApprovalGate from "./components/client/ApprovalGate.tsx";
 
 // Admin console sections (eagerly loaded since they're small)
@@ -255,6 +257,7 @@ const App = () => (
           <ErrorBoundary>
 <MaintenanceGate>
           <Suspense fallback={<PageLoader />}>
+<DemoWizardProvider>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/join/:sessionId" element={<MeetingHandoffPage />} />
@@ -427,6 +430,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
 </Routes>
+          </DemoWizardProvider>
           </Suspense>
           </MaintenanceGate>
           </ErrorBoundary>
