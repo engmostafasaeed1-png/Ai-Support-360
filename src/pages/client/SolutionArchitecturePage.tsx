@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,10 +14,10 @@ import { toast } from 'sonner';
 import {
   Cpu, Plus, FileText, Server, Database, Globe, Shield, Layers, ArrowRight,
   CheckCircle2, Clock, AlertTriangle, Eye, Download, MessageSquare, Users,
-  CalendarDays, Workflow, Boxes, Network, HardDrive, Lock, BarChart3, Zap,
+  CalendarDays, Workflow, Network, HardDrive, Lock, BarChart3, Zap,
   Target, Search, Filter, Link2, ExternalLink, GitBranch, BookOpen,
   PenTool, Map, MonitorSmartphone, Milestone, ChevronRight, ArrowUpDown,
-  Tag, Hash, Ticket, FileCheck, FilePlus, Activity, TrendingUp
+  Tag, Hash, Ticket, FileCheck, FilePlus, Activity
 } from 'lucide-react';
 import { useClientTickets } from '@/hooks/useClientTickets';
 import BlueprintDocuments from '@/components/architecture/BlueprintDocuments';
