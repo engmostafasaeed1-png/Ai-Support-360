@@ -6,6 +6,9 @@ export type CurrencyCode = typeof SUPPORTED_CURRENCIES[number];
 
 const STORAGE_KEY = 'preferred-currency';
 
+// The Saudi riyal and the UAE dirham are pegged to the dollar and are not in the ECB rates: the official pegs are used.
+const PEGGED_RATES: Record<string, number> = { SAR: 3.75, AED: 3.6725 };
+
 interface CurrencyContextValue {
   preferred: CurrencyCode;
   setPreferred: (c: CurrencyCode) => void;
@@ -20,11 +23,11 @@ const CurrencyContext = createContext<CurrencyContextValue | null>(null);
 
 async function fetchRates(): Promise<{ rates: Record<string, number>; date: string }> {
   // Frankfurter: ECB rates, no API key, CORS-enabled. Base USD.
-  const symbols = SUPPORTED_CURRENCIES.filter(c => c !== 'USD').join(',');
+  const symbols = SUPPORTED_CURRENCIES.filter(c => c !== 'USD' && !(c in PEGGED_RATES)).join(',');
   const res = await fetch(`https://api.frankfurter.dev/v1/latest?base=USD&symbols=${symbols}`);
   if (!res.ok) throw new Error('Failed to load FX rates');
   const json = await res.json();
-  return { rates: { USD: 1, ...json.rates }, date: json.date };
+  return { rates: { USD: 1, ...PEGGED_RATES, ...json.rates }, date: json.date };
 }
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
@@ -47,7 +50,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   });
 
   const value = useMemo<CurrencyContextValue>(() => {
-    const rates = data?.rates ?? null;
+    const rates = data?.rates ?? (isError ? { USD: 1, ...PEGGED_RATES } : null);
     const convert = (amount: number, from: string): number | null => {
       if (!Number.isFinite(amount)) return null;
       const src = (from || 'USD').toUpperCase();
