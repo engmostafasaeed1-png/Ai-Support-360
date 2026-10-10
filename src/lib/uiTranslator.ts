@@ -119,6 +119,11 @@ export function translateText(raw: string, dict: CompiledDictionary, depth = 0):
   if (!text || !LATIN.test(text)) return null;
   const hit = dict.exact.get(text);
   if (hit !== undefined) return hit;
+  // a list of messages joined with "; " (for example the report of a file import): translated when every message is known
+  if (depth < 2 && text.length < 800 && text.includes('; ')) {
+    const parts = text.split('; ').map((part) => translateText(part, dict, depth + 1));
+    if (parts.length > 1 && parts.every((part) => part !== null)) return parts.join('؛ ');
+  }
   for (const pattern of dict.patterns) {
     if (pattern.anchor && !text.includes(pattern.anchor)) continue;
     const match = pattern.re.exec(text);

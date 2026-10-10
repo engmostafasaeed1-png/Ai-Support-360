@@ -5,8 +5,10 @@
 const STORAGE_KEY = 'stale-chunk-reload-at';
 const MIN_GAP_MS = 60_000;
 
+// "reading 'default'": when the reload is started and the failed load is not thrown (see installStaleChunkReload),
+// the page that asked for the file gets undefined instead of the page file.
 const STALE_CHUNK_PATTERN =
-  /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Unable to preload CSS/i;
+  /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Unable to preload CSS|Cannot read properties of undefined \(reading 'default'\)/i;
 
 export function isStaleChunkError(message: string | null | undefined): boolean {
   return STALE_CHUNK_PATTERN.test(message ?? '');
@@ -23,6 +25,15 @@ export function reloadForNewVersion(reload: () => void = () => window.location.r
   }
   reload();
   return true;
+}
+
+/** True when a reload for a new version was started a few seconds ago: the error that follows is only a leftover of the old page. */
+export function reloadJustStarted(): boolean {
+  try {
+    return Date.now() - Number(sessionStorage.getItem(STORAGE_KEY) ?? 0) < 15_000;
+  } catch {
+    return false;
+  }
 }
 
 export function installStaleChunkReload(): void {
