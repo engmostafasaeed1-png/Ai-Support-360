@@ -16,7 +16,7 @@ const toolLabels: Record<string, string> = {
   guacamole: 'Guacamole',
 };
 
-type Group = { clientId: string; clientName: string; tools: string[]; environments: number };
+type Group = { clientId: string; clientName: string; tools: string[]; environments: number; waiting: boolean };
 
 export default function NdaPendingAccessPanel() {
   const qc = useQueryClient();
@@ -38,7 +38,7 @@ export default function NdaPendingAccessPanel() {
 
   const groups = new Map<string, Group>();
   for (const item of pending) {
-    const g = groups.get(item.client_id) ?? { clientId: item.client_id, clientName: item.client_name, tools: [], environments: 0 };
+    const g = groups.get(item.client_id) ?? { clientId: item.client_id, clientName: item.client_name, tools: [], environments: 0, waiting: !!item.waiting_for_client };
     if (item.kind === 'share') g.tools.push(toolLabels[item.detail] || item.detail);
     else g.environments += 1;
     groups.set(item.client_id, g);
@@ -59,11 +59,11 @@ export default function NdaPendingAccessPanel() {
           <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
             <ShieldAlert className="w-4 h-4 text-amber-500" />
           </div>
-          Waiting for your NDA
+          {[...groups.values()].every((g) => g.waiting) ? 'Waiting for the client to sign' : 'Waiting for your NDA'}
           <Badge variant="outline" className="text-[9px] ms-auto">{groups.size}</Badge>
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          You can see the connection details only after you have signed the client&apos;s Non-Disclosure Agreement.
+          You can see the connection details only after the client&apos;s Non-Disclosure Agreement is signed by you and by the client.
         </p>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -80,10 +80,14 @@ export default function NdaPendingAccessPanel() {
                 )}
               </p>
             </div>
-            <Button size="sm" className="h-8 gap-1.5 shrink-0"
-              onClick={() => setModal({ open: true, clientId: g.clientId, clientName: g.clientName })}>
-              <FileSignature className="w-3.5 h-3.5" /> Sign NDA
-            </Button>
+            {g.waiting ? (
+              <Badge variant="outline" className="shrink-0 text-[10px]">You signed: waiting for the client</Badge>
+            ) : (
+              <Button size="sm" className="h-8 gap-1.5 shrink-0"
+                onClick={() => setModal({ open: true, clientId: g.clientId, clientName: g.clientName })}>
+                <FileSignature className="w-3.5 h-3.5" /> Sign NDA
+              </Button>
+            )}
           </div>
         ))}
       </CardContent>

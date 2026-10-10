@@ -8,6 +8,7 @@ import { isInIframe } from '@/components/session/FramedAppNotice';
 import { detectProvider } from '@/components/session/MeetingLinkButton';
 import { hostIsOneOf } from '@/lib/safeUrl';
 import { logProviderEvent } from '@/lib/diagnostics';
+import { sessionRoomUrl } from '@/lib/meetingRoom';
 
 const PROVIDER_LABEL: Record<string, string> = {
   meet: 'Google Meet',
@@ -52,7 +53,7 @@ export default function MeetingHandoffPage() {
       }
     }
     // Fallback: deterministic Jitsi room when only sessionId is provided.
-    if (sessionId) return `https://meet.jit.si/qurtuba-session-${sessionId.slice(0, 8)}`;
+    if (sessionId) return sessionRoomUrl(sessionId);
     return null;
   }, [params, sessionId]);
 

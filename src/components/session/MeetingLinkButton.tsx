@@ -15,6 +15,7 @@ import PreflightTestDialog from './PreflightTestDialog';
 import { logProviderEvent } from '@/lib/diagnostics';
 import ProviderTroubleshootingPanel from './ProviderTroubleshootingPanel';
 import type { TroubleshootReason } from './providerTroubleshooting';
+import { sessionRoomUrl } from '@/lib/meetingRoom';
 
 export type MeetingProvider = 'meet' | 'jitsi' | 'zoom' | 'teams' | 'unknown';
 
@@ -127,10 +128,11 @@ export default function MeetingLinkButton({
 
   // Derive the always-available Jitsi fallback.
   const jitsiFallback = useMemo(() => {
+    // the room name is the whole session id (or a whole random id): nobody can guess it
     const roomSeed = fallbackRoomId || (typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID().slice(0, 8)
-      : Math.random().toString(36).slice(2, 10));
-    return `https://meet.jit.si/qurtuba-session-${roomSeed}`;
+      ? crypto.randomUUID()
+      : `${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`);
+    return sessionRoomUrl(roomSeed);
   }, [fallbackRoomId]);
 
   // Build the alternatives list (dedup by url, exclude the failed one).

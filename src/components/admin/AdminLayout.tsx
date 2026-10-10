@@ -26,7 +26,7 @@ export default function AdminLayout() {
                 <img src={logo.url} alt="AI Support 360" className="w-8 h-8 rounded-lg object-contain" />
                 <span className="font-bold text-sm text-foreground">AI Support 360</span>
               </Link>
-              <HeaderSearchButton placeholder="Search users, tickets..." />
+              <HeaderSearchButton placeholder="Search pages, features..." />
             </div>
             <div className="flex items-center gap-3">
               <NotificationBell basePath="/admin" />
