@@ -1,34 +1,219 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, Zap, Crown, Server, Cpu, HardDrive, MemoryStick } from 'lucide-react';
-import { useVMwarePricingPlans, useVMwareSubscriptions, useSubscribeVMwarePlan } from '@/hooks/useVMwarePricing';
+import { Check, Clock, Cpu, Crown, ExternalLink, Gift, HardDrive, Loader2, MemoryStick, Server, Zap } from 'lucide-react';
+import {
+  useRequestVMwarePlan,
+  useVMwarePricingPlans,
+  useVMwareSubscriptions,
+  type VMwarePricingPlan,
+  type VMwareSubscription,
+} from '@/hooks/useVMwarePricing';
+import { cn } from '@/lib/utils';
 
-const tierConfig: Record<string, { icon: typeof Zap; color: string; badge: string }> = {
-  basic: { icon: Zap, color: 'border-muted', badge: 'bg-muted text-muted-foreground' },
-  pro: { icon: Server, color: 'border-primary', badge: 'bg-primary/10 text-primary' },
-  enterprise: { icon: Crown, color: 'border-amber-500', badge: 'bg-amber-500/10 text-amber-600' },
+type Cycle = 'monthly' | 'hourly';
+
+const TIER_ICON: Record<string, typeof Zap> = {
+  free: Gift,
+  basic: Zap,
+  pro: Server,
+  enterprise: Crown,
+  payg: Clock,
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  requested: 'Requested',
+  active: 'Active',
+  rejected: 'Not accepted',
+  cancelled: 'Cancelled',
+  expired: 'Expired',
+};
+
+const STATUS_CLASS: Record<string, string> = {
+  requested: 'border-info/40 bg-info/10 text-info',
+  active: 'border-success/40 bg-success/10 text-success',
+  rejected: 'border-destructive/40 bg-destructive/10 text-destructive',
+  cancelled: 'border-border bg-muted text-muted-foreground',
+  expired: 'border-border bg-muted text-muted-foreground',
+};
+
+/** 149 -> $149, 0.05 -> $0.05, 0.0005 -> $0.0005 */
+const money = (v: number): string => `$${v.toFixed(4).replace(/\.?0+$/, '')}`;
+const isHttpUrl = (u: string | null): u is string => !!u && /^https?:\/\/\S+$/i.test(u);
+
+interface PlanCardProps {
+  plan: VMwarePricingPlan;
+  cycle: Cycle;
+  sub: VMwareSubscription | undefined;
+  busy: boolean;
+  onRequest: () => void;
+}
+
+function PlanCard({ plan, cycle, sub, busy, onRequest }: PlanCardProps) {
+  const Icon = TIER_ICON[plan.tier] ?? Server;
+  const isFree = plan.tier === 'free';
+  const isPayg = plan.tier === 'payg';
+  const popular = plan.tier === 'pro';
+  const upTo = isFree ? 'Up to ' : '';
+
+  return (
+    <Card className={cn('relative flex flex-col rounded-2xl border-2', popular ? 'border-primary shadow-lg' : 'border-border/50')}>
+      {popular ? (
+        <div className="absolute -top-3 start-1/2 -translate-x-1/2 rtl:translate-x-1/2">
+          <Badge className="bg-primary text-xs text-primary-foreground">Most Popular</Badge>
+        </div>
+      ) : null}
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-2">
+          <Icon aria-hidden="true" className="h-5 w-5 text-primary" />
+          <CardTitle className="text-lg leading-tight">{plan.name}</CardTitle>
+        </div>
+        {plan.description ? <p className="text-xs text-muted-foreground">{plan.description}</p> : null}
+      </CardHeader>
+      <CardContent className="flex flex-1 flex-col gap-4">
+        <div>
+          {isFree ? (
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold text-foreground">Free</span>
+            </div>
+          ) : isPayg ? (
+            <div className="flex items-baseline gap-1">
+              <span className="text-xl font-bold text-foreground">No monthly fee</span>
+            </div>
+          ) : cycle === 'monthly' ? (
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold text-foreground">{money(plan.monthly_rate)}</span>
+              <span className="text-sm text-muted-foreground">/mo</span>
+            </div>
+          ) : (
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold text-foreground">{money(plan.hourly_rate)}</span>
+              <span className="text-sm text-muted-foreground">/hr</span>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-1.5 border-y border-border/50 py-3">
+          {isPayg ? (
+            <>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Cpu aria-hidden="true" className="h-3.5 w-3.5" />
+                <span><span className="font-semibold text-foreground">{money(plan.cpu_price_per_core)}</span> per vCPU per hour</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <MemoryStick aria-hidden="true" className="h-3.5 w-3.5" />
+                <span><span className="font-semibold text-foreground">{money(plan.ram_price_per_gb)}</span> per GB RAM per hour</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <HardDrive aria-hidden="true" className="h-3.5 w-3.5" />
+                <span><span className="font-semibold text-foreground">{money(plan.disk_price_per_gb)}</span> per GB disk per hour</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Cpu aria-hidden="true" className="h-3.5 w-3.5" />
+                <span>{upTo}{plan.included_cpu} vCPU included{!isFree ? ` (+${money(plan.cpu_price_per_core)} per core per hour)` : ''}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <MemoryStick aria-hidden="true" className="h-3.5 w-3.5" />
+                <span>{upTo}{plan.included_ram_gb} GB RAM included{!isFree ? ` (+${money(plan.ram_price_per_gb)} per GB per hour)` : ''}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <HardDrive aria-hidden="true" className="h-3.5 w-3.5" />
+                <span>{upTo}{plan.included_disk_gb} GB disk included{!isFree ? ` (+${money(plan.disk_price_per_gb)} per GB per hour)` : ''}</span>
+              </div>
+            </>
+          )}
+        </div>
+
+        {plan.features.length > 0 ? (
+          <ul className="space-y-1.5">
+            {plan.features.map((f, i) => (
+              <li key={`${f}-${i}`} className="flex items-start gap-2 text-xs">
+                <Check aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
+                <span className="text-foreground">{f}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {plan.provider_name || isHttpUrl(plan.external_url) ? (
+          <div className="rounded-lg border border-border/50 bg-muted/30 p-2.5 text-xs text-muted-foreground">
+            {plan.provider_name ? (
+              <p>
+                Runs on <span className="font-medium text-foreground">{plan.provider_name}</span>
+              </p>
+            ) : null}
+            {isHttpUrl(plan.external_url) ? (
+              <a
+                href={plan.external_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-flex items-center gap-1 text-primary underline-offset-2 hover:underline"
+              >
+                Learn more <ExternalLink aria-hidden="true" className="h-3 w-3" />
+              </a>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="mt-auto space-y-2 pt-1">
+          {sub?.status === 'active' ? (
+            <Button className="w-full" variant="outline" disabled>
+              Current plan
+            </Button>
+          ) : sub?.status === 'requested' ? (
+            <>
+              <Button className="w-full" variant="outline" disabled>
+                Requested
+              </Button>
+              <p className="text-center text-[11px] text-muted-foreground">An administrator will contact you.</p>
+            </>
+          ) : (
+            <Button className="w-full" variant={popular ? 'default' : 'secondary'} disabled={busy} onClick={onRequest}>
+              {busy ? <Loader2 aria-hidden="true" className="me-2 h-4 w-4 animate-spin" /> : null}
+              {isFree ? 'Request free sandbox' : 'Request plan'}
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function VMwarePricingPage() {
-  const { t } = useTranslation();
   const { data: plans, isLoading } = useVMwarePricingPlans();
   const { data: subscriptions } = useVMwareSubscriptions();
-  const subscribe = useSubscribeVMwarePlan();
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'hourly' | 'payg'>('monthly');
+  const request = useRequestVMwarePlan();
+  const [cycle, setCycle] = useState<Cycle>('monthly');
 
-  const activePlanIds = (subscriptions || []).filter(s => s.status === 'active').map(s => s.plan_id);
+  // one open (requested or active) subscription per plan; active wins over requested
+  const openByPlan = useMemo(() => {
+    const m = new Map<string, VMwareSubscription>();
+    (subscriptions ?? []).forEach((s) => {
+      if (s.status !== 'active' && s.status !== 'requested') return;
+      const cur = m.get(s.plan_id);
+      if (!cur || (cur.status === 'requested' && s.status === 'active')) m.set(s.plan_id, s);
+    });
+    return m;
+  }, [subscriptions]);
+
+  const planName = useMemo(() => new Map((plans ?? []).map((p): [string, string] => [p.id, p.name])), [plans]);
+  const paidAndPayg = useMemo(() => (plans ?? []).filter((p) => p.tier !== 'free'), [plans]);
+  const pendingId = request.isPending ? request.variables?.plan_id : undefined;
 
   if (isLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-64" />
-        <div className="grid gap-4">
-          {[1,2,3].map(i => <Skeleton key={i} className="h-80 rounded-2xl" />)}
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-80 rounded-2xl" />
+          ))}
         </div>
       </div>
     );
@@ -37,184 +222,113 @@ export default function VMwarePricingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <Server className="w-6 h-6 text-primary" /> VMware Pricing
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
+          <Server aria-hidden="true" className="h-6 w-6 text-primary" /> VMware Pricing
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Choose the right plan for your infrastructure needs
+        <p className="mt-1 text-sm text-muted-foreground">
+          Choose a plan and send a request. An administrator activates it and contacts you with the access details.
         </p>
       </div>
 
-      <Tabs value={billingCycle} onValueChange={v => setBillingCycle(v as any)}>
-        <TabsList className="w-full max-w-md">
+      <Tabs value={cycle} onValueChange={(v) => setCycle(v as Cycle)}>
+        <TabsList className="w-full max-w-xs">
           <TabsTrigger value="monthly" className="flex-1">Monthly</TabsTrigger>
           <TabsTrigger value="hourly" className="flex-1">Hourly</TabsTrigger>
-          <TabsTrigger value="payg" className="flex-1">Pay as you go</TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {billingCycle === 'payg' && (
-        <Card className="rounded-2xl border-primary/30 bg-primary/5">
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-primary" />
-              <span className="font-semibold text-foreground">Pay as you go</span>
-              <Badge className="bg-emerald-500/10 text-emerald-600 text-[10px]">No commitment</Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              No monthly fee — pay only for the resources you consume. Ideal for dev/test workloads or unpredictable usage patterns.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 py-3 border-y border-border/40">
-              <div className="flex items-center gap-2 text-sm">
-                <Cpu className="w-4 h-4 text-primary" />
-                <div>
-                  <span className="font-semibold text-foreground">$0.05</span>
-                  <span className="text-muted-foreground text-xs"> /vCPU/hr</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <MemoryStick className="w-4 h-4 text-primary" />
-                <div>
-                  <span className="font-semibold text-foreground">$0.01</span>
-                  <span className="text-muted-foreground text-xs"> /GB RAM/hr</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <HardDrive className="w-4 h-4 text-primary" />
-                <div>
-                  <span className="font-semibold text-foreground">$0.0005</span>
-                  <span className="text-muted-foreground text-xs"> /GB Disk/hr</span>
-                </div>
-              </div>
-            </div>
-            <ul className="space-y-1.5 text-xs">
-              <li className="flex items-start gap-2"><Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" /> No minimum spend or lock-in</li>
-              <li className="flex items-start gap-2"><Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" /> Billed per-second, invoiced monthly</li>
-              <li className="flex items-start gap-2"><Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" /> Auto-scale resources up or down</li>
-              <li className="flex items-start gap-2"><Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" /> Real-time usage dashboard</li>
-            </ul>
-            <Button
-              className="w-full"
-              variant="default"
-              disabled={subscribe.isPending}
-              onClick={() => subscribe.mutate({ plan_id: 'payg', billing_cycle: 'payg' })}
-            >
-              Enable Pay as you go
-            </Button>
-          </CardContent>
-        </Card>
+      {(plans ?? []).length === 0 ? (
+        <p className="rounded-2xl border border-border/50 p-8 text-center text-sm text-muted-foreground">
+          No plans are available right now. Please check again later.
+        </p>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {(plans ?? []).map((plan) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              cycle={cycle}
+              sub={openByPlan.get(plan.id)}
+              busy={pendingId === plan.id}
+              onRequest={() => request.mutate({ plan_id: plan.id, billing_cycle: cycle })}
+            />
+          ))}
+        </div>
       )}
 
-      {billingCycle !== 'payg' && <div className="grid gap-4 md:grid-cols-3">
-        {(plans || []).map(plan => {
-          const config = tierConfig[plan.tier] || tierConfig.basic;
-          const TierIcon = config.icon;
-          const isActive = activePlanIds.includes(plan.id);
-          const features = Array.isArray(plan.features) ? plan.features : [];
-
-          return (
-            <Card key={plan.id} className={`rounded-2xl border-2 ${plan.tier === 'pro' ? 'border-primary shadow-lg relative' : 'border-border/50'}`}>
-              {plan.tier === 'pro' && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-primary text-primary-foreground text-xs">Most Popular</Badge>
-                </div>
-              )}
-              <CardHeader className="pb-2">
-                <div className="flex items-center gap-2">
-                  <TierIcon className="w-5 h-5 text-primary" />
-                  <CardTitle className="text-lg">{plan.name}</CardTitle>
-                </div>
-                <p className="text-xs text-muted-foreground">{plan.description}</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  {billingCycle === 'monthly' ? (
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-foreground">${plan.monthly_rate}</span>
-                      <span className="text-sm text-muted-foreground">/mo</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-foreground">${plan.hourly_rate}</span>
-                      <span className="text-sm text-muted-foreground">/hr</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Resource pricing */}
-                <div className="space-y-1.5 py-3 border-y border-border/50">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Cpu className="w-3.5 h-3.5" />
-                    <span>{plan.included_cpu} vCPU incl. (+${plan.cpu_price_per_core}/core/hr)</span>
+      {(subscriptions ?? []).length > 0 ? (
+        <Card className="rounded-2xl border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base">Your requests and plans</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y divide-border/50">
+              {(subscriptions ?? []).map((s) => (
+                <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">{planName.get(s.plan_id) ?? 'VMware plan'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {s.billing_cycle === 'payg' ? 'Pay as you go' : s.billing_cycle === 'hourly' ? 'Hourly' : 'Monthly'}
+                      {' · '}
+                      {s.status === 'requested' ? 'Asked on ' : s.status === 'active' ? 'Active since ' : 'Updated '}
+                      {new Date(s.status === 'active' ? s.started_at : s.status === 'requested' ? s.created_at : s.updated_at).toLocaleDateString()}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <MemoryStick className="w-3.5 h-3.5" />
-                    <span>{plan.included_ram_gb} GB RAM incl. (+${plan.ram_price_per_gb}/GB/hr)</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <HardDrive className="w-3.5 h-3.5" />
-                    <span>{plan.included_disk_gb} GB Disk incl. (+${plan.disk_price_per_gb}/GB/hr)</span>
-                  </div>
-                </div>
+                  <Badge variant="outline" className={cn('text-[11px]', STATUS_CLASS[s.status] ?? STATUS_CLASS.cancelled)}>
+                    {STATUS_LABEL[s.status] ?? s.status}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
 
-                {/* Features */}
-                <ul className="space-y-1.5">
-                  {features.map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs">
-                      <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                      <span className="text-foreground">{f}</span>
-                    </li>
-                  ))}
-                </ul>
+      {paidAndPayg.length > 0 ? (
+        <Card className="rounded-2xl border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base">Extra resources</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/50">
+                    <th className="py-2 text-start font-medium text-muted-foreground">Resource</th>
+                    {paidAndPayg.map((p) => (
+                      <th key={p.id} className="py-2 text-center font-medium text-muted-foreground">{p.name}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-border/30">
+                    <td className="py-2">CPU (per core per hour)</td>
+                    {paidAndPayg.map((p) => (
+                      <td key={p.id} className="py-2 text-center">{money(p.cpu_price_per_core)}</td>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-border/30">
+                    <td className="py-2">RAM (per GB per hour)</td>
+                    {paidAndPayg.map((p) => (
+                      <td key={p.id} className="py-2 text-center">{money(p.ram_price_per_gb)}</td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="py-2">Disk (per GB per hour)</td>
+                    {paidAndPayg.map((p) => (
+                      <td key={p.id} className="py-2 text-center">{money(p.disk_price_per_gb)}</td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
-                <Button
-                  className="w-full"
-                  variant={isActive ? 'outline' : plan.tier === 'pro' ? 'default' : 'secondary'}
-                  disabled={isActive || subscribe.isPending}
-                  onClick={() => subscribe.mutate({ plan_id: plan.id, billing_cycle: billingCycle })}
-                >
-                  {isActive ? 'Current Plan' : 'Subscribe'}
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>}
-
-      {/* Resource pricing table */}
-      <Card className="rounded-2xl border-border/50">
-        <CardHeader>
-          <CardTitle className="text-base">Resource-Based Pricing</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border/50">
-                  <th className="text-left py-2 text-muted-foreground font-medium">Resource</th>
-                  {(plans || []).map(p => (
-                    <th key={p.id} className="text-center py-2 text-muted-foreground font-medium">{p.name}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-border/30">
-                  <td className="py-2">Extra CPU (per core/hr)</td>
-                  {(plans || []).map(p => <td key={p.id} className="text-center py-2">${p.cpu_price_per_core}</td>)}
-                </tr>
-                <tr className="border-b border-border/30">
-                  <td className="py-2">Extra RAM (per GB/hr)</td>
-                  {(plans || []).map(p => <td key={p.id} className="text-center py-2">${p.ram_price_per_gb}</td>)}
-                </tr>
-                <tr>
-                  <td className="py-2">Extra Disk (per GB/hr)</td>
-                  {(plans || []).map(p => <td key={p.id} className="text-center py-2">${p.disk_price_per_gb}</td>)}
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      <p className="text-xs text-muted-foreground">
+        Prices are in US dollars. The free sandbox runs on Oracle Cloud's Always Free tier: Oracle sets its limits and can change them, and you need your own Oracle Cloud account.
+      </p>
     </div>
   );
 }

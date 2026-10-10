@@ -147,6 +147,7 @@ const AdminVMwareSettingsPage = React.lazy(() => import("./pages/admin/VMwareSet
 const AdminErrorsPage = React.lazy(() => import("./pages/admin/AdminErrorsPage.tsx"));
 const AdminPaymentsPage = React.lazy(() => import("./pages/admin/PaymentsAdminPage.tsx"));
 const AdminKnowledgeReviewPage = React.lazy(() => import("./pages/admin/KnowledgeReviewPage.tsx"));
+const VMwarePricingSection = React.lazy(() => import("./components/admin/console/sections/VMwarePricingSection.tsx"));
 const AdminClientApprovalsPage = React.lazy(() => import("./pages/admin/ClientApprovalsPage.tsx"));
 const AdminDemoRequestsPage = React.lazy(() => import("./pages/admin/DemoRequestsPage.tsx"));
 
@@ -376,6 +377,7 @@ const App = () => (
                 <Route path="maintenance" element={<MaintenanceSection />} />
                 <Route path="analytics" element={<AnalyticsConsoleSection />} />
                 <Route path="vmware" element={<VMwareSettingsConsoleSection />} />
+                <Route path="vmware-pricing" element={<VMwarePricingSection />} />
                 <Route path="environment-logs" element={<EnvironmentLogsConsoleSection />} />
                 <Route path="meeting-events" element={<MeetingEventsConsoleSection />} />
                 <Route path="interview-training" element={<InterviewTrainingConsoleSection />} />

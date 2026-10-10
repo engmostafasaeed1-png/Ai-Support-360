@@ -5,7 +5,7 @@ import {
   Lock, Key, Eye, Activity, Bell, Globe, Palette, HardDrive,
   Mail, Server, AlertTriangle, FileText, Kanban, Handshake,
   BookOpen, Settings, Monitor, Layers, ScrollText, Video,
-  GraduationCap, CalendarClock
+  GraduationCap, CalendarClock, DollarSign
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -23,6 +23,7 @@ export const adminSections: AdminSection[] = [
   { id: 'roles', label: 'Roles & Permissions', icon: Shield, group: 'Platform' },
   { id: 'subscriptions', label: 'Subscriptions & Plans', icon: CreditCard, group: 'Platform' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Platform' },
+  { id: 'vmware-pricing', label: 'VMware Pricing', icon: DollarSign, group: 'Platform' },
 
   // Operations
   { id: 'tickets', label: 'Ticket Management', icon: Kanban, group: 'Operations' },
