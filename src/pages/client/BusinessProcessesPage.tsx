@@ -364,12 +364,20 @@ function AddProcessDialog({
 
   const newLevel = parentInfo ? parentInfo.level + 1 : 1;
 
+  // names (lower case) of the processes that exist already under the same parent
+  const existingNames = new Set(
+    allProcesses
+      .filter((p: any) => (p.parent_id ?? null) === (parentInfo?.id ?? null))
+      .map((p: any) => String(p.name).trim().toLowerCase()),
+  );
+
   const reset = () => {
     setName(''); setDescription(''); setCategory('General'); setSapModule(''); setProcessOwner(''); setTags(''); setFile(null); setBulkText('');
   };
 
   const handleAddManual = async () => {
     if (!name.trim()) { toast.error('Name is required'); return; }
+    if (existingNames.has(name.trim().toLowerCase())) { toast.error('A process with this name already exists here'); return; }
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -403,7 +411,8 @@ function AddProcessDialog({
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      const names = bulkText.split('\n').map(n => n.trim()).filter(Boolean);
+      const { names, skipped: repeated } = filterNewNames(bulkText.split('\n'), existingNames);
+      if (names.length === 0) { toast.error(repeated.length > 0 ? 'These processes already exist here' : 'Enter process names'); return; }
       const rows = names.map(n => ({
         client_id: user.id,
         name: n,
@@ -413,7 +422,8 @@ function AddProcessDialog({
       }));
       const { error } = await supabase.from('business_processes').insert(rows as any);
       if (error) throw error;
-      toast.success(`${names.length} processes added`);
+      if (repeated.length > 0) toast.warning(`${names.length} added, ${repeated.length} skipped because they exist already: ${repeated.slice(0, 5).join(', ')}`);
+      else toast.success(`${names.length} processes added`);
       queryClient.invalidateQueries({ queryKey: ['business-processes'] });
       onOpenChange(false);
       reset();
@@ -431,32 +441,29 @@ function AddProcessDialog({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       const text = await file.text();
-      const lines = text.split('\n').filter(l => l.trim());
-      if (lines.length < 2) { toast.error('File must have header + at least 1 row'); return; }
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-      const nameIdx = headers.findIndex(h => h.includes('name') || h.includes('process'));
-      const descIdx = headers.findIndex(h => h.includes('desc'));
-      const catIdx = headers.findIndex(h => h.includes('categ'));
-      const modIdx = headers.findIndex(h => h.includes('module') || h.includes('sap'));
-      const ownerIdx = headers.findIndex(h => h.includes('owner'));
-      if (nameIdx === -1) { toast.error('File must have a "name" column'); setUploading(false); return; }
-      const rows = lines.slice(1).map(line => {
-        const cols = line.split(',').map(c => c.trim());
-        return {
-          client_id: user.id,
-          name: cols[nameIdx] || 'Unnamed',
-          description: descIdx >= 0 ? cols[descIdx] || null : null,
-          category: catIdx >= 0 ? cols[catIdx] || 'General' : 'General',
-          sap_module: modIdx >= 0 ? cols[modIdx] || null : null,
-          process_owner: ownerIdx >= 0 ? cols[ownerIdx] || null : null,
-          parent_id: parentInfo?.id || null,
-          level: newLevel,
-        };
-      }).filter(r => r.name && r.name !== 'Unnamed');
-      if (rows.length === 0) { toast.error('No valid rows found'); setUploading(false); return; }
+      const result = buildProcessRows(text, { categories: CATEGORIES, modules: SAP_MODULES, existingNames });
+      if (result.fatal) { toast.error(result.fatal); return; }
+      if (result.rows.length === 0) {
+        toast.error('Nothing was imported', { description: describeSkipped(result.skipped) || 'The file has no usable rows.', duration: 12000 });
+        return;
+      }
+      const rows = result.rows.map((r) => ({
+        client_id: user.id,
+        name: r.name,
+        description: r.description,
+        category: r.category,
+        sap_module: r.sap_module,
+        process_owner: r.process_owner,
+        parent_id: parentInfo?.id || null,
+        level: newLevel,
+      }));
       const { error } = await supabase.from('business_processes').insert(rows as any);
       if (error) throw error;
-      toast.success(`${rows.length} processes imported`);
+      if (result.skipped.length > 0) {
+        toast.warning(`${result.rows.length} imported, ${result.skipped.length} skipped`, { description: describeSkipped(result.skipped), duration: 15000 });
+      } else {
+        toast.success(`${result.rows.length} processes imported`);
+      }
       queryClient.invalidateQueries({ queryKey: ['business-processes'] });
       onOpenChange(false);
       reset();
@@ -555,7 +562,7 @@ function AddProcessDialog({
           </TabsContent>
 
           <TabsContent value="upload" className="space-y-3 mt-3">
-            <p className="text-sm text-muted-foreground">Upload a CSV file with columns: <strong>name</strong>, description, category, sap_module, owner</p>
+            <p className="text-sm text-muted-foreground">Upload a CSV file with columns: <strong>name</strong>, description, category, sap_module, owner. The category and the SAP module must be from the lists on this page; a row that does not fit, or that exists already, is skipped and listed after the import.</p>
             <Input type="file" accept=".csv,.txt" onChange={e => setFile(e.target.files?.[0] || null)} />
             {file && <p className="text-xs text-muted-foreground">Selected: {file.name}</p>}
             <DialogFooter>
