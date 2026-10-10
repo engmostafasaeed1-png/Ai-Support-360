@@ -7258,6 +7258,13 @@ export type Database = {
         }
         Returns: string
       }
+      assert_demo_slot_not_past: {
+        Args: { _date: string; _slot: string; _timezone: string }
+        Returns: undefined
+      }
+      audit_changed: { Args: { _new: Json; _old: Json }; Returns: Json }
+      audit_is_sensitive_key: { Args: { _k: string }; Returns: boolean }
+      audit_scrub_row: { Args: { _row: Json }; Returns: Json }
       bp_matches_ticket_client: {
         Args: { _bp_id: string; _ticket_id: string }
         Returns: boolean
@@ -7427,6 +7434,7 @@ export type Database = {
           vcenter_username: string
         }[]
       }
+      grant_referral_rewards: { Args: { _user_id: string }; Returns: undefined }
       has_active_nda: {
         Args: { _client_id: string; _consultant_id: string }
         Returns: boolean
