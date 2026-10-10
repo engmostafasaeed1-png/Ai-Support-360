@@ -26,10 +26,11 @@ const QUICK_PROMPTS = [
 ];
 
 function parseTicketSummary(content: string) {
-  const titleMatch = content.match(/\*\*Title\*\*:\s*(.+)/i);
-  const moduleMatch = content.match(/\*\*SAP Module\*\*:\s*(.+)/i);
-  const urgencyMatch = content.match(/\*\*Urgency\*\*:\s*(\w+)/i);
-  const descMatch = content.match(/\*\*Description\*\*:\s*(.+)/i);
+  // a label may be written as **Title**: or as **Title:**
+  const titleMatch = content.match(/\*\*Title(?:\*\*:|:\*\*)\s*(.+)/i);
+  const moduleMatch = content.match(/\*\*SAP Module(?:\*\*:|:\*\*)\s*(.+)/i);
+  const urgencyMatch = content.match(/\*\*Urgency(?:\*\*:|:\*\*)\s*(\w+)/i);
+  const descMatch = content.match(/\*\*Description(?:\*\*:|:\*\*)\s*(.+)/i);
   if (!titleMatch && !moduleMatch) return null;
   return {
     title: titleMatch?.[1]?.trim() || '',
@@ -423,7 +424,7 @@ export default function AIChatbot() {
                 ))}
 
                 {/* Continue / More Detail buttons */}
-                {!isLoading && messages.length > 0 && messages[messages.length - 1]?.role === 'assistant' && (
+                {!isLoading && messages.length > 0 && messages[messages.length - 1]?.role === 'assistant' && !parseTicketSummary(messages[messages.length - 1].content) && (
                   <div className="flex gap-2 ps-9">
                     <button
                       onClick={() => { resetChatIdle(); sendMessage("Continue", selectedModel); }}

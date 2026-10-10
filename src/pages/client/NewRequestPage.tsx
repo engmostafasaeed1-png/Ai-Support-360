@@ -12,7 +12,7 @@ import { issueTypes } from '@/data/clientMockData';
 import SapAreaPicker from '@/components/ticket/SapAreaPicker';
 import SolutionSuggestions from '@/components/ticket/SolutionSuggestions';
 import SapNotesField from '@/components/ticket/SapNotesField';
-import { MAX_SAP_AREAS, MAX_OTHER_AREA_LENGTH, MAX_AREA_DETAILS_LENGTH, areasSummary, areaLabel, isOtherArea } from '@/lib/sapAreas';
+import { MAX_SAP_AREAS, MAX_OTHER_AREA_LENGTH, MAX_AREA_DETAILS_LENGTH, OTHER_AREA, areasSummary, areaLabel, isOtherArea, resolveArea } from '@/lib/sapAreas';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { checkAttachments, ATTACHMENT_HINT } from '@/lib/attachments';
@@ -190,9 +190,16 @@ export default function NewRequestPage() {
     const description = searchParams.get('description');
     const urgency = searchParams.get('urgency');
     if (module || title || description || urgency) {
+      // the AI chat names a module in its own way: use the area of the master list, or "Other" with the text
+      const area = module ? resolveArea(module) : null;
       setForm(prev => ({
         ...prev,
-        ...(module && { sap_module: module, sap_modules: [module] }),
+        ...(module && area && { sap_module: area, sap_modules: [area] }),
+        ...(module && !area && {
+          sap_module: areasSummary([OTHER_AREA], module.slice(0, MAX_OTHER_AREA_LENGTH)),
+          sap_modules: [OTHER_AREA],
+          sap_module_other: module.slice(0, MAX_OTHER_AREA_LENGTH),
+        }),
         ...(title && { title }),
         ...(description && { description }),
         ...(urgency && { urgency }),

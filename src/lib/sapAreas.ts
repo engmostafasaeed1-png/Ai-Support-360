@@ -275,6 +275,34 @@ function tidy(name: string): string {
   return name.replace(/\s+/g, ' ').trim();
 }
 
+/** The usual short names that people (and the AI chat) use for an area of the list. */
+const AREA_ALIASES: Record<string, string> = {
+  mm: 'SAP MM', sd: 'SAP SD', pp: 'SAP PP', qm: 'SAP QM', pm: 'SAP PM/EAM', ps: 'SAP PS', ewm: 'SAP EWM', wm: 'SAP WM', tm: 'SAP TM',
+  fi: 'SAP FI/CO', co: 'SAP FI/CO', fico: 'SAP FI/CO', 'fi/co': 'SAP FI/CO',
+  basis: 'SAP Basis', abap: 'ABAP Development', btp: 'SAP BTP/CPI', cpi: 'SAP BTP/CPI', fiori: 'SAP Fiori/UX',
+  hcm: 'SAP HCM (on-premise)', hr: 'SAP HCM (on-premise)', successfactors: 'SuccessFactors',
+  's/4hana': 'SAP S/4HANA', s4hana: 'SAP S/4HANA', 's4 hana': 'SAP S/4HANA',
+  grc: 'SAP Security/GRC', ariba: 'SAP Ariba', crm: 'SAP CRM (on-premise)',
+  bw: 'SAP BW (classic and BW on HANA)', 'bw/4hana': 'SAP BW/4HANA',
+};
+
+/**
+ * The area of the master list that a free text means ("MM", "SAP MM", "sap fi/co"), or null when there is none.
+ * The AI chat and old links name a module in their own way; the request form needs the names of the list.
+ */
+export function resolveArea(text: string): string | null {
+  const clean = tidy(text);
+  if (!clean) return null;
+  const lower = clean.toLowerCase();
+  const exact = ALL_SAP_AREAS.find(x => x.name.toLowerCase() === lower);
+  if (exact) return exact.name;
+  const withoutPrefix = lower.replace(/^sap\s+/, '').replace(/\s+module$/, '');
+  const alias = AREA_ALIASES[withoutPrefix];
+  if (alias) return alias;
+  const prefixed = ALL_SAP_AREAS.find(x => x.name.toLowerCase() === `sap ${withoutPrefix}`);
+  return prefixed ? prefixed.name : null;
+}
+
 /** Same cleaning as the database: trimmed, no blanks, no duplicates (any capitals), order kept. */
 export function cleanAreaList(list: readonly string[]): string[] {
   const out: string[] = [];
