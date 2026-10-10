@@ -7582,6 +7582,7 @@ export type Database = {
           kind: string
           ref_id: string
           since: string
+          waiting_for_client: boolean
         }[]
       }
       normalize_credly_username: { Args: { _v: string }; Returns: string }
