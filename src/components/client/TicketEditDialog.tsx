@@ -9,6 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, Upload, X, FileText, Paperclip } from 'lucide-react';
+import { checkAttachments, ATTACHMENT_HINT } from '@/lib/attachments';
+import { safeFileName } from '@/lib/storagePath';
 import type { TicketDetail } from '@/hooks/useTicketDetail';
 import SapAreaPicker from '@/components/ticket/SapAreaPicker';
 import SapNotesField from '@/components/ticket/SapNotesField';
@@ -56,9 +58,16 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
   const [areaErrors, setAreaErrors] = useState<{ areas?: string; other?: string; details?: string }>({});
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [resolution, setResolution] = useState<string>(((ticket as any).resolution_notes as string | null) || '');
+  // moving the ticket to resolved or closed needs a short summary of how it was resolved
+  const finishing = (form.status === 'resolved' || form.status === 'closed') && ticket.status !== 'resolved' && ticket.status !== 'closed';
 
   const handleSave = async () => {
     if (!form.title.trim()) { toast.error('Title is required'); return; }
+    if (finishing && resolution.trim().length < 10) {
+      toast.error('Please describe how the issue was resolved (at least 10 characters).');
+      return;
+    }
     const cleanAreas = cleanAreaList(areas);
     const errs: { areas?: string; other?: string; details?: string } = {};
     if (cleanAreas.length === 0) errs.areas = 'Please choose at least one SAP module or area';
@@ -89,8 +98,8 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
       if (notesTried.join('|') !== cleanNoteList(ticket.sap_notes_tried).join('|')) {
         updates.sap_notes_tried = notesTried;
       }
-      if (form.status === 'resolved' && ticket.status !== 'resolved') {
-        updates.resolved_at = new Date().toISOString();
+      if (finishing) {
+        updates.resolution_notes = resolution.trim();
       }
       const { error } = await supabase
         .from('tickets')
@@ -113,8 +122,9 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
               .limit(1);
             const nextVersion = (existing && existing.length > 0) ? (existing[0] as any).version + 1 : 1;
 
-            const storagePath = `${ticket.id}/${session.user.id}/${Date.now()}_${file.name}`;
-            await supabase.storage.from('ticket-documents').upload(storagePath, file);
+            const storagePath = `${ticket.id}/${session.user.id}/${Date.now()}_${safeFileName(file.name)}`;
+            const { error: uploadError } = await supabase.storage.from('ticket-documents').upload(storagePath, file);
+            if (uploadError) { toast.error(`${file.name} could not be uploaded: ${uploadError.message}`); continue; }
             await supabase.from('ticket_documents').insert({
               ticket_id: ticket.id,
               uploaded_by: session.user.id,
@@ -220,6 +230,19 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
             </div>
           </div>
 
+          {finishing && (
+            <div className="space-y-2">
+              <Label>How was it resolved? *</Label>
+              <Textarea
+                value={resolution}
+                onChange={e => setResolution(e.target.value)}
+                rows={3}
+                maxLength={10000}
+                placeholder="Describe the fix or the answer in a few sentences. It is kept with the ticket."
+              />
+            </div>
+          )}
+
           <SapNotesField value={notesTried} onChange={setNotesTried} idPrefix="edit-ticket-notes" />
 
           {/* Document Upload */}
@@ -235,8 +258,8 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
                 className="hidden"
                 onChange={(e) => {
                   const files = Array.from(e.target.files || []);
-                  const valid = files.filter(f => f.size <= 20 * 1024 * 1024);
-                  if (valid.length < files.length) toast.error('Some files exceed 20MB limit');
+                  const { accepted: valid, problems } = checkAttachments(files);
+                  if (problems.length > 0) toast.error(problems.join(' '));
                   setNewFiles(prev => [...prev, ...valid]);
                   if (fileInputRef.current) fileInputRef.current.value = '';
                 }}
@@ -251,7 +274,7 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
                 >
                   <Upload className="w-3.5 h-3.5" /> Add Files
                 </Button>
-                <span className="text-[11px] text-muted-foreground">Max 20MB per file</span>
+                <span className="text-[11px] text-muted-foreground">{ATTACHMENT_HINT}</span>
               </div>
               {newFiles.length > 0 && (
                 <div className="space-y-1.5 mt-2">
