@@ -15,6 +15,7 @@ import MaintenanceBanner from "./components/MaintenanceBanner.tsx";
 import MaintenanceGate from "./components/MaintenanceGate.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
 import RouteSeo from "./components/RouteSeo";
+import UiTranslator from "./components/UiTranslator";
 import { HelmetProvider } from "react-helmet-async";
 import Watermark from "./components/Watermark.tsx";
 import WhatsAppButton from "./components/WhatsAppButton.tsx";
@@ -244,6 +245,7 @@ const App = () => (
         <CurrencyProvider>
         <TenantProvider>
           <RTLSync />
+          <UiTranslator />
           <RealtimeStatusSync />
           <a href="#main-content" className="skip-to-main">Skip to main content</a>
           <ScrollToTop />
