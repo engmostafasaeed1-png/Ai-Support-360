@@ -274,6 +274,13 @@
       "when": 1791647249337,
       "tag": "0038_m41_guard_business_process",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791651757088,
+      "tag": "0039_m43_ui_translations",
+      "breakpoints": true
     }
   ]
 }
