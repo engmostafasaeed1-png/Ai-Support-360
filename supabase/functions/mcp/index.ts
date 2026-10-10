@@ -56,7 +56,7 @@ function supabaseForUser(ctx) {
 }
 
 // src/lib/mcp/tools/list-tickets.ts
-const list_tickets_default = defineTool({
+var list_tickets_default = defineTool({
   name: "list_my_tickets",
   title: "List my tickets",
   description: "List the SAP support tickets you can see, newest first.",
@@ -87,7 +87,7 @@ const list_tickets_default = defineTool({
 // src/lib/mcp/tools/get-ticket.ts
 import { defineTool as defineTool2, ToolError } from "npm:@lovable.dev/mcp-js@3.0.4";
 import { z as z2 } from "npm:zod@^4.6.5";
-const get_ticket_default = defineTool2({
+var get_ticket_default = defineTool2({
   name: "get_ticket",
   title: "Get ticket",
   description: "Get the details of one support ticket by its ID.",
@@ -118,7 +118,7 @@ const get_ticket_default = defineTool2({
 // src/lib/mcp/tools/create-ticket.ts
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@3.0.4";
 import { z as z3 } from "npm:zod@^4.6.5";
-const create_ticket_default = defineTool3({
+var create_ticket_default = defineTool3({
   name: "create_ticket",
   title: "Create ticket",
   description: "Open a new SAP support ticket for the signed-in client.",
@@ -138,8 +138,8 @@ const create_ticket_default = defineTool3({
 });
 
 // src/lib/mcp/index.ts
-const projectRef = "ozzgsfsnlejfuexikwrm";
-const mcp_default = defineMcp({
+var projectRef = "ozzgsfsnlejfuexikwrm";
+var mcp_default = defineMcp({
   name: "ai-sap-support-now",
   title: "AI Support 360",
   version: "0.1.0",
