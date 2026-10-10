@@ -1,6 +1,9 @@
 /**
  * Sends an error report to the `log-error` edge function so admins are
  * notified and can take action. Fire-and-forget; never throws.
+ *
+ * Reports nobody can act on (editor preview, search-engine crawlers, browser / library noise) are dropped here and
+ * again in the edge function (supabase/functions/_shared/errorNoise.ts): keep both lists in step.
  */
 const ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/log-error`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -17,14 +20,38 @@ interface ReportInput {
   context?: Record<string, unknown>;
 }
 
-function shouldSkip(message: string): boolean {
-  // Avoid noise from extension/CSP/network we can't act on
-  return (
-    /ResizeObserver loop/i.test(message) ||
-    /Non-Error promise rejection captured/i.test(message) ||
-    /Failed to fetch.*frankfurter/i.test(message) ||
-    /Loading chunk \d+ failed/i.test(message) === false && false
-  );
+// Developer machines, the Lovable editor preview and its hot-reload test browser report edits that are not finished yet, not problems of the live site.
+const IGNORED_HOSTS =
+  /^(localhost|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|\[::1\]|[a-z0-9-]+\.lovableproject\.com|id-preview--[a-z0-9-]+\.lovable\.app)$/i;
+
+// Search-engine, social-preview and monitoring robots, and headless test browsers.
+const CRAWLER_AGENTS =
+  /googlebot|googleother|google-inspectiontool|storebot-google|adsbot-google|bingbot|bingpreview|yandex(?:bot|images)?|baiduspider|duckduckbot|slurp|facebookexternalhit|facebot|meta-webindexer|meta-externalagent|twitterbot|linkedinbot|slackbot|applebot|petalbot|semrushbot|ahrefsbot|mj12bot|dotbot|bytespider|gptbot|claudebot|ccbot|headlesschrome|lighthouse|pagespeed|gtmetrix|pingdom|uptimerobot|ia_archiver|crawler|spider/i;
+
+// Browser and library noise.
+// The two "Lock" messages come from the sign-in library when two requests (two tabs, a tab in the background) ask for its browser lock at the same moment; it recovers by itself.
+// "Script error." is a cross-origin script (browser extension, antivirus) without any detail.
+const IGNORED_MESSAGES: RegExp[] = [
+  /ResizeObserver loop/i,
+  /Non-Error promise rejection captured/i,
+  /Failed to fetch.*frankfurter/i,
+  /^Script error\.?$/i,
+  /Lock broken by another request with the 'steal' option/i,
+  /was released because another request stole it/i,
+  // Content-security-policy reports about the editor's hot-reload socket, browser extensions and antivirus scripts.
+  /^\[diag:csp\].*(?:wss?:\/\/localhost|(?:chrome|moz|safari|safari-web|ms-browser)-extension:|kaspersky-labs\.com)/i,
+];
+
+export function isIgnoredHost(hostname: string): boolean {
+  return IGNORED_HOSTS.test(hostname);
+}
+
+export function isCrawlerUserAgent(userAgent: string): boolean {
+  return CRAWLER_AGENTS.test(userAgent);
+}
+
+export function isIgnoredMessage(message: string): boolean {
+  return IGNORED_MESSAGES.some((rx) => rx.test(message));
 }
 
 /** Removes secrets / personal data from free text before it leaves the browser. */
@@ -45,7 +72,9 @@ function safePath(pathname: string): string {
 export function reportError(input: ReportInput): void {
   try {
     if (!input?.message) return;
-    if (shouldSkip(input.message)) return;
+    if (typeof window !== 'undefined' && isIgnoredHost(window.location.hostname)) return;
+    if (typeof navigator !== 'undefined' && isCrawlerUserAgent(navigator.userAgent)) return;
+    if (isIgnoredMessage(input.message)) return;
 
     const key = `${input.message}::${(input.stack || '').slice(0, 120)}`;
     const now = Date.now();
@@ -97,6 +126,16 @@ export function reportError(input: ReportInput): void {
   }
 }
 
+/** The text of a rejected promise: an Error, a string, or an object with a message (Supabase errors, DOMException). */
+function reasonToMessage(reason: unknown): string {
+  if (reason instanceof Error) return reason.message;
+  if (typeof reason === 'string') return reason;
+  if (reason && typeof reason === 'object' && typeof (reason as { message?: unknown }).message === 'string') {
+    return (reason as { message: string }).message;
+  }
+  return 'Unhandled promise rejection';
+}
+
 let installed = false;
 export function installGlobalErrorReporting(): void {
   if (installed || typeof window === 'undefined') return;
@@ -119,14 +158,11 @@ export function installGlobalErrorReporting(): void {
 
   window.addEventListener('unhandledrejection', (event) => {
     const reason = event.reason;
-    const message =
-      reason instanceof Error ? reason.message : typeof reason === 'string' ? reason : 'Unhandled promise rejection';
-    const stack = reason instanceof Error ? reason.stack : undefined;
     reportError({
       level: 'error',
       source: 'unhandledrejection',
-      message,
-      stack,
+      message: reasonToMessage(reason),
+      stack: reason instanceof Error ? reason.stack : undefined,
     });
   });
 }
