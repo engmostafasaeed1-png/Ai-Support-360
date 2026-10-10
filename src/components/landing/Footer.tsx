@@ -1,31 +1,37 @@
 import { useTranslation } from 'react-i18next';
 import logo from '@/assets/brand/horizontal.webp.asset.json';
+import { cn } from '@/lib/utils';
 import { useDemoWizard } from './DemoRequestWizard';
 
-export default function Footer() {
+type FooterLink = { label: string; href: string; onClick?: () => void };
+
+/**
+ * The site footer with the company details and the policy links.
+ * `compact` is the shorter version at the end of the client, consultant and admin pages.
+ * Links to sections of the landing page start with "/" so they also work from any other page.
+ */
+export default function Footer({ compact = false }: { compact?: boolean }) {
   const { t } = useTranslation();
   const demoWizard = useDemoWizard();
 
-  type FooterLink = { label: string; href: string; onClick?: () => void };
-
   const links: Record<string, FooterLink[]> = {
     platform: [
-      { label: t('nav.services'), href: '#categories' },
+      { label: t('nav.services'), href: '/#categories' },
       { label: t('categories.s4hana'), href: '/services/s4hana-support' },
       { label: t('categories.btp'), href: '/services/btp-support' },
-      { label: t('nav.consultants'), href: '#consultants' },
+      { label: t('nav.consultants'), href: '/#consultants' },
       { label: t('nav.pricing'), href: '/pricing' },
-      { label: t('nav.knowledge'), href: '#faq' },
+      { label: t('nav.knowledge'), href: '/#faq' },
     ],
     company: [
-      { label: t('footer.about'), href: '#about' },
-      { label: t('footer.careers'), href: '#contact' },
-      { label: t('footer.blog'), href: '#faq' },
+      { label: t('footer.about'), href: '/#about' },
+      { label: t('footer.careers'), href: '/#contact' },
+      { label: t('footer.blog'), href: '/#faq' },
     ],
     support: [
       { label: 'Request a demo', href: '#', onClick: () => demoWizard.open(undefined, { source: 'footer' }) },
-      { label: t('footer.help'), href: '#how-it-works' },
-      { label: t('footer.contact'), href: '#contact' },
+      { label: t('footer.help'), href: '/#how-it-works' },
+      { label: t('footer.contact'), href: '/#contact' },
     ],
     legal: [
       { label: t('footer.privacy'), href: '/privacy-policy' },
@@ -41,11 +47,17 @@ export default function Footer() {
   return (
     <footer className="border-t border-border/30 bg-card relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,hsl(var(--primary)/0.02),transparent_50%)]" />
-      <div className="container mx-auto px-4 py-16 relative">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-7">
+      <div className={cn('container mx-auto px-4 relative', compact ? 'py-8' : 'py-16')}>
+        <div className={cn('grid sm:grid-cols-2 lg:grid-cols-7', compact ? 'gap-6' : 'gap-10')}>
           <div className="lg:col-span-3">
-            <div className="flex items-center gap-3 mb-5">
-              <img src={logo.url} alt="AI Support 360 — aisupport360.com" width={576} height={128} className="w-[36rem] max-w-full h-32 object-contain object-left" />
+            <div className={cn('flex items-center gap-3', compact ? 'mb-3' : 'mb-5')}>
+              <img
+                src={logo.url}
+                alt="AI Support 360 — aisupport360.com"
+                width={576}
+                height={128}
+                className={cn('max-w-full object-contain object-left', compact ? 'h-12 w-auto' : 'w-[36rem] h-32')}
+              />
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
               {t('footer.description')}
@@ -54,10 +66,10 @@ export default function Footer() {
 
           {Object.entries(links).map(([key, items]) => (
             <div key={key}>
-              <h4 className="font-bold text-foreground mb-5 text-xs uppercase tracking-widest">
+              <h4 className={cn('font-bold text-foreground text-xs uppercase tracking-widest', compact ? 'mb-3' : 'mb-5')}>
                 {t(`footer.${key}`)}
               </h4>
-              <ul className="space-y-3">
+              <ul className={compact ? 'space-y-1.5' : 'space-y-3'}>
                 {items.map((item, i) => (
                   <li key={i}>
                     <a
@@ -74,7 +86,7 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-14 pt-6 border-t border-border/30 text-center">
+        <div className={cn('border-t border-border/30 text-center', compact ? 'mt-6 pt-4' : 'mt-14 pt-6')}>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} AI Support 360. {t('footer.rights')}
           </p>
