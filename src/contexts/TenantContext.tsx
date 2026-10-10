@@ -6,6 +6,9 @@ interface Tenant {
   name: string;
   slug: string;
   logo_url: string | null;
+  created_at: string | null;
+  industry: string | null;
+  company_size: string | null;
   subscription_tier: 'basic' | 'professional' | 'enterprise';
   subscription_status: string;
   max_users: number;
@@ -17,6 +20,7 @@ interface Tenant {
 interface TenantMember {
   tenant_id: string;
   org_role: 'owner' | 'admin' | 'manager' | 'member';
+  created_at: string | null;
 }
 
 interface TenantContextType {
@@ -28,6 +32,9 @@ interface TenantContextType {
   isOwnerOrAdmin: boolean;
   hasTenant: boolean;
   hasMultipleTenants: boolean;
+  /** the company that the client profile of the account belongs to: the first one the user joined or created */
+  mainTenantId: string | null;
+  isMainCompany: boolean;
   switchTenant: (tenantId: string) => void;
   refetch: () => Promise<void>;
 }
@@ -41,6 +48,8 @@ const TenantContext = createContext<TenantContextType>({
   isOwnerOrAdmin: false,
   hasTenant: false,
   hasMultipleTenants: false,
+  mainTenantId: null,
+  isMainCompany: true,
   switchTenant: () => {},
   refetch: async () => {},
 });
@@ -69,7 +78,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       // Get all tenant memberships
       const { data: memberData } = await supabase
         .from('tenant_members')
-        .select('tenant_id, org_role')
+        .select('tenant_id, org_role, created_at')
         .eq('user_id', user.id);
 
       if (!memberData || memberData.length === 0) {
@@ -83,6 +92,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       const mems = memberData.map(m => ({
         tenant_id: m.tenant_id,
         org_role: m.org_role as TenantMember['org_role'],
+        created_at: (m as { created_at?: string | null }).created_at ?? null,
       }));
       setMemberships(mems);
 
@@ -98,6 +108,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           name: t.name,
           slug: t.slug,
           logo_url: t.logo_url,
+          created_at: t.created_at ?? null,
+          industry: t.industry ?? null,
+          company_size: t.company_size ?? null,
           subscription_tier: t.subscription_tier as Tenant['subscription_tier'],
           subscription_status: t.subscription_status,
           max_users: t.max_users,
@@ -139,6 +152,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const tenant = tenants.find(t => t.id === activeTenantId) ?? null;
   const membership = memberships.find(m => m.tenant_id === activeTenantId) ?? null;
   const isOwnerOrAdmin = membership?.org_role === 'owner' || membership?.org_role === 'admin';
+  const mainTenantId = [...memberships].sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))[0]?.tenant_id ?? null;
+  const isMainCompany = !tenant || !mainTenantId || tenant.id === mainTenantId;
 
   return (
     <TenantContext.Provider value={{
@@ -150,6 +165,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       isOwnerOrAdmin,
       hasTenant: !!tenant,
       hasMultipleTenants: tenants.length > 1,
+      mainTenantId,
+      isMainCompany,
       switchTenant,
       refetch: fetchTenants,
     }}>

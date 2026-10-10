@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { mockActivityFeed } from '@/data/clientMockData';
 
 function timeAgo(dateStr: string) {
@@ -16,6 +17,7 @@ function timeAgo(dateStr: string) {
 
 export function useActivityFeed() {
   const { isGuest } = useGuestMode();
+  const { tenant, loading: tenantLoading } = useTenant();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -30,18 +32,21 @@ export function useActivityFeed() {
   }, [isGuest, queryClient]);
 
   return useQuery({
-    queryKey: ['activity-feed'],
+    queryKey: ['activity-feed', tenant?.id ?? null],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data, error } = await supabase
+      let feed = supabase
         .from('notifications')
         .select('id, title, body, type, created_at')
         .or('type.is.null,type.neq.error')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);
+      // the activity of the active company; an entry that belongs to no company shows in every company
+      if (tenant?.id) feed = feed.or(`tenant_id.eq.${tenant.id},tenant_id.is.null`);
+      const { data, error } = await feed;
       if (error) throw error;
 
       const iconMap: Record<string, string> = {
@@ -60,7 +65,7 @@ export function useActivityFeed() {
         icon: iconMap[n.type || ''] || 'ticket',
       }));
     },
-    enabled: !isGuest,
+    enabled: !isGuest && !tenantLoading,
     placeholderData: isGuest ? mockActivityFeed : undefined,
   });
 }

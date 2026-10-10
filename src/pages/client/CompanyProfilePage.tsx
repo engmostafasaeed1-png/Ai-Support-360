@@ -29,16 +29,16 @@ import { useClientProfileData, useUpdateClientProfile, type ClientProfile } from
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import ClientNDAUpload from '@/components/client/ClientNDAUpload';
 import ClientApprovalCard from '@/components/client/ClientApprovalCard';
+import OtherCompanyProfile from '@/components/client/OtherCompanyProfile';
+import { useTenant } from '@/contexts/TenantContext';
+import { COMPANY_INDUSTRIES, COMPANY_SIZES, withCurrentOption } from '@/lib/companyOptions';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const industries = [
-  'Manufacturing', 'Retail', 'Oil & Gas', 'Healthcare', 'Finance & Banking',
-  'Utilities', 'Government', 'Telecommunications', 'Transportation', 'Education',
-  'Real Estate', 'Construction', 'Food & Beverage', 'Pharmaceuticals', 'Other',
-];
-
-const companySizes = ['1-50', '51-200', '201-500', '501-1000', '1001-5000', '5000+'];
+// the same lists as the first-company form and the company selector; an older value that is not in a list stays visible
+const industries = COMPANY_INDUSTRIES;
+const companySizes = COMPANY_SIZES;
+const NONE = '__none__';
 
 interface Contact {
   name: string;
@@ -52,6 +52,9 @@ export default function CompanyProfilePage() {
   const { isGuest } = useGuestMode();
   const { data: profile, isLoading } = useClientProfileData();
   const updateProfile = useUpdateClientProfile();
+  const { tenant, isMainCompany, isOwnerOrAdmin, refetch: refetchTenants } = useTenant();
+  // the first company of the account keeps its details in the client profile; every other company has its own page
+  const isOtherCompany = !!tenant && !isMainCompany;
 
   const [companyName, setCompanyName] = useState('');
   const [companySize, setCompanySize] = useState('');
@@ -346,6 +349,14 @@ export default function CompanyProfilePage() {
       sap_third_party_tools: sapThirdPartyTools,
       sap_landscape_notes: sapLandscapeNotes.trim() || null,
     });
+    // the company list and the sidebar show the name of the company: keep it in step with this page
+    if (tenant && isOwnerOrAdmin && companyName.trim()) {
+      void supabase
+        .from('tenants')
+        .update({ name: companyName.trim(), industry: industry || null, company_size: companySize || null })
+        .eq('id', tenant.id)
+        .then(({ error }) => { if (!error) void refetchTenants(); });
+    }
   };
 
   const addSystemId = () => {
@@ -368,6 +379,8 @@ export default function CompanyProfilePage() {
   const removeContact = (index: number) => {
     setContacts(contacts.filter((_, i) => i !== index));
   };
+
+  if (isOtherCompany) return <OtherCompanyProfile />;
 
   if (isLoading) {
     return (
@@ -519,10 +532,11 @@ export default function CompanyProfilePage() {
             </div>
             <div className="space-y-2">
               <Label>{t('company_profile_page.industry', 'Industry')}</Label>
-              <Select value={industry} onValueChange={setIndustry}>
+              <Select value={industry || NONE} onValueChange={v => setIndustry(v === NONE ? '' : v)}>
                 <SelectTrigger><SelectValue placeholder="Select industry..." /></SelectTrigger>
                 <SelectContent>
-                  {industries.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                  <SelectItem value={NONE}>{t('company_profile_page.not_set', 'Not set')}</SelectItem>
+                  {withCurrentOption(industries, industry).map(i => <SelectItem key={i} value={i}>{t(`client_onboarding.industry_${i}`, { defaultValue: i })}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -530,10 +544,11 @@ export default function CompanyProfilePage() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>{t('company_profile_page.company_size', 'Company Size')}</Label>
-              <Select value={companySize} onValueChange={setCompanySize}>
+              <Select value={companySize || NONE} onValueChange={v => setCompanySize(v === NONE ? '' : v)}>
                 <SelectTrigger><SelectValue placeholder="Select size..." /></SelectTrigger>
                 <SelectContent>
-                  {companySizes.map(s => <SelectItem key={s} value={s}>{s} employees</SelectItem>)}
+                  <SelectItem value={NONE}>{t('company_profile_page.not_set', 'Not set')}</SelectItem>
+                  {withCurrentOption(companySizes, companySize).map(s => <SelectItem key={s} value={s}>{s} employees</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

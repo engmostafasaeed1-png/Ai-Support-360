@@ -82,7 +82,11 @@ export default function ClientDashboard() {
 
   const openTickets = useMemo(() => tickets.filter((t: any) => t.status !== 'resolved' && t.status !== 'closed'), [tickets]);
   const pendingPayments = useMemo(() => payments.filter((p: any) => p.status === 'pending'), [payments]);
-  const activeSessions = useMemo(() => sessions.filter((s: any) => s.status === 'scheduled'), [sessions]);
+  // a session whose time is over is not upcoming, whatever its stored status says
+  const activeSessions = useMemo(() => {
+    const now = Date.now();
+    return sessions.filter((s: any) => s.status === 'scheduled' && new Date(s.scheduled_at).getTime() + (s.duration_minutes || 30) * 60000 > now);
+  }, [sessions]);
   const resolvedCount = useMemo(() => tickets.filter((t: any) => t.status === 'resolved').length, [tickets]);
   const pendingTotal = useMemo(() => pendingPayments.reduce((a: number, p: any) => a + p.amount, 0), [pendingPayments]);
   const totalTickets = tickets.length;
@@ -390,7 +394,7 @@ export default function ClientDashboard() {
             <div className="grid md:grid-cols-2 gap-4">
               {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
             </div>
-          ) : sessions.length === 0 ? (
+          ) : activeSessions.length === 0 ? (
             <div className="text-center py-8">
               <div className="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto mb-3">
                 <Calendar className="w-6 h-6 text-green-500" />
@@ -400,7 +404,7 @@ export default function ClientDashboard() {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-4 stagger-fade">
-              {sessions.slice(0, 4).map((session: any) => {
+              {activeSessions.slice(0, 4).map((session: any) => {
                 const typeIcons: Record<string, typeof Video> = { video: Video, chat: MessageSquare, screen_share: Monitor };
                 const TypeIcon = typeIcons[session.session_type] || Video;
                 const time = new Date(session.scheduled_at);
