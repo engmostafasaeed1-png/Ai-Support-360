@@ -88,11 +88,11 @@ export default function TicketsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        <div className="relative flex-1 w-full sm:max-w-sm">
+        <div className="relative w-full shrink-0 sm:w-72">
           <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Search tickets..." value={search} onChange={(e) => setSearch(e.target.value)} className="ps-9 rounded-xl h-10" />
         </div>
-        <ScrollArea className="w-full">
+        <ScrollArea className="w-full min-w-0 sm:flex-1">
           <div className="flex gap-1.5 pb-1">
             {statuses.map((s) => (
               <Button

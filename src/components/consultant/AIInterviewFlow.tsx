@@ -219,6 +219,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
   const [bodyLanguage, setBodyLanguage] = useState<BodyLanguageResult | null>(null);
   const [error, setError] = useState('');
+  const [cameraNotice, setCameraNotice] = useState('');
+  const [micNotice, setMicNotice] = useState('');
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -270,6 +272,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     if (camOn) {
       navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' } })
         .then(stream => {
+          setCameraNotice('');
           streamRef.current = stream;
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
@@ -284,6 +287,11 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         .catch(err => {
           console.error('Camera access denied:', err);
           setCamOn(false);
+          setCameraNotice(
+            err?.name === 'NotFoundError'
+              ? 'No camera was found, so the interview continues without video. You can answer by typing.'
+              : 'Camera access is blocked, so the interview continues without video. To turn it on, click the camera or lock icon in the address bar, allow the camera, then press the camera button. You can answer by typing.'
+          );
         });
     } else {
       stopCamera();
@@ -481,10 +489,14 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
       if (event.error !== 'no-speech') setIsListening(false);
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        setMicNotice('Microphone access is blocked, so voice answers are off. To turn it on, click the microphone or lock icon in the address bar and allow the microphone. You can answer by typing.');
+      }
     };
     recognition.onend = () => { setIsListening(false); setInterimTranscript(''); };
 
     recognitionRef.current = recognition;
+    setMicNotice('');
     recognition.start();
     setIsListening(true);
   }, [isListening, interviewLang]);
@@ -1124,6 +1136,11 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
                   <AlertTriangle className="w-3.5 h-3.5" /> {error}
                 </div>
               )}
+              {[cameraNotice, micNotice].filter(Boolean).map((notice) => (
+                <div key={notice} role="status" className="flex items-start gap-2 text-xs text-amber-300 mb-2">
+                  <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" /> {notice}
+                </div>
+              ))}
               {interimTranscript && (
                 <div className="flex items-center gap-2 text-xs text-blue-300/70 mb-2 italic">
                   <Mic className="w-3 h-3 animate-pulse" /> {interimTranscript}

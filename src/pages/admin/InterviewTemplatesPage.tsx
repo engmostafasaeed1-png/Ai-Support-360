@@ -66,6 +66,16 @@ const STARTER: Record<string, string> = {
 
 const tbl = () => supabase.from('interview_templates' as any);
 
+const levelLabel = (list: { v: string; l: string }[], v: string) => list.find((x) => x.v === v)?.l || v;
+
+/** One active template per SAP area, experience level and role: say so in words when the database refuses a second one. */
+function duplicateMessage(error: { code?: string; message?: string }, t: Tpl): string {
+  if (error.code === '23505') {
+    return `There is already an active template for ${t.sap_module}, ${levelLabel(SENIORITY, t.seniority)}, ${levelLabel(ROLES, t.role_focus)}. Edit that one, or switch it off first.`;
+  }
+  return error.message || 'The template could not be saved';
+}
+
 export default function InterviewTemplatesPage() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Tpl | null>(null);
@@ -94,7 +104,7 @@ export default function InterviewTemplatesPage() {
       ? await tbl().update(payload).eq('id', id)
       : await tbl().insert({ ...payload, created_by: u.user?.id });
     setSaving(false);
-    if (res.error) return toast.error(res.error.message);
+    if (res.error) return toast.error(duplicateMessage(res.error, editing));
     toast.success('Template saved');
     setEditing(null);
     refresh();
@@ -109,7 +119,7 @@ export default function InterviewTemplatesPage() {
 
   const toggle = async (t: Tpl) => {
     const { error } = await tbl().update({ is_active: !t.is_active }).eq('id', t.id!);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(duplicateMessage(error, t));
     refresh();
   };
 
