@@ -820,7 +820,7 @@ function DetailsStep({
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="[email protected]"
+            placeholder="jane@company.com"
             className="rounded-xl h-11 bg-background/60"
             autoComplete="email"
             required

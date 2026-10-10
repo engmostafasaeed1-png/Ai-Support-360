@@ -1,8 +1,9 @@
-// Public, token-gated notifier used by the demo wizard right after a request was submitted.
+// Public, token-gated notifier used by the demo wizard and the contact form right after a request was submitted.
 //
 // The caller only supplies the secret request token. Recipient, name, requested slot and the
 // confirmation link are all read from the database here, so this endpoint cannot be used to
 // send arbitrary email (the generic send-transactional-email function is service-role only).
+// Two e-mails go out: a confirmation to the visitor and an alert to the team mailbox.
 import {
   adminClient,
   clientIp,
@@ -12,6 +13,7 @@ import {
   withinRateLimit,
 } from '../_shared/security.ts';
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
+import { TEAM_EMAIL } from '../_shared/contact.ts';
 
 const TOKEN_RE = /^[a-f0-9]{32}$/;
 const NEW_REQUEST_WINDOW_MS = 15 * 60 * 1000;
@@ -47,7 +49,7 @@ Deno.serve(async (req) => {
 
   const { data: row, error } = await admin
     .from('demo_requests')
-    .select('id, email, full_name, request_token, status, demo_type, scheduling_preference, scheduled_date, scheduled_slot, timezone, created_at')
+    .select('id, email, full_name, company, notes, source, request_token, status, demo_type, scheduling_preference, scheduled_date, scheduled_slot, timezone, created_at')
     .eq('request_token', token)
     .maybeSingle();
   if (error || !row) return accepted();
@@ -58,16 +60,20 @@ Deno.serve(async (req) => {
     return accepted();
   }
 
-  const templateName = 'demo-request-received';
-  const logRow = async (status: string, error_message?: string) => {
+  const isContact = row.source === 'contact-form';
+  const logRow = async (templateName: string, recipient: string, status: string, error_message?: string) => {
     const { error: logErr } = await admin.from('email_send_log').insert({
-      message_id: null, template_name: templateName, recipient_email: row.email, status, error_message: error_message ?? null,
+      message_id: null, template_name: templateName, recipient_email: recipient, status, error_message: error_message ?? null,
     });
     if (logErr) console.error('demo-request-notify: send log failed', { code: logErr.code, message: logErr.message });
   };
+
+  // 1. the confirmation to the visitor (a reply goes to the team mailbox)
+  const confirmation = isContact ? 'contact-message-received' : 'demo-request-received';
   try {
-    const result = await sendTemplateEmail(templateName, row.email, {
-      idempotencyKey: `demo-request-received-${row.id}`,
+    const result = await sendTemplateEmail(confirmation, row.email, {
+      idempotencyKey: `${confirmation}-${row.id}`,
+      replyTo: TEAM_EMAIL,
       templateData: {
         name: row.full_name,
         demoType: DEMO_LABELS[row.demo_type] ?? row.demo_type,
@@ -78,11 +84,37 @@ Deno.serve(async (req) => {
         confirmationUrl: `${SITE_URL}/demo/confirmation/${row.request_token}`,
       },
     });
-    await logRow(result.sent ? 'sent' : 'suppressed');
+    await logRow(confirmation, row.email, result.sent ? 'sent' : 'suppressed');
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.warn('demo-request-notify: send failed:', msg);
-    await logRow('failed', msg.slice(0, 1000));
+    console.warn('demo-request-notify: confirmation failed:', msg);
+    await logRow(confirmation, row.email, 'failed', msg.slice(0, 1000));
+  }
+
+  // 2. the alert to the team (a reply goes to the visitor)
+  const when = row.scheduled_date
+    ? `${row.scheduled_date}${row.scheduled_slot ? ` at ${row.scheduled_slot}` : ''}${row.timezone ? ` (${row.timezone})` : ''}`
+    : row.scheduling_preference ?? undefined;
+  try {
+    const result = await sendTemplateEmail('demo-request-alert', TEAM_EMAIL, {
+      idempotencyKey: `demo-request-alert-${row.id}`,
+      replyTo: row.email,
+      templateData: {
+        name: row.full_name,
+        email: row.email,
+        company: row.company ?? undefined,
+        demoType: isContact ? undefined : (DEMO_LABELS[row.demo_type] ?? row.demo_type),
+        when: isContact ? undefined : when,
+        source: row.source ?? undefined,
+        notes: row.notes ? String(row.notes).slice(0, 1500) : undefined,
+        adminUrl: `${SITE_URL}/admin/demo-requests`,
+      },
+    });
+    await logRow('demo-request-alert', TEAM_EMAIL, result.sent ? 'sent' : 'suppressed');
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn('demo-request-notify: team alert failed:', msg);
+    await logRow('demo-request-alert', TEAM_EMAIL, 'failed', msg.slice(0, 1000));
   }
   return accepted();
 });
