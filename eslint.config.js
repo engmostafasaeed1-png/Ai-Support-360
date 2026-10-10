@@ -5,7 +5,13 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "src/integrations/supabase/previewAuthStorage.ts"] },
+  {
+    ignores: [
+      "dist",
+      "src/integrations/supabase/previewAuthStorage.ts",
+      "supabase/functions/mcp/index.ts",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
