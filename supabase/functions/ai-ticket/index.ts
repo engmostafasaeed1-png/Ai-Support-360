@@ -103,6 +103,7 @@ serve(async (req) => {
         { status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
       );
     }
+    // eslint-disable-next-line prefer-const
     let { action, title, description, sap_module, sap_modules, sap_module_other, urgency, preferred_language, model } = parsed.data;
     let areaDetails = typeof parsed.data.area_details === "string" ? parsed.data.area_details.slice(0, 2000) : "";
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

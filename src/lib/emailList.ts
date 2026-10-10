@@ -1,4 +1,4 @@
-const EMAIL_RE = /^[^\s@<>()\[\]\\,;:"]+@[^\s@<>()\[\]\\,;:"]+\.[^\s@<>()\[\]\\,;:"]{2,}$/;
+const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]{2,}$/;
 
 /** Splits "a@x.com, b@y.org" (comma, semicolon or space separated) into clean, unique, lower-case addresses. */
 export function parseEmailList(text: string, max = 5): { emails: string[]; error: string | null } {

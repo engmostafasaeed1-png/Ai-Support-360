@@ -205,7 +205,7 @@ function normalise(raw: any, items: KnowledgeItem[], grounded: boolean): Suggest
     const guard = (text: string) => redactUnverifiedNotes(text, allowed);
     const tcodes = [...new Set<string>((Array.isArray(s?.tcodes) ? s.tcodes : [])
       .map((x: unknown) => String(x ?? "").trim().toUpperCase())
-      .filter((x: string) => /^[A-Z0-9_\/]{2,20}$/.test(x)))].slice(0, 8);
+      .filter((x: string) => /^[A-Z0-9_/]{2,20}$/.test(x)))].slice(0, 8);
     // the pages of SAP's documentation have no id in our tables: they are named by their source link, and the basis follows the first own source
     const own = used.filter((u) => u.kind !== "doc");
     const docs: DocRef[] = [];

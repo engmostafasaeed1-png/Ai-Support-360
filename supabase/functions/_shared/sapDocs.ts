@@ -148,6 +148,7 @@ interface Section {
 export function parseDoc(path: string, markdown: string): ParsedDoc {
   const bare = markdown.charCodeAt(0) === 0xfeff ? markdown.slice(1) : markdown; // a byte order mark at the start of the file
   const text = bare
+    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, " ") // control characters (a database text can not hold them)
     .replace(/\r\n?/g, "\n")
     .replace(/^---\n[\s\S]*?\n---\n/, "")

@@ -5,7 +5,7 @@ import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit } from "../
 
 const BodySchema = z.object({
   frames: z.array(
-    z.string().max(400_000).regex(/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/),
+    z.string().max(400_000).regex(/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/),
   ).min(1).max(20),
 });
 

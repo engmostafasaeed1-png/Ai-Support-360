@@ -14,7 +14,7 @@ describe('safeFileName', () => {
 
   it('never produces path separators or dot-dot segments', () => {
     const out = safeFileName('../../etc/passwd');
-    expect(out).not.toMatch(/[\/\\]/);
+    expect(out).not.toMatch(/[/\\]/);
     expect(out).not.toContain('..');
   });
 
