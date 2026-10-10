@@ -20,6 +20,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import ClientApprovalBanner from '@/components/client/ClientApprovalBanner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import logo from '@/assets/brand/mark.png.asset.json';
+import Footer from '@/components/landing/Footer';
 
 export default function ClientLayout() {
   const portalMargin = usePortalMargin();
@@ -93,6 +94,7 @@ export default function ClientLayout() {
               <Outlet />
             </PageTransition>
           </main>
+          <Footer compact />
         </div>
       </div>
     </SidebarProvider>

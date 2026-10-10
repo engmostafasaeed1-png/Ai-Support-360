@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Crown } from 'lucide-react';
 import HeaderNav from '@/components/HeaderNav';
 import logo from '@/assets/brand/mark.png.asset.json';
+import Footer from '@/components/landing/Footer';
 import { Link } from 'react-router-dom';
 
 export default function SuperAdminLayout() {
@@ -41,6 +42,7 @@ export default function SuperAdminLayout() {
               <Outlet />
             </PageTransition>
           </main>
+          <Footer compact />
         </div>
       </div>
     </SidebarProvider>

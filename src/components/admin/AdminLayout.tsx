@@ -9,6 +9,7 @@ import HeaderNav from '@/components/HeaderNav';
 import HeaderSearchButton from '@/components/layout/HeaderSearchButton';
 import LanguageSwitchButton from '@/components/layout/LanguageSwitchButton';
 import logo from '@/assets/brand/mark.png.asset.json';
+import Footer from '@/components/landing/Footer';
 import { Link } from 'react-router-dom';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 
@@ -43,6 +44,7 @@ export default function AdminLayout() {
               <Outlet />
             </PageTransition>
           </main>
+          <Footer compact />
         </div>
       </div>
     </SidebarProvider>
