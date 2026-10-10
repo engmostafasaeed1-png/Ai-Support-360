@@ -81,10 +81,10 @@ export default function ConsultantReportsPage() {
       const totalEarned = rangePayouts.reduce((s, p) => s + Number(p.amount), 0);
       const pendingAmount = rangePayments.filter(p => p.status === 'pending').reduce((s, p) => s + Number(p.amount) - Number(p.vat_amount || 0), 0);
 
-      // Monthly earnings trend
+      // Monthly earnings trend of the selected period
       const monthlyEarnings: Record<string, number> = {};
-      allPayouts.forEach(p => {
-        const m = format(new Date(p.created_at), 'MMM');
+      [...rangePayouts].sort((a, b) => a.created_at.localeCompare(b.created_at)).forEach(p => {
+        const m = format(new Date(p.created_at), 'MMM yyyy');
         monthlyEarnings[m] = (monthlyEarnings[m] || 0) + Number(p.amount);
       });
       const earningsTrend = Object.entries(monthlyEarnings).map(([month, amount]) => ({ month, amount: Math.round(amount) }));
@@ -189,7 +189,7 @@ export default function ConsultantReportsPage() {
             </TabsList>
           </Tabs>
           <DateRangePicker from={dateFrom} to={dateTo} onChange={(f, t) => { setDateFrom(f); setDateTo(t); }} />
-          <Button variant="outline" size="sm" className="text-xs h-8 gap-1" onClick={() => d.casesExport.length > 0 && exportToCSV(d.casesExport, 'consultant_cases')}>
+          <Button variant="outline" size="sm" className="text-xs h-8 gap-1" onClick={() => exportToCSV(d.casesExport, 'consultant_cases')}>
             <Download className="w-3.5 h-3.5" /> CSV
           </Button>
           <Button variant="outline" size="sm" className="text-xs h-8 gap-1" onClick={() => exportToPDF('Consultant Performance Report', [

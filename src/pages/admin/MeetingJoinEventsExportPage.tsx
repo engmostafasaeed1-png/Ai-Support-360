@@ -33,6 +33,7 @@ type ProviderFilter = 'all' | 'meet' | 'jitsi' | 'zoom' | 'teams' | 'unknown';
 type ReasonFilter =
   | 'all'
   | 'framed'
+  | 'fallback_shown'
   | 'load_failed'
   | 'popup_blocked'
   | 'invalid_url'
@@ -50,6 +51,7 @@ const PROVIDER_OPTIONS: { value: ProviderFilter; label: string }[] = [
 const REASON_OPTIONS: { value: ReasonFilter; label: string }[] = [
   { value: 'all', label: 'All reasons' },
   { value: 'framed', label: 'Framed (iframe-blocked)' },
+  { value: 'fallback_shown', label: 'Fallback shown' },
   { value: 'load_failed', label: 'Load failed' },
   { value: 'popup_blocked', label: 'Popup blocked' },
   { value: 'invalid_url', label: 'Invalid URL' },
@@ -161,7 +163,7 @@ export default function MeetingJoinEventsExportPage() {
             })}
           </p>
         </div>
-        <Button onClick={handleExport} disabled={isLoading || rows.length === 0}>
+        <Button onClick={handleExport} disabled={isLoading}>
           <Download className="w-4 h-4 mr-1.5" aria-hidden="true" />
           {t('mje_export.download', { defaultValue: 'Download CSV' })}
         </Button>
