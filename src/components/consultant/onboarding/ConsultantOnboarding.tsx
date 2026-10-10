@@ -148,15 +148,16 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           setData(prev => ({ ...prev, displayName: profileResult.data?.display_name || '' }));
           return;
         }
-        const [skills, certificates, jobs, studies, projects, slots] = await Promise.all([
+        const [skills, certificates, jobs, studies, projects, slots, privateDetails] = await Promise.all([
           supabase.from('consultant_skills').select('*').eq('consultant_id', c.id),
           supabase.from('certifications').select('*').eq('consultant_id', c.id),
           supabase.from('consultant_work_history').select('*').eq('consultant_id', c.id),
           supabase.from('consultant_education').select('*').eq('consultant_id', c.id),
           supabase.from('consultant_projects').select('*').eq('consultant_id', c.id),
           supabase.from('availability_slots').select('*').eq('consultant_id', c.id),
+          supabase.from('consultant_private').select('nationality').eq('consultant_id', c.id).maybeSingle(),
         ]);
-        for (const result of [skills, certificates, jobs, studies, projects, slots]) {
+        for (const result of [skills, certificates, jobs, studies, projects, slots, privateDetails]) {
           if (result.error) throw result.error;
         }
         if (!active) return;
@@ -166,7 +167,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           displayName: profileResult.data?.display_name || '', bio: c.bio || '',
           hourlyRate: Number(c.hourly_rate) || 0, currency: c.currency || 'USD',
           timezone: c.timezone || 'Asia/Riyadh', languages: c.languages || ['en'],
-          nationality: c.nationality || '', city: c.city || '', country: c.country || '',
+          nationality: privateDetails.data?.nationality || '', city: c.city || '', country: c.country || '',
           linkedinUrl: c.linkedin_url || '', githubUrl: c.github_url || '',
           personalWebsite: c.personal_website || '', credlyUsername: c.credly_username || '',
           skills: (skills.data || []).map(s => ({ sapModule: s.sap_module, proficiencyLevel: s.proficiency_level || 1, yearsExperience: s.years_experience || 0, certified: Boolean(s.certified) })),
@@ -255,7 +256,6 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           credly_username: credlyUsername,
           github_url: data.githubUrl || null,
           personal_website: data.personalWebsite || null,
-          nationality: data.nationality || null,
           city: data.city || null,
           country: data.country || null,
           latitude: place ? place.lat : null,
@@ -266,6 +266,12 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
 
       if (consultantErr || !consultant) throw consultantErr;
       setConsultantId(consultant.id);
+
+      // The nationality is a private detail: it is kept in its own table that only the consultant and the administrators can read.
+      const { error: privateError } = await supabase
+        .from('consultant_private')
+        .upsert({ consultant_id: consultant.id, nationality: data.nationality || null }, { onConflict: 'consultant_id' });
+      if (privateError) throw privateError;
 
       if (embedded) {
         // Existing rows are edited by their stable row IDs; new duplicates are skipped, not appended.

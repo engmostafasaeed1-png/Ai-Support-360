@@ -71,7 +71,7 @@ export default function ExperienceCvCard({ onProfileChanged }: { onProfileChange
   const load = async (uid: string) => {
     const [{ data: wh }, { data: c }] = await Promise.all([
       supabase.from('consultant_work_history').select('*').eq('consultant_id', uid).order('is_current', { ascending: false }).order('start_date', { ascending: false }),
-      supabase.from('consultants').select('cv_url').eq('id', uid).maybeSingle(),
+      supabase.from('consultant_private').select('cv_url').eq('consultant_id', uid).maybeSingle(),
     ]);
     setJobs((wh as Job[]) || []);
     setCvPath(c?.cv_url ?? null);
@@ -99,7 +99,7 @@ export default function ExperienceCvCard({ onProfileChanged }: { onProfileChange
       const path = `${authId}/cv/cv-${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type });
       if (error) throw error;
-      const { error: upErr } = await supabase.from('consultants').update({ cv_url: path }).eq('id', userId);
+      const { error: upErr } = await supabase.from('consultant_private').upsert({ consultant_id: userId, cv_url: path }, { onConflict: 'consultant_id' });
       if (upErr) {
         await supabase.storage.from(BUCKET).remove([path]);
         throw upErr;
