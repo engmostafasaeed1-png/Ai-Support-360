@@ -148,15 +148,16 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           setData(prev => ({ ...prev, displayName: profileResult.data?.display_name || '' }));
           return;
         }
-        const [skills, certificates, jobs, studies, projects, slots] = await Promise.all([
+        const [skills, certificates, jobs, studies, projects, slots, privateDetails] = await Promise.all([
           supabase.from('consultant_skills').select('*').eq('consultant_id', c.id),
           supabase.from('certifications').select('*').eq('consultant_id', c.id),
           supabase.from('consultant_work_history').select('*').eq('consultant_id', c.id),
           supabase.from('consultant_education').select('*').eq('consultant_id', c.id),
           supabase.from('consultant_projects').select('*').eq('consultant_id', c.id),
           supabase.from('availability_slots').select('*').eq('consultant_id', c.id),
+          supabase.from('consultant_private').select('nationality').eq('consultant_id', c.id).maybeSingle(),
         ]);
-        for (const result of [skills, certificates, jobs, studies, projects, slots]) {
+        for (const result of [skills, certificates, jobs, studies, projects, slots, privateDetails]) {
           if (result.error) throw result.error;
         }
         if (!active) return;
