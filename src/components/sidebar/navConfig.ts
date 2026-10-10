@@ -241,6 +241,7 @@ export const adminNavGroups: NavGroup[] = [
       { key: 'environment_logs', icon: ClipboardList, path: '/admin/environment-logs' },
       { key: 'payments_admin', icon: Wallet, path: '/admin/payments', fallback: 'Payments & payouts' },
       { key: 'knowledge_review', icon: BookOpenCheck, path: '/admin/knowledge-review', fallback: 'Knowledge review' },
+      { key: 'demo_requests', icon: CalendarClock, path: '/admin/demo-requests', fallback: 'Demo requests' },
       { key: 'integrations', icon: Plug, path: '/admin/integrations' },
       { key: 'vmware_settings', icon: Settings2, path: '/admin/vmware-settings' },
     ],

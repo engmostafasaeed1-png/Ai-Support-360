@@ -9,6 +9,7 @@ export interface TemplateEntry {
   previewData?: Record<string, any>
 }
 
+import { template as demoRequestReceived } from './demo-request-received.tsx'
 import { template as demoRescheduleReceived } from './demo-reschedule-received.tsx'
 import { template as demoRescheduleConfirmed } from './demo-reschedule-confirmed.tsx'
 import { template as interviewInvitation } from './interview-invitation.tsx'
@@ -18,6 +19,7 @@ import { template as platformInvitation } from './platform-invitation.tsx'
 import { template as verificationItems } from './verification-items.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
+  'demo-request-received': demoRequestReceived,
   'demo-reschedule-received': demoRescheduleReceived,
   'demo-reschedule-confirmed': demoRescheduleConfirmed,
   'interview-invitation': interviewInvitation,
