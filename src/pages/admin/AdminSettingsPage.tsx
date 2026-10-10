@@ -1,42 +1,35 @@
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Globe, Layout, Mail } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe, Bell, Shield, Layout } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useAdminSettings } from '@/hooks/useAdminSettings';
 import NDATemplateEditor from '@/components/admin/NDATemplateEditor';
-import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-const sections = [
+/** Only switches that really change what the platform does. */
+const GENERAL = [
   {
-    icon: Globe,
-    titleKey: 'admin.settings_general',
-    items: [
-      { key: 'maintenance_mode', labelKey: 'admin.settings_maintenance' },
-      { key: 'open_registration', labelKey: 'admin.settings_registration' },
-    ],
+    key: 'maintenance_mode',
+    labelKey: 'admin.settings_maintenance',
+    label: 'Maintenance mode',
+    hint: 'On: everyone except administrators sees a maintenance page. Administrators can still sign in and work.',
   },
   {
-    icon: Bell,
-    titleKey: 'admin.settings_notifications',
-    items: [
-      { key: 'email_notifications', labelKey: 'admin.settings_email_notif' },
-      { key: 'admin_alerts', labelKey: 'admin.settings_admin_alerts' },
-    ],
+    key: 'open_registration',
+    labelKey: 'admin.settings_registration',
+    label: 'Open registration',
+    hint: 'Off: nobody can create a new account and the sign-up page says that registration is closed. People who already have an account can still sign in.',
   },
-  {
-    icon: Shield,
-    titleKey: 'admin.settings_security',
-    items: [
-      { key: 'require_2fa', labelKey: 'admin.settings_2fa' },
-      { key: 'audit_logging', labelKey: 'admin.settings_audit' },
-    ],
-  },
-];
+] as const;
 
 export default function AdminSettingsPage() {
   const { t } = useTranslation();
@@ -44,6 +37,7 @@ export default function AdminSettingsPage() {
   const { toast } = useToast();
   const [portalMargin, setPortalMargin] = useState(5);
   const [marginLoading, setMarginLoading] = useState(true);
+  const [confirmMaintenance, setConfirmMaintenance] = useState(false);
 
   useEffect(() => {
     supabase
@@ -75,39 +69,47 @@ export default function AdminSettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">{t('admin.settings_title', 'Platform Settings')}</h1>
-        <p className="text-muted-foreground text-sm mt-1">{t('admin.settings_subtitle', 'Manage global platform configuration')}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t('admin.settings_subtitle', 'Manage global platform configuration')}</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {sections.map((section) => (
-          <Card key={section.titleKey}>
-            <CardHeader className="flex flex-row items-center gap-3 pb-2">
-              <section.icon className="w-5 h-5 text-primary" />
-              <CardTitle className="text-base">{t(section.titleKey)}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {section.items.map((item) => (
-                <div key={item.key} className="flex items-center justify-between">
-                  <Label htmlFor={item.key}>{t(item.labelKey)}</Label>
-                  {loading ? (
-                    <Skeleton className="h-5 w-9 rounded-full" />
-                  ) : (
-                    <Switch
-                      id={item.key}
-                      checked={!!settings[item.key]}
-                      onCheckedChange={(val) => updateSetting(item.key, val)}
-                    />
-                  )}
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-3 pb-2">
+            <Globe className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">{t('admin.settings_general', 'General')}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {GENERAL.map((item) => (
+              <div key={item.key} className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <Label htmlFor={item.key}>{t(item.labelKey, item.label)}</Label>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{item.hint}</p>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
+                {loading ? (
+                  <Skeleton className="h-5 w-9 shrink-0 rounded-full" />
+                ) : (
+                  <Switch
+                    id={item.key}
+                    className="shrink-0"
+                    checked={item.key === 'open_registration' ? settings.open_registration !== false : !!settings[item.key]}
+                    onCheckedChange={(val) => {
+                      if (item.key === 'maintenance_mode' && val) {
+                        setConfirmMaintenance(true);
+                        return;
+                      }
+                      void updateSetting(item.key, val);
+                    }}
+                  />
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
 
         {/* Portal Layout Card */}
         <Card>
           <CardHeader className="flex flex-row items-center gap-3 pb-2">
-            <Layout className="w-5 h-5 text-primary" />
+            <Layout className="h-5 w-5 text-primary" />
             <CardTitle className="text-base">{t('admin.settings_layout', 'Portal Layout')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -135,9 +137,50 @@ export default function AdminSettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Email notifications: this key is read by the feature flags hook. */}
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-3 pb-2">
+            <Mail className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">{t('admin.settings_email_notifications', 'Email Notifications')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <Label htmlFor="email_notifications">{t('admin.settings_email_notifications', 'Email Notifications')}</Label>
+                <p className="mt-0.5 text-xs text-muted-foreground">Controls whether the platform sends e-mail notifications for important events.</p>
+              </div>
+              {loading ? (
+                <Skeleton className="h-5 w-9 shrink-0 rounded-full" />
+              ) : (
+                <Switch
+                  id="email_notifications"
+                  className="shrink-0"
+                  checked={settings.email_notifications !== false}
+                  onCheckedChange={(val) => void updateSetting('email_notifications', val)}
+                />
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <NDATemplateEditor />
+
+      <AlertDialog open={confirmMaintenance} onOpenChange={setConfirmMaintenance}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Turn on maintenance mode?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Everyone except administrators will see a maintenance page until you turn it off again. Work in progress on their screens stops.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void updateSetting('maintenance_mode', true)}>Turn on</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

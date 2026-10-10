@@ -1,12 +1,12 @@
-import { Kanban, UserCheck, FileText, Handshake, Layers } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ExternalLink, FileText, Kanban, UserCheck } from 'lucide-react';
+import { Link, Navigate } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useAdminTickets } from '@/hooks/useAdminData';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ExternalLink } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useAdminTickets } from '@/hooks/useAdminData';
+import { LinkCard, SectionShell } from './shared';
 
 const urgencyColor: Record<string, string> = {
   critical: 'destructive',
@@ -28,24 +28,24 @@ export function TicketManagementSection() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <Kanban className="w-5 h-5 text-primary" /> Ticket Management
+          <h2 className="flex items-center gap-2 text-xl font-bold text-foreground">
+            <Kanban className="h-5 w-5 text-primary" /> Ticket Management
           </h2>
           <p className="text-sm text-muted-foreground">{allTickets.length} tickets total</p>
         </div>
         <Link to="/admin/tickets">
           <Button variant="outline" size="sm" className="gap-1">
-            <Kanban className="w-3.5 h-3.5" /> Kanban View <ExternalLink className="w-3 h-3" />
+            <Kanban className="h-3.5 w-3.5" /> Kanban View <ExternalLink className="h-3 w-3" />
           </Button>
         </Link>
       </div>
 
       {/* Status Summary */}
-      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {['new', 'in_progress', 'resolved', 'closed'].map((status) => (
           <Card key={status} className="rounded-xl">
-            <CardContent className="pt-4 pb-3 text-center">
-              <p className="text-xs text-muted-foreground capitalize">{status.replace('_', ' ')}</p>
+            <CardContent className="pb-3 pt-4 text-center">
+              <p className="text-xs capitalize text-muted-foreground">{status.replace('_', ' ')}</p>
               <p className="text-2xl font-bold text-foreground">
                 {tickets ? (tickets as any)[status]?.length || 0 : 0}
               </p>
@@ -55,7 +55,7 @@ export function TicketManagementSection() {
       </div>
 
       <Card className="rounded-2xl">
-        <CardContent className="pt-4 overflow-x-auto">
+        <CardContent className="overflow-x-auto pt-4">
           {isLoading ? (
             <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
           ) : (
@@ -72,7 +72,7 @@ export function TicketManagementSection() {
               </TableHeader>
               <TableBody>
                 {allTickets.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No tickets found.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No tickets found.</TableCell></TableRow>
                 )}
                 {allTickets.slice(0, 15).map((t: any) => (
                   <TableRow key={t.id}>
@@ -95,72 +95,34 @@ export function TicketManagementSection() {
 
 export function ConsultantApprovalsSection() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-          <UserCheck className="w-5 h-5 text-primary" /> Consultant Approvals
-        </h2>
-        <p className="text-sm text-muted-foreground">Review and approve consultant applications</p>
-      </div>
-      <Card className="rounded-2xl">
-        <CardContent className="py-12 text-center text-muted-foreground">
-          Consultant approval queue. Review verification status, interview scores, and certifications.
-        </CardContent>
-      </Card>
-    </div>
+    <SectionShell icon={UserCheck} title="Consultant Approvals" description="Review and approve consultant applications">
+      <LinkCard
+        to="/admin/approvals"
+        label="The approval queue, with verification, interview scores, certificates and the LinkedIn and Credly checks, is on its own page."
+        cta="Open Consultant Approvals"
+      />
+    </SectionShell>
   );
 }
 
 export function NDAManagementSection() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-          <FileText className="w-5 h-5 text-primary" /> NDA Management
-        </h2>
-        <p className="text-sm text-muted-foreground">Manage non-disclosure agreements</p>
-      </div>
-      <Card className="rounded-2xl">
-        <CardContent className="py-12 text-center text-muted-foreground">
-          NDA template editor and signed agreements tracking. View, revoke, and manage all NDAs.
-        </CardContent>
-      </Card>
-    </div>
+    <SectionShell icon={FileText} title="NDA Management" description="Manage non-disclosure agreements">
+      <LinkCard
+        to="/admin/nda-management"
+        label="Signed agreements, revoking an NDA and the lifecycle of each NDA are on their own page. The NDA template text is edited in Platform Settings."
+        cta="Open NDA Management"
+      />
+    </SectionShell>
   );
 }
 
+/** There is no page behind this section, so the old placeholder was removed. */
 export function MatchRequestsSection() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-          <Handshake className="w-5 h-5 text-primary" /> Match Requests
-        </h2>
-        <p className="text-sm text-muted-foreground">Track client-consultant matching</p>
-      </div>
-      <Card className="rounded-2xl">
-        <CardContent className="py-12 text-center text-muted-foreground">
-          Match request overview. Monitor pending, accepted, and rejected match requests across all tickets.
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return <Navigate to="/admin/console" replace />;
 }
 
+/** There is no page behind this section, so the old placeholder was removed. */
 export function ProjectsMilestonesSection() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-          <Layers className="w-5 h-5 text-primary" /> Projects & Milestones
-        </h2>
-        <p className="text-sm text-muted-foreground">Oversee all client projects and milestone escrow</p>
-      </div>
-      <Card className="rounded-2xl">
-        <CardContent className="py-12 text-center text-muted-foreground">
-          Project management overview. Track active projects, milestone funding, and delivery status.
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return <Navigate to="/admin/console" replace />;
 }
