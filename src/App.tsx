@@ -430,8 +430,8 @@ const App = () => (
             </Route>
             <Route path="/interview/live/:id" element={<ProtectedRoute><ErrorBoundary><LiveInterviewPage /></ErrorBoundary></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<PublicLayout />}>
-              <Route index element={<NotFound />} />
+            <Route element={<PublicLayout />}>
+              <Route path="*" element={<NotFound />} />
             </Route>
 </Routes>
           </DemoWizardProvider>
