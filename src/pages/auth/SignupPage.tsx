@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Users, Briefcase, MailCheck, Inbox, ShieldAlert } from 'lucide-react';
+import { Loader2, Users, Briefcase, MailCheck, Inbox, ShieldAlert, Lock } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import PasswordInput from '@/components/auth/PasswordInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,51 @@ const PENDING_EMAIL_KEY = 'verification_pending_email';
 type Role = 'client' | 'consultant';
 
 export default function SignupPage() {
+  const { t } = useTranslation();
+  // registration_is_open() is answered for visitors who are not signed in; an unreadable answer counts as open (the database blocks sign-up when it is closed)
+  const { data: open } = useQuery({
+    queryKey: ['registration-is-open'],
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await supabase.rpc('registration_is_open');
+      if (error) throw error;
+      return data !== false;
+    },
+    staleTime: 30_000,
+    retry: 1,
+  });
+  // someone who already signed up and still has to confirm the e-mail keeps seeing the confirmation screen
+  let hasPendingEmail = false;
+  try { hasPendingEmail = !!localStorage.getItem(PENDING_EMAIL_KEY); } catch { /* ignore */ }
+
+  if (open === false && !hasPendingEmail) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 relative py-8">
+        <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
+        <Card className="w-full max-w-md relative z-10 shadow-2xl border-border/30 backdrop-blur-sm bg-card/95 animate-fade-in">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+              <Lock className="w-7 h-7 text-primary" />
+            </div>
+            <h1 className="font-semibold leading-none tracking-tight text-2xl">{t('auth.signup_closed_title', 'Registration is closed')}</h1>
+            <CardDescription>{t('auth.signup_closed_desc', 'New accounts cannot be created at the moment. If you already have an account you can sign in.')}</CardDescription>
+          </CardHeader>
+          <CardFooter className="flex flex-col gap-3">
+            <Button asChild className="w-full gradient-primary border-0 h-11 text-base">
+              <Link to="/login">{t('auth.login_link', 'Sign in')}</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full h-11 rounded-xl">
+              <Link to="/">{t('auth.back_home', 'Back to home')}</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  return <SignupForm />;
+}
+
+function SignupForm() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

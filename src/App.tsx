@@ -12,6 +12,7 @@ import { CurrencyProvider } from "./contexts/CurrencyContext.tsx";
 import { TenantProvider } from "./contexts/TenantContext.tsx";
 import AIChatbot from "./components/chatbot/AIChatbot.tsx";
 import MaintenanceBanner from "./components/MaintenanceBanner.tsx";
+import MaintenanceGate from "./components/MaintenanceGate.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
 import RouteSeo from "./components/RouteSeo";
 import { HelmetProvider } from "react-helmet-async";
@@ -252,6 +253,7 @@ const App = () => (
           <AIChatbot />
           <WhatsAppButton />
           <ErrorBoundary>
+<MaintenanceGate>
           <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />
@@ -424,8 +426,9 @@ const App = () => (
             <Route path="/interview/live/:id" element={<ProtectedRoute><ErrorBoundary><LiveInterviewPage /></ErrorBoundary></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
+</Routes>
           </Suspense>
+          </MaintenanceGate>
           </ErrorBoundary>
         </TenantProvider>
         </CurrencyProvider>
