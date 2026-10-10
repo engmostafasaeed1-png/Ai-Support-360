@@ -253,6 +253,13 @@
       "when": 1791619469974,
       "tag": "0035_m39_ticket_tenant_nda_demo_insert",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791644265236,
+      "tag": "0036_wire_admin_setting_keys",
+      "breakpoints": true
     }
   ]
 }
