@@ -43,6 +43,13 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger }: 
   const removeFile = (index: number) => setFiles(prev => prev.filter((_, i) => i !== index));
 
   const handleSubmit = () => {
+    const rate = parseFloat(form.proposed_rate);
+    const hours = form.estimated_hours === '' ? 0 : parseFloat(form.estimated_hours);
+    const days = form.timeline_days === '' ? 0 : parseInt(form.timeline_days, 10);
+    if (!form.cover_letter.trim()) { toast.error('Please write a cover letter'); return; }
+    if (!Number.isFinite(rate) || rate <= 0 || rate > 100000) { toast.error('The rate must be more than 0 and at most 100,000 per hour'); return; }
+    if (!Number.isFinite(hours) || hours < 0 || hours > 100000) { toast.error('The estimated hours must be 0 or more'); return; }
+    if (!Number.isFinite(days) || days < 0 || days > 3650) { toast.error('The days must be 0 or more (at most 3,650)'); return; }
     if (!form.cover_letter || !form.proposed_rate) {
       toast.error('Cover letter and rate are required');
       return;
@@ -51,9 +58,9 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger }: 
       {
         ticket_id: ticketId,
         cover_letter: form.cover_letter,
-        proposed_rate: parseFloat(form.proposed_rate),
-        estimated_hours: parseFloat(form.estimated_hours) || 0,
-        timeline_days: parseInt(form.timeline_days) || 0,
+        proposed_rate: rate,
+        estimated_hours: hours,
+        timeline_days: days,
         files: files.length > 0 ? files : undefined,
         parent_proposal_id: latestVersion?.id,
         version: nextVersion,

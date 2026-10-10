@@ -10,6 +10,8 @@ import {
   ArrowRight, Play, Pause, Star, Calendar,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TimelineEvent {
   id: string;
@@ -46,8 +48,17 @@ export default function TicketTimeline({ ticketId, ticket }: Props) {
   const { data: messages, isLoading: ml } = useTicketMessages(ticketId);
   const { data: proposals, isLoading: pl } = useTicketProposals(ticketId);
   const { data: documents, isLoading: dl } = useTicketDocuments(ticketId);
+  // the real history of the ticket: status changes, assignments, urgency, plan decisions, match requests
+  const { data: history, isLoading: hl } = useQuery({
+    queryKey: ['ticket-timeline', ticketId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('ticket_timeline', { _ticket_id: ticketId });
+      if (error) throw error;
+      return (data || []) as { event_at: string; kind: string; title: string; detail: string | null }[];
+    },
+  });
 
-  const isLoading = sl || ml || pl || dl;
+  const isLoading = sl || ml || pl || dl || hl;
 
   if (isLoading) {
     return (
@@ -168,6 +179,29 @@ export default function TicketTimeline({ ticketId, ticket }: Props) {
       iconBg: 'bg-green-100',
     });
   }
+
+  // 7. History from the server (the "created" entry and the "resolved" status change are already shown above)
+  (history || []).forEach((h, i) => {
+    if (h.kind === 'created') return;
+    if (h.kind === 'status' && h.title === 'Status changed to resolved' && ticket.resolved_at) return;
+    const style = h.kind === 'status'
+      ? { icon: ArrowRight, color: 'text-blue-600', bg: 'bg-blue-100' }
+      : h.kind === 'assignment'
+        ? { icon: Play, color: 'text-primary', bg: 'bg-primary/10' }
+        : h.kind === 'plan'
+          ? { icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-100' }
+          : { icon: AlertCircle, color: 'text-muted-foreground', bg: 'bg-muted' };
+    events.push({
+      id: `history-${i}`,
+      timestamp: h.event_at,
+      type: 'status_change',
+      title: h.title,
+      subtitle: h.detail || undefined,
+      icon: style.icon,
+      iconColor: style.color,
+      iconBg: style.bg,
+    });
+  });
 
   // Sort chronologically (newest first)
   events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());

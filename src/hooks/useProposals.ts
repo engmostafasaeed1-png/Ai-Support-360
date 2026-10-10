@@ -180,6 +180,12 @@ export function useRespondToProposal() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ proposalId, status, client_notes }: { proposalId: string; status: 'accepted' | 'rejected'; client_notes?: string }) => {
+      if (status === 'accepted') {
+        // one server step: accept this bid, assign the consultant and reject the other pending bids
+        const { error: acceptError } = await supabase.rpc('accept_proposal', { _proposal_id: proposalId, _client_notes: client_notes ?? undefined });
+        if (acceptError) throw acceptError;
+        return;
+      }
       // Fetch proposal so we know which ticket + consultant to auto-assign
       const { data: proposal, error: fetchErr } = await supabase
         .from('proposals')
