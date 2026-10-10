@@ -267,6 +267,12 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
       if (consultantErr || !consultant) throw consultantErr;
       setConsultantId(consultant.id);
 
+      // The nationality is a private detail: it is kept in its own table that only the consultant and the administrators can read.
+      const { error: privateError } = await supabase
+        .from('consultant_private')
+        .upsert({ consultant_id: consultant.id, nationality: data.nationality || null }, { onConflict: 'consultant_id' });
+      if (privateError) throw privateError;
+
       if (embedded) {
         // Existing rows are edited by their stable row IDs; new duplicates are skipped, not appended.
         const syncRows = async (table: 'certifications' | 'consultant_education' | 'consultant_projects', rows: { id?: string; [key: string]: unknown }[], original: string[], key: (row: any) => string) => {
