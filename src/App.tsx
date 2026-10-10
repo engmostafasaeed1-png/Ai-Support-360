@@ -382,6 +382,7 @@ const App = () => (
                 <Route path="meeting-events" element={<MeetingEventsConsoleSection />} />
                 <Route path="interview-training" element={<InterviewTrainingConsoleSection />} />
                 <Route path="oncall" element={<OnCallScheduleConsoleSection />} />
+                <Route path="*" element={<Navigate to="/admin/console" replace />} />
               </Route>
               <Route path="users" element={<UsersPage />} />
               <Route path="tickets" element={<TicketKanbanPage />} />
