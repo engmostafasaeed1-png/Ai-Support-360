@@ -5,6 +5,7 @@ import type { Session } from '@supabase/supabase-js';
 import { Loader2 } from 'lucide-react';
 import { getClientOnboardingState } from '@/lib/clientOnboarding';
 import { getSessionWithRetry } from '@/lib/authSession';
+import TwoFactorGate from '@/components/auth/TwoFactorGate';
 
 interface Props {
   children: React.ReactNode;
@@ -137,5 +138,5 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
     return <Navigate to={onboardingPath} replace />;
   }
 
-  return <>{children}</>;
+  return <TwoFactorGate>{children}</TwoFactorGate>;
 }

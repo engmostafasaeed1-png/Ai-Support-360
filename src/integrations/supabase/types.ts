@@ -7606,6 +7606,10 @@ export type Database = {
       payment_service_fee_percent: { Args: never; Returns: number }
       payment_vat_percent: { Args: never; Returns: number }
       plan_limits_enforced: { Args: never; Returns: boolean }
+      platform_flag: {
+        Args: { _default: boolean; _key: string }
+        Returns: boolean
+      }
       pricing_breakdown: { Args: { _base: number }; Returns: Json }
       pricing_terms: { Args: never; Returns: Json }
       propose_ticket_rate: {

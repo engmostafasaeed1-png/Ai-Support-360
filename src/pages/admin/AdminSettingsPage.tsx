@@ -144,23 +144,30 @@ export default function AdminSettingsPage() {
             <Mail className="h-5 w-5 text-primary" />
             <CardTitle className="text-base">{t('admin.settings_email_notifications', 'Email Notifications')}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <Label htmlFor="email_notifications">{t('admin.settings_email_notifications', 'Email Notifications')}</Label>
-                <p className="mt-0.5 text-xs text-muted-foreground">Controls whether the platform sends e-mail notifications for important events.</p>
+          <CardContent className="space-y-4">
+            {([
+              ['email_notifications', 'Email Notifications', 'Automatic e-mails (demo requests, verification items, interview replies). Invitations you send yourself always go out.', true],
+              ['admin_alerts', 'Admin Alerts', 'In-app notifications to administrators. When off, new alerts for admins are not stored.', true],
+              ['audit_logging', 'Audit Logging', 'Records activity in the audit log. Changes to settings and roles are always recorded.', true],
+              ['require_2fa', 'Require two-step sign-in', 'Everyone must use an authenticator app code before the portal opens.', false],
+            ] as const).map(([key, label, hint, def]) => (
+              <div key={key} className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <Label htmlFor={key}>{label}</Label>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
+                </div>
+                {loading ? (
+                  <Skeleton className="h-5 w-9 shrink-0 rounded-full" />
+                ) : (
+                  <Switch
+                    id={key}
+                    className="shrink-0"
+                    checked={settings[key] === undefined ? def : settings[key]}
+                    onCheckedChange={(val) => void updateSetting(key, val)}
+                  />
+                )}
               </div>
-              {loading ? (
-                <Skeleton className="h-5 w-9 shrink-0 rounded-full" />
-              ) : (
-                <Switch
-                  id="email_notifications"
-                  className="shrink-0"
-                  checked={settings.email_notifications !== false}
-                  onCheckedChange={(val) => void updateSetting('email_notifications', val)}
-                />
-              )}
-            </div>
+            ))}
           </CardContent>
         </Card>
       </div>
