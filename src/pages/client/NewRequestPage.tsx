@@ -15,6 +15,8 @@ import SapNotesField from '@/components/ticket/SapNotesField';
 import { MAX_SAP_AREAS, MAX_OTHER_AREA_LENGTH, MAX_AREA_DETAILS_LENGTH, areasSummary, areaLabel, isOtherArea } from '@/lib/sapAreas';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { checkAttachments, ATTACHMENT_HINT } from '@/lib/attachments';
+import { safeFileName } from '@/lib/storagePath';
 import { z } from 'zod';
 import {
   ArrowLeft, ArrowRight, Check, Sparkles, Brain,
@@ -136,6 +138,10 @@ export default function NewRequestPage() {
     ticket_type: 'standard',
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const submitLock = useRef(false);
+  // the text the AI triage was run for: when the title, the description or the areas change afterwards, the result is out of date
+  const [triageKey, setTriageKey] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -211,6 +217,8 @@ export default function NewRequestPage() {
   ];
 
   const updateForm = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value } as typeof prev));
+  const currentTriageKey = JSON.stringify([form.title.trim(), form.description.trim(), form.sap_module]);
+  const triageIsStale = !!aiCategorization && triageKey !== currentTriageKey;
 
   // sap_module keeps ONE short line (at most 100 characters) for the AI calls and the review; the full list is sap_modules
   const setAreas = (areas: string[]) => {
@@ -247,7 +255,10 @@ export default function NewRequestPage() {
       });
       if (error) throw error;
       if (handleAiError(data)) return;
-      if (data?.result) setAiCategorization(data.result);
+      if (data?.result) {
+        setAiCategorization(data.result);
+        setTriageKey(JSON.stringify([form.title.trim(), form.description.trim(), form.sap_module]));
+      }
     } catch (err) {
       console.error('AI categorization failed:', err);
       toast.error('AI categorization failed. You can continue without it.');
@@ -357,7 +368,8 @@ export default function NewRequestPage() {
   const handleNext = () => {
     if (!validateStep(step)) return;
 
-    if (step === 1 && !aiCategorization && form.description.length > 15) {
+    if (step === 1 && form.description.length > 15 && (!aiCategorization || triageIsStale)) {
+      setAiCategorization(null);
       runAiCategorize();
     }
     if (step === 2) {
@@ -369,6 +381,19 @@ export default function NewRequestPage() {
   };
 
   const handleSubmit = async () => {
+    // a second click while the first request is still running must not create a second ticket
+    if (submitLock.current) return;
+    submitLock.current = true;
+    setSubmitting(true);
+    try {
+      await submitRequest();
+    } finally {
+      submitLock.current = false;
+      setSubmitting(false);
+    }
+  };
+
+  const submitRequest = async () => {
     const result = ticketSchema.safeParse(form);
     if (!result.success) {
       const firstError = result.error.issues[0]?.message || 'Please fix form errors';
@@ -392,18 +417,20 @@ export default function NewRequestPage() {
         urgency: form.urgency as any,
         preferred_session_type: form.preferred_session as any,
         preferred_language: form.preferred_language,
-        ai_suggested_category: aiCategorization?.category || null,
-        ai_suggested_priority: aiCategorization?.suggested_priority || null,
+        ai_suggested_category: (!triageIsStale && aiCategorization?.category) || null,
+        ai_suggested_priority: (!triageIsStale && aiCategorization?.suggested_priority) || null,
         ticket_type: form.ticket_type,
       }).select('id').single();
 
       if (error) throw error;
 
       // Upload attached files
+      const failedFiles: string[] = [];
       if (ticketData && attachedFiles.length > 0) {
         for (const file of attachedFiles) {
-          const storagePath = `${ticketData.id}/${user.id}/${Date.now()}_${file.name}`;
-          await supabase.storage.from('ticket-documents').upload(storagePath, file);
+          const storagePath = `${ticketData.id}/${user.id}/${Date.now()}_${safeFileName(file.name)}`;
+          const { error: uploadError } = await supabase.storage.from('ticket-documents').upload(storagePath, file);
+          if (uploadError) { failedFiles.push(file.name); continue; }
           await supabase.from('ticket_documents').insert({
             ticket_id: ticketData.id,
             uploaded_by: user.id,
@@ -414,6 +441,10 @@ export default function NewRequestPage() {
             version: 1,
           } as any);
         }
+      }
+
+      if (failedFiles.length > 0) {
+        toast.error(`Your ticket was created, but these files could not be attached: ${failedFiles.join(', ')}. You can add them from the ticket page.`);
       }
 
       // Create ticket links
@@ -640,8 +671,8 @@ export default function NewRequestPage() {
                   className="hidden"
                   onChange={(e) => {
                     const files = Array.from(e.target.files || []);
-                    const valid = files.filter(f => f.size <= 20 * 1024 * 1024);
-                    if (valid.length < files.length) toast.error('Some files exceed 20MB limit');
+                    const { accepted: valid, problems } = checkAttachments(files);
+                    if (problems.length > 0) toast.error(problems.join(' '));
                     setAttachedFiles(prev => [...prev, ...valid]);
                     if (fileInputRef.current) fileInputRef.current.value = '';
                   }}
@@ -656,7 +687,7 @@ export default function NewRequestPage() {
                   >
                     <Upload className="w-3.5 h-3.5" /> Add Files
                   </Button>
-                  <span className="text-[11px] text-muted-foreground">Screenshots, logs, error reports (max 20MB each)</span>
+                  <span className="text-[11px] text-muted-foreground">Screenshots, logs and error reports: {ATTACHMENT_HINT}</span>
                 </div>
                 {attachedFiles.length > 0 && (
                   <div className="space-y-1.5 mt-2">
@@ -747,14 +778,14 @@ export default function NewRequestPage() {
                 )}
               </div>
             </div>
-            {form.description.length > 15 && !aiCategorization && (
+            {form.description.length > 15 && (!aiCategorization || triageIsStale) && (
               <Button variant="outline" size="sm" onClick={runAiCategorize} disabled={aiLoading === 'categorize'} className="gap-1.5">
                 {aiLoading === 'categorize' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
                 {t('ticket_create.ai_analyze')}
               </Button>
             )}
 
-            {aiCategorization && (
+            {aiCategorization && !triageIsStale && (
               <div className="p-4 rounded-xl bg-accent/5 border border-accent/20">
                 <div className="flex items-center gap-2 mb-3">
                   <Brain className="w-4 h-4 text-accent" />
@@ -1170,7 +1201,7 @@ export default function NewRequestPage() {
 
       {/* Navigation */}
       <div className="flex justify-between">
-        <Button variant="outline" onClick={() => setStep(step - 1)} disabled={step === 0}>
+        <Button variant="outline" onClick={() => setStep(step - 1)} disabled={step === 0 || submitting}>
           <ArrowLeft className="w-4 h-4 me-1 rtl:rotate-180" /> {t('onboarding.back')}
         </Button>
         {step < steps.length - 1 ? (
@@ -1178,8 +1209,8 @@ export default function NewRequestPage() {
             {t('onboarding.next')} <ArrowRight className="w-4 h-4 ms-1 rtl:rotate-180" />
           </Button>
         ) : (
-          <Button onClick={handleSubmit} className="gradient-primary border-0">
-            <Check className="w-4 h-4 me-1" /> {t('ticket_create.submit_request')}
+          <Button onClick={handleSubmit} disabled={submitting} className="gradient-primary border-0">
+            {submitting ? <Loader2 className="w-4 h-4 me-1 animate-spin" /> : <Check className="w-4 h-4 me-1" />} {t('ticket_create.submit_request')}
           </Button>
         )}
       </div>
