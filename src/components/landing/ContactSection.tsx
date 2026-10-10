@@ -8,6 +8,7 @@ import SectionHeader from './SectionHeader';
 import { useDemoWizard } from './DemoRequestWizard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_HREF } from '@/lib/contact';
 
 export default function ContactSection() {
   const { t } = useTranslation();
@@ -22,7 +23,7 @@ export default function ContactSection() {
     const get = (k: string) => String(f.get(k) ?? '').trim();
     const notes = [get('phone') && `Phone: ${get('phone')}`, get('message')].filter(Boolean).join('\n\n').slice(0, 2000);
     setSending(true);
-    const { error } = await supabase.rpc('submit_demo_request', {
+    const { data: requestToken, error } = await supabase.rpc('submit_demo_request', {
       _demo_type: 'live',
       _scheduling_preference: 'flexible',
       _scheduled_date: null as any,
@@ -41,6 +42,10 @@ export default function ContactSection() {
       return;
     }
     setSubmitted(true);
+    // the confirmation to the visitor and the alert to the team (best effort: the server reads everything from the request itself)
+    if (typeof requestToken === 'string') {
+      void supabase.functions.invoke('demo-request-notify', { body: { token: requestToken } }).catch(() => undefined);
+    }
   };
 
   return (
@@ -134,6 +139,10 @@ export default function ContactSection() {
               <p className="text-center text-xs text-muted-foreground">
                 Prefer email? Write to us any time at{' '}
                 <a href="mailto:info@qurtubatalks.com" className="text-primary underline">info@qurtubatalks.com</a>
+              </p>
+              <p className="text-center text-xs text-muted-foreground">
+                Prefer to talk? Call us on{' '}
+                <a href={CONTACT_PHONE_HREF} dir="ltr" className="text-primary underline">{CONTACT_PHONE_DISPLAY}</a>
               </p>
             </form>
           )}

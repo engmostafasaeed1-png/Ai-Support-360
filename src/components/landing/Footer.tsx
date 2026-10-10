@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import logo from '@/assets/brand/horizontal.webp.asset.json';
 import { cn } from '@/lib/utils';
+import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_HREF } from '@/lib/contact';
 import { useDemoWizard } from './DemoRequestWizard';
 
-type FooterLink = { label: string; href: string; onClick?: () => void };
+type FooterLink = { label: string; href: string; onClick?: () => void; dir?: 'ltr' | 'rtl' };
 
 /**
  * The site footer with the company details and the policy links.
@@ -32,6 +33,7 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
       { label: 'Request a demo', href: '#', onClick: () => demoWizard.open(undefined, { source: 'footer' }) },
       { label: t('footer.help'), href: '/#how-it-works' },
       { label: t('footer.contact'), href: '/#contact' },
+      { label: `Call ${CONTACT_PHONE_DISPLAY}`, href: CONTACT_PHONE_HREF, dir: 'ltr' },
     ],
     legal: [
       { label: t('footer.privacy'), href: '/privacy-policy' },
@@ -74,6 +76,7 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
                   <li key={i}>
                     <a
                       href={item.href}
+                      dir={item.dir}
                       onClick={item.onClick ? (e) => { e.preventDefault(); item.onClick!(); } : undefined}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
