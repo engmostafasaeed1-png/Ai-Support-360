@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 
@@ -84,6 +85,10 @@ export default function RouteSeo() {
   const { pathname } = useLocation();
   const meta = resolve(pathname);
   const url = `${BASE_URL}${pathname === '/' ? '/' : pathname}`;
+  // react-helmet-async changes the title on the next animation frame, which a tab in the background never runs: set it directly as well
+  useEffect(() => {
+    document.title = meta.title;
+  }, [meta.title]);
   return (
     <Helmet>
       <title>{meta.title}</title>

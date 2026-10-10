@@ -8,6 +8,8 @@ export type NdaPendingItem = {
   client_name: string;
   detail: string;
   since: string;
+  /** The consultant signed already; the client has to countersign before the access opens. */
+  waiting_for_client?: boolean;
 };
 
 /** What waits for the signed-in consultant's NDA (no host, IP, ID or environment name is returned before the NDA). */

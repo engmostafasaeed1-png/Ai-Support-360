@@ -15,6 +15,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { format, addMinutes, setHours, setMinutes } from 'date-fns';
+import { sessionRoomUrl } from '@/lib/meetingRoom';
+import { validateMeetingUrl } from '@/lib/meetingUrlValidation';
 import {
   CalendarDays, Clock, Video, MessageSquare, Monitor, Bell,
   Loader2, CheckCircle2, X, UserPlus, Users, Mail, Search,
@@ -75,16 +77,14 @@ const TIME_SLOTS = Array.from({ length: 28 }, (_, i) => {
   return h < 22;
 });
 
-function generateMeetingUrl(platform: string, sessionId: string): string {
-  const room = `qurtuba-${sessionId.slice(0, 8)}`;
-  switch (platform) {
-    case 'jitsi': return `https://meet.jit.si/${room}`;
-    case 'zoom': return `https://zoom.us/j/${room}`;
-    case 'google_meet': return `https://meet.google.com/${room}`;
-    case 'ms_teams': return `https://teams.microsoft.com/l/meetup-join/${room}`;
-    default: return `https://meet.jit.si/${room}`;
-  }
+// Jitsi rooms are made here (the room name is the whole session id: nobody can guess it).
+// Zoom, Google Meet and Teams links need the account of the organizer, so the organizer pastes the link of the meeting.
+function needsPastedLink(platform: string, sessionType: string): boolean {
+  return (sessionType === 'video' || sessionType === 'screen_share') && platform !== 'jitsi';
 }
+
+// the provider that validateMeetingUrl reports for a link of each platform
+const PROVIDER_OF_PLATFORM: Record<string, string> = { zoom: 'zoom', google_meet: 'meet', ms_teams: 'teams' };
 
 export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ticketTitle, clientId, consultantId, consultantName }: Props) {
   const queryClient = useQueryClient();
@@ -95,6 +95,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
   const [reminder, setReminder] = useState('15');
   const [duration, setDuration] = useState('60');
   const [notes, setNotes] = useState('');
+  const [pastedUrl, setPastedUrl] = useState('');
   const [saving, setSaving] = useState(false);
 
   // Consultant selection state
@@ -216,12 +217,21 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
   const handleSchedule = async () => {
     if (!date) { toast.error('Please select a date'); return; }
     if (totalInvitees === 0) { toast.error('Please select at least one participant'); return; }
+    const pasteLink = needsPastedLink(platform, sessionType);
+    if (pasteLink) {
+      const check = validateMeetingUrl(pastedUrl);
+      if (!check.ok) { toast.error(check.summary || 'Please paste the link of your meeting'); return; }
+      if (check.provider !== PROVIDER_OF_PLATFORM[platform]) {
+        toast.error(`This is not a ${PLATFORMS.find(p => p.value === platform)?.label} link`);
+        return;
+      }
+    }
 
     setSaving(true);
     const [h, m] = time.split(':').map(Number);
     const scheduledAt = setMinutes(setHours(date, h), m);
     const sessionId = crypto.randomUUID();
-    const meetingUrl = generateMeetingUrl(platform, sessionId);
+    const meetingUrl = pasteLink ? pastedUrl.trim() : sessionRoomUrl(sessionId);
 
     // Create session for first selected consultant (primary)
     const primaryConsultantId = selectedConsultantIds[0] || null;
@@ -266,6 +276,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
     ];
     toast.success(`Meeting scheduled with ${inviteeSummary.length} participant(s)! Calendar invite downloaded.`);
     queryClient.invalidateQueries({ queryKey: ['ticket-sessions', ticketId] });
+    setPastedUrl('');
     onOpenChange(false);
     setSaving(false);
   };
@@ -433,6 +444,24 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
             </div>
           )}
 
+          {needsPastedLink(platform, sessionType) && (
+            <div className="space-y-2">
+              <Label htmlFor="meeting-link" className="text-xs font-medium">Meeting link</Label>
+              <Input
+                id="meeting-link"
+                type="url"
+                value={pastedUrl}
+                onChange={e => setPastedUrl(e.target.value)}
+                placeholder="https://"
+                className="h-9 text-xs"
+                maxLength={500}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Create the meeting in your {PLATFORMS.find(p => p.value === platform)?.label} account and paste its link here. The portal cannot create it for you.
+              </p>
+            </div>
+          )}
+
           {/* Date */}
           <div className="space-y-2">
             <Label className="text-xs font-medium">Date</Label>
@@ -551,7 +580,7 @@ function downloadICS(start: Date, durationMin: number, title: string, url: strin
   const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
   const attendeeLines = [
-    ...attendees.map(name => `ATTENDEE;CN=${name};ROLE=REQ-PARTICIPANT:MAILTO:noreply@qurtuba.com`),
+    ...attendees.map(name => `ATTENDEE;CN=${name};ROLE=REQ-PARTICIPANT:MAILTO:noreply@aisupport360.com`),
     ...externalEmails.map(email => `ATTENDEE;ROLE=REQ-PARTICIPANT;RSVP=TRUE:MAILTO:${email}`),
   ];
 

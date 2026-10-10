@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, Video, MessageSquare, Monitor, Clock, User, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { useTenant } from '@/contexts/TenantContext';
 
 const typeIcons = {
   video: Video,
@@ -25,19 +26,23 @@ const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'o
 export default function SessionsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { tenant, loading: tenantLoading } = useTenant();
 
   const { data: sessions, isLoading, error } = useQuery({
-    queryKey: ['client-sessions'],
+    queryKey: ['client-sessions', 'list', tenant?.id ?? null],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
       // Fetch sessions with consultant info via FK join
-      const { data, error } = await supabase
+      let query = supabase
         .from('sessions')
         .select('*, consultants(id, user_id, hourly_rate)')
         .eq('client_id', user.id)
         .order('scheduled_at', { ascending: false });
+      // the sessions of the active company; a session that belongs to no company shows in every company
+      if (tenant?.id) query = query.or(`tenant_id.eq.${tenant.id},tenant_id.is.null`);
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -65,6 +70,7 @@ export default function SessionsPage() {
         consultant_name: profileMap[s.consultants?.user_id] || t('sessions_page.unknown_consultant'),
       }));
     },
+    enabled: !tenantLoading,
   });
 
   return (
@@ -111,6 +117,9 @@ export default function SessionsPage() {
           {sessions.map((session) => {
             const TypeIcon = typeIcons[session.session_type as keyof typeof typeIcons] || Video;
             const status = session.status || 'scheduled';
+            // a session whose time is over but whose status was never updated is not upcoming
+            const timePassed = status === 'scheduled' && !!session.scheduled_at
+              && new Date(session.scheduled_at).getTime() + (session.duration_minutes || 30) * 60000 < Date.now();
 
             return (
               <Card key={session.id} className="rounded-2xl border-border/50 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => navigate(`/client/sessions/${session.id}`)}>
@@ -122,8 +131,8 @@ export default function SessionsPage() {
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant={statusVariant[status] || 'outline'} className="text-[10px]">
-                            {t(`sessions_page.status_${status}`)}
+                          <Badge variant={timePassed ? 'outline' : statusVariant[status] || 'outline'} className="text-[10px]">
+                            {timePassed ? t('sessions_page.time_passed', 'Time passed, status not updated') : t(`sessions_page.status_${status}`)}
                           </Badge>
                           <span className="text-xs text-muted-foreground capitalize">
                             {session.session_type?.replace('_', ' ')}
@@ -149,7 +158,7 @@ export default function SessionsPage() {
                       </div>
                     </div>
 
-                    {status === 'scheduled' && (
+                    {status === 'scheduled' && !timePassed && (
                       <Button size="sm" variant="outline" className="shrink-0 gap-1">
                         {t('sessions_page.join')} <ArrowRight className="w-3.5 h-3.5" />
                       </Button>

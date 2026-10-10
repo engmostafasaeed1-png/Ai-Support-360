@@ -41,7 +41,9 @@ function useConsultantContact(consultantId: string | null, ticketId: string) {
       return {
         display_name: row?.display_name ?? null,
         phone: row?.phone ?? null,
-        hourly_rate: row?.hourly_rate ?? consultant.hourly_rate,
+        // the rate of the person who answers: a consultant on call has another rate than the assigned one, an administrator has none
+        hourly_rate: row ? (row.hourly_rate ?? 0) : consultant.hourly_rate,
+        source: (row as any)?.source ?? null,
       };
     },
   });
@@ -50,6 +52,8 @@ function useConsultantContact(consultantId: string | null, ticketId: string) {
 export default function EmergencyContactPanel({ consultantId, consultantName, ticketId, ticketTitle, urgency }: Props) {
   const { data: contact } = useConsultantContact(consultantId, ticketId);
   const phone = (contact as any)?.phone;
+  const contactName = (contact as any)?.display_name as string | null | undefined;
+  const source = (contact as any)?.source as string | null | undefined;
   const hourlyRate = (contact as any)?.hourly_rate || 0;
   const isEmergency = urgency === 'critical' || urgency === 'high';
   const pricing = EMERGENCY_PRICING[urgency as keyof typeof EMERGENCY_PRICING] || EMERGENCY_PRICING.medium;
@@ -113,7 +117,11 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
         </div>
 
         <p className="text-xs text-muted-foreground">
-          {consultantName ? `Reach ${consultantName} directly` : 'Contact assigned consultant'}
+          {source === 'on_call' && contactName
+            ? `Reach ${contactName}, the consultant on call for this ticket, directly`
+            : source === 'administrator'
+              ? `No consultant is on call: this is the platform administrator${contactName ? `, ${contactName}` : ''}`
+              : consultantName ? `Reach ${consultantName}, your assigned consultant, directly` : 'Contact the assigned consultant'}
           {isEmergency ? ' — for critical issues requiring immediate attention.' : '.'}
         </p>
 

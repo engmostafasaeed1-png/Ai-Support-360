@@ -38,7 +38,7 @@ export default function ConsultantLayout() {
                 <img src={logo.url} alt="AI Support 360" className="w-8 h-8 rounded-lg object-contain" />
                 <span className="hidden font-bold text-sm text-foreground sm:inline">AI Support 360</span>
               </Link>
-              <HeaderSearchButton placeholder="Search cases, clients..." />
+              <HeaderSearchButton placeholder="Search pages, features..." />
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
               <Badge className="hidden xl:inline-flex bg-primary/10 text-primary border border-primary/30 px-3 py-1 text-xs font-semibold gap-1.5">

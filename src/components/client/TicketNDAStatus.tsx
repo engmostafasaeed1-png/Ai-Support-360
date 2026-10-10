@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldCheck, ShieldX, Download, FileSignature } from 'lucide-react';
 import { format } from 'date-fns';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
+import { Link } from 'react-router-dom';
 
 interface TicketNDAStatusProps {
   consultantId: string;
@@ -35,6 +36,8 @@ export default function TicketNDAStatus({ consultantId, clientId, consultantName
 
   const isSigned = !!nda && !nda.revoked_at;
   const isRevoked = !!nda?.revoked_at;
+  // the agreement is in force only when both sides have signed
+  const waitingForClient = isSigned && !nda?.client_signed_at;
 
   const handleExport = async () => {
     if (!nda) return;
@@ -54,7 +57,7 @@ export default function TicketNDAStatus({ consultantId, clientId, consultantName
   };
 
   return (
-    <Card className={`rounded-2xl border-border/50 ${isSigned ? 'border-green-500/30' : isRevoked ? 'border-destructive/30' : 'border-amber-500/30'}`}>
+    <Card className={`rounded-2xl border-border/50 ${waitingForClient ? 'border-amber-500/30' : isSigned ? 'border-green-500/30' : isRevoked ? 'border-destructive/30' : 'border-amber-500/30'}`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
           <FileSignature className="w-4 h-4 text-primary" />
@@ -62,7 +65,22 @@ export default function TicketNDAStatus({ consultantId, clientId, consultantName
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {isSigned ? (
+        {waitingForClient ? (
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <ShieldX className="w-5 h-5 text-amber-500" />
+              <div>
+                <p className="text-sm font-medium text-amber-700">Waiting for your signature</p>
+                <p className="text-xs text-muted-foreground">
+                  {consultantName || 'The consultant'} signed on {format(new Date(nda?.signed_at ?? ''), 'MMM d, yyyy')}. The agreement is in force, and the consultant can reach protected information, only after you sign as well.
+                </p>
+              </div>
+            </div>
+            <Button asChild variant="outline" size="sm" className="h-8 text-xs gap-1.5 shrink-0">
+              <Link to="/client/contracts"><FileSignature className="w-3.5 h-3.5" /> Sign now</Link>
+            </Button>
+          </div>
+        ) : isSigned ? (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-green-600" />
@@ -70,6 +88,7 @@ export default function TicketNDAStatus({ consultantId, clientId, consultantName
                 <p className="text-sm font-medium text-green-700">NDA Signed</p>
                 <p className="text-xs text-muted-foreground">
                   Signed on {format(new Date(nda.signed_at), 'MMM d, yyyy')} by {consultantName || 'Consultant'}
+                  {nda.client_signed_at ? ` and countersigned on ${format(new Date(nda.client_signed_at), 'MMM d, yyyy')}` : ''}
                 </p>
               </div>
             </div>

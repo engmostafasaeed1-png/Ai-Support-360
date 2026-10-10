@@ -39,7 +39,7 @@ export default function ClientLayout() {
                 <img src={logo.url} alt="AI Support 360" className="w-8 h-8 rounded-lg object-contain" />
                 <span className="hidden font-bold text-sm text-foreground sm:inline">AI Support 360</span>
               </Link>
-              <HeaderSearchButton placeholder="Search tickets, consultants..." />
+              <HeaderSearchButton placeholder="Search pages, features..." />
             </div>
             <div className="flex items-center gap-3">
               <Badge className="hidden xl:inline-flex bg-accent/10 text-accent border border-accent/30 px-3 py-1 text-xs font-semibold gap-1.5">

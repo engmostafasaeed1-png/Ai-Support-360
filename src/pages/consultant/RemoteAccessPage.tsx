@@ -69,15 +69,16 @@ function useNDAStatus(clientId?: string) {
     queryKey: ['nda-status', clientId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return { signed: false, consultantId: null as string | null };
+      if (!user) return { signed: false, countersigned: false, consultantId: null as string | null };
       const { data: consultant } = await supabase
         .from('consultants').select('id').eq('user_id', user.id).single();
-      if (!consultant) return { signed: false, consultantId: null };
+      if (!consultant) return { signed: false, countersigned: false, consultantId: null };
       const { data: nda } = await supabase
-        .from('nda_agreements').select('id')
+        .from('nda_agreements').select('id, client_signed_at')
         .eq('consultant_id', consultant.id).eq('client_id', clientId!)
         .is('revoked_at', null).limit(1).maybeSingle();
-      return { signed: !!nda, consultantId: consultant.id };
+      // the access opens only when the client has countersigned as well
+      return { signed: !!nda, countersigned: !!nda?.client_signed_at, consultantId: consultant.id };
     },
     enabled: !!clientId,
   });
@@ -106,6 +107,7 @@ function EnvironmentCard({ env, ticketInfo, onConnect }: {
   const [ndaModalOpen, setNdaModalOpen] = useState(false);
 
   const hasSigned = ndaStatus?.signed ?? false;
+  const countersigned = ndaStatus?.countersigned ?? false;
   const consultantId = ndaStatus?.consultantId;
   const sc = statusConfig[env.status] || statusConfig.active;
   const isAccessible = env.status === 'active';
@@ -186,6 +188,18 @@ function EnvironmentCard({ env, ticketInfo, onConnect }: {
                   <NDASigningModal open={ndaModalOpen} onOpenChange={setNdaModalOpen}
                     clientId={env.client_id} consultantId={consultantId} />
                 )}
+              </div>
+            ) : !countersigned ? (
+              <div className="mt-3 p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-1">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
+                  <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                    {t('remote.nda_waiting_client', 'NDA signed: waiting for the client')}
+                  </p>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {t('remote.nda_waiting_client_desc', 'You signed. The agreement is in force, and the access details open, as soon as the client signs it as well.')}
+                </p>
               </div>
             ) : (
               <>

@@ -35,6 +35,7 @@ import PreJoinChecklist from '@/components/session/PreJoinChecklist';
 import MeetingPermissionsNote from '@/components/session/MeetingPermissionsNote';
 import ShareAudioGuideNote from '@/components/session/ShareAudioGuideNote';
 import MeetingUrlValidationNotice from '@/components/session/MeetingUrlValidationNotice';
+import { sessionRoomUrl } from '@/lib/meetingRoom';
 
 const typeIcons = {
   video: Video,
@@ -196,7 +197,7 @@ export default function SessionDetailPage() {
   // sub-component (framed notice, validation, checklist, fallback dialog)
   // shows consistent provider-specific troubleshooting copy.
   const savedMeetingUrl = (session as any).meeting_url as string | null | undefined;
-  const jitsiFallbackUrl = `https://meet.jit.si/qurtuba-session-${sessionId?.slice(0, 8)}`;
+  const jitsiFallbackUrl = sessionRoomUrl(sessionId ?? '');
   const meetingUrl = savedMeetingUrl || jitsiFallbackUrl;
   const meetingProvider = detectProvider(meetingUrl);
 
@@ -334,7 +335,7 @@ export default function SessionDetailPage() {
                 <MeetingLinkButton
                   url={savedMeetingUrl ?? ''}
                   fallbackUrl={jitsiFallbackUrl}
-                  fallbackRoomId={sessionId?.slice(0, 8)}
+                  fallbackRoomId={sessionId}
                   sessionId={sessionId}
                   provider={meetingProvider}
                 />
@@ -571,7 +572,7 @@ export default function SessionDetailPage() {
           onRequest={async (targetUserId, role) => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
-            await (supabase.from('satisfaction_surveys') as any).insert({
+            const { error: surveyError } = await (supabase.from('satisfaction_surveys') as any).insert({
               rated_by: targetUserId,
               rated_user: user.id,
               role,
@@ -579,6 +580,7 @@ export default function SessionDetailPage() {
               requested_by: user.id,
               status: 'pending',
             });
+            if (surveyError) { toast.error(surveyError.message || 'The survey could not be requested'); return; }
             toast.success('CSAT survey requested!');
             setShowCsat(false);
           }}

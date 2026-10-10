@@ -54,6 +54,7 @@ import { useChatFileUrl } from '@/hooks/useChatFileUrl';
 import { areasOf, areaLabel } from '@/lib/sapAreas';
 import { SapNoteLinks } from '@/components/ticket/SapNotesField';
 import { cleanNoteList } from '@/lib/sapNotes';
+import { isolateDates } from '@/lib/bidi';
 
 function TicketFileLink({ fileUrl, fileName }: { fileUrl: string | null; fileName: string | null }) {
   const href = useChatFileUrl(fileUrl);
@@ -191,7 +192,7 @@ export default function TicketDetailPage() {
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h1 className="text-xl font-bold text-foreground">{ticket.title}</h1>
+            <h1 className="text-xl font-bold text-foreground">{isolateDates(ticket.title)}</h1>
             <ShareMenu
               title={ticket.title}
               text={`Ticket: ${ticket.title} — ${ticket.sap_module} — ${ticket.status}`}
@@ -334,7 +335,7 @@ export default function TicketDetailPage() {
                 {ticket.description && (
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Description</p>
-                    <p className="text-sm text-foreground whitespace-pre-wrap">{ticket.description}</p>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{isolateDates(ticket.description)}</p>
                   </div>
                 )}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
@@ -620,20 +621,29 @@ export default function TicketDetailPage() {
         isPending={false}
         parties={[
           ...(ticket.consultant_id ? [{ id: ticket.consultant_id, name: ticket.consultant_name || 'Consultant', role: 'consultant' as const }] : []),
-          { id: ticket.client_id, name: 'Client', role: 'client' as const },
+          // nobody asks themselves for a survey
+          ...(ticket.client_id !== currentUserId ? [{ id: ticket.client_id, name: 'Client', role: 'client' as const }] : []),
         ]}
         onRequest={async (targetUserId, role) => {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
+          // the consultant party carries the id of the consultant: the survey needs the user id of that consultant
+          let ratedBy = targetUserId;
+          if (role === 'consultant') {
+            const { data: consultantRow } = await supabase.from('consultants').select('user_id').eq('id', targetUserId).maybeSingle();
+            if (!consultantRow?.user_id) { toast.error('The consultant could not be found'); return; }
+            ratedBy = consultantRow.user_id;
+          }
           // rated_by = target (they fill the survey), rated_user = requester (they get rated)
-          await (supabase.from('satisfaction_surveys') as any).insert({
-            rated_by: targetUserId,
+          const { error: surveyError } = await (supabase.from('satisfaction_surveys') as any).insert({
+            rated_by: ratedBy,
             rated_user: user.id,
             role,
             ticket_id: ticket.id,
             requested_by: user.id,
             status: 'pending',
           });
+          if (surveyError) { toast.error(surveyError.message || 'The survey could not be requested'); return; }
           toast.success('CSAT survey requested!');
           setCsatOpen(false);
         }}
