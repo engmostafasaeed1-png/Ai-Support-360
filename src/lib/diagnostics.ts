@@ -101,9 +101,11 @@ export function recordDiagnostic(entry: Omit<DiagnosticEntry, 'ts'>) {
 
   const tag = `[diag:${entry.category}]`;
   const payload = { ...entry.data };
-  if (entry.level === 'error') logger.error(`${tag} ${entry.message}`, undefined, payload);
-  else if (entry.level === 'warn') logger.warn(`${tag} ${entry.message}`, payload);
-  else logger.info(`${tag} ${entry.message}`, payload);
+  // Only a blocked resource of the site itself is a reportable error. Meeting-provider and camera / microphone events
+  // (a blocked popup, a window closed quickly, ...) depend on the visitor's browser: they are stored in meeting_join_events, not in the error list.
+  if (entry.level === 'error' && entry.category === 'csp') logger.error(`${tag} ${entry.message}`, undefined, payload);
+  else if (entry.level === 'info') logger.info(`${tag} ${entry.message}`, payload);
+  else logger.warn(`${tag} ${entry.message}`, payload);
 }
 
 export function getDiagnosticsBuffer(): DiagnosticEntry[] {
@@ -116,6 +118,14 @@ export function clearDiagnosticsBuffer() {
   } catch {
     /* ignore */
   }
+}
+
+// Violations that the site did not cause: the editor preview's hot-reload socket, browser extensions and antivirus scripts.
+const FOREIGN_CSP_SOURCE =
+  /^(?:wss?|https?):\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:\/|$)|^(?:chrome|moz|safari|safari-web|ms-browser)-extension:|kaspersky-labs\.com/i;
+
+function isForeignCspViolation(evt: SecurityPolicyViolationEvent): boolean {
+  return FOREIGN_CSP_SOURCE.test(evt.blockedURI || '') || FOREIGN_CSP_SOURCE.test(evt.sourceFile || '');
 }
 
 let cspListenerAttached = false;
@@ -132,6 +142,7 @@ export function installCspViolationLogger() {
 
   document.addEventListener('securitypolicyviolation', (e) => {
     const evt = e as SecurityPolicyViolationEvent;
+    if (isForeignCspViolation(evt)) return;
     recordDiagnostic({
       category: 'csp',
       level: 'error',

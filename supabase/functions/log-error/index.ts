@@ -4,6 +4,7 @@
 // reported. Because it is public and writes with the service role it is throttled per IP and
 // globally, payloads are size-limited, and the de-duplication fingerprint is a SHA-256 digest.
 import { adminClient, authenticateUser, clientIp, corsHeaders, preflight, withinRateLimit } from '../_shared/security.ts';
+import { ignoredReason } from '../_shared/errorNoise.ts';
 
 const MAX_BODY_BYTES = 32 * 1024;
 const MAX_CONTEXT_CHARS = 8_000;
@@ -63,6 +64,11 @@ Deno.serve(async (req) => {
     if (!body || typeof body.message !== 'string' || !body.message) {
       return reply(req, { error: 'message is required' }, 400);
     }
+
+    // Reports nobody can act on (editor preview, crawlers, library noise) never use the rate limit or the table.
+    const agent = `${typeof body.user_agent === 'string' ? body.user_agent : ''} ${req.headers.get('user-agent') ?? ''}`;
+    const ignored = ignoredReason({ message: body.message, url: body.url, userAgent: agent });
+    if (ignored) return reply(req, { ok: true, ignored });
 
     const supabase = adminClient();
 

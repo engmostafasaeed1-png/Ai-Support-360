@@ -2,7 +2,7 @@ import React, { Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DirectionProvider } from '@radix-ui/react-direction';
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
-import { logger } from '@/lib/logger';
+import { reportQueryFailure } from '@/lib/queryErrorReporting';
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -176,10 +176,10 @@ const MatchRequestPopup = React.lazy(() => import("./components/consultant/Match
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
-    onError: (error) => logger.error('Query failed', error),
+    onError: (error, query) => reportQueryFailure('Query failed', error, query.queryKey),
   }),
   mutationCache: new MutationCache({
-    onError: (error) => logger.error('Mutation failed', error),
+    onError: (error) => reportQueryFailure('Mutation failed', error),
   }),
   defaultOptions: {
     queries: {

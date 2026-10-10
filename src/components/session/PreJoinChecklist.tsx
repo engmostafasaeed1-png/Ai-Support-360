@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -57,11 +57,16 @@ const PROVIDER_LABEL: Record<MeetingProvider, string> = {
  * surfaces actionable guidance if blocked by provider framing rules.
  *
  * Checks:
- *  1. Secure context (HTTPS) — required for getUserMedia + most providers.
- *  2. Top-level context — warns if the app is in an iframe (Meet/Teams refuse to frame).
- *  3. Popup permission — probes window.open to detect popup blocker before the user clicks Join.
- *  4. URL validity — verifies the meeting URL is well-formed and uses https.
- *  5. Provider framing rule — explicitly fails if framed AND provider is known to block frames.
+ *  1. Secure context (HTTPS) - required for getUserMedia + most providers.
+ *  2. Top-level context - warns if the app is in an iframe (Meet/Teams refuse to frame).
+ *  3. Popup permission - probes window.open, only when the person clicks "Re-run checks" (see below).
+ *  4. URL validity - verifies the meeting URL is well-formed and uses https.
+ *  5. Provider framing rule - explicitly fails if framed AND provider is known to block frames.
+ *
+ * The popup probe needs a click: without one every browser blocks the popup, so an automatic probe would
+ * report "blocked" for everybody. The probe must not use "noopener" either, because window.open then always
+ * returns null, even when the popup opened. A real block is still caught when the person clicks Join
+ * (MeetingLinkButton shows the alternatives).
  */
 export default function PreJoinChecklist({
   url,
@@ -73,6 +78,8 @@ export default function PreJoinChecklist({
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [running, setRunning] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
+  // Result of the last manual popup probe, kept when the checks run again by themselves.
+  const popupItemRef = useRef<ChecklistItem | null>(null);
 
   const provider = useMemo(() => detectProvider(url), [url]);
 
@@ -81,7 +88,7 @@ export default function PreJoinChecklist({
     window.open(target, '_blank', 'noopener,noreferrer');
   }, [topLevelUrl]);
 
-  const runChecks = useCallback(async () => {
+  const runChecks = useCallback(async (probePopup = false) => {
     setRunning(true);
     logProviderEvent('preflight_open', { stage: 'checklist_start', sessionId, provider });
     const next: ChecklistItem[] = [];
@@ -188,38 +195,41 @@ export default function PreJoinChecklist({
       });
     }
 
-    // 5. Popup permission probe — open a tiny about:blank, see if it succeeded, close it.
-    let popupAllowed = true;
-    try {
-      const probe = window.open('', '_blank', 'noopener,noreferrer,width=200,height=200');
-      if (!probe) popupAllowed = false;
-      else {
-        try {
-          probe.close();
-        } catch {
-          /* ignore */
+    // 5. Popup permission probe - open a tiny blank window, see if it opened, close it. Only after a click (see the note above).
+    if (probePopup) {
+      let popupAllowed = true;
+      try {
+        const probe = window.open('', '_blank', 'width=200,height=200');
+        if (!probe) popupAllowed = false;
+        else {
+          try {
+            probe.close();
+          } catch {
+            /* ignore */
+          }
         }
+      } catch {
+        popupAllowed = false;
       }
-    } catch {
-      popupAllowed = false;
+      popupItemRef.current = {
+        id: 'popup',
+        label: t('checklist.popup', { defaultValue: 'Popups are allowed for this site' }),
+        status: popupAllowed ? 'pass' : 'fail',
+        detail: popupAllowed
+          ? undefined
+          : t('checklist.popup_detail', {
+              defaultValue:
+                'Your browser blocked a popup. The meeting tab cannot open without popup permission for this site.',
+            }),
+        fix: popupAllowed
+          ? undefined
+          : t('checklist.popup_fix', {
+              defaultValue:
+                'Click the popup-blocked icon in the address bar and choose "Always allow popups for this site", then re-run the checks.',
+            }),
+      };
     }
-    next.push({
-      id: 'popup',
-      label: t('checklist.popup', { defaultValue: 'Popups are allowed for this site' }),
-      status: popupAllowed ? 'pass' : 'fail',
-      detail: popupAllowed
-        ? undefined
-        : t('checklist.popup_detail', {
-            defaultValue:
-              'Your browser blocked a popup. The meeting tab cannot open without popup permission for this site.',
-          }),
-      fix: popupAllowed
-        ? undefined
-        : t('checklist.popup_fix', {
-            defaultValue:
-              'Click the popup-blocked icon in the address bar and choose "Always allow popups for this site", then re-run the checks.',
-          }),
-    });
+    if (popupItemRef.current) next.push(popupItemRef.current);
 
     setItems(next);
     setRunning(false);
@@ -227,11 +237,8 @@ export default function PreJoinChecklist({
     const failed = next.filter((i) => i.status === 'fail').map((i) => i.id);
     const warned = next.filter((i) => i.status === 'warn').map((i) => i.id);
     if (failed.length || warned.length) {
-      logProviderEvent(
-        'fallback_shown',
-        { stage: 'checklist_result', sessionId, provider, failed, warned },
-        failed.length ? 'error' : 'warn'
-      );
+      // A failed check depends on the visitor's browser or on the meeting link: it is a warning for analytics, never an error report.
+      logProviderEvent('fallback_shown', { stage: 'checklist_result', sessionId, provider, failed, warned }, 'warn');
     } else {
       logProviderEvent('preflight_proceed', { stage: 'checklist_pass', sessionId, provider });
     }
@@ -290,7 +297,7 @@ export default function PreJoinChecklist({
             </ul>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={runChecks} disabled={running}>
+              <Button size="sm" variant="outline" onClick={() => runChecks(true)} disabled={running}>
                 {running ? (
                   <Loader2 className="w-4 h-4 mr-1.5 animate-spin" aria-hidden="true" />
                 ) : (
