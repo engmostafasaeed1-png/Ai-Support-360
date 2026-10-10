@@ -21,6 +21,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { accents, iconPlate, type AccentName } from './tokens';
+import { isSlotPast, nowInZone } from '@/lib/demoSlots';
 
 /* -------------------------------------------------------------------------- */
 /*  Demo type catalogue                                                        */
@@ -343,6 +344,8 @@ function DemoRequestWizard({
 
     setSubmitted(true);
     demoFunnel.submitSuccess({ ...submitProps });
+    // the confirmation e-mail to the requester (best effort: the server reads the recipient from the request itself)
+    void supabase.functions.invoke('demo-request-notify', { body: { token: requestToken } }).catch(() => undefined);
     toast({
       title: 'Demo request received',
       description: 'We\u2019ll be in touch within one business hour.',
@@ -377,7 +380,7 @@ function DemoRequestWizard({
             </div>
             <DialogTitle className="text-2xl md:text-3xl font-black tracking-tight mt-3 text-foreground">
               {submitted
-                ? 'You\u2019re on the calendar.'
+                ? 'Request received.'
                 : step === 0
                   ? 'What would you like to see?'
                   : step === 1
@@ -386,7 +389,7 @@ function DemoRequestWizard({
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground mt-1.5 max-w-md">
               {submitted
-                ? 'A specialist will reach out within one business hour.'
+                ? 'Our team will confirm the time with you by e-mail.'
                 : 'Pick the demo that matches your goal — every option is tailored to enterprise teams.'}
             </DialogDescription>
 
@@ -571,14 +574,23 @@ function ScheduleStep({
 }) {
   // Block weekends and any day before today; cap at 60 days out so
   // the picker stays focused on actually-bookable dates.
+  // "today" is the day in the timezone that the visitor picked: the same rule as the database
+  const zoneToday = nowInZone(timezone).date;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const maxDate = new Date(today);
   maxDate.setDate(maxDate.getDate() + 60);
   const isDisabled = (d: Date) => {
     const day = d.getDay();
-    return d < today || d > maxDate || day === 0 || day === 6;
+    return format(d, 'yyyy-MM-dd') < zoneToday || d > maxDate || day === 0 || day === 6;
   };
+  const selectedDate = date ? format(date, 'yyyy-MM-dd') : null;
+  const slotIsPast = (s: string) => !!selectedDate && isSlotPast(selectedDate, s, timezone);
+  // a slot that was picked and has passed since (another timezone, or time went by) is cleared
+  useEffect(() => {
+    if (slot && slotIsPast(slot)) onSlotChange(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timezone, selectedDate, slot]);
 
   return (
     <div className="space-y-5">
@@ -627,7 +639,7 @@ function ScheduleStep({
           <div>
             <h4 className="font-bold text-sm text-foreground">Pick an exact slot</h4>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Optional — choose a date and we\u2019ll show available 30-min windows.
+              Optional — choose a date and a time. Times are in the timezone you pick below.
             </p>
           </div>
           {(date || slot) && (
@@ -674,8 +686,8 @@ function ScheduleStep({
           </Popover>
 
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
-              {date ? 'Available slots' : 'Pick a date to see slots'}
+            <div className={cn('text-[10px] font-bold uppercase tracking-widest mb-2', date && !slot ? 'text-destructive' : 'text-muted-foreground')}>
+              {date ? (slot ? 'Requested time' : 'Pick a time for this date, or clear the date') : 'Pick a date to see the times'}
             </div>
             <div
               className={cn(
@@ -689,13 +701,14 @@ function ScheduleStep({
                   <button
                     key={s}
                     type="button"
-                    disabled={!date}
+                    disabled={!date || slotIsPast(s)}
                     onClick={() => onSlotChange(s)}
                     className={cn(
                       'h-9 rounded-lg text-xs font-semibold border transition-colors',
                       selected
                         ? 'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20'
                         : 'border-border/50 bg-background hover:border-primary/40 hover:bg-primary/5 text-foreground',
+                      slotIsPast(s) && 'line-through opacity-40 cursor-not-allowed hover:bg-background hover:border-border/50',
                     )}
                     aria-pressed={selected}
                   >
@@ -770,6 +783,10 @@ function DetailsStep({
   company: string; setCompany: (v: string) => void;
   notes: string; setNotes: (v: string) => void;
 }) {
+  // a field is marked after the visitor has left it
+  const [touched, setTouched] = useState({ name: false, email: false });
+  const nameBad = touched.name && name.trim().length < 2;
+  const emailBad = touched.email && !/\S+@\S+\.\S+/.test(email);
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -779,6 +796,9 @@ function DetailsStep({
           </Label>
           <Input
             id="dw-name"
+            aria-invalid={nameBad}
+            onBlur={() => setTouched((t) => ({ ...t, name: true }))}
+            style={nameBad ? { borderColor: 'hsl(var(--destructive))' } : undefined}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Jane Doe"
@@ -786,6 +806,7 @@ function DetailsStep({
             autoComplete="name"
             required
           />
+          {nameBad && <p className="text-[11px] text-destructive">Please enter your full name.</p>}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="dw-email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -793,6 +814,9 @@ function DetailsStep({
           </Label>
           <Input
             id="dw-email"
+            aria-invalid={emailBad}
+            onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+            style={emailBad ? { borderColor: 'hsl(var(--destructive))' } : undefined}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -801,6 +825,7 @@ function DetailsStep({
             autoComplete="email"
             required
           />
+          {emailBad && <p className="text-[11px] text-destructive">Please enter a valid e-mail address.</p>}
         </div>
       </div>
       <div className="space-y-1.5">
@@ -848,8 +873,8 @@ function SuccessPanel({
   // Prefer the exact slot when present — it's more reassuring than a
   // vague "this week".
   const scheduleLine = date && slot
-    ? `${format(date, 'EEE, MMM d')} at ${slot}`
-    : timeLabel;
+    ? `Requested: ${format(date, 'EEE, MMM d')} at ${slot}`
+    : `Preferred: ${timeLabel}`;
   const tzLabel = TIMEZONES.find((t) => t.value === timezone)?.label ?? timezone;
   const fmt = MEETING_FORMATS.find((f) => f.id === meetingFormat);
   return (
@@ -858,7 +883,7 @@ function SuccessPanel({
         <Check className="w-8 h-8 text-primary-foreground" strokeWidth={3} />
       </div>
       <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-        We&rsquo;ll send a confirmation to <span className="text-foreground font-semibold">{email}</span> shortly.
+        We received your request. Our team will confirm the final time with you at <span className="text-foreground font-semibold">{email}</span>.
       </p>
       <div className="mt-5 inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2 rounded-full border border-border/50 bg-muted/30 text-xs">
         {selectedType && (

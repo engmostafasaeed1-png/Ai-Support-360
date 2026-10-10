@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { demoFunnel } from '@/lib/analytics';
+import { isSlotPast, nowInZone } from '@/lib/demoSlots';
 
 /**
  * Public confirmation page reached after submitting the demo wizard.
@@ -157,7 +158,11 @@ function ConfirmationCard({ data, token, onChanged }: { data: DemoRequest; token
             Demo request
           </div>
           <h1 className="text-2xl md:text-3xl font-black tracking-tight mt-3 text-foreground">
-            {data.status === 'cancelled' ? 'This request was cancelled' : `You\u2019re on the calendar, ${data.full_name.split(' ')[0]}.`}
+            {data.status === 'cancelled'
+              ? 'This request was cancelled'
+              : data.status === 'scheduled'
+                ? `Your demo is booked, ${data.full_name.split(' ')[0]}.`
+                : `Request received, ${data.full_name.split(' ')[0]}.`}
           </h1>
           <p className="text-sm text-muted-foreground mt-1.5 max-w-md leading-relaxed">
             {meta.description}
@@ -232,7 +237,7 @@ function ConfirmationCard({ data, token, onChanged }: { data: DemoRequest; token
         {data.scheduled_date && (
           <DetailRow
             icon={Calendar}
-            label="Booked slot"
+            label={data.status === 'scheduled' ? 'Confirmed slot' : 'Requested slot'}
             value={`${new Date(data.scheduled_date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}${data.scheduled_slot ? ` · ${data.scheduled_slot}` : ''}`}
           />
         )}
@@ -289,6 +294,7 @@ function ConfirmationCard({ data, token, onChanged }: { data: DemoRequest; token
               requestId={data.id}
               requestEmail={data.email}
               requestName={data.full_name}
+              requestTimezone={data.timezone}
               isUpdate={data.status === 'rescheduling'}
               initialReason={data.reschedule_reason ?? ''}
               initialSlots={data.proposed_slots ?? []}
@@ -319,12 +325,13 @@ function ConfirmationCard({ data, token, onChanged }: { data: DemoRequest; token
 }
 
 function RescheduleForm({
-  token, requestId, requestEmail, requestName, isUpdate, initialReason, initialSlots, onCancel, onSuccess,
+  token, requestId, requestEmail, requestName, requestTimezone, isUpdate, initialReason, initialSlots, onCancel, onSuccess,
 }: {
   token: string;
   requestId: string;
   requestEmail: string;
   requestName: string;
+  requestTimezone: string | null;
   isUpdate: boolean;
   initialReason: string;
   initialSlots: ProposedSlot[];
@@ -337,13 +344,14 @@ function RescheduleForm({
   const [reason, setReason] = useState(initialReason);
   const [submitting, setSubmitting] = useState(false);
 
-  const today = new Date().toISOString().split('T')[0];
+  // the times are read in the timezone of the request, the same as the database and the list of proposed slots
   const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const slotTz = requestTimezone || browserTz;
+  const today = nowInZone(slotTz).date;
   const slotErrors = slots.map((s) => {
     if (!s.date || !s.time) return null;
-    const dt = new Date(`${s.date}T${s.time}`);
-    if (isNaN(dt.getTime())) return 'Invalid date/time';
-    if (dt.getTime() <= Date.now()) return 'Time is in the past';
+    if (isNaN(new Date(`${s.date}T${s.time}`).getTime())) return 'Invalid date/time';
+    if (isSlotPast(s.date, s.time, slotTz)) return 'Time is in the past';
     return null;
   });
 
@@ -410,12 +418,12 @@ function RescheduleForm({
           Propose new time slots
         </h3>
         <p className="text-xs text-muted-foreground mt-1">
-          Add up to 5 options that work for you. We\u2019ll lock in one and confirm via email.
+          Add up to 5 options that work for you. We&rsquo;ll lock in one and confirm via email.
         </p>
         <p className="text-[11px] text-muted-foreground/80 mt-1.5 flex items-center gap-1.5">
           <Globe className="w-3 h-3" />
-          Times are interpreted in your local timezone
-          <span className="font-mono text-foreground/70">({browserTz})</span>
+          Times are in the timezone of your request
+          <span className="font-mono text-foreground/70">({slotTz})</span>
         </p>
       </div>
 
@@ -530,13 +538,12 @@ function ProposedSlotsTimeline({
 }) {
   const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const displayTz = timezone || browserTz;
-  const now = Date.now();
-
   // Decorate, sort earliest-first, mark earliest valid as "preferred"
   const decorated = slots.map((s, originalIndex) => {
     const dt = s.date && s.time ? new Date(`${s.date}T${s.time}`) : null;
     const ts = dt && !isNaN(dt.getTime()) ? dt.getTime() : null;
-    const isPast = ts !== null && ts <= now;
+    // past in the timezone of the request, like the database
+    const isPast = ts !== null && isSlotPast(s.date, s.time, displayTz);
     return { ...s, originalIndex, dt, ts, isPast };
   });
   const sorted = [...decorated].sort((a, b) => {
