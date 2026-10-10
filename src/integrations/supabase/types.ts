@@ -1435,8 +1435,10 @@ export type Database = {
           location: unknown
           longitude: number | null
           nationality: string | null
+          new_case_alerts: boolean
           personal_website: string | null
           profile_video_url: string | null
+          profile_visible: boolean
           project_types: string[]
           rating: number | null
           response_time_minutes: number | null
@@ -1444,6 +1446,7 @@ export type Database = {
           sap_roles: string[]
           sap_technologies: string[]
           seniority_level: string | null
+          show_availability: boolean
           timezone: string | null
           total_reviews: number | null
           total_sap_years: number | null
@@ -1481,8 +1484,10 @@ export type Database = {
           location?: unknown
           longitude?: number | null
           nationality?: string | null
+          new_case_alerts?: boolean
           personal_website?: string | null
           profile_video_url?: string | null
+          profile_visible?: boolean
           project_types?: string[]
           rating?: number | null
           response_time_minutes?: number | null
@@ -1490,6 +1495,7 @@ export type Database = {
           sap_roles?: string[]
           sap_technologies?: string[]
           seniority_level?: string | null
+          show_availability?: boolean
           timezone?: string | null
           total_reviews?: number | null
           total_sap_years?: number | null
@@ -1527,8 +1533,10 @@ export type Database = {
           location?: unknown
           longitude?: number | null
           nationality?: string | null
+          new_case_alerts?: boolean
           personal_website?: string | null
           profile_video_url?: string | null
+          profile_visible?: boolean
           project_types?: string[]
           rating?: number | null
           response_time_minutes?: number | null
@@ -1536,6 +1544,7 @@ export type Database = {
           sap_roles?: string[]
           sap_technologies?: string[]
           seniority_level?: string | null
+          show_availability?: boolean
           timezone?: string | null
           total_reviews?: number | null
           total_sap_years?: number | null
@@ -1546,6 +1555,47 @@ export type Database = {
             | null
         }
         Relationships: []
+      }
+      credit_ledger: {
+        Row: {
+          amount: number
+          consultant_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          reason: string
+          source_id: string | null
+        }
+        Insert: {
+          amount: number
+          consultant_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          reason: string
+          source_id?: string | null
+        }
+        Update: {
+          amount?: number
+          consultant_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          reason?: string
+          source_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_ledger_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       demo_requests: {
         Row: {
@@ -5048,10 +5098,12 @@ export type Database = {
       tenants: {
         Row: {
           ai_quota: number
+          company_size: string | null
           created_at: string
           created_by: string | null
           domain: string | null
           id: string
+          industry: string | null
           logo_url: string | null
           max_sessions_per_month: number
           max_tickets_per_month: number
@@ -5067,10 +5119,12 @@ export type Database = {
         }
         Insert: {
           ai_quota?: number
+          company_size?: string | null
           created_at?: string
           created_by?: string | null
           domain?: string | null
           id?: string
+          industry?: string | null
           logo_url?: string | null
           max_sessions_per_month?: number
           max_tickets_per_month?: number
@@ -5086,10 +5140,12 @@ export type Database = {
         }
         Update: {
           ai_quota?: number
+          company_size?: string | null
           created_at?: string
           created_by?: string | null
           domain?: string | null
           id?: string
+          industry?: string | null
           logo_url?: string | null
           max_sessions_per_month?: number
           max_tickets_per_month?: number
@@ -7167,6 +7223,10 @@ export type Database = {
         Args: { _body: string; _submission_id: string }
         Returns: string
       }
+      admin_adjust_credits: {
+        Args: { _amount: number; _consultant_id: string; _note: string }
+        Returns: undefined
+      }
       admin_client_approval_counts: { Args: never; Returns: Json }
       admin_confirm_payment: {
         Args: {
@@ -7369,6 +7429,11 @@ export type Database = {
         }[]
       }
       consume_remote_share_quota: { Args: never; Returns: boolean }
+      create_company: {
+        Args: { _industry?: string; _name: string; _size?: string }
+        Returns: string
+      }
+      flag_sla_breaches: { Args: never; Returns: number }
       get_demo_request_by_token: {
         Args: { _token: string }
         Returns: {
@@ -7398,6 +7463,7 @@ export type Database = {
           display_name: string
           hourly_rate: number
           phone: string
+          source: string
         }[]
       }
       get_integration_credentials: {
@@ -7599,6 +7665,10 @@ export type Database = {
         Args: { p_billing_cycle?: string; p_plan_id: string }
         Returns: string
       }
+      resolve_oncall_consultant: {
+        Args: { _ticket_id: string }
+        Returns: string
+      }
       respond_ticket_invoice: {
         Args: { _approve: boolean; _invoice_id: string; _reason: string }
         Returns: string
@@ -7756,6 +7826,15 @@ export type Database = {
       ticket_owned_by: {
         Args: { _client_id: string; _ticket_id: string }
         Returns: boolean
+      }
+      ticket_timeline: {
+        Args: { _ticket_id: string }
+        Returns: {
+          detail: string
+          event_at: string
+          kind: string
+          title: string
+        }[]
       }
       timesheet_vat_percent: { Args: never; Returns: number }
       try_timestamptz: { Args: { _t: string }; Returns: string }
