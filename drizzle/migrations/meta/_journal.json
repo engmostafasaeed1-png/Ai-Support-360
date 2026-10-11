@@ -372,6 +372,13 @@
       "when": 1791739420051,
       "tag": "0052_m55_payment_methods_payout_deadline",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1791747487151,
+      "tag": "0053_m56_critical_response_service",
+      "breakpoints": true
     }
   ]
 }
