@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import TelegramAlertsCard from '@/components/consultant/TelegramAlertsCard';
 
 type PrefKey = 'new_case_alerts' | 'profile_visible' | 'show_availability';
 type Prefs = Record<PrefKey, boolean>;
@@ -97,6 +98,7 @@ export default function ConsultantSettingsPage() {
               {row('show_availability', 'Show availability status', 'When off, clients see you as Offline and do not see your weekly hours.')}
             </CardContent>
           </Card>
+          <TelegramAlertsCard />
         </div>
       )}
     </div>
