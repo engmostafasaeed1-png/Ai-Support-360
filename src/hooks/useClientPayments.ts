@@ -15,7 +15,7 @@ export function useClientPayments() {
       if (!user) return [];
       const { data, error } = await supabase
         .from('payments')
-        .select('id, amount, currency, vat_amount, status, invoice_number, payment_method, description, due_date, created_at, updated_at, ticket_id, consultant_id, session_id, kind, reference, client_reported_at, client_transfer_reference, client_transfer_date, rejection_note, paid_at, provider_status, card_started_at, pricing_model, base_amount, service_fee_percent, service_fee_amount, processing_fee_percent, processing_fee_amount, vat_percent')
+        .select('id, amount, currency, vat_amount, status, invoice_number, payment_method, description, due_date, created_at, updated_at, ticket_id, consultant_id, session_id, kind, reference, client_reported_at, client_transfer_reference, client_transfer_date, rejection_note, paid_at, provider_status, card_started_at, pricing_model, base_amount, service_fee_percent, service_fee_amount, processing_fee_percent, processing_fee_amount, vat_percent, tenant_id, buyer_details, buyer_details_revision, buyer_details_at')
         .eq('client_id', user.id)
         // the payments of the active company; a payment that belongs to no company shows in every company
         .or(tenant?.id ? `tenant_id.eq.${tenant.id},tenant_id.is.null` : 'tenant_id.is.null,tenant_id.not.is.null')
@@ -107,7 +107,11 @@ export function useClientPayments() {
         service_fee_amount: p.service_fee_amount ?? null,
         processing_fee_percent: p.processing_fee_percent ?? null,
         processing_fee_amount: p.processing_fee_amount ?? null,
-        vat_percent: p.vat_percent ?? null,
+vat_percent: p.vat_percent ?? null,
+        tenant_id: p.tenant_id || null,
+        buyer_details: p.buyer_details || null,
+        buyer_details_revision: p.buyer_details_revision ?? 0,
+        buyer_details_at: p.buyer_details_at || null,
         session_type: p.session_id ? sessionMap[p.session_id]?.session_type : null,
         session_status: p.session_id ? sessionMap[p.session_id]?.status : null,
         session_scheduled_at: p.session_id ? sessionMap[p.session_id]?.scheduled_at : null,
