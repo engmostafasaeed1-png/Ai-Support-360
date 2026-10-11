@@ -172,6 +172,8 @@ export function useSubmitProposal() {
       queryClient.invalidateQueries({ queryKey: ['consultant-proposals'] });
       queryClient.invalidateQueries({ queryKey: ['ticket-proposals'] });
       queryClient.invalidateQueries({ queryKey: ['proposal-versions'] });
+      queryClient.invalidateQueries({ queryKey: ['critical-my-alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['critical-view'] });
     },
   });
 }
@@ -198,6 +200,7 @@ export function useRespondToProposal() {
       queryClient.invalidateQueries({ queryKey: ['ticket-detail'] });
       queryClient.invalidateQueries({ queryKey: ['client-tickets'] });
       queryClient.invalidateQueries({ queryKey: ['consultant-cases'] });
+      queryClient.invalidateQueries({ queryKey: ['critical-view'] });
     },
   });
 }
