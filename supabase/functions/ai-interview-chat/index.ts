@@ -496,9 +496,15 @@ You are speaking via video call as ${interviewerName} (${voice_gender === "femal
 
 CRITICAL LANGUAGE INSTRUCTION: You MUST conduct this entire interview in ${interviewLang}. All your questions, responses, greetings, and follow-ups must be in ${interviewLang}. Do not switch to any other language unless the consultant does so first.`;
 
+    // Rebuild caller-supplied messages with server-controlled shape: only user/assistant roles and plain string content
+    // can reach the model, so a caller cannot smuggle in a system message or extra fields.
+    const safeMessages = (messages || []).map((m) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: String(m.content ?? ""),
+    }));
     const chatMessages = [
       { role: "system", content: systemPrompt },
-      ...(messages || []),
+      ...safeMessages,
     ];
 
     // Every turn is a person waiting for the answer, so ask for the lowest reasoning effort that the gateway accepts (the first one that works is remembered).

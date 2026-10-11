@@ -1,7 +1,7 @@
 // Emails consultants about their open verification items.
 //   { action: "assigned", consultant_id } -> admin only; emails the consultant their open items.
 //   { action: "reminders" }               -> daily job; emails items due within 3 days, once per item.
-import { ADMIN_ROLES, adminClient, authenticateUser, getUserRoles, hasAnyRole, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
+import { ADMIN_ROLES, adminClient, authenticateUser, getUserRoles, hasAnyRole, isServiceRoleRequest, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -50,7 +50,13 @@ Deno.serve(async (req) => {
   }
 
   if (body.action === 'reminders') {
-    // Safe to call by anyone: it only emails consultants whose own items are due, once per item.
+    // Daily job: only the scheduler (service role) or an administrator may trigger it — it reads private
+    // verification items and sends e-mails, so an anonymous caller must not run it.
+    if (!isServiceRoleRequest(req)) {
+      const user = await authenticateUser(req);
+      if (!user) return jsonResponse(req, { error: 'Unauthorized' }, 401);
+      if (!hasAnyRole(await getUserRoles(admin, user.id), ADMIN_ROLES)) return jsonResponse(req, { error: 'Forbidden' }, 403);
+    }
     const soon = new Date(Date.now() + 3 * 86_400_000).toISOString();
     const { data: items } = await admin.from('consultant_verification_items')
       .select('id, consultant_id, label, due_at').eq('status', 'open').is('reminder_sent_at', null)
