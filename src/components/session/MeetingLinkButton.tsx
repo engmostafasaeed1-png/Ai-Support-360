@@ -16,6 +16,7 @@ import { logProviderEvent } from '@/lib/diagnostics';
 import ProviderTroubleshootingPanel from './ProviderTroubleshootingPanel';
 import type { TroubleshootReason } from './providerTroubleshooting';
 import { sessionRoomUrl } from '@/lib/meetingRoom';
+import { openNewTab } from '@/lib/safeUrl';
 
 export type MeetingProvider = 'meet' | 'jitsi' | 'zoom' | 'teams' | 'unknown';
 
@@ -199,7 +200,7 @@ export default function MeetingLinkButton({
         return;
       }
       const handoffUrl = buildHandoffUrl(u);
-      const opened = window.open(handoffUrl, '_blank', 'noopener,noreferrer');
+      const opened = openNewTab(handoffUrl);
       if (!opened) {
         logProviderEvent('popup_blocked', { provider: providerHint, url: u }, 'error');
         triggerFallback(

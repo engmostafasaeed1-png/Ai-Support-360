@@ -424,8 +424,9 @@ export default function PreflightTestDialog({
       micId,
     });
     stopStream();
-    onOpenChange(false);
+    // The meeting must be opened first: closing the dialog clears what the Join button is about to open.
     onProceed();
+    onOpenChange(false);
   };
 
   const renderError = () => {
