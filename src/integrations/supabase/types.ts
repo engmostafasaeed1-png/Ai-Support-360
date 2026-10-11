@@ -1737,6 +1737,8 @@ export type Database = {
           emailed_ext: number | null
           id: string
           last_alerted_at: string
+          telegram_ext: number | null
+          telegram_sent_at: string | null
           ticket_id: string
           user_id: string
         }
@@ -1749,6 +1751,8 @@ export type Database = {
           emailed_ext?: number | null
           id?: string
           last_alerted_at?: string
+          telegram_ext?: number | null
+          telegram_sent_at?: string | null
           ticket_id: string
           user_id: string
         }
@@ -1761,6 +1765,8 @@ export type Database = {
           emailed_ext?: number | null
           id?: string
           last_alerted_at?: string
+          telegram_ext?: number | null
+          telegram_sent_at?: string | null
           ticket_id?: string
           user_id?: string
         }
@@ -5489,6 +5495,63 @@ export type Database = {
           },
         ]
       }
+      telegram_link_codes: {
+        Row: {
+          code_hash: string
+          created_at: string
+          expires_at: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code_hash: string
+          created_at?: string
+          expires_at: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code_hash?: string
+          created_at?: string
+          expires_at?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      telegram_links: {
+        Row: {
+          active: boolean
+          chat_id: number
+          last_error: string | null
+          last_error_at: string | null
+          last_sent_at: string | null
+          linked_at: string
+          telegram_username: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          chat_id: number
+          last_error?: string | null
+          last_error_at?: string | null
+          last_sent_at?: string | null
+          linked_at?: string
+          telegram_username?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          chat_id?: number
+          last_error?: string | null
+          last_error_at?: string | null
+          last_sent_at?: string | null
+          linked_at?: string
+          telegram_username?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       tenant_billing_details: {
         Row: {
           address_line: string | null
@@ -8499,6 +8562,12 @@ export type Database = {
         Args: { _message?: string; _ticket_id: string }
         Returns: string
       }
+      telegram_complete_link: {
+        Args: { _chat_id: number; _code_hash: string; _username: string }
+        Returns: string
+      }
+      telegram_my_status: { Args: never; Returns: Json }
+      telegram_unlink: { Args: never; Returns: undefined }
       ticket_consultant_for_me: {
         Args: { _ticket_id: string }
         Returns: string
