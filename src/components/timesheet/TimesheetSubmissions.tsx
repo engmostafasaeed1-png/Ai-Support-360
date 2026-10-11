@@ -184,7 +184,7 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
         {approved && (
           <p className="flex items-center gap-1.5 text-xs text-green-800">
             <CheckCircle2 className="h-3.5 w-3.5" />
-            Approved{sub.signed_by_name ? ` by ${sub.signed_by_name}` : ''}{sub.signed_at ? ` on ${format(new Date(sub.signed_at), 'MMM d, yyyy')}` : ''}
+            Approved{sub.signed_by_name ? <> by {sub.signed_by_name}</> : null}{sub.signed_at ? ` on ${format(new Date(sub.signed_at), 'MMM d, yyyy')}` : ''}
           </p>
         )}
         {invoice && (
