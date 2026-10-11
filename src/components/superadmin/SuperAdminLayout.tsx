@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Outlet } from 'react-router-dom';
 import SuperAdminSidebar from './SuperAdminSidebar';
 import PageTransition from '@/components/PageTransition';
+import PageErrorBoundary from '@/components/PageErrorBoundary';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +40,9 @@ export default function SuperAdminLayout() {
           </FixedSubHeader>
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-6 mt-14 md:mt-24">
             <PageTransition>
-              <Outlet />
+              <PageErrorBoundary homePath="/super-admin">
+                <Outlet />
+              </PageErrorBoundary>
             </PageTransition>
           </main>
           <Footer compact />

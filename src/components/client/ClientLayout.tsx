@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import ClientSidebar from '@/components/client/ClientSidebar';
 import PageTransition from '@/components/PageTransition';
+import PageErrorBoundary from '@/components/PageErrorBoundary';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { usePortalMargin } from '@/hooks/usePortalMargin';
@@ -91,7 +92,9 @@ export default function ClientLayout() {
             <SecurityAlert />
             <ClientApprovalBanner />
             <PageTransition>
-              <Outlet />
+              <PageErrorBoundary homePath="/client">
+                <Outlet />
+              </PageErrorBoundary>
             </PageTransition>
           </main>
           <Footer compact />
