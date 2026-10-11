@@ -157,6 +157,18 @@ export default function CaseDetailPage() {
     enabled: !!caseId,
   });
 
+  // the real history of the case: status changes, assignments, urgency, plan decisions, match requests, rates, timesheets
+  const { data: history } = useQuery({
+    queryKey: ['case-timeline', caseId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('ticket_timeline_v2', { _ticket_id: caseId! });
+      if (error) throw error;
+      return (data || []) as { event_at: string; kind: string; title: string; detail: string | null; actor_name: string | null }[];
+    },
+    enabled: !!caseId,
+  });
+
+
   // Build timeline
   const timeline: TimelineEvent[] = [];
   if (ticket) {
@@ -203,6 +215,21 @@ export default function CaseDetailPage() {
       date: d.created_at,
       icon: FileText,
       color: 'text-purple-500',
+    });
+  });
+
+  (history || []).forEach((h) => {
+    if (h.kind === 'created') return;
+    if (h.kind === 'document') return;
+    if (h.kind === 'status' && h.title === 'Status changed to resolved') return;
+    timeline.push({
+      id: `history-${h.kind}-${h.event_at}-${h.title}`,
+      type: 'status',
+      title: h.title,
+      description: [h.detail, h.actor_name ? `By ${h.actor_name}` : null].filter(Boolean).join(' · ') || undefined,
+      date: h.event_at,
+      icon: Activity,
+      color: 'text-blue-500',
     });
   });
 

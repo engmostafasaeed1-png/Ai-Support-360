@@ -25,24 +25,15 @@ const EMERGENCY_PRICING = {
 function useConsultantContact(consultantId: string | null, ticketId: string) {
   return useQuery({
     queryKey: ['consultant-contact', consultantId, ticketId],
-    enabled: !!consultantId,
+    enabled: true,
     queryFn: async () => {
-      if (!consultantId) return null;
-      const { data: consultant } = await supabase
-        .from('consultants')
-        .select('user_id, hourly_rate')
-        .eq('id', consultantId)
-        .maybeSingle();
-      if (!consultant) return null;
-
-      // the consultant's phone is released only for an urgent (high / critical) ticket of this client
+      // the server decides who answers: the consultant on call, the assigned consultant, else an administrator
       const { data: contact } = await supabase.rpc('get_emergency_contact', { _ticket_id: ticketId });
       const row = Array.isArray(contact) ? contact[0] : null;
       return {
         display_name: row?.display_name ?? null,
         phone: row?.phone ?? null,
-        // the rate of the person who answers: a consultant on call has another rate than the assigned one, an administrator has none
-        hourly_rate: row ? (row.hourly_rate ?? 0) : consultant.hourly_rate,
+        hourly_rate: row?.hourly_rate ?? null,
         source: (row as any)?.source ?? null,
       };
     },
@@ -54,12 +45,11 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
   const phone = (contact as any)?.phone;
   const contactName = (contact as any)?.display_name as string | null | undefined;
   const source = (contact as any)?.source as string | null | undefined;
-  const hourlyRate = (contact as any)?.hourly_rate || 0;
+  const hourlyRate = (contact as any)?.hourly_rate ?? null;
   const isEmergency = urgency === 'critical' || urgency === 'high';
   const pricing = EMERGENCY_PRICING[urgency as keyof typeof EMERGENCY_PRICING] || EMERGENCY_PRICING.medium;
-  const emergencyRate = Math.round(hourlyRate * pricing.multiplier);
+  const emergencyRate = hourlyRate ? Math.round(hourlyRate * pricing.multiplier) : null;
 
-  if (!consultantId) return null;
 
   const cleanPhone = phone?.replace(/[\s\-()]/g, '') || '';
   const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone.replace('+', '')}?text=${encodeURIComponent(`Urgent: Regarding ticket "${ticketTitle}"`)}` : '';
@@ -76,19 +66,19 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
   };
 
   const handleCall = () => {
-    if (!cleanPhone) { toast.error('Consultant phone number not available'); return; }
+    if (!cleanPhone) { toast.error('Phone number not available'); return; }
     logContact('call');
     window.open(callUrl, '_self');
   };
 
   const handleSMS = () => {
-    if (!cleanPhone) { toast.error('Consultant phone number not available'); return; }
+    if (!cleanPhone) { toast.error('Phone number not available'); return; }
     logContact('sms');
     window.open(smsUrl, '_self');
   };
 
   const handleWhatsApp = () => {
-    if (!cleanPhone) { toast.error('Consultant phone number not available'); return; }
+    if (!cleanPhone) { toast.error('Phone number not available'); return; }
     logContact('whatsapp');
     window.open(whatsappUrl, '_blank');
   };
@@ -118,14 +108,17 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
 
         <p className="text-xs text-muted-foreground">
           {source === 'on_call' && contactName
-            ? `Reach ${contactName}, the consultant on call for this ticket, directly`
+            ? `On call now: ${contactName}`
             : source === 'administrator'
-              ? `No consultant is on call: this is the platform administrator${contactName ? `, ${contactName}` : ''}`
-              : consultantName ? `Reach ${consultantName}, your assigned consultant, directly` : 'Contact the assigned consultant'}
+              ? contactName ? `Platform administrator: ${contactName}` : 'Platform administrator'
+              : contactName
+                ? `Reach ${contactName}, your assigned consultant, directly`
+                : consultantName ? `Reach ${consultantName}, your assigned consultant, directly` : 'Contact the assigned consultant'}
           {isEmergency ? ' — for critical issues requiring immediate attention.' : '.'}
         </p>
 
         {/* ─── Emergency Pricing Card ─── */}
+        {contact && (
         <Card className={`rounded-xl ${isEmergency ? 'border-red-500/20 bg-red-500/5' : 'border-amber-500/20 bg-amber-500/5'}`}>
           <CardContent className="p-3 space-y-2">
             <div className="flex items-center gap-2">
@@ -143,7 +136,7 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
                 <TrendingUp className="w-3.5 h-3.5 mx-auto text-muted-foreground mb-1" />
                 <p className="text-[10px] text-muted-foreground">Rate</p>
                 <p className="text-sm font-bold text-foreground">
-                  {hourlyRate > 0 ? `$${emergencyRate}` : '—'}
+                  {hourlyRate ? `$${emergencyRate}` : '—'}
                   <span className="text-[9px] font-normal text-muted-foreground">/hr</span>
                 </p>
               </div>
@@ -159,22 +152,19 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
               </div>
             </div>
 
-            {hourlyRate > 0 && pricing.multiplier > 1 && (
+            {hourlyRate && pricing.multiplier > 1 && (
               <p className="text-[10px] text-muted-foreground text-center">
                 Standard rate: ${hourlyRate}/hr → Emergency: ${emergencyRate}/hr ({pricing.label})
               </p>
             )}
-            {hourlyRate === 0 && (
-              <p className="text-[10px] text-muted-foreground text-center">
-                Rate not set. Contact consultant to agree on emergency pricing.
-              </p>
-            )}
           </CardContent>
         </Card>
+        )}
 
         <Separator className="my-1" />
 
         {/* ─── Contact Buttons ─── */}
+        {contact ? (
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="outline"
@@ -218,8 +208,13 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
             Portal Alert
           </Button>
         </div>
+        ) : (
+          <p className="text-xs text-muted-foreground text-center">
+            No contact is available for this ticket yet.
+          </p>
+        )}
 
-        {!cleanPhone && (
+        {!cleanPhone && contact && (
           <p className="text-[10px] text-muted-foreground text-center">
             📞 Phone/SMS/WhatsApp requires consultant phone number. Portal alert is always available.
           </p>

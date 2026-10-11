@@ -426,7 +426,7 @@ export default function TicketDetailPage() {
           />
 
           {/* ─── Emergency Contact ─── */}
-          {ticket.consultant_id && (
+          {(ticket.consultant_id || (isClient && (ticket.urgency === 'high' || ticket.urgency === 'critical'))) && (
             <SectionWrapper icon={Phone} title="Quick Contact" defaultOpen>
               <EmergencyContactPanel
                 consultantId={ticket.consultant_id}
