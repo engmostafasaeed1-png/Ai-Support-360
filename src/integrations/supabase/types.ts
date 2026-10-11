@@ -7440,6 +7440,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      complete_session: { Args: { _session_id: string }; Returns: undefined }
       consultant_booked_times: {
         Args: { _consultant_id: string; _from: string; _to: string }
         Returns: {

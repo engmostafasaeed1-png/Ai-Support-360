@@ -330,6 +330,13 @@
       "when": 1791708661148,
       "tag": "0046_m49_ticket_notice_links_session_rooms",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1791712362379,
+      "tag": "0047_m50_session_lifecycle_rooms_ratings",
+      "breakpoints": true
     }
   ]
 }
