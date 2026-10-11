@@ -333,6 +333,7 @@ export function useSavePaymentSetting() {
       qc.invalidateQueries({ queryKey: ['pricing-terms'] });
       qc.invalidateQueries({ queryKey: ['payment-instructions'] });
       qc.invalidateQueries({ queryKey: ['card-payments-enabled'] });
+      qc.invalidateQueries({ queryKey: ['bank-account-log'] });
     },
     onError: fail('Could not save'),
   });
@@ -444,3 +445,221 @@ export function useClientTicketsForInvoice(clientId: string | null) {
     },
   });
 }
+
+/* ------------------------------------------------ payment methods: cards first, bank transfer by permission */
+
+export type PaymentMethods = {
+  card: boolean;
+  bank_transfer: boolean;
+  /** why bank transfer is open: cards are off, the company was allowed or the invoice was allowed; null when it is not open */
+  bank_transfer_reason: 'cards_off' | 'company' | 'invoice' | null;
+};
+
+/** The ways to pay one open invoice: the card, and bank transfer only when the administrator allowed it (or while cards are off). */
+export function usePaymentMethods(paymentId: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ['payment-methods', paymentId],
+    enabled: enabled && !!paymentId,
+    staleTime: 30_000,
+    queryFn: () => rpc<PaymentMethods>('get_payment_methods', { _payment_id: paymentId }),
+  });
+}
+
+export type BankTransferCompany = {
+  id: string;
+  name: string;
+  allowed: boolean;
+  note: string | null;
+  grantedAt: string | null;
+  openInvoices: number;
+};
+
+/** Admin: every company with its bank-transfer permission and its number of open invoices. */
+export function useBankTransferCompanies() {
+  return useQuery({
+    queryKey: ['bank-transfer-companies'],
+    queryFn: async () => {
+      const [tenants, perms, open] = await Promise.all([
+        db.from('tenants').select('id, name').order('name').limit(500),
+        db.from('bank_transfer_permissions').select('tenant_id, note, granted_at'),
+        db.from('payments').select('tenant_id').eq('status', 'pending').not('tenant_id', 'is', null),
+      ]);
+      if (tenants.error) throw new Error(tenants.error.message);
+      if (perms.error) throw new Error(perms.error.message);
+      const allowed: Record<string, { note: string | null; granted_at: string }> = {};
+      (perms.data ?? []).forEach((p: any) => { allowed[p.tenant_id] = { note: p.note, granted_at: p.granted_at }; });
+      const openBy: Record<string, number> = {};
+      (open.data ?? []).forEach((p: any) => { openBy[p.tenant_id] = (openBy[p.tenant_id] ?? 0) + 1; });
+      return (tenants.data ?? []).map((t: any) => ({
+        id: t.id as string,
+        name: (t.name as string) || 'Company',
+        allowed: !!allowed[t.id],
+        note: allowed[t.id]?.note ?? null,
+        grantedAt: allowed[t.id]?.granted_at ?? null,
+        openInvoices: openBy[t.id] ?? 0,
+      })) as BankTransferCompany[];
+    },
+  });
+}
+
+/** Admin: the invoices that were opened for bank transfer one by one (payment id -> the grant). */
+export function useInvoiceBankGrants() {
+  return useQuery({
+    queryKey: ['invoice-bank-grants'],
+    queryFn: async () => {
+      const { data, error } = await db.from('invoice_bank_transfer_grants').select('payment_id, note, granted_at');
+      if (error) throw new Error(error.message);
+      const map: Record<string, { note: string | null; granted_at: string }> = {};
+      (data ?? []).forEach((g: any) => { map[g.payment_id] = { note: g.note, granted_at: g.granted_at }; });
+      return map;
+    },
+  });
+}
+
+export type BankTransferLogRow = {
+  id: string;
+  scope: 'company' | 'invoice';
+  label: string;
+  allowed: boolean;
+  note: string | null;
+  changed_at: string;
+};
+
+/** Admin: the last changes of the permission (who was allowed or stopped, and when). */
+export function useBankTransferLog(limit = 8) {
+  return useQuery({
+    queryKey: ['bank-transfer-log', limit],
+    queryFn: async () => {
+      const { data, error } = await db.from('bank_transfer_permission_log')
+        .select('id, scope, tenant_id, payment_id, allowed, note, changed_at')
+        .order('changed_at', { ascending: false })
+        .limit(limit);
+      if (error) throw new Error(error.message);
+      const rows: any[] = data ?? [];
+      const tenantIds = [...new Set(rows.map((r) => r.tenant_id).filter(Boolean))] as string[];
+      const paymentIds = [...new Set(rows.map((r) => r.payment_id).filter(Boolean))] as string[];
+      const names: Record<string, string> = {};
+      const numbers: Record<string, string> = {};
+      if (tenantIds.length > 0) {
+        const { data: t } = await db.from('tenants').select('id, name').in('id', tenantIds);
+        (t ?? []).forEach((x: any) => { names[x.id] = x.name; });
+      }
+      if (paymentIds.length > 0) {
+        const { data: p } = await db.from('payments').select('id, invoice_number, reference').in('id', paymentIds);
+        (p ?? []).forEach((x: any) => { numbers[x.id] = x.invoice_number || x.reference || ''; });
+      }
+      return rows.map((r) => ({
+        id: r.id as string,
+        scope: r.scope as 'company' | 'invoice',
+        allowed: !!r.allowed,
+        note: (r.note as string | null) ?? null,
+        changed_at: r.changed_at as string,
+        label: r.scope === 'invoice' ? `Invoice ${numbers[r.payment_id] || ''}`.trim() : names[r.tenant_id] || 'Company',
+      })) as BankTransferLogRow[];
+    },
+  });
+}
+
+function useBankTransferAction<V>(run: (v: V) => Promise<unknown>, okMessage: string, failTitle: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: run,
+    onSuccess: () => {
+      toast.success(okMessage);
+      for (const key of ['bank-transfer-companies', 'invoice-bank-grants', 'bank-transfer-log', 'invoice-bank-accounts', 'bank-account-log', 'admin-invoices', 'payment-methods', 'payment-instructions']) {
+        qc.invalidateQueries({ queryKey: [key] });
+      }
+    },
+    onError: fail(failTitle),
+  });
+}
+
+export const useSetCompanyBankTransfer = () =>
+  useBankTransferAction(
+    (v: { tenantId: string; allowed: boolean; note?: string }) =>
+      rpc('admin_set_company_bank_transfer', { _tenant_id: v.tenantId, _allowed: v.allowed, _note: v.note?.trim() || null }),
+    'Saved. The company was told.',
+    'Could not change the permission',
+  );
+
+export const useSetInvoiceBankTransfer = () =>
+  useBankTransferAction(
+    (v: { paymentId: string; allowed: boolean; note?: string }) =>
+      rpc('admin_set_invoice_bank_transfer', { _payment_id: v.paymentId, _allowed: v.allowed, _note: v.note?.trim() || null }),
+    'Saved. The client was told.',
+    'Could not change the permission',
+  );
+
+/* ------------------------------------------------ the bank account that clients pay into: all invoices, or one invoice */
+
+/** The bank account to pay one open invoice into: its own account when the administrator set one, else the platform account. Null when the client may not pay by bank transfer. */
+export function useInvoiceBankDetails(paymentId: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ['payment-instructions', paymentId],
+    enabled: enabled && !!paymentId,
+    queryFn: () => rpc<BankDetails | null>('get_payment_instructions', { _payment_id: paymentId }),
+  });
+}
+
+/** Admin: the invoices that have an account of their own (payment id -> the account). */
+export function useInvoiceBankAccounts() {
+  return useQuery({
+    queryKey: ['invoice-bank-accounts'],
+    queryFn: async () => {
+      const { data, error } = await db.from('invoice_bank_accounts').select('payment_id, details, note, set_at');
+      if (error) throw new Error(error.message);
+      const map: Record<string, { details: BankDetails; note: string | null; set_at: string }> = {};
+      (data ?? []).forEach((a: any) => { map[a.payment_id] = { details: (a.details ?? {}) as BankDetails, note: a.note ?? null, set_at: a.set_at }; });
+      return map;
+    },
+  });
+}
+
+export type BankAccountLogRow = {
+  id: string;
+  scope: 'all' | 'invoice';
+  label: string;
+  action: 'set' | 'removed';
+  summary: string | null;
+  note: string | null;
+  changed_at: string;
+};
+
+/** Admin: the last changes of the bank accounts (the number is never shown in full). */
+export function useBankAccountLog(limit = 8) {
+  return useQuery({
+    queryKey: ['bank-account-log', limit],
+    queryFn: async () => {
+      const { data, error } = await db.from('bank_account_change_log')
+        .select('id, scope, payment_id, action, summary, note, changed_at')
+        .order('changed_at', { ascending: false })
+        .limit(limit);
+      if (error) throw new Error(error.message);
+      const rows: any[] = data ?? [];
+      const paymentIds = [...new Set(rows.map((r) => r.payment_id).filter(Boolean))] as string[];
+      const numbers: Record<string, string> = {};
+      if (paymentIds.length > 0) {
+        const { data: p } = await db.from('payments').select('id, invoice_number, reference').in('id', paymentIds);
+        (p ?? []).forEach((x: any) => { numbers[x.id] = x.invoice_number || x.reference || ''; });
+      }
+      return rows.map((r) => ({
+        id: r.id as string,
+        scope: r.scope as 'all' | 'invoice',
+        action: r.action as 'set' | 'removed',
+        summary: (r.summary as string | null) ?? null,
+        note: (r.note as string | null) ?? null,
+        changed_at: r.changed_at as string,
+        label: r.scope === 'invoice' ? `Invoice ${numbers[r.payment_id] || ''}`.trim() : 'All invoices',
+      })) as BankAccountLogRow[];
+    },
+  });
+}
+
+/** Admin: gives one invoice an account of its own, or (details null) lets it use the platform account again. */
+export const useSetInvoiceBankAccount = () =>
+  useBankTransferAction(
+    (v: { paymentId: string; details: BankDetails | null; note?: string }) =>
+      rpc('admin_set_invoice_bank_account', { _payment_id: v.paymentId, _details: v.details ?? {}, _note: v.note?.trim() || null }),
+    'Saved. The client was told.',
+    'Could not change the bank account',
+  );
