@@ -76,7 +76,7 @@ export async function encryptPayload(
   uaPublicB64: string,
   authB64: string,
   fixed?: { salt?: Uint8Array<ArrayBuffer>; sender?: SenderKey },
-): Promise<Uint8Array> {
+): Promise<Uint8Array<ArrayBuffer>> {
   const uaPublic = b64urlDecode(uaPublicB64);
   const auth = b64urlDecode(authB64);
   if (uaPublic.length !== 65 || uaPublic[0] !== 4) throw new Error('bad_p256dh');
