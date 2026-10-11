@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle2, FileSignature, Loader2, MessageSquare, RotateCcw, Send } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, FileSignature, Loader2, MessageSquare, Receipt, RotateCcw, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +11,14 @@ import StatusBadge, { ToneBadge } from '@/components/timesheet/StatusBadge';
 import { commentLabel, formatHours, formatMoney, invoiceInfo, num, rateText, round2, submissionPrice, type CommentRow, type InvoiceRow, type SubmissionRow } from '@/lib/timesheet';
 import PriceBreakdown from '@/components/pricing/PriceBreakdown';
 import { usePricingTerms } from '@/hooks/usePricingTerms';
+
+// the colour of the edge of a timesheet card shows its status at a glance
+const STATUS_ACCENT: Record<string, string> = {
+  signed: 'border-s-green-500',
+  submitted: 'border-s-amber-500',
+  changes_requested: 'border-s-orange-500',
+  draft: 'border-s-slate-300',
+};
 
 interface Props {
   submissions: SubmissionRow[];
@@ -135,8 +143,8 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
   };
 
   return (
-    <Card className="rounded-xl border-border/40" data-testid="timesheet-card">
-      <CardContent className="space-y-3 p-4">
+    <Card className={`rounded-xl border-border/40 border-s-4 shadow-sm ${STATUS_ACCENT[sub.status] ?? 'border-s-slate-300'}`} data-testid="timesheet-card">
+      <CardContent className="space-y-4 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={sub.status} />
           {num(sub.submit_count) > 1 && <span className="text-[11px] text-muted-foreground">Round {num(sub.submit_count)}</span>}
@@ -146,30 +154,30 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs sm:grid-cols-4">
-          <div>
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border/60 bg-border/60 text-xs sm:grid-cols-3">
+          <div className="bg-card p-3">
             <p className="text-muted-foreground">Entries</p>
-            <p className="font-medium text-foreground">{entryCount || '-'}</p>
+            <p className="mt-0.5 text-sm font-semibold text-foreground">{entryCount || '-'}</p>
           </div>
-          <div>
+          <div className="bg-card p-3">
             <p className="text-muted-foreground">Hours</p>
-            <p className="font-medium text-foreground">{formatHours(sub.total_hours)} ({formatHours(sub.billable_hours ?? sub.total_hours)} billable)</p>
+            <p className="mt-0.5 text-sm font-semibold text-foreground">{formatHours(sub.total_hours)} ({formatHours(sub.billable_hours ?? sub.total_hours)} billable)</p>
           </div>
-          <div>
+          <div className="bg-card p-3">
             <p className="text-muted-foreground">Hourly rate</p>
-            <p className="font-medium text-foreground">{sub.hourly_rate != null ? rateText({ hourly_rate: sub.hourly_rate, currency: cur }) : subtotal > 0 ? 'more than one rate' : '-'}</p>
+            <p className="mt-0.5 text-sm font-semibold text-foreground">{sub.hourly_rate != null ? rateText({ hourly_rate: sub.hourly_rate, currency: cur }) : subtotal > 0 ? 'more than one rate' : '-'}</p>
           </div>
-          <div>
+          <div className="bg-card p-3">
             <p className="text-muted-foreground">{mine ? 'Your fee' : 'Consultant fee'}</p>
-            <p className="font-medium text-foreground">{formatMoney(subtotal, cur)}</p>
+            <p className="mt-0.5 text-sm font-semibold text-foreground">{formatMoney(subtotal, cur)}</p>
           </div>
-          <div>
+          <div className="bg-card p-3">
             <p className="text-muted-foreground">Fees and VAT{approved ? '' : ' (estimate)'}</p>
-            <p className="font-medium text-foreground">{formatMoney(round2(price.fees + vat), cur)}</p>
+            <p className="mt-0.5 text-sm font-semibold text-foreground">{formatMoney(round2(price.fees + vat), cur)}</p>
           </div>
-          <div>
+          <div className="bg-primary/5 p-3">
             <p className="text-muted-foreground">{mine ? 'The client pays' : 'Total'}{approved ? '' : ' (estimate)'}</p>
-            <p className="font-semibold text-foreground">{formatMoney(total, cur)}</p>
+            <p className="mt-0.5 text-base font-bold text-primary">{formatMoney(total, cur)}</p>
           </div>
         </div>
 
@@ -180,15 +188,16 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
           </p>
         )}
         {invoice && (
-          <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground" data-testid="timesheet-invoice">
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground" data-testid="timesheet-invoice">
+            <Receipt className="h-3.5 w-3.5" aria-hidden="true" />
             Invoice {invoice.invoice_number ?? ''} {formatMoney(invoice.amount, invoice.currency || cur)}
             <ToneBadge label={invoiceInfo(invoice).label} tone={invoiceInfo(invoice).tone} />
             {invoice.status !== 'completed' && invoice.due_date && <span>due {format(new Date(invoice.due_date), 'MMM d, yyyy')}</span>}
-          </p>
+          </div>
         )}
 
         {sub.status === 'changes_requested' && (
-          <div className="space-y-2 rounded-lg bg-orange-50 p-3 text-xs text-orange-900" data-testid="changes-banner">
+          <div className="space-y-2 rounded-xl border border-orange-200 bg-orange-50 p-3 text-xs text-orange-900" data-testid="changes-banner">
             <p className="font-semibold">{mine ? 'The client asked for changes' : 'Changes were requested'}</p>
             {lastRequest && <p className="whitespace-pre-wrap">{lastRequest.body}</p>}
             {mine && (
@@ -221,7 +230,7 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
           </div>
         )}
         {mine && sub.status === 'submitted' && (
-          <p className="text-xs text-muted-foreground">Waiting for the client. The entries of this timesheet can not be changed until the client answers.</p>
+          <p className="rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">Waiting for the client. The entries of this timesheet can not be changed until the client answers.</p>
         )}
 
         {comments.length > 0 && (
@@ -233,11 +242,16 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
             {comments.map(c => {
               const author = c.author_id === viewerUserId ? 'You' : names[c.author_id] || (c.author_role === 'client' ? 'The client' : 'The consultant');
               return (
-                <div key={c.id} className={`rounded-lg p-2.5 ${c.kind === 'change_request' ? 'bg-orange-50' : c.author_role === 'client' ? 'bg-blue-50' : 'bg-muted/40'}`}>
-                  <p className="text-[11px] text-muted-foreground">
-                    <strong className="text-foreground">{author}</strong> {commentLabel(c.kind)} - {format(new Date(c.created_at), 'MMM d, h:mm a')}
-                  </p>
-                  <p className="mt-0.5 whitespace-pre-wrap text-xs text-foreground">{c.body}</p>
+                <div key={c.id} className="flex gap-2">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary" aria-hidden="true">
+                    {author.charAt(0).toUpperCase()}
+                  </span>
+                  <div className={`min-w-0 flex-1 rounded-xl rounded-ss-sm p-2.5 ${c.kind === 'change_request' ? 'bg-orange-50' : c.author_role === 'client' ? 'bg-blue-50' : 'bg-muted/40'}`}>
+                    <p className="text-[11px] text-muted-foreground">
+                      <strong className="text-foreground">{author}</strong> {commentLabel(c.kind)} - {format(new Date(c.created_at), 'MMM d, h:mm a')}
+                    </p>
+                    <p className="mt-0.5 whitespace-pre-wrap text-xs text-foreground">{c.body}</p>
+                  </div>
                 </div>
               );
             })}
