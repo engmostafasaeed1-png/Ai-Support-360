@@ -75,7 +75,7 @@ export async function encryptPayload(
   plaintext: Uint8Array,
   uaPublicB64: string,
   authB64: string,
-  fixed?: { salt?: Uint8Array; sender?: SenderKey },
+  fixed?: { salt?: Uint8Array<ArrayBuffer>; sender?: SenderKey },
 ): Promise<Uint8Array> {
   const uaPublic = b64urlDecode(uaPublicB64);
   const auth = b64urlDecode(authB64);
