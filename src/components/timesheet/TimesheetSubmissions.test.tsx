@@ -104,6 +104,15 @@ describe('TimesheetSubmissions as the client', () => {
     expect(screen.queryByRole('button', { name: 'Request changes' })).toBeNull();
   });
 
+  it('writes the word "by" and the name of the approver as separate pieces of text, so that the Arabic translator can translate the word', () => {
+    const approved = sub({ status: 'signed', signed_by_name: 'Test Company', signed_at: '2026-10-05T10:00:00Z' });
+    render(<TimesheetSubmissions {...props({ submissions: [approved] })} />);
+    const line = screen.getByText(/Approved by Test Company/);
+    const pieces = Array.from(line.childNodes).filter(node => node.nodeType === Node.TEXT_NODE).map(node => node.textContent);
+    expect(pieces).toContain(' by ');
+    expect(pieces).toContain('Test Company');
+  });
+
   it('shows the comments of both sides in order', () => {
     const comments = [comment(), comment({ id: 'c2', author_id: 'u-client', author_role: 'client', kind: 'change_request', body: 'Please split the hours per day', created_at: '2026-10-04T10:00:00Z' })];
     render(<TimesheetSubmissions {...props({ comments })} />);
