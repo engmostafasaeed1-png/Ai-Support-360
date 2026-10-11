@@ -3373,6 +3373,44 @@ export type Database = {
           },
         ]
       }
+      payment_buyer_revisions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          details: Json
+          id: string
+          payment_id: string
+          revision: number
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          details: Json
+          id?: string
+          payment_id: string
+          revision: number
+          source: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          details?: Json
+          id?: string
+          payment_id?: string
+          revision?: number
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_buyer_revisions_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_card_attempts: {
         Row: {
           created_at: string
@@ -3472,6 +3510,9 @@ export type Database = {
           amount: number
           bank_reference: string | null
           base_amount: number | null
+          buyer_details: Json | null
+          buyer_details_at: string | null
+          buyer_details_revision: number
           card_started_at: string | null
           client_id: string
           client_note: string | null
@@ -3515,6 +3556,9 @@ export type Database = {
           amount: number
           bank_reference?: string | null
           base_amount?: number | null
+          buyer_details?: Json | null
+          buyer_details_at?: string | null
+          buyer_details_revision?: number
           card_started_at?: string | null
           client_id: string
           client_note?: string | null
@@ -3558,6 +3602,9 @@ export type Database = {
           amount?: number
           bank_reference?: string | null
           base_amount?: number | null
+          buyer_details?: Json | null
+          buyer_details_at?: string | null
+          buyer_details_revision?: number
           card_started_at?: string | null
           client_id?: string
           client_note?: string | null
@@ -5133,6 +5180,71 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_billing_details: {
+        Row: {
+          address_line: string | null
+          billing_email: string | null
+          business_name: string | null
+          city: string | null
+          commercial_registration: string | null
+          country: string | null
+          created_at: string
+          id: string
+          issue_business_invoices: boolean
+          phone: string | null
+          postal_code: string | null
+          reference_note: string | null
+          tax_number: string | null
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          address_line?: string | null
+          billing_email?: string | null
+          business_name?: string | null
+          city?: string | null
+          commercial_registration?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          issue_business_invoices?: boolean
+          phone?: string | null
+          postal_code?: string | null
+          reference_note?: string | null
+          tax_number?: string | null
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          address_line?: string | null
+          billing_email?: string | null
+          business_name?: string | null
+          city?: string | null
+          commercial_registration?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          issue_business_invoices?: boolean
+          phone?: string | null
+          postal_code?: string | null
+          reference_note?: string | null
+          tax_number?: string | null
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_billing_details_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -7403,6 +7515,10 @@ export type Database = {
         Returns: undefined
       }
       admin_rls_overview: { Args: never; Returns: Json }
+      admin_save_invoice_seller_details: {
+        Args: { _details: Json }
+        Returns: Json
+      }
       admin_set_invoice_counter: {
         Args: { _next: number; _reason: string }
         Returns: Json
@@ -7437,6 +7553,12 @@ export type Database = {
       audit_changed: { Args: { _new: Json; _old: Json }; Returns: Json }
       audit_is_sensitive_key: { Args: { _k: string }; Returns: boolean }
       audit_scrub_row: { Args: { _row: Json }; Returns: Json }
+      billing_snapshot: {
+        Args: {
+          _d: Database["public"]["Tables"]["tenant_billing_details"]["Row"]
+        }
+        Returns: Json
+      }
       bp_matches_ticket_client: {
         Args: { _bp_id: string; _ticket_id: string }
         Returns: boolean
@@ -7454,6 +7576,10 @@ export type Database = {
       check_rate_limit: {
         Args: { _bucket: string; _limit: number; _window_seconds: number }
         Returns: boolean
+      }
+      clean_billing_text: {
+        Args: { _label: string; _max: number; _v: string }
+        Returns: string
       }
       client_approval_required: { Args: never; Returns: boolean }
       client_info_ready: {
@@ -7586,6 +7712,8 @@ export type Database = {
           webhook_secret: string
         }[]
       }
+      get_invoice_document: { Args: { _payment_id: string }; Returns: Json }
+      get_invoice_seller_details: { Args: never; Returns: Json }
       get_payment_instructions: { Args: never; Returns: Json }
       get_user_tenant_id: { Args: never; Returns: string }
       get_vmware_settings_safe: {
@@ -7756,6 +7884,10 @@ export type Database = {
         Returns: undefined
       }
       registration_is_open: { Args: never; Returns: boolean }
+      reissue_invoice_with_business_details: {
+        Args: { _payment_id: string }
+        Returns: Json
+      }
       request_demo_reschedule: {
         Args: { _proposed_slots: Json; _reason?: string; _token: string }
         Returns: {
@@ -7849,6 +7981,10 @@ export type Database = {
           _user_id: string
         }
         Returns: string
+      }
+      save_tenant_billing_details: {
+        Args: { _details: Json; _tenant_id: string }
+        Returns: Json
       }
       search_knowledge: {
         Args: {
