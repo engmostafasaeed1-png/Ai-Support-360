@@ -1737,6 +1737,8 @@ export type Database = {
           emailed_ext: number | null
           id: string
           last_alerted_at: string
+          push_ext: number | null
+          push_sent_at: string | null
           telegram_ext: number | null
           telegram_sent_at: string | null
           ticket_id: string
@@ -1751,6 +1753,8 @@ export type Database = {
           emailed_ext?: number | null
           id?: string
           last_alerted_at?: string
+          push_ext?: number | null
+          push_sent_at?: string | null
           telegram_ext?: number | null
           telegram_sent_at?: string | null
           ticket_id: string
@@ -1765,6 +1769,8 @@ export type Database = {
           emailed_ext?: number | null
           id?: string
           last_alerted_at?: string
+          push_ext?: number | null
+          push_sent_at?: string | null
           telegram_ext?: number | null
           telegram_sent_at?: string | null
           ticket_id?: string
@@ -4592,6 +4598,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      push_subscriptions: {
+        Row: {
+          active: boolean
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_error: string | null
+          last_error_at: string | null
+          last_sent_at: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_error?: string | null
+          last_error_at?: string | null
+          last_sent_at?: string | null
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_error?: string | null
+          last_error_at?: string | null
+          last_sent_at?: string | null
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_vapid_keys: {
+        Row: {
+          created_at: string
+          id: boolean
+          private_jwk: Json
+          public_key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: boolean
+          private_jwk: Json
+          public_key: string
+        }
+        Update: {
+          created_at?: string
+          id?: boolean
+          private_jwk?: Json
+          public_key?: string
+        }
+        Relationships: []
       }
       rate_limit_counters: {
         Row: {
@@ -8346,6 +8415,17 @@ export type Database = {
         Args: { _hourly_rate: number; _ticket_id: string }
         Returns: string
       }
+      push_my_status: { Args: { _endpoint?: string }; Returns: Json }
+      push_subscribe: {
+        Args: {
+          _auth: string
+          _endpoint: string
+          _p256dh: string
+          _user_agent?: string
+        }
+        Returns: Json
+      }
+      push_unsubscribe: { Args: { _endpoint: string }; Returns: undefined }
       quote_plan_price: {
         Args: { _plan_id: string; _tickets: number; _voucher_code?: string }
         Returns: Json

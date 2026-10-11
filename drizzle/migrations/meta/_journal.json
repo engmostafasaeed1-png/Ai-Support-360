@@ -393,6 +393,13 @@
       "when": 1791756783966,
       "tag": "0055_m58_telegram_alert_links",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1791760117298,
+      "tag": "0056_m59_web_push_subscriptions",
+      "breakpoints": true
     }
   ]
 }
