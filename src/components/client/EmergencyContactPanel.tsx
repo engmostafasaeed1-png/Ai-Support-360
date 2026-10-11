@@ -137,7 +137,7 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
                 <TrendingUp className="w-3.5 h-3.5 mx-auto text-muted-foreground mb-1" />
                 <p className="text-[10px] text-muted-foreground">Rate</p>
                 <p className="text-sm font-bold text-foreground">
-                  {hourlyRate > 0 ? `$${emergencyRate}` : '—'}
+                  {hourlyRate ? `$${emergencyRate}` : '—'}
                   <span className="text-[9px] font-normal text-muted-foreground">/hr</span>
                 </p>
               </div>
@@ -153,18 +153,14 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
               </div>
             </div>
 
-            {hourlyRate > 0 && pricing.multiplier > 1 && (
+            {hourlyRate && pricing.multiplier > 1 && (
               <p className="text-[10px] text-muted-foreground text-center">
                 Standard rate: ${hourlyRate}/hr → Emergency: ${emergencyRate}/hr ({pricing.label})
               </p>
             )}
-            {hourlyRate === 0 && (
-              <p className="text-[10px] text-muted-foreground text-center">
-                Rate not set. Contact consultant to agree on emergency pricing.
-              </p>
-            )}
           </CardContent>
         </Card>
+        )}
 
         <Separator className="my-1" />
 
