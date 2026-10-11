@@ -351,6 +351,13 @@
       "when": 1791721210749,
       "tag": "0049_m52_invoice_counter",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1791723381581,
+      "tag": "0050_m53_invoice_counter_yearly_quarterly",
+      "breakpoints": true
     }
   ]
 }

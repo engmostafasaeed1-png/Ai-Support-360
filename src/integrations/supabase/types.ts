@@ -2528,6 +2528,8 @@ export type Database = {
           id: string
           new_next: number
           old_next: number
+          period_quarter: number | null
+          period_year: number | null
           reason: string
         }
         Insert: {
@@ -2536,6 +2538,8 @@ export type Database = {
           id?: string
           new_next: number
           old_next: number
+          period_quarter?: number | null
+          period_year?: number | null
           reason: string
         }
         Update: {
@@ -2544,6 +2548,8 @@ export type Database = {
           id?: string
           new_next?: number
           old_next?: number
+          period_quarter?: number | null
+          period_year?: number | null
           reason?: string
         }
         Relationships: []
@@ -2593,6 +2599,24 @@ export type Database = {
           resolved_by?: string | null
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      invoice_number_counters: {
+        Row: {
+          last_number: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          last_number: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          last_number?: number
+          updated_at?: string
+          year?: number
         }
         Relationships: []
       }
@@ -7625,6 +7649,13 @@ export type Database = {
         Args: { _consultant_ids: string[]; _session_id: string }
         Returns: number
       }
+      invoice_period: {
+        Args: { _at?: string }
+        Returns: {
+          q: number
+          y: number
+        }[]
+      }
       is_sap_note_list: { Args: { _v: string[] }; Returns: boolean }
       is_session_participant: {
         Args: { _session_id: string }
@@ -7674,6 +7705,7 @@ export type Database = {
           waiting_for_client: boolean
         }[]
       }
+      next_invoice_number: { Args: { _at?: string }; Returns: string }
       normalize_credly_username: { Args: { _v: string }; Returns: string }
       normalize_linkedin_url: { Args: { _v: string }; Returns: string }
       notify_payment_admins: {
