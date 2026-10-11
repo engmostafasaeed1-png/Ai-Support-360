@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { readTerms, type CriticalAlert, type CriticalTerms, type CriticalView } from '@/lib/criticalService';
+import { fetchAdminCriticalRequests } from '@/lib/criticalAdmin';
 
 // The critical-service functions are newer than the generated database types, so they are called through an untyped client.
 const db = supabase as any;
@@ -52,7 +53,8 @@ export function useCriticalView(ticketId: string | undefined, enabled = true) {
 }
 
 /** Consultant: the critical requests this consultant was alerted about in the last 24 hours (a push through realtime, a poll as the safety net). */
-export function useCriticalMyAlerts() {
+export function useCriticalMyAlerts(options: { realtime?: boolean } = {}) {
+  const { realtime = true } = options;
   const { isGuest } = useGuestMode();
   const qc = useQueryClient();
   const query = useQuery({
@@ -64,7 +66,7 @@ export function useCriticalMyAlerts() {
     queryFn: async (): Promise<CriticalAlert[]> => (await rpc<CriticalAlert[] | null>('critical_my_alerts')) ?? [],
   });
   useEffect(() => {
-    if (isGuest) return;
+    if (isGuest || !realtime) return;
     let cancelled = false;
     let channel: ReturnType<typeof supabase.channel> | null = null;
     supabase.auth.getUser().then(({ data }) => {
@@ -81,7 +83,7 @@ export function useCriticalMyAlerts() {
       cancelled = true;
       if (channel) supabase.removeChannel(channel);
     };
-  }, [isGuest, qc]);
+  }, [isGuest, realtime, qc]);
   return query;
 }
 
@@ -117,6 +119,17 @@ export function useExtendCritical() {
       void notifyCriticalByEmail(v.ticketId);
     },
     onError: (e) => toast.error(reason(e, 'The request could not be changed')),
+  });
+}
+
+/** Admin: the latest critical requests and every open one, with how many consultants were alerted and how many replied (refreshed every 15 seconds). */
+export function useAdminCriticalRequests(limit = 12) {
+  return useQuery({
+    queryKey: ['admin-critical-requests', limit],
+    staleTime: 5_000,
+    refetchInterval: 15_000,
+    retry: false,
+    queryFn: () => fetchAdminCriticalRequests(db, limit),
   });
 }
 
