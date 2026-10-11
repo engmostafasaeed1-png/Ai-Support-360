@@ -34,7 +34,11 @@ AI Support 360 uses OpenAI to power its AI features. Our current model is OpenAI
 
 Messages, relevant conversation context, and files submitted to AI features may be sent to OpenAI to generate responses.
 
-[BEFORE PUBLICATION: INSERT VERIFIED INFORMATION ABOUT OPENAI’S TRAINING USE, RETENTION, PROCESSING LOCATIONS, AND AVAILABLE CUSTOMER CONTROLS FOR THIS INTEGRATION.]
+AI requests reach OpenAI through the AI gateway of Lovable, the provider of our application platform. We do not control how OpenAI or the gateway provider run their own systems.
+
+According to OpenAI's published API documentation, content sent through its API is not used to train or improve OpenAI's models unless the customer explicitly opts in, and abuse-monitoring logs are kept for up to 30 days by default (longer only where the law requires it or to protect the services from harm). The documentation also says that OpenAI may process and temporarily store content outside the region selected for a project, so your content may be processed outside Egypt and outside Germany.
+
+We keep AI conversations on our own systems for the periods stated under Data Retention. Do not submit passwords, payment card details, or other confidential personal data to AI features. To ask us to delete your AI conversations, email [info@qurtubatalks.com](mailto:info@qurtubatalks.com). OpenAI's own privacy policy applies to its processing.
 
 We may update the model used to provide the service and will update material privacy disclosures where necessary.
 
@@ -60,6 +64,7 @@ The providers that receive personal information through the service are:
 
 - **Amazon Web Services** — application hosting, database, and file storage (Frankfurt, Germany).
 - **OpenAI** — AI features such as expert matching, interview assistance, and support suggestions. Names, employers, email addresses, and phone numbers are removed before content is sent.
+- **Lovable** — our application platform and the AI gateway through which requests to OpenAI are routed.
 - **Paymob** — card payment processing (Egypt), only when enabled and used. Banks process bank transfers under their own terms and privacy policies.
 - **Our email delivery provider** — sending account, invitation, and notification emails from notify.aisupport360.com.
 - **Jitsi Meet** — video meetings booked through the platform. Joining a video call shares your display name and media with the meeting service.
