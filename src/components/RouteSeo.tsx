@@ -18,12 +18,12 @@ const ROUTES: Record<string, Meta> = {
   '/pricing': {
     title: `Support Plans & Pricing — ${BRAND}`,
     description:
-      'Compare SAP support plans: pay-per-session, monthly retainers and enterprise coverage with verified S/4HANA, BTP and SuccessFactors experts.',
+      'SAP support priced on the hours you approve: you accept the hourly rate and each timesheet, and invoices show platform fees and VAT.',
   },
   '/services/s4hana-support': {
     title: `SAP S/4HANA Support Services — ${BRAND}`,
     description:
-      'On-demand and retainer SAP S/4HANA support: incident resolution, performance tuning, Fiori troubleshooting, and migration follow-up by verified experts.',
+      'On-demand SAP S/4HANA support: incident resolution, performance tuning, Fiori troubleshooting, and migration follow-up by verified experts.',
   },
   '/services/btp-support': {
     title: `SAP BTP & Integration Support — ${BRAND}`,
@@ -36,7 +36,7 @@ const ROUTES: Record<string, Meta> = {
   },
   '/signup': {
     title: `Create your account — ${BRAND}`,
-    description: 'Join as a client or SAP consultant and get matched with verified SAP experts in minutes.',
+    description: 'Join as a client or SAP consultant and get matched with verified SAP experts.',
   },
   '/forgot-password': {
     title: `Reset your password — ${BRAND}`,

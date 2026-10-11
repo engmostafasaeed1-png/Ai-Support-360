@@ -44,8 +44,8 @@ const quickActions = [
 const faqItems = [
   { q: 'How do I create a new support ticket?', a: 'Navigate to "New Request" from the sidebar or dashboard to submit a ticket.' },
   { q: 'How are consultants matched to my ticket?', a: 'Our AI analyzes your issue, required SAP modules, and urgency to match the best consultant.' },
-  { q: 'What are the SLA response times?', a: 'Critical: 1 hr, High: 2 hrs, Medium: 4 hrs, Low: 8 hrs. View full details on the SLA page.' },
-  { q: 'How do payments and invoicing work?', a: 'Payments are processed per milestone or hourly. Invoices are generated automatically.' },
+  { q: 'What are the SLA response times?', a: 'Targets by urgency, counted as elapsed time: Critical 1 hr, High 4 hrs, Medium 8 hrs, Low 24 hrs. The platform tracks them on every ticket. They are targets, not guarantees.' },
+  { q: 'How do payments and invoicing work?', a: 'You pay for the hours that you approve. The consultant proposes an hourly rate and you approve it, then you approve each timesheet. The invoice is created automatically from the approved timesheet.' },
   { q: 'Can I request a specific consultant?', a: 'Yes, browse the Consultants page and send a direct request to your preferred expert.' },
 ];
 
