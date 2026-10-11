@@ -157,6 +157,18 @@ export default function CaseDetailPage() {
     enabled: !!caseId,
   });
 
+  // the real history of the case: status changes, assignments, urgency, plan decisions, match requests, rates, timesheets
+  const { data: history } = useQuery({
+    queryKey: ['case-timeline', caseId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('ticket_timeline_v2', { _ticket_id: caseId! });
+      if (error) throw error;
+      return (data || []) as { event_at: string; kind: string; title: string; detail: string | null; actor_name: string | null }[];
+    },
+    enabled: !!caseId,
+  });
+
+
   // Build timeline
   const timeline: TimelineEvent[] = [];
   if (ticket) {
