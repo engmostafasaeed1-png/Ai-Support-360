@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSubmitProposal, useProposalVersions } from '@/hooks/useProposals';
+import { useNow } from '@/hooks/useCriticalService';
+import { effectiveRate, formatCountdown, formatPercent, msLeft } from '@/lib/criticalService';
 import { Send, Paperclip, X, FileText, RefreshCw } from 'lucide-react';
 import VoiceInput from '@/components/ui/voice-input';
 import { toast } from 'sonner';
@@ -15,9 +17,12 @@ interface SubmitProposalModalProps {
   ticketId: string;
   ticketTitle: string;
   trigger?: React.ReactNode;
+  /** A critical request that is still inside its reply window: the surcharge that a proposal sent in time earns, and the end of the window. */
+  criticalPercent?: number | null;
+  criticalDueAt?: string | null;
 }
 
-export default function SubmitProposalModal({ ticketId, ticketTitle, trigger }: SubmitProposalModalProps) {
+export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, criticalPercent, criticalDueAt }: SubmitProposalModalProps) {
   const [open, setOpen] = useState(false);
   const submit = useSubmitProposal();
   const { data: versions } = useProposalVersions(ticketId);
@@ -30,6 +35,10 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger }: 
     timeline_days: '',
   });
 
+  const rateNumber = parseFloat(form.proposed_rate);
+  // the countdown only runs while the form is open
+  const clock = useNow(open && criticalDueAt ? 1000 : 0);
+  const criticalOn = !!criticalPercent && criticalPercent > 0 && !!criticalDueAt && msLeft(criticalDueAt, clock) > 0;
   const latestVersion = versions && versions.length > 0 ? versions[0] : null;
   const isRevision = !!latestVersion;
   const nextVersion = latestVersion ? latestVersion.version + 1 : 1;
@@ -181,6 +190,16 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger }: 
                 <span className="font-semibold text-foreground">
                   ${(parseFloat(form.proposed_rate) * parseFloat(form.estimated_hours)).toLocaleString()}
                 </span>
+              </div>
+            )}
+
+            {criticalOn && criticalPercent && criticalDueAt && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200" data-testid="critical-proposal-note">
+                <p className="font-semibold">{`Critical request: +${formatPercent(criticalPercent)} on your hourly rate`}</p>
+                <p className="mt-0.5">{`Send this proposal within ${formatCountdown(msLeft(criticalDueAt, clock))} and, if the client accepts it, ${formatPercent(criticalPercent)} is added to the rate you enter.`}</p>
+                {Number.isFinite(rateNumber) && rateNumber > 0 && (
+                  <p className="mt-0.5 font-medium">{`A rate of $${rateNumber}/hr becomes $${effectiveRate(rateNumber, criticalPercent)}/hr when it is accepted.`}</p>
+                )}
               </div>
             )}
 

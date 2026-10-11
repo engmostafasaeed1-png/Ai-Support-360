@@ -3,6 +3,7 @@ import ConsultantSidebar from '@/components/consultant/ConsultantSidebar';
 import PageTransition from '@/components/PageTransition';
 import PageErrorBoundary from '@/components/PageErrorBoundary';
 import MatchRequestPopup from '@/components/consultant/MatchRequestPopup';
+import CriticalAlarm from '@/components/consultant/CriticalAlarm';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Outlet } from 'react-router-dom';
 import { Briefcase, Building2, Zap } from 'lucide-react';
@@ -112,6 +113,7 @@ export default function ConsultantLayout() {
           <Footer compact />
         </div>
         <MatchRequestPopup />
+        <CriticalAlarm />
       </div>
     </SidebarProvider>
   );
