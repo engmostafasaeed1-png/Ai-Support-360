@@ -110,7 +110,7 @@ export function useChat({ sessionId, userId }: UseChatOptions) {
   }, [sessionId, userId]);
 
   const sendMessage = useCallback(
-    async (content: string, type: 'text' | 'file' = 'text', fileUrl?: string, fileName?: string) => {
+    async (content: string, type: 'text' | 'file' = 'text', fileUrl?: string, fileName?: string): Promise<boolean> => {
       // Optimistic message
       const optimisticMsg: ChatMessage = {
         id: `optimistic-${Date.now()}`,
@@ -141,7 +141,9 @@ export function useChat({ sessionId, userId }: UseChatOptions) {
         // Remove optimistic message on error
         setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
         toast.error('Failed to send message. Please try again.');
+        return false;
       }
+      return true;
     },
     [sessionId, userId]
   );

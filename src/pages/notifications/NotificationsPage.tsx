@@ -29,6 +29,8 @@ export default function NotificationsPage() {
     markAllAsRead,
     markManyAsRead,
     deleteNotification,
+    loadError,
+    refetch,
   } = useNotifications();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -181,11 +183,48 @@ export default function NotificationsPage() {
         </Card>
       )}
 
-      {notifications.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Bell className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-          <p className="text-muted-foreground">{t('notifications.empty')}</p>
+      {loadError && (
+        <Card
+          className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 border-destructive/30 bg-destructive/5"
+          role="alert"
+          data-testid="notifications-load-error"
+        >
+          <div className="flex items-start gap-3 flex-1">
+            <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold">Your notifications could not be loaded</p>
+              <p className="text-xs text-muted-foreground">
+                {notifications.length > 0 ? 'The list below may be out of date.' : 'This is not an empty inbox: the list did not load.'} Check your connection and try again.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await refetch();
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            <RotateCw className="w-4 h-4" />
+            Try again
+          </Button>
         </Card>
+      )}
+
+      {notifications.length === 0 ? (
+        loadError ? null : (
+          <Card className="p-12 text-center">
+            <Bell className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+            <p className="text-muted-foreground">{t('notifications.empty')}</p>
+          </Card>
+        )
       ) : (
         <div className="space-y-2">
           {notifications.map((n) => {

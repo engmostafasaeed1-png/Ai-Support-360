@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Loader2, Upload, X, FileText, Paperclip } from 'lucide-react';
 import { checkAttachments, ATTACHMENT_HINT } from '@/lib/attachments';
 import { safeFileName } from '@/lib/storagePath';
+import { friendlyErrorMessage } from '@/lib/friendlyError';
 import type { TicketDetail } from '@/hooks/useTicketDetail';
 import SapAreaPicker from '@/components/ticket/SapAreaPicker';
 import SapNotesField from '@/components/ticket/SapNotesField';
@@ -124,7 +125,7 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
 
             const storagePath = `${ticket.id}/${session.user.id}/${Date.now()}_${safeFileName(file.name)}`;
             const { error: uploadError } = await supabase.storage.from('ticket-documents').upload(storagePath, file);
-            if (uploadError) { toast.error(`${file.name} could not be uploaded: ${uploadError.message}`); continue; }
+            if (uploadError) { toast.error(`${file.name} could not be uploaded: ${friendlyErrorMessage(uploadError, 'please try again')}`); continue; }
             await supabase.from('ticket_documents').insert({
               ticket_id: ticket.id,
               uploaded_by: session.user.id,
@@ -144,7 +145,7 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
       queryClient.invalidateQueries({ queryKey: ['ticket-documents', ticket.id] });
       onOpenChange(false);
     } catch (err) {
-      toast.error((err as any)?.message || 'Failed to update ticket');
+      toast.error(friendlyErrorMessage(err, 'Failed to update ticket'));
     } finally {
       setSaving(false);
     }

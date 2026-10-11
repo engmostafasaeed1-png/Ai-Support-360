@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { DirectionProvider } from '@radix-ui/react-direction';
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
 import { reportQueryFailure } from '@/lib/queryErrorReporting';
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -222,6 +222,12 @@ const RTLSync = () => {
   return null;
 };
 
+// Notices written for a consultant link to /consultant/sessions/<id>; the page of a session for a consultant is its chat page.
+const ConsultantSessionRedirect = () => {
+  const { sessionId } = useParams<{ sessionId: string }>();
+  return <Navigate to={sessionId ? `/consultant/chat/${sessionId}` : '/consultant/calendar'} replace />;
+};
+
 // Mounted inside QueryClientProvider so the hook can access the client.
 import { useRealtimeStatusSync } from '@/hooks/useRealtimeStatusSync';
 const RealtimeStatusSync = () => {
@@ -296,6 +302,7 @@ const App = () => (
               <Route path="profile" element={<ProfilePage />} />
               <Route path="chat" element={<ConsultantChatPage />} />
               <Route path="chat/:sessionId" element={<ChatSessionPage role="consultant" />} />
+              <Route path="sessions/:sessionId" element={<ConsultantSessionRedirect />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="onboarding" element={<OnboardingPage />} />
               <Route path="remote-access" element={<RemoteAccessPage />} />
