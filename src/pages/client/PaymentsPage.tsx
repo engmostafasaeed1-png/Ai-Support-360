@@ -277,7 +277,7 @@ const [tab, setTab] = useState('all');
                 <DetailRow label="Date" value={selectedPayment.date} icon={Calendar} />
                 <DetailRow label="Currency" value={selectedPayment.currency} icon={DollarSign} />
                 <DetailRow label="VAT" value={formatCurrency(Number(selectedPayment.vat || 0), selectedPayment.currency)} icon={FileText} />
-                {selectedPayment.payment_method && (
+                {selectedPayment.payment_method && selectedPayment.status !== 'pending' && (
                   <DetailRow label="Method" value={selectedPayment.payment_method} icon={CreditCard} />
                 )}
                 {selectedPayment.due_date && (

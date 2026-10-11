@@ -40,7 +40,7 @@ We may update the model used to provide the service and will update material pri
 
 ## Payments
 
-The current hourly pricing model uses invoices for approved consultant work, with separate platform service fees, payment processing fees, and VAT. Bank transfer is available; card payments through Paymob are available only when enabled and displayed in the payment screen. Paymob’s own privacy policy applies when you use that service.
+The current hourly pricing model uses invoices for approved consultant work, with separate platform service fees, payment processing fees, and VAT. Card payment through Paymob is the main way to pay when it is enabled and displayed in the payment screen. Bank transfer is optional: it is available only where the platform administrator has allowed it for your company or invoice, and to everyone while card payment is not yet enabled. Paymob’s own privacy policy applies when you use that service.
 
 AI Support 360 stores billing and work records, including timesheets, client approvals, approved hourly rates, invoice amounts and saved fee and VAT rates, payment status, transaction references, and payment dates. For bank transfers, payment references and any proof of payment you submit may contain personal or banking information; share only what is necessary to verify the payment. Consultant payout details provided to the platform are also processed to arrange payment.
 
@@ -161,7 +161,7 @@ The consultant receives the whole consultant fee; the additional fees are client
 
 Review submitted timesheets and request any changes before approval. Approval creates an invoice for the approved work, using the approved hourly rate and applicable fee and VAT rates. Each monetary component is rounded to two decimal places. The invoice retains those amounts and rates; later changes to pricing settings do not recalculate it. Consultants cannot issue separate free-form ticket invoices through the platform under this model.
 
-Invoices are payable within 14 days of issue, as shown on the invoice. Follow its payment instructions. Bank transfer is available; card payments through Paymob are available only when enabled and displayed. A payment processing fee shown in the breakdown is part of the price calculation, not a promise that card payment is available.
+Invoices are payable within 14 days of issue, as shown on the invoice. Follow its payment instructions. Card payment through Paymob (Visa and Mastercard) is the main way to pay once it is enabled and displayed. Bank transfer is optional: it is available only where the platform administrator has allowed it for your company or invoice, and to everyone while card payment is not yet enabled. The bank details are shown only to clients who may pay by bank transfer. You pay the platform, not the consultant; the platform pays the consultant within 15 business days (Sunday to Thursday) after it receives your payment. A payment processing fee shown in the breakdown is part of the price calculation, not a promise that card payment is available.
 
 No additional paid service or charge applies without disclosure and agreement.
 
@@ -269,7 +269,7 @@ Consultants cannot issue a separate free-form ticket invoice through the platfor
 
 ## Payment
 
-Approved timesheet invoices are payable within 14 days of issue, as shown on the invoice. Use the payment instructions displayed for that invoice. Bank transfer is available; card payment is available only when enabled and shown in the payment screen.
+Approved timesheet invoices are payable within 14 days of issue, as shown on the invoice. Use the payment instructions displayed for that invoice. Card payment is the main way to pay once it is enabled and shown in the payment screen. Bank transfer is optional: it is available only where the platform administrator has allowed it for your company or invoice, and to everyone while card payment is not yet enabled.
 
 Payment is for the invoiced consultant work and associated fees and VAT. It does not purchase a recurring subscription or a monthly ticket allowance.
 
@@ -327,7 +327,7 @@ Custom integrations, configuration, onboarding, and support delivery follow the 
 
 Consultants submit timesheets for client review. Approval creates an invoice for billable hours at the approved hourly rate, plus the platform service fee, payment processing fee, and VAT on the combined subtotal. The consultant receives the whole consultant fee. Estimates do not represent work already delivered or amounts already invoiced.
 
-Invoices retain the amounts and rates used at approval and are payable within 14 days of issue. Bank transfer is available; card payment is available only when enabled and displayed. Payment settles the invoiced work and charges, not a recurring subscription, monthly ticket allowance, or a guarantee of future delivery.
+Invoices retain the amounts and rates used at approval and are payable within 14 days of issue. Card payment is the main way to pay once it is enabled and displayed. Bank transfer is optional: it is available only where the platform administrator has allowed it for your company or invoice, and to everyone while card payment is not yet enabled. The platform pays the consultant within 15 business days (Sunday to Thursday) after it receives the client's payment. Payment settles the invoiced work and charges, not a recurring subscription, monthly ticket allowance, or a guarantee of future delivery.
 
 ## Customer Responsibilities
 

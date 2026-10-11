@@ -96,7 +96,7 @@ export function PaymentDetailsDrawer({ payment, open, onOpenChange }: Props) {
                 <Copy className="w-3 h-3" /> Copy
               </Button>
             </div>
-            {payment.payment_method && (
+            {payment.payment_method && payment.status !== 'pending' && (
               <p className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
                 <CreditCard className="w-3 h-3" /> via {payment.payment_method}
               </p>
@@ -112,7 +112,7 @@ export function PaymentDetailsDrawer({ payment, open, onOpenChange }: Props) {
             {payment.due_date && (
               <Detail icon={Clock} label="Due Date" value={format(new Date(payment.due_date), 'MMM d, yyyy')} />
             )}
-            {payment.payment_method && (
+            {payment.payment_method && payment.status !== 'pending' && (
               <Detail icon={Building2} label="Method" value={payment.payment_method} />
             )}
           </div>

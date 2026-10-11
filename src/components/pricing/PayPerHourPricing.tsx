@@ -141,12 +141,12 @@ export function PaymentMethodsNote({ terms }: { terms: PricingTerms | null | und
       <p className="leading-relaxed text-muted-foreground">
         {terms?.cardsEnabled
           ? pick(
-              'Pay online by card (Visa, Mastercard, credit and debit) or by bank transfer. Digital wallets are offered where our payment provider supports them.',
-              'ادفع عبر الإنترنت بالبطاقة (فيزا، ماستركارد، ائتمانية ومدين) أو بالتحويل البنكي. تتوفر المحافظ الرقمية حيث يدعمها مزوّد الدفع لدينا.',
+              'Pay online by card (Visa, Mastercard, credit and debit). Your payment goes to the platform, which pays the consultant within 15 business days. Bank transfer is optional: it is available only when the platform administrator allows it for your company or invoice. Digital wallets are offered where our payment provider supports them.',
+              'ادفع عبر الإنترنت بالبطاقة (فيزا، ماستركارد، ائتمانية ومدين). تذهب دفعتك إلى المنصة التي تدفع للمستشار خلال 15 يوم عمل. التحويل البنكي اختياري ويتوفر فقط عندما يسمح به مدير المنصة لشركتك أو لفاتورتك. تتوفر المحافظ الرقمية حيث يدعمها مزوّد الدفع لدينا.',
             )
           : pick(
-              'Pay by bank transfer. Online card payment is being activated and will be shown here when it is available.',
-              'الدفع بالتحويل البنكي. يجري تفعيل الدفع بالبطاقة عبر الإنترنت وسيظهر هنا عند توفره.',
+              'Pay by bank transfer to the platform. Online card payment (Visa, Mastercard) is being activated and will be shown here when it is available. The platform pays the consultant within 15 business days after it receives your payment.',
+              'الدفع بالتحويل البنكي إلى المنصة. يجري تفعيل الدفع بالبطاقة (فيزا، ماستركارد) عبر الإنترنت وسيظهر هنا عند توفره. تدفع المنصة للمستشار خلال 15 يوم عمل بعد استلام دفعتك.',
             )}{' '}
         {pick('Prices are in US dollars unless your ticket uses another currency.', 'الأسعار بالدولار الأمريكي ما لم تستخدم تذكرتك عملة أخرى.')}
       </p>
@@ -179,6 +179,25 @@ export function pricingFaqs(pick: (en: string, ar: string) => string, terms: Pri
       a: pick(
         'Only after you approve a timesheet. You see every activity, its duration and the total before you approve, and you can send the timesheet back with a comment.',
         'فقط بعد موافقتك على سجل الساعات. ترى كل نشاط ومدته والإجمالي قبل الموافقة، ويمكنك إعادة السجل مع تعليق.',
+      ),
+    },
+    {
+      q: pick('How can I pay?', 'كيف أدفع؟'),
+      a: terms?.cardsEnabled
+        ? pick(
+            'By card (Visa or Mastercard) on a secure payment page. Bank transfer is optional: it is available only when the platform administrator allows it for your company or for one invoice.',
+            'بالبطاقة (فيزا أو ماستركارد) في صفحة دفع آمنة. التحويل البنكي اختياري ولا يتوفر إلا عندما يسمح به مدير المنصة لشركتك أو لفاتورة واحدة.',
+          )
+        : pick(
+            'By bank transfer to the platform for now. Card payment (Visa or Mastercard) is being activated. When it is switched on, card becomes the main way to pay and bank transfer stays available only where the platform administrator allows it.',
+            'بالتحويل البنكي إلى المنصة حالياً. يجري تفعيل الدفع بالبطاقة (فيزا أو ماستركارد). وعند تشغيله تصبح البطاقة الطريقة الرئيسية ويبقى التحويل البنكي متاحاً فقط حيث يسمح به مدير المنصة.',
+          ),
+    },
+    {
+      q: pick('When does the consultant get paid?', 'متى يحصل المستشار على أتعابه؟'),
+      a: pick(
+        'You pay the platform, not the consultant. The platform pays the consultant within 15 business days (Sunday to Thursday) after it receives your payment.',
+        'تدفع للمنصة وليس للمستشار. تدفع المنصة للمستشار خلال 15 يوم عمل (من الأحد إلى الخميس) بعد استلام دفعتك.',
       ),
     },
     {
