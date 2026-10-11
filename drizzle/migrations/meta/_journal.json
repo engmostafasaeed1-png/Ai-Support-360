@@ -316,6 +316,13 @@
       "when": 1791691833388,
       "tag": "0044_m47_referral_notice_links",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1791692649370,
+      "tag": "0045_m48_proposals_accept_only_via_rpc",
+      "breakpoints": true
     }
   ]
 }
