@@ -38,7 +38,12 @@ export function validateAttachment(file: File): string | null {
   if (ext && BLOCKED_ATTACHMENT_EXTENSIONS.includes(ext)) return `${file.name}: files of type .${ext} are not allowed.`;
   if (file.size === 0) return `${file.name}: the file is empty.`;
   if (file.size > MAX_ATTACHMENT_BYTES) {
-    return `${file.name}: ${(file.size / 1048576).toFixed(1)} MB is too large (the limit is ${MAX_ATTACHMENT_LABEL}).`;
+    const mb = file.size / 1048576;
+    // just above the limit the rounded size would equal the limit ("10.0 MB is too large (the limit is 10 MB)"), so say the size in bytes then
+    const near = mb < 10.05;
+    const size = near ? `${file.size.toLocaleString('en-US')} bytes` : `${mb.toFixed(1)} MB`;
+    const limit = near ? `${MAX_ATTACHMENT_LABEL} = ${MAX_ATTACHMENT_BYTES.toLocaleString('en-US')} bytes` : MAX_ATTACHMENT_LABEL;
+    return `${file.name}: ${size} is too large (the limit is ${limit}).`;
   }
   const typeOk = ALLOWED_ATTACHMENT_TYPES.includes(file.type) || (file.type === '' && TYPE_LESS_EXTENSIONS.includes(ext));
   if (!typeOk) return `${file.name}: this kind of file is not allowed. Use ${ATTACHMENT_HINT}.`;

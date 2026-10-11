@@ -18,6 +18,12 @@ describe('validateAttachment', () => {
     expect(validateAttachment(file('big.pdf', 'application/pdf', MAX_ATTACHMENT_BYTES + 1))).toMatch(/too large/);
     expect(validateAttachment(file('ok.pdf', 'application/pdf', MAX_ATTACHMENT_BYTES))).toBeNull();
   });
+  it('says the size in bytes when the file is only just above the limit', () => {
+    expect(validateAttachment(file('big.pdf', 'application/pdf', MAX_ATTACHMENT_BYTES + 1))).toBe(
+      'big.pdf: 10,485,761 bytes is too large (the limit is 10 MB = 10,485,760 bytes).',
+    );
+    expect(validateAttachment(file('huge.pdf', 'application/pdf', 15 * 1048576))).toBe('huge.pdf: 15.0 MB is too large (the limit is 10 MB).');
+  });
   it('accepts a log file that has no type', () => {
     expect(validateAttachment(file('app.log', ''))).toBeNull();
   });

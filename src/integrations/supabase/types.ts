@@ -7680,6 +7680,7 @@ export type Database = {
         Args: { _consultant_id: string }
         Returns: undefined
       }
+      referrals_link_for: { Args: { _user_id: string }; Returns: string }
       register_card_attempt: {
         Args: {
           _intention_id?: string
