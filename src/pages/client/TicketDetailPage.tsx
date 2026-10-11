@@ -26,6 +26,7 @@ import TicketHierarchyTree from '@/components/client/TicketHierarchyTree';
 import TicketAssignments from '@/components/client/TicketAssignments';
 import TicketAcceptors from '@/components/client/TicketAcceptors';
 import TicketBids from '@/components/client/TicketBids';
+import CriticalRequestPanel from '@/components/client/CriticalRequestPanel';
 import TicketQuickActions from '@/components/tickets/TicketQuickActions';
 import RemoteAccessStatusPanel from '@/components/tickets/RemoteAccessStatusPanel';
 import TicketTimeline from '@/components/client/TicketTimeline';
@@ -247,6 +248,11 @@ export default function TicketDetailPage() {
             <Users className="w-3.5 h-3.5 shrink-0" /> This ticket belongs to a colleague in your company. You can follow it, but only its owner can change it.
           </CardContent>
         </Card>
+      )}
+
+      {/* ─── Critical reply service (only for a critical request) ─── */}
+      {(ticket as any).critical_response && (
+        <CriticalRequestPanel ticketId={ticket.id} role={isAdmin ? 'admin' : isConsultant ? 'consultant' : 'client'} />
       )}
 
       {/* ─── Status Stepper ─── */}

@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useTicketProposals, useRespondToProposal } from '@/hooks/useProposals';
+import { useCriticalView } from '@/hooks/useCriticalService';
+import { effectiveRate, formatPercent, surchargeApplies } from '@/lib/criticalService';
 import { DollarSign, Clock, Calendar, Star, CheckCircle2, XCircle, Gavel, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -22,6 +24,7 @@ interface Props {
 export default function TicketBids({ ticketId }: Props) {
   const { data: proposals, isLoading } = useTicketProposals(ticketId);
   const respond = useRespondToProposal();
+  const { data: critical } = useCriticalView(ticketId);
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [clientNotes, setClientNotes] = useState('');
 
@@ -63,6 +66,9 @@ export default function TicketBids({ ticketId }: Props) {
         const config = statusConfig[p.status] || statusConfig.pending;
         const StatusIcon = config.icon;
         const total = p.proposed_rate * (p.estimated_hours || 0);
+        // a critical request: the surcharge is added to the rate of a consultant who replied in time, when the client accepts the bid
+        const criticalPercent = critical?.critical_response ? Number(critical.surcharge_percent ?? 0) : 0;
+        const repliedInTime = surchargeApplies(critical, p.consultant_id);
 
         return (
           <Card key={p.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
@@ -106,6 +112,18 @@ export default function TicketBids({ ticketId }: Props) {
                       </span>
                     )}
                   </div>
+
+                  {p.status === 'pending' && criticalPercent > 0 && (
+                    repliedInTime ? (
+                      <p className="mt-2 rounded-lg bg-green-50 p-2 text-xs text-green-800 dark:bg-green-950/30 dark:text-green-300" data-testid="bid-critical-in-time">
+                        {`Replied in time. If you accept this bid, +${formatPercent(criticalPercent)} is added: $${effectiveRate(Number(p.proposed_rate), criticalPercent)}/hr instead of $${p.proposed_rate}/hr.`}
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-xs text-muted-foreground" data-testid="bid-critical-late">
+                        Replied after the critical reply window: no surcharge.
+                      </p>
+                    )
+                  )}
 
                   {/* Cover letter */}
                   {p.cover_letter && (
