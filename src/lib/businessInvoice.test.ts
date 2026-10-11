@@ -119,7 +119,7 @@ describe('validateBillingForm', () => {
   });
 
   it('refuses a control character', () => {
-    expect(validateBillingForm({ ...complete, business_name: 'QACo' }).business_name).toContain('not allowed');
+    expect(validateBillingForm({ ...complete, business_name: 'QA' + String.fromCharCode(1) + 'Co' }).business_name).toContain('not allowed');
   });
 
   it('accepts Arabic text', () => {
