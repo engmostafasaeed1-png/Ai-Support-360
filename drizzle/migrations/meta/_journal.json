@@ -337,6 +337,13 @@
       "when": 1791712362379,
       "tag": "0047_m50_session_lifecycle_rooms_ratings",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1791715079301,
+      "tag": "0048_m51_complete_session_end_not_before_start",
+      "breakpoints": true
     }
   ]
 }
