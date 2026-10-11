@@ -5,11 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Gavel, Inbox, Tag, Clock, Building2, Globe, ExternalLink } from 'lucide-react';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Search, Gavel, Inbox, Tag, Clock, Building2, Globe, ExternalLink, AlarmClock } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import SubmitProposalModal from '@/components/consultant/SubmitProposalModal';
 import { formatDistanceToNow } from 'date-fns';
+import { useNow } from '@/hooks/useCriticalService';
+import { formatCountdown, formatPercent, msLeft } from '@/lib/criticalService';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -24,7 +26,7 @@ function useOpenTickets() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
-        .select('id, title, description, sap_module, urgency, status, created_at, preferred_session_type, preferred_language, open_for_bids, opened_for_bids_at')
+        .select('id, title, description, sap_module, urgency, status, created_at, preferred_session_type, preferred_language, open_for_bids, opened_for_bids_at, critical_response, critical_due_at, critical_surcharge_percent, critical_status')
         // the database decides what this consultant may see: tickets open for bids and tickets they were invited to
         .in('status', ['new', 'under_review'])
         .is('consultant_id', null)
@@ -39,6 +41,23 @@ export default function OpenTicketsPage() {
   const [search, setSearch] = useState('');
   const [moduleFilter, setModuleFilter] = useState('all');
   const { data: tickets, isLoading } = useOpenTickets();
+  const [searchParams] = useSearchParams();
+  // the notice of a critical request links here with ?critical=<ticket id>: that ticket is highlighted
+  const focusId = searchParams.get('critical');
+  const scrolled = useRef(false);
+  const hasOpenCritical = (tickets || []).some(t => t.critical_response && !!t.critical_due_at && new Date(t.critical_due_at).getTime() > Date.now());
+  const now = useNow(hasOpenCritical ? 1000 : 0);
+  // a critical request whose reply window is still open: a proposal sent in time earns the surcharge
+  const isCriticalOpen = (t: { critical_response?: boolean | null; critical_due_at?: string | null }) =>
+    !!t.critical_response && msLeft(t.critical_due_at, now) > 0;
+  useEffect(() => {
+    if (!focusId || isLoading || scrolled.current) return;
+    const el = document.getElementById(`ticket-${focusId}`);
+    if (el) {
+      scrolled.current = true;
+      el.scrollIntoView({ block: 'center' });
+    }
+  }, [focusId, isLoading, tickets]);
 
   const modules = ['all', ...new Set((tickets || []).map(t => t.sap_module).filter(Boolean))];
 
@@ -117,8 +136,8 @@ export default function OpenTicketsPage() {
             </CardContent>
           </Card>
         ) : (
-          filtered.map(ticket => (
-            <Card key={ticket.id} className="rounded-2xl border-border/50 hover:shadow-premium hover:border-accent/30 transition-all cursor-pointer">
+          [...filtered].sort((a, b) => Number(isCriticalOpen(b)) - Number(isCriticalOpen(a))).map(ticket => (
+            <Card key={ticket.id} id={`ticket-${ticket.id}`} className={`rounded-2xl border-border/50 hover:shadow-premium hover:border-accent/30 transition-all cursor-pointer ${isCriticalOpen(ticket) ? 'border-red-400 ring-1 ring-red-300' : ''} ${focusId === ticket.id ? 'ring-2 ring-red-500' : ''}`}>
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -145,6 +164,14 @@ export default function OpenTicketsPage() {
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <div className="flex items-center gap-1.5">
+                      {isCriticalOpen(ticket) && (
+                        <Badge variant="secondary" className="text-[10px] bg-red-600 text-white gap-1 animate-pulse">
+                          <AlarmClock className="w-2.5 h-2.5" /> {`CRITICAL +${formatPercent(ticket.critical_surcharge_percent)} - ${formatCountdown(msLeft(ticket.critical_due_at, now))} left`}
+                        </Badge>
+                      )}
+                      {ticket.critical_response && !isCriticalOpen(ticket) && (
+                        <Badge variant="secondary" className="text-[10px] bg-red-100 text-red-700">Critical request</Badge>
+                      )}
                       <Badge variant="secondary" className="text-[9px] bg-accent/10 text-accent gap-1">
                         <Globe className="w-2.5 h-2.5" /> {ticket.open_for_bids ? 'Accepting Bids' : 'Private invitation'}
                       </Badge>
@@ -152,7 +179,12 @@ export default function OpenTicketsPage() {
                         {ticket.urgency}
                       </Badge>
                     </div>
-                    <SubmitProposalModal ticketId={ticket.id} ticketTitle={ticket.title} />
+                    <SubmitProposalModal
+                      ticketId={ticket.id}
+                      ticketTitle={ticket.title}
+                      criticalPercent={isCriticalOpen(ticket) ? ticket.critical_surcharge_percent : null}
+                      criticalDueAt={isCriticalOpen(ticket) ? ticket.critical_due_at : null}
+                    />
                   </div>
                 </div>
               </CardContent>
