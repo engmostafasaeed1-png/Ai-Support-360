@@ -34,6 +34,9 @@ import { useRealtimeConsultants, type ConsultantLive } from '@/hooks/useRealtime
 import AIModelSelector, { DEFAULT_MODEL, type AIModelId } from '@/components/ai/AIModelSelector';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
 import VoiceInput from '@/components/ui/voice-input';
+import CriticalRequestOption from '@/components/ticket/CriticalRequestOption';
+import { useCriticalTerms, notifyCriticalByEmail } from '@/hooks/useCriticalService';
+import { NO_CRITICAL_CHOICE, choiceSummary, criticalColumns, type CriticalChoice } from '@/lib/criticalService';
 
 const ticketSchema = z.object({
   sap_module: z.string().min(1, 'Please select an SAP module'),
@@ -159,6 +162,9 @@ export default function NewRequestPage() {
   // What did not get through on the last try: shown on the confirmation page, not only in a toast.
   const [sendIssues, setSendIssues] = useState<{ files: string[]; links: number; expertIds: string[] }>({ files: [], links: 0, expertIds: [] });
   const [solvedBySuggestion, setSolvedBySuggestion] = useState(false);
+  // the optional critical reply service (only offered under the urgency Critical)
+  const [critical, setCritical] = useState<CriticalChoice>(NO_CRITICAL_CHOICE);
+  const criticalTerms = useCriticalTerms().data;
   const togglePick = (expert: PickedExpert) => {
     setPicked(prev => {
       if (prev.some(p => p.id === expert.id)) return prev.filter(p => p.id !== expert.id);
@@ -375,6 +381,11 @@ export default function NewRequestPage() {
       }
     }
 
+    if (currentStep === 2 && form.urgency === 'critical' && critical.on && !critical.agreed) {
+      toast.error('Please confirm the terms of the critical request, or switch it off');
+      return false;
+    }
+
     setFieldErrors({});
     return true;
   };
@@ -417,8 +428,12 @@ export default function NewRequestPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error(t('onboarding.error_auth')); return; }
+      if (form.urgency === 'critical' && critical.on && !critical.agreed) {
+        toast.error('Please confirm the terms of the critical request, or switch it off');
+        return;
+      }
 
-      const requestKey = JSON.stringify([form.title.trim(), form.description.trim(), form.sap_modules, form.urgency, form.ticket_type]);
+      const requestKey = JSON.stringify([form.title.trim(), form.description.trim(), form.sap_modules, form.urgency, form.ticket_type, criticalColumns(form.urgency, critical)]);
       if (!ticketIdRef.current || ticketIdRef.current.key !== requestKey) {
         ticketIdRef.current = { key: requestKey, id: crypto.randomUUID() };
       }
@@ -441,12 +456,15 @@ export default function NewRequestPage() {
         ai_suggested_category: (!triageIsStale && aiCategorization?.category) || null,
         ai_suggested_priority: (!triageIsStale && aiCategorization?.suggested_priority) || null,
         ticket_type: form.ticket_type,
+        ...criticalColumns(form.urgency, critical),
       });
 
       // 23505 on the primary key means an earlier try with this id was saved although its answer was lost: carry on with that ticket
       const alreadySaved = !!error && error.code === '23505' && /tickets_pkey/.test(`${error.message} ${error.details ?? ''}`);
       if (error && !alreadySaved) throw error;
       const ticketData = { id: ticketId };
+      // the consultants who were alerted by the database also get an e-mail (best effort, in the background)
+      if (form.urgency === 'critical' && critical.on) void notifyCriticalByEmail(ticketId);
 
       // Upload attached files
       const failedFiles: string[] = [];
@@ -546,6 +564,16 @@ export default function NewRequestPage() {
           </div>
           <h2 className="text-2xl font-bold mb-2">{t('ticket_create.submitted_title')}</h2>
           <p className="text-muted-foreground mb-6">{t('ticket_create.submitted_desc')}</p>
+          {form.urgency === 'critical' && critical.on && criticalTerms && (
+            <div className="mb-6 space-y-2" data-testid="submitted-critical">
+              <p className="text-sm font-medium text-red-700">{`Your critical request is on its way: ${choiceSummary(critical, criticalTerms)}.`}</p>
+              {createdTicketId && (
+                <Button size="sm" className="bg-red-600 text-white hover:bg-red-700" asChild>
+                  <a href={`/client/tickets/${createdTicketId}`}>Watch the countdown</a>
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         {(sendIssues.files.length > 0 || sendIssues.links > 0 || sendIssues.expertIds.length > 0) && (
@@ -618,7 +646,7 @@ export default function NewRequestPage() {
             setSubmitted(false); setStep(0);
             setForm({ sap_module: '', sap_modules: [], sap_module_other: '', area_details: '', sap_notes_tried: [], issue_type: '', title: '', description: '', urgency: 'medium', preferred_session: 'video', preferred_language: 'en', ticket_type: 'standard' });
             setAiCategorization(null); setAiSummary(null); setAiMatch(null); setAiRecommendations(null); setAttachedFiles([]); setLinkedTickets([]);
-            setPicked([]); setCreatedTicketId(null); setSendIssues({ files: [], links: 0, expertIds: [] }); ticketIdRef.current = null;
+            setPicked([]); setCreatedTicketId(null); setSendIssues({ files: [], links: 0, expertIds: [] }); ticketIdRef.current = null; setCritical(NO_CRITICAL_CHOICE);
           }} variant="outline">
             {t('ticket_create.submit_another')}
           </Button>
@@ -910,6 +938,8 @@ export default function NewRequestPage() {
               </div>
             </div>
 
+            <CriticalRequestOption urgency={form.urgency} value={critical} onChange={setCritical} />
+
             {/* Major Incident Toggle */}
             <div>
               <label className="text-sm font-medium mb-3 block">Ticket Type</label>
@@ -995,6 +1025,12 @@ export default function NewRequestPage() {
                   <p className="text-sm font-medium capitalize">{form.preferred_session.replace('_', ' ')}</p>
                 </div>
               </div>
+              {form.urgency === 'critical' && critical.on && criticalTerms && (
+                <div className="p-3 rounded-xl border border-red-200 bg-red-50/60 dark:bg-red-950/20" data-testid="review-critical">
+                  <p className="text-xs text-muted-foreground mb-0.5">Critical reply service</p>
+                  <p className="text-sm font-medium">{choiceSummary(critical, criticalTerms)}</p>
+                </div>
+              )}
               {form.area_details.trim() && (
                 <div className="p-3 rounded-xl bg-muted/30">
                   <p className="text-xs text-muted-foreground mb-0.5">More details about the areas</p>
