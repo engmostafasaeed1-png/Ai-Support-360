@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   ChevronLeft, Video, MessageSquare, Monitor, Clock, User,
-  Calendar, FileText, ListChecks, Play, XCircle, Star, ClipboardCheck,
+  Calendar, FileText, ListChecks, Play, XCircle, Star, ClipboardCheck, CheckCircle2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -36,6 +36,7 @@ import MeetingPermissionsNote from '@/components/session/MeetingPermissionsNote'
 import ShareAudioGuideNote from '@/components/session/ShareAudioGuideNote';
 import MeetingUrlValidationNotice from '@/components/session/MeetingUrlValidationNotice';
 import { sessionRoomUrl } from '@/lib/meetingRoom';
+import { friendlyErrorMessage } from '@/lib/friendlyError';
 
 const typeIcons = {
   video: Video,
@@ -60,6 +61,7 @@ export default function SessionDetailPage() {
   const [showSurvey, setShowSurvey] = useState(false);
   const [showCsat, setShowCsat] = useState(false);
   const [showRate, setShowRate] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const handleCancel = async () => {
     setIsCancelling(true);
@@ -76,6 +78,22 @@ export default function SessionDetailPage() {
       toast.error(t('session_detail.cancel_error'), { description: err.message });
     } finally {
       setIsCancelling(false);
+    }
+  };
+
+  // A session that has taken place is closed here (or by the consultant on the Session Calendar); only then it can be rated.
+  const handleComplete = async () => {
+    setIsCompleting(true);
+    try {
+      const { error } = await supabase.rpc('complete_session', { _session_id: sessionId! });
+      if (error) throw error;
+      toast.success('The session is marked as completed. You can rate it now.');
+      queryClient.invalidateQueries({ queryKey: ['session-detail', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['client-sessions'] });
+    } catch (err) {
+      toast.error('The session could not be marked as completed', { description: friendlyErrorMessage(err) });
+    } finally {
+      setIsCompleting(false);
     }
   };
 
@@ -192,6 +210,8 @@ export default function SessionDetailPage() {
 
   const TypeIcon = typeIcons[session.session_type as keyof typeof typeIcons] || Video;
   const status = session.status || 'scheduled';
+  // the database allows "Mark as completed" from 15 minutes before the start
+  const sessionHasStarted = !!session.scheduled_at && new Date(session.scheduled_at).getTime() <= Date.now() + 15 * 60_000;
 
   // Resolve the meeting URL once and auto-detect the provider so every
   // sub-component (framed notice, validation, checklist, fallback dialog)
@@ -310,6 +330,11 @@ export default function SessionDetailPage() {
               </Button>
             {status === 'scheduled' && (
               <div className="flex items-center gap-2">
+                {sessionHasStarted && (
+                  <Button variant="outline" size="lg" className="gap-1.5" onClick={handleComplete} disabled={isCompleting}>
+                    <CheckCircle2 className="w-4 h-4" /> Mark as completed
+                  </Button>
+                )}
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="lg" className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10">
