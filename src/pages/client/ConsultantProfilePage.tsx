@@ -30,6 +30,7 @@ import { credlyProfileUrl, linkState, normalizeCredlyUsername, normalizeLinkedin
 import { placeLabel } from '@/lib/geo';
 import { consultantPoint, formatWeeklyHours, type WeeklySlot } from '@/lib/consultantDirectory';
 import WeeklyAvailability from '@/components/client/WeeklyAvailability';
+import { bookableTimes, hasWindowOn, localDateKey, type WindowRow } from '@/lib/bookableTimes';
 
 
 
@@ -218,6 +219,40 @@ export default function ConsultantProfilePage() {
     enabled: !isGuest && !!id,
   });
 
+  // Every window the consultant set (weekly hours and single dates). The Availability tab shows the free times of a chosen day with the same rule as the booking dialog.
+  // The key starts with the key of the weekly hours, so the change notice of the database refreshes it too.
+  const { data: availabilityRows } = useQuery({
+    queryKey: ['consultant-weekly-hours', id, 'rows'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('availability_slots')
+        .select('day_of_week, start_time, end_time, is_recurring, specific_date')
+        .eq('consultant_id', id!);
+      if (error) throw error;
+      return (data ?? []) as WindowRow[];
+    },
+    enabled: !isGuest && !!id,
+  });
+
+  // Times that are already booked with this consultant on the chosen day
+  const chosenDay = selectedDate ? localDateKey(selectedDate) : '';
+  const { data: bookedOnDay, isLoading: bookedLoading } = useQuery({
+    queryKey: ['consultant-booked-times', id, chosenDay],
+    queryFn: async () => {
+      const from = new Date(selectedDate!); from.setHours(0, 0, 0, 0);
+      const to = new Date(from); to.setDate(to.getDate() + 1);
+      const { data, error } = await supabase.rpc('consultant_booked_times', {
+        _consultant_id: id!, _from: from.toISOString(), _to: to.toISOString(),
+      });
+      if (error) throw error;
+      return (data || []).map((b: any) => {
+        const s = new Date(b.scheduled_at).getTime();
+        return [s, s + (b.duration_minutes || 60) * 60_000] as [number, number];
+      });
+    },
+    enabled: !isGuest && !!id && !!selectedDate,
+  });
+
 
   const verificationStatus: VerificationStatus =
     (liveConsultant?.verification_status as VerificationStatus) ||
@@ -266,6 +301,17 @@ export default function ConsultantProfilePage() {
 
   const status = (consultant.status ?? (consultant.available ? 'available' : 'offline')) as 'available' | 'busy' | 'offline';
   const statusColor = STATE_META[status].dot;
+
+  // Free times of the day chosen on the Availability tab: what the consultant offers minus what is already booked. Guests see the sample times.
+  const slotList: { time: string; type: string; duration: number }[] = isGuest
+    ? detail.availableSlots
+    : selectedDate && availabilityRows
+      ? bookableTimes(selectedDate, availabilityRows, bookedOnDay ?? [], Date.now()).map((time) => ({ time, type: '', duration: 60 }))
+      : [];
+  const today0 = localDateKey(new Date());
+  const oneDateWindows = (availabilityRows ?? [])
+    .filter((r) => r.specific_date && r.specific_date >= today0)
+    .sort((a, b) => `${a.specific_date}${a.start_time}`.localeCompare(`${b.specific_date}${b.start_time}`));
 
   return (
     <div className="space-y-6">
@@ -537,6 +583,20 @@ export default function ConsultantProfilePage() {
         {/* Availability Tab */}
         <TabsContent value="availability" className="space-y-6">
           {!isGuest && <WeeklyAvailability hours={weeklyHours} className="w-full" />}
+          {!isGuest && oneDateWindows.length > 0 && (
+            <Card className="rounded-2xl border-border/50" data-testid="one-date-windows">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold">Also available on these dates</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                {oneDateWindows.map((r) => (
+                  <Badge key={`${r.specific_date}-${r.start_time}`} variant="outline" className="text-xs">
+                    {format(new Date(`${r.specific_date}T00:00:00`), 'EEE, MMM d')} · {r.start_time.slice(0, 5)}–{r.end_time.slice(0, 5)}
+                  </Badge>
+                ))}
+              </CardContent>
+            </Card>
+          )}
           <div className="grid md:grid-cols-2 gap-6">
 
             <Card className="rounded-2xl border-border/50">
@@ -550,7 +610,7 @@ export default function ConsultantProfilePage() {
                   mode="single"
                   selected={selectedDate}
                   onSelect={setSelectedDate}
-                  disabled={(date) => date < new Date()}
+                  disabled={(date) => date < new Date() || (!isGuest && !!availabilityRows && !hasWindowOn(date, availabilityRows))}
                   className="pointer-events-auto"
                 />
               </CardContent>
@@ -563,9 +623,11 @@ export default function ConsultantProfilePage() {
               <CardContent>
                 {selectedDate ? (
                   <div className="space-y-2">
-                    {detail.availableSlots.map((slot: any, i: number) => (
+                    {slotList.map((slot, i) => (
                       <button
                         key={i}
+                        type="button"
+                        onClick={() => setBookingOpen(true)}
                         className="w-full flex items-center justify-between p-3 rounded-xl border border-border/50 hover:border-accent/50 hover:bg-accent/5 transition-colors text-start"
                       >
                         <div className="flex items-center gap-3">
@@ -580,6 +642,17 @@ export default function ConsultantProfilePage() {
                         </div>
                       </button>
                     ))}
+                    {!isGuest && bookedLoading && (
+                      <div className="space-y-2" role="status" aria-label="Loading the free times">
+                        <Skeleton className="h-11 w-full rounded-xl" />
+                        <Skeleton className="h-11 w-full rounded-xl" />
+                      </div>
+                    )}
+                    {!isGuest && !!availabilityRows && !bookedLoading && slotList.length === 0 && (
+                      <p className="py-4 text-center text-sm text-muted-foreground" data-testid="no-free-times">
+                        No free times on this day. Choose another day.
+                      </p>
+                    )}
                     <Button className="w-full gradient-primary border-0 mt-4" onClick={() => setBookingOpen(true)}>
                       {t('consultant_profile.book_session')}
                     </Button>
