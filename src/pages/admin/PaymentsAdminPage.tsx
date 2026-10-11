@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,12 +15,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { AlertTriangle, CheckCircle2, CreditCard, Plus, ShieldCheck, Wallet, XCircle } from 'lucide-react';
 import {
-  useAdminInvoices, useAdminPayouts, useBillingPeople, useClientTicketsForInvoice, useConfirmPayment,
-  useConsultantPayoutDetails, useCreateInvoice, usePaymentSettings, useRejectReport, useSavePaymentSetting,
+  useAdminInvoices, useAdminPayouts, useBankAccountLog, useBankTransferCompanies, useBillingPeople, useClientTicketsForInvoice, useConfirmPayment,
+  useConsultantPayoutDetails, useCreateInvoice, useInvoiceBankAccounts, useInvoiceBankGrants, usePaymentSettings, useRejectReport, useSavePaymentSetting,
   usePaymobStatus, useProviderEvents, useSetPayoutStatus, useVerifyPayoutDetails, type BankDetails, type ProviderEvent,
 } from '@/hooks/useBilling';
+import { deadlineSummary, payoutDeadline, type DeadlineTone } from '@/lib/payoutDeadline';
 import PricingSettingsCard from '@/components/admin/PricingSettingsCard';
 import InvoiceSellerCard from '@/components/admin/InvoiceSellerCard';
+import BankTransferSettingsCard from '@/components/admin/BankTransferSettingsCard';
+import InvoiceBankControls, { type InvoiceBankControlsInvoice } from '@/components/admin/InvoiceBankControls';
 
 const money = (n: number | string | null | undefined, currency = 'USD') => {
   try {
@@ -38,6 +41,12 @@ const invoiceVariant: Record<string, 'default' | 'secondary' | 'destructive' | '
 const payoutVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   completed: 'default', processing: 'secondary', pending: 'outline', failed: 'destructive',
 };
+const deadlineClass: Record<DeadlineTone, string> = {
+  done: 'text-green-700',
+  ok: 'text-muted-foreground',
+  soon: 'text-amber-700 font-medium',
+  overdue: 'text-destructive font-semibold',
+};
 
 export default function PaymentsAdminPage() {
   const invoicesQ = useAdminInvoices();
@@ -50,6 +59,9 @@ export default function PaymentsAdminPage() {
   const [payoutDialog, setPayoutDialog] = useState<{ payout: any; status: 'completed' | 'failed' } | null>(null);
   const [detailsFor, setDetailsFor] = useState<any>(null);
   const [newInvoiceOpen, setNewInvoiceOpen] = useState(false);
+  const [optionsFor, setOptionsFor] = useState<InvoiceBankControlsInvoice | null>(null);
+  const grantsQ = useInvoiceBankGrants();
+  const accountsQ = useInvoiceBankAccounts();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -64,6 +76,15 @@ export default function PaymentsAdminPage() {
     [invoices],
   );
   const payoutsOpen = payouts.filter((p) => p.status === 'pending' || p.status === 'processing');
+  const deadlines = deadlineSummary(payouts);
+  // the payouts that are still owed first (the one that is due first on top), then the paid ones, newest first
+  const payoutsSorted = [...payouts].sort((a, b) => {
+    const aOpen = a.status !== 'completed';
+    const bOpen = b.status !== 'completed';
+    if (aOpen !== bOpen) return aOpen ? -1 : 1;
+    if (aOpen) return String(a.due_by ?? '9999-12-31').localeCompare(String(b.due_by ?? '9999-12-31'));
+    return String(b.created_at).localeCompare(String(a.created_at));
+  });
 
   const filteredInvoices = invoices.filter((i) => {
     const q = search.trim().toLowerCase();
@@ -86,7 +107,7 @@ export default function PaymentsAdminPage() {
             <Wallet className="w-6 h-6 text-primary" /> Payments & payouts
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Clients pay the platform by card (confirmed automatically) or by bank transfer (you confirm the money arrived), then you pay the consultant their whole fee (the platform service fee, the payment processing fee and the VAT are paid by the client on top of the fee).
+            Clients pay the platform by card (Visa, Mastercard; confirmed automatically). Bank transfer is optional: you allow it for a company or for one invoice, and you confirm that the money arrived. Then you pay the consultant their whole fee within 15 business days (Sunday to Thursday) of receiving the client's payment. The platform service fee, the payment processing fee and the VAT are paid by the client on top of the fee.
           </p>
         </div>
         <Button className="gap-1.5" onClick={() => setNewInvoiceOpen(true)}>
@@ -102,6 +123,23 @@ export default function PaymentsAdminPage() {
               Finish the set-up in the Settings tab first: the three percentages of the price (platform service fee, payment processing fee, VAT)
               {' '}and the bank details your clients should pay into.
             </span>
+          </CardContent>
+        </Card>
+      )}
+
+      {(deadlines.overdue > 0 || deadlines.soon > 0) && (
+        <Card className={deadlines.overdue > 0 ? 'rounded-2xl border-destructive/40 bg-destructive/5' : 'rounded-2xl border-amber-300 bg-amber-50/60'}>
+          <CardContent className={`p-4 flex items-start gap-3 text-sm ${deadlines.overdue > 0 ? 'text-destructive' : 'text-amber-900'}`}>
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            <div className="space-y-0.5">
+              {deadlines.overdue > 0 && (
+                <p className="font-semibold">{`${deadlines.overdue} ${deadlines.overdue === 1 ? 'payout is late' : 'payouts are late'}`}</p>
+              )}
+              {deadlines.soon > 0 && (
+                <p>{`${deadlines.soon} ${deadlines.soon === 1 ? 'payout is' : 'payouts are'} due within 3 days`}</p>
+              )}
+              <p className="text-xs">The platform promises to pay every consultant within 15 business days of receiving the client's payment. Open the Payouts tab.</p>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -193,6 +231,7 @@ export default function PaymentsAdminPage() {
                           {i.client_reported_at && (
                             <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setRejectFor(i)}>Not found</Button>
                           )}
+                          <Button size="sm" variant="ghost" className="h-8 text-xs ms-2" onClick={() => setOptionsFor(i)}>Payment options</Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -232,6 +271,7 @@ export default function PaymentsAdminPage() {
                       <TableHead>Client</TableHead>
                       <TableHead>Consultant</TableHead>
 <TableHead>Invoice page</TableHead>
+                      <TableHead>Payment options</TableHead>
                       <TableHead>Created</TableHead>
                       <TableHead>Paid</TableHead>
                       <TableHead className="text-end">Amount</TableHead>
@@ -248,6 +288,19 @@ export default function PaymentsAdminPage() {
                         <TableCell className="text-sm">{i.client_name}</TableCell>
                         <TableCell className="text-sm">{i.consultant_name || '-'}</TableCell>
 <TableCell className="text-xs"><Link to={`/invoice/${i.id}`} className="text-primary hover:underline">View / print</Link></TableCell>
+                        <TableCell className="text-xs">
+                          {i.status === 'pending' ? (
+                            <div className="space-y-1">
+                              <div className="flex flex-wrap gap-1">
+                                {grantsQ.data?.[i.id] && <Badge variant="secondary" className="text-[10px]">Bank transfer allowed</Badge>}
+                                {accountsQ.data?.[i.id] && <Badge variant="outline" className="text-[10px]">Own bank account</Badge>}
+                              </div>
+                              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setOptionsFor(i)}>Payment options</Button>
+                            </div>
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs text-muted-foreground">{when(i.created_at)}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {i.paid_at ? <>{when(i.paid_at)}<div className="font-mono">{i.bank_reference}</div>{i.payment_method === 'card' && <Badge variant="outline" className="text-[10px] mt-0.5">Card</Badge>}</> : '-'}
@@ -291,13 +344,14 @@ export default function PaymentsAdminPage() {
                       <TableHead className="text-end">Consultant fee (before commission)</TableHead>
                       <TableHead className="text-end">Commission</TableHead>
                       <TableHead className="text-end">To transfer</TableHead>
+                      <TableHead>Due by</TableHead>
                       <TableHead>Bank details</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-end">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {payouts.map((p) => (
+                    {payoutsSorted.map((p) => (
                       <TableRow key={p.id}>
                         <TableCell className="text-sm">
                           <div className="font-medium">{p.consultant_name}</div>
@@ -307,7 +361,22 @@ export default function PaymentsAdminPage() {
                         <TableCell className="text-end text-sm">
                           {p.commission_amount != null ? (Number(p.commission_amount) === 0 ? 'none' : `${money(p.commission_amount, p.currency)} (${p.commission_percent}%)`) : '-'}
                         </TableCell>
-                        <TableCell className="text-end font-semibold">{money(p.amount, p.currency)}</TableCell>
+<TableCell className="text-end font-semibold">{money(p.amount, p.currency)}</TableCell>
+                        <TableCell className="text-xs">
+                          {p.status === 'completed' ? (
+                            '-'
+                          ) : (
+                            (() => {
+                              const d = payoutDeadline(p);
+                              return (
+                                <>
+                                  {p.due_by && <div className="font-medium text-foreground">{format(parseISO(p.due_by), 'MMM d, yyyy')}</div>}
+                                  <div className={deadlineClass[d.tone]}>{d.label}</div>
+                                </>
+                              );
+                            })()
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setDetailsFor(p)}>
                             {!p.has_details ? <Badge variant="destructive" className="text-[10px]">Missing</Badge>
@@ -361,6 +430,7 @@ export default function PaymentsAdminPage() {
                 </Button>
               </CardContent>
             </Card>
+            <BankTransferSettingsCard />
             <SettingsTab />
           </div>
         </TabsContent>
@@ -371,6 +441,7 @@ export default function PaymentsAdminPage() {
       <PayoutActionDialog state={payoutDialog} onClose={() => setPayoutDialog(null)} />
       <PayoutDetailsDialog payout={detailsFor} onClose={() => setDetailsFor(null)} />
       <NewInvoiceDialog open={newInvoiceOpen} onClose={() => setNewInvoiceOpen(false)} />
+      <InvoiceBankControls invoice={optionsFor} onClose={() => setOptionsFor(null)} />
     </div>
   );
 }
@@ -690,7 +761,7 @@ function SettingsTab() {
         <CardHeader className="pb-2"><CardTitle className="text-base">Bank details for client payments</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            Clients see these details only while they have an open invoice, together with the amount and a payment reference.
+            This is the platform account for all invoices. Only administrators and clients who may pay by bank transfer (see "Who may pay by bank transfer") see it, together with the amount and a payment reference. To use another account for one invoice, open it in All invoices and choose "Payment options".
           </p>
           <div className="grid grid-cols-2 gap-3">
             {field('beneficiary', 'Account holder')}
@@ -720,6 +791,7 @@ function SettingsTab() {
               Save bank details
             </Button>
           </div>
+          <BankAccountHistory />
         </CardContent>
       </Card>
 
@@ -735,6 +807,14 @@ function CardPaymentsCard({ commissionSet, cardsOn }: { commissionSet: boolean; 
   const statusQ = usePaymobStatus();
   const eventsQ = useProviderEvents();
   const save = useSavePaymentSetting();
+  const invoicesQ = useAdminInvoices();
+  const companiesQ = useBankTransferCompanies();
+  const grantsQ = useInvoiceBankGrants();
+  const [confirmOn, setConfirmOn] = useState(false);
+  const openInvoices = (invoicesQ.data ?? []).filter((i) => i.status === 'pending');
+  const allowedCompanies = new Set((companiesQ.data ?? []).filter((c) => c.allowed).map((c) => c.id));
+  const cardOnlyCount = openInvoices.filter((i) => !grantsQ.data?.[i.id] && !(i.tenant_id && allowedCompanies.has(i.tenant_id))).length;
+  const reportedCount = openInvoices.filter((i) => i.client_reported_at).length;
   const status = statusQ.data;
   const keysReady =
     !!status &&
@@ -759,8 +839,9 @@ function CardPaymentsCard({ commissionSet, cardsOn }: { commissionSet: boolean; 
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-xs text-muted-foreground">
-          Clients can pay an open invoice by card on Paymob's secure page. The invoice is then marked as paid and the consultant payout is created
-          automatically, exactly as when you confirm a bank transfer. Bank transfer stays available, and paying the consultant stays manual (Payouts tab).
+          Clients pay an open invoice by card on Paymob's secure page: this is the main way to pay. The invoice is then marked as paid and the consultant payout is created
+          automatically, exactly as when you confirm a bank transfer. Paying the consultant stays manual (Payouts tab) and is due within 15 business days.
+          Bank transfer becomes optional: it stays open only for the companies and invoices that you allow (see "Who may pay by bank transfer" above).
           Paymob pays out to your bank account in EGP.
         </p>
 
@@ -802,10 +883,10 @@ function CardPaymentsCard({ commissionSet, cardsOn }: { commissionSet: boolean; 
               <Switch
                 checked={cardsOn}
                 disabled={save.isPending || (!cardsOn && !canSwitchOn)}
-                onCheckedChange={(on) => save.mutate({ key: 'card_payments_enabled', value: on })}
+                onCheckedChange={(on) => (on ? setConfirmOn(true) : save.mutate({ key: 'card_payments_enabled', value: false }))}
                 aria-label="Offer card payments to clients"
               />
-              <span className="text-sm">{cardsOn ? 'On: clients see "Pay by card"' : 'Off: clients can only pay by bank transfer'}</span>
+              <span className="text-sm">{cardsOn ? 'On: clients pay by card; bank transfer only where you allow it' : 'Off: card payment is hidden and bank transfer is open for everybody'}</span>
             </div>
             {!cardsOn && !canSwitchOn && (
               <p className="text-xs text-muted-foreground">
@@ -851,7 +932,56 @@ function CardPaymentsCard({ commissionSet, cardsOn }: { commissionSet: boolean; 
             </div>
           )}
         </div>
+
+        <Dialog open={confirmOn} onOpenChange={setConfirmOn}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Switch card payments on?</DialogTitle>
+              <DialogDescription>
+                Clients will pay by card. Bank transfer closes for every company and invoice that you have not allowed.
+              </DialogDescription>
+            </DialogHeader>
+            <ul className="list-disc space-y-1 ps-5 text-sm">
+              <li>{`${cardOnlyCount} of ${openInvoices.length} open invoices will be payable by card only.`}</li>
+              {reportedCount > 0 && (
+                <li>{`${reportedCount} ${reportedCount === 1 ? 'client has' : 'clients have'} already reported a bank transfer; you can still confirm ${reportedCount === 1 ? 'it' : 'those'}.`}</li>
+              )}
+            </ul>
+            <p className="text-xs text-muted-foreground">You can allow bank transfer again for a company or an invoice at any time.</p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirmOn(false)}>Cancel</Button>
+              <Button
+                disabled={save.isPending}
+                onClick={() => save.mutate({ key: 'card_payments_enabled', value: true }, { onSuccess: () => setConfirmOn(false) })}
+              >
+                Switch on
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
+  );
+}
+
+/** The last changes of the bank account (the platform account for all invoices, or the own account of one invoice). The number is never shown in full. */
+function BankAccountHistory() {
+  const logQ = useBankAccountLog(5);
+  const rows = logQ.data ?? [];
+  if (logQ.isLoading || rows.length === 0) return null;
+  return (
+    <div className="space-y-1 border-t border-border/40 pt-3">
+      <p className="text-xs font-semibold uppercase text-muted-foreground">Recent changes of the bank account</p>
+      <ul className="space-y-1 text-xs">
+        {rows.map((r) => (
+          <li key={r.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <Badge variant="outline" className="text-[10px]">{r.scope === 'all' ? 'All invoices' : 'One invoice'}</Badge>
+            {r.scope === 'invoice' && <span className="font-mono">{r.label.replace(/^Invoice\s*/, '')}</span>}
+            <span>{r.summary || '-'}</span>
+            <span className="text-muted-foreground">{when(r.changed_at)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
