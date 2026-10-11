@@ -1727,6 +1727,143 @@ export type Database = {
           },
         ]
       }
+      critical_alerts: {
+        Row: {
+          alert_count: number
+          alerted_at: string
+          consultant_id: string
+          dismissed_at: string | null
+          emailed_at: string | null
+          emailed_ext: number | null
+          id: string
+          last_alerted_at: string
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          alert_count?: number
+          alerted_at?: string
+          consultant_id: string
+          dismissed_at?: string | null
+          emailed_at?: string | null
+          emailed_ext?: number | null
+          id?: string
+          last_alerted_at?: string
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          alert_count?: number
+          alerted_at?: string
+          consultant_id?: string
+          dismissed_at?: string | null
+          emailed_at?: string | null
+          emailed_ext?: number | null
+          id?: string
+          last_alerted_at?: string
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "critical_alerts_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "critical_alerts_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      critical_events: {
+        Row: {
+          by_user: string | null
+          created_at: string
+          id: string
+          kind: string
+          new_due_at: string | null
+          new_percent: number | null
+          old_due_at: string | null
+          old_percent: number | null
+          ticket_id: string
+        }
+        Insert: {
+          by_user?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          new_due_at?: string | null
+          new_percent?: number | null
+          old_due_at?: string | null
+          old_percent?: number | null
+          ticket_id: string
+        }
+        Update: {
+          by_user?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          new_due_at?: string | null
+          new_percent?: number | null
+          old_due_at?: string | null
+          old_percent?: number | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "critical_events_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      critical_replies: {
+        Row: {
+          consultant_id: string
+          id: string
+          kind: string
+          replied_at: string
+          ticket_id: string
+        }
+        Insert: {
+          consultant_id: string
+          id?: string
+          kind: string
+          replied_at?: string
+          ticket_id: string
+        }
+        Update: {
+          consultant_id?: string
+          id?: string
+          kind?: string
+          replied_at?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "critical_replies_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "critical_replies_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demo_requests: {
         Row: {
           company: string | null
@@ -6169,6 +6306,7 @@ export type Database = {
       }
       ticket_rates: {
         Row: {
+          base_rate: number | null
           consultant_id: string
           created_at: string
           currency: string
@@ -6180,10 +6318,12 @@ export type Database = {
           proposed_by: string | null
           source: string
           status: string
+          surcharge_percent: number | null
           ticket_id: string
           updated_at: string
         }
         Insert: {
+          base_rate?: number | null
           consultant_id: string
           created_at?: string
           currency?: string
@@ -6195,10 +6335,12 @@ export type Database = {
           proposed_by?: string | null
           source?: string
           status?: string
+          surcharge_percent?: number | null
           ticket_id: string
           updated_at?: string
         }
         Update: {
+          base_rate?: number | null
           consultant_id?: string
           created_at?: string
           currency?: string
@@ -6210,6 +6352,7 @@ export type Database = {
           proposed_by?: string | null
           source?: string
           status?: string
+          surcharge_percent?: number | null
           ticket_id?: string
           updated_at?: string
         }
@@ -6602,6 +6745,15 @@ export type Database = {
           cost_breakdown: Json | null
           cost_currency: string | null
           created_at: string
+          critical_committed_at: string | null
+          critical_due_at: string | null
+          critical_extensions: number
+          critical_first_reply_at: string | null
+          critical_first_reply_by: string | null
+          critical_minutes: number | null
+          critical_response: boolean
+          critical_status: string | null
+          critical_surcharge_percent: number | null
           description: string | null
           editing_by: string | null
           editing_since: string | null
@@ -6648,6 +6800,15 @@ export type Database = {
           cost_breakdown?: Json | null
           cost_currency?: string | null
           created_at?: string
+          critical_committed_at?: string | null
+          critical_due_at?: string | null
+          critical_extensions?: number
+          critical_first_reply_at?: string | null
+          critical_first_reply_by?: string | null
+          critical_minutes?: number | null
+          critical_response?: boolean
+          critical_status?: string | null
+          critical_surcharge_percent?: number | null
           description?: string | null
           editing_by?: string | null
           editing_since?: string | null
@@ -6694,6 +6855,15 @@ export type Database = {
           cost_breakdown?: Json | null
           cost_currency?: string | null
           created_at?: string
+          critical_committed_at?: string | null
+          critical_due_at?: string | null
+          critical_extensions?: number
+          critical_first_reply_at?: string | null
+          critical_first_reply_by?: string | null
+          critical_minutes?: number | null
+          critical_response?: boolean
+          critical_status?: string | null
+          critical_surcharge_percent?: number | null
           description?: string | null
           editing_by?: string | null
           editing_since?: string | null
@@ -6735,6 +6905,13 @@ export type Database = {
           {
             foreignKeyName: "tickets_consultant_id_fkey"
             columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_critical_first_reply_by_fkey"
+            columns: ["critical_first_reply_by"]
             isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
@@ -7695,6 +7872,16 @@ export type Database = {
         Args: { _allowed: boolean; _note?: string; _tenant_id: string }
         Returns: undefined
       }
+      admin_set_critical_service: {
+        Args: {
+          _enabled: boolean
+          _max_minutes: number
+          _max_percent: number
+          _minutes: number
+          _percent: number
+        }
+        Returns: Json
+      }
       admin_set_invoice_bank_account: {
         Args: { _details: Json; _note?: string; _payment_id: string }
         Returns: undefined
@@ -7866,6 +8053,38 @@ export type Database = {
         Args: { _industry?: string; _name: string; _size?: string }
         Returns: string
       }
+      critical_alert_targets: {
+        Args: { _ticket_id: string }
+        Returns: {
+          area_match: boolean
+          consultant_id: string
+          user_id: string
+        }[]
+      }
+      critical_dismiss_alert: {
+        Args: { _ticket_id: string }
+        Returns: undefined
+      }
+      critical_extend: {
+        Args: {
+          _extra_minutes: number
+          _new_percent?: number
+          _ticket_id: string
+        }
+        Returns: Json
+      }
+      critical_my_alerts: { Args: never; Returns: Json }
+      critical_record_reply: {
+        Args: { _consultant: string; _kind: string; _ticket: string }
+        Returns: undefined
+      }
+      critical_service_terms: { Args: never; Returns: Json }
+      critical_service_tick: { Args: never; Returns: number }
+      critical_surcharge_for: {
+        Args: { _consultant: string; _ticket: string }
+        Returns: number
+      }
+      critical_ticket_view: { Args: { _ticket_id: string }; Returns: Json }
       flag_sla_breaches: { Args: never; Returns: number }
       get_demo_request_by_token: {
         Args: { _token: string }
@@ -8181,6 +8400,7 @@ export type Database = {
         }
         Returns: string
       }
+      sap_area_tokens: { Args: { _name: string }; Returns: string[] }
       save_tenant_billing_details: {
         Args: { _details: Json; _tenant_id: string }
         Returns: Json
