@@ -194,7 +194,7 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
   const byUser = names?.byUser ?? {};
 
   const refresh = () => {
-    for (const key of ['ticket-work-logs', 'ticket-timesheet-submissions', 'ticket-rates', 'ticket-timesheet-comments', 'ticket-timesheet-invoices', 'timesheet-ticket', 'timesheet-names']) {
+    for (const key of ['ticket-work-logs', 'ticket-timesheet-submissions', 'ticket-rates', 'ticket-timesheet-comments', 'ticket-timesheet-invoices', 'ticket-payment-invoices', 'timesheet-ticket', 'timesheet-names']) {
       queryClient.invalidateQueries({ queryKey: [key, ticketId] });
     }
   };

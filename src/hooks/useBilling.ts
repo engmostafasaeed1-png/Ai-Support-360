@@ -81,7 +81,7 @@ export function useReportPayment() {
         _note: v.note?.trim() || null,
       }),
     onSuccess: () => {
-      toast.success('Thank you. We will confirm your payment when the money arrives.');
+      toast.success('Thank you. We have your report and confirm it when the money arrives.');
       qc.invalidateQueries({ queryKey: ['client-payments'] });
     },
     onError: fail('Could not report the payment'),

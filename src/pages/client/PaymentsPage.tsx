@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,14 @@ export default function PaymentsPage() {
   const [tab, setTab] = useState('all');
 
   const allPayments = payments || [];
+
+  // keep the open details panel in sync when the payments list refreshes (e.g. after "I have paid")
+  useEffect(() => {
+    if (selectedPayment && payments) {
+      const fresh = payments.find((p: any) => p.id === selectedPayment.id);
+      if (fresh && fresh !== selectedPayment) setSelectedPayment(fresh);
+    }
+  }, [payments]);
   const { preferred, convert, isLoading: ratesLoading } = useCurrency();
   const sumConverted = (filterFn: (p: any) => boolean, field: 'amount' | 'vat' = 'amount') => {
     let total = 0;
