@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { Phone, MessageSquare, AlertTriangle, DollarSign, Zap, Clock, TrendingUp } from 'lucide-react';
+import { Phone, MessageSquare, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Props {
@@ -15,12 +15,8 @@ interface Props {
   urgency: string;
 }
 
-const EMERGENCY_PRICING = {
-  critical: { multiplier: 2.0, label: '2× Standard Rate', responseTime: '< 30 min', surcharge: '100%' },
-  high:     { multiplier: 1.5, label: '1.5× Standard Rate', responseTime: '< 1 hour', surcharge: '50%' },
-  medium:   { multiplier: 1.0, label: 'Standard Rate', responseTime: '< 4 hours', surcharge: '0%' },
-  low:      { multiplier: 1.0, label: 'Standard Rate', responseTime: '< 24 hours', surcharge: '0%' },
-};
+// There is no "emergency pricing": the invoice is the approved hours x the hourly rate that the client approved.
+// A critical request can add the critical reply surcharge, which the ticket page shows (CriticalRequestPanel).
 
 function useConsultantContact(consultantId: string | null, ticketId: string) {
   return useQuery({
@@ -53,10 +49,7 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
   const phone = (contact as any)?.phone;
   const contactName = (contact as any)?.display_name as string | null | undefined;
   const source = (contact as any)?.source as string | null | undefined;
-  const hourlyRate = (contact as any)?.hourly_rate ?? null;
   const isEmergency = urgency === 'critical' || urgency === 'high';
-  const pricing = EMERGENCY_PRICING[urgency as keyof typeof EMERGENCY_PRICING] || EMERGENCY_PRICING.medium;
-  const emergencyRate = hourlyRate ? Math.round(hourlyRate * pricing.multiplier) : null;
 
 
   const cleanPhone = phone?.replace(/[\s\-()]/g, '') || '';
@@ -69,7 +62,7 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
       _action: `emergency_contact.${method}`,
       _entity_type: 'ticket',
       _entity_id: ticketId,
-      _metadata: { consultant_id: consultantId, method, urgency, rate: emergencyRate } as any,
+      _metadata: { consultant_id: consultantId, method, urgency } as any,
     });
   };
 
@@ -124,50 +117,6 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
                 : consultantName ? `Reach ${consultantName}, your assigned consultant, directly` : 'Contact the assigned consultant'}
           {isEmergency ? ' — for critical issues requiring immediate attention.' : '.'}
         </p>
-
-        {/* ─── Emergency Pricing Card ─── */}
-        {contact && (
-        <Card className={`rounded-xl ${isEmergency ? 'border-red-500/20 bg-red-500/5' : 'border-amber-500/20 bg-amber-500/5'}`}>
-          <CardContent className="p-3 space-y-2">
-            <div className="flex items-center gap-2">
-              <DollarSign className={`w-4 h-4 ${isEmergency ? 'text-red-500' : 'text-amber-500'}`} />
-              <span className="text-xs font-semibold text-foreground">Emergency Pricing</span>
-              {pricing.surcharge !== '0%' && (
-                <Badge variant="secondary" className="text-[9px] bg-red-500/15 text-red-600 ml-auto">
-                  +{pricing.surcharge} surcharge
-                </Badge>
-              )}
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <div className="text-center p-2 rounded-lg bg-background/60 border border-border/30">
-                <TrendingUp className="w-3.5 h-3.5 mx-auto text-muted-foreground mb-1" />
-                <p className="text-[10px] text-muted-foreground">Rate</p>
-                <p className="text-sm font-bold text-foreground">
-                  {hourlyRate ? `$${emergencyRate}` : '—'}
-                  <span className="text-[9px] font-normal text-muted-foreground">/hr</span>
-                </p>
-              </div>
-              <div className="text-center p-2 rounded-lg bg-background/60 border border-border/30">
-                <Clock className="w-3.5 h-3.5 mx-auto text-muted-foreground mb-1" />
-                <p className="text-[10px] text-muted-foreground">Response</p>
-                <p className="text-sm font-bold text-foreground">{pricing.responseTime}</p>
-              </div>
-              <div className="text-center p-2 rounded-lg bg-background/60 border border-border/30">
-                <Zap className="w-3.5 h-3.5 mx-auto text-muted-foreground mb-1" />
-                <p className="text-[10px] text-muted-foreground">Level</p>
-                <p className="text-sm font-bold text-foreground capitalize">{urgency}</p>
-              </div>
-            </div>
-
-            {hourlyRate && pricing.multiplier > 1 && (
-              <p className="text-[10px] text-muted-foreground text-center">
-                Standard rate: ${hourlyRate}/hr → Emergency: ${emergencyRate}/hr ({pricing.label})
-              </p>
-            )}
-          </CardContent>
-        </Card>
-        )}
 
         <Separator className="my-1" />
 
