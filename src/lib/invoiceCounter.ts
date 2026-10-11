@@ -1,4 +1,4 @@
-/** The counter of the invoice numbers (INV-<year>-<6 digits>) as the database function admin_get_invoice_counter returns it. */
+/** The counter of the invoice numbers (INV-<year>-Q<quarter>-<6 digits>) as the database function admin_get_invoice_counter returns it. */
 
 export interface InvoiceCounterChange {
   changed_at: string;
@@ -6,15 +6,23 @@ export interface InvoiceCounterChange {
   old_next: number;
   new_next: number;
   reason: string;
+  /** Year and quarter the change was made in (null for a change made before the quarter was part of the number). */
+  year: number | null;
+  quarter: number | null;
 }
 
 export interface InvoiceCounterInfo {
   year: number;
+  quarter: number;
   next_number: number;
   next_invoice_number: string;
   highest_used: number;
+  /** The invoice number that has the highest counter number this year (old or new format), null when there is none. */
+  highest_used_invoice: string | null;
   lowest_allowed_next: number;
   invoices_total: number;
+  invoices_this_year: number;
+  first_invoice_next_year: string;
   history: InvoiceCounterChange[];
 }
 
@@ -27,11 +35,19 @@ const num = (v: unknown): number => {
   return Number.isFinite(x) ? x : 0;
 };
 
+const numOrNull = (v: unknown): number | null => {
+  if (v === null || v === undefined || v === '') return null;
+  const x = Number(v);
+  return Number.isFinite(x) ? x : null;
+};
+
 const asRecord = (v: unknown): Record<string, unknown> =>
   v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 
-export function formatInvoiceNumber(year: number, n: number): string {
-  return `INV-${year}-${String(n).padStart(6, '0')}`;
+/** INV-2026-Q4-000019. Without a quarter (the old format of the first invoices) it is INV-2026-000019. */
+export function formatInvoiceNumber(year: number, quarter: number | null, n: number): string {
+  const q = quarter !== null && quarter >= 1 && quarter <= 4 ? `Q${quarter}-` : '';
+  return `INV-${year}-${q}${String(n).padStart(6, '0')}`;
 }
 
 /** The year written in a number is the year in which the number was handed out. */
@@ -46,11 +62,15 @@ export function toInvoiceCounterInfo(raw: unknown): InvoiceCounterInfo {
   const history = Array.isArray(r.history) ? r.history : [];
   return {
     year: num(r.year),
+    quarter: num(r.quarter),
     next_number: num(r.next_number),
     next_invoice_number: typeof r.next_invoice_number === 'string' ? r.next_invoice_number : '',
     highest_used: num(r.highest_used),
+    highest_used_invoice: typeof r.highest_used_invoice === 'string' && r.highest_used_invoice ? r.highest_used_invoice : null,
     lowest_allowed_next: Math.max(1, num(r.lowest_allowed_next)),
     invoices_total: num(r.invoices_total),
+    invoices_this_year: num(r.invoices_this_year),
+    first_invoice_next_year: typeof r.first_invoice_next_year === 'string' ? r.first_invoice_next_year : '',
     history: history.map((h): InvoiceCounterChange => {
       const x = asRecord(h);
       return {
@@ -59,6 +79,8 @@ export function toInvoiceCounterInfo(raw: unknown): InvoiceCounterInfo {
         old_next: num(x.old_next),
         new_next: num(x.new_next),
         reason: typeof x.reason === 'string' ? x.reason : '',
+        year: numOrNull(x.year),
+        quarter: numOrNull(x.quarter),
       };
     }),
   };
@@ -74,14 +96,15 @@ export function parseCounterInput(raw: string): number | null {
 /** The message under the box, or null when the number can be saved. The database repeats every check. */
 export function validateNextNumber(
   raw: string,
-  info: Pick<InvoiceCounterInfo, 'year' | 'next_number' | 'highest_used' | 'lowest_allowed_next'>,
+  info: Pick<InvoiceCounterInfo, 'year' | 'next_number' | 'highest_used' | 'highest_used_invoice' | 'lowest_allowed_next'>,
 ): string | null {
   const n = parseCounterInput(raw);
   if (n === null) return 'Enter a whole number, for example 16.';
   if (n < 1 || n > MAX_COUNTER_NUMBER) return `Enter a number from 1 to ${MAX_COUNTER_NUMBER}.`;
   if (n === info.next_number) return 'The counter is already at this number.';
   if (n < info.lowest_allowed_next) {
-    return `The number must be at least ${info.lowest_allowed_next}: ${formatInvoiceNumber(info.year, info.highest_used)} is already used.`;
+    const used = info.highest_used_invoice ?? formatInvoiceNumber(info.year, null, info.highest_used);
+    return `The number must be at least ${info.lowest_allowed_next}: ${used} is already used.`;
   }
   return null;
 }
@@ -93,12 +116,12 @@ export function validateReason(raw: string): string | null {
   return null;
 }
 
-/** Names the numbers that no invoice carries when the counter is ahead of the highest number in use, else null. */
+/** Names the counter numbers of this year that no invoice carries when the counter is ahead of the highest number in use, else null. */
 export function describeGap(info: Pick<InvoiceCounterInfo, 'year' | 'next_number' | 'highest_used'>): string | null {
   const from = info.highest_used + 1;
   const to = info.next_number - 1;
   if (to < from) return null;
   return from === to
-    ? `No invoice has the number ${formatInvoiceNumber(info.year, from)}.`
-    : `No invoice has the numbers ${formatInvoiceNumber(info.year, from)} to ${formatInvoiceNumber(info.year, to)}.`;
+    ? `No invoice of ${info.year} has the number ${from}.`
+    : `No invoice of ${info.year} has the numbers ${from} to ${to}.`;
 }
