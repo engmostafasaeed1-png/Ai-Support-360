@@ -52,9 +52,9 @@ export default function TicketTimeline({ ticketId, ticket }: Props) {
   const { data: history, isLoading: hl } = useQuery({
     queryKey: ['ticket-timeline', ticketId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('ticket_timeline', { _ticket_id: ticketId });
+      const { data, error } = await supabase.rpc('ticket_timeline_v2', { _ticket_id: ticketId });
       if (error) throw error;
-      return (data || []) as { event_at: string; kind: string; title: string; detail: string | null }[];
+      return (data || []) as { event_at: string; kind: string; title: string; detail: string | null; actor_name: string | null }[];
     },
   });
 
@@ -183,6 +183,7 @@ export default function TicketTimeline({ ticketId, ticket }: Props) {
   // 7. History from the server (the "created" entry and the "resolved" status change are already shown above)
   (history || []).forEach((h, i) => {
     if (h.kind === 'created') return;
+    if (h.kind === 'document') return;
     if (h.kind === 'status' && h.title === 'Status changed to resolved' && ticket.resolved_at) return;
     const style = h.kind === 'status'
       ? { icon: ArrowRight, color: 'text-blue-600', bg: 'bg-blue-100' }
@@ -190,13 +191,17 @@ export default function TicketTimeline({ ticketId, ticket }: Props) {
         ? { icon: Play, color: 'text-primary', bg: 'bg-primary/10' }
         : h.kind === 'plan'
           ? { icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-100' }
-          : { icon: AlertCircle, color: 'text-muted-foreground', bg: 'bg-muted' };
+          : h.kind === 'rate'
+            ? { icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-100' }
+            : h.kind === 'timesheet'
+              ? { icon: Clock, color: 'text-sky-600', bg: 'bg-sky-100' }
+              : { icon: AlertCircle, color: 'text-muted-foreground', bg: 'bg-muted' };
     events.push({
       id: `history-${i}`,
       timestamp: h.event_at,
       type: 'status_change',
       title: h.title,
-      subtitle: h.detail || undefined,
+      subtitle: [h.detail, h.actor_name ? `By ${h.actor_name}` : null].filter(Boolean).join(' · ') || undefined,
       icon: style.icon,
       iconColor: style.color,
       iconBg: style.bg,
