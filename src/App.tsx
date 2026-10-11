@@ -38,6 +38,7 @@ import OverviewSection from "./components/admin/console/sections/OverviewSection
 import UserManagementSection from "./components/admin/console/sections/UserManagementSection.tsx";
 import RolesPermissionsSection from "./components/admin/console/sections/RolesPermissionsSection.tsx";
 import SubscriptionsSection from "./components/admin/console/sections/SubscriptionsSection.tsx";
+import InvoiceNumberingSection from "./components/admin/console/sections/InvoiceNumberingSection.tsx";
 import { SecuritySettingsSection, AuthenticationSection, DataAccessSection, AuditLogSection } from "./components/admin/console/sections/SecuritySections.tsx";
 import { TicketManagementSection, ConsultantApprovalsSection, NDAManagementSection, MatchRequestsSection, ProjectsMilestonesSection } from "./components/admin/console/sections/OperationsSections.tsx";
 import { NotificationsSection, LocalizationSection, AppearanceSection, StorageSection, EmailSection, IntegrationsSection as AdminIntSection, EnvironmentsSection, LandingEditorSection, PlatformSettingsSection, MaintenanceSection } from "./components/admin/console/sections/SystemSections.tsx";
@@ -371,7 +372,8 @@ const App = () => (
                 <Route index element={<OverviewSection />} />
                 <Route path="users" element={<UserManagementSection />} />
                 <Route path="roles" element={<RolesPermissionsSection />} />
-                <Route path="subscriptions" element={<SubscriptionsSection />} />
+<Route path="subscriptions" element={<SubscriptionsSection />} />
+                <Route path="invoice-numbering" element={<InvoiceNumberingSection />} />
                 <Route path="tickets" element={<TicketManagementSection />} />
                 <Route path="approvals" element={<ConsultantApprovalsSection />} />
                 <Route path="nda" element={<NDAManagementSection />} />

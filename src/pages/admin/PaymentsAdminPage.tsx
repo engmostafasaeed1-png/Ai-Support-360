@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -343,6 +344,19 @@ export default function PaymentsAdminPage() {
         <TabsContent value="settings">
           <div className="space-y-4">
             <PricingSettingsCard />
+            <Card className="rounded-2xl border-border/50">
+              <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Invoice numbering</p>
+                  <p className="text-xs text-muted-foreground">
+                    See which number the next invoice gets and change the counter, for example to close a gap. It is in the Admin Console under Invoice Numbering.
+                  </p>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/admin/console/invoice-numbering">Open invoice numbering</Link>
+                </Button>
+              </CardContent>
+            </Card>
             <SettingsTab />
           </div>
         </TabsContent>

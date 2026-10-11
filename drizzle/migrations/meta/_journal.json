@@ -344,6 +344,13 @@
       "when": 1791715079301,
       "tag": "0048_m51_complete_session_end_not_before_start",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1791721210749,
+      "tag": "0049_m52_invoice_counter",
+      "breakpoints": true
     }
   ]
 }
