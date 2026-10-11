@@ -13,6 +13,7 @@ import { ToneBadge } from '@/components/timesheet/StatusBadge';
 import { formatMoney, rateStateFor, rateText, type RateRow, type RateState, type Tone } from '@/lib/timesheet';
 import { usePricingTerms } from '@/hooks/usePricingTerms';
 import { formatPercent, priceBreakdown } from '@/lib/pricing';
+import { rateSurchargeNote } from '@/lib/rateSurcharge';
 
 interface Props {
   ticketId: string;
@@ -165,6 +166,9 @@ function ConsultantRate({ ticketId, state, currency, suggestedRate, onChanged }:
           </p>
         </div>
       )}
+      {rateSurchargeNote(proposed ?? approved) && (
+        <p className="text-xs text-muted-foreground" data-testid="rate-surcharge">{rateSurchargeNote(proposed ?? approved)}</p>
+      )}
       <HourlyTotal rate={proposed ?? approved} audience="consultant" />
       {!showForm ? (
         <Button variant="outline" size="sm" onClick={startEditing}>
@@ -245,6 +249,9 @@ function ClientRate({ name, state, canApprove, onChanged }: { name: string; stat
             </div>
           )}
         </div>
+      )}
+      {rateSurchargeNote(proposed ?? approved) && (
+        <p className="text-xs text-muted-foreground" data-testid="rate-surcharge">{rateSurchargeNote(proposed ?? approved)}</p>
       )}
       <HourlyTotal rate={proposed ?? approved} audience="client" />
       {!approved && !proposed && !declined && (

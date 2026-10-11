@@ -45,6 +45,7 @@ const faqItems = [
   { q: 'How do I create a new support ticket?', a: 'Navigate to "New Request" from the sidebar or dashboard to submit a ticket.' },
   { q: 'How are consultants matched to my ticket?', a: 'Our AI analyzes your issue, required SAP modules, and urgency to match the best consultant.' },
   { q: 'What are the SLA response times?', a: 'Targets by urgency, counted as elapsed time: Critical 1 hr, High 4 hrs, Medium 8 hrs, Low 24 hrs. The platform tracks them on every ticket. They are targets, not guarantees.' },
+  { q: 'What is the critical reply service?', a: 'When your request has the urgency Critical you can switch on the critical reply service. Every verified consultant who covers your SAP area is alarmed at once. A consultant who replies with a proposal inside the reply window (30 minutes by default) earns a surcharge (30% by default) on the approved hourly rate, and you pay it. If nobody replies in time, no surcharge applies. While no consultant is assigned you can give the consultants more time or raise the surcharge.' },
   { q: 'How do payments and invoicing work?', a: 'You pay for the hours that you approve. The consultant proposes an hourly rate and you approve it, then you approve each timesheet. The invoice is created automatically from the approved timesheet.' },
   { q: 'Can I request a specific consultant?', a: 'Yes, browse the Consultants page and send a direct request to your preferred expert.' },
 ];
@@ -62,7 +63,7 @@ const contactChannels: ContactChannel[] = [
   { icon: Mail, label: 'Email Support', value: 'info@qurtubatalks.com', href: 'mailto:info@qurtubatalks.com', ltr: true, color: 'text-blue-500' },
   { icon: Phone, label: 'Phone Support', value: CONTACT_PHONE_DISPLAY, href: CONTACT_PHONE_HREF, ltr: true, color: 'text-emerald-500' },
   { icon: Clock, label: 'Business Hours', value: 'Sun–Thu, 8 AM – 6 PM (AST)', color: 'text-amber-500' },
-  { icon: Shield, label: 'Emergency', value: '24/7 for Critical Issues', color: 'text-destructive' },
+  { icon: Shield, label: 'Critical requests', value: 'Fast-reply alarm to consultants', color: 'text-destructive' },
 ];
 
 export default function SupportPage() {

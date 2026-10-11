@@ -54,6 +54,10 @@ export interface RateRow {
   source: string;
   decided_at: string | null;
   decision_note: string | null;
+  /** the hourly rate that the consultant proposed, before the critical reply surcharge was added (only when a surcharge applies) */
+  base_rate?: number | null;
+  /** the critical reply surcharge in percent that was added to base_rate */
+  surcharge_percent?: number | null;
   created_at: string;
 }
 

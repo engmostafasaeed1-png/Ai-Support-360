@@ -85,7 +85,7 @@ export default function ConsultantSettingsPage() {
               <CardTitle className="text-base flex items-center gap-2"><Bell className="w-4 h-4" /> Notifications</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {row('new_case_alerts', 'New case alerts', 'Get a notification when a client sends you a match request. When off, you will not be notified of new requests.')}
+              {row('new_case_alerts', 'New case alerts', 'Get a notification when a client sends you a match request, and the alarm when a client opens a critical request for your SAP area. When off, you will not be notified of new requests and you will not get critical alarms.')}
             </CardContent>
           </Card>
           <Card className="border-border/40">

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useAdminSettings } from '@/hooks/useAdminSettings';
 import NDATemplateEditor from '@/components/admin/NDATemplateEditor';
+import CriticalServiceSettingsCard from '@/components/admin/CriticalServiceSettingsCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -171,6 +172,8 @@ export default function AdminSettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <CriticalServiceSettingsCard />
 
       <NDATemplateEditor />
 
