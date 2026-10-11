@@ -93,7 +93,13 @@ export default function UsersPage() {
   const exportCsv = () => {
     const rows = [['Name', 'Email', 'Roles', 'Status', 'Joined', 'Last sign-in'],
       ...filtered.map((u) => [u.name, u.email, u.roles.join(' '), u.status, fmt(u.created_at), fmt(u.last_sign_in_at)])];
-    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    // Neutralize spreadsheet formulas: a value starting with =, +, - or @ would run as a formula when opened in Excel/Sheets.
+    const cell = (c: unknown) => {
+      const s = String(c);
+      const safe = /^[=+\-@]/.test(s) ? `'${s}` : s;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
+    const csv = rows.map((r) => r.map(cell).join(',')).join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     a.download = `users-${new Date().toISOString().slice(0, 10)}.csv`;
