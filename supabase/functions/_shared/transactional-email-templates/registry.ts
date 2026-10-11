@@ -18,6 +18,7 @@ import { template as interviewInvitation } from './interview-invitation.tsx'
 import { template as interviewInvitationCopy } from './interview-invitation-copy.tsx'
 import { template as interviewResponse } from './interview-response.tsx'
 import { template as platformInvitation } from './platform-invitation.tsx'
+import { template as criticalRequestAlert } from './critical-request-alert.tsx'
 import { template as verificationItems } from './verification-items.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
@@ -31,4 +32,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'interview-response': interviewResponse,
   'verification-items': verificationItems,
   'platform-invitation': platformInvitation,
+  'critical-request-alert': criticalRequestAlert,
 }
