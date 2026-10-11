@@ -14,6 +14,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Skeleton } from '@/components/ui/skeleton';
 import { Library, Plus, Upload, Sparkles, Pencil, Trash2, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { friendlyErrorMessage, functionErrorMessage } from '@/lib/friendlyError';
 
 const SAP_MODULES = [
   'general', 'SAP FICO', 'SAP MM', 'SAP SD', 'SAP PP', 'SAP HCM', 'SAP ABAP',
@@ -103,7 +104,7 @@ export default function QuestionLibraryPage() {
     const payload = { ...rest, question: rest.question.trim(), category: rest.category || null, key_points: rest.key_points || null, author_name: rest.author_name || null };
     const { error } = id ? await db().update(payload).eq('id', id) : await db().insert({ ...payload, source: 'manual' });
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyErrorMessage(error));
     toast.success('Saved');
     setEditing(null);
     refresh();
@@ -112,7 +113,7 @@ export default function QuestionLibraryPage() {
   const remove = async (id: string) => {
     if (!confirm('Delete this question?')) return;
     const { error } = await db().delete().eq('id', id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyErrorMessage(error));
     refresh();
   };
 
@@ -155,7 +156,7 @@ export default function QuestionLibraryPage() {
     if (!items.length) return toast.error('No valid questions');
     for (let i = 0; i < items.length; i += 200) {
       const { error } = await db().insert(items.slice(i, i + 200));
-      if (error) return toast.error(error.message);
+      if (error) return toast.error(friendlyErrorMessage(error));
     }
     toast.success(`Imported ${items.length} questions`);
     refresh();
@@ -168,8 +169,9 @@ export default function QuestionLibraryPage() {
       body: { ...gen, topic: gen.topic || undefined },
     });
     setGenLoading(false);
-    const msg = (data as any)?.error || error?.message;
-    if (msg || !data?.questions) return toast.error(msg || 'Generation failed');
+    if (error || (data as any)?.error || !data?.questions) {
+      return toast.error(await functionErrorMessage(error, data, 'The questions could not be written. Please try again.'));
+    }
     setDrafts(data.questions.map((q: any) => ({ ...empty, ...q, sap_module: gen.sap_module, difficulty: gen.difficulty, keep: true })));
   };
 
@@ -177,7 +179,7 @@ export default function QuestionLibraryPage() {
     const keep = drafts.filter((d) => d.keep).map(({ keep, id, ...d }) => ({ ...d, source: 'ai', author_name: d.author_name || null }));
     if (!keep.length) return;
     const { error } = await db().insert(keep);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyErrorMessage(error));
     toast.success(`Added ${keep.length} questions`);
     setGenOpen(false);
     setDrafts([]);

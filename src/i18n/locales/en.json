@@ -531,7 +531,7 @@
   },
   "ticket_board": {
     "title": "Ticket Board",
-    "subtitle": "Drag-and-drop ticket management",
+    "subtitle": "Tickets by status",
     "new": "New",
     "under_review": "Under Review",
     "matched": "Matched",

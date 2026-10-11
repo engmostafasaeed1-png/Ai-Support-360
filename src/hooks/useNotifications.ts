@@ -17,22 +17,33 @@ export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
 
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(50);
+    let data: Notification[] | null = null;
+    let failed = false;
+    try {
+      const res = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (res.error) failed = true;
+      else data = res.data;
+    } catch {
+      failed = true; // the request got no answer at all (offline, blocked)
+    }
 
     if (data) {
       setNotifications(data);
       setUnreadCount(data.filter(n => !n.is_read).length);
     }
+    // a failed load is not an empty inbox: the page shows an error with a Try again button
+    setLoadError(failed);
     setLoading(false);
   }, []);
 
@@ -112,5 +123,5 @@ export function useNotifications() {
     return () => { supabase.removeChannel(channel); };
   }, [fetchNotifications]);
 
-  return { notifications, unreadCount, loading, markAsRead, markAllAsRead, markManyAsRead, deleteNotification, refetch: fetchNotifications };
+  return { notifications, unreadCount, loading, loadError, markAsRead, markAllAsRead, markManyAsRead, deleteNotification, refetch: fetchNotifications };
 }

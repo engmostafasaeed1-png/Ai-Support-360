@@ -4,7 +4,8 @@ import { Send, Paperclip, X, Image as ImageIcon, File } from 'lucide-react';
 import VoiceInput from '@/components/ui/voice-input';
 
 interface ChatInputProps {
-  onSend: (content: string) => void;
+  /** May answer false (or a promise of false) when the message could not be sent: the text then comes back into the box. */
+  onSend: (content: string) => Promise<boolean | void> | boolean | void;
   onTyping: () => void;
   onFileUpload: (file: File) => void;
   disabled?: boolean;
@@ -23,8 +24,12 @@ export default function ChatInput({ onSend, onTyping, onFileUpload, disabled }: 
       setPreviewUrl(null);
     }
     if (text.trim()) {
-      onSend(text.trim());
+      const content = text.trim();
       setText('');
+      // a failed send gives the text back (unless something new has been typed in the meantime)
+      void Promise.resolve(onSend(content)).then((ok) => {
+        if (ok === false) setText((current) => (current.trim() ? current : content));
+      });
     }
   };
 
