@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Loader2, Receipt, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -59,20 +59,18 @@ interface Props { ticketId: string; role: Role; currency?: string }
  * plus the platform service fee and the payment processing fee, plus VAT. The client pays it in Payments & Invoices; the consultant gets the whole fee.
  */
 export default function TicketPaymentSection({ ticketId, role }: Props) {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(async () => {
-    const { data } = await supabase
-      .from('payments')
-      .select('id, invoice_number, status, amount, currency, vat_amount, due_date, created_at, paid_at, pricing_model, base_amount, service_fee_percent, service_fee_amount, processing_fee_percent, processing_fee_amount, vat_percent')
-      .eq('ticket_id', ticketId)
-      .eq('kind', 'invoice')
-      .order('created_at', { ascending: false });
-    setInvoices((data as unknown as Invoice[]) ?? []);
-    setLoading(false);
-  }, [ticketId]);
-  useEffect(() => { void load(); }, [load]);
+  const { data: invoices = [], isLoading: loading } = useQuery({
+    queryKey: ['ticket-payment-invoices', ticketId],
+    queryFn: async (): Promise<Invoice[]> => {
+      const { data } = await supabase
+        .from('payments')
+        .select('id, invoice_number, status, amount, currency, vat_amount, due_date, created_at, paid_at, pricing_model, base_amount, service_fee_percent, service_fee_amount, processing_fee_percent, processing_fee_amount, vat_percent')
+        .eq('ticket_id', ticketId)
+        .eq('kind', 'invoice')
+        .order('created_at', { ascending: false });
+      return (data as unknown as Invoice[]) ?? [];
+    },
+  });
 
   return (
     <Card className="rounded-2xl border-border/50 shadow-sm" data-testid="ticket-payment-section">
