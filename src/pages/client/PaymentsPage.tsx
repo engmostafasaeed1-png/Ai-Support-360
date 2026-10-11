@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PlanCheckoutDialog } from '@/components/client/PlanCheckoutDialog';
 import { useClientPayments } from '@/hooks/useClientPayments';
-import { Download, CreditCard, DollarSign, FileText, Clock, Search, ArrowRight, Ticket, AlertCircle, CheckCircle2, XCircle, ReceiptText, Calendar, User, Tag, Video, MessageSquare, Monitor, PlayCircle, Receipt } from 'lucide-react';
+import { Download, CreditCard, DollarSign, FileText, Clock, Search, ArrowRight, Ticket, AlertCircle, CheckCircle2, XCircle, ReceiptText, Calendar, User, Tag, Video, MessageSquare, Monitor, PlayCircle, Receipt, Building2, Printer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { generateInvoicePdf } from '@/lib/invoicePdf';
@@ -24,6 +24,8 @@ import { useCurrency, formatMoney } from '@/contexts/CurrencyContext';
 import PriceBreakdown from '@/components/pricing/PriceBreakdown';
 import { usePricingTerms } from '@/hooks/usePricingTerms';
 import { paymentBreakdown } from '@/lib/pricing';
+import BusinessInvoiceCard from '@/components/invoice/BusinessInvoiceCard';
+import InvoiceBusinessSection from '@/components/invoice/InvoiceBusinessSection';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   completed: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
@@ -38,7 +40,8 @@ export default function PaymentsPage() {
   const { data: pricingTerms } = usePricingTerms();
   const [search, setSearch] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
-  const [tab, setTab] = useState('all');
+const [tab, setTab] = useState('all');
+  const [billingOpen, setBillingOpen] = useState(false);
 
   const allPayments = payments || [];
 
@@ -117,6 +120,8 @@ export default function PaymentsPage() {
         ))}
       </div>
 
+<BusinessInvoiceCard open={billingOpen} onOpenChange={setBillingOpen} payments={allPayments} />
+
       {/* Search + Tabs */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="relative max-w-sm w-full">
@@ -172,7 +177,10 @@ export default function PaymentsPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-semibold text-foreground">{payment.invoice}</p>
+<p className="text-sm font-semibold text-foreground">{payment.invoice}</p>
+                          {payment.buyer_details && (
+                            <Badge variant="outline" className="text-[10px] gap-1"><Building2 className="w-3 h-3" /> Business</Badge>
+                          )}
                           {payment.status === 'pending' && payment.client_reported_at && (
                             <Badge variant="outline" className="text-[10px]">Reported, waiting for confirmation</Badge>
                           )}
@@ -222,6 +230,9 @@ export default function PaymentsPage() {
                           <p className="text-[10px] text-muted-foreground mt-0.5">VAT: {formatCurrency(Number(payment.vat), payment.currency)}</p>
                         )}
                       </div>
+<Button asChild variant="ghost" size="icon" title="View / print invoice" className="shrink-0" onClick={e => e.stopPropagation()}>
+                        <Link to={`/invoice/${payment.id}`}><Printer className="w-4 h-4" /></Link>
+                      </Button>
                       <Button variant="ghost" size="icon" title="Download Invoice" className="shrink-0" onClick={e => { e.stopPropagation(); generateInvoicePdf(payment); }}>
                         <Download className="w-4 h-4" />
                       </Button>
@@ -329,6 +340,8 @@ export default function PaymentsPage() {
                 const breakdown = paymentBreakdown(selectedPayment);
                 return breakdown && <PriceBreakdown breakdown={breakdown} currency={selectedPayment.currency} />;
               })()}
+
+<InvoiceBusinessSection payment={selectedPayment} onEditDetails={() => { setSelectedPayment(null); setBillingOpen(true); }} />
 
               <PayInvoiceCard key={selectedPayment.id} payment={selectedPayment} />
 
