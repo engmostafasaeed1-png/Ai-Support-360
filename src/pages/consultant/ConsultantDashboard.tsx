@@ -77,7 +77,7 @@ export default function ConsultantDashboard() {
         .limit(20);
 
       const upcoming = (sessions || [])
-        .filter(s => new Date(s.scheduled_at).getTime() + (s.duration_minutes || 60) * 60000 > Date.now())
+        .filter(s => new Date(s.scheduled_at!).getTime() + (s.duration_minutes || 60) * 60000 > Date.now())
         .slice(0, 5);
       const clientIds = [...new Set(upcoming.map(s => s.client_id))];
       let clientMap: Record<string, string> = {};
