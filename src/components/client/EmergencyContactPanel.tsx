@@ -208,8 +208,13 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
             Portal Alert
           </Button>
         </div>
+        ) : (
+          <p className="text-xs text-muted-foreground text-center">
+            No contact is available for this ticket yet.
+          </p>
+        )}
 
-        {!cleanPhone && (
+        {!cleanPhone && contact && (
           <p className="text-[10px] text-muted-foreground text-center">
             📞 Phone/SMS/WhatsApp requires consultant phone number. Portal alert is always available.
           </p>
