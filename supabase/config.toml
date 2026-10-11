@@ -37,5 +37,11 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = false
   [functions.critical-request-alert]
     verify_jwt = true
+  [functions.telegram-link]
+    verify_jwt = true
+  [functions.telegram-webhook]
+    verify_jwt = false
+  [functions.telegram-setup]
+    verify_jwt = true
   [functions.admin-send-invitation]
     verify_jwt = true
