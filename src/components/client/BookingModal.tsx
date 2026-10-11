@@ -14,6 +14,8 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { openExternal } from '@/lib/safeUrl';
+import { sessionRoomUrl } from '@/lib/meetingRoom';
+import { friendlyErrorMessage } from '@/lib/friendlyError';
 import {
   downloadLiveInterviewIcs, googleCalendarUrl, outlookCalendarUrl, type LiveInterviewEvent,
 } from '@/lib/liveInterviewCalendar';
@@ -42,10 +44,6 @@ const SESSION_TYPES = [
   { value: 'screen_share', icon: Monitor, labelKey: 'consultant_profile.screen_share' },
 ] as const;
 
-/** Free Jitsi Meet room, unique per session. */
-function generateMeetingUrl(sessionId: string): string {
-  return `https://meet.jit.si/aisupportnow-${sessionId.replace(/-/g, '')}`;
-}
 
 const isValidUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
@@ -180,7 +178,7 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
 
       const sessionId = crypto.randomUUID();
       const realConsultantId = isValidUUID(consultantId) ? consultantId : null;
-      const generatedMeetingUrl = sessionType === 'video' ? generateMeetingUrl(sessionId) : null;
+      const generatedMeetingUrl = sessionType === 'video' ? sessionRoomUrl(sessionId) : null;
 
       const { error } = await supabase.from('sessions').insert({
         id: sessionId,
@@ -213,7 +211,7 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
         description: t('booking.confirmed_desc', { name: consultantName }),
       });
     } catch (err: any) {
-      toast.error(t('booking.error'), { description: err.message });
+      toast.error(t('booking.error'), { description: friendlyErrorMessage(err) });
     } finally {
       setIsSubmitting(false);
     }
