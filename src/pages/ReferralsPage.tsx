@@ -66,7 +66,8 @@ export default function ReferralsPage() {
         </div>
         <h1 className="text-2xl font-bold text-foreground">Invite & Earn Together</h1>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Share your unique link — you earn <strong>$25</strong> credit, your friend gets <strong>$15</strong> welcome bonus!
+          Share your unique link. When the person you invite has confirmed their e-mail and completed a first paid invoice, you earn a <strong>$25</strong> credit and they get a <strong>$15</strong> welcome discount.
+
         </p>
       </div>
 

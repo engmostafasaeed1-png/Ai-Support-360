@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { usePaymentSettings } from '@/hooks/useBilling';
 import { CreditCard, Pencil, Plus, Trash2, Ticket } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -220,6 +221,7 @@ export default function SubscriptionsSection() {
   const qc = useQueryClient();
   const { data: plans = [], isLoading } = usePlans();
   const { data: vouchers = [], isLoading: vLoading } = useVouchers();
+  const { data: pay } = usePaymentSettings();
   const [editPlan, setEditPlan] = useState<Plan | null>(null);
   const [voucherDlg, setVoucherDlg] = useState<{ open: boolean; v: Voucher | null }>({ open: false, v: null });
 
@@ -237,7 +239,17 @@ export default function SubscriptionsSection() {
           <CreditCard className="w-5 h-5 text-primary" /> Subscriptions & Plans
         </h2>
         <p className="text-sm text-muted-foreground">Manage plans, ticket ranges and vouchers</p>
+        {pay && !pay.plans && (
+          <div className="rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700/40 dark:bg-amber-900/10 dark:text-amber-200">
+            <p className="font-medium">Plans are switched off.</p>
+            <p className="mt-0.5 text-xs">
+              Clients pay per approved timesheet: the hourly rate plus the platform service fee, the payment processing fee and VAT. The plans below are stored but are not offered to clients, and no company is on a plan. Plans are switched on under Payments & payouts.
+            </p>
+          </div>
+        )}
       </div>
+
+
 
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-40 w-full rounded-2xl" />)}</div>
