@@ -247,6 +247,8 @@ export default function SubscriptionsSection() {
             </p>
           </div>
         )}
+      </div>
+
 
 
       {isLoading ? (
