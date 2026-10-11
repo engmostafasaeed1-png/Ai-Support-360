@@ -50,7 +50,6 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
   const pricing = EMERGENCY_PRICING[urgency as keyof typeof EMERGENCY_PRICING] || EMERGENCY_PRICING.medium;
   const emergencyRate = hourlyRate ? Math.round(hourlyRate * pricing.multiplier) : null;
 
-  if (!consultantId) return null;
 
   const cleanPhone = phone?.replace(/[\s\-()]/g, '') || '';
   const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone.replace('+', '')}?text=${encodeURIComponent(`Urgent: Regarding ticket "${ticketTitle}"`)}` : '';
@@ -165,6 +164,7 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
         <Separator className="my-1" />
 
         {/* ─── Contact Buttons ─── */}
+        {contact ? (
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="outline"
