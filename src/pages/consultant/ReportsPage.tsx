@@ -96,8 +96,14 @@ export default function ConsultantReportsPage() {
         .eq('consultant_id', consultant.id);
 
       const rangeSessions = (sessions || []).filter(s => s.created_at >= fromISO && s.created_at < toISO);
-      const completedSessions = rangeSessions.filter(s => s.status === 'completed');
-      const totalHours = Math.round(completedSessions.reduce((s, se) => s + (se.duration_minutes || 0), 0) / 60);
+      const { data: sheets } = await supabase
+        .from('ticket_timesheet_submissions')
+        .select('billable_hours, signed_at')
+        .eq('submitted_by', user.id)
+        .eq('status', 'signed');
+      const totalHours = Math.round((sheets || [])
+        .filter(sh => sh.signed_at && sh.signed_at >= fromISO && sh.signed_at < toISO)
+        .reduce((sum, sh) => sum + Number(sh.billable_hours || 0), 0) * 100) / 100;
 
       // Session type breakdown
       const typeCounts: Record<string, number> = {};
@@ -212,7 +218,7 @@ export default function ConsultantReportsPage() {
               </div>
               {isLoading ? <Skeleton className="h-7 w-16" /> : (
                 <div className="text-xl font-bold text-foreground">
-                  <AnimatedCounter value={kpi.value} prefix={kpi.prefix} decimals={kpi.label === 'Rating' ? 1 : 0} />
+                  <AnimatedCounter value={kpi.value} prefix={kpi.prefix} decimals={kpi.label === 'Rating' || kpi.label === 'Billable Hours' ? 1 : 0} />
                   {kpi.suffix && <span className="text-sm font-normal text-muted-foreground">{kpi.suffix}</span>}
                 </div>
               )}

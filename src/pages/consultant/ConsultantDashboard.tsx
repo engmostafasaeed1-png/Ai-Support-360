@@ -72,10 +72,14 @@ export default function ConsultantDashboard() {
         .select('*')
         .eq('consultant_id', consultant.id)
         .eq('status', 'scheduled')
+        .gte('scheduled_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
         .order('scheduled_at', { ascending: true })
-        .limit(5);
+        .limit(20);
 
-      const clientIds = [...new Set((sessions || []).map(s => s.client_id))];
+      const upcoming = (sessions || [])
+        .filter(s => new Date(s.scheduled_at).getTime() + (s.duration_minutes || 60) * 60000 > Date.now())
+        .slice(0, 5);
+      const clientIds = [...new Set(upcoming.map(s => s.client_id))];
       let clientMap: Record<string, string> = {};
       if (clientIds.length > 0) {
         const { data: profiles } = await supabase
@@ -133,7 +137,7 @@ export default function ConsultantDashboard() {
 
       return {
         consultant,
-        sessions: (sessions || []).map(s => ({ ...s, client_name: clientMap[s.client_id] || 'Client' })),
+        sessions: upcoming.map(s => ({ ...s, client_name: clientMap[s.client_id] || 'Client' })),
         tickets: tickets || [],
         thisMonthEarned,
         monthlyTrend,

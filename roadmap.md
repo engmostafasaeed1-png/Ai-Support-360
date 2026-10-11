@@ -11,3 +11,5 @@
 - [x] Replace the old brand name قرطبة with AI Support 360 in the two Arabic sign-in and sign-up lines.
 
 - [ ] Paymob secrets: user adds PAYMOB_SECRET_KEY, PAYMOB_PUBLIC_KEY, PAYMOB_HMAC_SECRET, PAYMOB_CARD_INTEGRATION_ID in Cloud > Secrets, then switches on card payments in Admin > Payments > Settings
+
+- [x] Reports/dashboards 4 faults: client ReportsPage replaced (period/company/module filter/CSV/PDF), consultant dashboard upcoming sessions, consultant reports billable hours from signed timesheets, client activity feed filters admin/consultant notices (Oct 11)

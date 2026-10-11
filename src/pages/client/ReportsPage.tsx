@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,17 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   AreaChart, Area, CartesianGrid, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import { Download, FileText, Ticket, Clock, DollarSign, Users, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { format, subDays, startOfDay } from 'date-fns';
+import { toast } from 'sonner';
 import { DateRangePicker } from '@/components/reports/DateRangePicker';
 import { exportToCSV, exportToPDF } from '@/components/reports/exportUtils';
 import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { Sparkline } from '@/components/ui/sparkline';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import { useTenant } from '@/contexts/TenantContext';
 
 const COLORS = [
   'hsl(217, 91%, 60%)', 'hsl(45, 93%, 47%)', 'hsl(262, 83%, 58%)',
@@ -31,12 +34,17 @@ const tooltipStyle = {
 export default function ReportsPage() {
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
+  const { tenant } = useTenant();
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
   const [dateFrom, setDateFrom] = useState(() => subDays(new Date(), 30));
   const [dateTo, setDateTo] = useState(() => new Date());
+  const [moduleFilter, setModuleFilter] = useState<string>('all');
+
+  // another company has other modules: the module filter starts again
+  useEffect(() => { setModuleFilter('all'); }, [tenant?.id]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['client-reports', timeRange, dateFrom.toISOString(), dateTo.toISOString()],
+    queryKey: ['client-reports', tenant?.id ?? null, timeRange, dateFrom.toISOString(), dateTo.toISOString(), moduleFilter],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
@@ -44,23 +52,27 @@ export default function ReportsPage() {
       const fromISO = startOfDay(dateFrom).toISOString();
       const toISO = startOfDay(subDays(dateTo, -1)).toISOString();
 
-      // Tickets
-      const { data: tickets } = await supabase
+      // Tickets of the active company (the user's own and, read-only, their colleagues'); without a company the user's own
+      const ticketBase = supabase
         .from('tickets')
-        .select('id, title, status, sap_module, urgency, created_at, resolved_at, consultant_id')
-        .eq('client_id', user.id);
+        .select('id, title, status, sap_module, urgency, created_at, resolved_at, consultant_id');
+      const { data: tickets } = await (tenant?.id ? ticketBase.eq('tenant_id', tenant.id) : ticketBase.eq('client_id', user.id));
 
-      const allTickets = tickets || [];
-      const rangeTickets = allTickets.filter(t => t.created_at >= fromISO && t.created_at < toISO);
+      const companyTickets = tickets || [];
+      const modules = [...new Set(companyTickets.map(tk => tk.sap_module).filter(Boolean))].sort() as string[];
+      const inModule = (tk: { sap_module: string | null }) => moduleFilter === 'all' || tk.sap_module === moduleFilter;
+      const allTickets = companyTickets.filter(inModule);
+      const moduleTicketIds = new Set(allTickets.map(tk => tk.id));
+      const rangeTickets = allTickets.filter(tk => tk.created_at >= fromISO && tk.created_at < toISO);
 
       // Status breakdown
       const statusCounts: Record<string, number> = {};
-      rangeTickets.forEach(t => { const key = t.status || 'unknown'; statusCounts[key] = (statusCounts[key] || 0) + 1; });
+      rangeTickets.forEach(tk => { const key = tk.status || 'unknown'; statusCounts[key] = (statusCounts[key] || 0) + 1; });
       const statusData = Object.entries(statusCounts).map(([name, value]) => ({ name: name.replace(/_/g, ' '), value }));
 
       // Module breakdown
       const moduleCounts: Record<string, number> = {};
-      rangeTickets.forEach(t => { moduleCounts[t.sap_module] = (moduleCounts[t.sap_module] || 0) + 1; });
+      rangeTickets.forEach(tk => { moduleCounts[tk.sap_module] = (moduleCounts[tk.sap_module] || 0) + 1; });
       const moduleData = Object.entries(moduleCounts)
         .map(([module, count]) => ({ module, count, pct: Math.round(count / (rangeTickets.length || 1) * 100) }))
         .sort((a, b) => b.count - a.count);
@@ -75,47 +87,52 @@ export default function ReportsPage() {
         const dayEnd = startOfDay(subDays(d, -1)).toISOString();
         dailyTrend.push({
           day: dayStr,
-          created: allTickets.filter(t => t.created_at >= dayStart && t.created_at < dayEnd).length,
-          resolved: allTickets.filter(t => t.resolved_at && t.resolved_at >= dayStart && t.resolved_at < dayEnd).length,
+          created: allTickets.filter(tk => tk.created_at >= dayStart && tk.created_at < dayEnd).length,
+          resolved: allTickets.filter(tk => tk.resolved_at && tk.resolved_at >= dayStart && tk.resolved_at < dayEnd).length,
         });
       }
 
-      // Payments
-      const { data: payments } = await supabase
+      // Payments of the active company (a payment that belongs to no company shows in every company)
+      const payBase = supabase
         .from('payments')
-        .select('amount, status, created_at, currency')
+        .select('amount, status, created_at, currency, ticket_id')
         .eq('client_id', user.id);
+      const { data: payments } = await (tenant?.id ? payBase.or(`tenant_id.eq.${tenant.id},tenant_id.is.null`) : payBase);
 
-      const allPayments = payments || [];
+      const allPayments = (payments || []).filter(p => moduleFilter === 'all' || (p.ticket_id && moduleTicketIds.has(p.ticket_id)));
       const rangePayments = allPayments.filter(p => p.created_at >= fromISO && p.created_at < toISO);
       const totalSpent = rangePayments.filter(p => p.status === 'completed').reduce((s, p) => s + Number(p.amount), 0);
       const pending = rangePayments.filter(p => p.status === 'pending').reduce((s, p) => s + Number(p.amount), 0);
 
-      // Monthly spend
+      // Monthly spend of the selected period (the same period as the tiles)
       const monthlySpend: Record<string, number> = {};
-      allPayments.filter(p => p.status === 'completed').forEach(p => {
+      [...rangePayments].filter(p => p.status === 'completed').sort((a, b) => a.created_at.localeCompare(b.created_at)).forEach(p => {
         const m = format(new Date(p.created_at), 'MMM');
         monthlySpend[m] = (monthlySpend[m] || 0) + Number(p.amount);
       });
       const spendTrend = Object.entries(monthlySpend).map(([month, amount]) => ({ month, amount: Math.round(amount) }));
 
-      // Sessions
-      const { data: sessions } = await supabase
+      // Sessions of the active company
+      const sessBase = supabase
         .from('sessions')
-        .select('id, status, session_type, duration_minutes, created_at')
+        .select('id, status, session_type, duration_minutes, created_at, ticket_id')
         .eq('client_id', user.id);
+      const { data: sessions } = await (tenant?.id ? sessBase.or(`tenant_id.eq.${tenant.id},tenant_id.is.null`) : sessBase);
 
-      const rangeSessions = (sessions || []).filter(s => s.created_at >= fromISO && s.created_at < toISO);
+      const rangeSessions = (sessions || [])
+        .filter(s => moduleFilter === 'all' || (s.ticket_id && moduleTicketIds.has(s.ticket_id)))
+        .filter(s => s.created_at >= fromISO && s.created_at < toISO);
       const totalSessionMin = rangeSessions.reduce((s, se) => s + (se.duration_minutes || 0), 0);
 
       // Avg resolution
-      const resolved = rangeTickets.filter(t => t.resolved_at);
+      const resolved = rangeTickets.filter(tk => tk.resolved_at);
       let avgResHours = 0;
       if (resolved.length > 0) {
-        avgResHours = Math.round(resolved.reduce((s, t) => s + (new Date(t.resolved_at!).getTime() - new Date(t.created_at).getTime()), 0) / resolved.length / 3600000);
+        avgResHours = Math.round(resolved.reduce((s, tk) => s + (new Date(tk.resolved_at!).getTime() - new Date(tk.created_at).getTime()), 0) / resolved.length / 3600000);
       }
 
       return {
+        modules,
         totalTickets: rangeTickets.length,
         resolvedCount: resolved.length,
         totalSpent,
@@ -128,10 +145,10 @@ export default function ReportsPage() {
         dailyTrend,
         spendTrend,
         // For export
-        ticketsExport: rangeTickets.map(t => ({
-          Title: t.title, Status: t.status || 'unknown', Module: t.sap_module, Urgency: t.urgency || 'medium',
-          Created: format(new Date(t.created_at), 'PPP'),
-          Resolved: t.resolved_at ? format(new Date(t.resolved_at), 'PPP') : '—',
+        ticketsExport: rangeTickets.map(tk => ({
+          Title: tk.title, Status: tk.status || 'unknown', Module: tk.sap_module, Urgency: tk.urgency || 'medium',
+          Created: format(new Date(tk.created_at), 'PPP'),
+          Resolved: tk.resolved_at ? format(new Date(tk.resolved_at), 'PPP') : '—',
         })),
         paymentsExport: rangePayments.map(p => ({
           Amount: `$${Number(p.amount).toFixed(2)}`, Status: p.status || 'unknown',
@@ -143,7 +160,7 @@ export default function ReportsPage() {
   });
 
   const d = data || {
-    totalTickets: 0, resolvedCount: 0, totalSpent: 0, pending: 0, avgResHours: 0,
+    modules: [] as string[], totalTickets: 0, resolvedCount: 0, totalSpent: 0, pending: 0, avgResHours: 0,
     totalSessions: 0, totalSessionMin: 0, statusData: [], moduleData: [],
     dailyTrend: [], spendTrend: [], ticketsExport: [], paymentsExport: [],
   };
@@ -157,12 +174,26 @@ export default function ReportsPage() {
     { label: 'Resolution Rate', value: d.totalTickets > 0 ? Math.round(d.resolvedCount / d.totalTickets * 100) : 0, prefix: '', suffix: '%', icon: TrendingUp, sparkData: [] as number[], color: 'hsl(142, 71%, 45%)' },
   ];
 
-  const handleExportCSV = () => {
-    if (d.ticketsExport.length > 0) exportToCSV(d.ticketsExport, 'tickets_report');
-  };
+  // an empty period says so (exportToCSV shows the message)
+  const handleExportCSV = () => exportToCSV(d.ticketsExport, 'tickets_report');
 
   const handleExportPDF = () => {
+    if (d.ticketsExport.length === 0 && d.paymentsExport.length === 0) {
+      toast.info('There is no data to export for the selected period.');
+      return;
+    }
     exportToPDF('Client Analytics Report', [
+      {
+        heading: 'Summary',
+        data: [
+          { Item: 'Period', Value: `${format(dateFrom, 'PPP')} - ${format(dateTo, 'PPP')}` },
+          { Item: 'SAP module', Value: moduleFilter === 'all' ? 'All modules' : moduleFilter },
+          { Item: 'Tickets', Value: d.totalTickets },
+          { Item: 'Resolved', Value: d.resolvedCount },
+          { Item: 'Sessions', Value: d.totalSessions },
+          { Item: 'Total spent', Value: `$${d.totalSpent.toFixed(2)}` },
+        ],
+      },
       { heading: 'Tickets', data: d.ticketsExport },
       { heading: 'Payments', data: d.paymentsExport },
     ]);
@@ -188,7 +219,16 @@ export default function ReportsPage() {
               <TabsTrigger value="90d" className="text-xs px-3 h-7">90D</TabsTrigger>
             </TabsList>
           </Tabs>
-          <DateRangePicker from={dateFrom} to={dateTo} onChange={(f, t) => { setDateFrom(f); setDateTo(t); }} />
+          <DateRangePicker from={dateFrom} to={dateTo} onChange={(f, to) => { setDateFrom(f); setDateTo(to); }} />
+          <Select value={moduleFilter} onValueChange={setModuleFilter}>
+            <SelectTrigger className="h-8 w-[170px] text-xs" aria-label="SAP module filter">
+              <SelectValue placeholder="All modules" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All modules</SelectItem>
+              {d.modules.map((m: string) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Button variant="outline" size="sm" className="text-xs h-8 gap-1" onClick={handleExportCSV}>
             <Download className="w-3.5 h-3.5" /> CSV
           </Button>
@@ -250,7 +290,7 @@ export default function ReportsPage() {
           <CardHeader className="pb-2"><CardTitle className="text-base">Monthly Spend</CardTitle></CardHeader>
           <CardContent>
             {isLoading ? <Skeleton className="h-[220px]" /> : d.spendTrend.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-16 text-center">No spend data yet</p>
+              <p className="text-sm text-muted-foreground py-16 text-center">No spend in this period</p>
             ) : (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={d.spendTrend}>

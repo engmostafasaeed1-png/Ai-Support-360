@@ -39,11 +39,11 @@ export function useActivityFeed() {
 
       let feed = supabase
         .from('notifications')
-        .select('id, title, body, type, created_at')
+        .select('id, title, body, type, link, created_at')
         .or('type.is.null,type.neq.error')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(40);
       // the activity of the active company; an entry that belongs to no company shows in every company
       if (tenant?.id) feed = feed.or(`tenant_id.eq.${tenant.id},tenant_id.is.null`);
       const { data, error } = await feed;
@@ -57,7 +57,9 @@ export function useActivityFeed() {
         resolved: 'resolved',
       };
 
-      return (data || []).map(n => ({
+      const own = (data || []).filter(n => !/^\/(admin|consultant)(\/|$)/.test(n.link || '')).slice(0, 10);
+
+      return own.map(n => ({
         id: n.id,
         type: n.type || 'ticket',
         message: n.body || n.title,
