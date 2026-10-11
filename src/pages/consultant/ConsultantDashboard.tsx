@@ -20,6 +20,7 @@ import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { Sparkline } from '@/components/ui/sparkline';
 import AIInsightsButton from '@/components/ai/AIInsightsButton';
 import AvailabilityToggle from '@/components/consultant/AvailabilityToggle';
+import CriticalDashboardNotice from '@/components/consultant/CriticalDashboardNotice';
 
 const sessionTypeIcons: Record<string, typeof Video> = {
   video: Video,
@@ -205,6 +206,7 @@ export default function ConsultantDashboard() {
   return (
     <PullToRefresh>
     <div className="space-y-6">
+      <CriticalDashboardNotice />
       <WelcomeBanner />
       <EmailVerificationBanner />
       <OnboardingProgressCard role="consultant" />
