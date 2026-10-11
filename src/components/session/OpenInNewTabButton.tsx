@@ -2,6 +2,7 @@ import { ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { logProviderEvent } from '@/lib/diagnostics';
+import { openNewTab, parseHttpUrl } from '@/lib/safeUrl';
 import {
   detectProvider,
   type MeetingProvider,
@@ -67,7 +68,7 @@ export default function OpenInNewTabButton({
       'info'
     );
 
-    const win = window.open(handoffUrl, '_blank', 'noopener,noreferrer');
+    const win = openNewTab(handoffUrl);
     if (!win) {
       logProviderEvent(
         'popup_blocked',
@@ -80,7 +81,8 @@ export default function OpenInNewTabButton({
         },
         'warn'
       );
-      // Last-resort fallback: navigate the top window so the user still gets out.
+      // Last-resort fallback: navigate the top window so the user still gets out (only to an http(s) address).
+      if (!parseHttpUrl(handoffUrl)) return;
       try {
         window.top!.location.href = handoffUrl;
       } catch {

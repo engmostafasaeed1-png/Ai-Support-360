@@ -28,6 +28,24 @@ export function openExternal(value: string | null | undefined): boolean {
   return true;
 }
 
+/**
+ * Opens an http(s) URL in a new tab and returns the window, or null when the browser blocked the popup (or the value is not an http(s) URL).
+ * The tab is opened WITHOUT the "noopener" feature on purpose: with it window.open always returns null, which looks exactly like a blocked
+ * popup even when the tab did open. The opener is cleared right after, so the opened page cannot reach this window.
+ */
+export function openNewTab(value: string | null | undefined): Window | null {
+  const u = parseHttpUrl(value);
+  if (!u) return null;
+  const win = window.open(u.toString(), '_blank');
+  if (!win) return null;
+  try {
+    win.opener = null;
+  } catch {
+    /* a browser that does not allow it: the opened page is our own handoff page or a meeting provider */
+  }
+  return win;
+}
+
 /** Only allows opening a known custom-protocol link (e.g. anydesk:123456789). */
 export function openProtocolLink(uri: string | null | undefined, allowedSchemes: string[]): boolean {
   if (!uri) return false;
