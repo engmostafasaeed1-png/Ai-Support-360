@@ -31,7 +31,7 @@ export default function InviteUserDialog({ open, onOpenChange }: { open: boolean
     const hi = name.trim() ? `Hi ${name.trim()}, ` : '';
     const body = role === 'consultant'
       ? 'you are invited to join AI Support 360 as a consultant — get matched with client tickets that fit your expertise.'
-      : 'you are invited to AI Support 360 — open a ticket and get matched with verified experts in minutes.';
+      : 'you are invited to AI Support 360 — open a ticket and get matched with verified SAP experts.';
     return `${hi}${body}${message.trim() ? `\n\n${message.trim()}` : ''}\n\nSign up here: ${link}`;
   }, [name, role, message, link]);
 
