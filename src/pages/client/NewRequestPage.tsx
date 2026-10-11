@@ -17,6 +17,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { checkAttachments, ATTACHMENT_HINT } from '@/lib/attachments';
 import { safeFileName } from '@/lib/storagePath';
+import { invokeWithTimeout } from '@/lib/invokeWithTimeout';
+import { isNetworkError } from '@/lib/friendlyError';
 import { z } from 'zod';
 import {
   ArrowLeft, ArrowRight, Check, Sparkles, Brain,
@@ -151,6 +153,11 @@ export default function NewRequestPage() {
   // the experts the client asks (up to 3): they get a match request when the ticket is created
   const [picked, setPicked] = useState<PickedExpert[]>([]);
   const [createdTicketId, setCreatedTicketId] = useState<string | null>(null);
+  // One id per request: when the answer of the server is lost after the ticket was saved, the second try sends the same id,
+  // the database answers "already there" and we carry on with that ticket instead of creating a duplicate.
+  const ticketIdRef = useRef<{ key: string; id: string } | null>(null);
+  // What did not get through on the last try: shown on the confirmation page, not only in a toast.
+  const [sendIssues, setSendIssues] = useState<{ files: string[]; links: number; expertIds: string[] }>({ files: [], links: 0, expertIds: [] });
   const [solvedBySuggestion, setSolvedBySuggestion] = useState(false);
   const togglePick = (expert: PickedExpert) => {
     setPicked(prev => {
@@ -257,7 +264,7 @@ export default function NewRequestPage() {
     if (form.description.length < 15) return;
     setAiLoading('categorize');
     try {
-      const { data, error } = await supabase.functions.invoke('ai-ticket', {
+      const { data, error } = await invokeWithTimeout('ai-ticket', {
         body: { action: 'categorize', title: form.title, description: form.description, sap_module: form.sap_module, model: selectedModel },
       });
       if (error) throw error;
@@ -277,7 +284,7 @@ export default function NewRequestPage() {
   const runAiSummary = useCallback(async () => {
     setAiLoading('summary');
     try {
-      const { data, error } = await supabase.functions.invoke('ai-ticket', {
+      const { data, error } = await invokeWithTimeout('ai-ticket', {
         body: { action: 'summarize', title: form.title, description: form.description, sap_module: form.sap_module, urgency: form.urgency, model: selectedModel },
       });
       if (error) throw error;
@@ -293,7 +300,7 @@ export default function NewRequestPage() {
   const runAiMatch = useCallback(async () => {
     setAiLoading('match');
     try {
-      const { data, error } = await supabase.functions.invoke('ai-ticket', {
+      const { data, error } = await invokeWithTimeout('ai-ticket', {
         body: { action: 'match', title: form.title, description: form.description, sap_module: form.sap_module, urgency: form.urgency, model: selectedModel },
       });
       if (error) throw error;
@@ -309,7 +316,7 @@ export default function NewRequestPage() {
   const runAiMatchConsultants = useCallback(async () => {
     setAiLoading('match_consultants');
     try {
-      const { data, error } = await supabase.functions.invoke('ai-ticket', {
+      const { data, error } = await invokeWithTimeout('ai-ticket', {
         body: {
           action: 'match_consultants',
           title: form.title,
@@ -411,7 +418,14 @@ export default function NewRequestPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error(t('onboarding.error_auth')); return; }
 
-      const { data: ticketData, error } = await supabase.from('tickets').insert({
+      const requestKey = JSON.stringify([form.title.trim(), form.description.trim(), form.sap_modules, form.urgency, form.ticket_type]);
+      if (!ticketIdRef.current || ticketIdRef.current.key !== requestKey) {
+        ticketIdRef.current = { key: requestKey, id: crypto.randomUUID() };
+      }
+      const ticketId = ticketIdRef.current.id;
+
+      const { error } = await supabase.from('tickets').insert({
+        id: ticketId,
         client_id: user.id,
         tenant_id: tenant?.id || null,
         sap_module: form.sap_modules[0] || form.sap_module,
@@ -427,9 +441,12 @@ export default function NewRequestPage() {
         ai_suggested_category: (!triageIsStale && aiCategorization?.category) || null,
         ai_suggested_priority: (!triageIsStale && aiCategorization?.suggested_priority) || null,
         ticket_type: form.ticket_type,
-      }).select('id').single();
+      });
 
-      if (error) throw error;
+      // 23505 on the primary key means an earlier try with this id was saved although its answer was lost: carry on with that ticket
+      const alreadySaved = !!error && error.code === '23505' && /tickets_pkey/.test(`${error.message} ${error.details ?? ''}`);
+      if (error && !alreadySaved) throw error;
+      const ticketData = { id: ticketId };
 
       // Upload attached files
       const failedFiles: string[] = [];
@@ -455,32 +472,37 @@ export default function NewRequestPage() {
       }
 
       // Create ticket links
+      let failedLinks = 0;
       if (ticketData && linkedTickets.length > 0) {
         for (const link of linkedTickets) {
-          await supabase.from('ticket_links').insert({
+          const { error: linkError } = await supabase.from('ticket_links').insert({
             source_ticket_id: ticketData.id,
             target_ticket_id: link.id,
             link_type: link.linkType,
             created_by: user.id,
           } as any);
+          if (linkError && linkError.code !== '23505') failedLinks++;
         }
       }
 
       // Ask the experts the client picked to take the ticket: the existing match-request flow (each expert gets a notice and can accept or decline)
+      const notSentExpertIds: string[] = [];
       if (ticketData && picked.length > 0) {
-        let asked = 0;
         for (const expert of picked) {
           const { error: askError } = await supabase.from('ticket_match_requests').insert({
             ticket_id: ticketData.id,
             consultant_id: expert.id,
             sent_by: user.id,
           } as any);
-          if (!askError || (askError as any).code === '23505') asked++;
+          if (askError && askError.code !== '23505') notSentExpertIds.push(expert.id);
         }
-        if (asked < picked.length) {
+        if (notSentExpertIds.length > 0) {
           toast.error('Your ticket was created, but not every expert request could be sent. You can send them again from the ticket page.');
         }
       }
+      // what did not get through is shown on the confirmation page, not only in a toast
+      setSendIssues({ files: failedFiles, links: failedLinks, expertIds: notSentExpertIds });
+      ticketIdRef.current = null;
       setCreatedTicketId(ticketData?.id ?? null);
       setSubmitted(true);
       toast.success(t('ticket_create.submit_success'));
@@ -489,6 +511,7 @@ export default function NewRequestPage() {
       toast.error(
         (err as any)?.code === '53400' ? String((err as any).message)
         : (err as any)?.code === '23514' ? 'Please check the title (up to 300 characters) and the description (up to 50,000 characters).'
+        : isNetworkError(err) ? 'We could not confirm that your request was saved. Please press Submit again: it will not create a second ticket.'
         : t('onboarding.error_generic'),
       );
     }
@@ -525,6 +548,28 @@ export default function NewRequestPage() {
           <p className="text-muted-foreground mb-6">{t('ticket_create.submitted_desc')}</p>
         </div>
 
+        {(sendIssues.files.length > 0 || sendIssues.links > 0 || sendIssues.expertIds.length > 0) && (
+          <Card className="rounded-2xl border-amber-300/60 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20" role="alert" data-testid="send-issues">
+            <CardContent className="space-y-2 p-4 text-sm">
+              <p className="flex items-center gap-2 font-semibold text-amber-800 dark:text-amber-300">
+                <AlertTriangle className="h-4 w-4 shrink-0" /> Your request was saved, but not everything went through
+              </p>
+              <ul className="list-disc space-y-1 ps-5 text-amber-900/90 dark:text-amber-200/90">
+                {sendIssues.files.length > 0 && <li>These files could not be attached: {sendIssues.files.join(', ')}.</li>}
+                {sendIssues.links > 0 && <li>{sendIssues.links === 1 ? '1 linked ticket' : `${sendIssues.links} linked tickets`} could not be linked.</li>}
+                {sendIssues.expertIds.length > 0 && (
+                  <li>The request could not be sent to: {picked.filter((p) => sendIssues.expertIds.includes(p.id)).map((p) => p.name).join(', ')}.</li>
+                )}
+              </ul>
+              {createdTicketId && (
+                <a className="inline-block text-xs font-medium text-primary underline" href={`/client/tickets/${createdTicketId}`}>
+                  Open the ticket to add the missing files or send the requests again
+                </a>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* AI Recommended Consultants */}
         <Card className="rounded-2xl border-accent/20 bg-accent/5">
           <CardHeader className="pb-2 flex-row items-center justify-between">
@@ -551,7 +596,11 @@ export default function NewRequestPage() {
                   <p className="text-sm font-semibold text-foreground">{expert.name}</p>
                   <p className="text-xs text-muted-foreground">{expert.subtitle}</p>
                 </div>
-                <Badge className="bg-accent text-accent-foreground text-[10px]">Request sent</Badge>
+                {sendIssues.expertIds.includes(expert.id) ? (
+                  <Badge variant="outline" className="border-amber-400 text-[10px] text-amber-700">Not sent</Badge>
+                ) : (
+                  <Badge className="bg-accent text-accent-foreground text-[10px]">Request sent</Badge>
+                )}
               </div>
             ))}
             {aiRecommendations && aiRecommendations.recommendations.length > 0 ? (
@@ -569,7 +618,7 @@ export default function NewRequestPage() {
             setSubmitted(false); setStep(0);
             setForm({ sap_module: '', sap_modules: [], sap_module_other: '', area_details: '', sap_notes_tried: [], issue_type: '', title: '', description: '', urgency: 'medium', preferred_session: 'video', preferred_language: 'en', ticket_type: 'standard' });
             setAiCategorization(null); setAiSummary(null); setAiMatch(null); setAiRecommendations(null); setAttachedFiles([]); setLinkedTickets([]);
-            setPicked([]); setCreatedTicketId(null);
+            setPicked([]); setCreatedTicketId(null); setSendIssues({ files: [], links: 0, expertIds: [] }); ticketIdRef.current = null;
           }} variant="outline">
             {t('ticket_create.submit_another')}
           </Button>

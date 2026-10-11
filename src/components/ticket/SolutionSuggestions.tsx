@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeWithTimeout } from '@/lib/invokeWithTimeout';
 import {
   BASIS_LABEL,
   SAP_DOCS_LICENSE_URL,
@@ -138,7 +139,7 @@ export default function SolutionSuggestions({ title, description, areas, other, 
     setStatus('loading');
     setVerdicts({});
     try {
-      const { data, error } = await supabase.functions.invoke('ai-suggest', {
+      const { data, error } = await invokeWithTimeout('ai-suggest', {
         body: {
           title,
           description,

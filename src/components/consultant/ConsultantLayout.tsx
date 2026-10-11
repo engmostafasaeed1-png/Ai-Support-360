@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import ConsultantSidebar from '@/components/consultant/ConsultantSidebar';
 import PageTransition from '@/components/PageTransition';
+import PageErrorBoundary from '@/components/PageErrorBoundary';
 import MatchRequestPopup from '@/components/consultant/MatchRequestPopup';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Outlet } from 'react-router-dom';
@@ -103,7 +104,9 @@ export default function ConsultantLayout() {
           <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-6 mt-14 md:mt-24 protected-content">
             <SecurityAlert />
             <PageTransition>
-              <Outlet />
+              <PageErrorBoundary homePath="/consultant">
+                <Outlet />
+              </PageErrorBoundary>
             </PageTransition>
           </main>
           <Footer compact />
