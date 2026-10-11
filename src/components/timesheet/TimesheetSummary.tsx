@@ -1,9 +1,12 @@
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Clock, Percent, Receipt, Wallet, type LucideIcon } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { ToneBadge } from '@/components/timesheet/StatusBadge';
+import TimesheetProgress from '@/components/timesheet/TimesheetProgress';
 import { usePricingTerms } from '@/hooks/usePricingTerms';
 import { formatPercent } from '@/lib/pricing';
 import { entryStatus, formatHours, formatMoney, planUsage, statusInfo, summarise, type SubmissionRow, type WorkLogRow } from '@/lib/timesheet';
+import { STATUS_DOT, progressChip, type ProgressStep } from '@/lib/timesheetView';
 
 export interface PlanInfo {
   plannedHours: number;
@@ -23,6 +26,8 @@ interface Props {
   plan: PlanInfo | null;
   /** who looks at the numbers: the consultant sees the fee as their own, the client sees the total that is paid */
   audience?: 'client' | 'consultant';
+  /** the five steps of the timesheet (rate, hours, submitted, approved, paid); shown at the top when given */
+  steps?: ProgressStep[];
 }
 
 const GROUPS = [
@@ -33,18 +38,23 @@ const GROUPS = [
   { key: 'draft', label: statusInfo('draft').label },
 ];
 
-function Stat({ label, value, sub }: { label: string; value: string; sub: string }) {
+function Tile({ label, value, sub, icon: Icon, highlight = false }: { label: string; value: string; sub: string; icon: LucideIcon; highlight?: boolean }) {
   return (
-    <div className="rounded-xl border border-border/50 p-3 text-center">
-      <p className="text-lg font-bold text-foreground">{value}</p>
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="text-[10px] text-muted-foreground">{sub}</p>
+    <div className={`rounded-xl border p-3 ${highlight ? 'border-primary/30 bg-primary/5' : 'border-border/60 bg-card'}`}>
+      <div className={`flex items-center gap-1.5 text-[11px] font-medium ${highlight ? 'text-primary' : 'text-muted-foreground'}`}>
+        <span className={`flex h-5 w-5 items-center justify-center rounded-md ${highlight ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'}`}>
+          <Icon className="h-3 w-3" aria-hidden="true" />
+        </span>
+        {label}
+      </div>
+      <p className={`mt-2 text-xl font-bold ${highlight ? 'text-primary' : 'text-foreground'}`}>{value}</p>
+      <p className="text-[11px] text-muted-foreground">{sub}</p>
     </div>
   );
 }
 
-/** The calculation of the timesheet: hours, billable hours, amount (billable hours x approved rate), VAT, total, the part of the approved plan that is used. */
-export default function TimesheetSummary({ logs, submissions, vatPercent, currency, rateLabel, plan, audience = 'client' }: Props) {
+/** The overview of the timesheet: where it stands (five steps), the calculation (hours, fee, fees and VAT, total), the hours per status and the part of the approved plan that is used. */
+export default function TimesheetSummary({ logs, submissions, vatPercent, currency, rateLabel, plan, audience = 'client', steps }: Props) {
   const { data: pricingTerms } = usePricingTerms();
   const fees = pricingTerms ?? undefined;
   const all = summarise(logs, vatPercent, fees);
@@ -55,22 +65,44 @@ export default function TimesheetSummary({ logs, submissions, vatPercent, curren
   const usage = plan ? planUsage(plan.plannedHours, all.totalHours) : null;
   const vatLabel = String(Number(vatPercent) || 0);
   const feeNote = pricingTerms
-    ? `fee + ${formatPercent(pricingTerms.serviceFeePercent)} service + ${formatPercent(pricingTerms.processingFeePercent)} payment fee + ${vatLabel}% VAT`
+    ? `${formatPercent(pricingTerms.serviceFeePercent)} service + ${formatPercent(pricingTerms.processingFeePercent)} payment fee + ${vatLabel}% VAT`
     : `VAT ${vatLabel}%`;
+  const consultant = audience === 'consultant';
+  const chip = steps && steps.length > 0 ? progressChip(steps) : null;
 
   return (
-    <Card className="rounded-2xl border-border/50" data-testid="timesheet-summary">
-      <CardContent className="space-y-3 p-4">
-        <p className="text-sm font-semibold text-foreground">Summary</p>
-        <div className="grid grid-cols-3 gap-3">
-          <Stat label="Hours" value={formatHours(all.totalHours)} sub={`${formatHours(all.billableHours)} billable`} />
-          <Stat
-            label={audience === 'consultant' ? 'Your fee' : 'Consultant fee'}
-            value={formatMoney(all.subtotal, currency)}
-            sub={audience === 'consultant' ? 'you receive this in full' : 'billable hours x hourly rate'}
-          />
-          <Stat label={audience === 'consultant' ? 'The client pays' : 'Total you pay'} value={formatMoney(all.total, currency)} sub={feeNote} />
+    <Card className="rounded-2xl border-border/50 shadow-sm" data-testid="timesheet-summary">
+      <CardContent className="space-y-5 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-foreground">Overview</p>
+          {chip && <ToneBadge label={chip.label} tone={chip.tone} />}
         </div>
+
+        {steps && steps.length > 0 && <TimesheetProgress steps={steps} />}
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" data-testid="summary-tiles">
+          <Tile label="Hours" value={formatHours(all.totalHours)} sub={`${formatHours(all.billableHours)} billable`} icon={Clock} />
+          <Tile
+            label={consultant ? 'Your fee' : 'Consultant fee'}
+            value={formatMoney(all.subtotal, currency)}
+            sub={consultant ? 'you receive this in full' : 'billable hours x hourly rate'}
+            icon={Wallet}
+          />
+          <Tile
+            label="Fees and VAT"
+            value={formatMoney(all.fees + all.vat, currency)}
+            sub={consultant ? 'the client pays them on top' : feeNote}
+            icon={Percent}
+          />
+          <Tile
+            label={consultant ? 'The client pays' : 'Total you pay'}
+            value={formatMoney(all.total, currency)}
+            sub={consultant ? feeNote : 'fee + fees + VAT'}
+            icon={Receipt}
+            highlight
+          />
+        </div>
+
         {rateLabel && (
           <p className="text-xs text-muted-foreground">
             Hourly rate: <strong className="text-foreground">{rateLabel}</strong>. Amount = billable hours x hourly rate. Hours that are not billable cost nothing.
@@ -82,29 +114,33 @@ export default function TimesheetSummary({ logs, submissions, vatPercent, curren
             <p>{formatHours(all.pendingRateHours)} wait for an approved hourly rate and are not in the amounts yet.</p>
           </div>
         )}
-        {rows.length > 0 && (
-          <div className="overflow-hidden rounded-xl border border-border/40 text-xs">
-            <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 bg-muted/30 px-3 py-1.5 font-medium text-muted-foreground">
-              <span>Status</span>
-              <span className="text-right">Hours</span>
-              <span className="text-right">Amount</span>
+
+        {rows.length > 0 && all.totalHours > 0 && (
+          <div data-testid="status-breakdown">
+            <div className="flex h-2 overflow-hidden rounded-full bg-muted" role="img" aria-label="Hours by status">
+              {rows.map(r => (
+                <div key={r.key} className={STATUS_DOT[r.key] ?? 'bg-slate-400'} style={{ width: `${(r.summary.totalHours / all.totalHours) * 100}%` }} />
+              ))}
             </div>
-            {rows.map(r => (
-              <div key={r.key} className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-t border-border/40 px-3 py-1.5">
-                <span>{r.label}</span>
-                <span className="text-right">{formatHours(r.summary.totalHours)}</span>
-                <span className="text-right">{formatMoney(r.summary.subtotal, currency)}</span>
-              </div>
-            ))}
+            <ul className="mt-2 grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+              {rows.map(r => (
+                <li key={r.key} className="flex items-center gap-2">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[r.key] ?? 'bg-slate-400'}`} aria-hidden="true" />
+                  <span className="text-foreground">{r.label}</span>
+                  <span className="ms-auto text-muted-foreground">{formatHours(r.summary.totalHours)} &middot; {formatMoney(r.summary.subtotal, currency)}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
+
         {usage && plan && (
-          <div className="space-y-1.5" data-testid="plan-usage">
-            <div className="flex items-center justify-between text-xs">
+          <div className="space-y-1.5 rounded-xl bg-muted/60 p-3" data-testid="plan-usage">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 text-xs">
               <span className="text-muted-foreground">
                 {plan.approved ? 'Approved plan' : 'Plan (not approved yet)'}: {formatHours(plan.plannedHours)} / {formatMoney(plan.plannedCost, plan.currency || currency)}
               </span>
-              <span className={usage.over ? 'font-semibold text-red-700' : 'text-muted-foreground'}>{usage.percent}% of the hours used</span>
+              <span className={usage.over ? 'font-semibold text-red-700' : 'font-medium text-muted-foreground'}>{usage.percent}% of the hours used</span>
             </div>
             <Progress value={Math.min(100, usage.percent)} className="h-1.5" />
             {usage.over && (
