@@ -226,6 +226,104 @@ export type Database = {
           },
         ]
       }
+      bank_account_change_log: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          id: string
+          note: string | null
+          payment_id: string | null
+          scope: string
+          summary: string | null
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          note?: string | null
+          payment_id?: string | null
+          scope: string
+          summary?: string | null
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          note?: string | null
+          payment_id?: string | null
+          scope?: string
+          summary?: string | null
+        }
+        Relationships: []
+      }
+      bank_transfer_permission_log: {
+        Row: {
+          allowed: boolean
+          changed_at: string
+          changed_by: string | null
+          id: string
+          note: string | null
+          payment_id: string | null
+          scope: string
+          tenant_id: string | null
+        }
+        Insert: {
+          allowed: boolean
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          note?: string | null
+          payment_id?: string | null
+          scope: string
+          tenant_id?: string | null
+        }
+        Update: {
+          allowed?: boolean
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          note?: string | null
+          payment_id?: string | null
+          scope?: string
+          tenant_id?: string | null
+        }
+        Relationships: []
+      }
+      bank_transfer_permissions: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          id: string
+          note: string | null
+          tenant_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          note?: string | null
+          tenant_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          note?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transfer_permissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_process_documents: {
         Row: {
           business_process_id: string
@@ -2521,6 +2619,73 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_bank_accounts: {
+        Row: {
+          details: Json
+          id: string
+          note: string | null
+          payment_id: string
+          set_at: string
+          set_by: string | null
+        }
+        Insert: {
+          details: Json
+          id?: string
+          note?: string | null
+          payment_id: string
+          set_at?: string
+          set_by?: string | null
+        }
+        Update: {
+          details?: Json
+          id?: string
+          note?: string | null
+          payment_id?: string
+          set_at?: string
+          set_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_bank_accounts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_bank_transfer_grants: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          id: string
+          note: string | null
+          payment_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          note?: string | null
+          payment_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          note?: string | null
+          payment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_bank_transfer_grants_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_counter_changes: {
         Row: {
           changed_at: string
@@ -3698,6 +3863,7 @@ export type Database = {
           consultant_id: string
           created_at: string
           currency: string | null
+          due_by: string | null
           gross_amount: number | null
           id: string
           milestone_id: string | null
@@ -3718,6 +3884,7 @@ export type Database = {
           consultant_id: string
           created_at?: string
           currency?: string | null
+          due_by?: string | null
           gross_amount?: number | null
           id?: string
           milestone_id?: string | null
@@ -3738,6 +3905,7 @@ export type Database = {
           consultant_id?: string
           created_at?: string
           currency?: string | null
+          due_by?: string | null
           gross_amount?: number | null
           id?: string
           milestone_id?: string | null
@@ -7438,6 +7606,10 @@ export type Database = {
         Args: { _client_notes?: string; _proposal_id: string }
         Returns: undefined
       }
+      add_business_days: {
+        Args: { _days: number; _from: string }
+        Returns: string
+      }
       add_timesheet_comment: {
         Args: { _body: string; _submission_id: string }
         Returns: string
@@ -7519,6 +7691,18 @@ export type Database = {
         Args: { _details: Json }
         Returns: Json
       }
+      admin_set_company_bank_transfer: {
+        Args: { _allowed: boolean; _note?: string; _tenant_id: string }
+        Returns: undefined
+      }
+      admin_set_invoice_bank_account: {
+        Args: { _details: Json; _note?: string; _payment_id: string }
+        Returns: undefined
+      }
+      admin_set_invoice_bank_transfer: {
+        Args: { _allowed: boolean; _note?: string; _payment_id: string }
+        Returns: undefined
+      }
       admin_set_invoice_counter: {
         Args: { _next: number; _reason: string }
         Returns: Json
@@ -7553,6 +7737,15 @@ export type Database = {
       audit_changed: { Args: { _new: Json; _old: Json }; Returns: Json }
       audit_is_sensitive_key: { Args: { _k: string }; Returns: boolean }
       audit_scrub_row: { Args: { _row: Json }; Returns: Json }
+      bank_account_summary: { Args: { _details: Json }; Returns: string }
+      bank_transfer_available: {
+        Args: { _payment_id: string }
+        Returns: boolean
+      }
+      bank_transfer_company_allowed: {
+        Args: { _payment_id: string }
+        Returns: boolean
+      }
       billing_snapshot: {
         Args: {
           _d: Database["public"]["Tables"]["tenant_billing_details"]["Row"]
@@ -7577,6 +7770,7 @@ export type Database = {
         Args: { _bucket: string; _limit: number; _window_seconds: number }
         Returns: boolean
       }
+      clean_bank_account: { Args: { _details: Json }; Returns: Json }
       clean_billing_text: {
         Args: { _label: string; _max: number; _v: string }
         Returns: string
@@ -7714,7 +7908,11 @@ export type Database = {
       }
       get_invoice_document: { Args: { _payment_id: string }; Returns: Json }
       get_invoice_seller_details: { Args: never; Returns: Json }
-      get_payment_instructions: { Args: never; Returns: Json }
+      get_payment_instructions: {
+        Args: { _payment_id?: string }
+        Returns: Json
+      }
+      get_payment_methods: { Args: { _payment_id: string }; Returns: Json }
       get_user_tenant_id: { Args: never; Returns: string }
       get_vmware_settings_safe: {
         Args: { p_environment_id: string }
@@ -7854,6 +8052,7 @@ export type Database = {
       payment_processing_fee_percent: { Args: never; Returns: number }
       payment_service_fee_percent: { Args: never; Returns: number }
       payment_vat_percent: { Args: never; Returns: number }
+      payout_due_date: { Args: { _received: string }; Returns: string }
       plan_limits_enforced: { Args: never; Returns: boolean }
       platform_flag: {
         Args: { _default: boolean; _key: string }
