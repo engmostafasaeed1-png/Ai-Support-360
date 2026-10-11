@@ -25,24 +25,15 @@ const EMERGENCY_PRICING = {
 function useConsultantContact(consultantId: string | null, ticketId: string) {
   return useQuery({
     queryKey: ['consultant-contact', consultantId, ticketId],
-    enabled: !!consultantId,
+    enabled: true,
     queryFn: async () => {
-      if (!consultantId) return null;
-      const { data: consultant } = await supabase
-        .from('consultants')
-        .select('user_id, hourly_rate')
-        .eq('id', consultantId)
-        .maybeSingle();
-      if (!consultant) return null;
-
-      // the consultant's phone is released only for an urgent (high / critical) ticket of this client
+      // the server decides who answers: the consultant on call, the assigned consultant, else an administrator
       const { data: contact } = await supabase.rpc('get_emergency_contact', { _ticket_id: ticketId });
       const row = Array.isArray(contact) ? contact[0] : null;
       return {
         display_name: row?.display_name ?? null,
         phone: row?.phone ?? null,
-        // the rate of the person who answers: a consultant on call has another rate than the assigned one, an administrator has none
-        hourly_rate: row ? (row.hourly_rate ?? 0) : consultant.hourly_rate,
+        hourly_rate: row?.hourly_rate ?? null,
         source: (row as any)?.source ?? null,
       };
     },
@@ -54,10 +45,10 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
   const phone = (contact as any)?.phone;
   const contactName = (contact as any)?.display_name as string | null | undefined;
   const source = (contact as any)?.source as string | null | undefined;
-  const hourlyRate = (contact as any)?.hourly_rate || 0;
+  const hourlyRate = (contact as any)?.hourly_rate ?? null;
   const isEmergency = urgency === 'critical' || urgency === 'high';
   const pricing = EMERGENCY_PRICING[urgency as keyof typeof EMERGENCY_PRICING] || EMERGENCY_PRICING.medium;
-  const emergencyRate = Math.round(hourlyRate * pricing.multiplier);
+  const emergencyRate = hourlyRate ? Math.round(hourlyRate * pricing.multiplier) : null;
 
   if (!consultantId) return null;
 
