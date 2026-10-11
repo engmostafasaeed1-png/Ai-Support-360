@@ -37,7 +37,7 @@ export default function InvoiceNumberingSection() {
   const valueError = info ? validateNextNumber(value, info) : null;
   const reasonError = validateReason(reason);
   const canSave = !!info && parsed !== null && !valueError && !reasonError;
-  const preview = info && parsed !== null && !valueError ? formatInvoiceNumber(info.year, parsed) : null;
+  const preview = info && parsed !== null && !valueError ? formatInvoiceNumber(info.year, info.quarter, parsed) : null;
   const gap = info ? describeGap(info) : null;
 
   const review = () => {
@@ -68,7 +68,8 @@ export default function InvoiceNumberingSection() {
           <Hash aria-hidden="true" className="h-5 w-5 text-primary" /> Invoice Numbering
         </h2>
         <p className="text-sm text-muted-foreground">
-          Every invoice the platform creates takes the next number of one counter, written as INV-year-000000. Numbers that are already on invoices never change.
+          Every invoice the platform creates gets a number like INV-2026-Q4-000019: the year, the quarter in which the invoice is created, and a counter.
+          The counter starts again at 1 on 1 January (Cairo time). Numbers that are already on invoices never change.
           Change the counter only when your accountant asks for it. Every change is saved with your name, the time and your reason.
         </p>
       </div>
@@ -86,29 +87,32 @@ export default function InvoiceNumberingSection() {
         <>
           <Card className="rounded-2xl border-border/50">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">The counter now</CardTitle>
+              <CardTitle className="text-base">The counter now ({info.year})</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-xs text-muted-foreground">The next invoice gets this number</p>
+                <p className="text-xs text-muted-foreground">
+                  The next invoice gets this number. The quarter in it is the quarter in which the invoice is created.
+                </p>
                 <p className="font-mono text-3xl font-bold tracking-tight text-foreground">{info.next_invoice_number}</p>
               </div>
               <dl className="grid gap-4 text-sm sm:grid-cols-3">
                 <div>
                   <dt className="text-xs text-muted-foreground">Highest number on an invoice this year</dt>
-                  <dd className="font-medium text-foreground">
-                    {info.highest_used > 0 ? formatInvoiceNumber(info.year, info.highest_used) : 'No invoice this year yet'}
-                  </dd>
+                  <dd className="font-medium text-foreground">{info.highest_used_invoice ?? 'No invoice this year yet'}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground">Lowest number you can set now</dt>
                   <dd className="font-medium text-foreground">{info.lowest_allowed_next}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground">Invoices in the system</dt>
-                  <dd className="font-medium text-foreground">{info.invoices_total}</dd>
+                  <dt className="text-xs text-muted-foreground">Invoices this year (all years)</dt>
+                  <dd className="font-medium text-foreground">{info.invoices_this_year} ({info.invoices_total})</dd>
                 </div>
               </dl>
+              <p className="text-xs text-muted-foreground">
+                On 1 January {info.year + 1} the counter starts again at 1: the first invoice of {info.year + 1} will be {info.first_invoice_next_year}.
+              </p>
               {gap ? (
                 <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50/60 p-3 text-sm text-amber-900">
                   <AlertTriangle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
@@ -120,12 +124,12 @@ export default function InvoiceNumberingSection() {
 
           <Card className="rounded-2xl border-border/50">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Change the counter</CardTitle>
+              <CardTitle className="text-base">Change the counter of {info.year}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="inv-next" className="text-xs">Next invoice number</Label>
+                  <Label htmlFor="inv-next" className="text-xs">Next number of {info.year}</Label>
                   <Input
                     id="inv-next"
                     inputMode="numeric"
@@ -208,13 +212,13 @@ export default function InvoiceNumberingSection() {
               ) : (
                 <ul className="divide-y divide-border/50">
                   {info.history.map((h, i) => {
-                    const y = yearOf(h.changed_at, info.year);
+                    const y = h.year ?? yearOf(h.changed_at, info.year);
                     return (
                       <li key={`${h.changed_at}-${i}`} className="space-y-0.5 py-3 text-sm">
                         <p className="font-medium text-foreground">
-                          <span className="font-mono">{formatInvoiceNumber(y, h.old_next)}</span>
+                          <span className="font-mono">{formatInvoiceNumber(y, h.quarter, h.old_next)}</span>
                           {' → '}
-                          <span className="font-mono">{formatInvoiceNumber(y, h.new_next)}</span>
+                          <span className="font-mono">{formatInvoiceNumber(y, h.quarter, h.new_next)}</span>
                         </p>
                         <p className="text-xs text-muted-foreground">{when(h.changed_at)} · {h.changed_by_name}</p>
                         <p className="text-xs text-foreground">{h.reason}</p>
