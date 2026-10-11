@@ -26,8 +26,6 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
     ],
     company: [
       { label: t('footer.about'), href: '/#about' },
-      { label: t('footer.careers'), href: '/#contact' },
-      { label: t('footer.blog'), href: '/#faq' },
     ],
     support: [
       { label: 'Request a demo', href: '#', onClick: () => demoWizard.open(undefined, { source: 'footer' }) },

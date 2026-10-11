@@ -21,7 +21,7 @@ const MODULES: Record<string, ModuleConfig> = {
     name: 'SAP S/4HANA',
     headline: 'SAP S/4HANA Support Services',
     intro:
-      'On-demand and retainer-based support for SAP S/4HANA — from incident resolution and performance tuning to migration follow-up and continuous improvement, delivered by verified S/4HANA experts.',
+      'On-demand support for SAP S/4HANA — from incident resolution and performance tuning to migration follow-up and continuous improvement, delivered by verified S/4HANA experts.',
     coverage: [
       'Incident and break-fix support across FI/CO, MM, SD, PP, and PM on S/4HANA',
       'Performance tuning and HANA database optimization',
@@ -89,7 +89,7 @@ export default function ServiceModulePage({ moduleSlug }: { moduleSlug: string }
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link to="/pricing">View Plans</Link>
+              <Link to="/pricing">View pricing</Link>
             </Button>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default function ServiceModulePage({ moduleSlug }: { moduleSlug: string }
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground">Common Issues We Resolve</h2>
             <p className="text-muted-foreground mt-2">
-              Real {mod.name} problems our consultants fix every day
+              Typical {mod.name} problems our consultants help with
             </p>
           </div>
           <div className="max-w-3xl mx-auto space-y-3">
@@ -147,9 +147,9 @@ export default function ServiceModulePage({ moduleSlug }: { moduleSlug: string }
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <div className="bg-card rounded-2xl border border-border/50 p-6 text-center">
               <Clock className="w-8 h-8 text-accent mx-auto mb-3" />
-              <h3 className="font-bold text-foreground mb-2">Fast Response</h3>
+              <h3 className="font-bold text-foreground mb-2">Matched to your request</h3>
               <p className="text-sm text-muted-foreground">
-                AI matching connects you with a verified {mod.name} expert in minutes, with SLA-backed response times.
+                AI helps match your request with a verified {mod.name} expert. You agree the scope and the hourly rate before the work starts.
               </p>
             </div>
             <div className="bg-card rounded-2xl border border-border/50 p-6 text-center">
@@ -173,7 +173,7 @@ export default function ServiceModulePage({ moduleSlug }: { moduleSlug: string }
             Need {mod.name} help right now?
           </h2>
           <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-            Submit a support request and get matched with a verified {mod.name} consultant today.
+            Submit a support request and get matched with a verified {mod.name} consultant.
           </p>
           <Button size="lg" className="gradient-primary border-0" asChild>
             <Link to="/signup">

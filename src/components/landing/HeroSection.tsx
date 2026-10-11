@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Users, CheckCircle, Clock, Zap, ShieldCheck, Bot, Activity, LogIn, Rocket, CalendarPlus } from 'lucide-react';
+import { ArrowRight, Sparkles, Zap, ShieldCheck, Bot, Activity, LogIn, Rocket, CalendarPlus, Layers, Languages, FileSignature, Timer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useDemoWizard } from './DemoRequestWizard';
 import VideoBackground from '@/components/VideoBackground';
@@ -14,10 +14,10 @@ export default function HeroSection() {
   const demoWizard = useDemoWizard();
 
   const stats = [
-    { value: '500+', label: t('hero.stat_consultants'), icon: Users },
-    { value: '12,000+', label: t('hero.stat_tickets'), icon: CheckCircle },
-    { value: '98%', label: t('hero.stat_satisfaction'), icon: Sparkles },
-    { value: '<15 min', label: t('hero.stat_response'), icon: Clock },
+    { value: t('hero.fact1_value'), label: t('hero.fact1_label'), icon: Layers },
+    { value: t('hero.fact2_value'), label: t('hero.fact2_label'), icon: Languages },
+    { value: t('hero.fact3_value'), label: t('hero.fact3_label'), icon: FileSignature },
+    { value: t('hero.fact4_value'), label: t('hero.fact4_label'), icon: Timer },
   ];
 
   return (
@@ -174,7 +174,7 @@ export default function HeroSection() {
                   </div>
                   <div className="hidden sm:flex shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 backdrop-blur-md border border-white/15">
                     <Activity className="w-3.5 h-3.5 text-accent" />
-                    <span className="text-white text-[11px] font-medium">98% SLA</span>
+                    <span className="text-white text-[11px] font-medium">{t('hero.badge_logged')}</span>
                   </div>
                 </div>
               </div>
@@ -201,7 +201,7 @@ export default function HeroSection() {
                 </div>
                 <div className="absolute bottom-2 left-2 right-2 sm:bottom-3 sm:left-3 sm:right-3">
                   <p className="text-white text-xs sm:text-sm font-semibold leading-tight">Smart ticket routing</p>
-                  <p className="hidden sm:block text-white/70 text-[11px]">Resolved 3× faster with AI</p>
+                  <p className="hidden sm:block text-white/70 text-[11px]">{t('hero.caption_triage')}</p>
                 </div>
               </div>
 
@@ -209,7 +209,7 @@ export default function HeroSection() {
               <div className="relative group rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 shadow-lg sm:shadow-xl aspect-square sm:aspect-[4/3] md:aspect-auto md:flex-1 md:min-h-[180px]">
                 <img
                   src={introConsultant}
-                  alt="Certified consultant on call"
+                  alt="Consultant on call"
                   loading="lazy"
                   decoding="async"
                   width={1024}
@@ -224,7 +224,7 @@ export default function HeroSection() {
                 </div>
                 <div className="absolute bottom-2 left-2 right-2 sm:bottom-3 sm:left-3 sm:right-3">
                   <p className="text-white text-xs sm:text-sm font-semibold leading-tight">On-demand expert talent</p>
-                  <p className="hidden sm:block text-white/70 text-[11px]">500+ certified consultants</p>
+                  <p className="hidden sm:block text-white/70 text-[11px]">{t('hero.caption_verified')}</p>
                 </div>
               </div>
             </div>
