@@ -67,19 +67,19 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
   };
 
   const handleCall = () => {
-    if (!cleanPhone) { toast.error('Consultant phone number not available'); return; }
+    if (!cleanPhone) { toast.error('Phone number not available'); return; }
     logContact('call');
     window.open(callUrl, '_self');
   };
 
   const handleSMS = () => {
-    if (!cleanPhone) { toast.error('Consultant phone number not available'); return; }
+    if (!cleanPhone) { toast.error('Phone number not available'); return; }
     logContact('sms');
     window.open(smsUrl, '_self');
   };
 
   const handleWhatsApp = () => {
-    if (!cleanPhone) { toast.error('Consultant phone number not available'); return; }
+    if (!cleanPhone) { toast.error('Phone number not available'); return; }
     logContact('whatsapp');
     window.open(whatsappUrl, '_blank');
   };
@@ -109,14 +109,17 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
 
         <p className="text-xs text-muted-foreground">
           {source === 'on_call' && contactName
-            ? `Reach ${contactName}, the consultant on call for this ticket, directly`
+            ? `On call now: ${contactName}`
             : source === 'administrator'
-              ? `No consultant is on call: this is the platform administrator${contactName ? `, ${contactName}` : ''}`
-              : consultantName ? `Reach ${consultantName}, your assigned consultant, directly` : 'Contact the assigned consultant'}
+              ? contactName ? `Platform administrator: ${contactName}` : 'Platform administrator'
+              : contactName
+                ? `Reach ${contactName}, your assigned consultant, directly`
+                : consultantName ? `Reach ${consultantName}, your assigned consultant, directly` : 'Contact the assigned consultant'}
           {isEmergency ? ' — for critical issues requiring immediate attention.' : '.'}
         </p>
 
         {/* ─── Emergency Pricing Card ─── */}
+        {contact && (
         <Card className={`rounded-xl ${isEmergency ? 'border-red-500/20 bg-red-500/5' : 'border-amber-500/20 bg-amber-500/5'}`}>
           <CardContent className="p-3 space-y-2">
             <div className="flex items-center gap-2">
