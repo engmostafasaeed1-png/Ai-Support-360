@@ -30,10 +30,18 @@ function useConsultantContact(consultantId: string | null, ticketId: string) {
       // the server decides who answers: the consultant on call, the assigned consultant, else an administrator
       const { data: contact } = await supabase.rpc('get_emergency_contact', { _ticket_id: ticketId });
       const row = Array.isArray(contact) ? contact[0] : null;
+      // nobody to show: no consultant on the ticket and the server returned no contact
+      if (!row && !consultantId) return null;
+      // a consultant on the ticket but no urgent contact row (low or medium urgency): the standard rate of that consultant
+      let rate: number | null = row?.hourly_rate ?? null;
+      if (!row && consultantId) {
+        const { data: cons } = await supabase.from('consultants').select('hourly_rate').eq('id', consultantId).maybeSingle();
+        rate = cons?.hourly_rate ?? null;
+      }
       return {
         display_name: row?.display_name ?? null,
         phone: row?.phone ?? null,
-        hourly_rate: row?.hourly_rate ?? null,
+        hourly_rate: rate,
         source: (row as any)?.source ?? null,
       };
     },
