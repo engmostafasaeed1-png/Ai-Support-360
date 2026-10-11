@@ -151,7 +151,7 @@ export async function sendWebPush(
   nowSeconds: number = Math.floor(Date.now() / 1000),
 ): Promise<PushOutcome> {
   if (!isAllowedPushEndpoint(sub.endpoint)) return { ok: false, gone: true, status: 0, error: 'endpoint_not_allowed' };
-  let body: Uint8Array;
+  let body: Uint8Array<ArrayBuffer>;
   try {
     body = await encryptPayload(enc.encode(payload), sub.p256dh, sub.auth);
   } catch (e) {
