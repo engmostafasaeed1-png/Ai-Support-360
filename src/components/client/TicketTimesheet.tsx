@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, FileText, Lock, Pencil, Plus, Send, Trash2 } from 'lucide-react';
+import { ChevronDown, Download, FileText, Plus, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,12 +10,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import TimesheetRateCard from '@/components/timesheet/TimesheetRateCard';
 import TimesheetSummary, { type PlanInfo } from '@/components/timesheet/TimesheetSummary';
 import TimesheetSubmissions from '@/components/timesheet/TimesheetSubmissions';
+import TimesheetEntriesTable from '@/components/timesheet/TimesheetEntriesTable';
 import WorkLogDialog from '@/components/timesheet/WorkLogDialog';
 import SubmitTimesheetDialog from '@/components/timesheet/SubmitTimesheetDialog';
-import StatusBadge from '@/components/timesheet/StatusBadge';
 import { usePricingTerms } from '@/hooks/usePricingTerms';
 import { buildCsv, downloadText, type ExportRow } from '@/lib/timesheetExport';
 import { downloadTimesheetPdf } from '@/lib/timesheetPdf';
@@ -24,16 +25,7 @@ import {
   splitBySubmission, statusInfo, submitBlockReason, summarise,
   type CommentRow, type InvoiceRow, type RateRow, type SubmissionRow, type WorkLogRow,
 } from '@/lib/timesheet';
-
-const categoryColors: Record<string, string> = {
-  analysis: 'bg-violet-100 text-violet-700',
-  development: 'bg-blue-100 text-blue-700',
-  testing: 'bg-cyan-100 text-cyan-700',
-  meeting: 'bg-amber-100 text-amber-700',
-  documentation: 'bg-emerald-100 text-emerald-700',
-  support: 'bg-pink-100 text-pink-700',
-  other: 'bg-muted text-muted-foreground',
-};
+import { CATEGORY_COLORS, groupEntries, timesheetProgress } from '@/lib/timesheetView';
 
 const unique = (values: (string | null | undefined)[]): string[] => Array.from(new Set(values.filter((v): v is string => !!v)));
 // a day without a time is read as that day in the time zone of the viewer
@@ -51,6 +43,7 @@ interface Props {
 /**
  * The timesheet of a ticket. The consultant proposes the hourly rate, logs the activities (day, duration, kind of work, what was done, billable or not),
  * and submits them; the client approves the rate and the timesheet or asks for changes with a comment. Every amount is billable hours x the approved rate.
+ * The screen has three parts: the overview (where it stands and the calculation), the hourly rate, and the entries with the timesheets.
  */
 export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = false, canApprove = false }: Props) {
   const queryClient = useQueryClient();
@@ -216,11 +209,10 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
 
   if (isLoading) return <Skeleton className="h-48 rounded-2xl" />;
 
-  const knownIds = new Set(submissions.map(s => s.id));
   const { bySubmission } = splitBySubmission(namedLogs);
-  const openLogs = namedLogs.filter(l => !l.submission_id || !knownIds.has(l.submission_id));
   const entryCounts: Record<string, number> = {};
   for (const s of submissions) entryCounts[s.id] = bySubmission[s.id]?.length ?? 0;
+  const groups = groupEntries(namedLogs, submissions);
 
   const myOpenEntries = entriesToSubmit(namedLogs, submissions, myConsultantId);
   const myWaiting = submissions.some(s => s.status === 'submitted' && s.submitted_by === viewer?.userId);
@@ -237,6 +229,7 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
     : null;
   const totals = summarise(namedLogs, vatPercent, pricingTerms ?? undefined);
   const planOverBy = plan ? planUsage(plan.plannedHours, totals.totalHours)?.overBy ?? 0 : 0;
+  const steps = timesheetProgress({ rates, logs: namedLogs, submissions, invoices });
 
   const byCategory: Record<string, { hours: number; amount: number }> = {};
   for (const l of namedLogs) {
@@ -311,55 +304,22 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
 
   const canEdit = (l: WorkLogRow) => isConsultantView && l.consultant_id === myConsultantId && !isLocked(l, submissions);
 
-  const renderEntry = (l: WorkLogRow & { consultant_name?: string }) => {
-    const amount = entryAmount(l);
-    const locked = isLocked(l, submissions);
-    const amountText = !l.billable
-      ? 'Not billable: 0.00'
-      : l.hourly_rate == null
-        ? 'Rate pending approval'
-        : `${formatMoney(l.hourly_rate, currency)} per hour x ${formatDuration(l.hours)} = ${formatMoney(amount, currency)}`;
-    return (
-      <Card key={l.id} className="rounded-xl border-border/30" data-testid="timesheet-entry">
-        <CardContent className="p-3">
-          <div className="flex items-start gap-3">
-            <div className="w-16 shrink-0 rounded-lg bg-primary/10 px-1 py-1.5 text-center text-[11px] font-bold text-primary">{formatDuration(l.hours)}</div>
-            <div className="min-w-0 flex-1 space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-semibold text-foreground">{l.consultant_name}</span>
-                <Badge variant="secondary" className={`text-[10px] ${categoryColors[l.category] || ''}`}>{categoryLabel(l.category)}</Badge>
-                {l.billable ? (
-                  <Badge variant="secondary" className="bg-green-100 text-[10px] text-green-700">Billable</Badge>
-                ) : (
-                  <Badge variant="outline" className="text-[10px]">Not billable</Badge>
-                )}
-                {locked && <Lock className="h-3 w-3 text-muted-foreground" aria-label="Locked: part of a timesheet that was sent to the client or approved" />}
-                {canEdit(l) && (
-                  <span className="ms-auto flex gap-1">
-                    <button type="button" onClick={() => setEditEntry(l)} className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Change this entry">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button type="button" onClick={() => setDeleteEntry(l)} className="text-muted-foreground transition-colors hover:text-destructive" aria-label="Delete this entry">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {format(parseDay(l.work_date), 'MMM d, yyyy')} - {amountText}
-              </p>
-              {l.description && <p className="whitespace-pre-wrap text-xs text-foreground">{l.description}</p>}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
   const orderedSubmissions = [...submissions].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const countBadge = 'rounded-full bg-muted px-1.5 text-[10px] font-medium text-muted-foreground';
 
   return (
     <div className="space-y-4">
+      <TimesheetSummary
+        logs={namedLogs}
+        submissions={submissions}
+        vatPercent={vatPercent}
+        currency={currency}
+        rateLabel={rateLabel}
+        plan={plan}
+        audience={isConsultantView ? 'consultant' : 'client'}
+        steps={steps}
+      />
+
       <TimesheetRateCard
         ticketId={ticketId}
         currency={currency}
@@ -372,109 +332,124 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
         onChanged={refresh}
       />
 
-      <TimesheetSummary logs={namedLogs} submissions={submissions} vatPercent={vatPercent} currency={currency} rateLabel={rateLabel} plan={plan} audience={isConsultantView ? 'consultant' : 'client'} />
+      <section className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm" data-testid="timesheet-entries-card">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4 pb-3">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Time entries</p>
+            <p className="text-xs text-muted-foreground">
+              {namedLogs.length} {namedLogs.length === 1 ? 'activity' : 'activities'} &middot; {formatHours(totals.totalHours)}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {isConsultantView && (
+              <Button size="sm" className="h-8 gap-1.5 border-0 text-xs gradient-primary" onClick={() => setAddOpen(true)}>
+                <Plus className="h-3.5 w-3.5" /> Add activity
+              </Button>
+            )}
+            {isConsultantView && (
+              <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => setSubmitOpen(true)} disabled={!!blockReason} title={blockReason ?? undefined}>
+                <Send className="h-3.5 w-3.5" /> {resubmit ? 'Submit again' : 'Submit for approval'}
+              </Button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs">
+                  <Download className="h-3.5 w-3.5" /> Export <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => void exportPdf()}>
+                  <Download className="me-2 h-3.5 w-3.5" /> PDF file
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={exportCsv}>
+                  <FileText className="me-2 h-3.5 w-3.5" /> CSV file (opens in Excel)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+        {isConsultantView && blockReason && <p className="px-4 pb-3 text-xs text-muted-foreground">{blockReason}</p>}
 
-      <div className="flex flex-wrap items-center gap-2">
-        {isConsultantView && (
-          <Button size="sm" className="h-8 gap-1.5 border-0 text-xs gradient-primary" onClick={() => setAddOpen(true)}>
-            <Plus className="h-3.5 w-3.5" /> Add activity
-          </Button>
-        )}
-        {isConsultantView && (
-          <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => setSubmitOpen(true)} disabled={!!blockReason} title={blockReason ?? undefined}>
-            <Send className="h-3.5 w-3.5" /> {resubmit ? 'Submit again' : 'Submit for approval'}
-          </Button>
-        )}
-        <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => void exportPdf()}>
-          <Download className="h-3.5 w-3.5" /> Export PDF
-        </Button>
-        <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={exportCsv}>
-          <FileText className="h-3.5 w-3.5" /> Export CSV
-        </Button>
-      </div>
-      {isConsultantView && blockReason && <p className="text-xs text-muted-foreground">{blockReason}</p>}
+        <Tabs value={tab} onValueChange={value => { setTab(value); setTabChosen(true); }} className="w-full">
+          <div className="px-4">
+            <TabsList className="grid h-9 w-full grid-cols-3">
+              <TabsTrigger value="entries" className="gap-1.5 text-xs">
+                Activities <span className={countBadge}>{namedLogs.length}</span>
+              </TabsTrigger>
+              <TabsTrigger value="timesheets" className="gap-1.5 text-xs">
+                Timesheets <span className={countBadge}>{submissions.length}</span>
+                {waitingForClient && <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" role="img" aria-label="A timesheet waits for approval" />}
+              </TabsTrigger>
+              <TabsTrigger value="categories" className="text-xs">By category</TabsTrigger>
+            </TabsList>
+          </div>
 
-      <Tabs value={tab} onValueChange={value => { setTab(value); setTabChosen(true); }} className="w-full">
-        <TabsList className="grid h-9 w-full grid-cols-3">
-          <TabsTrigger value="entries" className="text-xs">Activities</TabsTrigger>
-          <TabsTrigger value="timesheets" className="text-xs">
-            Timesheets
-            {waitingForClient && <span className="ms-1 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" role="img" aria-label="A timesheet waits for approval" />}
-          </TabsTrigger>
-          <TabsTrigger value="categories" className="text-xs">By category</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="entries" className="mt-3 space-y-4">
-          {namedLogs.length === 0 && (
-            <Card className="rounded-2xl border-border/50">
-              <CardContent className="py-8 text-center">
+          <TabsContent value="entries" className="mt-3">
+            {namedLogs.length === 0 ? (
+              <div className="border-t border-border/50 px-4 py-8 text-center">
                 <FileText className="mx-auto mb-2 h-8 w-8 text-muted-foreground/30" />
                 <p className="text-sm text-muted-foreground">No work logged yet</p>
-              </CardContent>
-            </Card>
-          )}
-          {openLogs.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground">{isReadOnly ? 'Not sent to you yet' : 'Not submitted yet'}</p>
-              {openLogs.map(renderEntry)}
-            </div>
-          )}
-          {orderedSubmissions
-            .filter(s => (bySubmission[s.id]?.length ?? 0) > 0)
-            .map(s => (
-              <div key={s.id} className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusBadge status={s.status} />
-                  <span className="text-xs text-muted-foreground">
-                    {byUser[s.submitted_by] || 'Consultant'} - {formatHours(s.total_hours)} - {formatMoney(s.total_cost, s.cost_currency)} without VAT
-                  </span>
-                </div>
-                {bySubmission[s.id].map(renderEntry)}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {isConsultantView ? 'Press "Add activity" to log your first hours.' : 'The consultant logs the work here.'}
+                </p>
               </div>
-            ))}
-        </TabsContent>
+            ) : (
+              <TimesheetEntriesTable
+                groups={groups}
+                currency={currency}
+                submissions={submissions}
+                names={byUser}
+                isReadOnly={isReadOnly}
+                canEdit={canEdit}
+                onEdit={setEditEntry}
+                onDelete={setDeleteEntry}
+                totals={{ hours: totals.totalHours, billableHours: totals.billableHours, amount: totals.subtotal }}
+              />
+            )}
+          </TabsContent>
 
-        <TabsContent value="timesheets" className="mt-3">
-          <TimesheetSubmissions
-            submissions={orderedSubmissions}
-            comments={comments}
-            invoices={invoices}
-            entryCounts={entryCounts}
-            names={byUser}
-            vatPercent={vatPercent}
-            canApprove={canApprove}
-            isConsultantView={isConsultantView}
-            viewerUserId={viewer?.userId ?? null}
-            planOverBy={planOverBy}
-            onChanged={refresh}
-            onResubmit={() => setSubmitOpen(true)}
-          />
-        </TabsContent>
+          <TabsContent value="timesheets" className="mt-3 border-t border-border/50 p-4">
+            <TimesheetSubmissions
+              submissions={orderedSubmissions}
+              comments={comments}
+              invoices={invoices}
+              entryCounts={entryCounts}
+              names={byUser}
+              vatPercent={vatPercent}
+              canApprove={canApprove}
+              isConsultantView={isConsultantView}
+              viewerUserId={viewer?.userId ?? null}
+              planOverBy={planOverBy}
+              onChanged={refresh}
+              onResubmit={() => setSubmitOpen(true)}
+            />
+          </TabsContent>
 
-        <TabsContent value="categories" className="mt-3">
-          <div className="space-y-2">
-            {Object.entries(byCategory).map(([category, data]) => {
-              const percent = totals.totalHours > 0 ? (data.hours / totals.totalHours) * 100 : 0;
-              return (
-                <Card key={category} className="rounded-xl border-border/30">
-                  <CardContent className="p-3">
-                    <div className="mb-2 flex items-center gap-3">
-                      <Badge variant="secondary" className={`text-[10px] ${categoryColors[category] || ''}`}>{categoryLabel(category)}</Badge>
-                      <span className="ms-auto text-sm font-semibold text-foreground">{formatHours(data.hours)}</span>
-                      <span className="text-[10px] text-muted-foreground">{formatMoney(data.amount, currency)}</span>
-                      <span className="text-[10px] text-muted-foreground">{percent.toFixed(0)}%</span>
-                    </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-muted/30">
-                      <div className="h-full rounded-full bg-primary/60 transition-all" style={{ width: `${percent}%` }} />
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-            {Object.keys(byCategory).length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">No data</p>}
-          </div>
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="categories" className="mt-3 border-t border-border/50 p-4">
+            <div className="space-y-2">
+              {Object.entries(byCategory).map(([category, data]) => {
+                const percent = totals.totalHours > 0 ? (data.hours / totals.totalHours) * 100 : 0;
+                return (
+                  <Card key={category} className="rounded-xl border-border/30">
+                    <CardContent className="p-3">
+                      <div className="mb-2 flex items-center gap-3">
+                        <Badge variant="secondary" className={`text-[10px] ${CATEGORY_COLORS[category] || ''}`}>{categoryLabel(category)}</Badge>
+                        <span className="ms-auto text-sm font-semibold text-foreground">{formatHours(data.hours)}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatMoney(data.amount, currency)}</span>
+                        <span className="text-[10px] text-muted-foreground">{percent.toFixed(0)}%</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-muted/30">
+                        <div className="h-full rounded-full bg-primary/60 transition-all" style={{ width: `${percent}%` }} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+              {Object.keys(byCategory).length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">No data</p>}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </section>
 
       <WorkLogDialog ticketId={ticketId} consultantId={myConsultantId} open={addOpen} onOpenChange={setAddOpen} rateLabel={rateLabel} onSaved={refresh} />
       <WorkLogDialog ticketId={ticketId} consultantId={myConsultantId} open={!!editEntry} onOpenChange={open => { if (!open) setEditEntry(null); }} entry={editEntry} rateLabel={rateLabel} onSaved={refresh} />
