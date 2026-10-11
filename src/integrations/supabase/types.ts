@@ -7897,6 +7897,16 @@ export type Database = {
           title: string
         }[]
       }
+      ticket_timeline_v2: {
+        Args: { _ticket_id: string }
+        Returns: {
+          actor_name: string
+          detail: string
+          event_at: string
+          kind: string
+          title: string
+        }[]
+      }
       timesheet_vat_percent: { Args: never; Returns: number }
       try_timestamptz: { Args: { _t: string }; Returns: string }
       ts_num: { Args: { _n: number }; Returns: string }
