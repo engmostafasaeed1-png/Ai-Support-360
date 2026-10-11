@@ -18,14 +18,21 @@
     "badge": "AI-Powered Support Platform",
     "title1": "AI Support 360",
     "title2": "For Enterprise Excellence",
-    "subtitle": "Connect with verified enterprise experts instantly. AI-powered matching, real-time collaboration, and enterprise-grade support for S/4HANA, BTP, SuccessFactors, and 20+ modules.",
+    "subtitle": "Connect with verified SAP experts. AI-assisted request triage and expert matching, chat, video and screen sharing, and hourly pricing that you approve, for S/4HANA, BTP, SuccessFactors and 20+ modules.",
     "cta_support": "Request Support",
     "cta_consultant": "Join as Consultant",
     "cta_explore": "Explore Services",
-    "stat_consultants": "Expert Consultants",
-    "stat_tickets": "Tickets Resolved",
-    "stat_satisfaction": "Client Satisfaction",
-    "stat_response": "Avg Response Time"
+    "fact1_value": "20+",
+    "fact1_label": "SAP modules",
+    "fact2_value": "2",
+    "fact2_label": "Languages: Arabic and English",
+    "fact3_value": "NDA",
+    "fact3_label": "Signed before access",
+    "fact4_value": "Hourly",
+    "fact4_label": "You approve every hour",
+    "caption_verified": "Interviewed and verified",
+    "badge_logged": "Every session logged",
+    "caption_triage": "AI-assisted triage"
   },
   "categories": {
     "title": "Support Categories",
@@ -66,17 +73,17 @@
     "step3_title": "Collaborate",
     "step3_desc": "Connect via chat, video, or screen sharing. Real-time collaboration with session tracking.",
     "step4_title": "Resolve & Review",
-    "step4_desc": "Issue resolved, time tracked, invoice generated. Rate your consultant and build trust.",
+    "step4_desc": "Issue resolved, time recorded, timesheet approved by you, invoice created. Rate your consultant and build trust.",
     "faq_title": "Questions about the process",
     "faq_subtitle": "A quick answer for each of the four steps above.",
     "faq_step1_q": "Request — what should I include when submitting?",
     "faq_step1_a": "Add the module, system landscape (S/4HANA, ECC, BTP…), error codes or screenshots, and your desired timeline. Our AI wizard auto-classifies the issue and assigns priority — the more context you give, the faster the match.",
     "faq_step2_q": "Match — how does AI pick the right consultant?",
-    "faq_step2_a": "We score every available expert on module fit, certification level, prior cases on similar issues, customer ratings, language, and current workload. You see the top candidates within minutes and pick the one you want.",
+    "faq_step2_a": "AI compares every available expert with your request: module fit, certifications, language, availability and rate. You see the best candidates and pick the one you want.",
     "faq_step3_q": "Booking — how do I confirm and pay for a session?",
-    "faq_step3_a": "Pick a slot from the consultant's live calendar, confirm scope and budget cap, then pay-per-session or draw from your retainer. NDAs and access scopes are signed in-app before the session starts.",
+    "faq_step3_a": "Pick a time from the consultant's calendar and confirm. The hourly rate is agreed first, and you pay later for the hours that you approve in the timesheet. NDAs and access scopes are signed in the app before the work starts.",
     "faq_step4_q": "Support session — how does the live session work?",
-    "faq_step4_a": "Join the session via secure chat, video, or screen sharing. Time is tracked automatically, every action is auditable, and a recap with action items + invoice is generated the moment the session ends."
+    "faq_step4_a": "Join the session by secure chat, video, or screen sharing. The time is recorded and every action is logged. Afterwards the consultant submits a timesheet, and the invoice is created when you approve it."
   },
   "audience": {
     "eyebrow": "Who it's for",
@@ -102,19 +109,19 @@
   },
   "whyQurtuba": {
     "title": "Why Choose Us",
-    "subtitle": "Enterprise-grade support built for the GCC market",
+    "subtitle": "SAP support built for the GCC market",
     "feature1_title": "AI-Powered Matching",
-    "feature1_desc": "Smart algorithms match you with the perfect consultant based on your exact needs.",
+    "feature1_desc": "AI helps match your request with consultants by skills, availability, language and rate.",
     "feature2_title": "Verified Experts",
-    "feature2_desc": "Every consultant is rigorously verified with certifications and industry experience.",
+    "feature2_desc": "Every consultant is interviewed and verified before they can take your case.",
     "feature3_title": "Bilingual Support",
     "feature3_desc": "Full Arabic and English support with RTL interface for seamless GCC operations.",
-    "feature4_title": "Enterprise Security",
-    "feature4_desc": "SOC2-ready infrastructure with role-based access, audit logs, and encrypted communications.",
+    "feature4_title": "Security and Privacy",
+    "feature4_desc": "Role-based access, audit logs, encrypted communications, and an NDA signed before a consultant sees your case.",
     "feature5_title": "Real-Time Collaboration",
-    "feature5_desc": "HD video calls, screen sharing, AI transcription, and session recordings.",
-    "feature6_title": "SLA Guaranteed",
-    "feature6_desc": "Defined SLA commitments with real-time tracking, alerts, and escalation paths.",
+    "feature5_desc": "Chat, video calls and screen sharing in one place, with the time of every session recorded.",
+    "feature6_title": "You Approve Every Hour",
+    "feature6_desc": "Agree the hourly rate up front and approve each timesheet before you pay.",
     "image_alt": "Illustration representing {{title}}"
   },
   "industries": {
@@ -131,7 +138,7 @@
   },
   "consultants": {
     "title": "Featured Consultants",
-    "subtitle": "Top-rated experts ready to help",
+    "subtitle": "Interviewed and verified experts",
     "view_all": "View All Consultants",
     "per_hour": "/hr",
     "available": "Available Now",
@@ -145,7 +152,7 @@
   },
   "testimonials": {
     "title": "What Our Clients Say",
-    "subtitle": "Trusted by enterprises across the GCC region"
+    "subtitle": "Feedback from our clients"
   },
   "pricing": {
     "title": "Support Packages",
@@ -169,13 +176,13 @@
     "q1": "How does the AI matching work?",
     "a1": "Our AI engine analyzes your support request, identifies the required module expertise, and matches you with consultants based on their skills, ratings, availability, language preferences, and hourly rates.",
     "q2": "Are consultants verified?",
-    "a2": "Yes, every consultant goes through a rigorous verification process including certification validation, AI-based skills assessment, reference checks, and identity verification.",
+    "a2": "Yes. Every consultant is interviewed, and the platform team reviews the profile, the certificates and the professional links before the consultant can take your case.",
     "q3": "What modules are covered?",
     "a3": "We cover 20+ modules including S/4HANA, ECC, BTP, SuccessFactors, Ariba, Fiori, Basis, Security/GRC, ABAP, and all functional modules (FI/CO, MM, SD, PP, QM, PM, PS, EWM, TM).",
     "q4": "Is Arabic language support available?",
     "a4": "Yes, the platform offers full Arabic RTL support, Arabic-speaking consultants, and localized content for the GCC market.",
     "q5": "How does billing work?",
-    "a5": "We offer session-based billing, hourly rates, and fixed-price packages. Time is tracked automatically, VAT-ready invoices are generated, and payments are processed securely through multiple gateways."
+    "a5": "You pay for the hours that you approve. The consultant proposes an hourly rate and you approve it, then you review and approve each timesheet. The invoice shows the platform fees and the VAT on their own lines. See the pricing page for the details."
   },
   "contact": {
     "title": "Request a Demo",
@@ -1049,15 +1056,7 @@
     "ind_manufacturing_desc": "Smart manufacturing, Industry 4.0 & quality management",
     "ind_government_desc": "Public sector digital transformation & Vision 2030 initiatives",
     "ind_telecom_desc": "Subscriber management, billing & network operations",
-    "ind_logistics_desc": "Fleet management, warehouse & transportation optimization",
-    "ind_oil_count": "45+ experts",
-    "ind_banking_count": "38+ experts",
-    "ind_retail_count": "32+ experts",
-    "ind_healthcare_count": "28+ experts",
-    "ind_manufacturing_count": "35+ experts",
-    "ind_government_count": "40+ experts",
-    "ind_telecom_count": "30+ experts",
-    "ind_logistics_count": "25+ experts"
+    "ind_logistics_desc": "Fleet management, warehouse & transportation optimization"
   },
   "guest": {
     "explore_btn": "Explore as Guest",

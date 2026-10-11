@@ -48,15 +48,15 @@ const solutions: { key: string; icon: any; desc: string; tone: Tone; tag: string
   { key: 'pm',          icon: Wrench,         desc: 'explore.sol_pm_desc',          tone: 'orange',  tag: 'Maintain' },
 ];
 
-const industries: { key: string; icon: any; desc: string; count: string; tone: Tone }[] = [
-  { key: 'oil',           icon: Fuel,            desc: 'explore.ind_oil_desc',           count: 'explore.ind_oil_count',           tone: 'amber' },
-  { key: 'banking',       icon: Landmark,        desc: 'explore.ind_banking_desc',       count: 'explore.ind_banking_count',       tone: 'emerald' },
-  { key: 'retail',        icon: ShoppingBag,     desc: 'explore.ind_retail_desc',        count: 'explore.ind_retail_count',        tone: 'rose' },
-  { key: 'healthcare',    icon: HeartPulse,      desc: 'explore.ind_healthcare_desc',    count: 'explore.ind_healthcare_count',    tone: 'cyan' },
-  { key: 'manufacturing', icon: Factory,         desc: 'explore.ind_manufacturing_desc', count: 'explore.ind_manufacturing_count', tone: 'orange' },
-  { key: 'government',    icon: Building2,       desc: 'explore.ind_government_desc',    count: 'explore.ind_government_count',    tone: 'indigo' },
-  { key: 'telecom',       icon: RadioTower,      desc: 'explore.ind_telecom_desc',       count: 'explore.ind_telecom_count',       tone: 'violet' },
-  { key: 'logistics',     icon: Truck,           desc: 'explore.ind_logistics_desc',     count: 'explore.ind_logistics_count',     tone: 'lime' },
+const industries: { key: string; icon: any; desc: string; tone: Tone }[] = [
+  { key: 'oil',           icon: Fuel,            desc: 'explore.ind_oil_desc',           tone: 'amber' },
+  { key: 'banking',       icon: Landmark,        desc: 'explore.ind_banking_desc',       tone: 'emerald' },
+  { key: 'retail',        icon: ShoppingBag,     desc: 'explore.ind_retail_desc',        tone: 'rose' },
+  { key: 'healthcare',    icon: HeartPulse,      desc: 'explore.ind_healthcare_desc',    tone: 'cyan' },
+  { key: 'manufacturing', icon: Factory,         desc: 'explore.ind_manufacturing_desc', tone: 'orange' },
+  { key: 'government',    icon: Building2,       desc: 'explore.ind_government_desc',    tone: 'indigo' },
+  { key: 'telecom',       icon: RadioTower,      desc: 'explore.ind_telecom_desc',       tone: 'violet' },
+  { key: 'logistics',     icon: Truck,           desc: 'explore.ind_logistics_desc',     tone: 'lime' },
 ];
 
 export default function ExploreServicesSection() {
@@ -160,7 +160,7 @@ export default function ExploreServicesSection() {
           {/* Industries */}
           <TabsContent value="industries" className="mt-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {industries.map(({ key, icon: Icon, desc, count, tone }) => {
+              {industries.map(({ key, icon: Icon, desc, tone }) => {
                 const s = toneStyles[tone];
                 return (
                   <div
@@ -190,9 +190,6 @@ export default function ExploreServicesSection() {
                             <div className={`absolute inset-0 rounded-2xl ${s.glow} opacity-0 group-hover:opacity-100 blur-md transition-opacity`} />
                             <Icon className={`relative w-7 h-7 ${s.icon}`} strokeWidth={1.5} />
                           </div>
-                          <span className={`text-[10px] font-bold tracking-wider px-2.5 py-1 rounded-full ${s.chip}`}>
-                            {t(count)}
-                          </span>
                         </div>
 
                         <h3 className="text-lg font-semibold text-foreground mb-1.5 tracking-tight">
