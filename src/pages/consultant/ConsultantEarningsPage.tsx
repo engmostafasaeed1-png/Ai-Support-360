@@ -9,12 +9,13 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  DollarSign, ArrowDownToLine, Wallet, Receipt, Clock,
+  DollarSign, ArrowDownToLine, Wallet, Receipt, Clock, AlertTriangle,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { deadlineSummary, payoutDeadline, type DeadlineTone } from '@/lib/payoutDeadline';
 import ShareMenu from '@/components/ShareMenu';
 import PayoutDetailsCard from '@/components/consultant/PayoutDetailsCard';
 
@@ -44,6 +45,13 @@ const payoutStatusLabel: Record<string, string> = {
   processing: 'Being prepared',
   pending: 'Waiting for the administrator',
   failed: 'Problem',
+};
+
+const deadlineClass: Record<DeadlineTone, string> = {
+  done: 'text-green-700',
+  ok: 'text-muted-foreground',
+  soon: 'text-amber-700 font-medium',
+  overdue: 'text-destructive font-semibold',
 };
 
 const money = (n: number, currency = 'USD') => {
@@ -139,6 +147,8 @@ export default function ConsultantEarningsPage() {
     monthlyTrend: [] as { month: string; amount: number }[],
   };
 
+  const deadlines = deadlineSummary(e.payouts);
+
   const kpis = [
     { label: 'Earned (your fees)', value: money(e.totalEarned, e.currency), icon: DollarSign, color: 'bg-accent/10 text-accent' },
     { label: 'Invoices awaiting the client', value: money(e.awaitingClient, e.currency), icon: Clock, color: 'bg-yellow-100 text-yellow-600' },
@@ -152,7 +162,7 @@ export default function ConsultantEarningsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">{t('earnings.title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            When a client pays an invoice, the platform transfers your whole fee to your bank account: the platform service fee, the payment processing fee and the VAT are paid by the client on top of your fee. (Invoices from before the new pricing had a platform commission.)
+            The client pays the platform, not you. Within 15 business days (Sunday to Thursday) after the platform receives the client's payment, it transfers your whole fee to your bank account: the platform service fee, the payment processing fee and the VAT are paid by the client on top of your fee. (Invoices from before the new pricing had a platform commission.)
             Add your bank details in the "Bank details" tab.
           </p>
         </div>
@@ -171,6 +181,17 @@ export default function ConsultantEarningsPage() {
           />
         </div>
       </div>
+
+      {deadlines.overdue > 0 && (
+        <Card className="rounded-2xl border-destructive/40 bg-destructive/5">
+          <CardContent className="p-4 flex items-start gap-3 text-sm text-destructive">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>
+              {deadlines.overdue === 1 ? 'One payout is past its due date.' : 'Some payouts are past their due date.'} Please contact support and we will look into it.
+            </span>
+          </CardContent>
+        </Card>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -292,6 +313,7 @@ export default function ConsultantEarningsPage() {
                       <TableHead className="text-end">Your fee</TableHead>
                       <TableHead className="text-end">Platform commission</TableHead>
                       <TableHead className="text-end">You receive</TableHead>
+                      <TableHead>Due by</TableHead>
                       <TableHead className="text-end">{t('earnings.status')}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -313,6 +335,21 @@ export default function ConsultantEarningsPage() {
                         </TableCell>
                         <TableCell className="text-end font-semibold text-foreground">
                           {money(Number(p.amount), p.currency)}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {p.status === 'completed' ? (
+                            '—'
+                          ) : (
+                            (() => {
+                              const d = payoutDeadline(p);
+                              return (
+                                <>
+                                  {p.due_by && <div className="font-medium text-foreground">{format(parseISO(p.due_by), 'MMM d, yyyy')}</div>}
+                                  <div className={`text-xs ${deadlineClass[d.tone]}`}>{d.label}</div>
+                                </>
+                              );
+                            })()
+                          )}
                         </TableCell>
                         <TableCell className="text-end">
                           <Badge variant={payoutStatusVariant[p.status] || 'outline'} className="text-[10px]">
