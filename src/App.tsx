@@ -173,6 +173,7 @@ const LiveInterviewPage = React.lazy(() => import("./pages/interview/LiveIntervi
 const InterviewRespondPage = React.lazy(() => import("./pages/interview/InterviewRespondPage.tsx"));
 const NotificationsPage = React.lazy(() => import("./pages/notifications/NotificationsPage.tsx"));
 const ReferralsPage = React.lazy(() => import("./pages/ReferralsPage.tsx"));
+const InvoiceDocumentPage = React.lazy(() => import("./pages/InvoiceDocumentPage.tsx"));
 const MatchRequestPopup = React.lazy(() => import("./components/consultant/MatchRequestPopup.tsx"));
 
 const queryClient = new QueryClient({
@@ -439,7 +440,8 @@ const App = () => (
               <Route path="system" element={<SystemHealthPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
             </Route>
-            <Route path="/interview/live/:id" element={<ProtectedRoute><ErrorBoundary><LiveInterviewPage /></ErrorBoundary></ProtectedRoute>} />
+<Route path="/interview/live/:id" element={<ProtectedRoute><ErrorBoundary><LiveInterviewPage /></ErrorBoundary></ProtectedRoute>} />
+            <Route path="/invoice/:paymentId" element={<ProtectedRoute><ErrorBoundary><InvoiceDocumentPage /></ErrorBoundary></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route element={<PublicLayout />}>
               <Route path="*" element={<NotFound />} />

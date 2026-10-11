@@ -20,6 +20,7 @@ import {
   usePaymobStatus, useProviderEvents, useSetPayoutStatus, useVerifyPayoutDetails, type BankDetails, type ProviderEvent,
 } from '@/hooks/useBilling';
 import PricingSettingsCard from '@/components/admin/PricingSettingsCard';
+import InvoiceSellerCard from '@/components/admin/InvoiceSellerCard';
 
 const money = (n: number | string | null | undefined, currency = 'USD') => {
   try {
@@ -230,6 +231,7 @@ export default function PaymentsAdminPage() {
                       <TableHead>Invoice</TableHead>
                       <TableHead>Client</TableHead>
                       <TableHead>Consultant</TableHead>
+<TableHead>Invoice page</TableHead>
                       <TableHead>Created</TableHead>
                       <TableHead>Paid</TableHead>
                       <TableHead className="text-end">Amount</TableHead>
@@ -245,6 +247,7 @@ export default function PaymentsAdminPage() {
                         </TableCell>
                         <TableCell className="text-sm">{i.client_name}</TableCell>
                         <TableCell className="text-sm">{i.consultant_name || '-'}</TableCell>
+<TableCell className="text-xs"><Link to={`/invoice/${i.id}`} className="text-primary hover:underline">View / print</Link></TableCell>
                         <TableCell className="text-xs text-muted-foreground">{when(i.created_at)}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {i.paid_at ? <>{when(i.paid_at)}<div className="font-mono">{i.bank_reference}</div>{i.payment_method === 'card' && <Badge variant="outline" className="text-[10px] mt-0.5">Card</Badge>}</> : '-'}
@@ -344,6 +347,7 @@ export default function PaymentsAdminPage() {
         <TabsContent value="settings">
           <div className="space-y-4">
             <PricingSettingsCard />
+            <InvoiceSellerCard />
             <Card className="rounded-2xl border-border/50">
               <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
