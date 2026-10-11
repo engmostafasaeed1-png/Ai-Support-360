@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Users, BarChart3, CreditCard, UserCheck, Lock, Eye, Activity, HardDrive,
   Server, AlertTriangle, FileText, Kanban, BookOpen, Settings, Monitor,
-  ScrollText, Video, GraduationCap, CalendarClock, DollarSign,
+  ScrollText, Video, GraduationCap, CalendarClock, DollarSign, Hash,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -20,6 +20,7 @@ export const adminSections: AdminSection[] = [
   { id: 'overview', label: 'Overview & Analytics', icon: BarChart3, group: 'Platform' },
   { id: 'users', label: 'User Management', icon: Users, group: 'Platform' },
   { id: 'subscriptions', label: 'Subscriptions & Plans', icon: CreditCard, group: 'Platform' },
+  { id: 'invoice-numbering', label: 'Invoice Numbering', icon: Hash, group: 'Platform' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Platform' },
   { id: 'vmware-pricing', label: 'VMware Pricing', icon: DollarSign, group: 'Platform' },
 
