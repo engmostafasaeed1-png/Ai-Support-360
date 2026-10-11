@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { usePaymentSettings } from '@/hooks/useBilling';
 import { CreditCard, Pencil, Plus, Trash2, Ticket } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -220,6 +221,7 @@ export default function SubscriptionsSection() {
   const qc = useQueryClient();
   const { data: plans = [], isLoading } = usePlans();
   const { data: vouchers = [], isLoading: vLoading } = useVouchers();
+  const { data: pay } = usePaymentSettings();
   const [editPlan, setEditPlan] = useState<Plan | null>(null);
   const [voucherDlg, setVoucherDlg] = useState<{ open: boolean; v: Voucher | null }>({ open: false, v: null });
 
