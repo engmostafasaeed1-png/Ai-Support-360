@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { formatMoney, rateStateFor, rateText, type RateRow, type RateState } from '@/lib/timesheet';
+import { ToneBadge } from '@/components/timesheet/StatusBadge';
+import { formatMoney, rateStateFor, rateText, type RateRow, type RateState, type Tone } from '@/lib/timesheet';
 import { usePricingTerms } from '@/hooks/usePricingTerms';
 import { formatPercent, priceBreakdown } from '@/lib/pricing';
 
@@ -36,10 +37,12 @@ interface Props {
 export default function TimesheetRateCard({ ticketId, currency, rates, consultantIds, names, myConsultantId, suggestedRate, canApprove, onChanged }: Props) {
   const ids = myConsultantId ? [myConsultantId] : consultantIds;
   return (
-    <Card className="rounded-2xl border-border/50" data-testid="rate-card">
+    <Card className="rounded-2xl border-border/50 shadow-sm" data-testid="rate-card">
       <CardContent className="space-y-3 p-4">
         <div className="flex items-center gap-2">
-          <DollarSign className="h-4 w-4 text-primary" />
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <DollarSign className="h-4 w-4" aria-hidden="true" />
+          </span>
           <p className="text-sm font-semibold text-foreground">Hourly rate</p>
         </div>
         {ids.length === 0 && (
@@ -65,6 +68,14 @@ export default function TimesheetRateCard({ ticketId, currency, rates, consultan
   );
 }
 
+/** The state of the rate of one consultant in one word. */
+function rateChip({ approved, proposed, declined }: RateState): { label: string; tone: Tone } {
+  if (proposed) return { label: 'Waiting for approval', tone: 'amber' };
+  if (approved) return { label: 'Approved', tone: 'green' };
+  if (declined) return { label: 'Declined', tone: 'orange' };
+  return { label: 'No rate yet', tone: 'muted' };
+}
+
 /** What one hour costs the client in total (the rate plus the service fee, the processing fee and VAT), and that the consultant receives the whole rate. */
 function HourlyTotal({ rate, audience }: { rate: Pick<RateRow, 'hourly_rate' | 'currency'> | null; audience: 'client' | 'consultant' }) {
   const { data: terms } = usePricingTerms();
@@ -72,7 +83,7 @@ function HourlyTotal({ rate, audience }: { rate: Pick<RateRow, 'hourly_rate' | '
   const b = priceBreakdown(Number(rate.hourly_rate), terms);
   const cur = rate.currency || 'USD';
   return (
-    <p className="text-[11px] text-muted-foreground" data-testid="hourly-total">
+    <p className="rounded-lg bg-muted/50 px-2.5 py-1.5 text-[11px] text-muted-foreground" data-testid="hourly-total">
       {audience === 'client' ? (
         <>With the platform service fee ({formatPercent(terms.serviceFeePercent)}), the payment processing fee ({formatPercent(terms.processingFeePercent)}) and VAT ({formatPercent(terms.vatPercent)}) one hour costs you <strong className="text-foreground">{formatMoney(b.total, cur)}</strong>.</>
       ) : (
@@ -96,6 +107,7 @@ function ConsultantRate({ ticketId, state, currency, suggestedRate, onChanged }:
   const [busy, setBusy] = useState(false);
   const showForm = (!approved && !proposed) || editing;
   const cur = (proposed ?? approved)?.currency ?? currency;
+  const chip = rateChip(state);
 
   const startEditing = () => {
     const current = proposed ?? approved;
@@ -122,17 +134,21 @@ function ConsultantRate({ ticketId, state, currency, suggestedRate, onChanged }:
   };
 
   return (
-    <div className="space-y-2" data-testid="consultant-rate">
+    <div className="space-y-2.5 rounded-xl border border-border/60 p-3" data-testid="consultant-rate">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-xs font-medium text-muted-foreground">Your rate</p>
+        <ToneBadge label={chip.label} tone={chip.tone} />
+      </div>
       {approved && (
         <div className="flex items-start gap-2 text-sm text-green-800">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            Approved rate: <strong>{rateText(approved)}</strong> <span className="text-xs text-muted-foreground">({approvedNote(approved, false)})</span>
+            Approved rate: <strong className="text-base">{rateText(approved)}</strong> <span className="text-xs text-muted-foreground">({approvedNote(approved, false)})</span>
           </p>
         </div>
       )}
       {proposed && (
-        <div className="flex items-start gap-2 text-sm text-amber-800">
+        <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-2.5 text-sm text-amber-800">
           <Clock className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
             Waiting for the client to approve <strong>{rateText(proposed)}</strong>
@@ -141,7 +157,7 @@ function ConsultantRate({ ticketId, state, currency, suggestedRate, onChanged }:
         </div>
       )}
       {declined && (
-        <div className="flex items-start gap-2 text-sm text-red-700">
+        <div className="flex items-start gap-2 rounded-lg bg-red-50 p-2.5 text-sm text-red-700">
           <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
             The client declined <strong>{rateText(declined)}</strong>
@@ -178,6 +194,7 @@ function ClientRate({ name, state, canApprove, onChanged }: { name: string; stat
   const [busy, setBusy] = useState(false);
   const [declineOpen, setDeclineOpen] = useState(false);
   const [reason, setReason] = useState('');
+  const chip = rateChip(state);
 
   const answer = async (rate: RateRow, approve: boolean, note?: string) => {
     setBusy(true);
@@ -194,13 +211,16 @@ function ClientRate({ name, state, canApprove, onChanged }: { name: string; stat
   };
 
   return (
-    <div className="space-y-2 rounded-xl border border-border/50 p-3" data-testid="client-rate">
-      <p className="text-xs font-medium text-muted-foreground">{name}</p>
+    <div className="space-y-2.5 rounded-xl border border-border/60 p-3" data-testid="client-rate">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-xs font-medium text-muted-foreground">{name}</p>
+        <ToneBadge label={chip.label} tone={chip.tone} />
+      </div>
       {approved && (
         <div className="flex items-start gap-2 text-sm text-green-800">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            Approved rate: <strong>{rateText(approved)}</strong> <span className="text-xs text-muted-foreground">({approvedNote(approved, canApprove)})</span>
+            Approved rate: <strong className="text-base">{rateText(approved)}</strong> <span className="text-xs text-muted-foreground">({approvedNote(approved, canApprove)})</span>
           </p>
         </div>
       )}
@@ -231,7 +251,7 @@ function ClientRate({ name, state, canApprove, onChanged }: { name: string; stat
         <p className="text-xs text-muted-foreground">No hourly rate was proposed yet. The consultant can log hours, but can not send a timesheet before the client approved a rate.</p>
       )}
       {declined && !proposed && (
-        <p className="text-xs text-red-700">
+        <p className="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs text-red-700">
           {canApprove ? 'You declined' : 'The client declined'} {rateText(declined)}
           {declined.decision_note ? `: "${declined.decision_note}"` : ''}. The consultant can send another rate.
         </p>
