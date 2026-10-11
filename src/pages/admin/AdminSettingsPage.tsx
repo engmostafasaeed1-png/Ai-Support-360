@@ -15,6 +15,7 @@ import NDATemplateEditor from '@/components/admin/NDATemplateEditor';
 import CriticalServiceSettingsCard from '@/components/admin/CriticalServiceSettingsCard';
 import CriticalRequestsLive from '@/components/admin/CriticalRequestsLive';
 import TelegramAdminCard from '@/components/admin/TelegramAdminCard';
+import PushAdminCard from '@/components/admin/PushAdminCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -180,6 +181,8 @@ export default function AdminSettingsPage() {
       <CriticalRequestsLive />
 
       <TelegramAdminCard />
+
+      <PushAdminCard />
 
       <NDATemplateEditor />
 

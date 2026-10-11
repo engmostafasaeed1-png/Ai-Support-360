@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import TelegramAlertsCard from '@/components/consultant/TelegramAlertsCard';
+import PushAlertsCard from '@/components/consultant/PushAlertsCard';
 
 type PrefKey = 'new_case_alerts' | 'profile_visible' | 'show_availability';
 type Prefs = Record<PrefKey, boolean>;
@@ -99,6 +100,7 @@ export default function ConsultantSettingsPage() {
             </CardContent>
           </Card>
           <TelegramAlertsCard />
+          <PushAlertsCard />
         </div>
       )}
     </div>
