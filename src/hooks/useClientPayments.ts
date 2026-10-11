@@ -1,13 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { mockClientPayments } from '@/data/clientMockData';
 
 export function useClientPayments() {
   const { isGuest } = useGuestMode();
+  const { tenant, loading: tenantLoading } = useTenant();
 
   return useQuery({
-    queryKey: ['client-payments'],
+    queryKey: ['client-payments', tenant?.id ?? null],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
@@ -15,6 +17,8 @@ export function useClientPayments() {
         .from('payments')
         .select('id, amount, currency, vat_amount, status, invoice_number, payment_method, description, due_date, created_at, updated_at, ticket_id, consultant_id, session_id, kind, reference, client_reported_at, client_transfer_reference, client_transfer_date, rejection_note, paid_at, provider_status, card_started_at, pricing_model, base_amount, service_fee_percent, service_fee_amount, processing_fee_percent, processing_fee_amount, vat_percent')
         .eq('client_id', user.id)
+        // the payments of the active company; a payment that belongs to no company shows in every company
+        .or(tenant?.id ? `tenant_id.eq.${tenant.id},tenant_id.is.null` : 'tenant_id.is.null,tenant_id.not.is.null')
         .order('created_at', { ascending: false });
       if (error) throw error;
 
@@ -110,7 +114,7 @@ export function useClientPayments() {
         session_duration_minutes: p.session_id ? sessionMap[p.session_id]?.duration_minutes : null,
       }));
     },
-    enabled: !isGuest,
+    enabled: !isGuest && !tenantLoading,
     placeholderData: isGuest ? (mockClientPayments as any) : undefined,
   });
 }

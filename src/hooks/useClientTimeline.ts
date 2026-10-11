@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/contexts/TenantContext';
 
 export interface TimelineTicket {
   id: string;
@@ -38,17 +39,19 @@ export interface TimelineTicket {
 }
 
 export function useClientTimeline() {
+  const { tenant, loading: tenantLoading } = useTenant();
   return useQuery({
-    queryKey: ['client-timeline'],
+    queryKey: ['client-timeline', tenant?.id ?? null],
+    enabled: !tenantLoading,
     queryFn: async (): Promise<TimelineTicket[]> => {
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
       if (!uid) return [];
 
-      const { data: tickets, error: tErr } = await supabase
+      const ticketBase = supabase
         .from('tickets')
-        .select('id, title, status, urgency, sap_module, created_at, resolved_at, consultant_id')
-        .eq('client_id', uid)
+        .select('id, title, status, urgency, sap_module, created_at, resolved_at, consultant_id');
+      const { data: tickets, error: tErr } = await (tenant?.id ? ticketBase.eq('tenant_id', tenant.id) : ticketBase.eq('client_id', uid))
         .order('created_at', { ascending: false })
         .limit(50);
       if (tErr) throw tErr;
