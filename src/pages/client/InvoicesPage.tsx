@@ -607,7 +607,7 @@ export default function InvoicesPage() {
                   <DetailRow label="Date" value={selected.date} icon={Calendar} />
                   <DetailRow label="Currency" value={selected.currency} icon={DollarSign} />
                   <DetailRow label="VAT" value={fmt(Number(selected.vat || 0), selected.currency)} icon={FileText} />
-                  {selected.payment_method && <DetailRow label="Method" value={selected.payment_method} icon={CreditCard} />}
+                  {selected.payment_method && selected.status !== 'pending' && <DetailRow label="Method" value={selected.payment_method} icon={CreditCard} />}
                   {selected.due_date && <DetailRow label="Due Date" value={format(new Date(selected.due_date), 'MMM d, yyyy')} icon={Calendar} />}
                 </div>
 

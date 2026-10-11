@@ -35,7 +35,7 @@ export function PaymobReturnHandler() {
       } else if (data?.state === 'paid') {
         toast.success('Payment received. Thank you!');
       } else if (data?.state === 'failed') {
-        toast.error('The card payment was not completed', { description: 'Your card was not charged. You can try again or pay by bank transfer.' });
+        toast.error('The card payment was not completed', { description: 'Your card was not charged. You can try again.' });
       } else {
         toast.info('Your payment is being processed. This page updates when it is confirmed.');
       }
