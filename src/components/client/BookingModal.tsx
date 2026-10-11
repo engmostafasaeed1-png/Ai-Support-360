@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { openExternal } from '@/lib/safeUrl';
 import { sessionRoomUrl } from '@/lib/meetingRoom';
 import { friendlyErrorMessage } from '@/lib/friendlyError';
+import { bookableTimes, hasWindowOn } from '@/lib/bookableTimes';
 import {
   downloadLiveInterviewIcs, googleCalendarUrl, outlookCalendarUrl, type LiveInterviewEvent,
 } from '@/lib/liveInterviewCalendar';
@@ -99,44 +100,14 @@ export default function BookingModal({ open, onOpenChange, consultantName, consu
     });
   }, [selectedDate, consultantId]);
 
-  // Compute available time slots for selected date
-  const timeSlotsForDate = useMemo(() => {
-    if (!selectedDate) return [];
-
-    const dayOfWeek = selectedDate.getDay();
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
-
-    const matching = slots.filter(s => {
-      if (s.specific_date === dateStr) return true;
-      if ((s.is_recurring ?? true) && s.day_of_week === dayOfWeek && !s.specific_date) return true;
-      return false;
-    });
-
-    const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); };
-    const timeSet = new Set<string>();
-    const now = Date.now();
-    matching.forEach(s => {
-      for (let m = toMin(s.start_time); m + 60 <= toMin(s.end_time); m += 60) {
-        const start = new Date(selectedDate); start.setHours(Math.floor(m / 60), m % 60, 0, 0);
-        const st = start.getTime(), en = st + 60 * 60_000;
-        if (st <= now) continue;
-        if (booked.some(([bs, be]) => st < be && en > bs)) continue;
-        timeSet.add(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
-      }
-    });
-
-    return Array.from(timeSet).sort();
-  }, [selectedDate, slots, booked]);
+  // Free times of the selected date. The rule is shared with the Availability tab of the consultant profile (src/lib/bookableTimes.ts).
+  const timeSlotsForDate = useMemo(
+    () => (selectedDate ? bookableTimes(selectedDate, slots, booked, Date.now()) : []),
+    [selectedDate, slots, booked],
+  );
 
   // Check if a date has available slots
-  const dateHasSlots = (date: Date) => {
-    const dayOfWeek = date.getDay();
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return slots.some(s =>
-      (s.specific_date === dateStr) ||
-      ((s.is_recurring ?? true) && s.day_of_week === dayOfWeek && !s.specific_date)
-    );
-  };
+  const dateHasSlots = (date: Date) => hasWindowOn(date, slots);
 
   const reset = () => {
     setStep(0);
