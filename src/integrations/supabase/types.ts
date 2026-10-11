@@ -2521,6 +2521,33 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_counter_changes: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_next: number
+          old_next: number
+          reason: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_next: number
+          old_next: number
+          reason: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_next?: number
+          old_next?: number
+          reason?: string
+        }
+        Relationships: []
+      }
       invoice_disputes: {
         Row: {
           client_id: string
@@ -7338,6 +7365,7 @@ export type Database = {
         }
         Returns: string
       }
+      admin_get_invoice_counter: { Args: never; Returns: Json }
       admin_list_client_approvals: {
         Args: { p_limit?: number; p_status?: string }
         Returns: Json
@@ -7351,6 +7379,10 @@ export type Database = {
         Returns: undefined
       }
       admin_rls_overview: { Args: never; Returns: Json }
+      admin_set_invoice_counter: {
+        Args: { _next: number; _reason: string }
+        Returns: Json
+      }
       admin_set_payout_status: {
         Args: {
           _bank_reference?: string
