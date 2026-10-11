@@ -12,7 +12,7 @@ export function b64urlEncode(bytes: Uint8Array | ArrayBuffer): string {
   return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-export function b64urlDecode(text: string): Uint8Array {
+export function b64urlDecode(text: string): Uint8Array<ArrayBuffer> {
   const s = text.replace(/-/g, '+').replace(/_/g, '/');
   const bin = atob(s + '='.repeat((4 - (s.length % 4)) % 4));
   const out = new Uint8Array(bin.length);
@@ -20,7 +20,7 @@ export function b64urlDecode(text: string): Uint8Array {
   return out;
 }
 
-function concat(...parts: Uint8Array[]): Uint8Array {
+function concat(...parts: Uint8Array[]): Uint8Array<ArrayBuffer> {
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let at = 0;
   for (const p of parts) {
@@ -30,7 +30,7 @@ function concat(...parts: Uint8Array[]): Uint8Array {
   return out;
 }
 
-async function hmac(key: Uint8Array, data: Uint8Array): Promise<Uint8Array> {
+async function hmac(key: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
   const k = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   return new Uint8Array(await crypto.subtle.sign('HMAC', k, data));
 }
@@ -129,7 +129,7 @@ export type PushSubscriptionInput = { endpoint: string; p256dh: string; auth: st
 export type PushOutcome = { ok: boolean; gone: boolean; status: number; error?: string; retryAfter?: number };
 export type PushFetcher = (
   url: string,
-  init: { method: string; headers: Record<string, string>; body: Uint8Array; redirect: 'manual' },
+  init: { method: string; headers: Record<string, string>; body: Uint8Array<ArrayBuffer>; redirect: 'manual' },
 ) => Promise<{ status: number; headers: { get(name: string): string | null } }>;
 
 const defaultFetcher: PushFetcher = async (url, init) => {
