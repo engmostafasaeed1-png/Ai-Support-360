@@ -84,13 +84,15 @@ describe('buildPopupElement', () => {
 
   it('calls the handlers with the id of the consultant when a button is clicked', () => {
     const onView = vi.fn();
-    const onBook = vi.fn();
-    const popup = buildPopupElement(VIEW, { onView, onBook });
+    const onOpenRequest = vi.fn();
+    const popup = buildPopupElement(VIEW, { onView, onOpenRequest });
     buttonWith(popup, 'View profile').click();
     expect(onView.mock.calls).toEqual([['c-1']]);
-    expect(onBook.mock.calls).toHaveLength(0);
-    buttonWith(popup, 'Book session').click();
-    expect(onBook.mock.calls).toEqual([['c-1']]);
+    expect(onOpenRequest.mock.calls).toHaveLength(0);
+    buttonWith(popup, 'Open a request').click();
+    expect(onOpenRequest.mock.calls).toHaveLength(1);
+    expect(popup.querySelector('a')).toBeNull();
+    expect(Array.from(popup.querySelectorAll('button')).some(b => /book/i.test(b.textContent || ''))).toBe(false);
   });
 
   it('has buttons that do not submit a form and survive missing handlers', () => {
@@ -103,9 +105,9 @@ describe('buildPopupElement', () => {
   });
 
   it('uses the words it is given', () => {
-    const popup = buildPopupElement(VIEW, {}, { reviews: 'تقييمات', viewProfile: 'الملف', bookSession: 'احجز', noPlace: '-' });
+    const popup = buildPopupElement(VIEW, {}, { reviews: 'تقييمات', viewProfile: 'الملف', openRequest: 'افتح طلبًا', noPlace: '-' });
     expect(popup.textContent).toContain('(12 تقييمات)');
     expect(buttonWith(popup, 'الملف')).toBeTruthy();
-    expect(buttonWith(popup, 'احجز')).toBeTruthy();
+    expect(buttonWith(popup, 'افتح طلبًا')).toBeTruthy();
   });
 });

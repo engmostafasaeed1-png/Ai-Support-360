@@ -3,7 +3,7 @@
 // LinkedIn and Credly are "linked" (given by the consultant) or "checked" (confirmed by the platform team); nothing here claims more than that.
 
 import { STATE_META, availabilityState, type AvailabilityState } from './mapMarkers';
-import { linkState, normalizeCredlyUsername, normalizeLinkedinUrl, type LinkState } from './consultantLinks';
+import type { LinkState } from './consultantLinks';
 import { cityPoint, placeLabel } from './geo';
 
 export interface ConsultantLive {
@@ -30,8 +30,10 @@ export interface ConsultantLive {
   /** "Cairo, Egypt", or an empty text. */
   place: string;
   industries: string[];
-  credly_username?: string | null;
-  linkedin_url: string | null;
+  /** True when the platform team has checked the consultant's LinkedIn profile. The link itself is never sent to clients. */
+  linkedinVerified: boolean;
+  /** True when the platform team has checked the consultant's Credly profile. The username itself is never sent to clients. */
+  credlyVerified: boolean;
   linkedin_state: LinkState;
   credly_state: LinkState;
   languages: string[];
@@ -58,9 +60,7 @@ export interface DirectoryRow {
   country: string | null;
   latitude: number | null;
   longitude: number | null;
-  linkedin_url: string | null;
   linkedin_checked_at: string | null;
-  credly_username: string | null;
   credly_checked_at: string | null;
   credibility_credits?: number | null;
   ai_interview_badge?: string | null;
@@ -93,8 +93,8 @@ export function toConsultantLive(row: DirectoryRow, displayName: string | null |
   const name = displayName || 'Consultant';
   const status = availabilityState(row.availability_status);
   const where = consultantPoint(row);
-  const linkedin = normalizeLinkedinUrl(row.linkedin_url);
-  const credly = normalizeCredlyUsername(row.credly_username);
+  const linkedinVerified = !!row.linkedin_checked_at;
+  const credlyVerified = !!row.credly_checked_at;
   const rating = Number(row.rating) || 0;
   const responseTime = row.response_time_minutes || 0;
 
@@ -121,10 +121,10 @@ export function toConsultantLive(row: DirectoryRow, displayName: string | null |
     country: row.country ?? '',
     place: placeLabel(row.city, row.country),
     industries: row.industries || [],
-    credly_username: credly,
-    linkedin_url: linkedin,
-    linkedin_state: linkState(linkedin, row.linkedin_checked_at),
-    credly_state: linkState(credly, row.credly_checked_at),
+    linkedinVerified,
+    credlyVerified,
+    linkedin_state: linkedinVerified ? 'checked' : 'none',
+    credly_state: credlyVerified ? 'checked' : 'none',
     languages: row.languages && row.languages.length > 0 ? row.languages : ['en'],
     response_time_minutes: responseTime,
     verification_status: row.verification_status || 'pending',

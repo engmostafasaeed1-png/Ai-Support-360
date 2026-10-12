@@ -4,7 +4,6 @@ import 'leaflet/dist/leaflet.css';
 import { useTranslation } from 'react-i18next';
 import { OSM_ATTRIBUTION, OSM_TILES, spreadPins, type AvailabilityState } from '@/lib/mapMarkers';
 import { buildMarkerElement, buildPopupElement, type PinView } from '@/lib/mapDom';
-import type { LinkState } from '@/lib/consultantLinks';
 
 export interface MapConsultant {
   id: string;
@@ -19,8 +18,8 @@ export interface MapConsultant {
   lng: number | null;
   place: string;
   status: AvailabilityState;
-  linkedin_state: LinkState;
-  credly_state: LinkState;
+  linkedinVerified: boolean;
+  credlyVerified: boolean;
   hours?: string[];
 }
 
@@ -29,7 +28,8 @@ interface ConsultantMapProps {
   selectedId?: string | null;
   onSelectConsultant?: (id: string) => void;
   onViewProfile?: (id: string) => void;
-  onBook?: (id: string) => void;
+  /** Opens the page for a new request (sessions are arranged inside a request). */
+  onOpenRequest?: () => void;
 }
 
 const toView = (c: MapConsultant): PinView => ({
@@ -42,13 +42,13 @@ const toView = (c: MapConsultant): PinView => ({
   reviews: c.reviews,
   rate: c.rate,
   status: c.status,
-  linkedinState: c.linkedin_state,
-  credlyState: c.credly_state,
+  linkedinState: c.linkedinVerified ? 'checked' : 'none',
+  credlyState: c.credlyVerified ? 'checked' : 'none',
   hours: c.hours,
 });
 
 /** The consultants on a map: one pin for every consultant who chose a city, coloured by Online, Busy or Offline. The pins show the area of the city, never an address. */
-export default function ConsultantMap({ consultants, selectedId, onSelectConsultant, onViewProfile, onBook }: ConsultantMapProps) {
+export default function ConsultantMap({ consultants, selectedId, onSelectConsultant, onViewProfile, onOpenRequest }: ConsultantMapProps) {
   const { t } = useTranslation();
   const holder = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -57,13 +57,13 @@ export default function ConsultantMap({ consultants, selectedId, onSelectConsult
   const lastSelected = useRef<string | null>(null);
 
   // The newest functions of the page are kept here, so that a new function in the page does not rebuild the pins (that would close an open popup).
-  const handlers = useRef({ onSelectConsultant, onViewProfile, onBook });
-  handlers.current = { onSelectConsultant, onViewProfile, onBook };
+  const handlers = useRef({ onSelectConsultant, onViewProfile, onOpenRequest });
+  handlers.current = { onSelectConsultant, onViewProfile, onOpenRequest };
 
   const labels = {
     reviews: t('consultants_page.reviews', 'reviews'),
     viewProfile: t('consultants_page.view_profile', 'View profile'),
-    bookSession: t('consultants_page.book_session', 'Book session'),
+    openRequest: 'Open a request',
     noPlace: 'Location not set',
   };
   const labelsKey = JSON.stringify(labels);
@@ -111,7 +111,7 @@ export default function ConsultantMap({ consultants, selectedId, onSelectConsult
         }),
         title: c.name,
       }).bindPopup(
-        buildPopupElement(view, { onView: id => handlers.current.onViewProfile?.(id), onBook: id => handlers.current.onBook?.(id) }, labels),
+        buildPopupElement(view, { onView: id => handlers.current.onViewProfile?.(id), onOpenRequest: () => handlers.current.onOpenRequest?.() }, labels),
         { maxWidth: 280, minWidth: 240 },
       );
       marker.on('click', () => handlers.current.onSelectConsultant?.(c.id));

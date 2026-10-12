@@ -22,20 +22,21 @@ export interface PinView {
 export interface PopupLabels {
   reviews: string;
   viewProfile: string;
-  bookSession: string;
+  openRequest: string;
   noPlace: string;
 }
 
 export const DEFAULT_LABELS: PopupLabels = {
   reviews: 'reviews',
   viewProfile: 'View profile',
-  bookSession: 'Book session',
+  openRequest: 'Open a request',
   noPlace: 'Location not set',
 };
 
 export interface PopupHandlers {
   onView?: (id: string) => void;
-  onBook?: (id: string) => void;
+  /** Sessions are arranged inside a request: this opens the page for a new request. */
+  onOpenRequest?: () => void;
 }
 
 const STATE_TEXT: Record<AvailabilityState, string> = { available: '#16a34a', busy: '#d97706', offline: '#6b7280' };
@@ -149,10 +150,10 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
   const open = make('button', { flex: '1', fontSize: '10px', fontWeight: '500', padding: '6px 12px', borderRadius: '8px', backgroundColor: 'white', border: '1px solid #e5e7eb', cursor: 'pointer' }, labels.viewProfile);
   open.type = 'button';
   open.addEventListener('click', () => handlers.onView?.(view.id));
-  const book = make('button', { flex: '1', fontSize: '10px', fontWeight: '500', padding: '6px 12px', borderRadius: '8px', backgroundColor: '#1B2559', color: 'white', border: 'none', cursor: 'pointer' }, labels.bookSession);
-  book.type = 'button';
-  book.addEventListener('click', () => handlers.onBook?.(view.id));
-  actions.append(book, open);
+  const request = make('button', { flex: '1', fontSize: '10px', fontWeight: '500', padding: '6px 12px', borderRadius: '8px', backgroundColor: '#1B2559', color: 'white', border: 'none', cursor: 'pointer' }, labels.openRequest);
+  request.type = 'button';
+  request.addEventListener('click', () => handlers.onOpenRequest?.());
+  actions.append(request, open);
   root.append(actions);
 
   return root;

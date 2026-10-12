@@ -70,8 +70,8 @@ const person = (id: string, patch: Partial<MapConsultant> = {}): MapConsultant =
   lng: 31.24,
   place: 'Cairo, Egypt',
   status: 'available',
-  linkedin_state: 'none',
-  credly_state: 'none',
+  linkedinVerified: false,
+  credlyVerified: false,
   ...patch,
 });
 
@@ -138,13 +138,14 @@ describe('ConsultantMap', () => {
 
   it('wires the two buttons of the popup', () => {
     const onViewProfile = vi.fn();
-    const onBook = vi.fn();
-    render(<ConsultantMap consultants={[person('a')]} onViewProfile={onViewProfile} onBook={onBook} />);
+    const onOpenRequest = vi.fn();
+    render(<ConsultantMap consultants={[person('a')]} onViewProfile={onViewProfile} onOpenRequest={onOpenRequest} />);
     const popup = pinsDrawn()[0].popup as HTMLElement;
     buttonWith(popup, 'View profile').click();
-    buttonWith(popup, 'Book session').click();
+    buttonWith(popup, 'Open a request').click();
     expect(onViewProfile.mock.calls).toEqual([['a']]);
-    expect(onBook.mock.calls).toEqual([['a']]);
+    expect(onOpenRequest.mock.calls).toHaveLength(1);
+    expect(Array.from(popup.querySelectorAll('button')).some(b => /book/i.test(b.textContent || ''))).toBe(false);
   });
 
   it('says so when nobody has chosen a city', () => {

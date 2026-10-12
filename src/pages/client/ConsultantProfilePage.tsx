@@ -11,7 +11,7 @@ import { mockRecommendedConsultants } from '@/data/clientMockData';
 import { mockConsultantDetailData } from '@/data/consultantDetailMockData';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import {
-  Star, MapPin, Clock, Globe, Shield, Award, Video,
+  Star, MapPin, Clock, Globe, Shield, Award, Video, Lock, Linkedin, Github,
   MessageSquare, Monitor, ChevronLeft, CalendarDays, BadgeCheck, ExternalLink, Brain, EyeOff, User,
 } from 'lucide-react';
 import InterviewTranscript from '@/components/consultant/InterviewTranscript';
@@ -20,13 +20,13 @@ import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import BookingModal from '@/components/client/BookingModal';
 import WriteReviewDialog from '@/components/client/WriteReviewDialog';
 import VerificationBadge, { type VerificationStatus } from '@/components/consultant/VerificationBadge';
 import LinkStatus from '@/components/consultant/LinkStatus';
 import ConsultantLocationMap from '@/components/client/ConsultantLocationMap';
 import { STATE_META, availabilityState } from '@/lib/mapMarkers';
-import { credlyProfileUrl, linkState, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
+import { credlyProfileUrl, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
+import { safeHttpUrl } from '@/lib/consultantReview';
 import { placeLabel } from '@/lib/geo';
 import { consultantPoint, formatWeeklyHours, type WeeklySlot } from '@/lib/consultantDirectory';
 import WeeklyAvailability from '@/components/client/WeeklyAvailability';
@@ -39,7 +39,6 @@ export default function ConsultantProfilePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [bookingOpen, setBookingOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [credlyBadges, setCredlyBadges] = useState<any[]>([]);
   const [credlyLoading, setCredlyLoading] = useState(false);
@@ -87,7 +86,7 @@ export default function ConsultantProfilePage() {
       if (!id) return null;
       const { data: c } = await supabase
         .from('consultants')
-        .select('id, user_id, bio, hourly_rate, currency, languages, industries, response_time_minutes, credly_username, availability_status, rating, total_reviews, verification_status, ai_skills_score, city, country, latitude, longitude, linkedin_url, linkedin_checked_at, credly_checked_at')
+        .select('id, user_id, bio, hourly_rate, currency, languages, industries, response_time_minutes, availability_status, rating, total_reviews, verification_status, ai_skills_score, city, country, latitude, longitude, linkedin_checked_at, credly_checked_at')
         .eq('id', id)
         .maybeSingle();
       if (!c) return null;
@@ -126,10 +125,10 @@ export default function ConsultantProfilePage() {
           city: placeLabel(c.city, c.country),
           lat: consultantPoint(c)?.lat ?? null,
           lng: consultantPoint(c)?.lng ?? null,
-          credly_username: normalizeCredlyUsername(c.credly_username),
-          linkedin_url: normalizeLinkedinUrl(c.linkedin_url),
-          linkedin_state: linkState(normalizeLinkedinUrl(c.linkedin_url), c.linkedin_checked_at),
-          credly_state: linkState(normalizeCredlyUsername(c.credly_username), c.credly_checked_at),
+          linkedinVerified: !!c.linkedin_checked_at,
+          credlyVerified: !!c.credly_checked_at,
+          linkedin_state: c.linkedin_checked_at ? 'checked' : 'none',
+          credly_state: c.credly_checked_at ? 'checked' : 'none',
         },
         detail: {
           bio: c.bio || 'No bio provided yet.',
@@ -159,6 +158,30 @@ export default function ConsultantProfilePage() {
 
   const consultant: any = isGuest ? mockRecommendedConsultants.find(c => c.id === id) : liveProfile?.consultant;
   const detail: any = isGuest ? mockConsultantDetailData : (liveProfile?.detail || mockConsultantDetailData);
+
+  // The contact links: the view returns a row only when this consultant is assigned to one of this client's requests (administrators see every row).
+  const { data: contactLinks } = useQuery({
+    queryKey: ['consultant-contact-links', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await (supabase as any)
+        .from('consultant_contact_links')
+        .select('linkedin_url, github_url, personal_website, profile_video_url, credly_username')
+        .eq('consultant_id', id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as { linkedin_url: string | null; github_url: string | null; personal_website: string | null; profile_video_url: string | null; credly_username: string | null } | null;
+    },
+    enabled: !isGuest && !!id,
+  });
+  const sharedCredly = normalizeCredlyUsername(contactLinks?.credly_username);
+  const sharedLinks = contactLinks ? [
+    { key: 'linkedin', label: 'LinkedIn', icon: Linkedin, href: normalizeLinkedinUrl(contactLinks.linkedin_url) },
+    { key: 'credly', label: 'Credly profile', icon: Award, href: credlyProfileUrl(sharedCredly) },
+    { key: 'github', label: 'GitHub', icon: Github, href: safeHttpUrl(contactLinks.github_url) },
+    { key: 'website', label: 'Website', icon: Globe, href: safeHttpUrl(contactLinks.personal_website) },
+    { key: 'video', label: 'Video', icon: Video, href: safeHttpUrl(contactLinks.profile_video_url) },
+  ].filter((l): l is { key: string; label: string; icon: typeof Linkedin; href: string } => !!l.href) : [];
 
   // Try to fetch real verification_status; fall back to mock badge
   const { data: liveConsultant } = useQuery({
@@ -260,13 +283,13 @@ export default function ConsultantProfilePage() {
 
   // Fetch Credly badges if consultant has a credly_username
   useEffect(() => {
-    if (!consultant?.credly_username) return;
+    if (!sharedCredly) return;
     const fetchCredly = async () => {
       setCredlyLoading(true);
       try {
         const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
         const res = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/credly-badges?username=${encodeURIComponent(consultant.credly_username!)}`,
+          `https://${projectId}.supabase.co/functions/v1/credly-badges?username=${encodeURIComponent(sharedCredly)}`,
           { headers: { 'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
         );
         if (res.ok) {
@@ -280,7 +303,7 @@ export default function ConsultantProfilePage() {
       }
     };
     fetchCredly();
-  }, [consultant?.credly_username]);
+  }, [sharedCredly]);
 
   if (!isGuest && profileLoading) {
     return (
@@ -361,16 +384,8 @@ export default function ConsultantProfilePage() {
                       <span className={`h-2 w-2 rounded-full ${statusColor}`} />
                       {STATE_META[status].label}
                     </span>
-                    {consultant.linkedin_url && (
-                      <a href={consultant.linkedin_url} target="_blank" rel="noopener noreferrer" aria-label="Open the LinkedIn profile in a new tab">
-                        <LinkStatus state={consultant.linkedin_state} label="LinkedIn" />
-                      </a>
-                    )}
-                    {consultant.credly_username && credlyProfileUrl(consultant.credly_username) && (
-                      <a href={credlyProfileUrl(consultant.credly_username) as string} target="_blank" rel="noopener noreferrer" aria-label="Open the Credly profile in a new tab">
-                        <LinkStatus state={consultant.credly_state} label="Credly" />
-                      </a>
-                    )}
+                    {consultant.linkedinVerified && <LinkStatus state={consultant.linkedin_state} label="LinkedIn" />}
+                    {consultant.credlyVerified && <LinkStatus state={consultant.credly_state} label="Credly" />}
                     {consultant.badges.map((badge: any) => (
                       <Badge key={badge} variant="secondary" className="text-xs">
                         {t(`consultants.${badge}`)}
@@ -408,8 +423,9 @@ export default function ConsultantProfilePage() {
                       <span className="text-xs text-muted-foreground">/hr</span>
                     </div>
                   </div>
-                  <Button className="gradient-primary border-0 w-full md:w-auto" size="lg" onClick={() => setBookingOpen(true)}>
-                    <Video className="w-4 h-4 me-1" /> {t('consultant_profile.book_session')}
+                  <p className="max-w-xs text-end text-xs text-muted-foreground">Sessions are arranged inside a request, so everything stays protected in the portal.</p>
+                  <Button className="gradient-primary border-0 w-full md:w-auto" size="lg" onClick={() => navigate('/client/new-request')}>
+                    Open a request
                   </Button>
                 </div>
               </div>
@@ -429,6 +445,33 @@ export default function ConsultantProfilePage() {
 
         {/* About Tab */}
         <TabsContent value="about" className="space-y-6">
+          {sharedLinks.length > 0 ? (
+            <Card className="rounded-2xl border-border/50" data-testid="contact-links-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold">Contact links</CardTitle>
+                <p className="text-xs text-muted-foreground">Shared because this consultant is assigned to your request.</p>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-4 text-sm">
+                {sharedLinks.map(({ key, label, icon: Icon, href }) => (
+                  <a key={key} href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-accent hover:underline">
+                    <Icon className="h-3.5 w-3.5" aria-hidden="true" /> {label} <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                  </a>
+                ))}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="rounded-2xl border-border/50 opacity-70" data-testid="contact-links-locked">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold text-muted-foreground">Contact links</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Lock className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  Contact links are shown once this consultant is assigned to one of your requests.
+                </p>
+              </CardContent>
+            </Card>
+          )}
           <Card className="rounded-2xl border-border/50">
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-semibold">{t('consultant_profile.bio')}</CardTitle>
@@ -624,11 +667,9 @@ export default function ConsultantProfilePage() {
                 {selectedDate ? (
                   <div className="space-y-2">
                     {slotList.map((slot, i) => (
-                      <button
+                      <div
                         key={i}
-                        type="button"
-                        onClick={() => setBookingOpen(true)}
-                        className="w-full flex items-center justify-between p-3 rounded-xl border border-border/50 hover:border-accent/50 hover:bg-accent/5 transition-colors text-start"
+                        className="w-full flex items-center justify-between p-3 rounded-xl border border-border/50 text-start"
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-2 h-2 rounded-full bg-green-500" />
@@ -640,7 +681,7 @@ export default function ConsultantProfilePage() {
                           {slot.type === 'screen_share' && <Monitor className="w-3.5 h-3.5" />}
                           <span>{slot.duration} min</span>
                         </div>
-                      </button>
+                      </div>
                     ))}
                     {!isGuest && bookedLoading && (
                       <div className="space-y-2" role="status" aria-label="Loading the free times">
@@ -653,8 +694,9 @@ export default function ConsultantProfilePage() {
                         No free times on this day. Choose another day.
                       </p>
                     )}
-                    <Button className="w-full gradient-primary border-0 mt-4" onClick={() => setBookingOpen(true)}>
-                      {t('consultant_profile.book_session')}
+                    <p className="mt-4 text-xs text-muted-foreground">Sessions are arranged inside a request, so everything stays protected in the portal.</p>
+                    <Button className="w-full gradient-primary border-0 mt-2" onClick={() => navigate('/client/new-request')}>
+                      Open a request
                     </Button>
                   </div>
                 ) : (
@@ -882,15 +924,6 @@ export default function ConsultantProfilePage() {
         </h2>
         <InterviewTranscript consultantId={consultant.id} viewMode="client" />
       </div>
-
-      <BookingModal
-        open={bookingOpen}
-        onOpenChange={setBookingOpen}
-        consultantName={consultant.name}
-        consultantId={consultant.id}
-        rate={consultant.rate}
-        availableSlots={detail.availableSlots}
-      />
 
       <WriteReviewDialog
         open={reviewOpen}

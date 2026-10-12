@@ -15,9 +15,7 @@ const ROW: DirectoryRow = {
   country: 'Egypt',
   latitude: 30.04,
   longitude: 31.24,
-  linkedin_url: 'https://www.linkedin.com/in/jane-doe',
   linkedin_checked_at: '2026-10-04T10:00:00Z',
-  credly_username: 'jane-doe.1a2b3c4d',
   credly_checked_at: null,
   credibility_credits: 75,
   ai_interview_badge: 'Gold',
@@ -93,27 +91,26 @@ describe('toConsultantLive: place', () => {
 });
 
 describe('toConsultantLive: LinkedIn and Credly', () => {
-  it('says "checked" for a link that the platform team confirmed and "linked" for one that it did not', () => {
+  it('derives "verified" only from the checks of the platform team', () => {
     const c = live();
+    expect(c.linkedinVerified).toBe(true);
+    expect(c.credlyVerified).toBe(false);
     expect(c.linkedin_state).toBe('checked');
-    expect(c.credly_state).toBe('linked');
-    expect(c.linkedin_url).toBe('https://www.linkedin.com/in/jane-doe');
-    expect(c.credly_username).toBe('jane-doe.1a2b3c4d');
+    expect(c.credly_state).toBe('none');
+    expect(live({ credly_checked_at: '2026-10-05T10:00:00Z' }).credlyVerified).toBe(true);
   });
 
-  it('shows no link when there is none', () => {
-    const c = live({ linkedin_url: null, credly_username: null, linkedin_checked_at: null });
-    expect(c.linkedin_state).toBe('none');
-    expect(c.credly_state).toBe('none');
-    expect(c.linkedin_url).toBeNull();
+  it('carries no LinkedIn address and no Credly username', () => {
+    const c = live() as unknown as Record<string, unknown>;
+    expect('linkedin_url' in c).toBe(false);
+    expect('credly_username' in c).toBe(false);
+    expect(JSON.stringify(c)).not.toMatch(/linkedin\.com|credly\.com/);
   });
 
-  it('shows no link for a stored value that is not a profile address', () => {
-    const c = live({ linkedin_url: 'https://evil.example.com/in/jane', credly_username: 'jane doe' });
+  it('shows nothing when nothing was checked', () => {
+    const c = live({ linkedin_checked_at: null });
+    expect(c.linkedinVerified).toBe(false);
     expect(c.linkedin_state).toBe('none');
-    expect(c.linkedin_url).toBeNull();
-    expect(c.credly_state).toBe('none');
-    expect(c.credly_username).toBeNull();
   });
 
   it('does not call a consultant "Credly verified" any more', () => {
