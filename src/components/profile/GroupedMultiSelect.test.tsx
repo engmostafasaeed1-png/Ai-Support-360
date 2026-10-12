@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import GroupedMultiSelect from './GroupedMultiSelect';
@@ -10,7 +11,11 @@ const GROUPS: TaxonomyGroup[] = [
 
 function setup(initial: string[] = [], max?: number) {
   const onChange = vi.fn();
-  render(<GroupedMultiSelect groups={GROUPS} value={initial} onChange={onChange} max={max} />);
+  function Wrapper() {
+    const [value, setValue] = useState(initial);
+    return <GroupedMultiSelect groups={GROUPS} value={value} onChange={(next) => { onChange(next); setValue(next); }} max={max} />;
+  }
+  render(<Wrapper />);
   return onChange;
 }
 
