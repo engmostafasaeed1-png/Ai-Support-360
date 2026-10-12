@@ -142,8 +142,6 @@ export default function SapExpertiseCard() {
       seniority_level: seniority || null,
       total_sap_years: y,
       sap_technologies: tech,
-      localization_countries: loc,
-      project_types: types,
     }).eq('id', userId);
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -252,17 +250,6 @@ export default function SapExpertiseCard() {
         <div className="space-y-2">
           <Label>Technologies</Label>
           <Chips options={TECHNOLOGIES} value={tech} onChange={setTech} otherPlaceholder="Other technologies (comma-separated)" />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Localization experience (country versions)</Label>
-          <p className="text-xs text-muted-foreground">Countries whose SAP localization you configured — tax, e-invoicing, payroll, legal reporting.</p>
-          <Chips options={LOCALIZATIONS} value={loc} onChange={setLoc} otherPlaceholder="Other countries" />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Project types</Label>
-          <Chips options={PROJECT_TYPES} value={types} onChange={setTypes} otherPlaceholder="Other project types" />
         </div>
       </CardContent>
     </Card>
