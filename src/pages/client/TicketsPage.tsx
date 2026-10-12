@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useClientBidSummary, useBiddingClock } from '@/hooks/useClientBids';
+import { biddingIsOpen } from '@/lib/clientBidding';
+import { formatRemaining } from '@/lib/bidding';
 import { useClientTickets } from '@/hooks/useClientTickets';
 import {
   Search, TicketPlus, Ticket, ChevronDown, ChevronUp,
@@ -52,6 +55,8 @@ export default function TicketsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
   const { data: tickets, isLoading } = useClientTickets();
+  const { data: bidCounts } = useClientBidSummary((tickets || []).map(t => t.id));
+  const bidNow = useBiddingClock();
   const navigate = useNavigate();
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -159,9 +164,9 @@ export default function TicketsPage() {
                             {ticket.preferred_language && (
                               <Badge variant="outline" className="text-[10px] gap-0.5"><Globe className="w-2.5 h-2.5" />{ticket.preferred_language === 'ar' ? 'Arabic' : 'English'}</Badge>
                             )}
-                            {ticket.open_for_bids && (
-                              <Badge variant="secondary" className="text-[10px] bg-accent/10 text-accent gap-0.5"><Gavel className="w-2.5 h-2.5" /> Bids Open</Badge>
-                            )}
+                            {biddingIsOpen(ticket, bidNow) ? (
+                              <Badge variant="secondary" className="text-[10px] bg-accent/10 text-accent gap-1"><Gavel className="w-2.5 h-2.5" /> Bids Open · {bidCounts?.get(ticket.id) || 0}{ticket.bid_deadline && <><Clock className="w-2.5 h-2.5" />closes in {formatRemaining(Date.parse(ticket.bid_deadline) - bidNow)}</>}</Badge>
+                            ) : !ticket.consultant_id && (bidCounts?.get(ticket.id) || 0) > 0 && (ticket.bidding_closed_at || ticket.bidding_closed_reason || ticket.bid_deadline) ? <Badge variant="secondary" className="text-[10px] bg-warning/10 text-warning">Bids waiting</Badge> : null}
                             {ticket.ai_suggested_category && (
                               <Badge variant="outline" className="text-[10px] gap-0.5"><Brain className="w-2.5 h-2.5" /> {ticket.ai_suggested_category}</Badge>
                             )}

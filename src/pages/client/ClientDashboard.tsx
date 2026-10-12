@@ -17,6 +17,7 @@ import { PullToRefresh } from '@/components/PullToRefresh';
 import OnboardingProgressCard from '@/components/onboarding/OnboardingProgressCard';
 import WelcomeBanner from '@/components/onboarding/WelcomeBanner';
 import EmailVerificationBanner from '@/components/onboarding/EmailVerificationBanner';
+import { useClientBidSummary } from '@/hooks/useClientBids';
 import { useClientTickets } from '@/hooks/useClientTickets';
 import { useClientSessions } from '@/hooks/useClientSessions';
 import { useClientPayments } from '@/hooks/useClientPayments';
@@ -74,6 +75,7 @@ export default function ClientDashboard() {
   const { isGuest } = useGuestMode();
   const { profile: userProfile } = useUserProfile();
   const { data: tickets = [], isLoading: ticketsLoading } = useClientTickets();
+  const { data: bidCounts } = useClientBidSummary(tickets.map((t: any) => t.id));
   const { data: sessions = [], isLoading: sessionsLoading } = useClientSessions();
   const { data: payments = [], isLoading: paymentsLoading } = useClientPayments();
   const { data: activities = [] } = useActivityFeed();
@@ -293,7 +295,7 @@ export default function ClientDashboard() {
             ) : (
               <div className="stagger-fade space-y-2">
                 {tickets.slice(0, 5).map((ticket: any) => (
-                  <Link key={ticket.id} to={`/client/tickets/${ticket.id}`} className="block">
+                  <Link key={ticket.id} to={`/client/tickets/${ticket.id}${bidCounts?.get(ticket.id) ? '?tab=bids' : ''}`} className="block">
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 p-3 rounded-xl bg-muted/20 border border-border/30 card-interactive group sm:flex-nowrap">
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{
                         background: ticket.urgency === 'critical' ? 'hsl(0, 84%, 60%, 0.1)' :
@@ -308,6 +310,7 @@ export default function ClientDashboard() {
                         <h4 className="text-sm font-medium text-foreground truncate group-hover:text-accent transition-colors">{ticket.title}</h4>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                           <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-border/50">{ticket.sap_module}</Badge>
+                          {(bidCounts?.get(ticket.id) || 0) > 0 && <span className="text-warning">{bidCounts?.get(ticket.id)} bids to review</span>}
                           {ticket.consultant && (
                             <span className="truncate">→ {ticket.consultant}</span>
                           )}
