@@ -36,14 +36,6 @@ const TECHNOLOGIES = [
   'Workflow', 'Adobe Forms', 'SmartForms', 'Solution Manager', 'Cloud ALM', 'GRC', 'Ariba', 'SuccessFactors', 'Concur', 'Signavio',
 ];
 
-const LOCALIZATIONS = [
-  'Saudi Arabia', 'United Arab Emirates', 'Egypt', 'Qatar', 'Kuwait', 'Bahrain', 'Oman', 'Jordan', 'Morocco', 'Algeria', 'Tunisia',
-  'Turkey', 'Pakistan', 'India', 'Germany', 'United Kingdom', 'France', 'Italy', 'Spain', 'Netherlands', 'United States', 'Canada',
-  'Brazil', 'Mexico', 'South Africa', 'Nigeria', 'Kenya', 'Singapore', 'Malaysia', 'Indonesia', 'China', 'Japan', 'Australia',
-];
-
-const PROJECT_TYPES = ['Greenfield implementation', 'Brownfield conversion', 'Selective data transition', 'Rollout', 'Upgrade', 'AMS / support', 'Optimization'];
-
 type Skill = { id: string; sap_module: string; proficiency_level: number | null; years_experience: number | null };
 
 function Chips({ options, value, onChange, otherPlaceholder = 'Add another…' }: { options: readonly string[]; value: string[]; onChange: (v: string[]) => void; otherPlaceholder?: string }) {
@@ -96,8 +88,6 @@ export default function SapExpertiseCard() {
   const [seniority, setSeniority] = useState<string>('');
   const [years, setYears] = useState<string>('');
   const [tech, setTech] = useState<string[]>([]);
-  const [loc, setLoc] = useState<string[]>([]);
-  const [types, setTypes] = useState<string[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [picked, setPicked] = useState<string[]>([]);
   const [moduleQuery, setModuleQuery] = useState('');
@@ -119,7 +109,7 @@ export default function SapExpertiseCard() {
       setUserId(uid);
       const { data } = await supabase
         .from('consultants')
-        .select('sap_role, sap_roles, seniority_level, total_sap_years, sap_technologies, localization_countries, project_types')
+        .select('sap_role, sap_roles, seniority_level, total_sap_years, sap_technologies')
         .eq('id', uid)
         .maybeSingle();
       if (data) {
@@ -129,8 +119,6 @@ export default function SapExpertiseCard() {
         setSeniority(data.seniority_level ?? '');
         setYears(data.total_sap_years != null ? String(data.total_sap_years) : '');
         setTech(data.sap_technologies ?? []);
-        setLoc(data.localization_countries ?? []);
-        setTypes(data.project_types ?? []);
       }
       await loadSkills(uid);
       setLoading(false);
@@ -154,8 +142,6 @@ export default function SapExpertiseCard() {
       seniority_level: seniority || null,
       total_sap_years: y,
       sap_technologies: tech,
-      localization_countries: loc,
-      project_types: types,
     }).eq('id', userId);
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -264,17 +250,6 @@ export default function SapExpertiseCard() {
         <div className="space-y-2">
           <Label>Technologies</Label>
           <Chips options={TECHNOLOGIES} value={tech} onChange={setTech} otherPlaceholder="Other technologies (comma-separated)" />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Localization experience (country versions)</Label>
-          <p className="text-xs text-muted-foreground">Countries whose SAP localization you configured — tax, e-invoicing, payroll, legal reporting.</p>
-          <Chips options={LOCALIZATIONS} value={loc} onChange={setLoc} otherPlaceholder="Other countries" />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Project types</Label>
-          <Chips options={PROJECT_TYPES} value={types} onChange={setTypes} otherPlaceholder="Other project types" />
         </div>
       </CardContent>
     </Card>

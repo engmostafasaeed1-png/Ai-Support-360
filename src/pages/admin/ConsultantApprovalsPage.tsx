@@ -53,6 +53,8 @@ export default function ConsultantApprovalsPage() {
         .select(`
           id, user_id, bio, hourly_rate, currency, languages, industries, ai_skills_score, created_at, verification_status,
           city, country, linkedin_checked_at, credly_checked_at,
+          customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types,
+          deployment_experience, project_scale, work_modes, onsite_countries, working_week, language_levels,
           consultant_skills (sap_module, proficiency_level),
           certifications (id, name, issuer, issue_date, expiry_date, document_url, verified)
         `)
@@ -106,6 +108,18 @@ export default function ConsultantApprovalsPage() {
         credly_checked_at: c.credly_checked_at,
         github_url: linksById.get(c.id)?.github_url ?? null,
         personal_website: linksById.get(c.id)?.personal_website ?? null,
+        industries: c.industries || [],
+        customer_segments: c.customer_segments || [],
+        vertical_solutions: c.vertical_solutions || [],
+        localization_countries: c.localization_countries || [],
+        localization_solutions: c.localization_solutions || [],
+        project_types: c.project_types || [],
+        deployment_experience: c.deployment_experience || [],
+        project_scale: c.project_scale || null,
+        work_modes: c.work_modes || [],
+        onsite_countries: c.onsite_countries || [],
+        working_week: c.working_week || null,
+        language_levels: c.language_levels || null,
       }));
     },
     enabled: !isGuest,
@@ -318,6 +332,38 @@ export default function ConsultantApprovalsPage() {
                           ))}
                         </div>
                       )}
+
+                      {(() => {
+                        const groups: [string, string[]][] = [
+                          ['Industries', c.industries],
+                          ['Customer segments', c.customer_segments],
+                          ['Vertical solutions', c.vertical_solutions],
+                          ['Localization countries', c.localization_countries],
+                          ['Localization solutions', c.localization_solutions],
+                          ['Project types', c.project_types],
+                          ['Deployment', c.deployment_experience],
+                          ['Project scale', c.project_scale ? [c.project_scale] : []],
+                          ['Work modes', c.work_modes],
+                          ['Working week', c.working_week ? [c.working_week] : []],
+                          ['On-site countries', c.onsite_countries],
+                          ['Language levels', c.language_levels ? Object.entries(c.language_levels).map(([l, lvl]) => `${l}: ${lvl}`) : []],
+                        ];
+                        const nonEmpty = groups.filter(([, v]) => v.length > 0);
+                        if (nonEmpty.length === 0) return null;
+                        return (
+                          <div className="mb-4">
+                            <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Experience</h4>
+                            <div className="space-y-2">
+                              {nonEmpty.map(([label, values]) => (
+                                <div key={label} className="flex flex-wrap items-center gap-1.5">
+                                  <span className="text-xs text-muted-foreground">{label}:</span>
+                                  {values.map((v) => <Badge key={v} variant="secondary" className="text-[10px]">{v}</Badge>)}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-1">
