@@ -109,7 +109,7 @@ export default function SapExpertiseCard() {
       setUserId(uid);
       const { data } = await supabase
         .from('consultants')
-        .select('sap_role, sap_roles, seniority_level, total_sap_years, sap_technologies, localization_countries, project_types')
+        .select('sap_role, sap_roles, seniority_level, total_sap_years, sap_technologies')
         .eq('id', uid)
         .maybeSingle();
       if (data) {
@@ -119,8 +119,6 @@ export default function SapExpertiseCard() {
         setSeniority(data.seniority_level ?? '');
         setYears(data.total_sap_years != null ? String(data.total_sap_years) : '');
         setTech(data.sap_technologies ?? []);
-        setLoc(data.localization_countries ?? []);
-        setTypes(data.project_types ?? []);
       }
       await loadSkills(uid);
       setLoading(false);
