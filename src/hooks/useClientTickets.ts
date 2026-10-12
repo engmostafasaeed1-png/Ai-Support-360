@@ -5,6 +5,16 @@ import { useGuestMode } from '@/contexts/GuestModeContext';
 import { useTenant } from '@/contexts/TenantContext';
 import { mockClientTickets } from '@/data/clientMockData';
 
+interface ClientTicket {
+  id: string; title: string; sap_module: string; urgency: string; status: string;
+  created_at: string; updated_at: string | null; description: string;
+  preferred_session_type: string | null; preferred_language: string | null;
+  consultant_id: string | null; consultant?: string; ai_suggested_category: string | null;
+  ai_suggested_priority: string | null; sla_deadline: string | null; open_for_bids: boolean;
+  bid_deadline: string | null; bidding_closed_at: string | null; bidding_closed_reason: string | null;
+  client_id: string; is_own: boolean;
+}
+
 export function useClientTickets() {
   const { isGuest } = useGuestMode();
   const { tenant } = useTenant();
@@ -23,7 +33,7 @@ export function useClientTickets() {
 
   return useQuery({
     queryKey: ['client-tickets', tenant?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<ClientTicket[]> => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
       let query = (supabase as any)
@@ -40,7 +50,7 @@ export function useClientTickets() {
       if (error) throw error;
 
       // Resolve consultant names
-      const consultantIds = [...new Set((data || []).map(t => t.consultant_id).filter(Boolean))];
+      const consultantIds = [...new Set((data || []).map((t: any) => t.consultant_id).filter(Boolean))];
       const consultantMap: Record<string, string> = {};
       if (consultantIds.length > 0) {
         const { data: consultants } = await supabase
