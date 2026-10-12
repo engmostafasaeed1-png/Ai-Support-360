@@ -48,7 +48,6 @@ export interface BidRow {
   status: string;
   created_at: string;
   rejection_reason?: string | null;
-  [key: string]: unknown;
 }
 
 export interface LatestBid<T extends BidRow> {
