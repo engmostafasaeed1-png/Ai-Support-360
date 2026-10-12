@@ -36,14 +36,6 @@ const TECHNOLOGIES = [
   'Workflow', 'Adobe Forms', 'SmartForms', 'Solution Manager', 'Cloud ALM', 'GRC', 'Ariba', 'SuccessFactors', 'Concur', 'Signavio',
 ];
 
-const LOCALIZATIONS = [
-  'Saudi Arabia', 'United Arab Emirates', 'Egypt', 'Qatar', 'Kuwait', 'Bahrain', 'Oman', 'Jordan', 'Morocco', 'Algeria', 'Tunisia',
-  'Turkey', 'Pakistan', 'India', 'Germany', 'United Kingdom', 'France', 'Italy', 'Spain', 'Netherlands', 'United States', 'Canada',
-  'Brazil', 'Mexico', 'South Africa', 'Nigeria', 'Kenya', 'Singapore', 'Malaysia', 'Indonesia', 'China', 'Japan', 'Australia',
-];
-
-const PROJECT_TYPES = ['Greenfield implementation', 'Brownfield conversion', 'Selective data transition', 'Rollout', 'Upgrade', 'AMS / support', 'Optimization'];
-
 type Skill = { id: string; sap_module: string; proficiency_level: number | null; years_experience: number | null };
 
 function Chips({ options, value, onChange, otherPlaceholder = 'Add another…' }: { options: readonly string[]; value: string[]; onChange: (v: string[]) => void; otherPlaceholder?: string }) {
@@ -96,8 +88,6 @@ export default function SapExpertiseCard() {
   const [seniority, setSeniority] = useState<string>('');
   const [years, setYears] = useState<string>('');
   const [tech, setTech] = useState<string[]>([]);
-  const [loc, setLoc] = useState<string[]>([]);
-  const [types, setTypes] = useState<string[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [picked, setPicked] = useState<string[]>([]);
   const [moduleQuery, setModuleQuery] = useState('');
