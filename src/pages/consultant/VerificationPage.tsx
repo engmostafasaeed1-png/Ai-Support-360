@@ -113,11 +113,18 @@ export default function VerificationPage() {
       setUserId(user.id);
       supabase
         .from('consultants')
-        .select('id, credly_username, linkedin_url, linkedin_checked_at, credly_checked_at')
+        .select('id, linkedin_checked_at, credly_checked_at')
         .eq('user_id', user.id)
         .maybeSingle()
-        .then(({ data }) => {
-          if (!data) return;
+        .then(async ({ data: row }) => {
+          if (!row) return;
+          // The links are read from the view of contact links (the consultant's own row).
+          const { data: links } = await (supabase as any)
+            .from('consultant_contact_links')
+            .select('credly_username, linkedin_url')
+            .eq('consultant_id', row.id)
+            .maybeSingle();
+          const data = { ...row, credly_username: links?.credly_username ?? null, linkedin_url: links?.linkedin_url ?? null };
           setConsultantId(data.id);
           if ((data as any).credly_username) setCredlyUsername((data as any).credly_username);
           setLinks({

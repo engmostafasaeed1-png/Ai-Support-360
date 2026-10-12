@@ -14,9 +14,18 @@ export function useConsultantProfile() {
 
       const { data: consultant } = await supabase
         .from('consultants')
-        .select('*')
+        .select('id, bio, hourly_rate, currency, timezone, languages, industries, verification_status, rating, total_reviews, response_time_minutes, availability_status, ai_skills_score, credibility_credits, ai_interview_badge, ai_interview_completed_at')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      // The links are no longer readable on consultants: they come from the view of contact links (own row).
+      const { data: links } = consultant
+        ? await (supabase as any)
+          .from('consultant_contact_links')
+          .select('credly_username')
+          .eq('consultant_id', consultant.id)
+          .maybeSingle()
+        : { data: null };
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -47,7 +56,7 @@ export function useConsultantProfile() {
         response_time_minutes: consultant.response_time_minutes || 0,
         availability_status: consultant.availability_status || 'offline',
         ai_skills_score: Number(consultant.ai_skills_score) || 0,
-        credly_username: consultant.credly_username,
+        credly_username: (links?.credly_username as string | null | undefined) ?? null,
         credibility_credits: (consultant as any).credibility_credits || 0,
         ai_interview_badge: (consultant as any).ai_interview_badge || null,
         ai_interview_completed_at: (consultant as any).ai_interview_completed_at || null,

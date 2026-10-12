@@ -52,7 +52,7 @@ export default function ConsultantApprovalsPage() {
         .from('consultants')
         .select(`
           id, user_id, bio, hourly_rate, currency, languages, industries, ai_skills_score, created_at, verification_status,
-          city, country, linkedin_url, linkedin_checked_at, credly_username, credly_checked_at, github_url, personal_website,
+          city, country, linkedin_checked_at, credly_checked_at,
           consultant_skills (sap_module, proficiency_level),
           certifications (id, name, issuer, issue_date, expiry_date, document_url, verified)
         `)
@@ -72,6 +72,18 @@ export default function ConsultantApprovalsPage() {
         (profiles || []).forEach((p: any) => nameByUser.set(p.user_id, p.display_name));
       }
 
+      // The links are read from the view of contact links (administrators see every row).
+      const consultantIds = rows.map((c: any) => c.id).filter(Boolean);
+      const linksById = new Map<string, any>();
+      if (consultantIds.length > 0) {
+        const { data: links, error: linksError } = await (supabase as any)
+          .from('consultant_contact_links')
+          .select('consultant_id, linkedin_url, github_url, personal_website, credly_username')
+          .in('consultant_id', consultantIds);
+        if (linksError) throw linksError;
+        (links || []).forEach((l: any) => linksById.set(l.consultant_id, l));
+      }
+
       return rows.map((c: any) => ({
         id: c.id,
         user_id: c.user_id,
@@ -88,12 +100,12 @@ export default function ConsultantApprovalsPage() {
         city: c.city,
         country: c.country,
         place: placeLabel(c.city, c.country),
-        linkedin_url: c.linkedin_url,
+        linkedin_url: linksById.get(c.id)?.linkedin_url ?? null,
         linkedin_checked_at: c.linkedin_checked_at,
-        credly_username: c.credly_username,
+        credly_username: linksById.get(c.id)?.credly_username ?? null,
         credly_checked_at: c.credly_checked_at,
-        github_url: c.github_url,
-        personal_website: c.personal_website,
+        github_url: linksById.get(c.id)?.github_url ?? null,
+        personal_website: linksById.get(c.id)?.personal_website ?? null,
       }));
     },
     enabled: !isGuest,

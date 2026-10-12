@@ -62,7 +62,7 @@ export default function ConsultantDashboard() {
 
       const { data: consultant } = await supabase
         .from('consultants')
-        .select('*')
+        .select('id')
         .eq('user_id', user.id)
         .single();
 
