@@ -43,6 +43,15 @@ export interface ConsultantLive {
   ai_interview_badge?: string | null;
   /** Weekly working hours, e.g. "Mon 09:00–17:00". */
   hours?: string[];
+  customer_segments: string[];
+  vertical_solutions: string[];
+  localization_countries: string[];
+  localization_solutions: string[];
+  project_types: string[];
+  deployment_experience: string[];
+  project_scale: string | null;
+  work_modes: string[];
+  working_week: string | null;
 }
 
 /** The columns of `consultants` that the directory reads. */
@@ -64,6 +73,21 @@ export interface DirectoryRow {
   credly_checked_at: string | null;
   credibility_credits?: number | null;
   ai_interview_badge?: string | null;
+  customer_segments?: string[] | null;
+  vertical_solutions?: string[] | null;
+  localization_countries?: string[] | null;
+  localization_solutions?: string[] | null;
+  project_types?: string[] | null;
+  deployment_experience?: string[] | null;
+  project_scale?: string | null;
+  work_modes?: string[] | null;
+  working_week?: string | null;
+}
+
+/** True when the consultant passes a single-choice filter: no choice ('' or 'all') passes everyone; otherwise the label must be in the list. */
+export function passesListFilter(list: string[] | null | undefined, chosen: string): boolean {
+  if (!chosen || chosen === 'all') return true;
+  return (list || []).includes(chosen);
 }
 
 /**
@@ -130,6 +154,15 @@ export function toConsultantLive(row: DirectoryRow, displayName: string | null |
     verification_status: row.verification_status || 'pending',
     credibility_credits: row.credibility_credits || 0,
     ai_interview_badge: row.ai_interview_badge || null,
+    customer_segments: row.customer_segments || [],
+    vertical_solutions: row.vertical_solutions || [],
+    localization_countries: row.localization_countries || [],
+    localization_solutions: row.localization_solutions || [],
+    project_types: row.project_types || [],
+    deployment_experience: row.deployment_experience || [],
+    project_scale: row.project_scale || null,
+    work_modes: row.work_modes || [],
+    working_week: row.working_week || null,
   };
 }
 
