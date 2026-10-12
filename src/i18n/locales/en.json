@@ -881,7 +881,7 @@
     "title": "My Sessions",
     "subtitle": "View and manage your booked sessions",
     "empty_title": "No sessions yet",
-    "empty_desc": "Book a session with a consultant to get started",
+    "empty_desc": "Open a request to get started: sessions are scheduled with the consultant assigned to it",
     "browse_consultants": "Browse Consultants",
     "login_required": "Please log in to view your sessions.",
     "go_login": "Log In",
