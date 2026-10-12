@@ -76,6 +76,7 @@ describe('ProfileExperienceCard', () => {
     skillsSelect.mockClear();
     toastError.mockClear();
     toastSuccess.mockClear();
+    updateError = null;
   });
 
   it('loads with an explicit column list (no *) and shows saved selections', async () => {
@@ -92,11 +93,9 @@ describe('ProfileExperienceCard', () => {
     render(<ProfileExperienceCard />);
     await waitFor(() => expect(screen.getByText(/Profile completeness:/)).toBeTruthy());
     const before = screen.getByText(/Profile completeness:/).textContent;
-    // fill customer segments via its Other entry
-    const sections = screen.getAllByLabelText('Other (type and press Add)');
-    fireEvent.click(screen.getByText('Government & public sector'));
-    fireEvent.change(sections[1], { target: { value: 'Semi-government' } });
-    fireEvent.keyDown(sections[1], { key: 'Enter' });
+    // fill customer segments by checking one entry of the Public sector group
+    fireEvent.click(screen.getByText('Public sector'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Government ministries & authorities' }));
     await waitFor(() => {
       const after = screen.getByText(/Profile completeness:/).textContent;
       expect(after).not.toBe(before);
@@ -117,7 +116,7 @@ describe('ProfileExperienceCard', () => {
   });
 
   it('shows the database error message in a toast', async () => {
-    consultantsUpdate.mockImplementationOnce(() => ({ eq: () => Promise.resolve({ error: { message: 'contact details are not allowed' } }) }));
+    updateError = { message: 'contact details are not allowed' };
     render(<ProfileExperienceCard />);
     await waitFor(() => expect(screen.getByText('Utilities')).toBeTruthy());
     fireEvent.click(screen.getByRole('button', { name: /Save/ }));
