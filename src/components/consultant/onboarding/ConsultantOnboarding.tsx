@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useQueryClient } from '@tanstack/react-query';
 import SapExpertiseCard from '@/components/consultant/SapExpertiseCard';
+import ProfileExperienceCard from '@/components/consultant/ProfileExperienceCard';
 import ExperienceCvCard from '@/components/consultant/ExperienceCvCard';
 import SetAvailabilityDialog from '@/components/consultant/SetAvailabilityDialog';
 import ProfileAvailability from '@/components/consultant/ProfileAvailability';
