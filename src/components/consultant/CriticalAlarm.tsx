@@ -132,7 +132,7 @@ export default function CriticalAlarm() {
               <DialogTitle className="text-lg text-red-700 dark:text-red-400">
                 {current.extensions > 0 ? 'Updated critical request' : 'Critical request'}
               </DialogTitle>
-              <DialogDescription>{`Reply with a proposal and your hourly rate gets +${percent} on this ticket.`}</DialogDescription>
+              <DialogDescription>{`Reply with a bid and your hourly rate gets +${percent} on this ticket.`}</DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -155,7 +155,7 @@ export default function CriticalAlarm() {
           </div>
 
           <p className="text-xs text-muted-foreground">
-            {`You set your own rate. If the client accepts a proposal that was sent in time, your approved hourly rate is your rate plus ${percent}.`}
+            {`You set your own rate. If the client accepts a bid that was sent in time, your approved hourly rate is your rate plus ${percent}.`}
           </p>
           {others > 0 && (
             <p className="text-xs font-medium text-red-700 dark:text-red-400">

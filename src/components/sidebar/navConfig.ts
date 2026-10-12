@@ -151,8 +151,8 @@ export const consultantNavGroups: NavGroup[] = [
     items: [
       { key: 'cases', icon: Headset, path: '/consultant/cases' },
       { key: 'requests', icon: Inbox, path: '/consultant/requests' },
-      { key: 'proposals', icon: Receipt, path: '/consultant/proposals' },
-      { key: 'open_tickets', icon: ShoppingBag, path: '/consultant/open-tickets' },
+      { key: 'proposals', icon: Receipt, path: '/consultant/proposals', fallback: 'My bids' },
+      { key: 'open_tickets', icon: ShoppingBag, path: '/consultant/open-tickets', fallback: 'Open requests' },
       { key: 'work_diary', icon: Timer, path: '/consultant/work-diary' },
       { key: 'calendar', icon: CalendarClock, path: '/consultant/calendar' },
       { key: 'chat', icon: MessagesSquare, path: '/consultant/chat' },
