@@ -29,6 +29,7 @@ import { credlyProfileUrl, normalizeCredlyUsername, normalizeLinkedinUrl } from 
 import { safeHttpUrl } from '@/lib/consultantReview';
 import { placeLabel } from '@/lib/geo';
 import { consultantPoint, formatWeeklyHours, type WeeklySlot } from '@/lib/consultantDirectory';
+import ConsultantExperienceCard from '@/components/client/ConsultantExperienceCard';
 import WeeklyAvailability from '@/components/client/WeeklyAvailability';
 import { bookableTimes, hasWindowOn, localDateKey, type WindowRow } from '@/lib/bookableTimes';
 
@@ -86,7 +87,7 @@ export default function ConsultantProfilePage() {
       if (!id) return null;
       const { data: c } = await supabase
         .from('consultants')
-        .select('id, user_id, bio, hourly_rate, currency, languages, industries, response_time_minutes, availability_status, rating, total_reviews, verification_status, ai_skills_score, city, country, latitude, longitude, linkedin_checked_at, credly_checked_at')
+        .select('id, user_id, bio, hourly_rate, currency, languages, industries, response_time_minutes, availability_status, rating, total_reviews, verification_status, ai_skills_score, city, country, latitude, longitude, linkedin_checked_at, credly_checked_at, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, working_week, language_levels')
         .eq('id', id)
         .maybeSingle();
       if (!c) return null;
@@ -135,6 +136,20 @@ export default function ConsultantProfilePage() {
           responseTime: c.response_time_minutes || 0,
           languages: c.languages || [],
           industries: c.industries || [],
+          experience: {
+            industries: c.industries || [],
+            customer_segments: (c as any).customer_segments || [],
+            vertical_solutions: (c as any).vertical_solutions || [],
+            localization_countries: (c as any).localization_countries || [],
+            localization_solutions: (c as any).localization_solutions || [],
+            project_types: (c as any).project_types || [],
+            deployment_experience: (c as any).deployment_experience || [],
+            project_scale: (c as any).project_scale || null,
+            work_modes: (c as any).work_modes || [],
+            working_week: (c as any).working_week || null,
+            languages: c.languages || [],
+            language_levels: (c as any).language_levels || null,
+          },
           certifications: (certs || []).map((ct: any) => ({
             name: ct.name,
             issuer: ct.issuer || '',
@@ -579,18 +594,8 @@ export default function ConsultantProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-border/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold">{t('consultant_profile.industries')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {detail.industries.map((ind: any) => (
-                  <Badge key={ind} variant="outline" className="text-xs">{ind}</Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* One "Experience" card: it includes the industries (the old industries card is replaced by it). */}
+          <ConsultantExperienceCard data={detail.experience ?? { industries: detail.industries }} />
         </TabsContent>
 
         {/* Skills Tab */}

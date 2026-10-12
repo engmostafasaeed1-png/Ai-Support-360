@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { compareRecommended, initialsOf, toConsultantLive, type DirectoryRow } from './consultantDirectory';
+import { compareRecommended, passesListFilter, matchesExperienceFilters, initialsOf, toConsultantLive, type DirectoryRow } from './consultantDirectory';
 
 const ROW: DirectoryRow = {
   id: 'c-1',
@@ -167,5 +167,41 @@ describe('compareRecommended', () => {
   it('puts the better rated first inside a state, then the one with more reviews, then by name', () => {
     const sorted = [p('d', 'available', 4, 5), p('c', 'available', 4.5, 1), p('b', 'available', 4.5, 9), p('a', 'available', 4.5, 9)].sort(compareRecommended);
     expect(sorted.map(x => x.name)).toEqual(['a', 'b', 'c', 'd']);
+  });
+});
+
+describe('toConsultantLive: experience lists', () => {
+  it('maps the experience columns and defaults missing lists to []', () => {
+    const c = live({ customer_segments: ['Mid-market company'], localization_countries: ['Saudi Arabia'], project_scale: 'Large' });
+    expect(c.customer_segments).toEqual(['Mid-market company']);
+    expect(c.localization_countries).toEqual(['Saudi Arabia']);
+    expect(c.vertical_solutions).toEqual([]);
+    expect(c.project_scale).toBe('Large');
+    expect(c.working_week).toBeNull();
+  });
+});
+
+describe('passesListFilter', () => {
+  it('passes everyone without a choice and only consultants with the label otherwise', () => {
+    expect(passesListFilter([], 'all')).toBe(true);
+    expect(passesListFilter(undefined, '')).toBe(true);
+    expect(passesListFilter(['Saudi Arabia'], 'Saudi Arabia')).toBe(true);
+    expect(passesListFilter(['Egypt'], 'Saudi Arabia')).toBe(false);
+  });
+});
+
+describe('matchesExperienceFilters', () => {
+  const c = { customer_segments: ['Mid-market company'], localization_countries: ['Saudi Arabia', 'Egypt'], vertical_solutions: ['SAP Retail (merchandising, assortment, replenishment)'] };
+  const none = { segment: 'all', country: 'all', vertical: 'all' };
+  it('passes with no filter', () => expect(matchesExperienceFilters(c, none)).toBe(true));
+  it('checks each filter', () => {
+    expect(matchesExperienceFilters(c, { ...none, segment: 'Mid-market company' })).toBe(true);
+    expect(matchesExperienceFilters(c, { ...none, segment: 'Start-up / scale-up' })).toBe(false);
+    expect(matchesExperienceFilters(c, { ...none, country: 'Egypt' })).toBe(true);
+    expect(matchesExperienceFilters(c, { ...none, vertical: 'SAP Fashion Management' })).toBe(false);
+  });
+  it('combines the filters', () => {
+    expect(matchesExperienceFilters(c, { segment: 'Mid-market company', country: 'Saudi Arabia', vertical: 'all' })).toBe(true);
+    expect(matchesExperienceFilters(c, { segment: 'Mid-market company', country: 'Qatar', vertical: 'all' })).toBe(false);
   });
 });

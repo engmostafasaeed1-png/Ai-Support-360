@@ -3,6 +3,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import TaxonomySelect from '@/components/profile/TaxonomySelect';
+import { CUSTOMER_SEGMENTS, LOCALIZATION_COUNTRIES } from '@/lib/profileTaxonomy';
 import type { ClientOnboardingData } from '../ClientOnboarding';
 
 const companySizes = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
@@ -55,6 +57,17 @@ export default function CompanyStep({ data, onChange }: Props) {
               ))}
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="customerSegment">Customer segment</Label>
+          <TaxonomySelect id="customerSegment" groups={CUSTOMER_SEGMENTS} value={data.customerSegment} onChange={v => onChange({ customerSegment: v })} noneLabel="Not specified" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="companyCountry">Country</Label>
+          <TaxonomySelect id="companyCountry" groups={LOCALIZATION_COUNTRIES} value={data.country} onChange={v => onChange({ country: v })} noneLabel="Not specified" />
         </div>
       </div>
 

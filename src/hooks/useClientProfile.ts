@@ -35,6 +35,8 @@ export interface ClientProfile {
   sap_interfaces: string[] | null;
   sap_third_party_tools: string[] | null;
   sap_landscape_notes: string | null;
+  customer_segment?: string | null;
+  country?: string | null;
   created_at: string;
   updated_at: string;
 }
