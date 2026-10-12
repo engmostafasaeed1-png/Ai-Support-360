@@ -29,14 +29,18 @@ const CRAWLER_AGENTS =
   /googlebot|googleother|google-inspectiontool|storebot-google|adsbot-google|bingbot|bingpreview|yandex(?:bot|images)?|baiduspider|duckduckbot|slurp|facebookexternalhit|facebot|meta-webindexer|meta-externalagent|twitterbot|linkedinbot|slackbot|applebot|petalbot|semrushbot|ahrefsbot|mj12bot|dotbot|bytespider|gptbot|claudebot|ccbot|headlesschrome|lighthouse|pagespeed|gtmetrix|pingdom|uptimerobot|ia_archiver|crawler|spider/i;
 
 // Browser and library noise.
-// The two "Lock" messages come from the sign-in library when two requests (two tabs, a tab in the background) ask for its browser lock at the same moment; it recovers by itself.
+// The "Lock" and "LockManager" messages come from the sign-in library when two requests (two tabs, a tab in the background) ask for the same
+// browser lock at the same moment — the browser's own Navigator LockManager race. It recovers by itself, so nothing can be acted on.
 // "Script error." is a cross-origin script (browser extension, antivirus) without any detail.
 const IGNORED_MESSAGES: RegExp[] = [
   /ResizeObserver loop/i,
   /Non-Error promise rejection captured/i,
   /Failed to fetch.*frankfurter/i,
   /^Script error\.?$/i,
-  /Lock broken by another request with the 'steal' option/i,
+  /Lock broken by another request/i,
+  /Lock was stolen by another request/i,
+  /LockManager lock/i,
+  /Acquiring an exclusive Navigator LockManager lock/i,
   /was released because another request stole it/i,
   // Content-security-policy reports about the editor's hot-reload socket, browser extensions and antivirus scripts.
   /^\[diag:csp\].*(?:wss?:\/\/localhost|(?:chrome|moz|safari|safari-web|ms-browser)-extension:|kaspersky-labs\.com)/i,
