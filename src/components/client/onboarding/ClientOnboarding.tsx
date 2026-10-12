@@ -14,11 +14,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { useTenant } from '@/contexts/TenantContext';
 import { fireConfetti } from '@/lib/confetti';
+import { companyContextFields } from '@/lib/companyContext';
 
 export interface ClientOnboardingData {
   companyName: string;
   companySize: string;
   industry: string;
+  customerSegment: string;
+  country: string;
   sapLandscape: string;
   phone: string;
   preferredLanguage: string;
@@ -31,6 +34,8 @@ const initialData: ClientOnboardingData = {
   companyName: '',
   companySize: '',
   industry: '',
+  customerSegment: '',
+  country: '',
   sapLandscape: '',
   phone: '',
   preferredLanguage: 'en',
@@ -72,6 +77,8 @@ export default function ClientOnboarding() {
           companyName: cp.company_name || prev.companyName,
           companySize: cp.company_size || prev.companySize,
           industry: cp.industry || prev.industry,
+          customerSegment: (cp as any).customer_segment || prev.customerSegment,
+          country: (cp as any).country || prev.country,
           sapLandscape: cp.sap_landscape || prev.sapLandscape,
           phone: cp.phone || prev.phone,
           preferredLanguage: cp.preferred_language || prev.preferredLanguage,
@@ -133,6 +140,7 @@ export default function ClientOnboarding() {
         company_name: data.companyName || tenant?.name,
         company_size: data.companySize,
         industry: data.industry,
+        ...companyContextFields(data.customerSegment, data.country),
         sap_landscape: data.sapLandscape,
         phone: data.phone,
         preferred_language: data.preferredLanguage,
