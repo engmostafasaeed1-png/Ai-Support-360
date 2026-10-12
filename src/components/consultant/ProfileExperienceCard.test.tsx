@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 const consultantsSelect = vi.fn();
 const consultantsUpdate = vi.fn();
 const skillsSelect = vi.fn();
+let updateError: { message: string } | null = null;
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
@@ -45,7 +46,7 @@ vi.mock('@/integrations/supabase/client', () => ({
           },
           update: (payload: unknown) => {
             consultantsUpdate(payload);
-            return { eq: () => Promise.resolve({ error: null }) };
+            return { eq: () => Promise.resolve({ error: updateError }) };
           },
         };
       }
