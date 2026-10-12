@@ -333,6 +333,38 @@ export default function ConsultantApprovalsPage() {
                         </div>
                       )}
 
+                      {(() => {
+                        const groups: [string, string[]][] = [
+                          ['Industries', c.industries],
+                          ['Customer segments', c.customer_segments],
+                          ['Vertical solutions', c.vertical_solutions],
+                          ['Localization countries', c.localization_countries],
+                          ['Localization solutions', c.localization_solutions],
+                          ['Project types', c.project_types],
+                          ['Deployment', c.deployment_experience],
+                          ['Project scale', c.project_scale ? [c.project_scale] : []],
+                          ['Work modes', c.work_modes],
+                          ['Working week', c.working_week ? [c.working_week] : []],
+                          ['On-site countries', c.onsite_countries],
+                          ['Language levels', c.language_levels ? Object.entries(c.language_levels).map(([l, lvl]) => `${l}: ${lvl}`) : []],
+                        ];
+                        const nonEmpty = groups.filter(([, v]) => v.length > 0);
+                        if (nonEmpty.length === 0) return null;
+                        return (
+                          <div className="mb-4">
+                            <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Experience</h4>
+                            <div className="space-y-2">
+                              {nonEmpty.map(([label, values]) => (
+                                <div key={label} className="flex flex-wrap items-center gap-1.5">
+                                  <span className="text-xs text-muted-foreground">{label}:</span>
+                                  {values.map((v) => <Badge key={v} variant="secondary" className="text-[10px]">{v}</Badge>)}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-medium text-muted-foreground">{t('approvals_page.ai_skills_assessment')}</span>
