@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,6 +16,12 @@ export default function ProfilePage() {
   const { t } = useTranslation();
   const { data: profile, isLoading } = useConsultantProfile();
   const [reinterviewOpen, setReinterviewOpen] = useState(false);
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (isLoading || hash !== '#payout-details') return;
+    const id = setTimeout(() => document.getElementById('payout-details')?.scrollIntoView({ block: 'start' }), 300);
+    return () => clearTimeout(id);
+  }, [isLoading, hash]);
   if (isLoading) return <Skeleton className="h-80 w-full" />;
   return (
     <div className="space-y-6">
