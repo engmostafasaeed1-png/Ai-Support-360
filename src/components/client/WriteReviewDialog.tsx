@@ -108,7 +108,7 @@ export default function WriteReviewDialog({ open, onOpenChange, consultantId, se
           <div className="flex items-start gap-2 rounded-xl border border-border/40 bg-muted/30 p-3 text-sm text-muted-foreground" data-testid="no-session-to-rate">
             <Info className="mt-0.5 h-4 w-4 shrink-0" />
             <p>
-              You can rate a consultant after a completed session with them. Book a session; when it has taken place, mark it as completed on the session page, then you can rate it there or here.
+              You can rate a consultant after a completed session with them. Once a consultant is assigned to your request, schedule a session; when it has taken place, mark it as completed on the session page, then you can rate it there or here.
             </p>
           </div>
         ) : (
