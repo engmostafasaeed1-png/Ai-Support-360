@@ -57,6 +57,7 @@ import { SapNoteLinks } from '@/components/ticket/SapNotesField';
 import { cleanNoteList } from '@/lib/sapNotes';
 import { isolateDates } from '@/lib/bidi';
 import { ticketContextBadges } from '@/lib/ticketContext';
+import { splitBadge } from '@/components/client/ContextFitBadges';
 
 function TicketFileLink({ fileUrl, fileName }: { fileUrl: string | null; fileName: string | null }) {
   const href = useChatFileUrl(fileUrl);
