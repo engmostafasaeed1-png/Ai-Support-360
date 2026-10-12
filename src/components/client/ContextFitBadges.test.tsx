@@ -5,9 +5,13 @@ import ContextFitBadges from './ContextFitBadges';
 describe('ContextFitBadges', () => {
   it('shows the context fit, the matches and the gaps', () => {
     render(<ContextFitBadges fit={{ context_fit_score: 72, context_matches: ['Country: Saudi Arabia'], context_gaps: ['Industry: Retail'] }} />);
-    expect(screen.getByText('Context fit 72%')).toBeInTheDocument();
-    expect(screen.getByText('Country: Saudi Arabia')).toBeInTheDocument();
-    expect(screen.getByText('Industry: Retail')).toBeInTheDocument();
+    // prefix and label are separate text nodes so the Arabic translator can translate each
+    expect(screen.getByText('Context fit')).toBeInTheDocument();
+    expect(screen.getByText('72%')).toBeInTheDocument();
+    expect(screen.getByText('Country:')).toBeInTheDocument();
+    expect(screen.getByText('Saudi Arabia')).toBeInTheDocument();
+    expect(screen.getByText('Industry:')).toBeInTheDocument();
+    expect(screen.getByText('Retail')).toBeInTheDocument();
   });
   it('shows nothing when the fields are absent or empty', () => {
     const { container, rerender } = render(<ContextFitBadges fit={{}} />);
