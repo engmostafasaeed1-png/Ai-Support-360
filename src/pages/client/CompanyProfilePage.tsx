@@ -25,6 +25,9 @@ import {
   Server, Database, Users2, Mail, Phone, Briefcase, Camera,
   HardDrive, Cpu, Calendar, Code, Link2, Package, Upload,
 } from 'lucide-react';
+import TaxonomySelect from '@/components/profile/TaxonomySelect';
+import { CUSTOMER_SEGMENTS, LOCALIZATION_COUNTRIES } from '@/lib/profileTaxonomy';
+import { companyContextFields } from '@/lib/companyContext';
 import { useClientProfileData, useUpdateClientProfile, type ClientProfile } from '@/hooks/useClientProfile';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import ClientNDAUpload from '@/components/client/ClientNDAUpload';
@@ -62,6 +65,8 @@ export default function CompanyProfilePage() {
   const [description, setDescription] = useState('');
   const [website, setWebsite] = useState('');
   const [headquarters, setHeadquarters] = useState('');
+  const [customerSegment, setCustomerSegment] = useState('');
+  const [companyCountry, setCompanyCountry] = useState('');
   const [sapLandscape, setSapLandscape] = useState('');
   const [sapHostingType, setSapHostingType] = useState('on-prem');
   const [sapSystemIds, setSapSystemIds] = useState<string[]>([]);
@@ -132,6 +137,8 @@ export default function CompanyProfilePage() {
       setDescription(profile.company_description || '');
       setWebsite(profile.company_website || '');
       setHeadquarters(profile.headquarters || '');
+      setCustomerSegment(profile.customer_segment || '');
+      setCompanyCountry(profile.country || '');
       setSapLandscape(profile.sap_landscape || '');
       setSapHostingType(profile.sap_hosting_type || 'on-prem');
       setSapSystemIds(profile.sap_system_ids || []);
@@ -333,6 +340,7 @@ export default function CompanyProfilePage() {
       company_description: description.trim() || null,
       company_website: website.trim() || null,
       headquarters: headquarters.trim() || null,
+      ...companyContextFields(customerSegment, companyCountry),
       sap_landscape: sapLandscape.trim() || null,
       sap_hosting_type: sapHostingType,
       sap_system_ids: sapSystemIds,
@@ -555,6 +563,14 @@ export default function CompanyProfilePage() {
             <div className="space-y-2">
               <Label className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {t('company_profile_page.headquarters', 'Headquarters')}</Label>
               <Input value={headquarters} onChange={(e) => setHeadquarters(e.target.value)} placeholder="Riyadh, Saudi Arabia" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="company-customer-segment">Customer segment</Label>
+              <TaxonomySelect id="company-customer-segment" groups={CUSTOMER_SEGMENTS} value={customerSegment} onChange={setCustomerSegment} noneLabel="Not specified" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="company-country">Country</Label>
+              <TaxonomySelect id="company-country" groups={LOCALIZATION_COUNTRIES} value={companyCountry} onChange={setCompanyCountry} noneLabel="Not specified" />
             </div>
           </div>
           <div className="space-y-2">
