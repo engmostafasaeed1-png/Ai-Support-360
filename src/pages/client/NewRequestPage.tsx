@@ -38,7 +38,7 @@ import CriticalRequestOption from '@/components/ticket/CriticalRequestOption';
 import { useCriticalTerms, notifyCriticalByEmail } from '@/hooks/useCriticalService';
 import RequestContextSection, { industryLabelFor } from '@/components/ticket/RequestContextSection';
 import ContextFitBadges from '@/components/client/ContextFitBadges';
-import { buildTicketContext, type TicketContextInput } from '@/lib/ticketContext';
+import { buildTicketContext, withTicketContext, type TicketContextInput } from '@/lib/ticketContext';
 import { useClientProfileData } from '@/hooks/useClientProfile';
 import { NO_CRITICAL_CHOICE, choiceSummary, criticalColumns, type CriticalChoice } from '@/lib/criticalService';
 
@@ -345,7 +345,7 @@ export default function NewRequestPage() {
     setAiLoading('match_consultants');
     try {
       const { data, error } = await invokeWithTimeout('ai-ticket', {
-        body: {
+        body: withTicketContext({
           action: 'match_consultants',
           title: form.title,
           description: form.description,
@@ -356,8 +356,7 @@ export default function NewRequestPage() {
           urgency: form.urgency,
           preferred_language: form.preferred_language,
           model: selectedModel,
-          ...(ticketContext ? { ticket_context: ticketContext } : {}),
-        },
+        }, ticketContext),
       });
       if (error) throw error;
       if (handleAiError(data)) return;
@@ -462,7 +461,7 @@ export default function NewRequestPage() {
       }
       const ticketId = ticketIdRef.current.id;
 
-      const { error } = await supabase.from('tickets').insert({
+      const { error } = await supabase.from('tickets').insert(withTicketContext({
         id: ticketId,
         client_id: user.id,
         tenant_id: tenant?.id || null,
@@ -480,8 +479,7 @@ export default function NewRequestPage() {
         ai_suggested_priority: (!triageIsStale && aiCategorization?.suggested_priority) || null,
         ticket_type: form.ticket_type,
         ...criticalColumns(form.urgency, critical),
-        ...(ticketContext ? { ticket_context: ticketContext } : {}),
-      } as any);
+      }, ticketContext) as any);
 
       // 23505 on the primary key means an earlier try with this id was saved although its answer was lost: carry on with that ticket
       const alreadySaved = !!error && error.code === '23505' && /tickets_pkey/.test(`${error.message} ${error.details ?? ''}`);

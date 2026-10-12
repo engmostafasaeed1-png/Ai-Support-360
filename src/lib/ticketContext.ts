@@ -42,3 +42,8 @@ export function ticketContextBadges(ctx: unknown): string[] {
   }
   return out;
 }
+
+/** Adds ticket_context to a request body or a new ticket row, only when there is a context. Used for the match call and the ticket insert. */
+export function withTicketContext<T extends Record<string, unknown>>(target: T, ctx: TicketContext | null): T & { ticket_context?: TicketContext } {
+  return ctx ? { ...target, ticket_context: ctx } : target;
+}
