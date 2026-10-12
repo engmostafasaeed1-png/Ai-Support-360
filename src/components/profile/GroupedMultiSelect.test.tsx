@@ -17,7 +17,7 @@ function setup(initial: string[] = [], max?: number) {
 describe('GroupedMultiSelect', () => {
   it('selecting and unselecting calls onChange with the right arrays', () => {
     const onChange = setup(['Apple']);
-    fireEvent.click(screen.getByText('Fruits'));
+    // the Fruits group is already open because it contains the selected "Apple"
     fireEvent.click(screen.getByRole('checkbox', { name: 'Banana' }));
     expect(onChange).toHaveBeenLastCalledWith(['Apple', 'Banana']);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Apple' }));
