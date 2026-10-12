@@ -90,6 +90,18 @@ export function passesListFilter(list: string[] | null | undefined, chosen: stri
   return (list || []).includes(chosen);
 }
 
+export interface ExperienceFilters { segment: string; country: string; vertical: string }
+
+/** True when the consultant passes the customer segment, localization country and vertical solution filters together. */
+export function matchesExperienceFilters(
+  c: Pick<ConsultantLive, 'customer_segments' | 'localization_countries' | 'vertical_solutions'>,
+  f: ExperienceFilters,
+): boolean {
+  return passesListFilter(c.customer_segments, f.segment)
+    && passesListFilter(c.localization_countries, f.country)
+    && passesListFilter(c.vertical_solutions, f.vertical);
+}
+
 /**
  * The place of a consultant on the map: the point that is stored; when there is none, the centre of the stored city if that city is in the list of places
  * (consultants who gave their city before the map existed have a city but no point). No city in the list: null, and the consultant is not on the map.

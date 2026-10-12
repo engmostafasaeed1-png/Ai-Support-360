@@ -22,7 +22,9 @@ import VerificationBadge from '@/components/consultant/VerificationBadge';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
 import LinkStatus from '@/components/consultant/LinkStatus';
 import { STATE_META } from '@/lib/mapMarkers';
-import { compareRecommended, hasModule, skillMatchesText } from '@/lib/consultantDirectory';
+import { compareRecommended, hasModule, skillMatchesText, matchesExperienceFilters } from '@/lib/consultantDirectory';
+import TaxonomySelect from '@/components/profile/TaxonomySelect';
+import { INDUSTRY_EXPERIENCE, CUSTOMER_SEGMENTS, LOCALIZATION_COUNTRIES, VERTICAL_SOLUTIONS } from '@/lib/profileTaxonomy';
 
 const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
   verified: { icon: BadgeCheck, color: 'text-accent' },
@@ -58,6 +60,9 @@ export default function ConsultantsPage() {
   const [minRating, setMinRating] = useState(0);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
   const [languageFilter, setLanguageFilter] = useState('all');
+  const [segmentFilter, setSegmentFilter] = useState('all');
+  const [countryFilter, setCountryFilter] = useState('all');
+  const [verticalFilter, setVerticalFilter] = useState('all');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [credlyOnly, setCredlyOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('best_match');
@@ -96,8 +101,9 @@ export default function ConsultantsPage() {
       const matchesPrice = c.rate >= priceRange[0] && c.rate <= priceRange[1];
       const matchesVerified = !verifiedOnly || c.badges.includes('verified');
       const matchesCredly = !credlyOnly || c.credlyVerified;
+      const matchesExperience = matchesExperienceFilters(c, { segment: segmentFilter, country: countryFilter, vertical: verticalFilter });
 
-      return matchesSearch && matchesIndustry && matchesAvailability && matchesModule && matchesLanguage && matchesRating && matchesPrice && matchesVerified && matchesCredly;
+      return matchesExperience && matchesSearch && matchesIndustry && matchesAvailability && matchesModule && matchesLanguage && matchesRating && matchesPrice && matchesVerified && matchesCredly;
     });
 
     // Sort
@@ -126,7 +132,7 @@ export default function ConsultantsPage() {
     }
 
     return result;
-  }, [consultants, debouncedSearch, industryFilter, availabilityFilter, moduleFilter, minRating, priceRange, languageFilter, verifiedOnly, credlyOnly, sortBy]);
+  }, [consultants, debouncedSearch, industryFilter, availabilityFilter, moduleFilter, minRating, priceRange, languageFilter, verifiedOnly, credlyOnly, sortBy, segmentFilter, countryFilter, verticalFilter]);
 
   const notOnMapCount = filtered.filter(c => c.lat === null || c.lng === null).length;
 
@@ -136,6 +142,9 @@ export default function ConsultantsPage() {
     minRating > 0,
     priceRange[0] > 0 || priceRange[1] < 500,
     languageFilter !== 'all',
+    segmentFilter !== 'all',
+    countryFilter !== 'all',
+    verticalFilter !== 'all',
     verifiedOnly,
     credlyOnly,
   ].filter(Boolean).length;
@@ -146,6 +155,9 @@ export default function ConsultantsPage() {
     setMinRating(0);
     setPriceRange([0, 500]);
     setLanguageFilter('all');
+    setSegmentFilter('all');
+    setCountryFilter('all');
+    setVerticalFilter('all');
     setVerifiedOnly(false);
     setCredlyOnly(false);
     setSearchParams({});
@@ -284,6 +296,34 @@ export default function ConsultantsPage() {
                 </Select>
               </div>
 
+              {/* Industry (old keys from links still work; the list uses the new labels) */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">Industry</Label>
+                <TaxonomySelect groups={INDUSTRY_EXPERIENCE} value={industryFilter ?? ''} noneLabel="Any" ariaLabel="Industry" className="rounded-xl h-9 text-xs"
+                  onChange={v => setSearchParams(v ? { industry: v } : {})} />
+              </div>
+
+              {/* Customer segment */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">Customer segment</Label>
+                <TaxonomySelect groups={CUSTOMER_SEGMENTS} value={segmentFilter === 'all' ? '' : segmentFilter} noneLabel="Any" ariaLabel="Customer segment" className="rounded-xl h-9 text-xs"
+                  onChange={v => setSegmentFilter(v || 'all')} />
+              </div>
+
+              {/* Localization country */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">Localization country</Label>
+                <TaxonomySelect groups={LOCALIZATION_COUNTRIES} value={countryFilter === 'all' ? '' : countryFilter} noneLabel="Any" ariaLabel="Localization country" className="rounded-xl h-9 text-xs"
+                  onChange={v => setCountryFilter(v || 'all')} />
+              </div>
+
+              {/* Vertical solution */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">Vertical solution</Label>
+                <TaxonomySelect groups={VERTICAL_SOLUTIONS} value={verticalFilter === 'all' ? '' : verticalFilter} noneLabel="Any" ariaLabel="Vertical solution" className="rounded-xl h-9 text-xs"
+                  onChange={v => setVerticalFilter(v || 'all')} />
+              </div>
+
               {/* Min Rating */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
@@ -347,7 +387,7 @@ export default function ConsultantsPage() {
         <div className="flex flex-wrap items-center gap-2">
           {industryFilter && (
             <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs bg-accent/10 text-accent">
-              Industry: {t(`industries.${industryFilter}`)}
+              Industry: {t(`industries.${industryFilter}`, industryFilter)}
               <button onClick={() => setSearchParams({})} className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
             </Badge>
           )}
