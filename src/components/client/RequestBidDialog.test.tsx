@@ -2,7 +2,12 @@ import { vi, describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 const mocks = vi.hoisted(() => ({ update: vi.fn(), eq: vi.fn() }));
-vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: (table: string) => table === 'tickets' ? { update: mocks.update } : { select: () => ({ eq: () => ({ order: () => ({ limit: () => Promise.resolve({ data: [] }) }) }) }) } }));
+vi.mock('@/integrations/supabase/client', () => ({ supabase: {
+  from: (table: string) => {
+    if (table === 'tickets') return { update: mocks.update };
+    return { select: () => ({ eq: () => ({ order: () => ({ limit: () => Promise.resolve({ data: [] }) }) }) }) };
+  },
+} }));
 vi.mock('@/hooks/useClientBids', () => ({ useTicketBids: () => ({ data: { bids: [] } }) }));
 import RequestBidDialog from './RequestBidDialog';
 describe('public bidding deadline', () => {
