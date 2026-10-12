@@ -4825,6 +4825,90 @@ export type Database = {
           },
         ]
       }
+      proposal_counters: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          created_by: string
+          estimated_hours: number
+          id: string
+          message: string | null
+          new_proposal_id: string | null
+          proposal_id: string
+          proposed_rate: number
+          responded_at: string | null
+          status: string
+          ticket_id: string
+          timeline_days: number | null
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          created_by: string
+          estimated_hours: number
+          id?: string
+          message?: string | null
+          new_proposal_id?: string | null
+          proposal_id: string
+          proposed_rate: number
+          responded_at?: string | null
+          status?: string
+          ticket_id: string
+          timeline_days?: number | null
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          created_by?: string
+          estimated_hours?: number
+          id?: string
+          message?: string | null
+          new_proposal_id?: string | null
+          proposal_id?: string
+          proposed_rate?: number
+          responded_at?: string | null
+          status?: string
+          ticket_id?: string
+          timeline_days?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_counters_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "proposal_counters_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_counters_new_proposal_id_fkey"
+            columns: ["new_proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_counters_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_counters_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposals: {
         Row: {
           client_notes: string | null
@@ -4835,11 +4919,14 @@ export type Database = {
           id: string
           parent_proposal_id: string | null
           proposed_rate: number
+          rejection_reason: string | null
+          shortlisted: boolean
           status: Database["public"]["Enums"]["proposal_status"]
           ticket_id: string
           timeline_days: number | null
           updated_at: string
           version: number
+          withdrawn_at: string | null
         }
         Insert: {
           client_notes?: string | null
@@ -4850,11 +4937,14 @@ export type Database = {
           id?: string
           parent_proposal_id?: string | null
           proposed_rate?: number
+          rejection_reason?: string | null
+          shortlisted?: boolean
           status?: Database["public"]["Enums"]["proposal_status"]
           ticket_id: string
           timeline_days?: number | null
           updated_at?: string
           version?: number
+          withdrawn_at?: string | null
         }
         Update: {
           client_notes?: string | null
@@ -4865,11 +4955,14 @@ export type Database = {
           id?: string
           parent_proposal_id?: string | null
           proposed_rate?: number
+          rejection_reason?: string | null
+          shortlisted?: boolean
           status?: Database["public"]["Enums"]["proposal_status"]
           ticket_id?: string
           timeline_days?: number | null
           updated_at?: string
           version?: number
+          withdrawn_at?: string | null
         }
         Relationships: [
           {
@@ -6802,6 +6895,61 @@ export type Database = {
           },
         ]
       }
+      ticket_questions: {
+        Row: {
+          answer: string | null
+          answered_at: string | null
+          consultant_id: string
+          created_at: string
+          hidden: boolean
+          id: string
+          question: string
+          ticket_id: string
+        }
+        Insert: {
+          answer?: string | null
+          answered_at?: string | null
+          consultant_id: string
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          question: string
+          ticket_id: string
+        }
+        Update: {
+          answer?: string | null
+          answered_at?: string | null
+          consultant_id?: string
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          question?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_questions_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "ticket_questions_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_questions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_rates: {
         Row: {
           base_rate: number | null
@@ -7252,6 +7400,9 @@ export type Database = {
           ai_suggested_category: string | null
           ai_suggested_priority: string | null
           area_details: string | null
+          bid_deadline: string | null
+          bidding_closed_at: string | null
+          bidding_closed_reason: string | null
           client_id: string
           consultant_id: string | null
           cost_breakdown: Json | null
@@ -7308,6 +7459,9 @@ export type Database = {
           ai_suggested_category?: string | null
           ai_suggested_priority?: string | null
           area_details?: string | null
+          bid_deadline?: string | null
+          bidding_closed_at?: string | null
+          bidding_closed_reason?: string | null
           client_id: string
           consultant_id?: string | null
           cost_breakdown?: Json | null
@@ -7364,6 +7518,9 @@ export type Database = {
           ai_suggested_category?: string | null
           ai_suggested_priority?: string | null
           area_details?: string | null
+          bid_deadline?: string | null
+          bidding_closed_at?: string | null
+          bidding_closed_reason?: string | null
           client_id?: string
           consultant_id?: string | null
           cost_breakdown?: Json | null
@@ -8259,6 +8416,25 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_questions_public: {
+        Row: {
+          answer: string | null
+          answered_at: string | null
+          created_at: string | null
+          id: string | null
+          question: string | null
+          ticket_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_questions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vmware_settings_safe: {
         Row: {
           auto_shutdown_hours: number | null
@@ -8488,6 +8664,10 @@ export type Database = {
         Returns: undefined
       }
       admin_storage_overview: { Args: never; Returns: Json }
+      answer_ticket_question: {
+        Args: { _answer: string; _question_id: string }
+        Returns: undefined
+      }
       apply_provider_payment: {
         Args: {
           _amount: number
@@ -8499,6 +8679,10 @@ export type Database = {
           _source?: string
           _transaction_id: string
         }
+        Returns: string
+      }
+      ask_ticket_question: {
+        Args: { _question: string; _ticket_id: string }
         Returns: string
       }
       assert_demo_slot_not_past: {
@@ -8532,6 +8716,7 @@ export type Database = {
         Returns: boolean
       }
       can_use_internal_notes: { Args: { _ticket_id: string }; Returns: boolean }
+      cancel_counter: { Args: { _counter_id: string }; Returns: undefined }
       card_payment_context: {
         Args: { _payment_id: string; _user_id: string }
         Returns: Json
@@ -8590,6 +8775,7 @@ export type Database = {
         Args: { _plan_id: string; _tickets: number; _voucher_code?: string }
         Returns: string
       }
+      close_expired_bidding: { Args: never; Returns: number }
       complete_live_interview: {
         Args: {
           _overall: number
@@ -8659,6 +8845,16 @@ export type Database = {
       }
       consume_remote_share_quota: { Args: never; Returns: boolean }
       contact_details_in_text: { Args: { _text: string }; Returns: boolean }
+      counter_offer: {
+        Args: {
+          _days: number
+          _hours: number
+          _message?: string
+          _proposal_id: string
+          _rate: number
+        }
+        Returns: string
+      }
       create_company: {
         Args: { _industry?: string; _name: string; _size?: string }
         Returns: string
@@ -8787,6 +8983,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      hide_ticket_question: {
+        Args: { _hidden: boolean; _question_id: string }
+        Returns: undefined
       }
       interview_role: {
         Args: { _session_id: string; _user_id: string }
@@ -8981,6 +9181,10 @@ export type Database = {
         Args: { _accept: boolean; _tenant_id: string }
         Returns: undefined
       }
+      respond_to_counter: {
+        Args: { _accept: boolean; _counter_id: string }
+        Returns: string
+      }
       respond_to_ticket_rate: {
         Args: { _approve: boolean; _note?: string; _rate_id: string }
         Returns: undefined
@@ -9128,6 +9332,13 @@ export type Database = {
       }
       telegram_my_status: { Args: never; Returns: Json }
       telegram_unlink: { Args: never; Returns: undefined }
+      ticket_bid_counts: {
+        Args: { _ticket_ids: string[] }
+        Returns: {
+          bids: number
+          ticket_id: string
+        }[]
+      }
       ticket_consultant_for_me: {
         Args: { _ticket_id: string }
         Returns: string
