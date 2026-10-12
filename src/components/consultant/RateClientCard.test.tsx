@@ -47,7 +47,7 @@ describe('RateClientCard', () => {
     db.error = { message: 'Too many attempts. Please wait a while and try again.' };
     ui();
     await screen.findByText('Rate this client');
-    fireEvent.click(screen.getByRole('radio', { name: '5 stars', checked: false, hidden: false }));
+    fireEvent.click(screen.getByRole('radiogroup', { name: 'Overall' }).querySelectorAll('[role=radio]')[4]);
     fireEvent.click(screen.getByRole('button', { name: 'Submit rating' }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Too many attempts. Please wait a while and try again.'));
   });
