@@ -17,7 +17,7 @@ export default function BidCounterDialog({ bid, hasCounter, open, onOpenChange }
   useEffect(() => { if (open) { setRate(String(bid.proposed_rate)); setHours(String(bid.estimated_hours)); setDays(String(bid.timeline_days)); setMessage(''); } }, [open, bid.id, bid.proposed_rate, bid.estimated_hours, bid.timeline_days]);
   const input = { proposalId: bid.id, rate: Number(rate), hours: Number(hours), days: Number(days), message };
   const problem = counterProblem(input, hasCounter);
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Make a counter-offer</DialogTitle></DialogHeader>
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent aria-describedby={undefined}><DialogHeader><DialogTitle>Make a counter-offer</DialogTitle></DialogHeader>
     <form className="space-y-3" onSubmit={e => { e.preventDefault(); if (problem) { toast.error(problem); return; } send.mutate(input, { onSuccess: () => { toast.success('Counter-offer sent.'); onOpenChange(false); }, onError: (e: any) => toast.error(e.message) }); }}>
       <Label htmlFor="counter-rate">Rate per hour</Label><Input id="counter-rate" type="number" min="0.01" step="any" value={rate} onChange={e => setRate(e.target.value)} />
       <Label htmlFor="counter-hours">Estimated hours</Label><Input id="counter-hours" type="number" min="0.01" step="any" value={hours} onChange={e => setHours(e.target.value)} />

@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useRespondToProposal } from '@/hooks/useProposals';
 import { useBiddingClock, useTicketBids, useTicketQuestions, useShortlist, useCancelCounter, useCloseBidding } from '@/hooks/useClientBids';
 import { compareBids, comparisonHighlights, estimatedTotal, biddingIsOpen, biddingStatus, type BiddingTicket, type ComparisonSort } from '@/lib/clientBidding';
-import { bidCountdown, formatRemaining } from '@/lib/bidding';
+import { formatRemaining } from '@/lib/bidding';
 import { useCriticalView } from '@/hooks/useCriticalService';
 import { effectiveRate, formatPercent, surchargeApplies } from '@/lib/criticalService';
 import RatingStars from './RatingStars';
@@ -33,6 +34,7 @@ function Attachment({ attachment }: { attachment: any }) {
   return <Button variant="link" size="sm" onClick={open}><Paperclip className="h-3 w-3 me-1" />{attachment.file_name}</Button>;
 }
 export default function TicketBids({ ticketId, ticket = {}, onInvite = () => {}, readOnly = false }: { ticketId: string; ticket?: BiddingTicket; onInvite?: () => void; readOnly?: boolean }) {
+  const queryClient = useQueryClient();
   const { data, isLoading, error } = useTicketBids(ticketId);
   const { data: questions = [], error: questionError } = useTicketQuestions(ticketId);
   const { data: critical } = useCriticalView(ticketId);
@@ -116,6 +118,6 @@ export default function TicketBids({ ticketId, ticket = {}, onInvite = () => {},
     {counterBid && <BidCounterDialog bid={counterBid} hasCounter={!!counterFor(counterBid)} open onOpenChange={v => { if (!v) setCounterBid(null); }} />}
     {declineBid && <BidDeclineDialog id={declineBid} open onOpenChange={v => { if (!v) setDeclineBid(null); }} />}
     <AlertDialog open={closeOpen} onOpenChange={setCloseOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Close bidding now</AlertDialogTitle><AlertDialogDescription>Close bidding now?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><Button disabled={close.isPending} onClick={() => close.mutate(ticketId, { onSuccess: () => setCloseOpen(false), onError: reportError })}>Close bidding now</Button></AlertDialogFooter></AlertDialogContent></AlertDialog>
-    <AlertDialog open={!!acceptBid} onOpenChange={v => { if (!v) setAcceptBid(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Accept bid</AlertDialogTitle><AlertDialogDescription>The other bidders will be told that another consultant was chosen.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><Button disabled={accept.isPending} onClick={() => { if (!acceptBid) return; accept.mutate({ proposalId: acceptBid.id, status: 'accepted' }, { onSuccess: () => { setAcceptBid(null); toast.success('Bid accepted!'); }, onError: reportError }); }}>Accept bid</Button></AlertDialogFooter></AlertDialogContent></AlertDialog>
+    <AlertDialog open={!!acceptBid} onOpenChange={v => { if (!v) setAcceptBid(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Accept bid</AlertDialogTitle><AlertDialogDescription>The other bidders will be told that another consultant was chosen.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><Button disabled={accept.isPending} onClick={() => { if (!acceptBid) return; accept.mutate({ proposalId: acceptBid.id, status: 'accepted' }, { onSuccess: () => { setAcceptBid(null); for (const key of ['client-bids', 'client-bid-summary']) void queryClient.invalidateQueries({ queryKey: [key] }); toast.success('Bid accepted!'); }, onError: reportError }); }}>Accept bid</Button></AlertDialogFooter></AlertDialogContent></AlertDialog>
   </div>;
 }
