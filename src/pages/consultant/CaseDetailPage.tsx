@@ -26,6 +26,8 @@ import TicketTimesheet from '@/components/client/TicketTimesheet';
 import TicketPaymentSection from '@/components/payments/TicketPaymentSection';
 import { areasOf, areaLabel } from '@/lib/sapAreas';
 import { cleanNoteList } from '@/lib/sapNotes';
+import RateClientCard from '@/components/consultant/RateClientCard';
+import ClientRatingChip from '@/components/consultant/ClientRatingChip';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -275,6 +277,12 @@ export default function CaseDetailPage() {
           <p className="text-xs text-muted-foreground">
             Created {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}
           </p>
+          {ticket.client_id && (
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+              {clientProfile?.company_name && <span className="font-medium text-foreground">{clientProfile.company_name}</span>}
+              <ClientRatingChip clientId={ticket.client_id} details />
+            </div>
+          )}
         </div>
         <Badge className={`${statusColors[ticket.status || 'new']} text-xs`}>
           {(ticket.status || 'new').replace(/_/g, ' ')}
@@ -304,6 +312,11 @@ export default function CaseDetailPage() {
       {/* The assigned consultant hands the ticket back to the client, resumes work or marks it resolved */}
       {ticket.consultant_id && !!consultantData?.id && consultantData.id === ticket.consultant_id && (
         <TicketStatusActions ticketId={ticket.id} status={ticket.status} />
+      )}
+
+      {/* The assigned consultant rates the client once the request is finished */}
+      {(ticket.status === 'resolved' || ticket.status === 'closed') && !!consultantData?.id && consultantData.id === ticket.consultant_id && ticket.client_id && (
+        <RateClientCard ticketId={ticket.id} consultantId={consultantData.id} clientId={ticket.client_id} />
       )}
 
       {/* The timesheet of this case: the hourly rate, the activities and the timesheets that the client approves */}

@@ -154,6 +154,7 @@ const AdminPaymentsPage = React.lazy(() => import("./pages/admin/PaymentsAdminPa
 const AdminKnowledgeReviewPage = React.lazy(() => import("./pages/admin/KnowledgeReviewPage.tsx"));
 const VMwarePricingSection = React.lazy(() => import("./components/admin/console/sections/VMwarePricingSection.tsx"));
 const AdminClientApprovalsPage = React.lazy(() => import("./pages/admin/ClientApprovalsPage.tsx"));
+const AdminClientReviewsPage = React.lazy(() => import("./pages/admin/ClientReviewsPage.tsx"));
 const AdminDemoRequestsPage = React.lazy(() => import("./pages/admin/DemoRequestsPage.tsx"));
 
 // Super admin pages
@@ -426,6 +427,7 @@ const App = () => (
               <Route path="payments" element={<AdminPaymentsPage />} />
               <Route path="knowledge-review" element={<AdminKnowledgeReviewPage />} />
               <Route path="client-approvals" element={<AdminClientApprovalsPage />} />
+              <Route path="client-reviews" element={<AdminClientReviewsPage />} />
               <Route path="demo-requests" element={<AdminDemoRequestsPage />} />
             </Route>
             <Route path="/super-admin" element={<ProtectedRoute requiredRole="super-admin"><ErrorBoundary><SuperAdminLayout /></ErrorBoundary></ProtectedRoute>}>

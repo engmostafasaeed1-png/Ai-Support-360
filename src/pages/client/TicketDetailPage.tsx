@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import ClientRatingChip from '@/components/consultant/ClientRatingChip';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -205,7 +206,10 @@ export default function TicketDetailPage() {
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h1 className="text-xl font-bold text-foreground">{isolateDates(ticket.title)}</h1>
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold text-foreground">{isolateDates(ticket.title)}</h1>
+              {isConsultant && ticket.client_id && <ClientRatingChip clientId={ticket.client_id} className="mt-1" />}
+            </div>
             <ShareMenu
               title={ticket.title}
               text={`Ticket: ${ticket.title} — ${ticket.sap_module} — ${ticket.status}`}

@@ -48,6 +48,7 @@ const adminNavItems: NavItem[] = [
   { label: 'Tickets', path: '/admin/tickets', icon: Kanban },
   { label: 'Approvals', path: '/admin/approvals', icon: UserCheck },
   { label: 'Client approvals', path: '/admin/client-approvals', icon: BadgeCheck },
+  { label: 'Client ratings', path: '/admin/client-reviews', icon: Star },
   { label: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
   { label: 'Environments', path: '/admin/environments', icon: Monitor },
   { label: 'Env Logs', path: '/admin/environment-logs', icon: ScrollText },

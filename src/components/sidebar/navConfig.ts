@@ -223,6 +223,7 @@ export const adminNavGroups: NavGroup[] = [
       { key: 'users', icon: Users, path: '/admin/users' },
       { key: 'approvals', icon: UserCheck, path: '/admin/approvals' },
       { key: 'client_approvals', icon: BadgeCheck, path: '/admin/client-approvals', fallback: 'Client approvals' },
+      { key: 'client_ratings', icon: StarHalf, path: '/admin/client-reviews', fallback: 'Client ratings' },
       { key: 'interview_training', icon: Brain, path: '/admin/interview-training' },
       { key: 'question_library', icon: BookMarked, path: '/admin/question-library', fallback: 'Question library' },
       { key: 'interview_templates', icon: LayoutTemplate, path: '/admin/interview-templates', fallback: 'Interview templates' },
