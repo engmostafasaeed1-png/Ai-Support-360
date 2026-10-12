@@ -52,7 +52,7 @@ export default function ConsultantApprovalsPage() {
         .from('consultants')
         .select(`
           id, user_id, bio, hourly_rate, currency, languages, industries, ai_skills_score, created_at, verification_status,
-          city, country, linkedin_url, linkedin_checked_at, credly_username, credly_checked_at, github_url, personal_website,
+          city, country, linkedin_checked_at, credly_checked_at,
           consultant_skills (sap_module, proficiency_level),
           certifications (id, name, issuer, issue_date, expiry_date, document_url, verified)
         `)
@@ -70,6 +70,18 @@ export default function ConsultantApprovalsPage() {
           .in('user_id', userIds);
         if (profilesError) throw profilesError;
         (profiles || []).forEach((p: any) => nameByUser.set(p.user_id, p.display_name));
+      }
+
+      // The links are read from the view of contact links (administrators see every row).
+      const consultantIds = rows.map((c: any) => c.id).filter(Boolean);
+      const linksById = new Map<string, any>();
+      if (consultantIds.length > 0) {
+        const { data: links, error: linksError } = await (supabase as any)
+          .from('consultant_contact_links')
+          .select('consultant_id, linkedin_url, github_url, personal_website, credly_username')
+          .in('consultant_id', consultantIds);
+        if (linksError) throw linksError;
+        (links || []).forEach((l: any) => linksById.set(l.consultant_id, l));
       }
 
       return rows.map((c: any) => ({

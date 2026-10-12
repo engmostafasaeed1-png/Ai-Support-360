@@ -138,7 +138,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
         if (!user) return;
         const [profileResult, consultantResult] = await Promise.all([
           supabase.from('profiles').select('display_name').eq('user_id', user.id).maybeSingle(),
-          supabase.from('consultants').select('*').eq('user_id', user.id).maybeSingle(),
+          supabase.from('consultants').select('id, bio, hourly_rate, currency, timezone, languages, city, country').eq('user_id', user.id).maybeSingle(),
         ]);
         if (profileResult.error) throw profileResult.error;
         if (consultantResult.error) throw consultantResult.error;
@@ -148,7 +148,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           setData(prev => ({ ...prev, displayName: profileResult.data?.display_name || '' }));
           return;
         }
-        const [skills, certificates, jobs, studies, projects, slots, privateDetails] = await Promise.all([
+        const [skills, certificates, jobs, studies, projects, slots, privateDetails, contactLinks] = await Promise.all([
           supabase.from('consultant_skills').select('*').eq('consultant_id', c.id),
           supabase.from('certifications').select('*').eq('consultant_id', c.id),
           supabase.from('consultant_work_history').select('*').eq('consultant_id', c.id),
@@ -156,8 +156,10 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           supabase.from('consultant_projects').select('*').eq('consultant_id', c.id),
           supabase.from('availability_slots').select('*').eq('consultant_id', c.id),
           supabase.from('consultant_private').select('nationality').eq('consultant_id', c.id).maybeSingle(),
+          // The links are read from the view of contact links (the consultant's own row).
+          (supabase as any).from('consultant_contact_links').select('linkedin_url, github_url, personal_website, credly_username').eq('consultant_id', c.id).maybeSingle(),
         ]);
-        for (const result of [skills, certificates, jobs, studies, projects, slots, privateDetails]) {
+        for (const result of [skills, certificates, jobs, studies, projects, slots, privateDetails, contactLinks]) {
           if (result.error) throw result.error;
         }
         if (!active) return;
@@ -168,8 +170,8 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           hourlyRate: Number(c.hourly_rate) || 0, currency: c.currency || 'USD',
           timezone: c.timezone || 'Asia/Riyadh', languages: c.languages || ['en'],
           nationality: privateDetails.data?.nationality || '', city: c.city || '', country: c.country || '',
-          linkedinUrl: c.linkedin_url || '', githubUrl: c.github_url || '',
-          personalWebsite: c.personal_website || '', credlyUsername: c.credly_username || '',
+          linkedinUrl: contactLinks.data?.linkedin_url || '', githubUrl: contactLinks.data?.github_url || '',
+          personalWebsite: contactLinks.data?.personal_website || '', credlyUsername: contactLinks.data?.credly_username || '',
           skills: (skills.data || []).map(s => ({ sapModule: s.sap_module, proficiencyLevel: s.proficiency_level || 1, yearsExperience: s.years_experience || 0, certified: Boolean(s.certified) })),
           certifications: (certificates.data || []).map(s => ({ id: s.id, name: s.name, issuer: s.issuer || '', issueDate: s.issue_date || '', expiryDate: s.expiry_date || '' })),
           workHistory: (jobs.data || []).map(s => ({ companyName: s.company_name, jobTitle: s.job_title, startDate: s.start_date || '', endDate: s.end_date || '', description: s.description || '', isCurrent: Boolean(s.is_current) })),

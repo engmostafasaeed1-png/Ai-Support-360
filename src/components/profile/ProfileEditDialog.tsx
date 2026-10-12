@@ -65,7 +65,12 @@ export default function ProfileEditDialog({ open, onOpenChange, role }: Props) {
       };
 
       if (role === 'consultant') {
-        const { data: c } = await supabase.from('consultants').select('*').eq('user_id', uid).maybeSingle();
+        const { data: row } = await supabase.from('consultants').select('id, bio, hourly_rate, city, country').eq('user_id', uid).maybeSingle();
+        // The links are read from the view of contact links (the consultant's own row).
+        const { data: links } = row
+          ? await (supabase as any).from('consultant_contact_links').select('linkedin_url, github_url, personal_website').eq('consultant_id', row.id).maybeSingle()
+          : { data: null };
+        const c = row ? { ...row, linkedin_url: links?.linkedin_url ?? null, github_url: links?.github_url ?? null, personal_website: links?.personal_website ?? null } : null;
         if (c) {
           updates.bio = c.bio || '';
           updates.hourly_rate = c.hourly_rate?.toString() || '';

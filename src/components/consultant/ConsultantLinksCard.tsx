@@ -26,11 +26,26 @@ async function loadMine() {
   if (!user) return null;
   const { data, error } = await supabase
     .from('consultants')
-    .select('city, country, linkedin_url, github_url, personal_website, credly_username, linkedin_checked_at, credly_checked_at')
+    .select('id, city, country, linkedin_checked_at, credly_checked_at')
     .eq('user_id', user.id)
     .maybeSingle();
   if (error) throw error;
-  return data ? { ...data, user_id: user.id } : null;
+  if (!data) return null;
+  // The links are read from the view of contact links (the consultant's own row).
+  const { data: links, error: linksError } = await (supabase as any)
+    .from('consultant_contact_links')
+    .select('linkedin_url, github_url, personal_website, credly_username')
+    .eq('consultant_id', data.id)
+    .maybeSingle();
+  if (linksError) throw linksError;
+  return {
+    ...data,
+    linkedin_url: (links?.linkedin_url ?? null) as string | null,
+    github_url: (links?.github_url ?? null) as string | null,
+    personal_website: (links?.personal_website ?? null) as string | null,
+    credly_username: (links?.credly_username ?? null) as string | null,
+    user_id: user.id,
+  };
 }
 
 /** The consultant's place (clients see it as an area on a map) and the links to LinkedIn and Credly, with what the platform team has checked. */
