@@ -16,8 +16,11 @@ describe('ConsultantExperienceCard', () => {
     expect(screen.queryByText('Customer segments')).toBeNull();
     expect(screen.queryByText('Vertical solutions')).toBeNull();
     expect(screen.queryByText('Working week')).toBeNull();
-    expect(screen.getByText('English - Fluent (business)')).toBeInTheDocument();
-    expect(screen.getByText('Arabic - Native')).toBeInTheDocument();
+    // language name and level are separate text nodes so each can be translated
+    expect(screen.getByText('English')).toBeInTheDocument();
+    expect(screen.getByText('Fluent (business)')).toBeInTheDocument();
+    expect(screen.getByText('Arabic')).toBeInTheDocument();
+    expect(screen.getByText('Native')).toBeInTheDocument();
   });
   it('shows nothing when every list is empty', () => {
     const { container } = render(<ConsultantExperienceCard data={{}} />);

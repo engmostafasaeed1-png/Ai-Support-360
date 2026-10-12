@@ -69,6 +69,18 @@ describe('context fit between a request and a consultant', () => {
     expect(r.score).toBe(50);
   });
 
+  it('lists every requested solution on its own, as a match or as a gap', () => {
+    const r = contextFit({
+      vertical_solutions: ['SAP IS-Utilities (IS-U, billing and customer service)', 'SAP Mining (mine-to-market, heavy equipment)'],
+      localization_solutions: ['Saudi Arabia ZATCA e-invoicing (FATOORA, phase 1 and 2)'],
+    }, gulf);
+    expect(r.matches).toEqual([
+      'Vertical solution: SAP IS-Utilities (IS-U, billing and customer service)',
+      'Localization solution: Saudi Arabia ZATCA e-invoicing (FATOORA, phase 1 and 2)',
+    ]);
+    expect(r.gaps).toEqual(['Vertical solution: SAP Mining (mine-to-market, heavy equipment)']);
+  });
+
   it('is case and space insensitive and ignores "Other"', () => {
     expect(contextFit({ country: '  saudi   arabia ' }, gulf).score).toBe(100);
     expect(contextFit({ vertical_solutions: ['Other', 'sap is-utilities (is-u, billing and customer service)'] }, gulf).score).toBe(100);

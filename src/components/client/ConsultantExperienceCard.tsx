@@ -62,7 +62,15 @@ export default function ConsultantExperienceCard({ data }: { data: ConsultantExp
           <div key={r.label}>
             <p className="text-xs font-medium text-muted-foreground mb-1">{r.label}</p>
             <div className="flex flex-wrap gap-1.5">
-              {r.items.map(item => <Badge key={item} variant="outline" className="text-xs font-normal whitespace-normal">{item}</Badge>)}
+              {r.items.map(item => {
+                // Language lines "English - Fluent (business)": name and level in separate spans so each can be translated.
+                const i = r.label === 'Languages' ? item.indexOf(' - ') : -1;
+                return (
+                  <Badge key={item} variant="outline" className="text-xs font-normal whitespace-normal">
+                    {i >= 0 ? <><span>{item.slice(0, i)}</span>{' - '}<span>{item.slice(i + 3)}</span></> : item}
+                  </Badge>
+                );
+              })}
             </div>
           </div>
         ))}

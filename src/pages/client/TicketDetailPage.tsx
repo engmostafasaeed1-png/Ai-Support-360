@@ -57,6 +57,7 @@ import { SapNoteLinks } from '@/components/ticket/SapNotesField';
 import { cleanNoteList } from '@/lib/sapNotes';
 import { isolateDates } from '@/lib/bidi';
 import { ticketContextBadges } from '@/lib/ticketContext';
+import { splitBadge } from '@/components/client/ContextFitBadges';
 
 function TicketFileLink({ fileUrl, fileName }: { fileUrl: string | null; fileName: string | null }) {
   const href = useChatFileUrl(fileUrl);
@@ -343,9 +344,14 @@ export default function TicketDetailPage() {
               <CardContent className="p-4 space-y-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Matching context</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {ticketContextBadges((ticket as any).ticket_context).map(line => (
-                    <Badge key={line} variant="outline" className="text-xs font-normal whitespace-normal">{line}</Badge>
-                  ))}
+                  {ticketContextBadges((ticket as any).ticket_context).map(line => {
+                    const { prefix, label } = splitBadge(line);
+                    return (
+                      <Badge key={line} variant="outline" className="text-xs font-normal whitespace-normal">
+                        {prefix ? <><span>{prefix}</span> <span>{label}</span></> : <span>{label}</span>}
+                      </Badge>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
