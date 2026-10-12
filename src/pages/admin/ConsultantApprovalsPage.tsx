@@ -23,6 +23,8 @@ import ConsultantTrustPanel from '@/components/admin/ConsultantTrustPanel';
 import CertificateReview from '@/components/admin/CertificateReview';
 import { ApproveWithItemsDialog, AdminVerificationItemsPanel, OverdueItemsBanner } from '@/components/admin/PendingVerificationItems';
 import { placeLabel } from '@/lib/geo';
+import { useAdminPayoutStatus } from '@/hooks/useBilling';
+import { PAYOUT_STATUS_LABELS, payoutStateFor, payoutStatusMap } from '@/lib/payoutStatus';
 import {
   STATE_LABELS, STATE_TONES, STATUS_FILTERS, countByStatus, countForFilter, decisionOptions, isVerificationState,
   type DecisionOption, type VerificationState,
@@ -36,6 +38,9 @@ export default function ConsultantApprovalsPage() {
   const [decisionTarget, setDecisionTarget] = useState<{ id: string; name: string; option: DecisionOption } | null>(null);
   const [conditionalTarget, setConditionalTarget] = useState<{ id: string; name: string } | null>(null);
   const [decisionReason, setDecisionReason] = useState('');
+  const [bankMissingOnly, setBankMissingOnly] = useState(false);
+  const payoutStatusQ = useAdminPayoutStatus();
+  const payoutMap = payoutStatusMap(payoutStatusQ.data);
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
   const queryClient = useQueryClient();
@@ -203,7 +208,8 @@ export default function ConsultantApprovalsPage() {
     queryClient.invalidateQueries({ queryKey: ['realtime-consultants'] });
   };
 
-  const list = consultants || [];
+  const allRows = consultants || [];
+  const list = bankMissingOnly ? allRows.filter((c: any) => payoutStateFor(payoutMap, c.id) === 'missing') : allRows;
 
   return (
     <div className="space-y-6">
@@ -228,6 +234,14 @@ export default function ConsultantApprovalsPage() {
             {f.label}{statusRows ? ` (${countForFilter(counts, f)})` : ''}
           </button>
         ))}
+        <button
+          type="button"
+          aria-pressed={bankMissingOnly}
+          onClick={() => { setBankMissingOnly((v) => !v); setExpanded(null); }}
+          className={`rounded-xl px-3 py-1.5 text-xs md:text-sm font-medium transition-all ${bankMissingOnly ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+        >
+          Bank details missing
+        </button>
       </div>
 
       {isLoading ? (
@@ -276,6 +290,14 @@ export default function ConsultantApprovalsPage() {
                         <p className="text-[10px] text-muted-foreground">{t('approvals_page.ai_score')}</p>
                       </div>
                       <Badge variant="outline" className={`${STATE_TONES[status]} text-[10px]`}>{STATE_LABELS[status]}</Badge>
+                      {payoutStatusQ.data && (() => {
+                        const ps = payoutStateFor(payoutMap, c.id);
+                        return (
+                          <Badge variant={ps === 'missing' ? 'destructive' : ps === 'verified' ? 'default' : 'secondary'} className="text-[10px] hidden sm:inline-flex">
+                            {PAYOUT_STATUS_LABELS[ps]}
+                          </Badge>
+                        );
+                      })()}
                       {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                     </div>
                   </div>
