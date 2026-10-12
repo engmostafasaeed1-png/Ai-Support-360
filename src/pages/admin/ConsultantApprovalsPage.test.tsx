@@ -77,6 +77,7 @@ function show() {
 beforeEach(() => {
   db.updates.length = 0;
   db.tables.consultants = { data: [row('c1', 'u1', 'pending'), row('c2', 'u2', 'verified', { city: null, country: null })], error: null };
+  db.tables.consultant_contact_links = { data: [{ consultant_id: 'c1', linkedin_url: 'https://www.linkedin.com/in/jane-doe', github_url: null, personal_website: null, credly_username: null }, { consultant_id: 'c2', linkedin_url: 'https://www.linkedin.com/in/jane-doe', github_url: null, personal_website: null, credly_username: null }], error: null };
   db.tables.profiles = { data: [{ user_id: 'u1', display_name: 'Jane Doe' }, { user_id: 'u2', display_name: 'Omar Ali' }], error: null };
   vi.mocked(toast.success).mockReset();
   vi.mocked(toast.error).mockReset();
