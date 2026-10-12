@@ -984,9 +984,11 @@ export type Database = {
           company_name: string | null
           company_size: string | null
           company_website: string | null
+          country: string | null
           created_at: string
           custom_nda_filename: string | null
           custom_nda_url: string | null
+          customer_segment: string | null
           headquarters: string | null
           id: string
           industry: string | null
@@ -1027,9 +1029,11 @@ export type Database = {
           company_name?: string | null
           company_size?: string | null
           company_website?: string | null
+          country?: string | null
           created_at?: string
           custom_nda_filename?: string | null
           custom_nda_url?: string | null
+          customer_segment?: string | null
           headquarters?: string | null
           id?: string
           industry?: string | null
@@ -1070,9 +1074,11 @@ export type Database = {
           company_name?: string | null
           company_size?: string | null
           company_website?: string | null
+          country?: string | null
           created_at?: string
           custom_nda_filename?: string | null
           custom_nda_url?: string | null
+          customer_segment?: string | null
           headquarters?: string | null
           id?: string
           industry?: string | null
@@ -1629,23 +1635,29 @@ export type Database = {
           credly_checked_at: string | null
           credly_username: string | null
           currency: string | null
+          customer_segments: string[]
           cv_url: string | null
+          deployment_experience: string[]
           github_url: string | null
           hourly_rate: number | null
           id: string
           industries: string[] | null
+          language_levels: Json
           languages: string[] | null
           latitude: number | null
           linkedin_checked_at: string | null
           linkedin_url: string | null
           localization_countries: string[]
+          localization_solutions: string[]
           location: unknown
           longitude: number | null
           nationality: string | null
           new_case_alerts: boolean
+          onsite_countries: string[]
           personal_website: string | null
           profile_video_url: string | null
           profile_visible: boolean
+          project_scale: string | null
           project_types: string[]
           rating: number | null
           response_time_minutes: number | null
@@ -1662,6 +1674,9 @@ export type Database = {
           verification_status:
             | Database["public"]["Enums"]["verification_status"]
             | null
+          vertical_solutions: string[]
+          work_modes: string[]
+          working_week: string | null
         }
         Insert: {
           ai_interview_badge?: string | null
@@ -1678,23 +1693,29 @@ export type Database = {
           credly_checked_at?: string | null
           credly_username?: string | null
           currency?: string | null
+          customer_segments?: string[]
           cv_url?: string | null
+          deployment_experience?: string[]
           github_url?: string | null
           hourly_rate?: number | null
           id?: string
           industries?: string[] | null
+          language_levels?: Json
           languages?: string[] | null
           latitude?: number | null
           linkedin_checked_at?: string | null
           linkedin_url?: string | null
           localization_countries?: string[]
+          localization_solutions?: string[]
           location?: unknown
           longitude?: number | null
           nationality?: string | null
           new_case_alerts?: boolean
+          onsite_countries?: string[]
           personal_website?: string | null
           profile_video_url?: string | null
           profile_visible?: boolean
+          project_scale?: string | null
           project_types?: string[]
           rating?: number | null
           response_time_minutes?: number | null
@@ -1711,6 +1732,9 @@ export type Database = {
           verification_status?:
             | Database["public"]["Enums"]["verification_status"]
             | null
+          vertical_solutions?: string[]
+          work_modes?: string[]
+          working_week?: string | null
         }
         Update: {
           ai_interview_badge?: string | null
@@ -1727,23 +1751,29 @@ export type Database = {
           credly_checked_at?: string | null
           credly_username?: string | null
           currency?: string | null
+          customer_segments?: string[]
           cv_url?: string | null
+          deployment_experience?: string[]
           github_url?: string | null
           hourly_rate?: number | null
           id?: string
           industries?: string[] | null
+          language_levels?: Json
           languages?: string[] | null
           latitude?: number | null
           linkedin_checked_at?: string | null
           linkedin_url?: string | null
           localization_countries?: string[]
+          localization_solutions?: string[]
           location?: unknown
           longitude?: number | null
           nationality?: string | null
           new_case_alerts?: boolean
+          onsite_countries?: string[]
           personal_website?: string | null
           profile_video_url?: string | null
           profile_visible?: boolean
+          project_scale?: string | null
           project_types?: string[]
           rating?: number | null
           response_time_minutes?: number | null
@@ -1760,6 +1790,9 @@ export type Database = {
           verification_status?:
             | Database["public"]["Enums"]["verification_status"]
             | null
+          vertical_solutions?: string[]
+          work_modes?: string[]
+          working_week?: string | null
         }
         Relationships: []
       }
@@ -7156,6 +7189,7 @@ export type Database = {
           sla_response_deadline: string | null
           status: Database["public"]["Enums"]["ticket_status"] | null
           tenant_id: string | null
+          ticket_context: Json
           ticket_type: string
           title: string
           updated_at: string
@@ -7211,6 +7245,7 @@ export type Database = {
           sla_response_deadline?: string | null
           status?: Database["public"]["Enums"]["ticket_status"] | null
           tenant_id?: string | null
+          ticket_context?: Json
           ticket_type?: string
           title: string
           updated_at?: string
@@ -7266,6 +7301,7 @@ export type Database = {
           sla_response_deadline?: string | null
           status?: Database["public"]["Enums"]["ticket_status"] | null
           tenant_id?: string | null
+          ticket_context?: Json
           ticket_type?: string
           title?: string
           updated_at?: string
@@ -8727,6 +8763,7 @@ export type Database = {
       }
       pricing_breakdown: { Args: { _base: number }; Returns: Json }
       pricing_terms: { Args: never; Returns: Json }
+      profile_list_is_valid: { Args: { _list: string[] }; Returns: boolean }
       propose_ticket_rate: {
         Args: { _hourly_rate: number; _ticket_id: string }
         Returns: string
