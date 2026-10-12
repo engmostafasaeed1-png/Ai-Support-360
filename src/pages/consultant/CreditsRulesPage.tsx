@@ -46,7 +46,7 @@ const COMING_SOON_EARN = [
 const PLANNED_PERKS = [
   { icon: TrendingUp, title: 'Higher match priority',    detail: 'A boost to the top of client recommendations.' },
   { icon: Users,      title: 'Featured on landing page', detail: 'Showcased in the public consultants section.' },
-  { icon: Zap,        title: 'Premium bidding',          detail: 'Submit a proposal on premium client tickets.' },
+  { icon: Zap,        title: 'Premium bidding',          detail: 'Place a bid on premium client tickets.' },
   { icon: Award,      title: 'Premium badge on profile', detail: 'A permanent ribbon on your profile for a period.' },
 ];
 
