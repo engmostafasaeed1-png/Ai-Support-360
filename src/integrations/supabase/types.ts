@@ -221,6 +221,13 @@ export type Database = {
             foreignKeyName: "availability_slots_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "availability_slots_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -664,6 +671,13 @@ export type Database = {
           verified?: boolean | null
         }
         Relationships: [
+          {
+            foreignKeyName: "certifications_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "certifications_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -1185,6 +1199,13 @@ export type Database = {
             foreignKeyName: "consultant_cv_profiles_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: true
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "consultant_cv_profiles_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -1222,6 +1243,13 @@ export type Database = {
           start_year?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "consultant_education_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "consultant_education_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -1282,6 +1310,13 @@ export type Database = {
             foreignKeyName: "consultant_payout_details_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: true
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "consultant_payout_details_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -1310,6 +1345,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "consultant_private_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "consultant_private_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -1358,6 +1400,13 @@ export type Database = {
             foreignKeyName: "consultant_projects_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "consultant_projects_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -1396,6 +1445,13 @@ export type Database = {
             foreignKeyName: "consultant_skills_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "consultant_skills_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -1430,6 +1486,13 @@ export type Database = {
           reviewer_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "consultant_verification_audit_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "consultant_verification_audit_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -1487,6 +1550,13 @@ export type Database = {
             foreignKeyName: "consultant_verification_items_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "consultant_verification_items_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -1527,6 +1597,13 @@ export type Database = {
           start_date?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "consultant_work_history_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "consultant_work_history_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -1722,6 +1799,13 @@ export type Database = {
             foreignKeyName: "credit_ledger_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "credit_ledger_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -1777,6 +1861,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "critical_alerts_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "critical_alerts_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -1860,6 +1951,13 @@ export type Database = {
           ticket_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "critical_replies_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "critical_replies_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -2096,6 +2194,13 @@ export type Database = {
           id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "environment_consultants_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "environment_consultants_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -2679,6 +2784,13 @@ export type Database = {
             foreignKeyName: "interview_sessions_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "interview_sessions_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -3022,6 +3134,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "knowledge_solutions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_solution_meta_source_consultant_id_fkey"
+            columns: ["source_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
           },
           {
             foreignKeyName: "knowledge_solution_meta_source_consultant_id_fkey"
@@ -3528,6 +3647,13 @@ export type Database = {
             foreignKeyName: "nda_agreements_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "nda_agreements_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -3621,6 +3747,13 @@ export type Database = {
           start_date?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "oncall_rotations_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "oncall_rotations_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -3963,6 +4096,13 @@ export type Database = {
             foreignKeyName: "payments_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "payments_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -4068,6 +4208,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payouts_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "payouts_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -4476,6 +4623,13 @@ export type Database = {
             foreignKeyName: "projects_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "projects_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -4576,6 +4730,13 @@ export type Database = {
           version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "proposals_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "proposals_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -4721,6 +4882,13 @@ export type Database = {
           technical_expertise_score?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "ratings_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "ratings_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -4903,6 +5071,13 @@ export type Database = {
           vmware_host?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "remote_environments_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "remote_environments_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -5306,6 +5481,13 @@ export type Database = {
             foreignKeyName: "sessions_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "sessions_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -5369,6 +5551,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "shared_remote_configs_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "shared_remote_configs_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -5835,6 +6024,13 @@ export type Database = {
             foreignKeyName: "ticket_assignments_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "ticket_assignments_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -6190,6 +6386,13 @@ export type Database = {
             foreignKeyName: "ticket_interviews_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "ticket_interviews_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -6267,6 +6470,13 @@ export type Database = {
           vat_percent?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "ticket_invoices_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "ticket_invoices_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -6364,6 +6574,13 @@ export type Database = {
             foreignKeyName: "ticket_match_requests_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "ticket_match_requests_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -6420,6 +6637,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ticket_payment_terms_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "ticket_payment_terms_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -6489,6 +6713,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ticket_rates_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "ticket_rates_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -6848,6 +7079,13 @@ export type Database = {
             foreignKeyName: "ticket_work_logs_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "ticket_work_logs_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -7038,8 +7276,22 @@ export type Database = {
             foreignKeyName: "tickets_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "tickets_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_critical_first_reply_by_fkey"
+            columns: ["critical_first_reply_by"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
           },
           {
             foreignKeyName: "tickets_critical_first_reply_by_fkey"
@@ -7581,6 +7833,13 @@ export type Database = {
             foreignKeyName: "work_diary_entries_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "work_diary_entries_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
@@ -7631,10 +7890,47 @@ export type Database = {
             foreignKeyName: "certifications_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "certifications_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
             referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
         ]
+      }
+      consultant_contact_links: {
+        Row: {
+          consultant_id: string | null
+          credly_username: string | null
+          github_url: string | null
+          linkedin_url: string | null
+          personal_website: string | null
+          profile_video_url: string | null
+          user_id: string | null
+        }
+        Insert: {
+          consultant_id?: string | null
+          credly_username?: string | null
+          github_url?: string | null
+          linkedin_url?: string | null
+          personal_website?: string | null
+          profile_video_url?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          consultant_id?: string | null
+          credly_username?: string | null
+          github_url?: string | null
+          linkedin_url?: string | null
+          personal_website?: string | null
+          profile_video_url?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       consultant_reviews: {
         Row: {
@@ -7677,6 +7973,13 @@ export type Database = {
           technical_expertise_score?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "ratings_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
           {
             foreignKeyName: "ratings_consultant_id_fkey"
             columns: ["consultant_id"]
@@ -8136,12 +8439,24 @@ export type Database = {
         Returns: undefined
       }
       complete_session: { Args: { _session_id: string }; Returns: undefined }
+      consultant_assigned_to_client: {
+        Args: { _client_id: string; _consultant_id: string }
+        Returns: boolean
+      }
+      consultant_assigned_to_ticket: {
+        Args: { _consultant_id: string; _ticket_id: string }
+        Returns: boolean
+      }
       consultant_booked_times: {
         Args: { _consultant_id: string; _from: string; _to: string }
         Returns: {
           duration_minutes: number
           scheduled_at: string
         }[]
+      }
+      consultant_engaged_on_ticket: {
+        Args: { _consultant_id: string; _ticket_id: string }
+        Returns: boolean
       }
       consultant_has_environment_for_client: {
         Args: { _client_id: string; _consultant_id: string }
@@ -8181,6 +8496,7 @@ export type Database = {
         }[]
       }
       consume_remote_share_quota: { Args: never; Returns: boolean }
+      contact_details_in_text: { Args: { _text: string }; Returns: boolean }
       create_company: {
         Args: { _industry?: string; _name: string; _size?: string }
         Returns: string
