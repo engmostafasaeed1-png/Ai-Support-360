@@ -43,15 +43,15 @@ export interface ConsultantLive {
   ai_interview_badge?: string | null;
   /** Weekly working hours, e.g. "Mon 09:00–17:00". */
   hours?: string[];
-  customer_segments: string[];
-  vertical_solutions: string[];
-  localization_countries: string[];
-  localization_solutions: string[];
-  project_types: string[];
-  deployment_experience: string[];
-  project_scale: string | null;
-  work_modes: string[];
-  working_week: string | null;
+  customer_segments?: string[];
+  vertical_solutions?: string[];
+  localization_countries?: string[];
+  localization_solutions?: string[];
+  project_types?: string[];
+  deployment_experience?: string[];
+  project_scale?: string | null;
+  work_modes?: string[];
+  working_week?: string | null;
 }
 
 /** The columns of `consultants` that the directory reads. */
