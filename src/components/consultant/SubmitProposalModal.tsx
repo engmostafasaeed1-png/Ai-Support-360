@@ -12,6 +12,8 @@ import { effectiveRate, formatCountdown, formatPercent, msLeft } from '@/lib/cri
 import { Send, Paperclip, X, FileText, RefreshCw } from 'lucide-react';
 import VoiceInput from '@/components/ui/voice-input';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { bidCountdown, bidsSoFar, toneClass } from '@/lib/bidding';
 
 interface SubmitProposalModalProps {
   ticketId: string;
@@ -20,10 +22,19 @@ interface SubmitProposalModalProps {
   /** A critical request that is still inside its reply window: the surcharge that a proposal sent in time earns, and the end of the window. */
   criticalPercent?: number | null;
   criticalDueAt?: string | null;
+  /** The bidding deadline of the request, the bids so far and the consultant's own currency (when the page has them). */
+  bidDeadline?: string | null;
+  bidCount?: number;
+  currency?: string | null;
 }
 
-export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, criticalPercent, criticalDueAt }: SubmitProposalModalProps) {
+export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, criticalPercent, criticalDueAt, bidDeadline, bidCount, currency }: SubmitProposalModalProps) {
   const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const unit = currency ? `${currency}/hr` : '$/hr';
+  const money = (n: number) => (currency ? `${currency} ${n.toLocaleString()}` : `$${n.toLocaleString()}`);
+  const deadlineClock = useNow(open ? 30_000 : 0);
+  const deadline = bidCountdown(bidDeadline, deadlineClock);
   const submit = useSubmitProposal();
   const { data: versions } = useProposalVersions(ticketId);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -40,7 +51,8 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
   const clock = useNow(open && criticalDueAt ? 1000 : 0);
   const criticalOn = !!criticalPercent && criticalPercent > 0 && !!criticalDueAt && msLeft(criticalDueAt, clock) > 0;
   const latestVersion = versions && versions.length > 0 ? versions[0] : null;
-  const isRevision = !!latestVersion;
+  // revising = changing a bid that the client has not answered yet; after a withdrawal or a decision a new bid is placed
+  const isRevision = !!latestVersion && latestVersion.status === 'pending';
   const nextVersion = latestVersion ? latestVersion.version + 1 : 1;
 
   const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,12 +88,13 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
       },
       {
         onSuccess: () => {
-          toast.success(isRevision ? `Proposal v${nextVersion} submitted!` : 'Proposal submitted!');
+          toast.success(isRevision ? 'Your bid was revised.' : 'Your bid was sent.');
+          for (const key of ['my-bids', 'open-tickets-for-bidding', 'ticket-bid-counts']) void queryClient.invalidateQueries({ queryKey: [key] });
           setOpen(false);
           setForm({ cover_letter: '', proposed_rate: '', estimated_hours: '', timeline_days: '' });
           setFiles([]);
         },
-        onError: () => toast.error('Failed to submit proposal'),
+        onError: (e: any) => toast.error(e?.message || 'Your bid could not be sent.'),
       }
     );
   };
@@ -97,14 +110,14 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
       <DialogTrigger asChild>
         {trigger || (
           <Button size="sm" className="gradient-primary border-0 gap-1.5 text-xs">
-            <Send className="w-3.5 h-3.5" /> {isRevision ? `Submit v${nextVersion}` : 'Submit Proposal'}
+            <Send className="w-3.5 h-3.5" /> {isRevision ? 'Revise bid' : 'Place a bid'}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg max-h-[90vh] w-[calc(100vw-2rem)] flex flex-col p-4 sm:p-6 rounded-2xl">
         <DialogHeader className="pb-1">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-            Submit Proposal
+            {isRevision ? 'Revise your bid' : 'Place a bid'}
             {isRevision && (
               <Badge variant="secondary" className="text-[10px] bg-accent/20 text-accent gap-1">
                 <RefreshCw className="w-3 h-3" /> v{nextVersion}
@@ -112,6 +125,11 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
             )}
           </DialogTitle>
           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">Bidding on: {ticketTitle}</p>
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
+            <span className={toneClass[deadline.tone]} title={bidDeadline ? new Date(bidDeadline).toLocaleString() : undefined}>{deadline.text}</span>
+            {bidCount !== undefined && <span className="text-muted-foreground">{bidsSoFar(bidCount)}</span>}
+          </div>
+          <p className="text-xs text-muted-foreground">You can revise or withdraw your bid until the client answers.</p>
         </DialogHeader>
 
         <ScrollArea className="flex-1 -mx-1 px-1">
@@ -119,12 +137,12 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
             {/* Previous versions - compact on mobile */}
             {versions && versions.length > 0 && (
               <div className="bg-muted/30 rounded-xl p-2.5 space-y-1">
-                <p className="text-[11px] font-medium text-muted-foreground">Previous Versions</p>
+                <p className="text-[11px] font-medium text-muted-foreground">Earlier versions of your bid</p>
                 {versions.slice(0, 3).map((v: any) => (
                   <div key={v.id} className="flex items-center justify-between text-[11px]">
                     <span className="flex items-center gap-1.5">
                       <Badge variant="outline" className="text-[9px] h-4 px-1.5">v{v.version}</Badge>
-                      <span className="text-muted-foreground">${v.proposed_rate}/hr • {v.estimated_hours}h</span>
+                      <span className="text-muted-foreground">{money(Number(v.proposed_rate))}/hr • {v.estimated_hours}h</span>
                     </span>
                     <Badge variant="secondary" className="text-[9px] h-4">{v.status}</Badge>
                   </div>
@@ -152,7 +170,7 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
             {/* Rate fields - stack 2+1 on mobile */}
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <div>
-                <Label className="text-[11px] sm:text-xs">Rate ($/hr)</Label>
+                <Label className="text-[11px] sm:text-xs">Rate ({unit})</Label>
                 <Input
                   type="number"
                   value={form.proposed_rate}
@@ -186,9 +204,9 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
             {/* Estimated total */}
             {form.proposed_rate && form.estimated_hours && (
               <div className="bg-muted/50 rounded-xl p-2.5 text-sm flex items-center justify-between">
-                <span className="text-muted-foreground text-xs">Estimated Total</span>
+                <span className="text-muted-foreground text-xs">Estimated total</span>
                 <span className="font-semibold text-foreground">
-                  ${(parseFloat(form.proposed_rate) * parseFloat(form.estimated_hours)).toLocaleString()}
+                  {money(parseFloat(form.proposed_rate) * parseFloat(form.estimated_hours))}
                 </span>
               </div>
             )}
@@ -196,9 +214,9 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
             {criticalOn && criticalPercent && criticalDueAt && (
               <div className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs text-red-900 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200" data-testid="critical-proposal-note">
                 <p className="font-semibold">{`Critical request: +${formatPercent(criticalPercent)} on your hourly rate`}</p>
-                <p className="mt-0.5">{`Send this proposal within ${formatCountdown(msLeft(criticalDueAt, clock))} and, if the client accepts it, ${formatPercent(criticalPercent)} is added to the rate you enter.`}</p>
+                <p className="mt-0.5">{`Send this bid within ${formatCountdown(msLeft(criticalDueAt, clock))} and, if the client accepts it, ${formatPercent(criticalPercent)} is added to the rate you enter.`}</p>
                 {Number.isFinite(rateNumber) && rateNumber > 0 && (
-                  <p className="mt-0.5 font-medium">{`A rate of $${rateNumber}/hr becomes $${effectiveRate(rateNumber, criticalPercent)}/hr when it is accepted.`}</p>
+                  <p className="mt-0.5 font-medium">{`A rate of ${money(rateNumber)}/hr becomes ${money(effectiveRate(rateNumber, criticalPercent))}/hr when it is accepted.`}</p>
                 )}
               </div>
             )}
@@ -244,7 +262,7 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
         {/* Sticky submit button */}
         <div className="pt-2 border-t border-border/50">
           <Button onClick={handleSubmit} disabled={submit.isPending} className="w-full gradient-primary border-0 h-10">
-            {submit.isPending ? 'Submitting...' : isRevision ? `Submit Revision v${nextVersion}` : 'Submit Proposal'}
+            {submit.isPending ? 'Sending...' : isRevision ? `Send revised bid (v${nextVersion})` : 'Send bid'}
           </Button>
         </div>
       </DialogContent>
