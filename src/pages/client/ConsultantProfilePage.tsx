@@ -31,6 +31,9 @@ import { placeLabel } from '@/lib/geo';
 import { consultantPoint, formatWeeklyHours, type WeeklySlot } from '@/lib/consultantDirectory';
 import ConsultantExperienceCard from '@/components/client/ConsultantExperienceCard';
 import WeeklyAvailability from '@/components/client/WeeklyAvailability';
+import RatingStars from '@/components/client/RatingStars';
+import CredibilityAvatar from '@/components/client/CredibilityAvatar';
+import { credibility } from '@/lib/consultantCredibility';
 import { bookableTimes, hasWindowOn, localDateKey, type WindowRow } from '@/lib/bookableTimes';
 
 
@@ -41,6 +44,7 @@ export default function ConsultantProfilePage() {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [tab, setTab] = useState('about');
   const [credlyBadges, setCredlyBadges] = useState<any[]>([]);
   const [credlyLoading, setCredlyLoading] = useState(false);
 
@@ -120,6 +124,7 @@ export default function ConsultantProfilePage() {
           reviews: c.total_reviews || 0,
           rate: Number(c.hourly_rate) || 0,
           avatar: initials,
+          avatarUrl: profile?.avatar_url ?? null,
           available: c.availability_status === 'available',
           status: availabilityState(c.availability_status),
           badges: c.verification_status === 'verified' ? ['verified'] : [],
@@ -339,6 +344,7 @@ export default function ConsultantProfilePage() {
 
   const status = (consultant.status ?? (consultant.available ? 'available' : 'offline')) as 'available' | 'busy' | 'offline';
   const statusColor = STATE_META[status].dot;
+  const credibilityResult = credibility({ certifications: detail.certifications, skills: detail.skills, rating: consultant.rating, aiScore: detail.aiScore });
 
   // Free times of the day chosen on the Availability tab: what the consultant offers minus what is already booked. Guests see the sample times.
   const slotList: { time: string; type: string; duration: number }[] = isGuest
@@ -359,98 +365,81 @@ export default function ConsultantProfilePage() {
       </Button>
 
       {/* Hero Section */}
-      <Card className="rounded-2xl border-border/50 overflow-hidden">
-        <div className="h-28 gradient-primary" />
-        <CardContent className="relative px-6 pb-6">
-          <div className="flex flex-col md:flex-row gap-6 -mt-12">
-            {/* Avatar */}
-            <div className="relative">
-              <div className="w-24 h-24 rounded-2xl gradient-primary flex items-center justify-center text-primary-foreground text-3xl font-bold border-4 border-background shadow-lg">
-                {consultant.avatar}
-              </div>
-              <div className={`absolute -bottom-1 -end-1 w-5 h-5 rounded-full ${statusColor} border-2 border-background`} />
+      <Card className="rounded-2xl border-border/50 overflow-hidden" data-testid="profile-hero">
+        <div className="relative h-24 sm:h-28 gradient-primary" data-testid="profile-banner">
+          <ShareMenu
+            title={consultant.name}
+            text={`${consultant.specialty} — ${consultant.rating}★ — $${consultant.rate}/hr`}
+            details={[
+              { label: 'Specialty', value: consultant.specialty },
+              { label: 'Rating', value: `${consultant.rating} (${consultant.reviews} reviews)` },
+              { label: 'Rate', value: `$${consultant.rate}/hr` },
+              { label: 'Location', value: consultant.city },
+            ]}
+            variant="outline"
+            size="sm"
+            className="absolute top-3 end-3 bg-card text-card-foreground"
+          />
+        </div>
+        <CardContent className="px-5 pb-6 sm:px-8">
+          <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-6">
+            <div className="relative -mt-14 shrink-0 self-start sm:-mt-16">
+              <CredibilityAvatar name={consultant.name} initials={consultant.avatar} avatarUrl={consultant.avatarUrl}
+                total={credibilityResult.total} statusClass={statusColor} href="#credibility" />
             </div>
-
-            {/* Info */}
-            <div className="flex-1 pt-2">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground flex items-center gap-2 flex-wrap">
-                    {consultant.name}
-                    <VerificationBadge status={verificationStatus} size="md" />
-                  </h1>
-                  <p className="text-muted-foreground">{consultant.specialty}</p>
-                  <div className="flex items-center gap-3 mt-2 flex-wrap">
-                    <div className="flex items-center gap-1 text-sm">
-                      <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                      <span className="text-muted-foreground">{consultant.city || 'Location not set'}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-sm">
-                      <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                      <span className="text-muted-foreground">{detail.responseTime} {t('consultant_profile.min_response')}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-sm">
-                      <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-                      <span className="text-muted-foreground">{detail.languages.join(', ')}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 mt-3 flex-wrap">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium" data-testid="consultant-status">
-                      <span className={`h-2 w-2 rounded-full ${statusColor}`} />
-                      {STATE_META[status].label}
-                    </span>
-                    {consultant.linkedinVerified && <LinkStatus state={consultant.linkedin_state} label="LinkedIn" />}
-                    {consultant.credlyVerified && <LinkStatus state={consultant.credly_state} label="Credly" />}
-                    {consultant.badges.map((badge: any) => (
-                      <Badge key={badge} variant="secondary" className="text-xs">
-                        {t(`consultants.${badge}`)}
-                      </Badge>
-                    ))}
-                  </div>
-                  {!isGuest && <WeeklyAvailability hours={weeklyHours} className="mt-3" />}
-
+            <div className="min-w-0 flex-1 md:pt-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">{consultant.name}</h1>
+                <VerificationBadge status={verificationStatus} size="md" />
+              </div>
+              <p className="mt-0.5 text-base text-muted-foreground">{consultant.specialty}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  <span>{consultant.city || 'Location not set'}</span>
                 </div>
-
-                {/* Stats + CTA */}
-                <div className="flex flex-col items-end gap-3">
-                  <ShareMenu
-                    title={consultant.name}
-                    text={`${consultant.specialty} — ${consultant.rating}★ — $${consultant.rate}/hr`}
-                    details={[
-                      { label: 'Specialty', value: consultant.specialty },
-                      { label: 'Rating', value: `${consultant.rating} (${consultant.reviews} reviews)` },
-                      { label: 'Rate', value: `$${consultant.rate}/hr` },
-                      { label: 'Location', value: consultant.city },
-                    ]}
-                    variant="outline"
-                    size="sm"
-                  />
-                  <div className="flex items-center gap-4">
-                    <div className="text-center">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                        <span className="text-xl font-bold text-foreground">{consultant.rating}</span>
-                      </div>
-                      <span className="text-xs text-muted-foreground">{consultant.reviews} {t('consultants_page.reviews')}</span>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xl font-bold text-foreground">${consultant.rate}</div>
-                      <span className="text-xs text-muted-foreground">/hr</span>
-                    </div>
-                  </div>
-                  <p className="max-w-xs text-end text-xs text-muted-foreground">Sessions are arranged inside a request, so everything stays protected in the portal.</p>
-                  <Button className="gradient-primary border-0 w-full md:w-auto" size="lg" onClick={() => navigate('/client/new-request')}>
-                    Open a request
-                  </Button>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 shrink-0" />
+                  <span>{detail.responseTime} {t('consultant_profile.min_response')}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Globe className="h-3.5 w-3.5 shrink-0" />
+                  <span>{detail.languages.join(', ')}</span>
                 </div>
               </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium" data-testid="consultant-status">
+                  <span className={`h-2 w-2 rounded-full ${statusColor}`} />
+                  {STATE_META[status].label}
+                </span>
+                {consultant.linkedinVerified && <LinkStatus state={consultant.linkedin_state} label="LinkedIn" />}
+                {consultant.credlyVerified && <LinkStatus state={consultant.credly_state} label="Credly" />}
+                {consultant.badges.map((badge: any) => (
+                  <Badge key={badge} variant="secondary" className="text-xs">{t(`consultants.${badge}`)}</Badge>
+                ))}
+              </div>
+              {!isGuest && <WeeklyAvailability hours={weeklyHours} className="mt-4" />}
             </div>
+            <aside className="w-full shrink-0 space-y-3 md:w-72 md:pt-4">
+              <div className="grid grid-cols-2 gap-3">
+                <Button variant="outline" onClick={() => setTab('reviews')} data-testid="rating-tile"
+                  className="h-auto min-w-0 items-start justify-start whitespace-normal rounded-lg p-3 text-start">
+                  <RatingStars rating={consultant.rating} reviews={consultant.reviews} />
+                </Button>
+                <div className="min-w-0 rounded-lg border border-border bg-card p-3">
+                  <p className="break-words text-2xl font-bold leading-none text-foreground">${consultant.rate}<span className="text-sm font-medium text-muted-foreground">/hr</span></p>
+                  <p className="mt-1.5 text-xs text-muted-foreground">Hourly rate</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Sessions are arranged inside a request, so everything stays protected in the portal.</p>
+              <Button className="gradient-primary border-0 w-full" size="lg" onClick={() => navigate('/client/new-request')}>Open a request</Button>
+            </aside>
           </div>
         </CardContent>
       </Card>
 
       {/* Tabs */}
-      <Tabs defaultValue="about" className="space-y-4">
+      <Tabs value={tab} onValueChange={setTab} className="space-y-4">
         <TabsList className="bg-muted/50 rounded-xl p-1">
           <TabsTrigger value="about" className="rounded-lg text-sm">{t('consultant_profile.about')}</TabsTrigger>
           <TabsTrigger value="skills" className="rounded-lg text-sm">{t('consultant_profile.skills')}</TabsTrigger>
@@ -750,15 +739,7 @@ export default function ConsultantProfilePage() {
             <CardContent>
               {/* Rating summary */}
               <div className="flex items-center gap-6 p-4 rounded-xl bg-muted/20 border border-border/30 mb-6">
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-foreground">{consultant.rating}</div>
-                  <div className="flex items-center gap-0.5 mt-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className={`w-4 h-4 ${i < Math.round(consultant.rating) ? 'text-yellow-500 fill-yellow-500' : 'text-muted'}`} />
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">{consultant.reviews} {t('consultants_page.reviews')}</p>
-                </div>
+                <RatingStars rating={consultant.rating} reviews={consultant.reviews} size="lg" className="shrink-0" />
                 <div className="flex-1 space-y-1.5">
                   {[5, 4, 3, 2, 1].map(star => {
                     const reviews_ = liveReviews && liveReviews.length > 0 ? liveReviews : detail.reviews;
@@ -824,7 +805,7 @@ export default function ConsultantProfilePage() {
       </Tabs>
 
       {/* Profile Credibility Score */}
-      <Card className="rounded-2xl border-border/50">
+      <Card id="credibility" className="rounded-2xl border-border/50 scroll-mt-24">
         <CardContent className="p-6">
           <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" /> Profile Credibility
@@ -835,25 +816,7 @@ export default function ConsultantProfilePage() {
 
           {/* Credibility breakdown */}
           {(() => {
-            const interviewScore = Number(detail.aiScore) || 0;
-            const hasInterview = interviewScore > 0;
-            
-            const certScore = Math.min(detail.certifications.length * 10, 25);
-            const expScore = Math.min(detail.skills.reduce((s: any, sk: any) => s + sk.years, 0), 25);
-            const reviewScore = Math.min(Math.round(consultant.rating * 5), 25);
-            // Interview contributes 20% if completed, based on score (0-100 → 0-20)
-            const interviewContrib = hasInterview ? Math.round((interviewScore / 100) * 20) : 0;
-            // Remaining 5% for profile completeness
-            const profileScore = 5;
-            const total = Math.min(certScore + expScore + reviewScore + interviewContrib + profileScore, 100);
-
-            const segments = [
-              { label: 'Certifications', value: certScore, max: 25, color: 'bg-blue-500' },
-              { label: 'Experience', value: expScore, max: 25, color: 'bg-green-500' },
-              { label: 'Client Reviews', value: reviewScore, max: 25, color: 'bg-amber-500' },
-              { label: 'AI Interview', value: interviewContrib, max: 20, color: 'bg-purple-500', highlight: true },
-              { label: 'Profile Completeness', value: profileScore, max: 5, color: 'bg-muted-foreground/40' },
-            ];
+            const { total, label, hasInterview, interviewScore, interviewContrib, segments } = credibilityResult;
 
             return (
               <div className="space-y-4">
@@ -871,7 +834,7 @@ export default function ConsultantProfilePage() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-foreground">
-                      {total >= 80 ? 'Highly Credible' : total >= 60 ? 'Credible' : total >= 40 ? 'Moderate' : 'Building Profile'}
+                      {label}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {hasInterview
