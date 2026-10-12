@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
-import { render, screen, cleanup, waitFor } from '@testing-library/react';
+import { render, screen, cleanup, waitFor, within, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
@@ -88,6 +88,22 @@ describe('client directory', () => {
 });
 
 describe('client consultant profile', () => {
+  it('keeps identity below the banner, shows credibility and five stars with no reviews, and opens Reviews from the rating tile', async () => {
+    db.tables.consultants = { ...(db.tables.consultants as Record<string, unknown>), rating: 0, total_reviews: 0, bio: '' };
+    show(<ConsultantProfilePage />, '/client/consultants/c1', '/client/consultants/:id');
+    const name = await screen.findByRole('heading', { level: 1, name: 'Jane Doe' });
+    expect(screen.getByTestId('profile-hero')).toContainElement(name);
+    expect(screen.getByTestId('profile-banner')).not.toContainElement(name);
+    const tile = screen.getByTestId('rating-tile');
+    expect(within(tile).getAllByTestId('rating-star')).toHaveLength(5);
+    expect(within(tile).getByText('No reviews yet')).toBeInTheDocument();
+    expect(screen.getByTestId('credibility-pill')).toBeInTheDocument();
+    expect(screen.getByText('JD')).toBeInTheDocument();
+    fireEvent.click(tile);
+    expect(screen.getByRole('tab', { name: 'consultant_profile.reviews' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('data-state', 'active');
+  });
+
   it('shows the locked card when the view returns no row, with no links and no Book button', async () => {
     show(<ConsultantProfilePage />, '/client/consultants/c1', '/client/consultants/:id');
     expect(await screen.findByTestId('contact-links-locked')).toBeTruthy();

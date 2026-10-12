@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Keep consultant credibility calculations and star fills in the shared consultant credibility library, reused by profile and directory displays, so scores and ratings stay consistent.
+
 - Use shared CDN logo pointers for brand artwork and local derived browser icons so all logo placements stay consistent.
 
 - Use the consultant Profile page as the single consolidated editor, reusing existing field controls without a duplicate setup tab; legacy onboarding links must land there.

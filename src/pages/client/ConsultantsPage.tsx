@@ -17,6 +17,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useTranslation } from 'react-i18next';
 import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
 import ConsultantMap from '@/components/client/ConsultantMap';
+import RatingStars from '@/components/client/RatingStars';
 import { sapModules } from '@/data/clientMockData';
 import VerificationBadge from '@/components/consultant/VerificationBadge';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
@@ -468,10 +469,7 @@ export default function ConsultantsPage() {
                   </div>
                   <div className="text-end shrink-0">
                     <p className="text-sm font-bold text-foreground">${c.rate}</p>
-                    <div className="flex items-center gap-0.5 justify-end">
-                      <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                      <span className="text-[10px] text-muted-foreground">{c.rating}</span>
-                    </div>
+                    <RatingStars rating={c.rating} reviews={c.reviews} size="sm" className="max-w-32 justify-end" />
                   </div>
                 </button>
               ))}
@@ -515,11 +513,7 @@ export default function ConsultantsPage() {
                       {c.place || 'Location not set'}
                     </p>
 
-                    <div className="flex items-center gap-2 mt-2">
-                      <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                      <span className="text-sm font-semibold text-foreground">{c.rating}</span>
-                      <span className="text-xs text-muted-foreground">({c.reviews} {t('consultants_page.reviews')})</span>
-                    </div>
+                    <RatingStars rating={c.rating} reviews={c.reviews} size="sm" className="mt-2" />
 
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {c.linkedinVerified && <LinkStatus state={c.linkedin_state} label="LinkedIn" />}
