@@ -30,6 +30,7 @@ import { Sparkline } from '@/components/ui/sparkline';
 import { StatusDot } from '@/components/ui/status-dot';
 import AIInsightsButton from '@/components/ai/AIInsightsButton';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
+import ContextFitBadges from '@/components/client/ContextFitBadges';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -488,6 +489,7 @@ export default function ClientDashboard() {
                     <p className="text-xs text-muted-foreground truncate">{c.specialty}</p>
                   </div>
                 </div>
+                <ContextFitBadges fit={c} className="mb-2" />
 
                 <div className="flex items-center gap-1 mb-2">
                   <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />

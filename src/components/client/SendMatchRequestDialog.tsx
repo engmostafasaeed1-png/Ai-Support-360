@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import ContextFitBadges from '@/components/client/ContextFitBadges';
 import { Loader2, Search, Star, Brain, Send, CheckCircle2, Sparkles, Wifi, WifiOff, Clock, Filter, SlidersHorizontal, ArrowUpDown, X } from 'lucide-react';
 
 interface Props {
@@ -33,6 +34,9 @@ interface AIRecommendation {
   score_breakdown?: MatchCriterion[];
   match_reason: string;
   strengths: string[];
+  context_fit_score?: number | null;
+  context_matches?: string[];
+  context_gaps?: string[];
 }
 
 type SortBy = 'relevance' | 'rating' | 'rate_low' | 'rate_high' | 'ai_score' | 'experience';
@@ -437,6 +441,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
                               {rec.match_reason}
                             </p>
                           )}
+                          {rec && <ContextFitBadges fit={rec} />}
                         </div>
                         <div className="shrink-0 pt-1">
                           {c.alreadySent ? (

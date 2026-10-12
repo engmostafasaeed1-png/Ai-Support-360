@@ -13,6 +13,7 @@ import { useAdminSendMatch } from '@/hooks/useMatchRequests';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { Send, Brain, Star, Sparkles, Shield, Clock, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
+import ContextFitBadges from '@/components/client/ContextFitBadges';
 
 interface Props {
   open: boolean;
@@ -230,6 +231,7 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
                   {isExpanded && (
                     <div className="px-4 pb-4 pt-1 border-t border-border/30 space-y-3">
                       <p className="text-xs text-muted-foreground">{c.match_reason}</p>
+                      <ContextFitBadges fit={c} />
 
                       {/* Score breakdown */}
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
