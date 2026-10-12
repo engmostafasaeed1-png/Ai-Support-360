@@ -156,6 +156,28 @@ export default function OpenTicketsPage() {
         <p className="text-sm text-muted-foreground mt-1">Requests where you can place a bid.</p>
       </div>
 
+      {/* Summary */}
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="rounded-2xl border-border/50">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-foreground">{tickets.length}</p>
+            <p className="text-xs text-muted-foreground">Open requests</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl border-border/50">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-orange-600">{tickets.filter(t => t.urgency === 'high' || t.urgency === 'critical').length}</p>
+            <p className="text-xs text-muted-foreground">High Priority</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl border-border/50">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-accent">{new Set(tickets.flatMap(t => ticketAreas(t))).size}</p>
+            <p className="text-xs text-muted-foreground">SAP Modules</p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Filters */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="relative flex-1 w-full lg:max-w-sm">

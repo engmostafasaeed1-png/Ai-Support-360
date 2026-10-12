@@ -1,78 +1,111 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useConsultantProposals } from '@/hooks/useProposals';
-import { FileText, Clock, CheckCircle2, XCircle, Inbox, DollarSign, Calendar, Paperclip, RefreshCw } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { FileText, Clock, Calendar, Inbox, DollarSign, Star, ChevronDown } from 'lucide-react';
+import SubmitProposalModal from '@/components/consultant/SubmitProposalModal';
+import WithdrawBidButton from '@/components/consultant/WithdrawBidButton';
+import CounterOfferBanner from '@/components/consultant/CounterOfferBanner';
+import { useMyBids, useMyConsultant, useMyCounters, type MyBidRow } from '@/hooks/useBidding';
+import { useNow } from '@/hooks/useCriticalService';
+import { bidCountdown, latestBids, rejectionLine, toneClass } from '@/lib/bidding';
+import { cn } from '@/lib/utils';
 
-const statusConfig: Record<string, { label: string; className: string; icon: typeof CheckCircle2 }> = {
-  pending: { label: 'Pending', className: 'bg-amber-100 text-amber-700', icon: Clock },
-  accepted: { label: 'Accepted', className: 'bg-green-100 text-green-700', icon: CheckCircle2 },
-  rejected: { label: 'Rejected', className: 'bg-red-100 text-red-700', icon: XCircle },
-  withdrawn: { label: 'Withdrawn', className: 'bg-muted text-muted-foreground', icon: XCircle },
+type Filter = 'all' | 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+
+const STATUS: Record<string, { label: string; className: string }> = {
+  pending: { label: 'Waiting for the client', className: 'bg-amber-100 text-amber-700' },
+  accepted: { label: 'Accepted', className: 'bg-green-100 text-green-700' },
+  rejected: { label: 'Not chosen', className: 'bg-red-100 text-red-700' },
+  withdrawn: { label: 'Withdrawn', className: 'bg-muted text-muted-foreground' },
 };
 
-const urgencyColors: Record<string, string> = {
-  low: 'bg-muted text-muted-foreground',
-  medium: 'bg-yellow-100 text-yellow-700',
-  high: 'bg-orange-100 text-orange-700',
-  critical: 'bg-red-100 text-red-700',
-};
+const FILTERS: { key: Filter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'pending', label: 'Active' },
+  { key: 'accepted', label: 'Accepted' },
+  { key: 'rejected', label: 'Not chosen' },
+  { key: 'withdrawn', label: 'Withdrawn' },
+];
+
+const day = (d: string | null | undefined) => (d ? format(new Date(d), 'PP') : '');
+
+function Timeline({ bid }: { bid: MyBidRow }) {
+  const steps: { label: string; date?: string }[] = [{ label: 'Bid sent', date: day(bid.created_at) }];
+  if (bid.shortlisted) steps.push({ label: 'Shortlisted' });
+  if (bid.status === 'accepted') steps.push({ label: 'Accepted', date: day(bid.updated_at) });
+  if (bid.status === 'rejected') steps.push({ label: 'Not chosen', date: day(bid.updated_at) });
+  if (bid.status === 'withdrawn') steps.push({ label: 'Withdrawn', date: day(bid.withdrawn_at) });
+  return (
+    <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground" aria-label="Bid timeline">
+      {steps.map((s, i) => (
+        <li key={s.label} className="flex items-center gap-1.5">
+          {i > 0 && <span aria-hidden="true">→</span>}
+          <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+          <span>{s.label}</span>
+          {s.date && <span>{s.date}</span>}
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 export default function ProposalsPage() {
-  const { t } = useTranslation();
-  const { data: proposals, isLoading } = useConsultantProposals();
-  const [filter, setFilter] = useState<string>('all');
+  const navigate = useNavigate();
+  const { data: rows, isLoading } = useMyBids();
+  const { data: counters } = useMyCounters();
+  const { data: me } = useMyConsultant();
+  const [filter, setFilter] = useState<Filter>('all');
+  const [params] = useSearchParams();
+  const focus = params.get('ticket');
+  const scrolled = useRef(false);
+  const now = useNow(30_000);
+  const money = (n: number) => (me?.currency ? `${me.currency} ${Number(n).toLocaleString()}` : `$${Number(n).toLocaleString()}`);
 
-  const filtered = (proposals || []).filter((p: any) => filter === 'all' || p.status === filter);
-  const stats = {
-    total: (proposals || []).length,
-    pending: (proposals || []).filter((p: any) => p.status === 'pending').length,
-    accepted: (proposals || []).filter((p: any) => p.status === 'accepted').length,
-  };
+  const bids = useMemo(() => latestBids(rows || []), [rows]);
+  const counterByTicket = useMemo(() => new Map((counters || []).map(c => [c.ticket_id, c])), [counters]);
+  const count = (s: string) => bids.filter(b => b.bid.status === s).length;
+  const shown = bids.filter(b => filter === 'all' || b.bid.status === filter);
+
+  useEffect(() => {
+    if (!focus || isLoading || scrolled.current) return;
+    const el = document.getElementById(`bid-${focus}`);
+    if (el) { scrolled.current = true; el.scrollIntoView({ block: 'center' }); }
+  }, [focus, isLoading, bids]);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">My Proposals</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Track your submitted proposals and bids on open tickets.
-        </p>
+        <h1 className="text-2xl font-bold text-foreground">My bids</h1>
+        <p className="text-sm text-muted-foreground mt-1">The bids you placed on requests and what the clients answered.</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="rounded-2xl border-border/50">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-foreground">{stats.total}</p>
-            <p className="text-xs text-muted-foreground">Total Proposals</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-2xl border-border/50">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-amber-600">{stats.pending}</p>
-            <p className="text-xs text-muted-foreground">Pending</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-2xl border-border/50">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-green-600">{stats.accepted}</p>
-            <p className="text-xs text-muted-foreground">Accepted</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        {[
+          { label: 'Total', value: bids.length, cls: 'text-foreground' },
+          { label: 'Active', value: count('pending'), cls: 'text-amber-600' },
+          { label: 'Accepted', value: count('accepted'), cls: 'text-green-600' },
+          { label: 'Not chosen', value: count('rejected'), cls: 'text-destructive' },
+          { label: 'Withdrawn', value: count('withdrawn'), cls: 'text-muted-foreground' },
+        ].map(c => (
+          <Card key={c.label} className="rounded-2xl border-border/50">
+            <CardContent className="p-4 text-center">
+              <p className={cn('text-2xl font-bold', c.cls)}>{c.value}</p>
+              <p className="text-xs text-muted-foreground">{c.label}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="flex gap-1.5 flex-wrap">
-        {['all', 'pending', 'accepted', 'rejected'].map(s => (
-          <Button
-            key={s}
-            size="sm"
-            variant={filter === s ? 'default' : 'outline'}
-            className={`text-xs rounded-full h-8 ${filter === s ? 'gradient-primary border-0' : ''}`}
-            onClick={() => setFilter(s)}
-          >
-            {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+      <div className="flex gap-1.5 flex-wrap" role="tablist">
+        {FILTERS.map(f => (
+          <Button key={f.key} role="tab" aria-selected={filter === f.key} size="sm" variant={filter === f.key ? 'default' : 'outline'}
+            className={`text-xs rounded-full h-8 ${filter === f.key ? 'gradient-primary border-0' : ''}`} onClick={() => setFilter(f.key)}>
+            {f.label}
           </Button>
         ))}
       </div>
@@ -80,70 +113,89 @@ export default function ProposalsPage() {
       <div className="space-y-3">
         {isLoading ? (
           [1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)
-        ) : filtered.length === 0 ? (
+        ) : bids.length === 0 ? (
           <Card className="rounded-2xl border-border/50">
-            <CardContent className="py-12 text-center">
-              <Inbox className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">No proposals found.</p>
+            <CardContent className="py-12 text-center space-y-3">
+              <Inbox className="w-10 h-10 text-muted-foreground mx-auto" />
+              <p className="text-muted-foreground">You have not placed any bid yet.</p>
+              <Button size="sm" onClick={() => navigate('/consultant/open-tickets')}>Browse open requests</Button>
             </CardContent>
           </Card>
+        ) : shown.length === 0 ? (
+          <Card className="rounded-2xl border-border/50"><CardContent className="py-8 text-center text-sm text-muted-foreground">No bids in this group.</CardContent></Card>
         ) : (
-          filtered.map((proposal: any) => {
-            const config = statusConfig[proposal.status] || statusConfig.pending;
-            const StatusIcon = config.icon;
+          shown.map(({ bid, history }) => {
+            const t = bid.ticket;
+            const openForBids = !!t?.open_for_bids && !(t.bid_deadline && new Date(t.bid_deadline).getTime() <= now);
+            const cd = bidCountdown(t?.bid_deadline, now, openForBids);
+            const cfg = STATUS[bid.status] ?? STATUS.pending;
+            const reason = bid.status === 'rejected' ? rejectionLine(bid.rejection_reason) : null;
+            const counter = counterByTicket.get(bid.ticket_id);
+            const modal = (label: string) => (
+              <SubmitProposalModal ticketId={bid.ticket_id} ticketTitle={t?.title || ''} bidDeadline={t?.bid_deadline} currency={me?.currency}
+                trigger={<Button size="sm" variant="outline">{label}</Button>} />
+            );
             return (
-              <Card key={proposal.id} className="rounded-2xl border-border/50 hover:shadow-premium hover:border-accent/30 transition-all cursor-pointer">
-                <CardContent className="p-5">
+              <Card key={bid.id} id={`bid-${bid.ticket_id}`} className={cn('rounded-2xl border-border/50', focus === bid.ticket_id && 'ring-2 ring-accent')}>
+                <CardContent className="p-5 space-y-3">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-accent shrink-0" />
-                        <h3 className="font-semibold text-foreground truncate">{proposal.ticket_title}</h3>
+                        {openForBids
+                          ? <Link to={`/consultant/open-tickets?ticket=${bid.ticket_id}`} className="font-semibold text-foreground truncate hover:underline">{t?.title || 'Request'}</Link>
+                          : <h3 className="font-semibold text-foreground truncate">{t?.title || 'Request'}</h3>}
                       </div>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                        <Badge variant="secondary" className={`text-[10px] ${urgencyColors[proposal.urgency]}`}>
-                          {proposal.urgency}
-                        </Badge>
-                        <span>{proposal.sap_module}</span>
-                        <span className="text-xs">•</span>
-                        <span>{new Date(proposal.created_at).toLocaleDateString()}</span>
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        {t?.sap_module && <Badge variant="outline" className="text-[10px]">{t.sap_module}</Badge>}
+                        <span className={toneClass[cd.tone]}>{cd.text}</span>
+                        {bid.version && bid.version > 1 ? <Badge variant="outline" className="text-[10px]">v{bid.version}</Badge> : null}
                       </div>
-                      {proposal.cover_letter && (
-                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2">"{proposal.cover_letter}"</p>
-                      )}
-                      <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground flex-wrap">
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="w-3 h-3" /> ${proposal.proposed_rate}/hr
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> {proposal.estimated_hours}h estimated
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" /> {proposal.timeline_days} days
-                        </span>
-                        {proposal.version > 1 && (
-                          <Badge variant="outline" className="text-[10px] gap-1 h-5">
-                            <RefreshCw className="w-2.5 h-2.5" /> v{proposal.version}
-                          </Badge>
-                        )}
-                        {proposal.attachment_count > 0 && (
-                          <span className="flex items-center gap-1 text-accent">
-                            <Paperclip className="w-3 h-3" /> {proposal.attachment_count} file{proposal.attachment_count > 1 ? 's' : ''}
-                          </span>
-                        )}
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                        <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /> {money(bid.proposed_rate)}/hr</span>
+                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {bid.estimated_hours} h</span>
+                        <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {bid.timeline_days} days</span>
+                        <span><span>Estimated total: </span><span dir="ltr">{money(Number(bid.proposed_rate) * Number(bid.estimated_hours))}</span></span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                      <Badge variant="secondary" className={`text-[10px] gap-1 ${config.className}`}>
-                        <StatusIcon className="w-3 h-3" /> {config.label}
-                      </Badge>
-                      {proposal.client_notes && (
-                        <p className="text-[10px] text-muted-foreground italic max-w-[200px] text-end">
-                          Client: "{proposal.client_notes}"
-                        </p>
-                      )}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <Badge variant="secondary" className={`text-[10px] ${cfg.className}`}>{cfg.label}</Badge>
+                      {bid.shortlisted && <Badge variant="secondary" className="text-[10px] gap-1 bg-amber-100 text-amber-700"><Star className="w-3 h-3" /> Shortlisted</Badge>}
                     </div>
                   </div>
+                  {reason && <p className="text-xs text-muted-foreground">{reason}</p>}
+                  {bid.client_notes && <p className="text-xs text-muted-foreground italic">Client: "{bid.client_notes}"</p>}
+                  <Timeline bid={bid} />
+                  {counter && (
+                    <CounterOfferBanner counter={counter} bid={bid} money={money}
+                      newVersion={counter.new_proposal_id ? (rows || []).find(r => r.id === counter.new_proposal_id)?.version : null} />
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {bid.status === 'pending' && <>{modal('Revise bid')}<WithdrawBidButton bidId={bid.id} /></>}
+                    {bid.status === 'accepted' && <Button size="sm" onClick={() => navigate(`/consultant/cases/${bid.ticket_id}`)}>Open the request</Button>}
+                    {(bid.status === 'withdrawn' || bid.status === 'rejected') && openForBids && modal('Place a new bid')}
+                  </div>
+                  {history.length > 0 && (
+                    <Collapsible>
+                      <CollapsibleTrigger className="flex items-center gap-1 text-xs text-accent hover:underline">
+                        Version history <ChevronDown className="w-3 h-3" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <ul className="mt-2 space-y-1 text-[11px] text-muted-foreground">
+                          {history.map(h => (
+                            <li key={h.id} className="flex flex-wrap gap-x-3">
+                              <span>v{h.version ?? 1}</span>
+                              <span dir="ltr">{money(h.proposed_rate)}/hr</span>
+                              <span>{h.estimated_hours} h</span>
+                              <span>{h.timeline_days} days</span>
+                              <span>{day(h.created_at)}</span>
+                              <span>{h.rejection_reason === 'superseded' ? 'Replaced by a newer version' : (STATUS[h.status]?.label ?? h.status)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
                 </CardContent>
               </Card>
             );
