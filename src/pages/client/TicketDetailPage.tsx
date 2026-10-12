@@ -27,6 +27,9 @@ import TicketHierarchyTree from '@/components/client/TicketHierarchyTree';
 import TicketAssignments from '@/components/client/TicketAssignments';
 import TicketAcceptors from '@/components/client/TicketAcceptors';
 import TicketBids from '@/components/client/TicketBids';
+import { useTicketBids, useTicketQuestions, useBiddingClock } from '@/hooks/useClientBids';
+import { bidsTabState } from '@/lib/clientBidding';
+import { bidCountdown } from '@/lib/bidding';
 import CriticalRequestPanel from '@/components/client/CriticalRequestPanel';
 import TicketQuickActions from '@/components/tickets/TicketQuickActions';
 import RemoteAccessStatusPanel from '@/components/tickets/RemoteAccessStatusPanel';
@@ -116,7 +119,7 @@ const sessionStatusIcons: Record<string, typeof Circle> = {
   cancelled: Circle,
 };
 
-const TICKET_TABS = ['overview', 'work', 'sessions', 'billing', 'files', 'activity'] as const;
+const TICKET_TABS = ['overview', 'bids', 'work', 'sessions', 'billing', 'files', 'activity'] as const;
 type TicketTab = (typeof TICKET_TABS)[number];
 // Older links name a section instead of a tab (the Documents quick action uses ?tab=documents).
 const TAB_ALIASES: Record<string, TicketTab> = { documents: 'files' };
@@ -141,6 +144,11 @@ export default function TicketDetailPage() {
   const { data: ticket, isLoading } = useTicketDetail(ticketId);
   const { data: sessions, isLoading: sessionsLoading } = useTicketSessions(ticketId);
   const { data: messages, isLoading: messagesLoading } = useTicketMessages(ticketId);
+  const { data: clientBids } = useTicketBids(ticketId, isClient);
+  const { data: bidQuestions = [] } = useTicketQuestions(ticketId, isClient);
+  const bidNow = useBiddingClock();
+  const bidTab = bidsTabState((ticket || {}) as any, clientBids?.bids.map(r => r.bid) || [], bidQuestions.filter(q => !q.answer).length);
+  const bidDeadline = bidCountdown((ticket as any)?.bid_deadline, bidNow, !!ticket?.open_for_bids);
   const [editOpen, setEditOpen] = useState(false);
   const [matchOpen, setMatchOpen] = useState(false);
   const [bidOpen, setBidOpen] = useState(false);
@@ -233,6 +241,7 @@ export default function TicketDetailPage() {
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setBidOpen(true)}>
                 <Gavel className="w-3.5 h-3.5" />
                 {ticket.open_for_bids ? 'Manage Bids' : 'Request Bids'}
+                {(ticket as any).bid_deadline && <span className="text-muted-foreground">· {bidDeadline.text}</span>}
               </Button>
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" disabled={!canScheduleMeeting} onClick={() => setMeetingOpen(true)}>
                 <CalendarDays className="w-3.5 h-3.5" /> Schedule Meeting
@@ -255,6 +264,7 @@ export default function TicketDetailPage() {
             {ticket.open_for_bids && (
               <Badge variant="secondary" className="text-[10px] bg-accent/10 text-accent gap-1">
                 <Gavel className="w-2.5 h-2.5" /> Open for Bids
+                {(ticket as any).bid_deadline && <span>· {bidDeadline.text}</span>}
               </Badge>
             )}
           </div>
@@ -297,9 +307,10 @@ export default function TicketDetailPage() {
         <RemoteAccessStatusPanel ticketId={ticket.id} role="client" />
       )}
 
-      <Tabs value={activeTab} onValueChange={changeTab} className="space-y-4">
+      <Tabs value={activeTab === 'bids' && !bidTab.visible ? 'overview' : activeTab} onValueChange={changeTab} className="space-y-4">
         <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto bg-muted/60 p-1">
           <TabsTrigger value="overview" className="shrink-0 gap-1.5"><Tag className="h-3.5 w-3.5" />Overview</TabsTrigger>
+          {isClient && bidTab.visible && <TabsTrigger value="bids" className="shrink-0 gap-1.5"><Gavel className="h-3.5 w-3.5" />Bids<Badge variant="secondary" className="text-xs">{bidTab.pending}</Badge>{bidTab.unanswered > 0 && <span role="status" aria-label={`${bidTab.unanswered} unanswered questions`} title={`${bidTab.unanswered} unanswered questions`} className="h-2 w-2 rounded-full bg-warning" />}</TabsTrigger>}
           <TabsTrigger value="work" className="shrink-0 gap-1.5"><Users className="h-3.5 w-3.5" />Work &amp; plan</TabsTrigger>
           <TabsTrigger value="sessions" className="shrink-0 gap-1.5"><Video className="h-3.5 w-3.5" />Sessions &amp; chat</TabsTrigger>
           <TabsTrigger value="billing" className="shrink-0 gap-1.5"><Calculator className="h-3.5 w-3.5" />Time &amp; billing</TabsTrigger>
@@ -483,6 +494,8 @@ export default function TicketDetailPage() {
           )}
         </TabsContent>
 
+        {isClient && bidTab.visible && <TabsContent value="bids" className="mt-0"><TicketBids ticketId={ticket.id} ticket={ticket as any} onInvite={() => setBidOpen(true)} readOnly={isColleague} /></TabsContent>}
+
         <TabsContent value="work" className="mt-0 space-y-5">
           {/* ─── Pre-Work Interview ─── */}
           <SectionWrapper icon={Video} title="Pre-Work Interview" defaultOpen>
@@ -511,10 +524,9 @@ export default function TicketDetailPage() {
             <TicketAssignments ticketId={ticket.id} isReadOnly={isConsultant || isColleague} />
           </SectionWrapper>
 
-          {/* ─── Bids Section ─── */}
-          <SectionWrapper icon={Gavel} title="Bids & Proposals" defaultOpen>
-            <TicketBids ticketId={ticket.id} />
-          </SectionWrapper>
+          {!isClient && <SectionWrapper icon={Gavel} title="Bids & Proposals" defaultOpen>
+            <TicketBids ticketId={ticket.id} ticket={ticket as any} readOnly />
+          </SectionWrapper>}
 
           {/* ─── Ticket Hierarchy Tree ─── */}
           <SectionWrapper icon={Network} title="Ticket Hierarchy" defaultOpen>

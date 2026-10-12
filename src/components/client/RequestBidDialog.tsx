@@ -12,7 +12,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, Gavel, Globe, ShieldCheck, Clock, AlertTriangle, CheckCircle2, Users, Sparkles, Search, UserCheck, Pencil, ArrowLeft, Send } from 'lucide-react';
-import { useTicketProposals } from '@/hooks/useProposals';
+import { useTicketBids } from '@/hooks/useClientBids';
+import { deadlineFromOption, deadlineOptions, type DeadlineOption } from '@/lib/clientBidding';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type BidMode = 'select' | 'open' | 'manual' | 'ai';
 
@@ -90,7 +92,9 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
   const [searchQuery, setSearchQuery] = useState('');
   const [bidMessage, setBidMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const { data: proposals } = useTicketProposals(ticketId);
+  const [deadline, setDeadline] = useState<DeadlineOption>('72');
+  const { data: bids } = useTicketBids(ticketId);
+  const proposals = bids?.bids.map(r => r.bid);
   const { data: consultants, isLoading: loadingConsultants } = useVerifiedConsultants(ticketModule);
 
   const pendingBids = (proposals || []).filter((p: any) => p.status === 'pending').length;
@@ -108,6 +112,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
       setSearchQuery('');
       setBidMessage('');
       setIsEditing(false);
+      setDeadline('72');
     }
   }, [open, isOpenForBids]);
 
@@ -130,19 +135,21 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
 
   const handleOpenForBids = async () => {
     setSaving(true);
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('tickets')
       .update({
         open_for_bids: true,
+        bid_deadline: deadlineFromOption(deadline),
         opened_for_bids_at: new Date().toISOString(),
       } as any)
       .eq('id', ticketId);
     setSaving(false);
     if (error) {
-      toast.error('Failed to open ticket for bids');
+      toast.error(error.message);
     } else {
       toast.success('Ticket is now open for public bids!');
       queryClient.invalidateQueries({ queryKey: ['ticket-detail', ticketId] });
+      queryClient.invalidateQueries({ queryKey: ['client-tickets'] });
       onOpenChange(false);
     }
   };
@@ -247,7 +254,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
               </Button>
             )}
             <Gavel className="w-5 h-5 text-accent" />
-            {mode === 'select' ? 'Request Bids' : mode === 'open' ? 'Open Bid' : mode === 'manual' ? 'Select Consultants' : 'AI Recommended'}
+            {mode === 'select' ? 'Request Bids' : mode === 'open' ? 'Public bids' : mode === 'manual' ? 'Select Consultants' : 'AI Recommended'}
           </DialogTitle>
           <DialogDescription className="text-sm">
             {mode === 'select' && 'Choose how you want to invite consultants to bid'}
@@ -278,7 +285,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
             <div className="space-y-2.5">
               <ModeOption
                 icon={<Globe className="w-5 h-5 text-accent" />}
-                title="Open Bid"
+                title="Public bids"
                 description="All verified consultants can see and submit proposals"
                 onClick={() => setMode('open')}
               />
@@ -371,6 +378,9 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
                   </div>
                 ))}
               </div>
+              <Label>Bidding deadline</Label>
+              <Select value={deadline} onValueChange={v => setDeadline(v as DeadlineOption)}><SelectTrigger aria-label="Bidding deadline"><SelectValue /></SelectTrigger><SelectContent>{deadlineOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
+              <p className="text-xs text-muted-foreground">Matching consultants are notified. You review the bids in the 'Bids' tab.</p>
               <Button className="w-full gradient-primary border-0 gap-2" onClick={handleOpenForBids} disabled={saving}>
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
                 Open for Public Bids
