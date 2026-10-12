@@ -1,5 +1,5 @@
 import MatchScoreBreakdown, { type MatchCriterion } from '@/components/client/MatchScoreBreakdown';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -180,7 +180,7 @@ export default function NewRequestPage() {
       country: prev.country || companyProfile.country || '',
     }));
   }, [companyProfile]);
-  const ticketContext = buildTicketContext(contextInput);
+  const ticketContext = useMemo(() => buildTicketContext(contextInput), [contextInput]);
   // What did not get through on the last try: shown on the confirmation page, not only in a toast.
   const [sendIssues, setSendIssues] = useState<{ files: string[]; links: number; expertIds: string[] }>({ files: [], links: 0, expertIds: [] });
   const [solvedBySuggestion, setSolvedBySuggestion] = useState(false);
