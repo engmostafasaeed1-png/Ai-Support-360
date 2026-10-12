@@ -103,12 +103,12 @@ export function contextFit(request: RequestContext, consultant: ConsultantContex
   const verticals = list(request.vertical_solutions).filter((v) => !isOther(v));
   const localizationSolutions = list(request.localization_solutions).filter((v) => !isOther(v));
 
-  const parts: Array<{ key: keyof typeof CONTEXT_WEIGHTS; weight: number; fit: number; label: string }> = [];
+  const parts: Array<{ key: keyof typeof CONTEXT_WEIGHTS; weight: number; fit: number; label: string; items?: string[]; have?: string[] }> = [];
   if (industry) parts.push({ key: 'industry', weight: CONTEXT_WEIGHTS.industry, fit: industryFit(industry, list(consultant.industries)), label: `Industry: ${industry}` });
   if (segment) parts.push({ key: 'customer_segment', weight: CONTEXT_WEIGHTS.customer_segment, fit: segmentFit(segment, list(consultant.customer_segments)), label: `Customer segment: ${segment}` });
   if (country) parts.push({ key: 'country', weight: CONTEXT_WEIGHTS.country, fit: countryFit(country, list(consultant.localization_countries), list(consultant.onsite_countries)), label: `Country: ${country}` });
-  if (verticals.length > 0) parts.push({ key: 'vertical', weight: CONTEXT_WEIGHTS.vertical, fit: shareFit(verticals, list(consultant.vertical_solutions)), label: `Vertical solution: ${verticals.join(', ')}` });
-  if (localizationSolutions.length > 0) parts.push({ key: 'localization_solution', weight: CONTEXT_WEIGHTS.localization_solution, fit: shareFit(localizationSolutions, list(consultant.localization_solutions)), label: `Localization: ${localizationSolutions.join(', ')}` });
+  if (verticals.length > 0) parts.push({ key: 'vertical', weight: CONTEXT_WEIGHTS.vertical, fit: shareFit(verticals, list(consultant.vertical_solutions)), label: 'Vertical solution', items: verticals, have: list(consultant.vertical_solutions) });
+  if (localizationSolutions.length > 0) parts.push({ key: 'localization_solution', weight: CONTEXT_WEIGHTS.localization_solution, fit: shareFit(localizationSolutions, list(consultant.localization_solutions)), label: 'Localization solution', items: localizationSolutions, have: list(consultant.localization_solutions) });
   if (projectType) parts.push({ key: 'project_type', weight: CONTEXT_WEIGHTS.project_type, fit: has(list(consultant.project_types), projectType) ? 1 : 0, label: `Project type: ${projectType}` });
 
   if (parts.length === 0) return { score: null, matches: [], gaps: [] };
@@ -116,8 +116,9 @@ export function contextFit(request: RequestContext, consultant: ConsultantContex
   const got = parts.reduce((sum, p) => sum + p.weight * p.fit, 0);
   return {
     score: round((100 * got) / total),
-    matches: parts.filter((p) => p.fit >= 0.5).map((p) => p.label),
-    gaps: parts.filter((p) => p.fit < 0.5).map((p) => p.label),
+    // one entry per requested item for the two list criteria, so that every label can be shown (and translated) on its own
+    matches: parts.flatMap((p) => (p.items ? p.items.filter((i) => has(p.have ?? [], i)).map((i) => `${p.label}: ${i}`) : p.fit >= 0.5 ? [p.label] : [])),
+    gaps: parts.flatMap((p) => (p.items ? p.items.filter((i) => !has(p.have ?? [], i)).map((i) => `${p.label}: ${i}`) : p.fit < 0.5 ? [p.label] : [])),
   };
 }
 
