@@ -46,7 +46,7 @@ type Row = {
   sap_technologies: string[] | null;
 };
 
-export default function ProfileExperienceCard() {
+export default function ProfileExperienceCard({ payoutReady = false }: { payoutReady?: boolean } = {}) {
   const [consultantId, setConsultantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -117,7 +117,8 @@ export default function ProfileExperienceCard() {
     work_modes: workModes,
     working_week: workingWeek || null,
     language_levels: languageLevels,
-  }), [base, skillsCount, industries, segments, verticals, locCountries, locSolutions, projectTypes, deployment, scale, workModes, workingWeek, languageLevels]);
+    payout_ready: payoutReady,
+  }), [payoutReady, base, skillsCount, industries, segments, verticals, locCountries, locSolutions, projectTypes, deployment, scale, workModes, workingWeek, languageLevels]);
 
   const missing = completeness.items.filter((i) => !i.done).slice(0, 4);
 
