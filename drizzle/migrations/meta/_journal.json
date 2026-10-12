@@ -400,6 +400,13 @@
       "when": 1791760117298,
       "tag": "0056_m59_web_push_subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1791783926161,
+      "tag": "0057_m60_consultant_contact_protection",
+      "breakpoints": true
     }
   ]
 }
