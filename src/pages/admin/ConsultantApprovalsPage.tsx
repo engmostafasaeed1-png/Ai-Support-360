@@ -53,6 +53,8 @@ export default function ConsultantApprovalsPage() {
         .select(`
           id, user_id, bio, hourly_rate, currency, languages, industries, ai_skills_score, created_at, verification_status,
           city, country, linkedin_checked_at, credly_checked_at,
+          customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types,
+          deployment_experience, project_scale, work_modes, onsite_countries, working_week, language_levels,
           consultant_skills (sap_module, proficiency_level),
           certifications (id, name, issuer, issue_date, expiry_date, document_url, verified)
         `)
@@ -106,6 +108,18 @@ export default function ConsultantApprovalsPage() {
         credly_checked_at: c.credly_checked_at,
         github_url: linksById.get(c.id)?.github_url ?? null,
         personal_website: linksById.get(c.id)?.personal_website ?? null,
+        industries: c.industries || [],
+        customer_segments: c.customer_segments || [],
+        vertical_solutions: c.vertical_solutions || [],
+        localization_countries: c.localization_countries || [],
+        localization_solutions: c.localization_solutions || [],
+        project_types: c.project_types || [],
+        deployment_experience: c.deployment_experience || [],
+        project_scale: c.project_scale || null,
+        work_modes: c.work_modes || [],
+        onsite_countries: c.onsite_countries || [],
+        working_week: c.working_week || null,
+        language_levels: c.language_levels || null,
       }));
     },
     enabled: !isGuest,
