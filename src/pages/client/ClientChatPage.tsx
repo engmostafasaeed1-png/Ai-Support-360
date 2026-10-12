@@ -23,7 +23,7 @@ export default function ClientChatPage() {
             <CardContent className="py-12 text-center">
               <MessageSquare className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">Nothing here yet</p>
-              <p className="text-xs text-muted-foreground mt-1">Your consultant conversations will appear here once you book a session.</p>
+              <p className="text-xs text-muted-foreground mt-1">Your consultant conversations will appear here once a consultant is assigned to your request.</p>
             </CardContent>
           </Card>
         ) : (

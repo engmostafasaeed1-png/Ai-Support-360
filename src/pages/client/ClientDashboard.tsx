@@ -400,7 +400,7 @@ export default function ClientDashboard() {
                 <Calendar className="w-6 h-6 text-green-500" />
               </div>
               <p className="text-sm font-medium text-foreground">No sessions scheduled</p>
-              <p className="text-xs text-muted-foreground mt-1">Book a session with a consultant to get started</p>
+              <p className="text-xs text-muted-foreground mt-1">Open a request to get started: sessions are scheduled with the consultant assigned to it</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-4 stagger-fade">
