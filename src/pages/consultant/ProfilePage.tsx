@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { RotateCcw, Brain } from 'lucide-react';
+import { RotateCcw, Brain, Landmark } from 'lucide-react';
+import PayoutDetailsCard from '@/components/consultant/PayoutDetailsCard';
 import InterviewTranscript from '@/components/consultant/InterviewTranscript';
 import AvatarUpload from '@/components/profile/AvatarUpload';
 import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
@@ -14,6 +16,12 @@ export default function ProfilePage() {
   const { t } = useTranslation();
   const { data: profile, isLoading } = useConsultantProfile();
   const [reinterviewOpen, setReinterviewOpen] = useState(false);
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (isLoading || hash !== '#payout-details') return;
+    const id = setTimeout(() => document.getElementById('payout-details')?.scrollIntoView({ block: 'start' }), 300);
+    return () => clearTimeout(id);
+  }, [isLoading, hash]);
   if (isLoading) return <Skeleton className="h-80 w-full" />;
   return (
     <div className="space-y-6">
@@ -28,6 +36,12 @@ export default function ProfilePage() {
       </div>
       <div className="flex items-center gap-4"><AvatarUpload /><h2 className="text-lg font-semibold">{profile?.display_name}</h2></div>
       <ConsultantOnboarding embedded />
+      <section id="payout-details" className="scroll-mt-20">
+        <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+          <Landmark className="w-5 h-5 text-primary" /> Payout bank details
+        </h2>
+        <PayoutDetailsCard />
+      </section>
       <section id="interview-history">
         <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
           <Brain className="w-5 h-5 text-primary" /> {t('interview.history', 'Interview History & Results')}

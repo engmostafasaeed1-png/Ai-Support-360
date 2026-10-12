@@ -8,6 +8,8 @@ import { Card } from '@/components/ui/card';
 import { useQueryClient } from '@tanstack/react-query';
 import SapExpertiseCard from '@/components/consultant/SapExpertiseCard';
 import ProfileExperienceCard from '@/components/consultant/ProfileExperienceCard';
+import { useMyPayoutDetails } from '@/hooks/useBilling';
+import { payoutReady } from '@/lib/payoutDisclaimer';
 import ExperienceCvCard from '@/components/consultant/ExperienceCvCard';
 import SetAvailabilityDialog from '@/components/consultant/SetAvailabilityDialog';
 import ProfileAvailability from '@/components/consultant/ProfileAvailability';
@@ -118,6 +120,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const payoutQ = useMyPayoutDetails();
   const [loadedRevision, setLoadedRevision] = useState(0);
   const [savedRows, setSavedRows] = useState({ certifications: [] as string[], education: [] as string[], projects: [] as string[] });
   const { isGuest } = useGuestMode();
@@ -468,7 +471,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
         <ProfileStep data={data} onChange={updateData} />
       </section>
       <section id="expertise"><SapExpertiseCard key={`skills-${loadedRevision}`} /></section>
-      <section id="profile-experience"><ProfileExperienceCard key={`experience-${loadedRevision}`} /></section>
+      <section id="profile-experience"><ProfileExperienceCard key={`experience-${loadedRevision}`} payoutReady={payoutReady(payoutQ.data?.details)} /></section>
       <section id="experience"><ExperienceCvCard onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section>
       <section id="certifications"><CertificationsStep data={data} onChange={updateData} /></section>
       <section id="education"><EducationStep data={data} onChange={updateData} /></section>

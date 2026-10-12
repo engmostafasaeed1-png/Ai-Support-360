@@ -591,7 +591,12 @@ function PayoutDetailsDialog({ payout, onClose }: { payout: any; onClose: () => 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Close</Button>
           {d && !d.verified_at && (
-            <Button disabled={verify.isPending} onClick={() => verify.mutate(d.consultant_id)}>Mark as verified</Button>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <span className="text-xs text-muted-foreground">
+                {d.acknowledged_at ? `Disclaimer accepted ${when(d.acknowledged_at)}` : 'Disclaimer not accepted yet'}
+              </span>
+              <Button disabled={verify.isPending} onClick={() => verify.mutate(d.consultant_id)}>Mark as verified</Button>
+            </div>
           )}
         </DialogFooter>
       </DialogContent>

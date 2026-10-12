@@ -27,6 +27,8 @@ export type PayoutDetails = {
   currency: string;
   notes: string | null;
   verified_at: string | null;
+  acknowledged_at?: string | null;
+  acknowledged_version?: string | null;
   updated_at?: string;
 };
 
@@ -186,7 +188,9 @@ export function useMyPayoutDetails() {
       if (!user) return null;
       const { data: consultant } = await db.from('consultants').select('id').eq('user_id', user.id).maybeSingle();
       if (!consultant) return null;
-      const { data } = await db.from('consultant_payout_details').select('*').eq('consultant_id', consultant.id).maybeSingle();
+      const { data } = await db.from('consultant_payout_details')
+        .select('account_holder, bank_name, iban, account_number, swift_bic, country, currency, notes, verified_at, acknowledged_at, acknowledged_version, updated_at')
+        .eq('consultant_id', consultant.id).maybeSingle();
       return { consultantId: consultant.id as string, details: (data ?? null) as PayoutDetails | null };
     },
   });
@@ -196,28 +200,40 @@ export function useSavePayoutDetails() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (v: {
-      consultantId: string; account_holder: string; bank_name: string; iban: string;
-      account_number: string; swift_bic: string; country: string; currency: string; notes: string;
+      account_holder: string; bank_name: string; iban: string; account_number: string; swift_bic: string;
+      country: string; currency: string; notes: string; acknowledged: boolean; ackVersion: string;
     }) => {
-      const row = {
-        consultant_id: v.consultantId,
-        account_holder: v.account_holder.trim(),
-        bank_name: v.bank_name.trim(),
-        iban: v.iban.trim() || null,
-        account_number: v.account_number.trim() || null,
-        swift_bic: v.swift_bic.replace(/\s+/g, '') || null,
-        country: v.country.trim() || null,
-        currency: v.currency.trim().toUpperCase() || 'USD',
-        notes: v.notes.trim() || null,
-      };
-      const { error } = await db.from('consultant_payout_details').upsert(row, { onConflict: 'consultant_id' });
+      const { error } = await db.rpc('save_payout_details', {
+        _account_holder: v.account_holder,
+        _bank_name: v.bank_name,
+        _iban: v.iban,
+        _account_number: v.account_number,
+        _swift_bic: v.swift_bic,
+        _country: v.country,
+        _currency: v.currency,
+        _notes: v.notes,
+        _acknowledged: v.acknowledged,
+        _ack_version: v.ackVersion,
+      });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast.success('Bank details saved. The platform checks them before the next payout.');
+      toast.success('Bank details saved.');
       qc.invalidateQueries({ queryKey: ['my-payout-details'] });
     },
-    onError: fail('Could not save the bank details'),
+    onError: (e: unknown) => { toast.error(e instanceof Error ? e.message : 'Could not save the bank details'); },
+  });
+}
+
+/** Admin: Missing / Waiting / Verified for every consultant, without the numbers. One call per page. */
+export function useAdminPayoutStatus() {
+  return useQuery({
+    queryKey: ['admin-payout-status'],
+    queryFn: async () => {
+      const { data, error } = await db.rpc('admin_payout_details_status');
+      if (error) throw new Error(error.message);
+      return (data ?? []) as import('@/lib/payoutStatus').PayoutStatusRow[];
+    },
   });
 }
 

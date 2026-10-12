@@ -6,7 +6,7 @@ describe('profile completeness', () => {
     const r = profileCompleteness({});
     expect(r.percent).toBe(0);
     expect(r.done).toBe(0);
-    expect(r.total).toBe(14);
+    expect(r.total).toBe(15);
     expect(r.items.every((i) => !i.done && i.hint.length > 10)).toBe(true);
   });
 
@@ -16,6 +16,7 @@ describe('profile completeness', () => {
       industries: ['Mining'], customer_segments: ['Large listed enterprise'], vertical_solutions: ['SAP Mining (mine-to-market, heavy equipment)'],
       localization_countries: ['Egypt'], localization_solutions: ['Egypt e-invoice & e-receipt (ETA)'], project_types: ['Implementation (greenfield)'],
       deployment_experience: ['Hybrid'], project_scale: 'Medium (20-100 people)', work_modes: ['Remote'], working_week: 'Flexible (both)', language_levels: { en: 'Fluent (business)' },
+      payout_ready: true,
     });
     expect(r.percent).toBe(100);
     expect(r.items.filter((i) => !i.done)).toEqual([]);
@@ -31,6 +32,14 @@ describe('profile completeness', () => {
   });
 
   it('rounds the percentage', () => {
-    expect(profileCompleteness({ skills_count: 1, sap_roles: ['x'], industries: ['y'] }).percent).toBe(21);
+    expect(profileCompleteness({ skills_count: 1, sap_roles: ['x'], industries: ['y'] }).percent).toBe(20);
+  });
+
+  it('counts the bank details only when saved with the disclaimer acknowledged', () => {
+    const missing = profileCompleteness({}).items.find((i) => i.key === 'payout');
+    expect(missing?.label).toBe('Bank details for payouts');
+    expect(missing?.hint).toBe('Add your bank details to receive payouts');
+    expect(missing?.done).toBe(false);
+    expect(profileCompleteness({ payout_ready: true }).items.find((i) => i.key === 'payout')?.done).toBe(true);
   });
 });

@@ -1378,6 +1378,8 @@ export type Database = {
         Row: {
           account_holder: string
           account_number: string | null
+          acknowledged_at: string | null
+          acknowledged_version: string | null
           bank_name: string
           consultant_id: string
           country: string | null
@@ -1393,6 +1395,8 @@ export type Database = {
         Insert: {
           account_holder: string
           account_number?: string | null
+          acknowledged_at?: string | null
+          acknowledged_version?: string | null
           bank_name: string
           consultant_id: string
           country?: string | null
@@ -1408,6 +1412,8 @@ export type Database = {
         Update: {
           account_holder?: string
           account_number?: string | null
+          acknowledged_at?: string | null
+          acknowledged_version?: string | null
           bank_name?: string
           consultant_id?: string
           country?: string | null
@@ -4281,6 +4287,51 @@ export type Database = {
             columns: ["timesheet_id"]
             isOneToOne: false
             referencedRelation: "ticket_timesheet_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payout_details_log: {
+        Row: {
+          action: string
+          actor: string | null
+          actor_role: string | null
+          consultant_id: string
+          created_at: string
+          disclaimer_version: string | null
+          id: string
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          actor_role?: string | null
+          consultant_id: string
+          created_at?: string
+          disclaimer_version?: string | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          actor_role?: string | null
+          consultant_id?: string
+          created_at?: string
+          disclaimer_version?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_details_log_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "payout_details_log_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
             referencedColumns: ["id"]
           },
         ]
@@ -8615,6 +8666,15 @@ export type Database = {
         Args: { p_limit?: number; p_status?: string }
         Returns: Json
       }
+      admin_payout_details_status: {
+        Args: never
+        Returns: {
+          acknowledged: boolean
+          consultant_id: string
+          state: string
+          updated_at: string
+        }[]
+      }
       admin_reject_payment_report: {
         Args: { _note: string; _payment_id: string }
         Returns: undefined
@@ -8988,6 +9048,7 @@ export type Database = {
         Args: { _hidden: boolean; _question_id: string }
         Returns: undefined
       }
+      iban_valid: { Args: { _iban: string }; Returns: boolean }
       interview_role: {
         Args: { _session_id: string; _user_id: string }
         Returns: string
@@ -9228,6 +9289,21 @@ export type Database = {
         Returns: string
       }
       sap_area_tokens: { Args: { _name: string }; Returns: string[] }
+      save_payout_details: {
+        Args: {
+          _account_holder: string
+          _account_number: string
+          _ack_version: string
+          _acknowledged: boolean
+          _bank_name: string
+          _country: string
+          _currency: string
+          _iban: string
+          _notes: string
+          _swift_bic: string
+        }
+        Returns: undefined
+      }
       save_tenant_billing_details: {
         Args: { _details: Json; _tenant_id: string }
         Returns: Json

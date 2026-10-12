@@ -16,6 +16,8 @@ export type ProfileForCompleteness = {
   working_week?: string | null;
   language_levels?: Record<string, unknown> | null;
   skills_count?: number | null;
+  /** Bank details saved with the current payout disclaimer acknowledged. */
+  payout_ready?: boolean | null;
 };
 
 export type CompletenessItem = { key: string; label: string; hint: string; done: boolean };
@@ -45,6 +47,7 @@ export function profileCompleteness(p: ProfileForCompleteness): { percent: numbe
     { key: 'scale', label: 'Project scale', hint: 'Add the largest project size you worked on.', done: filled(p.project_scale) },
     { key: 'work', label: 'Work mode and working week', hint: 'Add remote or on-site, and your working week, so urgent requests reach you at the right time.', done: filled(p.work_modes) && filled(p.working_week) },
     { key: 'languages', label: 'Language levels', hint: 'Add your level in each language you speak.', done: filled(p.language_levels) },
+    { key: 'payout', label: 'Bank details for payouts', hint: 'Add your bank details to receive payouts', done: p.payout_ready === true },
   ];
   const done = items.filter((i) => i.done).length;
   return { percent: Math.round((100 * done) / items.length), done, total: items.length, items };
