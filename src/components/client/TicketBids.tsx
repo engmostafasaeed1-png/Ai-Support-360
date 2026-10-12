@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
@@ -35,6 +35,13 @@ function Attachment({ attachment }: { attachment: any }) {
 }
 export default function TicketBids({ ticketId, ticket = {}, onInvite = () => {}, readOnly = false }: { ticketId: string; ticket?: BiddingTicket; onInvite?: () => void; readOnly?: boolean }) {
   const queryClient = useQueryClient();
+  const [wide, setWide] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)');
+    const update = () => setWide(media.matches);
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
   const { data, isLoading, error } = useTicketBids(ticketId);
   const { data: questions = [], error: questionError } = useTicketQuestions(ticketId);
   const { data: critical } = useCriticalView(ticketId);
