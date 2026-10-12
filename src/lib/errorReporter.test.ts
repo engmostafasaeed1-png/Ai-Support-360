@@ -39,6 +39,12 @@ describe('error report noise filters', () => {
     for (const message of [
       "Lock broken by another request with the 'steal' option.",
       'Lock "lock:sb-abcdefghijklmnopqrst-auth-token" was released because another request stole it',
+      // Navigator LockManager races in the sign-in library: two requests refresh the session at once, the losing one reports and then recovers.
+      'Lock was stolen by another request',
+      "Lock broken by another request with the 'steal' option",
+      'Acquiring an exclusive Navigator LockManager lock failed',
+      'A Navigator LockManager lock was taken elsewhere',
+      'lockmanager lock busy, retrying',
       'ResizeObserver loop completed with undelivered notifications.',
       'Script error.',
       '[diag:csp] CSP violation: connect-src blocked wss://localhost:8080/?token=[redacted]',
@@ -50,6 +56,7 @@ describe('error report noise filters', () => {
       "Cannot read properties of undefined (reading 'default')",
       '[diag:csp] CSP violation: script-src-elem blocked https://cdn.example.com/x.js',
       'Query failed: relation "public.nothing" does not exist',
+      'TypeError: Cannot read properties of null (reading "toFixed")',
     ]) {
       expect(isIgnoredMessage(message), message).toBe(false);
     }
