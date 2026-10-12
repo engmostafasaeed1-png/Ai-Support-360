@@ -11,6 +11,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import SubmitProposalModal from '@/components/consultant/SubmitProposalModal';
 import { formatDistanceToNow } from 'date-fns';
 import { useNow } from '@/hooks/useCriticalService';
+import ClientRatingChip from '@/components/consultant/ClientRatingChip';
+import { useClientRatingSummaries } from '@/hooks/useClientRatings';
 import { formatCountdown, formatPercent, msLeft } from '@/lib/criticalService';
 
 const urgencyColors: Record<string, string> = {
@@ -26,7 +28,7 @@ function useOpenTickets() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
-        .select('id, title, description, sap_module, urgency, status, created_at, preferred_session_type, preferred_language, open_for_bids, opened_for_bids_at, critical_response, critical_due_at, critical_surcharge_percent, critical_status')
+        .select('id, title, client_id, description, sap_module, urgency, status, created_at, preferred_session_type, preferred_language, open_for_bids, opened_for_bids_at, critical_response, critical_due_at, critical_surcharge_percent, critical_status')
         // the database decides what this consultant may see: tickets open for bids and tickets they were invited to
         .in('status', ['new', 'under_review'])
         .is('consultant_id', null)
@@ -147,6 +149,7 @@ export default function OpenTicketsPage() {
                         <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
                       </h3>
                     </Link>
+                    {ticket.client_id && <ClientRatingChip clientId={ticket.client_id} summary={ratings?.get(ticket.client_id) ?? null} className="mt-1" />}
                     {ticket.description && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{ticket.description}</p>
                     )}
