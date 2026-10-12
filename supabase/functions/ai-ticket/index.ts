@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit, getUserRoles, hasAnyRole, ADMIN_ROLES } from "../_shared/security.ts";
 import { weightedMatch } from "../_shared/matchScoring.ts";
+import { contextFit, readRequestContext } from "../_shared/contextFit.ts";
 import { scrubText } from "../_shared/scrub.ts";
 import { responsesRequest, userTextItem, extractFirstFunctionCall } from "../_shared/aiResponses.ts";
 
@@ -94,6 +95,7 @@ serve(async (req) => {
       preferred_language: z.string().max(20).optional(),
       model: z.string().max(100).optional(),
       ticket_id: z.string().uuid().optional(),
+      ticket_context: z.record(z.unknown()).optional(),
     }).passthrough();
 
     const parsed = BodySchema.safeParse(parsedBody);
@@ -238,19 +240,28 @@ serve(async (req) => {
 
       // Read existing tickets through the caller's RLS context, never with privileged access.
       let clientUserId = authUser.id;
+      let requestContextRaw: unknown = parsed.data.ticket_context;
       if (parsed.data.ticket_id) {
         const caller = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") || "", { global: { headers: { Authorization: authHeader } } });
-        const { data: ticket, error } = await caller.from("tickets").select("title, description, sap_module, sap_modules, sap_module_other, area_details, urgency, preferred_language, client_id").eq("id", parsed.data.ticket_id).single();
+        const { data: ticket, error } = await caller.from("tickets").select("title, description, sap_module, sap_modules, sap_module_other, area_details, urgency, preferred_language, client_id, ticket_context").eq("id", parsed.data.ticket_id).single();
         if (error || !ticket) return new Response(JSON.stringify({ error: "Ticket not accessible" }), { status: 403, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
         title = ticket.title; description = ticket.description || ""; sap_module = ticket.sap_module;
         sap_modules = ticket.sap_modules; sap_module_other = ticket.sap_module_other || "";
         areaDetails = ticket.area_details || ""; urgency = ticket.urgency || "medium";
         preferred_language = ticket.preferred_language || "en"; clientUserId = ticket.client_id;
+        requestContextRaw = (ticket as any).ticket_context;
       }
       const { data: clientContext, error: contextError } = await supabase.from("client_profiles")
-        .select("industry, headquarters, timezone, sap_product, sap_version, sap_database_type, sap_hosting_type, sap_interfaces, sap_third_party_tools")
+        .select("industry, customer_segment, country, headquarters, timezone, sap_product, sap_version, sap_database_type, sap_hosting_type, sap_interfaces, sap_third_party_tools")
         .eq("user_id", clientUserId).maybeSingle();
       if (contextError) throw contextError;
+
+      // What the request says about itself (industry, customer segment, country, project type, vertical and localization solutions);
+      // what it leaves out is taken from the company profile of the client.
+      const requestContext = readRequestContext(requestContextRaw);
+      if (!requestContext.industry) requestContext.industry = (clientContext as any)?.industry || null;
+      if (!requestContext.customer_segment) requestContext.customer_segment = (clientContext as any)?.customer_segment || null;
+      if (!requestContext.country) requestContext.country = (clientContext as any)?.country || null;
 
       // Only verified consultants can be asked to take a ticket (the match request is refused for anyone else).
       const consultants: any[] = [];
@@ -261,7 +272,9 @@ serve(async (req) => {
           id, user_id, bio, hourly_rate, currency, timezone, languages, industries,
           availability_status, rating, total_reviews, response_time_minutes,
           verification_status, ai_skills_score, country, credly_checked_at, linkedin_checked_at,
-          sap_role, sap_roles, seniority_level, total_sap_years, sap_technologies, localization_countries, project_types
+          sap_role, sap_roles, seniority_level, total_sap_years, sap_technologies, localization_countries, project_types,
+          customer_segments, vertical_solutions, localization_solutions, deployment_experience, project_scale,
+          work_modes, onsite_countries, working_week, language_levels
         `)
         .eq("verification_status", "verified")
         .order("id").range(offset, offset + 499);
@@ -389,6 +402,17 @@ serve(async (req) => {
           technologies: c.sap_technologies,
           localization_countries: c.localization_countries,
           project_types: c.project_types,
+          customer_segments: c.customer_segments,
+          vertical_solutions: c.vertical_solutions,
+          localization_solutions: c.localization_solutions,
+          deployment_experience: c.deployment_experience,
+          project_scale: c.project_scale,
+          work_modes: c.work_modes,
+          onsite_countries: c.onsite_countries,
+          working_week: c.working_week,
+          language_levels: c.language_levels,
+          // computed on the server from the stated request context: the model is told the result and must not score it itself
+          context_fit: contextFit(requestContext, c),
           has_active_nda: hasActiveNDA,
           links_checked: Boolean(c.credly_checked_at || c.linkedin_checked_at),
           education: (education || []).filter(e => e.consultant_id === c.id).map(e => ({ degree: e.degree, field: e.field_of_study, start_year: e.start_year, end_year: e.end_year })),
@@ -450,7 +474,7 @@ serve(async (req) => {
 
 SCORING CRITERIA (total = 100%):
 
-1. SAP Module & Skill Match (35%):
+1. SAP Module & Skill Match (30%):
    - Direct skill in the required module (proficiency 1-5, years of experience)
    - Certified in the module = strong bonus
    - Cross-module knowledge relevant to the issue
@@ -458,38 +482,40 @@ SCORING CRITERIA (total = 100%):
    - technologies matching the ticket (e.g. Fiori, CPI, RAP); localization_countries matching the client's country or country-specific issues (tax, e-invoicing, payroll, legal reporting); project_types for migration/rollout tickets
    - Assess ALL supplied bio, education (degree/field only), work/project descriptions, localization, technology, role, and CV evidence: cv_summary, cv_keywords, cv_excerpt and work_experience (titles, years, descriptions) that mention the same modules, processes, t-codes or problem type
 
-2. Track Record on Similar Issues (25%):
+2. Track Record on Similar Issues (20%):
    - solved_similar_issues: how many published solutions for similar problems came from this consultant's tickets
    - resolved_tickets_in_these_areas: how many tickets this consultant resolved in the same SAP areas
    - Past projects involving the same SAP modules, industry and role
 
-3. AI Interview & Verified Skills Score (10%):
+3. AI Interview & Verified Skills Score (8%):
    - Overall AI interview score (technical + soft skills)
    - ai_skills_score from platform assessment
    - Higher scores indicate verified, battle-tested expertise
 
-4. Availability & Response Time (10%):
+4. Availability & Response Time (8%):
    - Available > busy > offline; take saved working_hours and timezone into account; unknown hours are unknown, not zero availability
    - Response time weighted by ticket urgency (critical tickets heavily penalize slow responders)
    - Timezone proximity to client's preferred working hours
 
-5. Track Record & Reliability (8%):
+5. Track Record & Reliability (6%):
    - Session completion rate (higher = more reliable)
    - Total completed sessions (experience on the platform)
    - Average session duration (engagement quality)
 
-6. Client Satisfaction (5%):
+6. Client Satisfaction (4%):
    - Rating score (out of 5)
    - Number of reviews (statistical confidence)
 
 7. Language & Cultural Fit (5%):
-   - Speaks client's preferred language
+   - Speaks client's preferred language; take language_levels into account (native or fluent business level counts more than basic)
    - Language only; never score nationality, gender, age or ethnicity
 
-8. Compliance & Trust (2%):
+8. Compliance & Trust (4%):
    - Active NDA on file = trust bonus
    - Verification status
    - Valid (non-expired) certifications
+
+9. Context Fit (15%) is computed by the server (do NOT score it): how well the consultant's industries, customer_segments, localization_countries, onsite_countries, vertical_solutions, localization_solutions and project_types fit what the request states (see "Request context" in the ticket). Each consultant carries context_fit {score, matches, gaps}. Mention the matched items in match_reason and strengths (for example the industry, the customer segment such as government or sovereign-fund-owned, the country localization or the vertical solution), and name important gaps in concerns. Never invent context that is not in the profile.
 
 URGENCY MODIFIERS:
 - Critical: Heavily favor available consultants with fast response times and high completion rates
@@ -510,6 +536,7 @@ Title: ${scrubText(title || "").text}
 Description: ${scrubText(description || "").text}
 Area details: ${scrubText(areaDetails).text}
 Client technical context: ${JSON.stringify(clientContext || {})}
+Request context (industry, customer segment, country, project type, vertical and localization solutions; empty = not stated): ${JSON.stringify(requestContext)}
 Urgency: ${urgency}
 Preferred Language: ${preferred_language || 'en'}
 
@@ -586,7 +613,10 @@ Score every supplied consultant for this ticket. Be specific about why each matc
             const solved = solvedMap.get(rec.consultant_id);
             return {
               ...rec,
-              ...weightedMatch(rec),
+              context_fit_score: consultant?.context_fit?.score ?? null,
+              context_matches: consultant?.context_fit?.matches ?? [],
+              context_gaps: consultant?.context_fit?.gaps ?? [],
+              ...weightedMatch({ ...rec, context_fit_score: consultant?.context_fit?.score ?? undefined }),
               match_reason: scrubText(rec.match_reason).text,
               strengths: (Array.isArray(rec.strengths) ? rec.strengths : []).map((s: unknown) => scrubText(String(s ?? "")).text),
               concerns: (Array.isArray(rec.concerns) ? rec.concerns : []).map((s: unknown) => scrubText(String(s ?? "")).text),
