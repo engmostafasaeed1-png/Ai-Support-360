@@ -407,6 +407,13 @@
       "when": 1791783926161,
       "tag": "0057_m60_consultant_contact_protection",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1791790930517,
+      "tag": "0058_m61_clear_meeting_links_on_ticket_close",
+      "breakpoints": true
     }
   ]
 }
