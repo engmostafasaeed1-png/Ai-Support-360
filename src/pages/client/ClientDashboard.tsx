@@ -95,7 +95,7 @@ export default function ClientDashboard() {
   const recommendedConsultants = useMemo(() => isGuest ? mockRecommendedConsultants : (
     realtimeConsultants.slice(0, 6).map(c => ({
       ...c, avatar: c.name.split(' ').map(w => w[0]).join('').slice(0, 2),
-      reviews: c.reviews || 0, badges: c.badges || [], credly_username: c.credly_username,
+      reviews: c.reviews || 0, badges: c.badges || [], credlyVerified: c.credlyVerified,
       credibility_credits: c.credibility_credits, ai_interview_badge: c.ai_interview_badge,
     }))
   ), [realtimeConsultants, isGuest]);
@@ -496,7 +496,7 @@ export default function ClientDashboard() {
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-3">
-                  {c.credly_username && (
+                  {c.credlyVerified && (
                     <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                       <Award className="w-2.5 h-2.5" />
                       Credly

@@ -32,7 +32,7 @@ export function useRealtimeConsultants() {
       // The consultants that the signed-in person may see (verified ones; an administrator sees all)
       const { data: consultantRows, error } = await supabase
         .from('consultants')
-        .select('id, user_id, hourly_rate, industries, languages, verification_status, rating, total_reviews, response_time_minutes, availability_status, city, country, latitude, longitude, linkedin_url, linkedin_checked_at, credly_username, credly_checked_at, credibility_credits, ai_interview_badge, show_availability')
+        .select('id, user_id, hourly_rate, industries, languages, verification_status, rating, total_reviews, response_time_minutes, availability_status, city, country, latitude, longitude, linkedin_checked_at, credly_checked_at, credibility_credits, ai_interview_badge, show_availability')
         .order('rating', { ascending: false });
 
       if (error) throw error;
@@ -88,9 +88,8 @@ export function useRealtimeConsultants() {
       status: c.available ? 'available' : 'offline',
       country: '',
       place: c.city,
-      linkedin_url: null,
-      linkedin_state: 'none',
-      credly_state: c.credly_username ? 'linked' : 'none',
+      linkedin_state: c.linkedinVerified ? 'checked' : 'none',
+      credly_state: c.credlyVerified ? 'checked' : 'none',
       languages: ['en'],
       response_time_minutes: 15,
       verification_status: 'verified',

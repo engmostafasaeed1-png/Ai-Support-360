@@ -17,14 +17,12 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useTranslation } from 'react-i18next';
 import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
 import ConsultantMap from '@/components/client/ConsultantMap';
-import BookingModal from '@/components/client/BookingModal';
 import { sapModules } from '@/data/clientMockData';
 import VerificationBadge from '@/components/consultant/VerificationBadge';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
 import LinkStatus from '@/components/consultant/LinkStatus';
 import { STATE_META } from '@/lib/mapMarkers';
 import { compareRecommended, hasModule, skillMatchesText } from '@/lib/consultantDirectory';
-import { credlyProfileUrl } from '@/lib/consultantLinks';
 
 const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
   verified: { icon: BadgeCheck, color: 'text-accent' },
@@ -63,7 +61,6 @@ export default function ConsultantsPage() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [credlyOnly, setCredlyOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('best_match');
-  const [bookingConsultant, setBookingConsultant] = useState<{ id: string; name: string; rate: number } | null>(null);
   const [mapSelectedId, setMapSelectedId] = useState<string | null>(null);
 
   const { consultants, realtimeConnected } = useRealtimeConsultants();
@@ -79,7 +76,7 @@ export default function ConsultantsPage() {
   const onlineCount = consultants.filter(c => c.status === 'available').length;
   const busyCount = consultants.filter(c => c.status === 'busy').length;
   const offlineCount = consultants.filter(c => c.status === 'offline').length;
-  const credlyCount = consultants.filter(c => !!c.credly_username).length;
+  const credlyCount = consultants.filter(c => c.credlyVerified).length;
 
   const filtered = useMemo(() => {
     const result = consultants.filter((c) => {
@@ -98,7 +95,7 @@ export default function ConsultantsPage() {
       const matchesRating = c.rating >= minRating;
       const matchesPrice = c.rate >= priceRange[0] && c.rate <= priceRange[1];
       const matchesVerified = !verifiedOnly || c.badges.includes('verified');
-      const matchesCredly = !credlyOnly || !!c.credly_username;
+      const matchesCredly = !credlyOnly || c.credlyVerified;
 
       return matchesSearch && matchesIndustry && matchesAvailability && matchesModule && matchesLanguage && matchesRating && matchesPrice && matchesVerified && matchesCredly;
     });
@@ -119,8 +116,8 @@ export default function ConsultantsPage() {
         break;
       case 'credly_first':
         result.sort((a, b) => {
-          const aCredly = a.credly_username ? 1 : 0;
-          const bCredly = b.credly_username ? 1 : 0;
+          const aCredly = a.credlyVerified ? 1 : 0;
+          const bCredly = b.credlyVerified ? 1 : 0;
           return bCredly - aCredly || b.rating - a.rating;
         });
         break;
@@ -408,10 +405,7 @@ export default function ConsultantsPage() {
               selectedId={mapSelectedId}
               onSelectConsultant={setMapSelectedId}
               onViewProfile={(id) => navigate(`/client/consultants/${id}`)}
-              onBook={(id) => {
-                const c = filtered.find(x => x.id === id);
-                if (c) setBookingConsultant({ id: c.id, name: c.name, rate: c.rate });
-              }}
+              onOpenRequest={() => navigate('/client/new-request')}
             />
             {/* Side list */}
             <div className="space-y-2 max-h-[300px] lg:max-h-[420px] overflow-y-auto pr-1">
@@ -488,16 +482,8 @@ export default function ConsultantsPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 mt-2">
-                      {c.linkedin_url && (
-                        <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" aria-label={`LinkedIn profile of ${c.name} (opens in a new tab)`} onClick={(e) => e.stopPropagation()}>
-                          <LinkStatus state={c.linkedin_state} label="LinkedIn" />
-                        </a>
-                      )}
-                      {c.credly_username && credlyProfileUrl(c.credly_username) && (
-                        <a href={credlyProfileUrl(c.credly_username) as string} target="_blank" rel="noopener noreferrer" aria-label={`Credly profile of ${c.name} (opens in a new tab)`} onClick={(e) => e.stopPropagation()}>
-                          <LinkStatus state={c.credly_state} label="Credly" />
-                        </a>
-                      )}
+                      {c.linkedinVerified && <LinkStatus state={c.linkedin_state} label="LinkedIn" />}
+                      {c.credlyVerified && <LinkStatus state={c.credly_state} label="Credly" />}
                       {c.badges.map((badge) => {
                         const config = badgeConfig[badge];
                         if (!config) return null;
@@ -544,8 +530,9 @@ export default function ConsultantsPage() {
                       )}
                     </div>
 
-                    <div className="flex gap-2 mt-3">
-                      <Button size="sm" className="gradient-primary border-0 flex-1 text-xs" onClick={() => setBookingConsultant({ id: c.id, name: c.name, rate: c.rate })}>{t('consultants_page.book_session')}</Button>
+                    <p className="mt-3 text-xs text-muted-foreground">Sessions are arranged inside a request, so everything stays protected in the portal.</p>
+                    <div className="flex gap-2 mt-2">
+                      <Button size="sm" className="gradient-primary border-0 flex-1 text-xs" onClick={() => navigate('/client/new-request')}>Open a request</Button>
                       <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => navigate(`/client/consultants/${c.id}`)}>{t('consultants_page.view_profile')}</Button>
                     </div>
                   </div>
@@ -556,17 +543,6 @@ export default function ConsultantsPage() {
         </div>
       ) : null}
 
-      {/* Booking Modal */}
-      {bookingConsultant && (
-        <BookingModal
-          open={!!bookingConsultant}
-          onOpenChange={(open) => { if (!open) setBookingConsultant(null); }}
-          consultantName={bookingConsultant.name}
-          consultantId={bookingConsultant.id}
-          rate={bookingConsultant.rate}
-          availableSlots={[]}
-        />
-      )}
     </div>
   );
 }

@@ -90,7 +90,7 @@ export default function EmergencyContactPanel({ consultantId, consultantName, ti
       toast.error(error.message || 'Could not send the alert. Please try again.');
       return;
     }
-    toast.success('Emergency notification sent to consultant!');
+    toast.success(source === 'administrator' ? 'Emergency notification sent to the platform team!' : 'Emergency notification sent to consultant!');
   };
 
   return (

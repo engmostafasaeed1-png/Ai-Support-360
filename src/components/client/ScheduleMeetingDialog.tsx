@@ -44,7 +44,7 @@ interface ExternalInvitee {
   email: string;
 }
 
-type InviteeSource = 'assigned' | 'all' | 'external';
+type InviteeSource = 'assigned' | 'external';
 
 const SESSION_TYPES = [
   { value: 'video', icon: Video, label: 'Video Call' },
@@ -112,16 +112,22 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
     }
   }, [consultantId, inviteeSource]);
 
-  // Fetch assigned consultants for this ticket
+  // The meeting is always with a consultant assigned to THIS ticket: the ticket's consultant and the active assignments of the ticket. There is no list of all consultants.
   const { data: assignedConsultants = [] } = useQuery({
     queryKey: ['ticket-assigned-consultants', ticketId, consultantId],
     queryFn: async () => {
-      if (!consultantId) return [];
+      const { data: assignments } = await supabase
+        .from('ticket_assignments')
+        .select('consultant_id')
+        .eq('ticket_id', ticketId)
+        .eq('status', 'active');
+      const ids = Array.from(new Set([consultantId, ...(assignments || []).map(a => a.consultant_id)].filter((x): x is string => !!x)));
+      if (!ids.length) return [];
 
       const { data: consultants } = await supabase
         .from('consultants')
         .select('id, user_id')
-        .eq('id', consultantId);
+        .in('id', ids);
 
       if (!consultants?.length) return [];
 
@@ -145,39 +151,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
     enabled: open,
   });
 
-  // Fetch all consultants
-  const { data: allConsultants = [] } = useQuery({
-    queryKey: ['all-consultants-for-meeting'],
-    queryFn: async () => {
-      const { data: consultants } = await supabase
-        .from('consultants')
-        .select('id, user_id')
-        .eq('verification_status', 'verified')
-        .limit(100);
-
-      if (!consultants?.length) return [];
-
-      const userIds = consultants.map(c => c.user_id);
-      const { data: profiles } = await supabase
-        .from('profile_directory')
-        .select('user_id, display_name, avatar_url')
-        .in('user_id', userIds);
-
-      return consultants.map(c => {
-        const p = profiles?.find(pr => pr.user_id === c.user_id);
-        return {
-          id: c.id,
-          user_id: c.user_id,
-          display_name: p?.display_name || 'Consultant',
-          avatar_url: p?.avatar_url,
-          isAssigned: c.id === consultantId,
-        } as ConsultantOption;
-      });
-    },
-    enabled: open && inviteeSource === 'all',
-  });
-
-  const displayedConsultants = inviteeSource === 'assigned' ? assignedConsultants : allConsultants;
+  const displayedConsultants = assignedConsultants;
   const filteredConsultants = displayedConsultants.filter(c =>
     c.display_name.toLowerCase().includes(consultantSearch.toLowerCase())
   );
@@ -303,7 +277,6 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
             <RadioGroup value={inviteeSource} onValueChange={(v) => { setInviteeSource(v as InviteeSource); setSelectedConsultantIds([]); setExternalEmails([]); }} className="flex gap-2">
               {[
                 { value: 'assigned', label: 'Assigned', icon: CheckCircle2 },
-                { value: 'all', label: 'All Consultants', icon: Users },
                 { value: 'external', label: 'External', icon: Mail },
               ].map(opt => (
                 <Label
@@ -321,19 +294,8 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
           </div>
 
           {/* Consultant list (assigned or all) */}
-          {(inviteeSource === 'assigned' || inviteeSource === 'all') && (
+          {inviteeSource === 'assigned' && (
             <div className="space-y-2">
-              {inviteeSource === 'all' && (
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
-                  <Input
-                    placeholder="Search consultants..."
-                    value={consultantSearch}
-                    onChange={e => setConsultantSearch(e.target.value)}
-                    className="pl-8 h-8 text-xs"
-                  />
-                </div>
-              )}
               <ScrollArea className="max-h-36 rounded-lg border border-border/50">
                 <div className="p-2 space-y-1">
                   {filteredConsultants.length === 0 ? (
