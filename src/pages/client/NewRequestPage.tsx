@@ -36,6 +36,10 @@ import { TrustBadge } from '@/components/consultant/TrustBadge';
 import VoiceInput from '@/components/ui/voice-input';
 import CriticalRequestOption from '@/components/ticket/CriticalRequestOption';
 import { useCriticalTerms, notifyCriticalByEmail } from '@/hooks/useCriticalService';
+import RequestContextSection, { industryLabelFor } from '@/components/ticket/RequestContextSection';
+import ContextFitBadges from '@/components/client/ContextFitBadges';
+import { buildTicketContext, type TicketContextInput } from '@/lib/ticketContext';
+import { useClientProfileData } from '@/hooks/useClientProfile';
 import { NO_CRITICAL_CHOICE, choiceSummary, criticalColumns, type CriticalChoice } from '@/lib/criticalService';
 
 const ticketSchema = z.object({
@@ -100,6 +104,9 @@ interface ConsultantRecommendation {
   ai_interview_badge?: string | null;
   solved_similar?: number;
   resolved_in_areas?: number;
+  context_fit_score?: number | null;
+  context_matches?: string[];
+  context_gaps?: string[];
 }
 
 // an expert the client asks to take the ticket (suggested by the AI or chosen by hand)
@@ -159,6 +166,21 @@ export default function NewRequestPage() {
   // One id per request: when the answer of the server is lost after the ticket was saved, the second try sends the same id,
   // the database answers "already there" and we carry on with that ticket instead of creating a duplicate.
   const ticketIdRef = useRef<{ key: string; id: string } | null>(null);
+  // Optional matching context; prefilled once from the company profile
+  const { data: companyProfile } = useClientProfileData();
+  const [contextInput, setContextInput] = useState<TicketContextInput>({});
+  const contextPrefilled = useRef(false);
+  useEffect(() => {
+    if (!companyProfile || contextPrefilled.current) return;
+    contextPrefilled.current = true;
+    setContextInput(prev => ({
+      ...prev,
+      industry: prev.industry || industryLabelFor(companyProfile.industry),
+      customer_segment: prev.customer_segment || companyProfile.customer_segment || '',
+      country: prev.country || companyProfile.country || '',
+    }));
+  }, [companyProfile]);
+  const ticketContext = buildTicketContext(contextInput);
   // What did not get through on the last try: shown on the confirmation page, not only in a toast.
   const [sendIssues, setSendIssues] = useState<{ files: string[]; links: number; expertIds: string[] }>({ files: [], links: 0, expertIds: [] });
   const [solvedBySuggestion, setSolvedBySuggestion] = useState(false);
@@ -334,6 +356,7 @@ export default function NewRequestPage() {
           urgency: form.urgency,
           preferred_language: form.preferred_language,
           model: selectedModel,
+          ...(ticketContext ? { ticket_context: ticketContext } : {}),
         },
       });
       if (error) throw error;
@@ -345,7 +368,7 @@ export default function NewRequestPage() {
     } finally {
       setAiLoading(null);
     }
-  }, [form.title, form.description, form.sap_module, form.sap_modules, form.sap_module_other, form.area_details, form.urgency, form.preferred_language, selectedModel]);
+  }, [form.title, form.description, form.sap_module, form.sap_modules, form.sap_module_other, form.area_details, form.urgency, form.preferred_language, selectedModel, ticketContext]);
 
   const validateStep = (currentStep: number): boolean => {
     const result = ticketSchema.safeParse(form);
@@ -457,7 +480,8 @@ export default function NewRequestPage() {
         ai_suggested_priority: (!triageIsStale && aiCategorization?.suggested_priority) || null,
         ticket_type: form.ticket_type,
         ...criticalColumns(form.urgency, critical),
-      });
+        ...(ticketContext ? { ticket_context: ticketContext } : {}),
+      } as any);
 
       // 23505 on the primary key means an earlier try with this id was saved although its answer was lost: carry on with that ticket
       const alreadySaved = !!error && error.code === '23505' && /tickets_pkey/.test(`${error.message} ${error.details ?? ''}`);
@@ -992,6 +1016,7 @@ export default function NewRequestPage() {
                 ))}
               </div>
             </div>
+            <RequestContextSection value={contextInput} onChange={setContextInput} />
           </CardContent>
         </Card>
       )}
@@ -1380,6 +1405,8 @@ function RecommendationCard({ rec, rank, navigate, picked, pickDisabled, onToggl
 
           {/* Match reason */}
           <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{rec.match_reason}</p>
+
+          <ContextFitBadges fit={rec} />
 
           <MatchScoreBreakdown breakdown={rec.score_breakdown} />
 
