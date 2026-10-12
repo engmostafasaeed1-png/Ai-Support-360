@@ -18,9 +18,9 @@ describe('GroupedMultiSelect', () => {
   it('selecting and unselecting calls onChange with the right arrays', () => {
     const onChange = setup(['Apple']);
     fireEvent.click(screen.getByText('Fruits'));
-    fireEvent.click(screen.getByLabelText('Banana'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Banana' }));
     expect(onChange).toHaveBeenLastCalledWith(['Apple', 'Banana']);
-    fireEvent.click(screen.getByLabelText('Apple'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Apple' }));
     expect(onChange).toHaveBeenLastCalledWith(['Banana']);
   });
 
@@ -57,7 +57,7 @@ describe('GroupedMultiSelect', () => {
     const onChange = setup(['Apple', 'Banana'], 2);
     expect(screen.getByText('You can choose up to 2 entries.')).toBeTruthy();
     fireEvent.click(screen.getByText('Vegetables'));
-    const carrot = screen.getByLabelText('Carrot') as HTMLInputElement;
+    const carrot = screen.getByRole('checkbox', { name: 'Carrot' }) as HTMLInputElement;
     expect(carrot.disabled).toBe(true);
     fireEvent.click(carrot);
     expect(onChange).not.toHaveBeenCalled();
