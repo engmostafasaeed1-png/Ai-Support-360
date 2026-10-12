@@ -468,6 +468,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
         <ProfileStep data={data} onChange={updateData} />
       </section>
       <section id="expertise"><SapExpertiseCard key={`skills-${loadedRevision}`} /></section>
+      <section id="profile-experience"><ProfileExperienceCard key={`experience-${loadedRevision}`} /></section>
       <section id="experience"><ExperienceCvCard onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section>
       <section id="certifications"><CertificationsStep data={data} onChange={updateData} /></section>
       <section id="education"><EducationStep data={data} onChange={updateData} /></section>
