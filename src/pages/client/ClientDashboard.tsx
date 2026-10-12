@@ -1,3 +1,4 @@
+import ClientCollaborationRatingCard from '@/components/client/ClientCollaborationRatingCard';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -534,6 +535,8 @@ export default function ClientDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {!isGuest && <ClientCollaborationRatingCard />}
 
       {/* Quick Access Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

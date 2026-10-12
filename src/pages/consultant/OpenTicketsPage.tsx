@@ -43,6 +43,7 @@ export default function OpenTicketsPage() {
   const [search, setSearch] = useState('');
   const [moduleFilter, setModuleFilter] = useState('all');
   const { data: tickets, isLoading } = useOpenTickets();
+  const { data: ratings } = useClientRatingSummaries((tickets || []).map((t: any) => t.client_id).filter(Boolean));
   const [searchParams] = useSearchParams();
   // the notice of a critical request links here with ?critical=<ticket id>: that ticket is highlighted
   const focusId = searchParams.get('critical');
@@ -149,7 +150,7 @@ export default function OpenTicketsPage() {
                         <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
                       </h3>
                     </Link>
-                    {ticket.client_id && <ClientRatingChip clientId={ticket.client_id} summary={ratings?.get(ticket.client_id) ?? null} className="mt-1" />}
+                    {ticket.client_id && ratings && <ClientRatingChip clientId={ticket.client_id} summary={ratings.get(ticket.client_id) ?? null} className="mt-1" />}
                     {ticket.description && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{ticket.description}</p>
                     )}
