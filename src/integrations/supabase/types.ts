@@ -1109,6 +1109,115 @@ export type Database = {
         }
         Relationships: []
       }
+      client_rating_stats: {
+        Row: {
+          avg_score: number
+          clarity_avg: number | null
+          client_id: string
+          communication_avg: number | null
+          cooperation_avg: number | null
+          review_count: number
+          updated_at: string
+          would_work_again_pct: number | null
+        }
+        Insert: {
+          avg_score: number
+          clarity_avg?: number | null
+          client_id: string
+          communication_avg?: number | null
+          cooperation_avg?: number | null
+          review_count: number
+          updated_at?: string
+          would_work_again_pct?: number | null
+        }
+        Update: {
+          avg_score?: number
+          clarity_avg?: number | null
+          client_id?: string
+          communication_avg?: number | null
+          cooperation_avg?: number | null
+          review_count?: number
+          updated_at?: string
+          would_work_again_pct?: number | null
+        }
+        Relationships: []
+      }
+      client_reviews: {
+        Row: {
+          clarity_score: number | null
+          client_id: string
+          comment: string | null
+          communication_score: number | null
+          consultant_id: string
+          cooperation_score: number | null
+          created_at: string
+          hidden: boolean
+          hidden_by: string | null
+          hidden_reason: string | null
+          id: string
+          score: number
+          ticket_id: string
+          updated_at: string
+          would_work_again: boolean | null
+        }
+        Insert: {
+          clarity_score?: number | null
+          client_id: string
+          comment?: string | null
+          communication_score?: number | null
+          consultant_id: string
+          cooperation_score?: number | null
+          created_at?: string
+          hidden?: boolean
+          hidden_by?: string | null
+          hidden_reason?: string | null
+          id?: string
+          score: number
+          ticket_id: string
+          updated_at?: string
+          would_work_again?: boolean | null
+        }
+        Update: {
+          clarity_score?: number | null
+          client_id?: string
+          comment?: string | null
+          communication_score?: number | null
+          consultant_id?: string
+          cooperation_score?: number | null
+          created_at?: string
+          hidden?: boolean
+          hidden_by?: string | null
+          hidden_reason?: string | null
+          id?: string
+          score?: number
+          ticket_id?: string
+          updated_at?: string
+          would_work_again?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_reviews_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "client_reviews_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_reviews_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_testimonials: {
         Row: {
           accent: string
@@ -8322,6 +8431,10 @@ export type Database = {
         Returns: string
       }
       admin_get_invoice_counter: { Args: never; Returns: Json }
+      admin_hide_client_review: {
+        Args: { _hidden: boolean; _reason?: string; _review_id: string }
+        Returns: undefined
+      }
       admin_list_client_approvals: {
         Args: { p_limit?: number; p_status?: string }
         Returns: Json
@@ -8438,6 +8551,18 @@ export type Database = {
         Args: { _company_name: string; _sap_modules: string[] }
         Returns: boolean
       }
+      client_rating_summaries: {
+        Args: { _client_ids: string[] }
+        Returns: {
+          avg_score: number
+          clarity_avg: number
+          client_id: string
+          communication_avg: number
+          cooperation_avg: number
+          review_count: number
+          would_work_again_pct: number
+        }[]
+      }
       client_report_payment: {
         Args: {
           _note?: string
@@ -8451,6 +8576,7 @@ export type Database = {
         Args: { p_message?: string }
         Returns: undefined
       }
+      client_review_rate_ok: { Args: never; Returns: boolean }
       client_sign_nda: {
         Args: {
           _nda_id: string
@@ -8783,6 +8909,7 @@ export type Database = {
         Args: { _plan_id: string; _tickets: number; _voucher_code?: string }
         Returns: Json
       }
+      recompute_client_rating: { Args: { _client: string }; Returns: undefined }
       recompute_consultant_rating: {
         Args: { _consultant_id: string }
         Returns: undefined
