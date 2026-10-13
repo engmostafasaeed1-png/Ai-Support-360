@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Check, ChevronLeft, ChevronRight, Upload, User, Cpu, Award, Clock, Briefcase, GraduationCap, FolderKanban, Brain } from 'lucide-react';
@@ -119,6 +119,14 @@ const initialData: OnboardingData = {
 
 const STEP_COUNT = 9;
 
+/** Applies freshly loaded values, keeping the current value of every field the user edited since the last load or save. */
+export function mergeLoaded(current: OnboardingData, loaded: OnboardingData, dirty: ReadonlySet<string>): OnboardingData {
+  const next = { ...loaded } as Record<string, unknown>;
+  for (const key of dirty) if (key in current) next[key] = (current as unknown as Record<string, unknown>)[key];
+  const merged = next as unknown as OnboardingData;
+  return JSON.stringify(merged) === JSON.stringify(current) ? current : merged;
+}
+
 const stepIcons = [Upload, User, Cpu, Award, Briefcase, GraduationCap, FolderKanban, Clock, Brain];
 
 export default function ConsultantOnboarding({ embedded = false }: { embedded?: boolean }) {
@@ -141,6 +149,11 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
   const [loading, setLoading] = useState(!isGuest);
   const embeddedGuides = useEmbeddedGuides();
   const { data: loadedProfile } = useConsultantProfile();
+  // The latest t is kept in a ref, so a language or translation update does not reload (and overwrite) the form.
+  const tRef = useRef(t);
+  tRef.current = t;
+  // Fields the user changed since the last successful load or save; a reload keeps their typed values.
+  const dirtyKeys = useRef(new Set<string>());
 
   useEffect(() => {
     if (isGuest) return;
@@ -158,7 +171,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
         const c = consultantResult.data;
         if (!active) return;
         if (!c) {
-          setData(prev => ({ ...prev, displayName: profileResult.data?.display_name || '' }));
+          setData(prev => mergeLoaded(prev, { ...prev, displayName: profileResult.data?.display_name || '' }, dirtyKeys.current));
           return;
         }
         const [skills, certificates, jobs, studies, projects, slots, privateDetails, contactLinks] = await Promise.all([
@@ -178,7 +191,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
         if (!active) return;
         setConsultantId(c.id);
         setSavedRows({ certifications: (certificates.data || []).map(x => x.id), education: (studies.data || []).map(x => x.id), projects: (projects.data || []).map(x => x.id) });
-        setData({
+        const loaded: OnboardingData = {
           displayName: profileResult.data?.display_name || '', bio: c.bio || '',
           hourlyRate: Number(c.hourly_rate) || 0, currency: c.currency || 'USD',
           timezone: c.timezone || 'Asia/Riyadh', languages: c.languages || ['en'],
@@ -191,16 +204,17 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           education: (studies.data || []).map(s => ({ id: s.id, institution: s.institution, degree: s.degree || '', fieldOfStudy: s.field_of_study || '', startYear: s.start_year, endYear: s.end_year })),
           projects: (projects.data || []).map(s => ({ id: s.id, projectName: s.project_name, clientIndustry: s.client_industry || '', sapModules: s.sap_modules || [], description: s.description || '', durationMonths: s.duration_months, role: s.role || '' })),
           availability: (slots.data || []).flatMap(s => s.day_of_week === null ? [] : [{ dayOfWeek: s.day_of_week, startTime: s.start_time, endTime: s.end_time }]),
-        });
+        };
+        setData(prev => mergeLoaded(prev, loaded, dirtyKeys.current));
       } catch {
-        toast.error(t('onboarding.error_generic'));
+        toast.error(tRef.current('onboarding.error_generic'));
       } finally {
         if (active) setLoading(false);
       }
     };
     void prefill();
     return () => { active = false; };
-  }, [isGuest, t, loadedRevision]);
+  }, [isGuest, loadedRevision]);
 
   useEffect(() => {
     setCurrentStep(Math.min(Math.max(Number(searchParams.get('step')) || 0, 0), STEP_COUNT - 1));
@@ -225,6 +239,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
   ];
 
   const updateData = (partial: Partial<OnboardingData>) => {
+    for (const key of Object.keys(partial)) dirtyKeys.current.add(key);
     setData(prev => ({ ...prev, ...partial }));
   };
 
@@ -328,6 +343,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
         await syncRows('consultant_education', data.education.filter(e => e.institution.trim()).map(e => ({ id: e.id, institution: e.institution.trim(), degree: e.degree || null, field_of_study: e.fieldOfStudy || null, start_year: e.startYear, end_year: e.endYear })), savedRows.education, r => studyKey(r.institution, r.degree, r.field_of_study, r.start_year));
         await syncRows('consultant_projects', data.projects.filter(p => p.projectName.trim()).map(p => ({ id: p.id, project_name: p.projectName.trim(), client_industry: p.clientIndustry || null, sap_modules: [...new Set(p.sapModules)], description: p.description || null, duration_months: p.durationMonths, role: p.role || null })), savedRows.projects, r => projectKey(r.project_name));
         await queryClient.invalidateQueries({ queryKey: ['consultant-profile'] });
+        dirtyKeys.current.clear();
         setLoadedRevision(r => r + 1);
         toast.success(t('common.saved', 'Profile saved'));
         return;

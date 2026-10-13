@@ -70,10 +70,18 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
   });
 
   // Load the saved slots into the editable draft list when they arrive
+  // Load the saved slots only while the list has no unsaved changes, so a refetch does not drop them.
+  const applied = useRef<string | null>(null);
   useEffect(() => {
     if (!data) return;
-    setDrafts(data.slots.map(toDraft));
-    setEditingId(null);
+    const fresh = data.slots.map(toDraft);
+    setDrafts(current => {
+      const untouched = applied.current === null || snapshot(current.filter(d => !d.removed)) === applied.current;
+      if (!untouched) return current;
+      setEditingId(null);
+      return fresh;
+    });
+    applied.current = snapshot(fresh);
   }, [data]);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ['my-availability-slots'] });
