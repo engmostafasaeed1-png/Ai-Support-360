@@ -274,29 +274,41 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
 
       if (profileError) throw profileError;
 
-      // Upsert consultant record
-      const { data: consultant, error: consultantErr } = await supabase
+      // Update the consultant record, or create it on the first save. An upsert (ON CONFLICT) cannot be used:
+      // it needs read permission on every written column, and the contact-link columns are write-only for the consultant.
+      const consultantValues = {
+        user_id: user.id,
+        bio: data.bio,
+        hourly_rate: data.hourlyRate,
+        currency: data.currency,
+        timezone: data.timezone,
+        languages: data.languages,
+        linkedin_url: linkedinUrl,
+        credly_username: credlyUsername,
+        github_url: data.githubUrl || null,
+        personal_website: data.personalWebsite || null,
+        city: data.city || null,
+        country: data.country || null,
+        latitude: place ? place.lat : null,
+        longitude: place ? place.lng : null,
+      };
+      const { data: existingRow, error: lookupError } = await supabase
         .from('consultants')
-        .upsert({
-          user_id: user.id,
-          bio: data.bio,
-          hourly_rate: data.hourlyRate,
-          currency: data.currency,
-          timezone: data.timezone,
-          languages: data.languages,
-          linkedin_url: linkedinUrl,
-          credly_username: credlyUsername,
-          github_url: data.githubUrl || null,
-          personal_website: data.personalWebsite || null,
-          city: data.city || null,
-          country: data.country || null,
-          latitude: place ? place.lat : null,
-          longitude: place ? place.lng : null,
-        }, { onConflict: 'user_id' })
         .select('id')
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (lookupError) throw lookupError;
 
-      if (consultantErr || !consultant) throw consultantErr;
+      let consultantIdValue = existingRow?.id as string | undefined;
+      if (consultantIdValue) {
+        const { error } = await supabase.from('consultants').update(consultantValues).eq('user_id', user.id);
+        if (error) throw error;
+      } else {
+        const { data: inserted, error } = await supabase.from('consultants').insert(consultantValues).select('id').single();
+        if (error || !inserted) throw error;
+        consultantIdValue = inserted.id;
+      }
+      const consultant = { id: consultantIdValue };
       setConsultantId(consultant.id);
 
       // The nationality is a private detail: it is kept in its own table that only the consultant and the administrators can read.
