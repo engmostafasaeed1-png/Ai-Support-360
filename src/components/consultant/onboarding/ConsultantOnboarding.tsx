@@ -135,6 +135,8 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
   const queryClient = useQueryClient();
   const payoutQ = useMyPayoutDetails();
   const [loadedRevision, setLoadedRevision] = useState(0);
+  // Bumped only by a finished CV import: the skills and experience cards remount to show the imported rows.
+  const [importRevision, setImportRevision] = useState(0);
   const [savedRows, setSavedRows] = useState({ certifications: [] as string[], education: [] as string[], projects: [] as string[] });
   const { isGuest } = useGuestMode();
   const [searchParams] = useSearchParams();
@@ -497,9 +499,9 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
         </div>
         <ProfileStep data={data} onChange={updateData} />
       </section>
-      <section id="expertise"><EmbeddedGuideCard section="expertise" stepKey="skills" /><SapExpertiseCard key={`skills-${loadedRevision}`} onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section>
-      <section id="profile-experience"><EmbeddedGuideCard section="profile-experience" stepKey="projects" /><ProfileExperienceCard key={`experience-${loadedRevision}`} payoutReady={payoutReady(payoutQ.data?.details)} onCompletenessChange={embeddedGuides.setCompleteness} /></section>
-      <section id="experience"><EmbeddedGuideCard section="experience" stepKey="work" /><ExperienceCvCard onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section>
+      <section id="expertise"><EmbeddedGuideCard section="expertise" stepKey="skills" /><SapExpertiseCard key={`skills-${importRevision}`} onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section>
+      <section id="profile-experience"><EmbeddedGuideCard section="profile-experience" stepKey="projects" /><ProfileExperienceCard key={`experience-${importRevision}`} payoutReady={payoutReady(payoutQ.data?.details)} onCompletenessChange={embeddedGuides.setCompleteness} /></section>
+      <section id="experience"><EmbeddedGuideCard section="experience" stepKey="work" /><ExperienceCvCard onProfileChanged={() => { setImportRevision(r => r + 1); setLoadedRevision(r => r + 1); }} /></section>
       <section id="certifications"><EmbeddedGuideCard section="certifications" stepKey="certifications" /><CertificationsStep data={data} onChange={updateData} /></section>
       <section id="education"><EmbeddedGuideCard section="education" stepKey="education" /><EducationStep data={data} onChange={updateData} /></section>
       <section id="projects"><EmbeddedGuideCard section="projects" stepKey="projects" /><ProjectsStep data={data} onChange={updateData} /></section>
