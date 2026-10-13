@@ -49,3 +49,13 @@ describe.each(portals)('%s navigation config', (_name, groups, root, extra) => {
     expect(groups.some((g) => g.defaultOpen)).toBe(true);
   });
 });
+
+describe('consultant tour ids', () => {
+  it('tags the menu items the product tour points at', () => {
+    const ids = Object.fromEntries(consultantNavGroups.flatMap((g) => g.items).filter((i) => i.tourId).map((i) => [i.tourId, i.key]));
+    expect(ids).toEqual({
+      'nav-profile': 'profile', 'nav-my-bids': 'proposals', 'nav-open-requests': 'open_tickets',
+      'nav-sessions': 'calendar', 'nav-messages': 'chat', 'nav-earnings': 'earnings',
+    });
+  });
+});
