@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { mockRecommendedConsultants } from '@/data/clientMockData';
+import { useHiddenConsultantIds, withoutHidden } from '@/hooks/useHiddenConsultants';
 import { toConsultantLive, formatWeeklyHours, type ConsultantLive, type WeeklySlot } from '@/lib/consultantDirectory';
 
 export type { ConsultantLive } from '@/lib/consultantDirectory';
@@ -26,7 +27,8 @@ export function useRealtimeConsultants() {
     return () => { supabase.removeChannel(channel); };
   }, [isGuest, queryClient]);
 
-  const { data: consultants = [], isLoading } = useQuery({
+  const hiddenIds = useHiddenConsultantIds(!isGuest);
+  const { data: allConsultants = [], isLoading } = useQuery({
     queryKey: ['realtime-consultants'],
     queryFn: async (): Promise<ConsultantLive[]> => {
       // The consultants that the signed-in person may see (verified ones; an administrator sees all)
@@ -98,6 +100,8 @@ export function useRealtimeConsultants() {
     })) : undefined,
   });
 
+  // Incomplete profiles are left out while the administrator's switch is on (an empty list when the call fails: everyone is shown).
+  const consultants = withoutHidden(allConsultants, hiddenIds);
   const realtimeConnected = !isGuest;
 
   return { consultants, realtimeConnected, isLoading };

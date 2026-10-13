@@ -1282,7 +1282,7 @@ export default function NewRequestPage() {
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-muted-foreground">{c.specialty} · {c.city}</p>
+                              <p className="text-xs text-muted-foreground">{c.specialty} · {c.place || 'Location not set'}</p>
                               <TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} className="mt-1" />
                             </div>
                             <div className="text-end shrink-0">

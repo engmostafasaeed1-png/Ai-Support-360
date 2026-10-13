@@ -77,3 +77,46 @@ export function cityPoint(country: string, city: string): { lat: number; lng: nu
 export function placeLabel(city?: string | null, country?: string | null): string {
   return [city, country].map(x => (x ?? '').trim()).filter(Boolean).join(', ');
 }
+
+/** The place shown on consultant cards, the map list and profiles: "City, Country", only one of them, or "Location not set". */
+export function locationText(city?: string | null, country?: string | null, unset = 'Location not set'): string {
+  return placeLabel(city, country) || unset;
+}
+
+/** Rough centre of each country (2 decimals), used when the consultant's city is not in the list. */
+const COUNTRY_CENTRES: Record<string, { lat: number; lng: number }> = {
+  'saudi arabia': { lat: 23.89, lng: 45.08 },
+  uae: { lat: 23.42, lng: 53.85 },
+  'united arab emirates': { lat: 23.42, lng: 53.85 },
+  qatar: { lat: 25.35, lng: 51.18 },
+  switzerland: { lat: 46.82, lng: 8.23 },
+  sweden: { lat: 60.13, lng: 18.64 },
+  ireland: { lat: 53.41, lng: -8.24 },
+  egypt: { lat: 26.82, lng: 30.8 },
+  kuwait: { lat: 29.31, lng: 47.48 },
+  bahrain: { lat: 26.07, lng: 50.56 },
+  oman: { lat: 21.51, lng: 55.92 },
+  jordan: { lat: 30.59, lng: 36.24 },
+  'united kingdom': { lat: 55.38, lng: -3.44 },
+  germany: { lat: 51.17, lng: 10.45 },
+  india: { lat: 20.59, lng: 78.96 },
+  pakistan: { lat: 30.38, lng: 69.35 },
+};
+
+/** A small stable number in [-0.5, 0.5) from a text, so pins of one country do not stack exactly. */
+function jitter(seed: string, salt: number): number {
+  let h = 2166136261 ^ salt;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+  return ((h >>> 0) % 1000) / 1000 - 0.5;
+}
+
+/** The centre of a country (plus a small offset that is always the same for the same seed), or null for an unknown country. */
+export function countryPoint(country?: string | null, seed = ''): { lat: number; lng: number } | null {
+  const centre = country ? COUNTRY_CENTRES[country.trim().toLowerCase()] : undefined;
+  if (!centre) return null;
+  if (!seed) return { ...centre };
+  return {
+    lat: Math.round((centre.lat + jitter(seed, 1) * 0.6) * 100) / 100,
+    lng: Math.round((centre.lng + jitter(seed, 2) * 0.6) * 100) / 100,
+  };
+}

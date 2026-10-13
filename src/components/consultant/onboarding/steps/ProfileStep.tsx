@@ -9,6 +9,8 @@ import { COUNTRIES, citiesOf } from '@/lib/geo';
 import { CREDLY_HINT, LINKEDIN_HINT, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 import type { OnboardingData } from '../ConsultantOnboarding';
 import { FieldHint } from '../OnboardingGuidePanel';
+import { FieldGate, RequiredMark } from '@/components/consultant/ProfileFieldRule';
+import CityPicker from './CityPicker';
 
 const timezones = [
   'Asia/Riyadh', 'Asia/Dubai', 'Asia/Karachi', 'Europe/London',
@@ -65,8 +67,8 @@ export default function ProfileStep({ data, onChange }: Props) {
 
   return (
     <div className="space-y-5">
-      <div className="space-y-1.5">
-        <Label htmlFor="displayName">{t('onboarding.display_name')} *</Label><FieldHint field="displayName" />
+      <FieldGate field="display_name"><div className="space-y-1.5">
+        <Label htmlFor="displayName">{t('onboarding.display_name')}<RequiredMark field="display_name" /></Label><FieldHint field="displayName" />
         <Input
           id="displayName"
           value={data.displayName}
@@ -74,10 +76,10 @@ export default function ProfileStep({ data, onChange }: Props) {
           placeholder={t('onboarding.display_name_placeholder')}
           maxLength={100}
         />
-      </div>
+      </div></FieldGate>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="bio">{t('onboarding.bio')} *</Label><FieldHint field="bio" />
+      <FieldGate field="bio"><div className="space-y-1.5">
+        <Label htmlFor="bio">{t('onboarding.bio')}<RequiredMark field="bio" /></Label><FieldHint field="bio" />
         <Textarea
           id="bio"
           value={data.bio}
@@ -87,12 +89,12 @@ export default function ProfileStep({ data, onChange }: Props) {
           maxLength={8000}
         />
         <p className="text-[10px] text-muted-foreground text-end">{data.bio.length}/8000</p>
-      </div>
+      </div></FieldGate>
 
       {/* Location & Personal */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="space-y-1.5">
-          <Label>Nationality</Label>
+        <FieldGate field="nationality"><div className="space-y-1.5">
+          <Label>Nationality<RequiredMark field="nationality" /></Label>
           <Select value={data.nationality} onValueChange={v => onChange({ nationality: v })}>
             <SelectTrigger><SelectValue placeholder="Select nationality" /></SelectTrigger>
             <SelectContent>
@@ -101,9 +103,9 @@ export default function ProfileStep({ data, onChange }: Props) {
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label>Country</Label>
+        </div></FieldGate>
+        <FieldGate field="country"><div className="space-y-1.5">
+          <Label>Country<RequiredMark field="country" /></Label>
           <Select value={COUNTRIES.includes(data.country) ? data.country : ''} onValueChange={v => onChange({ country: v, city: '' })}>
             <SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger>
             <SelectContent>
@@ -112,18 +114,11 @@ export default function ProfileStep({ data, onChange }: Props) {
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label>City</Label>
-          <Select value={availableCities.includes(data.city) ? data.city : ''} onValueChange={v => onChange({ city: v })} disabled={!data.country}>
-            <SelectTrigger><SelectValue placeholder={data.country ? 'Select city' : 'Select country first'} /></SelectTrigger>
-            <SelectContent>
-              {availableCities.map(c => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        </div></FieldGate>
+        <FieldGate field="city"><div className="space-y-1.5">
+          <Label>City<RequiredMark field="city" /></Label>
+          <CityPicker country={data.country} city={data.city} cities={availableCities} onChange={city => onChange({ city })} />
+        </div></FieldGate>
       </div>
       <p className="-mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
         <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
@@ -132,10 +127,10 @@ export default function ProfileStep({ data, onChange }: Props) {
 
       {/* Rate & Currency */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="hourlyRate">{t('onboarding.hourly_rate')}</Label><FieldHint field="hourlyRate" />
+        <FieldGate field="hourly_rate"><div className="space-y-1.5">
+          <Label htmlFor="hourlyRate">{t('onboarding.hourly_rate')}<RequiredMark field="hourly_rate" /></Label><FieldHint field="hourlyRate" />
           <Input id="hourlyRate" type="number" min={0} step="0.01" value={data.hourlyRate} onChange={e => onChange({ hourlyRate: Number(e.target.value) })} />
-        </div>
+        </div></FieldGate>
         <div className="space-y-1.5">
           <Label>{t('onboarding.currency')}</Label>
           <Select value={data.currency} onValueChange={v => onChange({ currency: v })}>
@@ -147,8 +142,8 @@ export default function ProfileStep({ data, onChange }: Props) {
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1.5">
-          <Label>{t('onboarding.timezone')}</Label><FieldHint field="timezone" />
+        <FieldGate field="timezone"><div className="space-y-1.5">
+          <Label>{t('onboarding.timezone')}<RequiredMark field="timezone" /></Label><FieldHint field="timezone" />
           <Select value={data.timezone} onValueChange={v => onChange({ timezone: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -157,58 +152,58 @@ export default function ProfileStep({ data, onChange }: Props) {
               ))}
             </SelectContent>
           </Select>
-        </div>
+        </div></FieldGate>
       </div>
 
       {/* Social Links */}
-      <div className="space-y-3">
+      <FieldGate field={['linkedin_url', 'credly_username', 'github_url', 'personal_website']}><div className="space-y-3">
         <div className="flex items-center"><Label className="text-sm font-medium">Social & Web Links</Label><FieldHint field="linkedin" /></div>
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
+          <FieldGate field="linkedin_url"><div className="flex items-center gap-2">
             <Linkedin className="w-4 h-4 text-muted-foreground shrink-0" />
             <Input
               value={data.linkedinUrl}
               onChange={e => onChange({ linkedinUrl: e.target.value })}
               placeholder="https://www.linkedin.com/in/your-name"
               aria-label="LinkedIn profile address"
-            />
+            /><RequiredMark field="linkedin_url" />
           </div>
-          {linkedinBad && <p className="text-[11px] text-destructive" role="alert">{LINKEDIN_HINT}</p>}
-          <div className="flex items-center gap-2">
+          {linkedinBad && <p className="text-[11px] text-destructive" role="alert">{LINKEDIN_HINT}</p>}</FieldGate>
+          <FieldGate field="credly_username"><div className="flex items-center gap-2">
             <Award className="w-4 h-4 text-muted-foreground shrink-0" />
             <Input
               value={data.credlyUsername}
               onChange={e => onChange({ credlyUsername: e.target.value })}
               placeholder="Your Credly username or profile address"
               aria-label="Credly username or profile address"
-            />
+            /><RequiredMark field="credly_username" />
           </div>
-          {credlyBad && <p className="text-[11px] text-destructive" role="alert">{CREDLY_HINT}</p>}
-          <div className="flex items-center gap-2">
+          {credlyBad && <p className="text-[11px] text-destructive" role="alert">{CREDLY_HINT}</p>}</FieldGate>
+          <FieldGate field="github_url"><div className="flex items-center gap-2">
             <Github className="w-4 h-4 text-muted-foreground shrink-0" />
             <Input
               value={data.githubUrl}
               onChange={e => onChange({ githubUrl: e.target.value })}
               placeholder="https://github.com/username"
-            />
-          </div>
-          <div className="flex items-center gap-2">
+            /><RequiredMark field="github_url" />
+          </div></FieldGate>
+          <FieldGate field="personal_website"><div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
             <Input
               value={data.personalWebsite}
               onChange={e => onChange({ personalWebsite: e.target.value })}
               placeholder="https://your-website.com"
-            />
-          </div>
+            /><RequiredMark field="personal_website" />
+          </div></FieldGate>
         </div>
         <p className="text-[11px] text-muted-foreground">
           The platform team opens your LinkedIn and Credly links when it reviews your application. Clients see them as "linked", and as "checked" once the team confirmed them.
         </p>
-      </div>
+      </div></FieldGate>
 
       {/* Languages - Multi-select badges */}
-      <div className="space-y-1.5">
-        <Label>{t('onboarding.languages')}</Label><FieldHint field="languages" />
+      <FieldGate field="languages"><div className="space-y-1.5">
+        <Label>{t('onboarding.languages')}<RequiredMark field="languages" /></Label><FieldHint field="languages" />
         <div className="flex flex-wrap gap-2">
           {allLanguages.map(lang => (
             <Button type="button"
@@ -222,7 +217,7 @@ export default function ProfileStep({ data, onChange }: Props) {
             </Button>
           ))}
         </div>
-      </div>
+      </div></FieldGate>
     </div>
   );
 }

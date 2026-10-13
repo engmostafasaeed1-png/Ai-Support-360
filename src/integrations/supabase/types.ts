@@ -4732,6 +4732,87 @@ export type Database = {
           },
         ]
       }
+      profile_field_rules: {
+        Row: {
+          default_mode: string
+          field_key: string
+          label: string
+          mode: string
+          section: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          default_mode?: string
+          field_key: string
+          label: string
+          mode?: string
+          section: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          default_mode?: string
+          field_key?: string
+          label?: string
+          mode?: string
+          section?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      profile_field_rules_log: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          field_key: string
+          id: string
+          new_mode: string
+          old_mode: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          field_key: string
+          id?: string
+          new_mode: string
+          old_mode?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          field_key?: string
+          id?: string
+          new_mode?: string
+          old_mode?: string | null
+        }
+        Relationships: []
+      }
+      profile_rules_config: {
+        Row: {
+          enforce: boolean
+          id: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enforce?: boolean
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enforce?: boolean
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -8692,6 +8773,15 @@ export type Database = {
         Args: { _hidden: boolean; _reason?: string; _review_id: string }
         Returns: undefined
       }
+      admin_incomplete_consultants: {
+        Args: never
+        Returns: {
+          consultant_id: string
+          display_name: string
+          missing: string[]
+          verification_status: string
+        }[]
+      }
       admin_list_client_approvals: {
         Args: { p_limit?: number; p_status?: string }
         Returns: Json
@@ -8751,6 +8841,10 @@ export type Database = {
           _payout_id: string
           _status: string
         }
+        Returns: undefined
+      }
+      admin_set_profile_field_rules: {
+        Args: { _enforce: boolean; _rules: Json }
         Returns: undefined
       }
       admin_storage_overview: { Args: never; Returns: Json }
@@ -8904,6 +8998,7 @@ export type Database = {
         Args: { _ticket_id: string }
         Returns: boolean
       }
+      consultant_missing_fields: { Args: { _cid: string }; Returns: string[] }
       consultant_profile_visible: {
         Args: { _consultant_id: string }
         Returns: boolean
@@ -9074,6 +9169,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      hidden_consultant_ids: { Args: never; Returns: string[] }
       hide_ticket_question: {
         Args: { _hidden: boolean; _question_id: string }
         Returns: undefined
@@ -9139,6 +9235,7 @@ export type Database = {
         Args: { _connectable?: boolean; _env: string }
         Returns: boolean
       }
+      my_missing_profile_fields: { Args: never; Returns: string[] }
       my_nda_pending_access: {
         Args: never
         Returns: {
@@ -9150,6 +9247,10 @@ export type Database = {
           since: string
           waiting_for_client: boolean
         }[]
+      }
+      new_bid_blocked_by_profile: {
+        Args: { _cid: string; _ticket: string }
+        Returns: boolean
       }
       next_invoice_number: { Args: { _at?: string }; Returns: string }
       normalize_credly_username: { Args: { _v: string }; Returns: string }
@@ -9180,6 +9281,10 @@ export type Database = {
       }
       pricing_breakdown: { Args: { _base: number }; Returns: Json }
       pricing_terms: { Args: never; Returns: Json }
+      profile_field_filled: {
+        Args: { _cid: string; _key: string }
+        Returns: boolean
+      }
       profile_list_is_valid: { Args: { _list: string[] }; Returns: boolean }
       propose_ticket_rate: {
         Args: { _hourly_rate: number; _ticket_id: string }

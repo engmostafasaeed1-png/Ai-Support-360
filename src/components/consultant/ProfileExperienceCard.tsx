@@ -9,6 +9,7 @@ import { Briefcase, Loader2, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import GroupedMultiSelect from '@/components/profile/GroupedMultiSelect';
+import { FieldGate, RequiredMark } from '@/components/consultant/ProfileFieldRule';
 import { profileCompleteness } from '@/lib/profileCompleteness';
 import {
   CUSTOMER_SEGMENTS, DEPLOYMENT_EXPERIENCE, INDUSTRY_EXPERIENCE, LANGUAGE_LEVELS,
@@ -174,53 +175,53 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label>Industries I worked in</Label>
+<FieldGate field="industries">        <div className="space-y-2">
+          <Label>Industries I worked in<RequiredMark field="industries" /></Label>
           <GroupedMultiSelect groups={INDUSTRY_EXPERIENCE} value={industries} onChange={setIndustries} />
-        </div>
+        </div></FieldGate>
 
-        <div className="space-y-2">
-          <Label>Customer segments I served</Label>
+<FieldGate field="customer_segments">        <div className="space-y-2">
+          <Label>Customer segments I served<RequiredMark field="customer_segments" /></Label>
           <p className="text-xs text-muted-foreground">Government, semi-government, sovereign-fund-owned companies, large enterprises, SMEs and more: clients are matched by who you served before.</p>
           <GroupedMultiSelect groups={CUSTOMER_SEGMENTS} value={segments} onChange={setSegments} />
-        </div>
+        </div></FieldGate>
 
-        <div className="space-y-2">
-          <Label>Vertical (industry) solutions</Label>
+<FieldGate field="vertical_solutions">        <div className="space-y-2">
+          <Label>Vertical (industry) solutions<RequiredMark field="vertical_solutions" /></Label>
           <GroupedMultiSelect groups={VERTICAL_SOLUTIONS} value={verticals} onChange={setVerticals} />
-        </div>
+        </div></FieldGate>
 
-        <div className="space-y-2">
-          <Label>Countries whose localization I configured</Label>
+<FieldGate field="localization_countries">        <div className="space-y-2">
+          <Label>Countries whose localization I configured<RequiredMark field="localization_countries" /></Label>
           <GroupedMultiSelect groups={LOCALIZATION_COUNTRIES} value={locCountries} onChange={setLocCountries} />
-        </div>
+        </div></FieldGate>
 
-        <div className="space-y-2">
-          <Label>Localization solutions I delivered</Label>
+<FieldGate field="localization_solutions">        <div className="space-y-2">
+          <Label>Localization solutions I delivered<RequiredMark field="localization_solutions" /></Label>
           <p className="text-xs text-muted-foreground">For example e-invoicing, payroll, tax reporting and bank formats required by local law.</p>
           <GroupedMultiSelect groups={LOCALIZATION_SOLUTIONS} value={locSolutions} onChange={setLocSolutions} />
-        </div>
+        </div></FieldGate>
 
-        <div className="space-y-2">
-          <Label>Project types</Label>
+<FieldGate field="project_types">        <div className="space-y-2">
+          <Label>Project types<RequiredMark field="project_types" /></Label>
           <GroupedMultiSelect groups={[{ group: 'Project types', items: PROJECT_TYPE_OPTIONS }]} value={projectTypes} onChange={setProjectTypes} />
-        </div>
+        </div></FieldGate>
 
-        <div className="space-y-2">
-          <Label>Deployment experience</Label>
+<FieldGate field="deployment_experience">        <div className="space-y-2">
+          <Label>Deployment experience<RequiredMark field="deployment_experience" /></Label>
           <GroupedMultiSelect groups={[{ group: 'Deployment experience', items: DEPLOYMENT_EXPERIENCE }]} value={deployment} onChange={setDeployment} />
-        </div>
+        </div></FieldGate>
 
-        <div className="space-y-2">
-          <Label>Largest project I worked on</Label>
+<FieldGate field="project_scale">        <div className="space-y-2">
+          <Label>Largest project I worked on<RequiredMark field="project_scale" /></Label>
           <Select value={scale} onValueChange={setScale}>
             <SelectTrigger><SelectValue placeholder="Choose project size" /></SelectTrigger>
             <SelectContent>{PROJECT_SCALE.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
           </Select>
-        </div>
+        </div></FieldGate>
 
         <div className="space-y-3">
-          <Label>How I work</Label>
+          <FieldGate field="work_modes"><Label>How I work<RequiredMark field="work_modes" /></Label>
           <div className="flex flex-wrap gap-4">
             {WORK_MODES.map((m) => (
               <label key={m} className="flex items-center gap-2 text-xs cursor-pointer">
@@ -231,22 +232,22 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
                 {m}
               </label>
             ))}
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">Working week</Label>
+          </div></FieldGate>
+          <FieldGate field="working_week"><div>
+            <Label className="text-xs text-muted-foreground">Working week<RequiredMark field="working_week" /></Label>
             <Select value={workingWeek} onValueChange={setWorkingWeek}>
               <SelectTrigger><SelectValue placeholder="Choose working week" /></SelectTrigger>
               <SelectContent>{WORKING_WEEK.map((w) => <SelectItem key={w} value={w}>{w}</SelectItem>)}</SelectContent>
             </Select>
-          </div>
+          </div></FieldGate>
           <div className="space-y-2">
             <Label className="text-xs">Countries where I can work on site (I hold or can get the work permit)</Label>
             <GroupedMultiSelect groups={LOCALIZATION_COUNTRIES} value={onsiteCountries} onChange={setOnsiteCountries} />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>Language levels</Label>
+<FieldGate field="language_levels">        <div className="space-y-2">
+          <Label>Language levels<RequiredMark field="language_levels" /></Label>
           {languages.length === 0 ? (
             <p className="text-xs text-muted-foreground">Add your languages in your profile first.</p>
           ) : (
@@ -265,7 +266,7 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
               ))}
             </div>
           )}
-        </div>
+        </div></FieldGate>
       </CardContent>
     </Card>
   );

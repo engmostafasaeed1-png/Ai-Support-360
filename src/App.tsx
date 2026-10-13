@@ -152,6 +152,7 @@ const AdminVMwareSettingsPage = React.lazy(() => import("./pages/admin/VMwareSet
 const AdminErrorsPage = React.lazy(() => import("./pages/admin/AdminErrorsPage.tsx"));
 const AdminPaymentsPage = React.lazy(() => import("./pages/admin/PaymentsAdminPage.tsx"));
 const AdminKnowledgeReviewPage = React.lazy(() => import("./pages/admin/KnowledgeReviewPage.tsx"));
+const ProfileFieldsSection = React.lazy(() => import("./components/admin/console/sections/ProfileFieldsSection.tsx"));
 const VMwarePricingSection = React.lazy(() => import("./components/admin/console/sections/VMwarePricingSection.tsx"));
 const AdminClientApprovalsPage = React.lazy(() => import("./pages/admin/ClientApprovalsPage.tsx"));
 const AdminClientReviewsPage = React.lazy(() => import("./pages/admin/ClientReviewsPage.tsx"));
@@ -378,6 +379,7 @@ const App = () => (
                 <Route path="invoice-numbering" element={<InvoiceNumberingSection />} />
                 <Route path="tickets" element={<TicketManagementSection />} />
                 <Route path="approvals" element={<ConsultantApprovalsSection />} />
+                <Route path="profile-fields" element={<ProfileFieldsSection />} />
                 <Route path="nda" element={<NDAManagementSection />} />
                 <Route path="match-requests" element={<MatchRequestsSection />} />
                 <Route path="projects" element={<ProjectsMilestonesSection />} />

@@ -464,7 +464,7 @@ export default function ConsultantsPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
                     <p className="text-[11px] text-muted-foreground truncate">{c.specialty}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{c.place || 'Location not set'}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{c.place || t('profileRules.locationNotSet', 'Location not set')}</p>
                     <TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} className="mt-1" />
                   </div>
                   <div className="text-end shrink-0">
@@ -510,7 +510,7 @@ export default function ConsultantsPage() {
                     <p className="text-sm text-muted-foreground">{c.skills && c.skills.length > 1 ? c.skills.slice(0, 4).join(' · ') + (c.skills.length > 4 ? ` +${c.skills.length - 4}` : '') : c.specialty}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <MapPin className="w-3 h-3 shrink-0" aria-hidden="true" />
-                      {c.place || 'Location not set'}
+                      {c.place || t('profileRules.locationNotSet', 'Location not set')}
                     </p>
 
                     <RatingStars rating={c.rating} reviews={c.reviews} size="sm" className="mt-2" />

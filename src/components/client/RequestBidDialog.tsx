@@ -9,6 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
+import { useHiddenConsultantIds, withoutHidden } from '@/hooks/useHiddenConsultants';
+import { locationText } from '@/lib/geo';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, Gavel, Globe, ShieldCheck, Clock, AlertTriangle, CheckCircle2, Users, Sparkles, Search, UserCheck, Pencil, ArrowLeft, Send } from 'lucide-react';
@@ -95,7 +97,9 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
   const [deadline, setDeadline] = useState<DeadlineOption>('72');
   const { data: bids } = useTicketBids(ticketId);
   const proposals = bids?.bids.map(r => r.bid);
-  const { data: consultants, isLoading: loadingConsultants } = useVerifiedConsultants(ticketModule);
+  const { data: allConsultants, isLoading: loadingConsultants } = useVerifiedConsultants(ticketModule);
+  const hiddenIds = useHiddenConsultantIds(open);
+  const consultants = allConsultants ? withoutHidden(allConsultants, hiddenIds) : allConsultants;
 
   const pendingBids = (proposals || []).filter((p: any) => p.status === 'pending').length;
   const totalBids = (proposals || []).length;
@@ -234,7 +238,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
           <span>⭐ {c.rating.toFixed(1)}</span>
           {c.hourly_rate && <span>${c.hourly_rate}/hr</span>}
-          {c.city && <span>{c.city}</span>}
+          <span>{locationText(c.city, c.country)}</span>
         </div>
       </div>
       {c.hasModule && (

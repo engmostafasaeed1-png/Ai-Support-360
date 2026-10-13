@@ -28,7 +28,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { fireConfetti } from '@/lib/confetti';
 import { safeFileName } from '@/lib/storagePath';
-import { cityPoint } from '@/lib/geo';
+import { cityPoint, countryPoint } from '@/lib/geo';
+import { FieldGate } from '@/components/consultant/ProfileFieldRule';
 import { CREDLY_HINT, LINKEDIN_HINT, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 import { OnboardingGuidePanel, OnboardingGuideAccordion, OnboardingMobileProgress, OnboardingWelcome, OnboardingFinish, welcomeSeen, markWelcomeSeen } from './OnboardingGuidePanel';
 import { profileCompleteness } from '@/lib/profileCompleteness';
@@ -259,7 +260,8 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
       return;
     }
     // The place on the map is the centre of the chosen city (the database rounds it to about 1 km).
-    const place = data.country && data.city ? cityPoint(data.country, data.city) : null;
+    // A city that is not in the list ("Other city") or no city: the centre of the country, so the consultant is still on the map.
+    const place = (data.country && data.city ? cityPoint(data.country, data.city) : null) ?? (data.country ? countryPoint(data.country) : null);
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -511,21 +513,21 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
         </div>
         <ProfileStep data={data} onChange={updateData} />
       </section>
-      <section id="expertise"><EmbeddedGuideCard section="expertise" stepKey="skills" /><SapExpertiseCard key={`skills-${importRevision}`} onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section>
+      <FieldGate field={['skills', 'sap_role', 'seniority_level', 'total_sap_years', 'sap_roles', 'sap_technologies']}><section id="expertise"><EmbeddedGuideCard section="expertise" stepKey="skills" /><SapExpertiseCard key={`skills-${importRevision}`} onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section></FieldGate>
       <section id="profile-experience"><EmbeddedGuideCard section="profile-experience" stepKey="projects" /><ProfileExperienceCard key={`experience-${importRevision}`} payoutReady={payoutReady(payoutQ.data?.details)} onCompletenessChange={embeddedGuides.setCompleteness} /></section>
-      <section id="experience"><EmbeddedGuideCard section="experience" stepKey="work" /><ExperienceCvCard onProfileChanged={() => { setImportRevision(r => r + 1); setLoadedRevision(r => r + 1); }} /></section>
-      <section id="certifications"><EmbeddedGuideCard section="certifications" stepKey="certifications" /><CertificationsStep data={data} onChange={updateData} /></section>
-      <section id="education"><EmbeddedGuideCard section="education" stepKey="education" /><EducationStep data={data} onChange={updateData} /></section>
-      <section id="projects"><EmbeddedGuideCard section="projects" stepKey="projects" /><ProjectsStep data={data} onChange={updateData} /></section>
+      <FieldGate field={['work_history', 'cv']}><section id="experience"><EmbeddedGuideCard section="experience" stepKey="work" /><ExperienceCvCard onProfileChanged={() => { setImportRevision(r => r + 1); setLoadedRevision(r => r + 1); }} /></section></FieldGate>
+      <FieldGate field="certifications"><section id="certifications"><EmbeddedGuideCard section="certifications" stepKey="certifications" /><CertificationsStep data={data} onChange={updateData} /></section></FieldGate>
+      <FieldGate field="education"><section id="education"><EmbeddedGuideCard section="education" stepKey="education" /><EducationStep data={data} onChange={updateData} /></section></FieldGate>
+      <FieldGate field="projects"><section id="projects"><EmbeddedGuideCard section="projects" stepKey="projects" /><ProjectsStep data={data} onChange={updateData} /></section></FieldGate>
       <div className="flex justify-end"><Button onClick={handleSaveAndContinue} disabled={submitting || isGuest}>{submitting ? t('common.loading') : t('common.save', 'Save')}</Button></div>
-      <section id="availability" className="space-y-4">
+      <FieldGate field="availability"><section id="availability" className="space-y-4">
         <EmbeddedGuideCard section="availability" stepKey="availability" />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">{t('onboarding.availability')}<FieldHint field="availability" /></h2>
           <SetAvailabilityDialog onSaved={() => setLoadedRevision(r => r + 1)} trigger={<Button variant="outline">{t('onboarding.step_availability')}</Button>} />
         </div>
         {consultantId && <ProfileAvailability consultantId={consultantId} />}
-      </section>
+      </section></FieldGate>
     </div>
   );
 
