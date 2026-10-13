@@ -36,7 +36,7 @@ const snapshot = (list: DraftSlot[]) =>
 const dateLabel = (key: string) =>
   new Date(`${key}T00:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 
-export default function SetAvailabilityDialog({ trigger }: { trigger: React.ReactNode }) {
+export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: React.ReactNode; onSaved?: () => void }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<'weekly' | 'date'>('weekly');
@@ -150,6 +150,7 @@ export default function SetAvailabilityDialog({ trigger }: { trigger: React.Reac
       toast.success('Availability saved');
       refresh();
       setOpen(false);
+      onSaved?.();
     } catch (e) {
       toast.error(friendlyErrorMessage(e, 'Could not save your availability'));
     } finally {

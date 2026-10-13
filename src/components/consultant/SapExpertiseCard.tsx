@@ -10,6 +10,7 @@ import { Cpu, Loader2, Plus, Save, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ALL_SAP_AREAS } from '@/lib/sapAreas';
+import { FieldHint } from './onboarding/OnboardingGuidePanel';
 
 export const SAP_ROLES = [
   ['functional', 'Functional consultant'],
@@ -80,7 +81,7 @@ function Chips({ options, value, onChange, otherPlaceholder = 'Add another…' }
   );
 }
 
-export default function SapExpertiseCard() {
+export default function SapExpertiseCard({ onProfileChanged }: { onProfileChanged?: () => void } = {}) {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -146,6 +147,7 @@ export default function SapExpertiseCard() {
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success('SAP expertise saved');
+    onProfileChanged?.();
   };
 
   const addSkills = async () => {
@@ -165,6 +167,7 @@ export default function SapExpertiseCard() {
     toast.success(`${names.length} module${names.length > 1 ? 's' : ''} added`);
     setPicked([]); setCustomModule(''); setNewYears(''); setNewLevel('3'); setModuleQuery('');
     loadSkills(userId);
+    onProfileChanged?.();
   };
 
   const removeSkill = async (id: string) => {
@@ -172,6 +175,7 @@ export default function SapExpertiseCard() {
     const { error } = await supabase.from('consultant_skills').delete().eq('id', id);
     if (error) return toast.error(error.message);
     loadSkills(userId);
+    onProfileChanged?.();
   };
 
   if (loading) {
@@ -205,7 +209,7 @@ export default function SapExpertiseCard() {
         </div>
 
         <div className="space-y-2">
-          <Label>SAP modules &amp; skill level</Label>
+          <Label>SAP modules &amp; skill level</Label><FieldHint field="skillLevel" />
           {skills.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {skills.map((s) => (
@@ -240,6 +244,7 @@ export default function SapExpertiseCard() {
                 </SelectContent>
               </Select>
               <Input className="w-24 h-8 text-xs" type="number" min={0} max={50} placeholder="Years" value={newYears} onChange={(e) => setNewYears(e.target.value)} />
+              <FieldHint field="skillYears" />
               <Button size="sm" variant="outline" onClick={addSkills} disabled={!picked.length && !customModule.trim()}>
                 <Plus className="h-4 w-4 me-1" />Add {picked.length + (customModule.trim() ? customModule.split(',').filter((x) => x.trim()).length : 0) || ''} module(s)
               </Button>

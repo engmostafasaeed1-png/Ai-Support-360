@@ -46,7 +46,7 @@ type Row = {
   sap_technologies: string[] | null;
 };
 
-export default function ProfileExperienceCard({ payoutReady = false }: { payoutReady?: boolean } = {}) {
+export default function ProfileExperienceCard({ payoutReady = false, onCompletenessChange }: { payoutReady?: boolean; onCompletenessChange?: (value: ReturnType<typeof profileCompleteness>) => void } = {}) {
   const [consultantId, setConsultantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -121,6 +121,7 @@ export default function ProfileExperienceCard({ payoutReady = false }: { payoutR
   }), [payoutReady, base, skillsCount, industries, segments, verticals, locCountries, locSolutions, projectTypes, deployment, scale, workModes, workingWeek, languageLevels]);
 
   const missing = completeness.items.filter((i) => !i.done).slice(0, 4);
+  useEffect(() => { if (!loading) onCompletenessChange?.(completeness); }, [loading, completeness, onCompletenessChange]);
 
   const save = async () => {
     if (!consultantId) return;

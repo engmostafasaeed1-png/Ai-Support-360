@@ -33,6 +33,9 @@ import { CREDLY_HINT, LINKEDIN_HINT, normalizeCredlyUsername, normalizeLinkedinU
 import { OnboardingGuidePanel, OnboardingGuideAccordion, OnboardingMobileProgress, OnboardingWelcome, OnboardingFinish, welcomeSeen, markWelcomeSeen } from './OnboardingGuidePanel';
 import { profileCompleteness } from '@/lib/profileCompleteness';
 import { certificateKey, jobKey, onlyNew, projectKey, skillKey, slotKey, studyKey } from '@/lib/onboardingDedupe';
+import { EmbeddedGuideCard, EmbeddedSetupMessages, useEmbeddedGuides } from './EmbeddedGuides';
+import { FieldHint } from './OnboardingGuidePanel';
+import { useConsultantProfile } from '@/hooks/useConsultantProfile';
 
 export interface WorkHistoryEntry {
   companyName: string;
@@ -136,6 +139,8 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
   const [interviewDone, setInterviewDone] = useState(false);
   const [consultantId, setConsultantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(!isGuest);
+  const embeddedGuides = useEmbeddedGuides();
+  const { data: loadedProfile } = useConsultantProfile();
 
   useEffect(() => {
     if (isGuest) return;
@@ -467,24 +472,27 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
 
   if (embedded) return (
     <div className="space-y-8">
+      <EmbeddedSetupMessages data={{ ...data, interviewDone: !!loadedProfile?.ai_interview_completed_at }} userId={loadedProfile?.user_id} />
       <section id="profile-details" className="space-y-4">
+        <EmbeddedGuideCard section="profile-details" stepKey="profile" />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">{t('consultant_profile_hub.details')}</h2>
           <Button onClick={handleSaveAndContinue} disabled={submitting || isGuest}>{submitting ? t('common.loading') : t('common.save', 'Save')}</Button>
         </div>
         <ProfileStep data={data} onChange={updateData} />
       </section>
-      <section id="expertise"><SapExpertiseCard key={`skills-${loadedRevision}`} /></section>
-      <section id="profile-experience"><ProfileExperienceCard key={`experience-${loadedRevision}`} payoutReady={payoutReady(payoutQ.data?.details)} /></section>
-      <section id="experience"><ExperienceCvCard onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section>
-      <section id="certifications"><CertificationsStep data={data} onChange={updateData} /></section>
-      <section id="education"><EducationStep data={data} onChange={updateData} /></section>
-      <section id="projects"><ProjectsStep data={data} onChange={updateData} /></section>
+      <section id="expertise"><EmbeddedGuideCard section="expertise" stepKey="skills" /><SapExpertiseCard key={`skills-${loadedRevision}`} onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section>
+      <section id="profile-experience"><EmbeddedGuideCard section="profile-experience" stepKey="projects" /><ProfileExperienceCard key={`experience-${loadedRevision}`} payoutReady={payoutReady(payoutQ.data?.details)} onCompletenessChange={embeddedGuides.setCompleteness} /></section>
+      <section id="experience"><EmbeddedGuideCard section="experience" stepKey="work" /><ExperienceCvCard onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section>
+      <section id="certifications"><EmbeddedGuideCard section="certifications" stepKey="certifications" /><CertificationsStep data={data} onChange={updateData} /></section>
+      <section id="education"><EmbeddedGuideCard section="education" stepKey="education" /><EducationStep data={data} onChange={updateData} /></section>
+      <section id="projects"><EmbeddedGuideCard section="projects" stepKey="projects" /><ProjectsStep data={data} onChange={updateData} /></section>
       <div className="flex justify-end"><Button onClick={handleSaveAndContinue} disabled={submitting || isGuest}>{submitting ? t('common.loading') : t('common.save', 'Save')}</Button></div>
       <section id="availability" className="space-y-4">
+        <EmbeddedGuideCard section="availability" stepKey="availability" />
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold">{t('onboarding.availability')}</h2>
-          <SetAvailabilityDialog trigger={<Button variant="outline">{t('onboarding.step_availability')}</Button>} />
+          <h2 className="text-lg font-semibold">{t('onboarding.availability')}<FieldHint field="availability" /></h2>
+          <SetAvailabilityDialog onSaved={() => setLoadedRevision(r => r + 1)} trigger={<Button variant="outline">{t('onboarding.step_availability')}</Button>} />
         </div>
         {consultantId && <ProfileAvailability consultantId={consultantId} />}
       </section>

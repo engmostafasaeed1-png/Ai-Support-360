@@ -147,6 +147,7 @@ export default function ExperienceCvCard({ onProfileChanged }: { onProfileChange
     toast.success('Experience saved');
     setEditing(null);
     load(userId);
+    onProfileChanged?.();
   };
 
   const removeJob = async (id: string) => {
@@ -154,6 +155,7 @@ export default function ExperienceCvCard({ onProfileChanged }: { onProfileChange
     const { error } = await supabase.from('consultant_work_history').delete().eq('id', id);
     if (error) return toast.error(error.message);
     load(userId);
+    onProfileChanged?.();
   };
 
   return (
