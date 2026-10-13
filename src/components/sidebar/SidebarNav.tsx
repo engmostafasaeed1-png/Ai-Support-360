@@ -59,7 +59,7 @@ function NavRow({ item, label, active, collapsed, done, badge }: NavRowProps) {
           'data-[active=true]:before:absolute data-[active=true]:before:inset-y-2 data-[active=true]:before:start-0 data-[active=true]:before:w-[3px] data-[active=true]:before:rounded-full data-[active=true]:before:bg-sidebar-primary',
         )}
       >
-        <Link to={item.path} aria-current={active ? 'page' : undefined} aria-label={collapsed ? label : undefined}>
+        <Link to={item.path} data-tour={item.tourId} aria-current={active ? 'page' : undefined} aria-label={collapsed ? label : undefined}>
           <Icon aria-hidden="true" focusable="false" className={done ? 'text-emerald-400' : undefined} />
           {!collapsed && <span>{label}</span>}
           {!collapsed && badge ? (

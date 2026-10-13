@@ -13,6 +13,8 @@ export interface NavItem {
   fallback?: string;
   /** Cannot be hidden from the menu by the user (for example the dashboard). */
   required?: boolean;
+  /** data-tour value used by the guided product tour. */
+  tourId?: string;
 }
 
 export interface NavGroup {
