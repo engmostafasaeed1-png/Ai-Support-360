@@ -11,3 +11,4 @@
 
 - Keep client bid comparison/deadline rules in the shared client bidding library and client mutations in useClientBids so ticket tabs and lists agree.
 - Share embedded profile guide visibility and the existing completeness result through one provider; reuse wizard guide content so the active editor and interview anchor stay consistent without duplicate scoring or guide copy.
+- Consultant profile field visibility/required state comes only from the admin-managed field rules via useProfileFieldRules (FieldGate/RequiredMark); client consultant lists drop ids from hidden_consultant_ids and show everyone if that call fails, so admin rules apply everywhere without blocking saves.
