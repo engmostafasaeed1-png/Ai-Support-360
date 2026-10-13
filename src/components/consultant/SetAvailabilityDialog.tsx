@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Loader2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
@@ -70,10 +70,17 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
   });
 
   // Load the saved slots into the editable draft list when they arrive
+  // Load the saved slots only while the list has no unsaved changes, so a refetch does not drop them.
+  const applied = useRef<string | null>(null);
   useEffect(() => {
     if (!data) return;
-    setDrafts(data.slots.map(toDraft));
+    const fresh = data.slots.map(toDraft);
+    const untouched = applied.current === null || snapshot(drafts.filter(d => !d.removed)) === applied.current;
+    applied.current = snapshot(fresh);
+    if (!untouched) return;
+    setDrafts(fresh);
     setEditingId(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs only when the saved slots change
   }, [data]);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ['my-availability-slots'] });
@@ -148,6 +155,7 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
         if (error) throw error;
       }
       toast.success('Availability saved');
+      applied.current = null;
       refresh();
       setOpen(false);
       onSaved?.();
