@@ -75,13 +75,12 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
   useEffect(() => {
     if (!data) return;
     const fresh = data.slots.map(toDraft);
-    setDrafts(current => {
-      const untouched = applied.current === null || snapshot(current.filter(d => !d.removed)) === applied.current;
-      if (!untouched) return current;
-      setEditingId(null);
-      return fresh;
-    });
+    const untouched = applied.current === null || snapshot(drafts.filter(d => !d.removed)) === applied.current;
     applied.current = snapshot(fresh);
+    if (!untouched) return;
+    setDrafts(fresh);
+    setEditingId(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs only when the saved slots change
   }, [data]);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ['my-availability-slots'] });
@@ -156,6 +155,7 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
         if (error) throw error;
       }
       toast.success('Availability saved');
+      applied.current = null;
       refresh();
       setOpen(false);
       onSaved?.();
