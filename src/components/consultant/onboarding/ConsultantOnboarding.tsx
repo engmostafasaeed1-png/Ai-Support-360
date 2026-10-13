@@ -30,6 +30,8 @@ import { fireConfetti } from '@/lib/confetti';
 import { safeFileName } from '@/lib/storagePath';
 import { cityPoint } from '@/lib/geo';
 import { CREDLY_HINT, LINKEDIN_HINT, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
+import { OnboardingGuidePanel, OnboardingGuideAccordion, OnboardingMobileProgress, OnboardingWelcome, OnboardingFinish, welcomeSeen, markWelcomeSeen } from './OnboardingGuidePanel';
+import { profileCompleteness } from '@/lib/profileCompleteness';
 import { certificateKey, jobKey, onlyNew, projectKey, skillKey, slotKey, studyKey } from '@/lib/onboardingDedupe';
 
 export interface WorkHistoryEntry {
@@ -128,6 +130,8 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
   const initialStep = Math.min(Math.max(Number(searchParams.get('step')) || 0, 0), STEP_COUNT - 1);
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [data, setData] = useState<OnboardingData>(initialData);
+  const [showWelcome, setShowWelcome] = useState(() => !embedded && !searchParams.has('step') && !welcomeSeen());
+  const [finished, setFinished] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [interviewDone, setInterviewDone] = useState(false);
   const [consultantId, setConsultantId] = useState<string | null>(null);
@@ -487,8 +491,45 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     </div>
   );
 
+  const skipOnboarding = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('profiles').update({ onboarding_completed: true }).eq('user_id', user.id);
+      }
+    } catch {}
+    navigate(embedded ? '/consultant/profile' : '/consultant');
+  };
+
+  if (showWelcome) {
+    return (
+      <div className="px-1 py-4">
+        <OnboardingWelcome
+          onStart={() => { markWelcomeSeen(); setShowWelcome(false); }}
+          onSkip={() => { markWelcomeSeen(); void skipOnboarding(); }}
+        />
+      </div>
+    );
+  }
+
+  if (finished) {
+    return (
+      <div className="px-1 py-4">
+        <OnboardingFinish onTour={() => navigate('/consultant?welcome=true')} />
+      </div>
+    );
+  }
+
+  const strength = profileCompleteness({
+    skills_count: data.skills.length,
+    industries: data.projects.map(p => p.clientIndustry).filter(Boolean),
+    project_types: data.projects.length > 0 ? ['project'] : [],
+    language_levels: data.languages.length > 0 ? Object.fromEntries(data.languages.map(l => [l, 'set'])) : {},
+  }).percent;
+
   return (
-    <div className="max-w-2xl mx-auto space-y-6 px-1 pb-36 md:pb-6">
+    <div className="max-w-6xl mx-auto grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] items-start px-1">
+    <div className="max-w-2xl w-full mx-auto space-y-6 pb-36 md:pb-6 lg:pb-6">
       {!embedded && <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold">{t('onboarding.title')}</h1>
         <p className="text-muted-foreground text-sm">{t('onboarding.subtitle')}</p>
@@ -500,15 +541,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           variant="ghost"
           size="sm"
           className="text-xs text-muted-foreground"
-          onClick={async () => {
-            try {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (user) {
-                await supabase.from('profiles').update({ onboarding_completed: true }).eq('user_id', user.id);
-              }
-            } catch {}
-             navigate(embedded ? '/consultant/profile' : '/consultant');
-          }}
+          onClick={skipOnboarding}
         >
           Skip for now
         </Button>
@@ -545,6 +578,8 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           );
         })}
       </div>
+
+      <div className="lg:hidden"><OnboardingGuideAccordion stepIndex={currentStep} /></div>
 
       {/* Step content */}
       <Card className="p-4 md:p-6">
@@ -610,7 +645,8 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
               } catch {}
               fireConfetti();
               toast.success('Profile setup complete!');
-               setTimeout(() => navigate(embedded ? '/consultant/profile' : '/consultant?welcome=true'), 1200);
+              if (embedded) setTimeout(() => navigate('/consultant/profile'), 1200);
+              else setFinished(true);
             }}
             className="gap-1.5"
           >
@@ -618,6 +654,9 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           </Button>
         </div>
       )}
+    </div>
+    <aside className="hidden lg:block"><OnboardingGuidePanel stepIndex={currentStep} strength={strength} /></aside>
+    <OnboardingMobileProgress stepIndex={currentStep} />
     </div>
   );
 }
