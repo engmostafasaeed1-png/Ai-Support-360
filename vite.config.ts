@@ -23,6 +23,12 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [react(), mcpPlugin(), mode === "development" && componentTagger()].filter(Boolean),
+  ...(mode === "production"
+    ? {
+        build: { sourcemap: false, minify: "esbuild" as const },
+        esbuild: { drop: ["console", "debugger"] as ("console" | "debugger")[], legalComments: "none" as const },
+      }
+    : {}),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

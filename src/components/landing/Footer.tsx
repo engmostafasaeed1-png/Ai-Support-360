@@ -89,7 +89,10 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
 
         <div className={cn('border-t border-border/30 text-center', compact ? 'mt-6 pt-4' : 'mt-14 pt-6')}>
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} AI Support 360. {t('footer.rights')}
+            {t('footer.copyright_notice', {
+              defaultValue:
+                '© 2026 AI Support 360. All rights reserved. Copying, scraping or reverse engineering of this service is not permitted.',
+            })}
           </p>
           <p className="text-xs text-muted-foreground mt-2">
             AI Support 360 is operated by Qurtuba Tech for Software (قرطبة تك للبرمجيات), registered in Egypt. Commercial Registration No. 226435.
