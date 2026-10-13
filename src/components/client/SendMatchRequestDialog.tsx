@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useHiddenConsultantIds, withoutHidden } from '@/hooks/useHiddenConsultants';
 import { toast } from 'sonner';
 import ContextFitBadges from '@/components/client/ContextFitBadges';
 import { Loader2, Search, Star, Brain, Send, CheckCircle2, Sparkles, Wifi, WifiOff, Clock, Filter, SlidersHorizontal, ArrowUpDown, X } from 'lucide-react';
@@ -65,7 +66,8 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
   const activeFilterCount = [availabilityFilter !== 'all', moduleFilter !== 'all', minRating !== 'all', maxRate !== 'all'].filter(Boolean).length;
 
   // Fetch all consultants
-  const { data: consultants, isLoading } = useQuery({
+  const hiddenIds = useHiddenConsultantIds(open);
+  const { data: allConsultants, isLoading } = useQuery({
     queryKey: ['available-consultants', sapModule, search, availabilityFilter, moduleFilter],
     enabled: open,
     queryFn: async () => {
@@ -133,6 +135,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
         });
     },
   });
+  const consultants = allConsultants ? withoutHidden(allConsultants, hiddenIds) : allConsultants;
 
   const handleAiRecommend = async () => {
     setAiLoading(true);

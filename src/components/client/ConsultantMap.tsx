@@ -21,6 +21,7 @@ export interface MapConsultant {
   linkedinVerified: boolean;
   credlyVerified: boolean;
   hours?: string[];
+  approximate?: boolean;
 }
 
 interface ConsultantMapProps {
@@ -45,6 +46,7 @@ const toView = (c: MapConsultant): PinView => ({
   linkedinState: c.linkedinVerified ? 'checked' : 'none',
   credlyState: c.credlyVerified ? 'checked' : 'none',
   hours: c.hours,
+  approximate: c.approximate,
 });
 
 /** The consultants on a map: one pin for every consultant who chose a city, coloured by Online, Busy or Offline. The pins show the area of the city, never an address. */
@@ -64,7 +66,8 @@ export default function ConsultantMap({ consultants, selectedId, onSelectConsult
     reviews: t('consultants_page.reviews', 'reviews'),
     viewProfile: t('consultants_page.view_profile', 'View profile'),
     openRequest: 'Open a request',
-    noPlace: 'Location not set',
+    noPlace: t('profileRules.locationNotSet', 'Location not set'),
+    approximate: t('profileRules.approximate', 'Approximate location (country)'),
   };
   const labelsKey = JSON.stringify(labels);
 

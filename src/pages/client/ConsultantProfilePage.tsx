@@ -374,7 +374,7 @@ export default function ConsultantProfilePage() {
               { label: 'Specialty', value: consultant.specialty },
               { label: 'Rating', value: `${consultant.rating} (${consultant.reviews} reviews)` },
               { label: 'Rate', value: `$${consultant.rate}/hr` },
-              { label: 'Location', value: consultant.city },
+              { label: 'Location', value: consultant.city || 'Location not set' },
             ]}
             variant="outline"
             size="sm"

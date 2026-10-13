@@ -17,6 +17,8 @@ export interface PinView {
   linkedinState: LinkState;
   credlyState: LinkState;
   hours?: string[];
+  /** The pin is only the centre of the country. */
+  approximate?: boolean;
 }
 
 export interface PopupLabels {
@@ -24,6 +26,7 @@ export interface PopupLabels {
   viewProfile: string;
   openRequest: string;
   noPlace: string;
+  approximate?: string;
 }
 
 export const DEFAULT_LABELS: PopupLabels = {
@@ -31,6 +34,7 @@ export const DEFAULT_LABELS: PopupLabels = {
   viewProfile: 'View profile',
   openRequest: 'Open a request',
   noPlace: 'Location not set',
+  approximate: 'Approximate location (country)',
 };
 
 export interface PopupHandlers {
@@ -112,6 +116,7 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
     make('div', { fontSize: '12px', color: '#6b7280', ...ellipsis }, view.specialty),
     make('div', { fontSize: '10px', color: '#9ca3af' }, view.place || labels.noPlace),
   );
+  if (view.approximate) who.append(make('div', { fontSize: '10px', color: '#9ca3af', fontStyle: 'italic' }, labels.approximate || DEFAULT_LABELS.approximate || ''));
   head.append(avatar, who);
 
   const rating = make('div', { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' });

@@ -1,3 +1,5 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactElement } from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
@@ -80,7 +82,7 @@ describe('ProfileExperienceCard', () => {
   });
 
   it('loads with an explicit column list (no *) and shows saved selections', async () => {
-    render(<ProfileExperienceCard />);
+    withRules(<ProfileExperienceCard />);
     await waitFor(() => expect(screen.getByText('Industry, customer and solution experience')).toBeTruthy());
     const cols = consultantsSelect.mock.calls.map((c) => c[0]).find((c) => c.includes('customer_segments'));
     expect(cols).toBeTruthy();
@@ -90,7 +92,7 @@ describe('ProfileExperienceCard', () => {
   });
 
   it('shows the completeness meter and updates it when a list is filled', async () => {
-    render(<ProfileExperienceCard />);
+    withRules(<ProfileExperienceCard />);
     await waitFor(() => expect(screen.getByText(/Profile completeness:/)).toBeTruthy());
     const before = screen.getByText(/Profile completeness:/).textContent;
     // fill customer segments by checking one entry of the Public sector group
@@ -103,7 +105,7 @@ describe('ProfileExperienceCard', () => {
   });
 
   it('saves the changed columns with one update and shows the success toast', async () => {
-    render(<ProfileExperienceCard />);
+    withRules(<ProfileExperienceCard />);
     await waitFor(() => expect(screen.getByText('Utilities')).toBeTruthy());
     fireEvent.click(screen.getByRole('button', { name: /Save/ }));
     await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith('Experience saved'));
@@ -117,16 +119,22 @@ describe('ProfileExperienceCard', () => {
 
   it('shows the database error message in a toast', async () => {
     updateError = { message: 'contact details are not allowed' };
-    render(<ProfileExperienceCard />);
+    withRules(<ProfileExperienceCard />);
     await waitFor(() => expect(screen.getByText('Utilities')).toBeTruthy());
     fireEvent.click(screen.getByRole('button', { name: /Save/ }));
     await waitFor(() => expect(toastError).toHaveBeenCalledWith('contact details are not allowed'));
   });
 
   it('language level selects follow the consultant languages', async () => {
-    render(<ProfileExperienceCard />);
+    withRules(<ProfileExperienceCard />);
     await waitFor(() => expect(screen.getByText('Language levels')).toBeTruthy());
     expect(screen.getByText('English')).toBeTruthy();
     expect(screen.getByText('Arabic')).toBeTruthy();
   });
 });
+
+// The field rules (Required / Optional / Hidden) are read with react-query; without rules every field is shown.
+function withRules(ui: ReactElement) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+}

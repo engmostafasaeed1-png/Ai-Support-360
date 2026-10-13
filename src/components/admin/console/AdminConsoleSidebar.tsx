@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Users, BarChart3, CreditCard, UserCheck, Lock, Eye, Activity, HardDrive,
   Server, AlertTriangle, FileText, Kanban, BookOpen, Settings, Monitor,
-  ScrollText, Video, GraduationCap, CalendarClock, DollarSign, Hash,
+  ScrollText, Video, GraduationCap, CalendarClock, DollarSign, Hash, ListChecks,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -27,6 +27,7 @@ export const adminSections: AdminSection[] = [
   // Operations
   { id: 'tickets', label: 'Ticket Management', icon: Kanban, group: 'Operations' },
   { id: 'approvals', label: 'Consultant Approvals', icon: UserCheck, group: 'Operations' },
+  { id: 'profile-fields', label: 'Profile fields', icon: ListChecks, group: 'Operations' },
   { id: 'nda', label: 'NDA Management', icon: FileText, group: 'Operations' },
   { id: 'interview-training', label: 'Interview Training', icon: GraduationCap, group: 'Operations' },
   { id: 'oncall', label: 'On-Call Schedule', icon: CalendarClock, group: 'Operations' },

@@ -4,7 +4,7 @@
 
 import { STATE_META, availabilityState, type AvailabilityState } from './mapMarkers';
 import type { LinkState } from './consultantLinks';
-import { cityPoint, placeLabel } from './geo';
+import { cityPoint, countryPoint, placeLabel } from './geo';
 
 export interface ConsultantLive {
   id: string;
@@ -25,6 +25,8 @@ export interface ConsultantLive {
   /** The centre of the consultant's city, or null when the consultant has not chosen a city. */
   lat: number | null;
   lng: number | null;
+  /** True when the pin is only the centre of the consultant's country. */
+  approximate?: boolean;
   city: string;
   country: string;
   /** "Cairo, Egypt", or an empty text. */
@@ -106,12 +108,16 @@ export function matchesExperienceFilters(
  * The place of a consultant on the map: the point that is stored; when there is none, the centre of the stored city if that city is in the list of places
  * (consultants who gave their city before the map existed have a city but no point). No city in the list: null, and the consultant is not on the map.
  */
-export function consultantPoint(row: Pick<DirectoryRow, 'latitude' | 'longitude' | 'city' | 'country'>): { lat: number; lng: number } | null {
+export function consultantPoint(row: Pick<DirectoryRow, 'latitude' | 'longitude' | 'city' | 'country'> & { id?: string }): { lat: number; lng: number; approximate?: boolean } | null {
   const { latitude, longitude } = row;
   if (typeof latitude === 'number' && typeof longitude === 'number' && Number.isFinite(latitude) && Number.isFinite(longitude)) {
     return { lat: latitude, lng: longitude };
   }
-  return row.city && row.country ? cityPoint(row.country, row.city) : null;
+  const city = row.city && row.country ? cityPoint(row.country, row.city) : null;
+  if (city) return city;
+  // No point and no known city: the centre of the country (with a small stable offset), marked as approximate.
+  const country = countryPoint(row.country, row.id ?? '');
+  return country ? { ...country, approximate: true } : null;
 }
 
 /** The first letters of the first two words of a name. */
@@ -153,6 +159,7 @@ export function toConsultantLive(row: DirectoryRow, displayName: string | null |
     badges,
     lat: where ? where.lat : null,
     lng: where ? where.lng : null,
+    approximate: !!where?.approximate,
     city: row.city ?? '',
     country: row.country ?? '',
     place: placeLabel(row.city, row.country),
