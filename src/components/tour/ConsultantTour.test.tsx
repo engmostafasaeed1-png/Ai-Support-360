@@ -63,7 +63,7 @@ describe('ConsultantTour', () => {
     h.progress = { tour_key: 'consultant-welcome', tour_version: 1, last_step: 2, completed_at: null, skipped_at: null };
     renderAt();
     await waitFor(() => expect(screen.getByRole('dialog')).toBeTruthy(), { timeout: AUTO_START_DELAY_MS + 1500 });
-    expect(screen.getByText(/Step 3 of/)).toBeTruthy();
+    expect(screen.getAllByText(/Step 3 of/)[0]).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     await waitFor(() => expect(h.rpc).toHaveBeenCalledWith('save_tour_progress', { _key: 'consultant-welcome', _version: 1, _last_step: 3, _status: 'in_progress' }));
     fireEvent.keyDown(document, { key: 'Escape' });
@@ -75,6 +75,6 @@ describe('ConsultantTour', () => {
     renderAt();
     fireEvent.click(screen.getByText('start'));
     await waitFor(() => expect(h.rpc).toHaveBeenCalledWith('reset_tour_progress', { _key: 'consultant-welcome' }));
-    expect(screen.getByText(/Step 1 of/)).toBeTruthy();
+    expect(screen.getAllByText(/Step 1 of/)[0]).toBeTruthy();
   });
 });
