@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { Plus, Trash2, Cpu } from 'lucide-react';
 import type { OnboardingData } from '../ConsultantOnboarding';
+import { FieldHint } from '../OnboardingGuidePanel';
 
 const sapModules = [
   'S/4HANA', 'SAP MM', 'SAP SD', 'SAP FI', 'SAP CO', 'SAP PP', 'SAP QM',
@@ -90,7 +91,7 @@ export default function SkillsStep({ data, onChange }: Props) {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label>{t('onboarding.years_experience')}</Label>
+                    <Label>{t('onboarding.years_experience')}</Label><FieldHint field="skillYears" />
                     <Select value={String(skill.yearsExperience)} onValueChange={v => updateSkill(idx, { yearsExperience: Number(v) })}>
                       <SelectTrigger><SelectValue placeholder="Select years" /></SelectTrigger>
                       <SelectContent>
@@ -107,7 +108,7 @@ export default function SkillsStep({ data, onChange }: Props) {
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label>{t('onboarding.proficiency')} ({skill.proficiencyLevel}/5)</Label>
+                  <Label>{t('onboarding.proficiency')} ({skill.proficiencyLevel}/5)<FieldHint field="skillLevel" /></Label>
                 </div>
                 <Slider
                   value={[skill.proficiencyLevel]}

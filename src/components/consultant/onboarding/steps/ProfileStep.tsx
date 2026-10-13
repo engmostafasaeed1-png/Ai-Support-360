@@ -8,6 +8,7 @@ import { X, Globe, Linkedin, Github, Award, MapPin } from 'lucide-react';
 import { COUNTRIES, citiesOf } from '@/lib/geo';
 import { CREDLY_HINT, LINKEDIN_HINT, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 import type { OnboardingData } from '../ConsultantOnboarding';
+import { FieldHint } from '../OnboardingGuidePanel';
 
 const timezones = [
   'Asia/Riyadh', 'Asia/Dubai', 'Asia/Karachi', 'Europe/London',
@@ -65,7 +66,7 @@ export default function ProfileStep({ data, onChange }: Props) {
   return (
     <div className="space-y-5">
       <div className="space-y-1.5">
-        <Label htmlFor="displayName">{t('onboarding.display_name')} *</Label>
+        <Label htmlFor="displayName">{t('onboarding.display_name')} *</Label><FieldHint field="displayName" />
         <Input
           id="displayName"
           value={data.displayName}
@@ -76,7 +77,7 @@ export default function ProfileStep({ data, onChange }: Props) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="bio">{t('onboarding.bio')} *</Label>
+        <Label htmlFor="bio">{t('onboarding.bio')} *</Label><FieldHint field="bio" />
         <Textarea
           id="bio"
           value={data.bio}
@@ -132,7 +133,7 @@ export default function ProfileStep({ data, onChange }: Props) {
       {/* Rate & Currency */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="hourlyRate">{t('onboarding.hourly_rate')}</Label>
+          <Label htmlFor="hourlyRate">{t('onboarding.hourly_rate')}</Label><FieldHint field="hourlyRate" />
           <Input id="hourlyRate" type="number" min={0} step="0.01" value={data.hourlyRate} onChange={e => onChange({ hourlyRate: Number(e.target.value) })} />
         </div>
         <div className="space-y-1.5">
@@ -147,7 +148,7 @@ export default function ProfileStep({ data, onChange }: Props) {
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>{t('onboarding.timezone')}</Label>
+          <Label>{t('onboarding.timezone')}</Label><FieldHint field="timezone" />
           <Select value={data.timezone} onValueChange={v => onChange({ timezone: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -161,7 +162,7 @@ export default function ProfileStep({ data, onChange }: Props) {
 
       {/* Social Links */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Social & Web Links</Label>
+        <div className="flex items-center"><Label className="text-sm font-medium">Social & Web Links</Label><FieldHint field="linkedin" /></div>
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Linkedin className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -207,7 +208,7 @@ export default function ProfileStep({ data, onChange }: Props) {
 
       {/* Languages - Multi-select badges */}
       <div className="space-y-1.5">
-        <Label>{t('onboarding.languages')}</Label>
+        <Label>{t('onboarding.languages')}</Label><FieldHint field="languages" />
         <div className="flex flex-wrap gap-2">
           {allLanguages.map(lang => (
             <Button type="button"

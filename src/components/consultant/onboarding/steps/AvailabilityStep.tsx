@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Plus, Trash2, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { OnboardingData } from '../ConsultantOnboarding';
+import { FieldHint } from '../OnboardingGuidePanel';
 
 const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
@@ -51,7 +52,7 @@ export default function AvailabilityStep({ data, onChange }: Props) {
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="font-semibold">{t('onboarding.availability')}</h3>
+        <h3 className="font-semibold">{t('onboarding.availability')}<FieldHint field="availability" /></h3>
         <p className="text-xs text-muted-foreground">{t('onboarding.availability_desc')}</p>
       </div>
 

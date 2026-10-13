@@ -4,6 +4,8 @@ import PageTransition from '@/components/PageTransition';
 import PageErrorBoundary from '@/components/PageErrorBoundary';
 import MatchRequestPopup from '@/components/consultant/MatchRequestPopup';
 import CriticalAlarm from '@/components/consultant/CriticalAlarm';
+import QuickGuideSheet from '@/components/consultant/QuickGuideSheet';
+import { ConsultantTourProvider } from '@/components/tour/ConsultantTour';
 import { FixedHeader, FixedSubHeader } from '@/components/layout/FixedHeader';
 import { Outlet } from 'react-router-dom';
 import { Briefcase, Building2, Zap } from 'lucide-react';
@@ -31,6 +33,7 @@ export default function ConsultantLayout() {
 
   return (
     <SidebarProvider>
+      <ConsultantTourProvider>
       <div className="min-h-screen flex w-full bg-canvas relative">
 
         <ConsultantSidebar />
@@ -83,7 +86,8 @@ export default function ConsultantLayout() {
               </Tooltip>
 
               <LanguageSwitchButton />
-              <NotificationBell basePath="/consultant" />
+              <QuickGuideSheet />
+              <span data-tour="bell" className="inline-flex"><NotificationBell basePath="/consultant" /></span>
 
               {/* Profile avatar with name */}
               <Link to="/consultant/profile" className="flex items-center gap-2 group">
@@ -115,6 +119,7 @@ export default function ConsultantLayout() {
         <MatchRequestPopup />
         <CriticalAlarm />
       </div>
+      </ConsultantTourProvider>
     </SidebarProvider>
   );
 }

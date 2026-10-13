@@ -22,6 +22,7 @@ import AIInsightsButton from '@/components/ai/AIInsightsButton';
 import AvailabilityToggle from '@/components/consultant/AvailabilityToggle';
 import CriticalDashboardNotice from '@/components/consultant/CriticalDashboardNotice';
 import PayoutDetailsNudge from '@/components/consultant/PayoutDetailsNudge';
+import GettingStartedCard from '@/components/consultant/GettingStartedCard';
 
 const sessionTypeIcons: Record<string, typeof Video> = {
   video: Video,
@@ -212,6 +213,7 @@ export default function ConsultantDashboard() {
       <EmailVerificationBanner />
       <OnboardingProgressCard role="consultant" />
       <PayoutDetailsNudge />
+      <GettingStartedCard />
 
       {liveData?.consultant && profile.verification_status && profile.verification_status !== 'verified' && (
         <Card className="rounded-2xl border-yellow-300/50 bg-yellow-50/60 dark:bg-yellow-900/10 dark:border-yellow-700/40">

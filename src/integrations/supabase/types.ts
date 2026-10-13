@@ -7755,6 +7755,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_tour_progress: {
+        Row: {
+          completed_at: string | null
+          last_step: number
+          skipped_at: string | null
+          tour_key: string
+          tour_version: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          last_step?: number
+          skipped_at?: string | null
+          tour_key: string
+          tour_version?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          last_step?: number
+          skipped_at?: string | null
+          tour_key?: string
+          tour_version?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       vmware_pricing_plans: {
         Row: {
           cpu_price_per_core: number | null
@@ -9226,6 +9256,7 @@ export type Database = {
         Args: { p_billing_cycle?: string; p_plan_id: string }
         Returns: string
       }
+      reset_tour_progress: { Args: { _key: string }; Returns: undefined }
       resolve_oncall_consultant: {
         Args: { _ticket_id: string }
         Returns: string
@@ -9307,6 +9338,15 @@ export type Database = {
       save_tenant_billing_details: {
         Args: { _details: Json; _tenant_id: string }
         Returns: Json
+      }
+      save_tour_progress: {
+        Args: {
+          _key: string
+          _last_step: number
+          _status: string
+          _version: number
+        }
+        Returns: undefined
       }
       search_knowledge: {
         Args: {

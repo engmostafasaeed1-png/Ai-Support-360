@@ -140,7 +140,7 @@ export const consultantNavGroups: NavGroup[] = [
     defaultOpen: true,
     items: [
       { key: 'dashboard', icon: Gauge, path: '/consultant', required: true },
-      { key: 'profile', icon: UserCircle, path: '/consultant/profile', required: true },
+      { key: 'profile', icon: UserCircle, path: '/consultant/profile', required: true, tourId: 'nav-profile' },
     ],
   },
   {
@@ -151,11 +151,11 @@ export const consultantNavGroups: NavGroup[] = [
     items: [
       { key: 'cases', icon: Headset, path: '/consultant/cases' },
       { key: 'requests', icon: Inbox, path: '/consultant/requests' },
-      { key: 'proposals', icon: Receipt, path: '/consultant/proposals', fallback: 'My bids' },
-      { key: 'open_tickets', icon: ShoppingBag, path: '/consultant/open-tickets', fallback: 'Open requests' },
+      { key: 'proposals', icon: Receipt, path: '/consultant/proposals', fallback: 'My bids', tourId: 'nav-my-bids' },
+      { key: 'open_tickets', icon: ShoppingBag, path: '/consultant/open-tickets', fallback: 'Open requests', tourId: 'nav-open-requests' },
       { key: 'work_diary', icon: Timer, path: '/consultant/work-diary' },
-      { key: 'calendar', icon: CalendarClock, path: '/consultant/calendar' },
-      { key: 'chat', icon: MessagesSquare, path: '/consultant/chat' },
+      { key: 'calendar', icon: CalendarClock, path: '/consultant/calendar', tourId: 'nav-sessions' },
+      { key: 'chat', icon: MessagesSquare, path: '/consultant/chat', tourId: 'nav-messages' },
       { key: 'business_processes', icon: Workflow, path: '/consultant/business-processes' },
     ],
   },
@@ -164,7 +164,7 @@ export const consultantNavGroups: NavGroup[] = [
     labelKey: 'sidebar.finance',
     fallback: 'Finance',
     items: [
-      { key: 'earnings', icon: Wallet, path: '/consultant/earnings' },
+      { key: 'earnings', icon: Wallet, path: '/consultant/earnings', tourId: 'nav-earnings' },
       { key: 'credits', icon: Sparkles, path: '/consultant/credits' },
     ],
   },
