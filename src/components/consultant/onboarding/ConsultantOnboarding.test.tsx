@@ -52,7 +52,6 @@ vi.mock('./steps/ProfileStep', () => ({
     </div>
   ),
 }));
-for (const step of ['CertificationsStep', 'EducationStep', 'ProjectsStep']) vi.doMock(`./steps/${step}`, () => ({ default: () => null }));
 vi.mock('./steps/CertificationsStep', () => ({ default: () => null }));
 vi.mock('./steps/EducationStep', () => ({ default: () => null }));
 vi.mock('./steps/ProjectsStep', () => ({ default: () => null }));
