@@ -24,7 +24,7 @@ export const GUIDE_ICONS: Record<GuideStepKey, LucideIcon> = {
 const TOTAL = GUIDE_STEP_ORDER.length;
 
 /** Translated guide texts for one step, with the English content as defaults. */
-function useStepText(key: GuideStepKey) {
+export function useStepText(key: GuideStepKey) {
   const { t } = useTranslation();
   const s = CONSULTANT_GUIDE[key];
   return {
@@ -39,7 +39,7 @@ function useStepText(key: GuideStepKey) {
 }
 
 /** The guide body shared by the desktop card and the mobile accordion. */
-function GuideBody({ stepKey }: { stepKey: GuideStepKey }) {
+export function GuideBody({ stepKey }: { stepKey: GuideStepKey }) {
   const { t } = useTranslation();
   const s = useStepText(stepKey);
   return (
