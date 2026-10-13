@@ -100,6 +100,12 @@ Deno.serve(async (req) => {
     ? await personContact(admin, session.requested_by)
     : { name: 'The organizer', email: null as string | null };
   const people = await loadPeople(admin, sessionId);
+  // Extra recipients and copies may only go to people already on this interview.
+  const onInterview = new Set(
+    [...people.map((p) => p.email), organizer.email].filter(Boolean).map((e) => String(e).toLowerCase()),
+  );
+  extra.emails = extra.emails.filter((e) => onInterview.has(e.toLowerCase()));
+  ccList.emails = ccList.emails.filter((e) => onInterview.has(e.toLowerCase()));
   const invitees = people.filter((p) => p.user_id !== session.requested_by);
   const result = { sent: 0, suppressed: 0, failed: 0, skipped: 0 };
   const outside = {

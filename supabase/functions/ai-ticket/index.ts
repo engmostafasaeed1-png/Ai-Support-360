@@ -440,10 +440,10 @@ serve(async (req) => {
             soft_skills_score: latestInterview.soft_skills_score,
             type: latestInterview.interview_type,
           } : null,
-          // CV and experience: job titles, durations and scrubbed descriptions only — employer names are never sent.
-          cv_summary: cv?.matching_summary ? scrubText(String(cv.matching_summary)).text : null,
-          cv_keywords: Array.isArray(cv?.expertise_keywords) ? cv.expertise_keywords.map((v: unknown) => scrubText(String(v)).text) : [],
-          cv_excerpt: cv?.cv_text ? scrubText(String(cv.cv_text)).text : null,
+          // Self-written CV text is not checked by anyone, so it never counts toward the ranking.
+          cv_summary: (void cv, null),
+          cv_keywords: [],
+          cv_excerpt: null,
           work_experience: cJobs.map((w) => {
             const start = w.start_date ? new Date(w.start_date) : null;
             const end = w.is_current || !w.end_date ? new Date() : new Date(w.end_date);
