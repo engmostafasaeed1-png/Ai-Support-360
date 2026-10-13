@@ -1,6 +1,9 @@
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronsUpDown, Globe, LogOut, SlidersHorizontal, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { ChevronsUpDown, Globe, LogOut, Repeat, SlidersHorizontal, User } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -27,6 +30,24 @@ export default function SidebarAccountMenu({ collapsed, onEditProfile, onCustomi
   const { isGuest } = useGuestMode();
   const { currentLang, toggleLanguage } = useLanguage();
   const logout = useLogout();
+  const navigate = useNavigate();
+  const { data: roles = [] } = useQuery({
+    queryKey: ['my-roles'],
+    queryFn: async (): Promise<string[]> => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return [];
+      const { data } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id);
+      return (data ?? []).map((r: any) => String(r.role));
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  // Only shortcuts; each portal still checks the role on entry and in the database.
+  const portals = [
+    { role: 'client', path: '/client', label: String(t('sidebar.portal_client_switch', { defaultValue: 'Client portal' })) },
+    { role: 'consultant', path: '/consultant', label: String(t('sidebar.portal_consultant_switch', { defaultValue: 'Consultant portal' })) },
+    { role: 'admin', path: '/admin', label: String(t('sidebar.portal_admin_switch', { defaultValue: 'Admin console' })) },
+    { role: 'super_admin', path: '/super-admin', label: String(t('sidebar.portal_super_switch', { defaultValue: 'Super admin' })) },
+  ].filter((p) => roles.includes(p.role));
   // Set when a menu item opens a dialog, so the menu does not hand focus back to its trigger.
   const openingDialog = useRef(false);
 
@@ -105,6 +126,20 @@ export default function SidebarAccountMenu({ collapsed, onEditProfile, onCustomi
             <User aria-hidden="true" className="me-2 h-4 w-4" />
             {String(t('sidebar.edit_profile', { defaultValue: 'Edit profile' }))}
           </DropdownMenuItem>
+        )}
+        {portals.length > 1 && (
+          <>
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+              {String(t('sidebar.switch_portal', { defaultValue: 'Switch portal' }))}
+            </DropdownMenuLabel>
+            {portals.map((p) => (
+              <DropdownMenuItem key={p.path} onSelect={() => navigate(p.path)}>
+                <Repeat aria-hidden="true" className="me-2 h-4 w-4" />
+                {p.label}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+          </>
         )}
         <DropdownMenuItem onSelect={openDialog(onCustomize)}>
           <SlidersHorizontal aria-hidden="true" className="me-2 h-4 w-4" />
