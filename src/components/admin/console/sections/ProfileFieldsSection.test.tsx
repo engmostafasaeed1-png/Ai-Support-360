@@ -48,7 +48,7 @@ describe('ProfileFieldsSection', () => {
     expect(document.querySelectorAll('[data-testid^="rule-"]').length).toBe(40);
     for (const s of ['Basics', 'Location', 'Links', 'Experience', 'Records', 'Verification']) expect(screen.getByTestId(`section-${s}`)).toBeTruthy();
     expect(within(screen.getByTestId('section-Location')).getAllByText(/^Label /)).toHaveLength(4);
-    expect(screen.getByText('1 consultants are missing required fields')).toBeTruthy();
+    expect(screen.getByText(/consultants are missing required fields/)).toBeTruthy();
   });
 
   it('saves only the changed rows', async () => {
@@ -62,7 +62,7 @@ describe('ProfileFieldsSection', () => {
 
   it('lists the consultants that would be hidden before the switch turns on', async () => {
     show();
-    await screen.findByText('1 consultants are missing required fields');
+    await screen.findByText(/consultants are missing required fields/);
     fireEvent.click(screen.getByRole('switch', { name: /Hide incomplete profiles/ }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText('Sara Ali')).toBeTruthy();

@@ -84,7 +84,7 @@ describe('toConsultantLive: place', () => {
   });
 
   it('has no point for a city that is not in the list of places', () => {
-    const c = live({ city: 'Atlantis', latitude: null, longitude: null });
+    const c = live({ city: 'Atlantis', country: 'Atlantis', latitude: null, longitude: null });
     expect(c.lat).toBeNull();
     expect(c.lng).toBeNull();
   });

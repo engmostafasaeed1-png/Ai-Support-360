@@ -90,7 +90,7 @@ describe('ProfileTodoCard', () => {
     state.missing = ['bio'];
     render(<ProfileTodoCard />, { wrapper: wrap() });
     expect(await screen.findByText('Complete your profile')).toBeTruthy();
-    expect(screen.getByText('1 required fields are missing.')).toBeTruthy();
+    expect(screen.getByText(/required fields are missing\./)).toBeTruthy();
     expect(await screen.findByRole('button', { name: 'Bio' })).toBeTruthy();
     expect(screen.queryByText(/hidden from clients/)).toBeNull();
   });

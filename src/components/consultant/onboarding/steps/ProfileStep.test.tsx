@@ -1,3 +1,5 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactElement } from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import ProfileStep from './ProfileStep';
@@ -26,7 +28,7 @@ const BASE: OnboardingData = {
 };
 
 function show(partial: Partial<OnboardingData> = {}, onChange: (p: Partial<OnboardingData>) => void = () => {}) {
-  render(<ProfileStep data={{ ...BASE, ...partial }} onChange={onChange} />);
+  withRules(<ProfileStep data={{ ...BASE, ...partial }} onChange={onChange} />);
 }
 
 afterEach(() => cleanup());
@@ -74,3 +76,9 @@ describe('ProfileStep (links and place)', () => {
     expect(document.body.textContent).toMatch(/never an address/);
   });
 });
+
+// The field rules (Required / Optional / Hidden) are read with react-query; without rules every field is shown.
+function withRules(ui: ReactElement) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+}
