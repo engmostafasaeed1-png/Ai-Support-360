@@ -9,6 +9,7 @@ import { useConsultantProfile } from '@/hooks/useConsultantProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { toast } from 'sonner';
+import { FieldHint } from '../OnboardingGuidePanel';
 
 const TIERS = [
   { name: 'Gold',     range: 'Score 85+',  credits: 150, icon: Medal,       cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 ring-amber-300/60' },
@@ -98,6 +99,7 @@ export default function InterviewStep({ onInterviewComplete, consultantId }: Pro
           <Brain className="w-12 h-12 text-primary mx-auto" />
           <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
             AI Skills Assessment
+            <FieldHint field="interview" />
             <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">Optional</span>
           </h3>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
