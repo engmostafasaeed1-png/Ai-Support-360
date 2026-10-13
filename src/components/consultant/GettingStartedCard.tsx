@@ -1,3 +1,4 @@
+import { fill } from '@/lib/i18nFill';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -113,8 +114,8 @@ export default function GettingStartedCard() {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">{t('getting_started.progress', '{{done}} of {{total}} done', { done, total })}</p>
-          <Progress value={Math.round((100 * done) / total)} className="h-1.5" aria-label={t('getting_started.progress', '{{done}} of {{total}} done', { done, total })} />
+          <p className="text-xs text-muted-foreground">{fill(t('getting_started.progress', '{{done}} of {{total}} done', { done, total }), { done, total })}</p>
+          <Progress value={Math.round((100 * done) / total)} className="h-1.5" aria-label={fill(t('getting_started.progress', '{{done}} of {{total}} done', { done, total }), { done, total })} />
         </div>
         {allDone ? (
           <div className="flex items-center gap-3 rounded-xl bg-primary/5 border border-primary/15 p-3">

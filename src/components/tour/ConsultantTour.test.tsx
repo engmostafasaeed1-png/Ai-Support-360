@@ -65,16 +65,16 @@ describe('ConsultantTour', () => {
     await waitFor(() => expect(screen.getByRole('dialog')).toBeTruthy(), { timeout: AUTO_START_DELAY_MS + 1500 });
     expect(screen.getByText(/Step 3 of/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect(h.rpc).toHaveBeenCalledWith('save_tour_progress', { _key: 'consultant-welcome', _version: 1, _last_step: 3, _status: 'in_progress' });
+    await waitFor(() => expect(h.rpc).toHaveBeenCalledWith('save_tour_progress', { _key: 'consultant-welcome', _version: 1, _last_step: 3, _status: 'in_progress' }));
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(h.rpc).toHaveBeenLastCalledWith('save_tour_progress', { _key: 'consultant-welcome', _version: 1, _last_step: 3, _status: 'skipped' });
+    await waitFor(() => expect(h.rpc).toHaveBeenLastCalledWith('save_tour_progress', { _key: 'consultant-welcome', _version: 1, _last_step: 3, _status: 'skipped' }));
   });
 
   it('start() resets and opens at step 0', async () => {
     h.onboarding = false;
     renderAt();
     fireEvent.click(screen.getByText('start'));
-    expect(h.rpc).toHaveBeenCalledWith('reset_tour_progress', { _key: 'consultant-welcome' });
+    await waitFor(() => expect(h.rpc).toHaveBeenCalledWith('reset_tour_progress', { _key: 'consultant-welcome' }));
     expect(screen.getByText(/Step 1 of/)).toBeTruthy();
   });
 });

@@ -5,6 +5,7 @@ import { Compass, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { fill } from '@/lib/i18nFill';
 import { clampStep } from '@/lib/tour';
 
 export type TourPlacement = 'top' | 'bottom' | 'start' | 'end' | 'center';
@@ -200,7 +201,7 @@ export default function ProductTour({ steps, open, startAt = 0, onStep, onFinish
   }
 
   const Icon = step.icon ?? Compass;
-  const counter = t('tour.step_of', 'Step {{n}} of {{total}}', { n: index + 1, total });
+  const counter = fill(t('tour.step_of', 'Step {{n}} of {{total}}', { n: index + 1, total }), { n: index + 1, total });
 
   return (
     <div className="fixed inset-0 z-[100]" data-testid="product-tour">
@@ -280,7 +281,7 @@ export default function ProductTour({ steps, open, startAt = 0, onStep, onFinish
       </div>
 
       <div className="sr-only" aria-live="polite" role="status">
-        {t('tour.announce', 'Step {{n}} of {{total}}: {{title}}', { n: index + 1, total, title: step.title })}
+        {fill(t('tour.announce', 'Step {{n}} of {{total}}: {{title}}', { n: index + 1, total, title: step.title }), { n: index + 1, total, title: step.title })}
       </div>
     </div>
   );

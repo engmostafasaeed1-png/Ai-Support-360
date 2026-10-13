@@ -1,3 +1,4 @@
+import { fill } from '@/lib/i18nFill';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -105,16 +106,16 @@ export function OnboardingGuidePanel({ stepIndex, strength }: { stepIndex: numbe
             <p className="text-[11px] font-medium text-muted-foreground">{t('guide.title', 'Guide')}</p>
             <h3 className="font-semibold text-foreground">{s.title}</h3>
             <p className="text-xs text-muted-foreground">
-              {t('guide.step_of', 'Step {{n}} of {{total}} · about {{m}} min', { n: stepIndex + 1, total: TOTAL, m: s.minutes })}
+              {fill(t('guide.step_of', 'Step {{n}} of {{total}} · about {{m}} min', { n: stepIndex + 1, total: TOTAL, m: s.minutes }), { n: stepIndex + 1, total: TOTAL, m: s.minutes })}
             </p>
           </div>
         </div>
         <GuideBody stepKey={key} />
         <div className="pt-3 border-t border-border/50 space-y-1.5">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-muted-foreground">{t('guide.strength', 'Profile strength {{x}}%', { x: strength })}</span>
+            <span className="font-medium text-muted-foreground">{fill(t('guide.strength', 'Profile strength {{x}}%', { x: strength }), { x: strength })}</span>
           </div>
-          <Progress value={strength} className="h-1.5" aria-label={t('guide.strength', 'Profile strength {{x}}%', { x: strength })} />
+          <Progress value={strength} className="h-1.5" aria-label={fill(t('guide.strength', 'Profile strength {{x}}%', { x: strength }), { x: strength })} />
         </div>
       </CardContent>
     </Card>
@@ -162,10 +163,10 @@ export function OnboardingMobileProgress({ stepIndex }: { stepIndex: number }) {
   return (
     <div className="lg:hidden fixed inset-x-0 bottom-0 z-30 border-t border-border/50 bg-background/95 backdrop-blur px-4 py-2">
       <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
-        <span className="font-medium text-foreground">{t('guide.step_n', 'Step {{n}} of {{total}}', { n: stepIndex + 1, total: TOTAL })}</span>
-        <span>{t('guide.minutes_left', 'About {{m}} min left', { m: minutesLeft(stepIndex) })}</span>
+        <span className="font-medium text-foreground">{fill(t('guide.step_n', 'Step {{n}} of {{total}}', { n: stepIndex + 1, total: TOTAL }), { n: stepIndex + 1, total: TOTAL })}</span>
+        <span>{fill(t('guide.minutes_left', 'About {{m}} min left', { m: minutesLeft(stepIndex) }), { m: minutesLeft(stepIndex) })}</span>
       </div>
-      <Progress value={pct} className="h-1" aria-label={t('guide.step_n', 'Step {{n}} of {{total}}', { n: stepIndex + 1, total: TOTAL })} />
+      <Progress value={pct} className="h-1" aria-label={fill(t('guide.step_n', 'Step {{n}} of {{total}}', { n: stepIndex + 1, total: TOTAL }), { n: stepIndex + 1, total: TOTAL })} />
     </div>
   );
 }
@@ -218,7 +219,7 @@ export function OnboardingWelcome({ onStart, onSkip }: { onStart: () => void; on
         <div className="space-y-2">
           <h1 className="text-2xl font-bold text-foreground">{t('guide.welcome.title', "Welcome. Let's set up your consultant profile")}</h1>
           <p className="text-sm text-muted-foreground">
-            {t('guide.welcome.subtitle', 'About {{total}} minutes. You can stop at any time and continue later.', { total: totalGuideMinutes() })}
+            {fill(t('guide.welcome.subtitle', 'About {{total}} minutes. You can stop at any time and continue later.', { total: totalGuideMinutes() }), { total: totalGuideMinutes() })}
           </p>
         </div>
         <ul className="grid sm:grid-cols-3 gap-3">
