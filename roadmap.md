@@ -17,4 +17,4 @@
 - [x] Reports/dashboards 4 faults: client ReportsPage replaced (period/company/module filter/CSV/PDF), consultant dashboard upcoming sessions, consultant reports billable hours from signed timesheets, client activity feed filters admin/consultant notices (Oct 11)
 
 - [x] Implement M64-B3 client bidding screens and run requested checks.
-- [ ] Show and verify registration guides, welcome checklist and remembered completion in the embedded consultant profile only.
+- [x] Show and verify registration guides, welcome checklist and remembered completion in the embedded consultant profile only.
