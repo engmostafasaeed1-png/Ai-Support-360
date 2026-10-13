@@ -81,6 +81,13 @@ function resolve(pathname: string): Meta {
   return { ...DEFAULT, noindex: true };
 }
 
+const APP_ROUTES = ['/admin', '/client', '/consultant', '/super-admin', '/invoice', '/interview'];
+
+/** Signed-in application areas: kept out of search engines entirely. */
+export function isAppRoute(pathname: string): boolean {
+  return APP_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`));
+}
+
 export default function RouteSeo() {
   const { pathname } = useLocation();
   const meta = resolve(pathname);
@@ -99,7 +106,9 @@ export default function RouteSeo() {
       <meta property="og:url" content={url} />
       <meta name="twitter:title" content={meta.title} />
       <meta name="twitter:description" content={meta.description} />
-      {meta.noindex && <meta name="robots" content="noindex, follow" />}
+      {isAppRoute(pathname)
+        ? <meta name="robots" content="noindex,nofollow" />
+        : meta.noindex && <meta name="robots" content="noindex, follow" />}
     </Helmet>
   );
 }
