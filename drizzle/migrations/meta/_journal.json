@@ -442,6 +442,13 @@
       "when": 1791842492943,
       "tag": "0062_m65_payout_details_private",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1791859626919,
+      "tag": "0063_m66_user_tour_progress",
+      "breakpoints": true
     }
   ]
 }
