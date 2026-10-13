@@ -28,14 +28,8 @@ export default function HeroSection() {
         overlayOpacity={0.88}
       />
 
-      <div className="container mx-auto px-4 py-16 sm:py-24 relative z-10">
+      <div className="container mx-auto px-4 pt-28 sm:pt-36 lg:pt-40 pb-16 sm:pb-24 relative z-10">
         <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-10">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-primary-foreground text-sm font-medium animate-fade-in shadow-lg">
-            <Zap className="w-4 h-4 text-yellow-400" />
-            {t('hero.badge')}
-          </div>
-
           {/* Title */}
           <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black leading-[0.95] tracking-tight animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <span className="text-primary-foreground">{t('hero.title1')}</span>
@@ -47,6 +41,14 @@ export default function HeroSection() {
           <p className="text-base sm:text-lg md:text-xl text-primary-foreground/75 max-w-2xl mx-auto leading-relaxed animate-fade-in" style={{ animationDelay: '0.2s' }}>
             {t('hero.subtitle')}
           </p>
+
+          {/* Badge */}
+          <div className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-primary-foreground text-sm font-medium shadow-lg">
+              <Zap className="w-4 h-4 text-yellow-400" />
+              {t('hero.badge')}
+            </div>
+          </div>
 
           {/* CTA Tiles */}
           <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
