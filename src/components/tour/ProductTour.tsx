@@ -238,7 +238,7 @@ export default function ProductTour({ steps, open, startAt = 0, onStep, onFinish
         style={mobile || centered ? undefined : style}
       >
         <div className="flex items-start gap-3">
-          <span className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0"><Icon className="w-4.5 h-4.5" aria-hidden="true" /></span>
+          <span className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0"><Icon className="w-4 h-4" aria-hidden="true" /></span>
           <div className="min-w-0 flex-1">
             <h2 id={titleId} className="font-semibold text-foreground">{step.title}</h2>
             <p id={bodyId} className="mt-1 text-sm text-muted-foreground">{step.body}</p>
