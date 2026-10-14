@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { hasActiveSession } from '@/lib/sessionState';
 
 export interface ErrorInfo {
   message: string;
@@ -34,6 +35,7 @@ const NETWORK_OR_SESSION =
   /Failed to fetch|NetworkError|Load failed|Network request failed|Failed to send a request to the Edge Function|The operation was aborted|signal is aborted|AbortError|JWT expired|Auth session missing|not authenticated|Invalid login credentials/i;
 
 const NOT_SIGNED_IN = /^Not signed in( yet)?$/i;
+const SIGNED_OUT_REFUSAL = /(permission denied|not signed in|jwt|invalid token|row-level security)/i;
 
 /** True when the failure is the normal answer to a bad request or a lost connection and not a problem of the app. */
 export function isExpectedFailure(info: ErrorInfo): boolean {
@@ -54,6 +56,8 @@ export function reportQueryFailure(
   const info = describeError(error);
   // A query that ran while the session was still being restored: a normal sign-in race, never an error report.
   if (NOT_SIGNED_IN.test(info.message)) return;
+  // Without a session the database refuses the call on purpose: an anonymous caller during a sign-in race, not an app error.
+  if (!hasActiveSession() && SIGNED_OUT_REFUSAL.test(info.message)) return;
   const context: Record<string, unknown> = {
     code: info.code,
     status: info.status,
