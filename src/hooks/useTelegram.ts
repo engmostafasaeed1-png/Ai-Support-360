@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +21,9 @@ async function callFunction<T>(name: string, action: string, failure: string): P
 
 /** Consultant: the own Telegram link. `poll` refreshes it every 3 seconds while the consultant is pressing Start in Telegram. */
 export function useTelegramStatus(poll = false) {
+  const signedIn = useSessionReady().signedIn;
   return useQuery({
+    enabled: signedIn,
     queryKey: ['telegram-status'],
     staleTime: 5_000,
     refetchInterval: poll ? 3_000 : false,

@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { TOUR_VERSION, type TourProgress, type TourStatus } from '@/lib/tour';
@@ -9,7 +10,9 @@ export const tourProgressQueryKey = (key: string) => ['tour-progress', key];
 /** The saved progress of one tour. Errors never block the UI: the tour then simply runs locally. */
 export function useTourProgress(key: string, enabled = true) {
   const qc = useQueryClient();
+  const signedIn = useSessionReady().signedIn;
   const query = useQuery({
+    enabled: signedIn,
     queryKey: tourProgressQueryKey(key),
     enabled,
     retry: false,

@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,7 +32,9 @@ export default function TicketPlanSubmitForm({ ticket }: Props) {
   const [currency, setCurrency] = useState(ticket.cost_currency || 'USD');
   const [lines, setLines] = useState<Line[]>([]);
 
+  const signedIn = useSessionReady().signedIn;
   const { data: myConsultantId } = useQuery({
+    enabled: signedIn,
     queryKey: ['my-consultant-id-for-plan'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();

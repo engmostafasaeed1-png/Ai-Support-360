@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +21,9 @@ export function useUserProfile() {
     return () => subscription.unsubscribe();
   }, [queryClient]);
 
+  const signedIn = useSessionReady().signedIn;
   const { data: profile = null, isLoading: loading } = useQuery({
+    enabled: signedIn,
     queryKey: ['user-profile'],
     queryFn: async (): Promise<UserProfile | null> => {
       const session = await getSessionWithRetry();

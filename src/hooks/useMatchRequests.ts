@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +20,7 @@ export function useConsultantMatchRequests() {
     return () => { channel.unsubscribe(); };
   }, [isGuest, queryClient]);
 
+  const signedIn = useSessionReady().signedIn;
   return useQuery({
     queryKey: ['consultant-match-requests'],
     queryFn: async () => {
@@ -58,7 +60,7 @@ export function useConsultantMatchRequests() {
         };
       });
     },
-    enabled: !isGuest,
+    enabled: signedIn && (!isGuest),
     placeholderData: isGuest ? mockMatchRequests : undefined,
   });
 }
@@ -98,6 +100,7 @@ export function useAdminSendMatch() {
 
 export function useClientMatchAcceptors(ticketId: string) {
   const { isGuest } = useGuestMode();
+  const signedIn2 = useSessionReady().signedIn;
   return useQuery({
     queryKey: ['client-match-acceptors', ticketId],
     queryFn: async () => {
@@ -142,6 +145,6 @@ export function useClientMatchAcceptors(ticketId: string) {
         };
       });
     },
-    enabled: !!ticketId && !isGuest,
+    enabled: signedIn2 && (!!ticketId && !isGuest),
   });
 }

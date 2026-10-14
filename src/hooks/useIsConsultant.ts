@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +21,9 @@ export function useIsConsultant() {
     return () => subscription.unsubscribe();
   }, [queryClient]);
 
+  const signedIn = useSessionReady().signedIn;
   const { data } = useQuery({
+    enabled: signedIn,
     queryKey: QUERY_KEY,
     queryFn: async (): Promise<boolean> => {
       const session = await getSessionWithRetry();

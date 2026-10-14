@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -31,7 +32,9 @@ export function useNow(intervalMs = 1000): number {
 
 /** The terms of the critical service: the standard window and surcharge, the limits and the switch of the administrator. */
 export function useCriticalTerms() {
+  const signedIn = useSessionReady().signedIn;
   return useQuery({
+    enabled: signedIn,
     queryKey: ['critical-terms'],
     staleTime: 60_000,
     retry: false,
@@ -57,9 +60,10 @@ export function useCriticalMyAlerts(options: { realtime?: boolean } = {}) {
   const { realtime = true } = options;
   const { isGuest } = useGuestMode();
   const qc = useQueryClient();
+  const signedIn2 = useSessionReady().signedIn;
   const query = useQuery({
     queryKey: ['critical-my-alerts'],
-    enabled: !isGuest,
+    enabled: signedIn2 && (!isGuest),
     staleTime: 5_000,
     refetchInterval: 15_000,
     retry: false,

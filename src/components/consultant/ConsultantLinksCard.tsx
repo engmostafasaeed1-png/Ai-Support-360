@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Award, ExternalLink, Github, Globe, Linkedin, Loader2, MapPin, Save } from 'lucide-react';
@@ -51,7 +52,8 @@ async function loadMine() {
 /** The consultant's place (clients see it as an area on a map) and the links to LinkedIn and Credly, with what the platform team has checked. */
 export default function ConsultantLinksCard() {
   const qc = useQueryClient();
-  const { data: me, isLoading } = useQuery({ queryKey: MINE_KEY, queryFn: loadMine });
+  const signedIn = useSessionReady().signedIn;
+  const { data: me, isLoading } = useQuery({ enabled: signedIn, queryKey: MINE_KEY, queryFn: loadMine });
   const [form, setForm] = useState({ country: '', city: '', linkedin: '', github: '', website: '', credly: '' });
   const [problem, setProblem] = useState<{ linkedin?: string; credly?: string }>({});
   const [saving, setSaving] = useState(false);

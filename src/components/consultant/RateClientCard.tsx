@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Star } from 'lucide-react';
@@ -74,7 +75,9 @@ interface Props { ticketId: string; consultantId: string; clientId: string }
 export default function RateClientCard({ ticketId, consultantId, clientId }: Props) {
   const qc = useQueryClient();
   const key = ['client-review', ticketId, consultantId];
+  const signedIn = useSessionReady().signedIn;
   const { data: review, isLoading } = useQuery({
+    enabled: signedIn,
     queryKey: key,
     queryFn: async () => {
       const { data, error } = await (supabase as any).from('client_reviews')

@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useTranslation } from 'react-i18next';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useQuery } from '@tanstack/react-query';
@@ -56,7 +57,9 @@ const verificationNotice: Record<string, string> = {
 export default function ConsultantDashboard() {
   const { t } = useTranslation();
 
+  const signedIn = useSessionReady().signedIn;
   const { data: liveData, isLoading } = useQuery({
+    enabled: signedIn,
     queryKey: ['consultant-dashboard'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
