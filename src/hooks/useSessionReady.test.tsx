@@ -14,7 +14,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-import { useSessionReady } from './useSessionReady';
+const { useSessionReady } = await vi.importActual<typeof import('./useSessionReady')>('./useSessionReady');
 import { hasActiveSession } from '@/lib/sessionState';
 
 describe('useSessionReady', () => {
