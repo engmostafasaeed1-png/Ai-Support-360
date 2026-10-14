@@ -108,7 +108,7 @@ describe('reportQueryFailure: no session', () => {
 
     sessionMock.active = true;
     reportQueryFailure('Query failed', { message: 'permission denied for function critical_my_alerts' }, ['critical-my-alerts']);
-    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledTimes(1);
   });
 
   it('never reports "Not signed in yet", with or without a session', () => {
