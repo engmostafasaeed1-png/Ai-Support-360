@@ -12,9 +12,8 @@ export function useTourProgress(key: string, enabled = true) {
   const qc = useQueryClient();
   const signedIn = useSessionReady().signedIn;
   const query = useQuery({
-    enabled: signedIn,
     queryKey: tourProgressQueryKey(key),
-    enabled,
+    enabled: signedIn && enabled,
     retry: false,
     queryFn: async (): Promise<TourProgress | null> => {
       try {
