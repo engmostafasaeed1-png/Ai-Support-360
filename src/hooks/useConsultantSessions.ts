@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +20,7 @@ export function useConsultantSessions() {
     return () => { channel.unsubscribe(); };
   }, [isGuest, queryClient]);
 
+  const signedIn = useSessionReady().signedIn;
   return useQuery({
     queryKey: ['consultant-sessions'],
     queryFn: async () => {
@@ -48,7 +50,7 @@ export function useConsultantSessions() {
         duration_minutes: s.duration_minutes || 30,
       }));
     },
-    enabled: !isGuest,
+    enabled: signedIn && (!isGuest),
     placeholderData: isGuest ? mockSessions : undefined,
   });
 }

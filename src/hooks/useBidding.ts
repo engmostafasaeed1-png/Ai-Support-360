@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -12,7 +13,9 @@ async function myConsultant(): Promise<{ id: string; currency: string | null } |
 
 /** The signed-in consultant (id, currency) and his SAP skills. */
 export function useMyConsultant() {
+  const signedIn = useSessionReady().signedIn;
   return useQuery({
+    enabled: signedIn,
     queryKey: ['my-consultant-bidding'],
     staleTime: 5 * 60_000,
     queryFn: async () => {
@@ -27,9 +30,10 @@ export function useMyConsultant() {
 /** One RPC call for a list (at most 100 ids). */
 export function useTicketBidCounts(ticketIds: string[]) {
   const ids = [...new Set(ticketIds.filter(Boolean))].sort().slice(0, 100);
+  const signedIn2 = useSessionReady().signedIn;
   return useQuery({
     queryKey: ['ticket-bid-counts', ids],
-    enabled: ids.length > 0,
+    enabled: signedIn2 && (ids.length > 0),
     queryFn: async () => {
       const { data, error } = await db.rpc('ticket_bid_counts', { _ticket_ids: ids });
       if (error) throw error;
@@ -61,7 +65,9 @@ export interface MyBidRow {
 
 /** Every bid row of the signed-in consultant with the request it belongs to. */
 export function useMyBids() {
+  const signedIn3 = useSessionReady().signedIn;
   return useQuery({
+    enabled: signedIn3,
     queryKey: ['my-bids'],
     queryFn: async (): Promise<MyBidRow[]> => {
       const c = await myConsultant();
@@ -114,7 +120,9 @@ export interface CounterRow {
 
 /** The consultant's own counter-offers, read once for all his bids. */
 export function useMyCounters() {
+  const signedIn4 = useSessionReady().signedIn;
   return useQuery({
+    enabled: signedIn4,
     queryKey: ['my-counters'],
     queryFn: async (): Promise<CounterRow[]> => {
       const c = await myConsultant();
@@ -151,9 +159,10 @@ export interface QuestionRow {
 
 /** Answered questions of a request (no names) and the consultant's own unanswered ones. */
 export function useTicketQuestions(ticketId: string | undefined) {
+  const signedIn5 = useSessionReady().signedIn;
   return useQuery({
     queryKey: ['ticket-questions', ticketId],
-    enabled: !!ticketId,
+    enabled: signedIn5 && (!!ticketId),
     queryFn: async () => {
       const c = await myConsultant();
       const [{ data: answered, error }, own] = await Promise.all([

@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +24,7 @@ export default function InterviewAnswersDialog({ interviewId, open, onOpenChange
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
 
+  const signedIn = useSessionReady().signedIn;
   const { data: answers, isLoading } = useQuery({
     queryKey: ['interview-answers', interviewId],
     queryFn: async () => {
@@ -36,7 +38,7 @@ export default function InterviewAnswersDialog({ interviewId, open, onOpenChange
       if (error) throw error;
       return data || [];
     },
-    enabled: !!interviewId && open,
+    enabled: signedIn && (!!interviewId && open),
   });
 
   return (

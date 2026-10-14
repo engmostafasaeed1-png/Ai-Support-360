@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +29,9 @@ export async function fetchProfileFieldRules(): Promise<ProfileFieldRule[]> {
 
 /** The admin-chosen mode of every profile field. Unknown or not-yet-loaded fields count as optional (shown, not required). */
 export function useProfileFieldRules() {
+  const signedIn = useSessionReady().signedIn;
   const query = useQuery({
+    enabled: signedIn,
     queryKey: PROFILE_FIELD_RULES_KEY,
     queryFn: fetchProfileFieldRules,
     staleTime: 5 * 60 * 1000,
@@ -44,7 +47,9 @@ export function useProfileFieldRules() {
 
 /** The enforcement switch (hide incomplete profiles and block their new bids). */
 export function useProfileRulesConfig() {
+  const signedIn2 = useSessionReady().signedIn;
   return useQuery({
+    enabled: signedIn2,
     queryKey: PROFILE_RULES_CONFIG_KEY,
     queryFn: async (): Promise<{ enforce: boolean }> => {
       const { data, error } = await (supabase as any).from('profile_rules_config').select('enforce').maybeSingle();
@@ -57,7 +62,9 @@ export function useProfileRulesConfig() {
 
 /** The required field keys that the signed-in consultant still lacks. */
 export function useMyMissingFields() {
+  const signedIn3 = useSessionReady().signedIn;
   return useQuery({
+    enabled: signedIn3,
     queryKey: MY_MISSING_FIELDS_KEY,
     queryFn: async (): Promise<string[]> => {
       const { data, error } = await (supabase as any).rpc('my_missing_profile_fields');

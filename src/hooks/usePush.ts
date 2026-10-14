@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,7 +27,9 @@ export type PushConfig = { configured: boolean; public_key: string | null };
 
 /** The public key of the platform (nothing secret); configured = false until the administrator has created the keys. */
 export function usePushConfig() {
+  const signedIn = useSessionReady().signedIn;
   return useQuery({
+    enabled: signedIn,
     queryKey: ['push-config'],
     staleTime: 5 * 60_000,
     retry: false,
@@ -52,7 +55,9 @@ export type PushDeviceState = {
 
 /** What this device can do and has done: refreshed when the settings page opens and after every change. */
 export function usePushDevice(publicKey: string | null | undefined) {
+  const signedIn2 = useSessionReady().signedIn;
   return useQuery({
+    enabled: signedIn2,
     queryKey: ['push-device', publicKey ?? null],
     staleTime: 5_000,
     retry: false,

@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { fill } from '@/lib/i18nFill';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -49,7 +50,9 @@ export function gettingStartedItems(i: GettingStartedInput): GettingStartedItem[
 function useGettingStartedData() {
   const payout = useMyPayoutDetails();
   const telegram = useTelegramStatus();
+  const signedIn = useSessionReady().signedIn;
   const base = useQuery({
+    enabled: signedIn,
     queryKey: ['getting-started'],
     retry: false,
     queryFn: async () => {

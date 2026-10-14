@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { Session } from '@supabase/supabase-js';
@@ -37,9 +37,14 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
     needsOnboarding: false,
   });
   const location = useLocation();
+  // Each check gets a number; only the newest may set the state, so a slower older check (started with a session)
+  // can never overwrite a later sign-out and render the page without a session.
+  const checkSeq = useRef(0);
 
   const checkAuth = useCallback(async () => {
+    const seq = ++checkSeq.current;
     const session = await getSessionWithRetry();
+    if (seq !== checkSeq.current) return;
 
     if (!session) {
       setState({ status: 'ready', session: null, roleOk: false, hasTenant: true, needsOnboarding: false });
@@ -79,6 +84,7 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
             .maybeSingle()
         : Promise.resolve({ data: { onboarding_completed: true } }),
     ]);
+    if (seq !== checkSeq.current) return;
 
     const roleOk = !!roleResult.data;
     const hasTenant = !!(tenantResult.data && (tenantResult.data as any[]).length > 0);
@@ -102,6 +108,7 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       if (!s) {
+        checkSeq.current++; // cancels any check still running
         setState({ status: 'ready', session: null, roleOk: false, hasTenant: true, needsOnboarding: false });
       } else {
         void checkAuth();

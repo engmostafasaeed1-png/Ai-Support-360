@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Loader2, Pencil } from 'lucide-react';
@@ -49,9 +50,10 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
   const [editingId, setEditingId] = useState<string | null>(null);
   const today = localDateKey(new Date());
 
+  const signedIn = useSessionReady().signedIn;
   const { data, isLoading } = useQuery({
     queryKey: ['my-availability-slots'],
-    enabled: open,
+    enabled: signedIn && (open),
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       // The session may still be restoring: answer "no slots"; useRefetchOnSignIn reloads this once signed in.

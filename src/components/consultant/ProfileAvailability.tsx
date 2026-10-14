@@ -1,9 +1,12 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import WeeklyAvailability from '@/components/client/WeeklyAvailability';
 
 export default function ProfileAvailability({ consultantId }: { consultantId: string }) {
+  const signedIn = useSessionReady().signedIn;
   const { data } = useQuery({
+    enabled: signedIn,
     queryKey: ['my-availability-slots'],
     queryFn: async () => {
       const { data: slots, error } = await supabase.from('availability_slots')

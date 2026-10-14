@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,7 +49,9 @@ export default function AvailabilityToggle({ variant = 'switch', className }: Pr
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
 
+  const signedIn = useSessionReady().signedIn;
   const { data: consultant, refetch } = useQuery({
+    enabled: signedIn,
     queryKey: ['my-consultant-availability'],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();

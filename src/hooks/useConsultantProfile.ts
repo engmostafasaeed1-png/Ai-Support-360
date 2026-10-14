@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
@@ -6,6 +7,7 @@ import { mockConsultantProfile } from '@/data/consultantMockData';
 export function useConsultantProfile() {
   const { isGuest } = useGuestMode();
 
+  const signedIn = useSessionReady().signedIn;
   return useQuery({
     queryKey: ['consultant-profile'],
     queryFn: async () => {
@@ -62,7 +64,7 @@ export function useConsultantProfile() {
         ai_interview_completed_at: (consultant as any).ai_interview_completed_at || null,
       };
     },
-    enabled: !isGuest,
+    enabled: signedIn && (!isGuest),
     placeholderData: isGuest ? { ...mockConsultantProfile, avatar_url: null, credly_username: null, credibility_credits: 250, ai_interview_badge: 'Gold', ai_interview_completed_at: new Date().toISOString() } : undefined,
   });
 }

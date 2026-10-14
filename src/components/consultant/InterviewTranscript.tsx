@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +27,7 @@ interface ChatMessage {
 export default function InterviewTranscript({ consultantId, viewMode = 'consultant' }: InterviewTranscriptProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  const signedIn = useSessionReady().signedIn;
   const { data: interviews, isLoading } = useQuery({
     queryKey: ['interview-transcripts', consultantId],
     queryFn: async () => {
@@ -38,9 +40,10 @@ export default function InterviewTranscript({ consultantId, viewMode = 'consulta
       if (error) throw error;
       return data || [];
     },
-    enabled: !!consultantId,
+    enabled: signedIn && (!!consultantId),
   });
 
+  const signedIn2 = useSessionReady().signedIn;
   const { data: answers } = useQuery({
     queryKey: ['interview-answers', consultantId],
     queryFn: async () => {
@@ -54,7 +57,7 @@ export default function InterviewTranscript({ consultantId, viewMode = 'consulta
       if (error) throw error;
       return data || [];
     },
-    enabled: !!interviews?.length,
+    enabled: signedIn2 && (!!interviews?.length),
   });
 
   if (isLoading) {

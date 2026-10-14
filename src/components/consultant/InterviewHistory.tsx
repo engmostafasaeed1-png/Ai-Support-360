@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,6 +34,7 @@ export default function InterviewHistory({ consultantId }: Props) {
   const [answersId, setAnswersId] = useState<string | null>(null);
   const [showComparison, setShowComparison] = useState(false);
 
+  const signedIn = useSessionReady().signedIn;
   const { data: interviews, isLoading } = useQuery({
     queryKey: ['interview-history', consultantId],
     queryFn: async () => {
@@ -46,7 +48,7 @@ export default function InterviewHistory({ consultantId }: Props) {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!consultantId,
+    enabled: signedIn && (!!consultantId),
   });
 
   if (isLoading) {

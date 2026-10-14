@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -181,7 +182,9 @@ export function useProviderEvents(enabled = true) {
 /* ----------------------------------------------------------- consultant */
 
 export function useMyPayoutDetails() {
+  const signedIn = useSessionReady().signedIn;
   return useQuery({
+    enabled: signedIn,
     queryKey: ['my-payout-details'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();

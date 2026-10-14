@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +23,7 @@ export function useConsultantEarnings() {
     return () => { channel.unsubscribe(); };
   }, [isGuest, queryClient]);
 
+  const signedIn = useSessionReady().signedIn;
   return useQuery({
     queryKey: ['consultant-earnings'],
     queryFn: async () => {
@@ -96,7 +98,7 @@ export function useConsultantEarnings() {
         monthlyTrend,
       };
     },
-    enabled: !isGuest,
+    enabled: signedIn && (!isGuest),
     placeholderData: isGuest ? mockEarnings : undefined,
   });
 }

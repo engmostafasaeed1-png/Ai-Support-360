@@ -1,3 +1,4 @@
+import { useSessionReady } from '@/hooks/useSessionReady';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +20,7 @@ export function useConsultantCases() {
     return () => { channel.unsubscribe(); };
   }, [isGuest, queryClient]);
 
+  const signedIn = useSessionReady().signedIn;
   return useQuery({
     queryKey: ['consultant-cases'],
     queryFn: async () => {
@@ -52,7 +54,7 @@ export function useConsultantCases() {
         resolved_at: t.resolved_at || '',
       }));
     },
-    enabled: !isGuest,
+    enabled: signedIn && (!isGuest),
     placeholderData: isGuest ? mockCases.map(c => ({ ...c, client_id: '' })) as any : undefined,
   });
 }

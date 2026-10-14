@@ -4,6 +4,9 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
+const sessionMock = vi.hoisted(() => ({ active: true }));
+vi.mock('@/lib/sessionState', () => ({ hasActiveSession: () => sessionMock.active }));
+
 import { logger } from '@/lib/logger';
 import { describeError, isExpectedFailure, reportQueryFailure } from '@/lib/queryErrorReporting';
 
@@ -90,5 +93,30 @@ describe('reportQueryFailure: sign-in race', () => {
   it('still reports "relation does not exist"', () => {
     reportQueryFailure('Query failed', { message: 'relation "x" does not exist', code: '42P01' }, ['q']);
     expect(logger.error).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('reportQueryFailure: no session', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('does not report a refused call without a session, reports it with one', () => {
+    sessionMock.active = false;
+    reportQueryFailure('Query failed', { message: 'permission denied for function critical_my_alerts', code: '42501' }, ['critical-my-alerts']);
+    reportQueryFailure('Query failed', { message: 'permission denied for function critical_my_alerts' }, ['critical-my-alerts']);
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(logger.warn).not.toHaveBeenCalled();
+
+    sessionMock.active = true;
+    reportQueryFailure('Query failed', { message: 'permission denied for function critical_my_alerts' }, ['critical-my-alerts']);
+    expect(logger.error).toHaveBeenCalledTimes(1);
+  });
+
+  it('never reports "Not signed in yet", with or without a session', () => {
+    for (const active of [true, false]) {
+      sessionMock.active = active;
+      reportQueryFailure('Query failed', new Error('Not signed in yet'));
+    }
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 });
