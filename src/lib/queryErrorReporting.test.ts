@@ -76,3 +76,19 @@ describe('reportQueryFailure', () => {
     expect(context).toMatchObject({ code: '42703', query: 'ai-match-consultants' });
   });
 });
+
+describe('reportQueryFailure: sign-in race', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('ignores "Not signed in yet" and "Not signed in"', () => {
+    reportQueryFailure('Query failed', new Error('Not signed in yet'), ['my-consultant-availability']);
+    reportQueryFailure('Query failed', new Error('Not signed in'), ['my-availability-slots']);
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('still reports "relation does not exist"', () => {
+    reportQueryFailure('Query failed', { message: 'relation "x" does not exist', code: '42P01' }, ['q']);
+    expect(logger.error).toHaveBeenCalledTimes(1);
+  });
+});

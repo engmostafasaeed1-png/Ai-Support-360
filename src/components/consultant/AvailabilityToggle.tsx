@@ -53,7 +53,8 @@ export default function AvailabilityToggle({ variant = 'switch', className }: Pr
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
-      if (!user) throw new Error('Not signed in yet');
+      // The session may still be restoring: answer "no consultant row"; useRefetchOnSignIn reloads this once signed in.
+      if (!user) return null;
       const { data, error } = await supabase
         .from('consultants')
         .select('id, availability_status')

@@ -54,7 +54,8 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
     enabled: open,
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) throw new Error('Not signed in');
+      // The session may still be restoring: answer "no slots"; useRefetchOnSignIn reloads this once signed in.
+      if (!session?.user) return { consultantId: null as string | null, slots: [] as Slot[] };
       const { data: c, error: ce } = await supabase
         .from('consultants').select('id').eq('user_id', session.user.id).maybeSingle();
       if (ce) throw ce;
