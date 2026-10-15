@@ -28,6 +28,14 @@ const IGNORED_HOSTS =
 const CRAWLER_AGENTS =
   /googlebot|googleother|google-inspectiontool|storebot-google|adsbot-google|bingbot|bingpreview|yandex(?:bot|images)?|baiduspider|duckduckbot|slurp|facebookexternalhit|facebot|meta-webindexer|meta-externalagent|twitterbot|linkedinbot|slackbot|applebot|petalbot|semrushbot|ahrefsbot|mj12bot|dotbot|bytespider|gptbot|claudebot|ccbot|headlesschrome|lighthouse|pagespeed|gtmetrix|pingdom|uptimerobot|ia_archiver|crawler|spider/i;
 
+/** A lazy page file that could not be loaded (missing chunk, old cache after a new Publish). */
+export const CHUNK_LOAD_ERROR =
+  /(_result\.default|dynamically imported module|Importing a module script failed|Loading chunk|ChunkLoadError|error loading dynamically)/i;
+
+export function isChunkLoadError(message: string | null | undefined): boolean {
+  return CHUNK_LOAD_ERROR.test(message ?? '');
+}
+
 // Browser and library noise.
 // The "Lock" and "LockManager" messages come from the sign-in library when two requests (two tabs, a tab in the background) ask for the same
 // browser lock at the same moment — the browser's own Navigator LockManager race. It recovers by itself, so nothing can be acted on.
@@ -42,6 +50,8 @@ const IGNORED_MESSAGES: RegExp[] = [
   /LockManager lock/i,
   /Acquiring an exclusive Navigator LockManager lock/i,
   /was released because another request stole it/i,
+  // A lazy page file that failed to load; the visitor can reload (see src/lib/lazyWithRetry.ts).
+  CHUNK_LOAD_ERROR,
   // Content-security-policy reports about the editor's hot-reload socket, browser extensions and antivirus scripts.
   /^\[diag:csp\].*(?:wss?:\/\/localhost|(?:chrome|moz|safari|safari-web|ms-browser)-extension:|kaspersky-labs\.com)/i,
 ];
