@@ -12,6 +12,7 @@ import { useQuery } from '@tanstack/react-query';
 import PasswordInput from '@/components/auth/PasswordInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 import { cn } from '@/lib/utils';
+import { storeOAuthRole } from '@/lib/oauthReturn';
 import { MIN_PASSWORD_LENGTH } from '@/lib/passwordPolicy';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
@@ -371,7 +372,7 @@ function SignupForm() {
             </Button>
             <p className="text-sm text-muted-foreground">
               {t('auth.have_account')}{' '}
-              <Link to="/login" className="text-primary font-medium hover:underline">{t('auth.login_link')}</Link>
+              <Link to={role === 'consultant' ? '/login?role=consultant' : '/login'} onClick={() => storeOAuthRole(role)} className="text-primary font-medium hover:underline">{t('auth.login_link')}</Link>
             </p>
           </CardFooter>
         </form>

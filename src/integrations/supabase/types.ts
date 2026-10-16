@@ -8910,6 +8910,7 @@ export type Database = {
         Args: { _bucket: string; _limit: number; _window_seconds: number }
         Returns: boolean
       }
+      choose_first_oauth_role: { Args: { _role: string }; Returns: string }
       clean_bank_account: { Args: { _details: Json }; Returns: Json }
       clean_billing_text: {
         Args: { _label: string; _max: number; _v: string }
