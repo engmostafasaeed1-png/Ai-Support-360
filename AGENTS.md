@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Keep invoice details in a three-zone dialog with shared billing controls and the existing admin confirmation hook; this keeps visible actions consistent with backend permissions.
+
 - Keep timesheet PDF and CSV row models in the shared timesheet document helpers, using existing screen amounts and approval metadata; this prevents export totals and statuses from diverging.
 
 - Keep consultant credibility calculations and star fills in the shared consultant credibility library, reused by profile and directory displays, so scores and ratings stay consistent.

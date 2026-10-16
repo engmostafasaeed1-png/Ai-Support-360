@@ -1,3 +1,4 @@
+import { InvoiceDetailsDialog } from '@/components/invoice/InvoiceDetailsDialog';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -5,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PlanCheckoutDialog } from '@/components/client/PlanCheckoutDialog';
 import { useClientPayments } from '@/hooks/useClientPayments';
 import { Download, CreditCard, DollarSign, FileText, Clock, Search, ArrowRight, Ticket, AlertCircle, CheckCircle2, XCircle, ReceiptText, Calendar, User, Tag, Video, MessageSquare, Monitor, PlayCircle, Receipt, Building2, Printer } from 'lucide-react';
@@ -13,19 +13,13 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { generateInvoicePdf } from '@/lib/invoicePdf';
 import { generateReceiptPdf } from '@/lib/receiptPdf';
-import { PaymentStatusTimeline } from '@/components/invoice/PaymentStatusTimeline';
-import { PayInvoiceCard } from '@/components/invoice/PayInvoiceCard';
 import { PaymobReturnHandler } from '@/components/invoice/PaymobReturnHandler';
-import { InvoiceDisputeSection } from '@/components/invoice/InvoiceDisputeSection';
 import { InvoiceDueCalendar } from '@/components/invoice/InvoiceDueCalendar';
 import { ConvertedAmount } from '@/components/currency/ConvertedAmount';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
 import { useCurrency, formatMoney } from '@/contexts/CurrencyContext';
-import PriceBreakdown from '@/components/pricing/PriceBreakdown';
 import { usePricingTerms } from '@/hooks/usePricingTerms';
-import { paymentBreakdown } from '@/lib/pricing';
 import BusinessInvoiceCard from '@/components/invoice/BusinessInvoiceCard';
-import InvoiceBusinessSection from '@/components/invoice/InvoiceBusinessSection';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   completed: { label: 'Paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
@@ -250,141 +244,19 @@ const [tab, setTab] = useState('all');
         </CardContent>
       </Card>
 
-      {/* Detail Dialog */}
-      <Dialog open={!!selectedPayment} onOpenChange={() => setSelectedPayment(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ReceiptText className="w-5 h-5 text-primary" />
-              {selectedPayment?.invoice}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedPayment && (
-            <div className="space-y-4">
-              {/* Status */}
-              <div className="flex items-center gap-2">
-                {(() => {
-                  const sc = statusConfig[selectedPayment.status] || statusConfig.pending;
-                  const Icon = sc.icon;
-                  return <Badge className={`gap-1 ${sc.color}`}><Icon className="w-3.5 h-3.5" /> {sc.label}</Badge>;
-                })()}
-                <ConvertedAmount amount={Number(selectedPayment.amount)} currency={selectedPayment.currency} className="ml-auto items-end text-lg font-bold text-foreground" />
-              </div>
-
-              {/* Details Grid */}
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <DetailRow label="Consultant" value={selectedPayment.consultant} icon={User} />
-                <DetailRow label="Date" value={selectedPayment.date} icon={Calendar} />
-                <DetailRow label="Currency" value={selectedPayment.currency} icon={DollarSign} />
-                <DetailRow label="VAT" value={formatCurrency(Number(selectedPayment.vat || 0), selectedPayment.currency)} icon={FileText} />
-                {selectedPayment.payment_method && selectedPayment.status !== 'pending' && (
-                  <DetailRow label="Method" value={selectedPayment.payment_method} icon={CreditCard} />
-                )}
-                {selectedPayment.due_date && (
-                  <DetailRow label="Due Date" value={format(new Date(selectedPayment.due_date), 'MMM d, yyyy')} icon={Calendar} />
-                )}
-              </div>
-
-              {/* Description */}
-              {selectedPayment.description && (
-                <div className="rounded-lg bg-muted/30 p-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Description</p>
-                  <p className="text-sm text-foreground">{selectedPayment.description}</p>
-                </div>
-              )}
-
-              {/* Linked Session */}
-              {selectedPayment.session_id && (
-                <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 p-3">
-                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase mb-1 flex items-center gap-1">
-                    <SessionTypeIcon type={selectedPayment.session_type} className="w-3 h-3" /> Linked Session
-                  </p>
-                  <p className="text-sm font-medium text-foreground capitalize">
-                    {(selectedPayment.session_type || 'session').toString().replace(/_/g, ' ')} session
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-1 text-[11px] text-muted-foreground">
-                    {selectedPayment.session_status && (
-                      <Badge variant="outline" className="text-[10px] capitalize">{selectedPayment.session_status}</Badge>
-                    )}
-                    {selectedPayment.session_scheduled_at && (
-                      <span>{format(new Date(selectedPayment.session_scheduled_at), 'MMM d, yyyy h:mm a')}</span>
-                    )}
-                    {selectedPayment.session_duration_minutes ? (
-                      <span>· {selectedPayment.session_duration_minutes} min</span>
-                    ) : null}
-                  </div>
-                  <Link to={`/client/sessions/${selectedPayment.session_id}`} className="inline-flex items-center gap-1 text-xs text-blue-700 dark:text-blue-400 mt-2 hover:underline">
-                    View Session <ArrowRight className="w-3 h-3" />
-                  </Link>
-                </div>
-              )}
-
-              {/* Linked Ticket */}
-              {selectedPayment.ticket_id && (
-                <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
-                  <p className="text-xs font-semibold text-primary uppercase mb-1 flex items-center gap-1">
-                    <Ticket className="w-3 h-3" /> Linked Ticket
-                  </p>
-                  <p className="text-sm font-medium text-foreground">{selectedPayment.ticket_title}</p>
-                  <div className="flex gap-1.5 mt-1">
-                    {selectedPayment.ticket_sap_module && <Badge variant="secondary" className="text-[10px]">{selectedPayment.ticket_sap_module}</Badge>}
-                    {selectedPayment.ticket_urgency && <Badge variant="outline" className="text-[10px]">{selectedPayment.ticket_urgency}</Badge>}
-                  </div>
-                  <Link to={`/client/tickets/${selectedPayment.ticket_id}`} className="inline-flex items-center gap-1 text-xs text-primary mt-2 hover:underline">
-                    View Ticket <ArrowRight className="w-3 h-3" />
-                  </Link>
-                </div>
-              )}
-
-              {(() => {
-                const breakdown = paymentBreakdown(selectedPayment);
-                return breakdown && <PriceBreakdown breakdown={breakdown} currency={selectedPayment.currency} />;
-              })()}
-
-<InvoiceBusinessSection payment={selectedPayment} onEditDetails={() => { setSelectedPayment(null); setBillingOpen(true); }} />
-
-              <PayInvoiceCard key={selectedPayment.id} payment={selectedPayment} />
-
-              <PaymentStatusTimeline payment={selectedPayment} />
-
-              <InvoiceDisputeSection payment={selectedPayment} />
-
-              {/* Actions */}
-              <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={() => generateInvoicePdf(selectedPayment)}>
-                  <Download className="w-4 h-4" /> Download Invoice
-                </Button>
-                {(selectedPayment.status === 'completed' || selectedPayment.status === 'paid') && (
-                  <Button
-                    variant="outline"
-                    className="flex-1 gap-1.5 border-green-500/40 text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/30"
-                    size="sm"
-                    onClick={() => generateReceiptPdf({
-                      ...selectedPayment,
-                      paid_at: selectedPayment.paid_at || selectedPayment.updated_at || selectedPayment.date,
-                      transaction_id: selectedPayment.transaction_id || selectedPayment.id,
-                    })}
-                  >
-                    <Receipt className="w-4 h-4" /> Download Receipt
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
-function DetailRow({ label, value, icon: Icon }: { label: string; value: string; icon: any }) {
-  return (
-    <div className="flex items-center gap-2">
-      <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-      <div>
-        <p className="text-[10px] text-muted-foreground uppercase">{label}</p>
-        <p className="text-sm font-medium text-foreground">{value}</p>
-      </div>
+      {selectedPayment && (
+        <InvoiceDetailsDialog key={selectedPayment.id} payment={selectedPayment}
+          status={statusConfig[selectedPayment.status] || statusConfig.pending}
+          onClose={() => setSelectedPayment(null)}
+          onEditDetails={() => { setSelectedPayment(null); setBillingOpen(true); }}
+          onDownload={() => generateInvoicePdf(selectedPayment)}
+          billedActions={(selectedPayment.status === 'completed' || selectedPayment.status === 'paid') ? (
+            <Button variant="outline" size="sm" className="mt-2" onClick={() => generateReceiptPdf({ ...selectedPayment, paid_at: selectedPayment.paid_at || selectedPayment.updated_at || selectedPayment.date, transaction_id: selectedPayment.transaction_id || selectedPayment.id })}>
+              <Receipt className="h-4 w-4" /> Download Receipt
+            </Button>
+          ) : null}
+        />
+      )}
     </div>
   );
 }
