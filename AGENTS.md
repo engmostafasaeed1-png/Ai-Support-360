@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Keep timesheet PDF and CSV row models in the shared timesheet document helpers, using existing screen amounts and approval metadata; this prevents export totals and statuses from diverging.
+
 - Keep consultant credibility calculations and star fills in the shared consultant credibility library, reused by profile and directory displays, so scores and ratings stay consistent.
 
 - Use shared CDN logo pointers for brand artwork and local derived browser icons so all logo placements stay consistent.

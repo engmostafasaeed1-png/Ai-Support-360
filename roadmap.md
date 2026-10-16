@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Redesign timesheet PDF/CSV tables; test data helpers and inspect 25-entry and single-entry PDFs.
+
 - [x] Redesign the client-facing consultant profile header with shared credibility/avatar and rating displays; verify the header and Reviews action.
 
 - [x] Align all legal policies with current hourly pricing and verify all seven policy pages.

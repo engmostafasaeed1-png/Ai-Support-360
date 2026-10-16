@@ -82,11 +82,13 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
-        .select('consultant_id, planned_hours, planned_cost, cost_currency, plan_approved_at')
+        .select('consultant_id, client_id, planned_hours, planned_cost, cost_currency, plan_approved_at')
         .eq('id', ticketId)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      if (!data) return null;
+      const { data: client } = await supabase.from('client_profiles').select('company_name').eq('user_id', data.client_id).maybeSingle();
+      return { ...data, clientName: client?.company_name ?? undefined };
     },
   });
 
@@ -266,6 +268,7 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
       await downloadTimesheetPdf({
         ticketTitle,
         ticketId,
+        clientName: ticket?.clientName,
         currency,
         vatPercent,
         serviceFeePercent: pricingTerms?.serviceFeePercent,
@@ -276,6 +279,19 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
         }),
         rows: exportRows(),
         totals,
+        // The screen groups by submission, not by day; do not introduce day subtotals here.
+        groupByDay: false,
+        approvals: submissions.map(s => ({
+          number: s.id,
+          status: s.status,
+          submittedBy: byUser[s.submitted_by] ?? 'Consultant',
+          submittedAt: s.submitted_at,
+          approvedBy: s.signed_by_name,
+          approvedAt: s.signed_at,
+          comments: s.status === 'changes_requested'
+            ? comments.filter(c => c.submission_id === s.id && c.author_role === 'client' && c.kind === 'change_request').map(c => c.body)
+            : [],
+        })),
         timesheets: submissions.map(s => {
           const who = byUser[s.submitted_by] ?? 'Consultant';
           const approved = s.status === 'signed' && s.signed_by_name ? ` - approved by ${s.signed_by_name}${s.signed_at ? ` on ${format(new Date(s.signed_at), 'MMM d, yyyy')}` : ''}` : '';
@@ -359,10 +375,10 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onSelect={() => void exportPdf()}>
-                  <Download className="me-2 h-3.5 w-3.5" /> PDF file
+                  <Download className="me-2 h-3.5 w-3.5" /> Download PDF
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={exportCsv}>
-                  <FileText className="me-2 h-3.5 w-3.5" /> CSV file (opens in Excel)
+                  <FileText className="me-2 h-3.5 w-3.5" /> Download CSV
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
