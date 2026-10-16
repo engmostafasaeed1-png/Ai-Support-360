@@ -30,7 +30,7 @@ describe('buildCsv', () => {
     const csv = buildCsv([row(), row({ billable: false, rate: null, amount: 0, description: 'Training, internal', timesheet: 'Not sent yet' })]);
     const lines = csv.split('\n');
     expect(lines[0]).toBe('#,Date,Activity / description,Start,End,Hours,Amount,Status');
-    expect(csv).toContain("1,2026-10-02,\"Analysed the posting error\nAnalysis | Mostaf Test | Billable | Rate: 50.00 USD\",'-,('PLACEHOLDER')");
+    expect(csv).toContain("1,2026-10-02,\"Analysed the posting error\nAnalysis | Mostaf Test | Billable | Rate: 50.00 USD\",'-,'-,1.50,75.00,Approved");
     expect(csv).toContain('Analysis | Mostaf Test | Not billable | Rate: pending USD');
     expect(csv).toContain(',,TOTAL,,,3.00,75.00,');
   });
@@ -42,7 +42,7 @@ describe('buildCsv', () => {
 describe('downloadText', () => {
   it('adds the UTF-8 BOM and retains the object URL until after the download', async () => {
     vi.useFakeTimers();
-    const create = vi.fn(() => 'blob:timesheet');
+    const create = vi.fn((_blob: Blob | MediaSource) => 'blob:timesheet');
     const revoke = vi.fn();
     const oldCreate = URL.createObjectURL;
     const oldRevoke = URL.revokeObjectURL;
