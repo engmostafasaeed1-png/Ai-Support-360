@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Clock } from 'lucide-react';
 
 const state = vi.hoisted(() => ({ admin: false, disputes: false, confirm: vi.fn(), report: vi.fn() }));
+vi.mock('react-i18next', () => ({ useTranslation: () => ({ i18n: { dir: () => 'ltr' } }) }));
 vi.mock('@/hooks/useIsAdmin', () => ({ useIsAdmin: () => state.admin }));
 vi.mock('@/contexts/GuestModeContext', () => ({ useGuestMode: () => ({ isGuest: false }) }));
 vi.mock('@/hooks/useBilling', () => ({
