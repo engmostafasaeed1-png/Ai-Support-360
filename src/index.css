@@ -18,6 +18,7 @@
 
     --primary: 214 94% 19%;
     --primary-foreground: 0 0% 100%;
+    --primary-shade: 214 94% 14%;
 
     --secondary: 220 30% 94%;
     --secondary-foreground: 218 44% 18%;
@@ -30,6 +31,7 @@
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
+    --destructive-shade: 0 72% 43%;
 
     --success: 152 64% 30%;
     --success-foreground: 0 0% 100%;
@@ -76,6 +78,7 @@
 
     --primary: 226 80% 68%;
     --primary-foreground: 218 50% 8%;
+    --primary-shade: 226 72% 62%;
 
     --secondary: 218 35% 16%;
     --secondary-foreground: 214 32% 92%;
@@ -86,8 +89,9 @@
     --accent: 226 80% 68%;
     --accent-foreground: 218 50% 8%;
 
-    --destructive: 0 68% 56%;
+    --destructive: 0 68% 50%;
     --destructive-foreground: 0 0% 100%;
+    --destructive-shade: 0 70% 43%;
 
     --success: 152 55% 45%;
     --success-foreground: 218 50% 8%;
