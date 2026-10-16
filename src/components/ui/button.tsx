@@ -36,8 +36,8 @@ const buttonVariants = cva(
 const OWN_GRADIENT = /(^|\s)gradient-primary(\s|$)/;
 const VARIANT_GRADIENT = /\b(bg-gradient-to-b|from-\S+|to-\S+-shade)\b/g;
 
-export function getButtonClasses(opts: VariantProps<typeof buttonVariants> & { className?: string }) {
-  const classes = buttonVariants(opts);
+export function getButtonClasses(opts: { variant?: VariantProps<typeof buttonVariants>["variant"]; size?: VariantProps<typeof buttonVariants>["size"]; className?: string }) {
+  const classes = buttonVariants({ variant: opts.variant, size: opts.size, className: opts.className });
   if (opts.className && OWN_GRADIENT.test(opts.className)) {
     return cn(classes.replace(VARIANT_GRADIENT, ""));
   }
