@@ -63,8 +63,8 @@ export function InvoiceDetailsDialog({ payment, onClose, onEditDetails, onDownlo
   return (
     <Dialog open onOpenChange={open => { if (!open) onClose(); }}>
       <DialogContent dir={i18n.dir()} aria-describedby={undefined}
-        className="flex h-[100dvh] max-h-[100dvh] max-w-none flex-col gap-0 overflow-hidden p-0 sm:rounded-none md:h-auto md:max-h-[92dvh] md:max-w-4xl md:rounded-2xl"
-        onOpenAutoFocus={event => { event.preventDefault(); const panel = document.querySelector('[data-invoice-details]'); panel?.querySelector<HTMLButtonElement>('button:last-child')?.focus(); }}
+        className="flex h-[100dvh] max-h-[100dvh] !max-w-none flex-col gap-0 overflow-hidden p-0 sm:rounded-none md:h-auto md:max-h-[92dvh] md:!max-w-4xl md:rounded-2xl"
+        onOpenAutoFocus={event => { event.preventDefault(); const panel = document.querySelector('[data-invoice-details]'); panel?.querySelector<HTMLElement>('[data-invoice-body]')?.focus({ preventScroll: true }); }}
         data-invoice-details>
         <DialogHeader className="shrink-0 border-b border-border px-4 py-3 pe-12 text-start md:px-5 md:pe-14">
           <DialogTitle className="break-words text-base">{payment.invoice}</DialogTitle>
@@ -100,8 +100,8 @@ export function InvoiceDetailsDialog({ payment, onClose, onEditDetails, onDownlo
 
               {/* Linked Session */}
               {payment.session_id && (
-                <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 p-2">
-                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase mb-1 flex items-center gap-1">
+                <div className="rounded-lg bg-primary/5 border border-primary/20 p-2">
+                  <p className="text-xs font-semibold text-primary uppercase mb-1 flex items-center gap-1">
                     <SessionTypeIcon type={payment.session_type} className="w-3 h-3" /> Linked Session
                   </p>
                   <p className="text-sm font-medium text-foreground capitalize">
@@ -118,7 +118,7 @@ export function InvoiceDetailsDialog({ payment, onClose, onEditDetails, onDownlo
                       <span>· {payment.session_duration_minutes} min</span>
                     ) : null}
                   </div>
-                  <Link to={`/client/sessions/${payment.session_id}`} className="inline-flex items-center gap-1 text-xs text-blue-700 dark:text-blue-400 mt-2 hover:underline">
+                  <Link to={`/client/sessions/${payment.session_id}`} className="inline-flex items-center gap-1 text-xs text-primary mt-2 hover:underline">
                     View Session <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
@@ -162,10 +162,12 @@ export function InvoiceDetailsDialog({ payment, onClose, onEditDetails, onDownlo
             </AccordionItem>
             <AccordionItem value="disputes">
               <AccordionTrigger className="py-2 text-xs">Disputes</AccordionTrigger>
-              <AccordionContent forceMount className="data-[state=closed]:hidden">
+              <AccordionContent forceMount>
+                <div hidden={!sections.includes('disputes')}>
                 <InvoiceDisputeSection payment={payment} hideHeading onDisputesLoaded={exists => {
                   if (exists) setSections(current => current.includes('disputes') ? current : [...current, 'disputes']);
                 }} />
+                </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>

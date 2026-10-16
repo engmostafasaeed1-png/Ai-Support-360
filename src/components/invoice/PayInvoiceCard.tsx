@@ -26,13 +26,13 @@ const money = (n: number | string, currency = 'USD') => {
 function CopyRow({ label, value }: { label: string; value?: string }) {
   if (!value) return null;
   return (
-    <div className="flex items-center justify-between gap-3 text-xs py-1.5 border-b border-border/30 last:border-0">
-      <span className="text-muted-foreground shrink-0">{label}</span>
-      <span className="font-mono text-end break-all">{value}</span>
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 text-xs py-1.5 border-b border-border/30 last:border-0">
+      <span className="col-start-1 text-muted-foreground">{label}</span>
+      <span dir="auto" className="col-start-1 min-w-0 font-mono break-words [overflow-wrap:anywhere]">{value}</span>
       <Button variant="ghost" size="icon"
         type="button"
         aria-label={`Copy ${label}`}
-        className="text-muted-foreground hover:text-foreground shrink-0"
+        className="col-start-2 row-start-1 row-span-2 h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
         onClick={() => { navigator.clipboard?.writeText(value); toast.success(`${label} copied`); }}
       >
         <Copy className="w-3.5 h-3.5" />
@@ -217,7 +217,7 @@ export function PayInvoiceCard({ payment, compact = false, actionsContainer, can
                 {reportedBox ?? (
                   canReport ? (compact ? (
                     <Dialog open={reportOpen} onOpenChange={setReportOpen}>
-                      <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-md">
+                      <DialogContent aria-describedby={undefined} className="max-h-[92dvh] overflow-y-auto sm:max-w-md">
                         <DialogHeader><DialogTitle>I have paid</DialogTitle></DialogHeader>
                   <div className="space-y-2 pt-1 border-t border-border/40">
                     <p className="text-xs text-muted-foreground">After you made the transfer, tell us, so that we find it faster.</p>
