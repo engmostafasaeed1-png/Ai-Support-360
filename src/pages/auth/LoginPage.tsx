@@ -470,7 +470,7 @@ export default function LoginPage() {
             )}
             <div className="space-y-1.5">
               <Label htmlFor="email">{t('auth.email')}</Label>
-              <Input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" className="h-11 rounded-xl" />
+              <Input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" className="h-11 rounded-xl hover:-translate-y-0.5" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">{t('auth.password')}</Label>
@@ -491,7 +491,7 @@ export default function LoginPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 rounded-xl"
+                className="h-11 rounded-xl hover:-translate-y-0.5"
                 onClick={() => handleOAuthLogin('google')}
                 disabled={loading || !!oauthLoading}
               >
@@ -510,7 +510,7 @@ export default function LoginPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 rounded-xl"
+                className="h-11 rounded-xl hover:-translate-y-0.5"
                 onClick={() => handleOAuthLogin('apple')}
                 disabled={loading || !!oauthLoading}
               >
@@ -526,7 +526,7 @@ export default function LoginPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 rounded-xl"
+                className="h-11 rounded-xl hover:-translate-y-0.5"
                 onClick={() => handleOAuthLogin('microsoft')}
                 disabled={loading || !!oauthLoading}
               >
@@ -545,7 +545,7 @@ export default function LoginPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 rounded-xl"
+                className="h-11 rounded-xl hover:-translate-y-0.5"
                 onClick={() => handleOAuthLogin('lovable')}
                 disabled={loading || !!oauthLoading}
               >
