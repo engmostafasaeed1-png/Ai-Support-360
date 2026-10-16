@@ -1,6 +1,8 @@
 // The files of a timesheet: the CSV text and the download of a text file.
 // A cell that starts with = + - @ would be run as a formula by a spreadsheet program: a quote is put in front of it.
 
+import { buildDocumentRows, TABLE_COLUMNS } from './timesheetDocument';
+
 export interface ExportRow {
   date: string;
   consultant: string;
@@ -12,6 +14,8 @@ export interface ExportRow {
   currency: string;
   timesheet: string;
   description: string;
+  start?: string;
+  end?: string;
 }
 
 export function csvCell(value: unknown): string {
@@ -21,11 +25,8 @@ export function csvCell(value: unknown): string {
 }
 
 export function buildCsv(rows: ExportRow[]): string {
-  const header = ['Date', 'Consultant', 'Category', 'Hours', 'Billable', 'Rate', 'Amount', 'Currency', 'Timesheet', 'Description'];
-  const lines = rows.map(r =>
-    [r.date, r.consultant, r.category, r.hours, r.billable ? 'Yes' : 'No', r.rate ?? '', r.amount ?? '', r.currency, r.timesheet, r.description].map(csvCell).join(','),
-  );
-  return [header.join(','), ...lines].join('\n');
+  const lines = buildDocumentRows(rows).map(r => r.cells.map(csvCell).join(','));
+  return [TABLE_COLUMNS.join(','), ...lines].join('\n');
 }
 
 /** Starts the download of a text file (with a byte order mark so that a spreadsheet program reads the letters right). */
@@ -35,6 +36,8 @@ export function downloadText(filename: string, text: string, type = 'text/csv'):
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(url);
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
