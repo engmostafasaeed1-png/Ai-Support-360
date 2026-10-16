@@ -41,7 +41,7 @@ describe('buildCsv', () => {
 
 describe('downloadText', () => {
   it('adds the UTF-8 BOM and retains the object URL until after the download', async () => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const create = vi.fn((_blob: Blob | MediaSource) => 'blob:timesheet');
     const revoke = vi.fn();
     const oldCreate = URL.createObjectURL;
@@ -53,11 +53,13 @@ describe('downloadText', () => {
       downloadText('timesheet-test.csv', buildCsv([row({ description: 'إصلاح' })]));
       const blob = create.mock.calls[0]?.[0] as unknown as Blob;
       const reader = new FileReader();
-      const bytes = await new Promise<ArrayBuffer>((resolve, reject) => {
+      const bytesPromise = new Promise<ArrayBuffer>((resolve, reject) => {
         reader.onload = () => { if (reader.result instanceof ArrayBuffer) resolve(reader.result); else reject(new Error('Missing bytes')); };
         reader.onerror = reject;
         reader.readAsArrayBuffer(blob);
       });
+      await vi.advanceTimersByTimeAsync(0);
+      const bytes = await bytesPromise;
       expect([...new Uint8Array(bytes).slice(0, 3)]).toEqual([239, 187, 191]);
       expect(blob.type).toBe('text/csv;charset=utf-8');
       expect(click).toHaveBeenCalledOnce();
