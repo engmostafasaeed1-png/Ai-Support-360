@@ -23,6 +23,14 @@ import {
   getResendCooldownRemaining,
   clearResendCooldown,
 } from '@/lib/verificationStorage';
+import {
+  readOAuthError,
+  isFirstTimeOAuthUser,
+  newUserDestination,
+  readStoredOAuthRole,
+  storeOAuthRole,
+  type FirstRole,
+} from '@/lib/oauthReturn';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
@@ -48,6 +56,46 @@ export default function LoginPage() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendSuccessAt, setResendSuccessAt] = useState<Date | null>(null);
   const [resendSuccessEmail, setResendSuccessEmail] = useState<string | null>(null);
+  const [oauthError, setOauthError] = useState(() => readOAuthError(location.search, location.hash));
+  const [roleChoice, setRoleChoice] = useState(false);
+  const [choosingRole, setChoosingRole] = useState<FirstRole | null>(null);
+
+  // A "Join as consultant" link carries ?role=consultant; remember it across the Google redirect.
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('role') === 'consultant') storeOAuthRole('consultant');
+  }, [location.search]);
+
+  const finishRoleChoice = async (choice: FirstRole) => {
+    setChoosingRole(choice);
+    try {
+      let finalRole: FirstRole = 'client';
+      if (choice === 'consultant') {
+        const { data, error } = await (supabase.rpc as any)('choose_first_oauth_role', { _role: 'consultant' });
+        if (error) throw error;
+        finalRole = data === 'consultant' ? 'consultant' : 'client';
+      }
+      storeOAuthRole(null);
+      sessionStorage.removeItem('oauth_next');
+      navigate(newUserDestination(finalRole), { replace: true });
+    } catch (err) {
+      console.error('Role choice failed:', err);
+      toast.error(t('auth.role_choice_failed', 'Could not save your choice. Please try again.'));
+      setChoosingRole(null);
+    }
+  };
+
+  /** Returns true when a first-time social sign-in was handled (role step shown or applied). */
+  const handleFirstTimeOAuth = async (user: any, role?: string) => {
+    if (!isFirstTimeOAuthUser(user) || (role && role !== 'client')) return false;
+    const preset = readStoredOAuthRole();
+    if (preset) {
+      await finishRoleChoice(preset);
+      return true;
+    }
+    setRoleChoice(true);
+    setChecking(false);
+    return true;
+  };
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -193,6 +241,7 @@ export default function LoginPage() {
 
       try {
         const role = await getRoleAndRepairAccount(session.user);
+        if (await handleFirstTimeOAuth(session.user, role)) return;
 
         const oauthNext = sessionStorage.getItem('oauth_next');
         sessionStorage.removeItem('oauth_next');
@@ -234,6 +283,7 @@ export default function LoginPage() {
     try {
       // Remember the intended destination across the OAuth redirect
       if (from) sessionStorage.setItem('oauth_next', from);
+      setOauthError(null);
       const result = await lovable.auth.signInWithOAuth(provider, {
         redirect_uri: `${window.location.origin}/login`,
       });
@@ -246,6 +296,7 @@ export default function LoginPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const role = await getRoleAndRepairAccount(user);
+        if (await handleFirstTimeOAuth(user, role)) return;
         const next = sessionStorage.getItem('oauth_next');
         sessionStorage.removeItem('oauth_next');
         logAudit('login');
@@ -371,6 +422,30 @@ export default function LoginPage() {
     );
   }
 
+  if (roleChoice) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 relative">
+        <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
+        <Card className="w-full max-w-md relative z-10 shadow-2xl border-border/30 backdrop-blur-sm bg-card/95 animate-fade-in">
+          <CardHeader className="text-center">
+            <h1 className="font-semibold leading-none tracking-tight text-2xl">{t('auth.role_choice_title', 'How will you use AI Support 360?')}</h1>
+            <CardDescription>{t('auth.role_choice_desc', 'Choose once to finish creating your account.')}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            <Button className="h-12" onClick={() => finishRoleChoice('client')} disabled={!!choosingRole}>
+              {choosingRole === 'client' && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
+              {t('auth.role_choice_client', 'I need SAP support (Client)')}
+            </Button>
+            <Button variant="outline" className="h-12" onClick={() => finishRoleChoice('consultant')} disabled={!!choosingRole}>
+              {choosingRole === 'consultant' && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
+              {t('auth.role_choice_consultant', 'I am an SAP consultant (Consultant)')}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative">
       <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
@@ -384,6 +459,15 @@ export default function LoginPage() {
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
+            {oauthError && (
+              <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 space-y-2">
+                <p className="text-sm font-medium text-destructive">{t('auth.oauth_error_title', 'Sign-in did not complete')}</p>
+                <p className="text-xs text-muted-foreground">{oauthError.description}</p>
+                <Button type="button" size="sm" variant="outline" onClick={() => handleOAuthLogin('google')} disabled={!!oauthLoading}>
+                  {t('auth.oauth_try_again', 'Try again')}
+                </Button>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="email">{t('auth.email')}</Label>
               <Input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" className="h-11 rounded-xl" />
@@ -475,6 +559,9 @@ export default function LoginPage() {
                 Lovable
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground text-center">
+              {t('auth.oauth_help', 'If Google sign-in fails, use a normal browser window (not a private window or an in-app browser) or sign up with your e-mail.')}
+            </p>
             <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('auth.forgot_link')}
             </Link>
