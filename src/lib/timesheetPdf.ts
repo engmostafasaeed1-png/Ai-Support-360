@@ -128,10 +128,13 @@ export function renderTimesheetPdf(doc: jsPDF, data: PdfData): jsPDF {
   y += 30;
   if (needsPageBreak(y, 23)) newPage();
   header();
-  buildDocumentRows(data.rows, data.groupByDay).forEach((row, index) => {
+  const documentRows = buildDocumentRows(data.rows, data.groupByDay);
+  documentRows.forEach((row, index) => {
     const cells = row.cells.map((value, i) => lines(value, widths[i] - 2, 3));
     const height = tableRowHeight(cells.map(c => c.length));
-    if (needsPageBreak(y, height)) newPage(true);
+    // Keep the last activity with its total instead of leaving the total on a page by itself.
+    const followingTotal = documentRows[index + 1]?.kind === 'total' ? 8 : 0;
+    if (needsPageBreak(y, height + followingTotal)) newPage(true);
     if (row.kind !== 'entry' || index % 2 === 1) box(14, y, 182, height, row.kind === 'entry' ? PAPER.surface : PAPER.subtotal);
     doc.setDrawColor(PAPER.border); doc.setLineWidth(row.kind === 'total' ? 0.5 : 0.15);
     doc.line(14, row.kind === 'total' ? y : y + height, 196, row.kind === 'total' ? y : y + height);
@@ -150,13 +153,28 @@ export function renderTimesheetPdf(doc: jsPDF, data: PdfData): jsPDF {
   y += fees.length * 6 + 12;
   paragraph(`Hours: ${data.totals.billableHours.toFixed(2)} billable | ${data.totals.nonBillableHours.toFixed(2)} not billable | ${data.totals.pendingRateHours.toFixed(2)} awaiting a rate`);
   if (data.rates.length) { paragraph('APPROVED HOURLY RATES', true); data.rates.forEach(r => paragraph(r)); y += 4; }
+  // Reserve the heading with the first signature block, using measured heights for long names/IDs.
+  const firstApproval = data.approvals?.[0];
+  const approvalLeadHeight = firstApproval
+    ? [
+      `Timesheet no. ${firstApproval.number} | ${exportStatus(firstApproval.status)}`,
+      `Submitted by: ${firstApproval.submittedBy} | ${day(firstApproval.submittedAt)}`,
+      firstApproval.status === 'signed' ? `Approved by: ${firstApproval.approvedBy || '-'} | ${day(firstApproval.approvedAt)}` : 'Waiting for approval',
+    ].reduce((height, value) => height + wrap(value, 178).length * 5, 17)
+    : 25;
+  if (needsPageBreak(y, approvalLeadHeight)) newPage();
   paragraph('APPROVAL', true);
   if (!data.approvals?.length) {
     if (data.timesheets.length) data.timesheets.forEach(value => paragraph(value));
     paragraph('Submitted by: -'); paragraph('Waiting for approval');
   }
   data.approvals?.forEach(approval => {
-    if (needsPageBreak(y, 28)) newPage();
+    const blockHeight = [
+      `Timesheet no. ${approval.number} | ${exportStatus(approval.status)}`,
+      `Submitted by: ${approval.submittedBy} | ${day(approval.submittedAt)}`,
+      approval.status === 'signed' ? `Approved by: ${approval.approvedBy || '-'} | ${day(approval.approvedAt)}` : 'Waiting for approval',
+    ].reduce((height, value) => height + wrap(value, 178).length * 5, 12);
+    if (needsPageBreak(y, blockHeight)) newPage();
     paragraph(`Timesheet no. ${approval.number} | ${exportStatus(approval.status)}`, true);
     paragraph(`Submitted by: ${approval.submittedBy} | ${day(approval.submittedAt)}`);
     paragraph(approval.status === 'signed' ? `Approved by: ${approval.approvedBy || '-'} | ${day(approval.approvedAt)}` : 'Waiting for approval');
