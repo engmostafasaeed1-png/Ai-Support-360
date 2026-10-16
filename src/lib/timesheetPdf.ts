@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import type { jsPDF } from 'jspdf';
 import { formatMoney, type Summary } from './timesheet';
 import type { ExportRow } from './timesheetExport';
-import { ARABIC_TEXT, asciiText, buildDocumentRows, exportStatus, needsPageBreak, TABLE_COLUMNS, tableRowHeight, TIMESHEET_DISCLAIMER, truncateLines } from './timesheetDocument';
+import { ARABIC_TEXT, asciiText, buildDocumentRows, exportStatus, needsPageBreak, tableColumns, tableRowHeight, TIMESHEET_DISCLAIMER, truncateLines } from './timesheetDocument';
 
 export interface ApprovalData {
   number: string;
@@ -32,7 +32,9 @@ export interface PdfData {
 
 // Fixed paper palette: primary navy and semantic light surfaces, independent of screen dark mode.
 const PAPER = { primary: '#032A5E', white: '#FFFFFF', ink: '#142034', muted: '#576171', surface: '#F4F6F9', border: '#DDE2EA', subtotal: '#EAF2FC', approved: '#1B754C', submitted: '#8A5B12', changes: '#A84720' };
-const widths = [7, 21, 66, 12, 12, 14, 23, 27]; // 182 mm; exactly eight columns, A4 portrait
+const columnWidths = (columns: string[]) => columns.includes('Time')
+  ? [7, 21, 66, 24, 14, 23, 27]
+  : [7, 21, 90, 14, 23, 27]; // 182 mm; freed clock width belongs to the description
 const day = (value?: string | null) => value ? value.slice(0, 10) : '-';
 const statusColor = (value: string) => value === 'Approved' ? PAPER.approved : value === 'Submitted' ? PAPER.submitted : value === 'Changes requested' ? PAPER.changes : PAPER.muted;
 const money = (value: number, data: PdfData) => formatMoney(value, data.currency);
@@ -66,6 +68,9 @@ function feeLines(data: PdfData): [string, string][] {
 /** Exposed for document verification without downloading or involving live customer data. */
 export function renderTimesheetPdf(doc: jsPDF, data: PdfData): jsPDF {
   const meta = metadata(data);
+  const columns = tableColumns(data.rows);
+  const widths = columnWidths(columns);
+  const numericColumn = (index: number) => columns[index] === 'Hours' || columns[index] === 'Amount';
   let y = 0;
   const text = (value: string | string[], x: number, top: number, size = 9, color = PAPER.ink, bold = false, align: 'left' | 'right' = 'left') => {
     doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(size); doc.setTextColor(color);
@@ -89,9 +94,9 @@ export function renderTimesheetPdf(doc: jsPDF, data: PdfData): jsPDF {
   const header = () => {
     box(14, y, 182, 11, PAPER.primary);
     let x = 14;
-    TABLE_COLUMNS.forEach((label, i) => {
+    columns.forEach((label, i) => {
       const cell = lines(label, widths[i] - 2, 2, 8);
-      text(cell, i === 5 || i === 6 ? x + widths[i] - 1 : x + 1, y + 4, 8, PAPER.white, true, i === 5 || i === 6 ? 'right' : 'left');
+      text(cell, numericColumn(i) ? x + widths[i] - 1 : x + 1, y + 4, 8, PAPER.white, true, numericColumn(i) ? 'right' : 'left');
       x += widths[i];
     });
     y += 11;
@@ -140,7 +145,7 @@ export function renderTimesheetPdf(doc: jsPDF, data: PdfData): jsPDF {
     doc.line(14, row.kind === 'total' ? y : y + height, 196, row.kind === 'total' ? y : y + height);
     let x = 14;
     cells.forEach((cell, i) => {
-      text(cell, i === 5 || i === 6 ? x + widths[i] - 1 : x + 1, y + 4, 9, i === 7 ? statusColor(row.cells[7]) : PAPER.ink, row.kind !== 'entry', i === 5 || i === 6 ? 'right' : 'left');
+      text(cell, numericColumn(i) ? x + widths[i] - 1 : x + 1, y + 4, 9, columns[i] === 'Status' ? statusColor(row.cells[i]) : PAPER.ink, row.kind !== 'entry', numericColumn(i) ? 'right' : 'left');
       x += widths[i];
     });
     y += height;
@@ -201,11 +206,14 @@ const html = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;
 /** Browser printing preserves Arabic shaping; never pass Arabic to Helvetica. */
 function printArabicTimesheet(data: PdfData, page: Window) {
   const meta = metadata(data);
+  const columns = tableColumns(data.rows);
+  const widths = columnWidths(columns);
+  const numericColumn = (index: number) => columns[index] === 'Hours' || columns[index] === 'Amount';
   const rows = buildDocumentRows(data.rows, data.groupByDay).map(row => `<tr class="${row.kind}">${row.cells.map(cell => `<td><bdi>${html(cell).replace(/\n/g, '<br>')}</bdi></td>`).join('')}</tr>`).join('');
   const approvals = data.approvals?.map(a => `<section><h3>Timesheet no. <bdi>${html(a.number)}</bdi> - ${exportStatus(a.status)}</h3><p>Submitted by: <bdi>${html(a.submittedBy)}</bdi> - ${day(a.submittedAt)}</p><p>${a.status === 'signed' ? `Approved by: <bdi>${html(a.approvedBy || '-')}</bdi> - ${day(a.approvedAt)}` : 'Waiting for approval'}</p>${a.comments.map(c => `<p>Client comment: <bdi>${html(c)}</bdi></p>`).join('')}<hr></section>`).join('') || '<section><p>Submitted by: -</p><p>Waiting for approval</p><hr></section>';
   page.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>timesheet-${html(data.ticketId.slice(0, 8))}</title><style>
-    @page{size:A4 portrait;margin:14mm}*{box-sizing:border-box}body{font:9pt Tahoma,Arial,sans-serif;color:${PAPER.ink};margin:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}header{background:${PAPER.primary};color:${PAPER.white};padding:10px;display:flex;justify-content:space-between;align-items:center}h1{font-size:18pt;margin:0}h3{font-size:9pt}.info,.cards{display:grid;gap:8px;margin:12px 0}.info{grid-template-columns:1fr 1fr;background:${PAPER.surface};padding:10px}.cards{grid-template-columns:repeat(4,1fr)}.cards div{background:${PAPER.surface};padding:8px}.cards strong{display:block;font-size:14pt;margin-top:5px}table{width:100%;border-collapse:collapse;table-layout:fixed}thead{display:table-header-group}th{background:${PAPER.primary};color:${PAPER.white}}th,td{padding:1mm;border-bottom:1px solid ${PAPER.border};vertical-align:top;overflow-wrap:anywhere}tr,section{break-inside:avoid}tr:nth-child(even){background:${PAPER.surface}}tr.total,tr.subtotal{background:${PAPER.subtotal};font-weight:bold}td:nth-child(6),td:nth-child(7){text-align:right}.fees{background:${PAPER.surface};padding:8px;margin:12px 0}.fees p{display:flex;justify-content:space-between}footer{font-size:7pt;color:${PAPER.muted};margin-top:12px}@media print{footer{position:fixed;bottom:-10mm}}
-    </style></head><body><header><h1>Timesheet</h1><strong>AI Support 360</strong></header><div class="info"><div><p>Consultant: <bdi>${html(meta.consultant)}</bdi></p><p>Client: <bdi>${html(data.clientName || '-')}</bdi></p><p>Request: <bdi>${html(data.ticketTitle)} | ${html(data.ticketId)}</bdi></p></div><div><p>Period: ${meta.period}</p><p>Status: ${meta.status}</p><p>Hourly rate: ${meta.rate}</p><p>Document date: ${meta.date}</p>${meta.number ? `<p>Timesheet no. ${html(meta.number)}</p>` : ''}</div></div><div class="cards">${[['Total hours', data.totals.totalHours.toFixed(2)], ['Entries', String(data.rows.length)], ['Hourly rate', meta.rate], ['Amount', money(data.totals.subtotal, data)]].map(([k,v]) => `<div>${k}<strong>${html(v)}</strong></div>`).join('')}</div><table><colgroup>${widths.map(w => `<col style="width:${w / 182 * 100}%">`).join('')}</colgroup><thead><tr>${TABLE_COLUMNS.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table><div class="fees">${feeLines(data).map(([k,v]) => `<p><span>${html(k)}</span><strong>${html(v)}</strong></p>`).join('')}</div><p>Hours: ${data.totals.billableHours.toFixed(2)} billable | ${data.totals.nonBillableHours.toFixed(2)} not billable | ${data.totals.pendingRateHours.toFixed(2)} awaiting a rate</p>${data.rates.map(r => `<p><bdi>${html(r)}</bdi></p>`).join('')}<h3>Approval</h3>${approvals}${data.timesheets.map(value => `<p><bdi>${html(value)}</bdi></p>`).join('')}<footer>${meta.date} | ${TIMESHEET_DISCLAIMER}</footer></body></html>`);
+    @page{size:A4 portrait;margin:14mm}*{box-sizing:border-box}body{font:9pt Tahoma,Arial,sans-serif;color:${PAPER.ink};margin:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}header{background:${PAPER.primary};color:${PAPER.white};padding:10px;display:flex;justify-content:space-between;align-items:center}h1{font-size:18pt;margin:0}h3{font-size:9pt}.info,.cards{display:grid;gap:8px;margin:12px 0}.info{grid-template-columns:1fr 1fr;background:${PAPER.surface};padding:10px}.cards{grid-template-columns:repeat(4,1fr)}.cards div{background:${PAPER.surface};padding:8px}.cards strong{display:block;font-size:14pt;margin-top:5px}table{width:100%;border-collapse:collapse;table-layout:fixed}thead{display:table-header-group}th{background:${PAPER.primary};color:${PAPER.white}}th,td{padding:1mm;border-bottom:1px solid ${PAPER.border};vertical-align:top;overflow-wrap:anywhere}tr,section{break-inside:avoid}tr:nth-child(even){background:${PAPER.surface}}tr.total,tr.subtotal{background:${PAPER.subtotal};font-weight:bold}${columns.map((_, index) => numericColumn(index) ? `td:nth-child(${index + 1}),th:nth-child(${index + 1})` : '').filter(Boolean).join(',')}{text-align:right}.fees{background:${PAPER.surface};padding:8px;margin:12px 0}.fees p{display:flex;justify-content:space-between}footer{font-size:7pt;color:${PAPER.muted};margin-top:12px}@media print{footer{position:fixed;bottom:-10mm}}
+    </style></head><body><header><h1>Timesheet</h1><strong>AI Support 360</strong></header><div class="info"><div><p>Consultant: <bdi>${html(meta.consultant)}</bdi></p><p>Client: <bdi>${html(data.clientName || '-')}</bdi></p><p>Request: <bdi>${html(data.ticketTitle)} | ${html(data.ticketId)}</bdi></p></div><div><p>Period: ${meta.period}</p><p>Status: ${meta.status}</p><p>Hourly rate: ${meta.rate}</p><p>Document date: ${meta.date}</p>${meta.number ? `<p>Timesheet no. ${html(meta.number)}</p>` : ''}</div></div><div class="cards">${[['Total hours', data.totals.totalHours.toFixed(2)], ['Entries', String(data.rows.length)], ['Hourly rate', meta.rate], ['Amount', money(data.totals.subtotal, data)]].map(([k,v]) => `<div>${k}<strong>${html(v)}</strong></div>`).join('')}</div><table><colgroup>${widths.map(w => `<col style="width:${w / 182 * 100}%">`).join('')}</colgroup><thead><tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table><div class="fees">${feeLines(data).map(([k,v]) => `<p><span>${html(k)}</span><strong>${html(v)}</strong></p>`).join('')}</div><p>Hours: ${data.totals.billableHours.toFixed(2)} billable | ${data.totals.nonBillableHours.toFixed(2)} not billable | ${data.totals.pendingRateHours.toFixed(2)} awaiting a rate</p>${data.rates.map(r => `<p><bdi>${html(r)}</bdi></p>`).join('')}<h3>Approval</h3>${approvals}${data.timesheets.map(value => `<p><bdi>${html(value)}</bdi></p>`).join('')}<footer>${meta.date} | ${TIMESHEET_DISCLAIMER}</footer></body></html>`);
   page.document.close(); page.focus(); setTimeout(() => page.print(), 300);
 }
 
