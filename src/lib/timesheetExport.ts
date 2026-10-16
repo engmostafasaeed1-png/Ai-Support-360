@@ -1,7 +1,7 @@
 // The files of a timesheet: the CSV text and the download of a text file.
 // A cell that starts with = + - @ would be run as a formula by a spreadsheet program: a quote is put in front of it.
 
-import { buildDocumentRows, TABLE_COLUMNS } from './timesheetDocument';
+import { buildDocumentRows, tableColumns } from './timesheetDocument';
 
 export interface ExportRow {
   date: string;
@@ -26,7 +26,7 @@ export function csvCell(value: unknown): string {
 
 export function buildCsv(rows: ExportRow[]): string {
   const lines = buildDocumentRows(rows).map(r => r.cells.map(csvCell).join(','));
-  return [TABLE_COLUMNS.join(','), ...lines].join('\n');
+  return [tableColumns(rows).join(','), ...lines].join('\n');
 }
 
 /** Starts the download of a text file (with a byte order mark so that a spreadsheet program reads the letters right). */
