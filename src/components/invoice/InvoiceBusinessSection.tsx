@@ -25,12 +25,13 @@ type PaymentLike = {
 
 interface Props {
   payment: PaymentLike;
+  hideHeading?: boolean;
   /** Opens the dialog where the business details of the company are entered (on the Payments page). */
   onEditDetails: () => void;
 }
 
 /** In the details of an invoice: who it is billed to, the link to the printable invoice, and the button that re-issues it with the business details. */
-export default function InvoiceBusinessSection({ payment, onEditDetails }: Props) {
+export default function InvoiceBusinessSection({ payment, onEditDetails, hideHeading = false }: Props) {
   const { tenant, isOwnerOrAdmin } = useTenant();
   const detailsQ = useTenantBillingDetails(tenant?.id);
   const reissue = useReissueInvoice();
@@ -68,9 +69,9 @@ export default function InvoiceBusinessSection({ payment, onEditDetails }: Props
 
   return (
     <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
-      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
+      {!hideHeading && <p className="flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
         <Building2 aria-hidden="true" className="h-3 w-3" /> Billed to
-      </p>
+      </p>}
       {buyer ? (
         <div className="space-y-0.5 text-sm">
           <p dir="auto" className="font-medium text-foreground">{buyer.business_name}</p>

@@ -395,11 +395,11 @@ function useBillingAction<V>(run: (v: V) => Promise<unknown>, okMessage: string,
   });
 }
 
-export const useConfirmPayment = () =>
+export const useConfirmPayment = (successMessage = 'Payment confirmed. The consultant payout was created.') =>
   useBillingAction(
     (v: { id: string; bankReference: string; received?: number }) =>
       rpc('admin_confirm_payment', { _payment_id: v.id, _bank_reference: v.bankReference, _received_amount: v.received ?? null, _note: null }),
-    'Payment confirmed. The consultant payout was created.',
+    successMessage,
     'Could not confirm the payment',
   );
 

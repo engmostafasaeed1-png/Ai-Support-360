@@ -38,6 +38,8 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }>
 
 interface Props {
   payment: any;
+  hideHeading?: boolean;
+  onDisputesLoaded?: (hasDisputes: boolean) => void;
 }
 
 interface Dispute {
@@ -55,7 +57,7 @@ interface Dispute {
   updated_at: string;
 }
 
-export function InvoiceDisputeSection({ payment }: Props) {
+export function InvoiceDisputeSection({ payment, hideHeading = false, onDisputesLoaded }: Props) {
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -70,7 +72,10 @@ export function InvoiceDisputeSection({ payment }: Props) {
       .select('*')
       .eq('payment_id', payment.id)
       .order('created_at', { ascending: false });
-    if (!error && data) setDisputes(data as Dispute[]);
+    if (!error && data) {
+      setDisputes(data as Dispute[]);
+      onDisputesLoaded?.(data.length > 0);
+    }
     setLoading(false);
   };
 
@@ -151,7 +156,7 @@ export function InvoiceDisputeSection({ payment }: Props) {
     <div className="rounded-lg border border-border/60 p-3 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-foreground uppercase flex items-center gap-1.5">
-          <ShieldAlert className="w-3.5 h-3.5 text-orange-500" /> Disputes
+          {!hideHeading && <><ShieldAlert className="w-3.5 h-3.5 text-orange-500" /> Disputes</>}
           {disputes.length > 0 && (
             <Badge variant="secondary" className="text-[10px]">{disputes.length}</Badge>
           )}

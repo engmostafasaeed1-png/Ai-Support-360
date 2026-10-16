@@ -133,15 +133,15 @@ function buildEvents(p: PaymentTimelineRecord): TimelineEvent[] {
   return events;
 }
 
-export function PaymentStatusTimeline({ payment, className }: { payment: PaymentTimelineRecord; className?: string }) {
+export function PaymentStatusTimeline({ payment, className, hideHeading = false }: { payment: PaymentTimelineRecord; className?: string; hideHeading?: boolean }) {
   const events = buildEvents(payment);
 
   return (
     <div className={cn('rounded-lg border bg-card p-4', className)}>
-      <div className="flex items-center gap-2 mb-4">
+      {!hideHeading && <div className="flex items-center gap-2 mb-4">
         <AlertCircle className="w-4 h-4 text-primary" />
         <h4 className="text-sm font-semibold text-foreground">Payment Timeline</h4>
-      </div>
+      </div>}
       <ol className="relative space-y-4">
         {events.map((ev, idx) => {
           const Icon = ev.icon;
@@ -154,7 +154,7 @@ export function PaymentStatusTimeline({ payment, className }: { payment: Payment
                 <span
                   aria-hidden
                   className={cn(
-                    'absolute left-[15px] top-8 bottom-[-16px] w-px',
+                    'absolute start-[15px] top-8 bottom-[-16px] w-px',
                     dimmed ? 'bg-border' : 'bg-border'
                   )}
                 />
