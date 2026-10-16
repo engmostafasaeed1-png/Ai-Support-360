@@ -29,11 +29,12 @@ describe('buildCsv', () => {
   it('writes the header and one line per entry', () => {
     const csv = buildCsv([row(), row({ billable: false, rate: null, amount: 0, description: 'Training, internal', timesheet: 'Not sent yet' })]);
     const lines = csv.split('\n');
-    expect(lines[0]).toBe('Date,Consultant,Category,Hours,Billable,Rate,Amount,Currency,Timesheet,Description');
-    expect(lines[1]).toBe('2026-10-02,Mostaf Test,Analysis,1.5,Yes,50,75,USD,Approved,Analysed the posting error');
-    expect(lines[2]).toBe('2026-10-02,Mostaf Test,Analysis,1.5,No,,0,USD,Not sent yet,"Training, internal"');
+    expect(lines[0]).toBe('#,Date,Activity / description,Start,End,Hours,Amount,Status');
+    expect(csv).toContain('1,2026-10-02,"Analysed the posting error\nAnalysis | Mostaf Test | Billable | Rate: 50.00 USD",-,-,1.50,75.00,Approved');
+    expect(csv).toContain('2,2026-10-02,"Training, internal\nAnalysis | Mostaf Test | Not billable | Rate: pending USD",-,-,1.50,0.00,Draft');
+    expect(csv).toContain(',,TOTAL,,,3.00,75.00,');
   });
-  it('writes only the header for no entries', () => {
-    expect(buildCsv([]).split('\n')).toHaveLength(1);
+  it('writes zero totals for no entries', () => {
+    expect(buildCsv([]).split('\n')[1]).toBe(',,TOTAL,,,0.00,0.00,');
   });
 });
