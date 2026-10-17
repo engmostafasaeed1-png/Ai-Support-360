@@ -211,11 +211,11 @@ export default function ConsultantDashboard() {
   return (
     <PullToRefresh>
     <div className="space-y-6">
+      <PayoutDetailsNudge />
       <CriticalDashboardNotice />
       <WelcomeBanner />
       <EmailVerificationBanner />
       <OnboardingProgressCard role="consultant" />
-      <PayoutDetailsNudge />
       <GettingStartedCard />
 
       {liveData?.consultant && profile.verification_status && profile.verification_status !== 'verified' && (

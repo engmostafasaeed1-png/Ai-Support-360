@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Add payout readiness banners and administrator badges; payout details already belongs to the seven-item checklist. Full unit suite: 1,512 passed; automatic TypeScript/build clean.
+- [ ] Daily assignment/accepted-bid payout reminder: blocked by service-only safe_insert_notification and absent server-side daily dedupe; requires database changes not authorized by this frontend-only request.
+
 - [x] Fix consultant landing head tags and identical pricing duplication; 1,477 tests passed, automatic TypeScript/build check clean, preview tags and navigation cleanup verified.
 
 - [x] Apply exact M69 SQL and add administrator full-profile sheet and entry points; timed masking, empty/full records, error/deep-link tests passed. Verified real profile at desktop/mobile and audit row; TypeScript clean, 1,458 tests passed.

@@ -18,6 +18,7 @@ import { format, parseISO } from 'date-fns';
 import { deadlineSummary, payoutDeadline, type DeadlineTone } from '@/lib/payoutDeadline';
 import ShareMenu from '@/components/ShareMenu';
 import PayoutDetailsCard from '@/components/consultant/PayoutDetailsCard';
+import PayoutDetailsNudge from '@/components/consultant/PayoutDetailsNudge';
 
 const paymentStatusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   completed: 'default',
@@ -158,6 +159,7 @@ export default function ConsultantEarningsPage() {
 
   return (
     <div className="space-y-6">
+      <PayoutDetailsNudge />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{t('earnings.title')}</h1>
