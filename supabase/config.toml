@@ -49,3 +49,5 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = true
   [functions.admin-send-invitation]
     verify_jwt = true
+  [functions.payout-approved-notify]
+    verify_jwt = false

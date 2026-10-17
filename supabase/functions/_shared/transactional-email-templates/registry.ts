@@ -20,8 +20,10 @@ import { template as interviewResponse } from './interview-response.tsx'
 import { template as platformInvitation } from './platform-invitation.tsx'
 import { template as criticalRequestAlert } from './critical-request-alert.tsx'
 import { template as verificationItems } from './verification-items.tsx'
+import { template as payoutApproved } from './payout-approved.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
+  'payout-approved': payoutApproved,
   'demo-request-received': demoRequestReceived,
   'demo-request-alert': demoRequestAlert,
   'contact-message-received': contactMessageReceived,
