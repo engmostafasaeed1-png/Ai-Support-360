@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import { readFileSync } from 'node:fs';
@@ -52,26 +51,25 @@ describe('ForConsultantsPage', () => {
     expect(screen.getByText('VAT (15 %)').parentElement).toHaveTextContent('69.00 USD');
   });
 
-  it('validates the calculator inputs', async () => {
-    const user = userEvent.setup();
+  it('validates the calculator inputs', () => {
     renderPage();
     const rate = screen.getByLabelText('Your hourly rate (USD)');
-    await user.clear(rate);
-    await user.type(rate, '0');
+    fireEvent.change(rate, { target: { value: '0' } });
     expect(screen.getByText('Enter a rate between 1 and 1000.')).toBeInTheDocument();
     expect(screen.getByText('Fix the inputs to see the result.')).toBeInTheDocument();
   });
 
-  it('opens and closes FAQ items with the keyboard, first item closed', async () => {
-    const user = userEvent.setup();
+  it('opens and closes FAQ items with the keyboard, first item closed', () => {
     renderPage();
     const first = screen.getByRole('button', { name: 'Who can apply?' });
     expect(first).toHaveAttribute('aria-expanded', 'false');
     first.focus();
-    await user.keyboard('{Enter}');
+    fireEvent.keyDown(first, { key: 'Enter' });
+    fireEvent.click(first);
     expect(first).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByText(/SAP consultants who complete their profile/)).toBeVisible();
-    await user.keyboard('{Enter}');
+    fireEvent.keyDown(first, { key: 'Enter' });
+    fireEvent.click(first);
     expect(first).toHaveAttribute('aria-expanded', 'false');
   });
 
