@@ -31,3 +31,4 @@
 - [x] Implement M64-B3 client bidding screens and run requested checks.
 - [x] Show and verify registration guides, welcome checklist and remembered completion in the embedded consultant profile only.
 - [x] Move hero platform badge below subtitle and add top clearance for fixed navbar.
+- [x] Consultant sidebar link to the public /for-consultants landing page, opened in a new tab (Oct 17)
