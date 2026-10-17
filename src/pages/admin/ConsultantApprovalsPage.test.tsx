@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 
 // A small fake of the database: every table answers with the rows that the test put in it, and every update is written down.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -37,6 +38,7 @@ vi.mock('@/components/consultant/ReinterviewDialog', () => ({ default: () => nul
 vi.mock('@/components/admin/ScheduleLiveInterviewDialog', () => ({ default: () => null }));
 vi.mock('@/components/consultant/InterviewHistory', () => ({ default: () => null }));
 vi.mock('@/components/admin/ConsultantVerificationAuditLog', () => ({ default: () => null }));
+vi.mock('@/components/admin/ConsultantFullProfileSheet', () => ({ default: ({ consultantId }: { consultantId: string | null }) => consultantId ? <div data-testid="full-profile-sheet">{consultantId}</div> : null }));
 
 import { toast } from 'sonner';
 import ConsultantApprovalsPage from './ConsultantApprovalsPage';
@@ -65,11 +67,11 @@ const row = (id: string, userId: string, status: string, patch: Record<string, u
   ...patch,
 });
 
-function show() {
+function show(url = '/admin/approvals') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
-      <ConsultantApprovalsPage />
+      <MemoryRouter initialEntries={[url]}><ConsultantApprovalsPage /></MemoryRouter>
     </QueryClientProvider>,
   );
 }
@@ -85,6 +87,15 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe('ConsultantApprovalsPage', () => {
+  it('opens the consultant deep link independently of status filters', () => {
+    show('/admin/approvals?consultant=c2&filter=verified');
+    expect(screen.getByTestId('full-profile-sheet')).toHaveTextContent('c2');
+  });
+  it('opens the profile from a consultant card', async () => {
+    show(); await screen.findByText('Jane Doe');
+    fireEvent.click(screen.getAllByRole('button', { name: 'View full profile' })[0]);
+    expect(screen.getByTestId('full-profile-sheet')).toHaveTextContent('c1');
+  });
   it('shows the groups of consultants with the number in each', async () => {
     show();
     await screen.findByText('Jane Doe');

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import ConsultantFullProfileSheet from '@/components/admin/ConsultantFullProfileSheet';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,6 +33,13 @@ import {
 } from '@/lib/consultantReview';
 
 export default function ConsultantApprovalsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [fullProfileId, setFullProfileId] = useState<string | null>(null);
+  const linkedConsultant = searchParams.get('consultant');
+  const closeProfile = () => {
+    setFullProfileId(null);
+    if (linkedConsultant) { const next = new URLSearchParams(searchParams); next.delete('consultant'); setSearchParams(next, { replace: true }); }
+  };
   const [expanded, setExpanded] = useState<string | null>(null);
   const [filterKey, setFilterKey] = useState(STATUS_FILTERS[0].key);
   const [reinterviewTarget, setReinterviewTarget] = useState<{ id: string; name: string } | null>(null);
@@ -213,6 +222,7 @@ export default function ConsultantApprovalsPage() {
 
   return (
     <div className="space-y-6">
+      <ConsultantFullProfileSheet consultantId={fullProfileId || linkedConsultant} onClose={closeProfile} />
       <div>
         <h1 className="text-2xl font-bold text-foreground">{t('approvals_page.title')}</h1>
         <p className="text-sm text-muted-foreground">{isError ? '' : `${list.length} ${filter.label.toLowerCase()}`}</p>
@@ -272,7 +282,7 @@ export default function ConsultantApprovalsPage() {
             return (
               <Card key={c.id} className="border-border/50">
                 <CardContent className="p-0">
-                  <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-muted/20 transition-colors" onClick={() => setExpanded(isExpanded ? null : c.id)}>
+                  <div className="flex flex-wrap items-center gap-4 p-4 cursor-pointer hover:bg-muted/20 transition-colors" onClick={() => setExpanded(isExpanded ? null : c.id)}>
                     <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-sm font-bold text-primary-foreground shrink-0">
                       {c.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                     </div>
@@ -282,6 +292,7 @@ export default function ConsultantApprovalsPage() {
                       {c.place && <p className="text-xs text-muted-foreground">{c.place}</p>}
                     </div>
                     <div className="flex items-center gap-2">
+                      {!isGuest && <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); setFullProfileId(c.id); }}>{t('admin.fullProfile.view', 'View full profile')}</Button>}
                       <div className="text-center hidden sm:block">
                         <div className="flex items-center gap-1">
                           <Brain className="w-3.5 h-3.5 text-accent" />
