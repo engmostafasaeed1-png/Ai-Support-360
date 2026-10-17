@@ -344,7 +344,8 @@ textarea:focus-visible {
 /* Skip to main content link */
 .skip-to-main {
   position: absolute;
-  left: -9999px;
+  /* Logical offset keeps the hidden link inside the canvas in RTL too. */
+  inset-inline-start: -9999px;
   top: auto;
   width: 1px;
   height: 1px;
