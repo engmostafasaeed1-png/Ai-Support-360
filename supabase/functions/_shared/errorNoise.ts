@@ -48,10 +48,20 @@ export function isIgnoredMessage(message: string): boolean {
 }
 
 /** Why a report is dropped, or null when it must be stored. */
-export function ignoredReason(input: { message: string; url?: unknown; userAgent?: string }): IgnoredReason | null {
+const EXTENSION_SOURCE = /^(?:chrome|moz|safari|safari-web)-extension(?::\/\/|$)/i;
+
+/** A CSP report whose sourceFile is a browser extension (sent in the report context). */
+export function isExtensionCspReport(message: string, context?: unknown): boolean {
+  if (!/^\[diag:csp\]/i.test(message) || !context || typeof context !== 'object') return false;
+  const c = context as { sourceFile?: unknown; data?: { sourceFile?: unknown } };
+  const src = typeof c.sourceFile === 'string' ? c.sourceFile : typeof c.data?.sourceFile === 'string' ? c.data.sourceFile : '';
+  return EXTENSION_SOURCE.test(src);
+}
+
+export function ignoredReason(input: { message: string; url?: unknown; userAgent?: string; context?: unknown }): IgnoredReason | null {
   const host = hostOf(input.url);
   if (host && isIgnoredHost(host)) return 'host';
   if (input.userAgent && isCrawlerUserAgent(input.userAgent)) return 'crawler';
-  if (isIgnoredMessage(input.message)) return 'message';
+  if (isIgnoredMessage(input.message) || isExtensionCspReport(input.message, input.context)) return 'message';
   return null;
 }

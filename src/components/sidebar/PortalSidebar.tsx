@@ -32,7 +32,7 @@ export interface PortalSidebarProps {
   scope: NavScope;
   /** The portal home, e.g. /client. It only counts as active on that exact URL. */
   rootPath: string;
-  /** Where the logo links to. */
+  /** Where the logo links to; defaults to the portal home (rootPath). */
   homePath?: string;
   subtitleKey: string;
   subtitleFallback: string;
@@ -48,7 +48,7 @@ export interface PortalSidebarProps {
 }
 
 export default function PortalSidebar({
-  scope, rootPath, homePath = '/', subtitleKey, subtitleFallback, groups, primaryAction, workspace, itemState, profileRole,
+  scope, rootPath, homePath, subtitleKey, subtitleFallback, groups, primaryAction, workspace, itemState, profileRole,
 }: PortalSidebarProps) {
   const { state, isMobile } = useSidebar();
   // The mobile sheet always shows the full menu, whatever the desktop rail is doing.
@@ -112,7 +112,7 @@ export default function PortalSidebar({
     <>
       <Sidebar side={isRTL ? 'right' : 'left'} collapsible="icon" className="border-sidebar-border">
         <SidebarHeader className="gap-2 p-2">
-          <SidebarBrand to={homePath} subtitle={subtitle} collapsed={collapsed} />
+          <SidebarBrand to={homePath ?? rootPath} subtitle={subtitle} collapsed={collapsed} />
 
           {workspace && !collapsed && (
             <Link
