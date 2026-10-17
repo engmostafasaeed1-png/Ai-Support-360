@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Add payout readiness banners, checklist label, administrator badges and daily assignment reminder if existing safe notification permissions allow; test and verify.
+- [x] Add payout readiness banners and administrator badges; payout details already belongs to the seven-item checklist. Full unit suite: 1,512 passed; automatic TypeScript/build clean.
+- [ ] Daily assignment/accepted-bid payout reminder: blocked by service-only safe_insert_notification and absent server-side daily dedupe; requires database changes not authorized by this frontend-only request.
 
 - [x] Fix consultant landing head tags and identical pricing duplication; 1,477 tests passed, automatic TypeScript/build check clean, preview tags and navigation cleanup verified.
 
