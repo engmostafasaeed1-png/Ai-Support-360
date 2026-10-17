@@ -412,8 +412,18 @@ export const useRejectReport = () =>
 
 export const useSetPayoutStatus = () =>
   useBillingAction(
-    (v: { id: string; status: 'pending' | 'processing' | 'completed' | 'failed'; bankReference?: string; note?: string }) =>
-      rpc('admin_set_payout_status', { _payout_id: v.id, _status: v.status, _bank_reference: v.bankReference ?? null, _note: v.note ?? null }),
+    async (v: { id: string; status: 'pending' | 'processing' | 'completed' | 'failed'; bankReference?: string; note?: string }) => {
+      await rpc('admin_set_payout_status', { _payout_id: v.id, _status: v.status, _bank_reference: v.bankReference ?? null, _note: v.note ?? null });
+      if (v.status === 'processing' || v.status === 'completed') {
+        try {
+          const { error } = await supabase.functions.invoke('payout-approved-notify', { body: { payout_id: v.id } });
+          if (error) throw error;
+        } catch {
+          // Email failure never rolls back or misrepresents a successful financial action.
+          toast.warning('Payout updated, but the email could not be sent.');
+        }
+      }
+    },
     'Payout updated. The consultant was told.',
     'Could not update the payout',
   );

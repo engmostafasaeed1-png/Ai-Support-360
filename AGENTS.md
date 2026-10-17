@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Send payout approval emails from the dedicated authenticated payout notification function after the existing status RPC succeeds, deriving recipient, money and date server-side and deduplicating by payout ID; email failures must not undo financial actions.
+
 - Keep invoice details in a three-zone dialog with shared billing controls and the existing admin confirmation hook; this keeps visible actions consistent with backend permissions.
 
 - Keep timesheet PDF and CSV row models in the shared timesheet document helpers, using existing screen amounts and approval metadata; this prevents export totals and statuses from diverging.
