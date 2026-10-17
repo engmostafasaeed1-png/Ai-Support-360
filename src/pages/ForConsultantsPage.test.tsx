@@ -23,8 +23,10 @@ describe('ForConsultantsPage', () => {
     renderPage();
     const h1 = screen.getByRole('heading', { level: 1 });
     const hero = h1.closest('section')!;
-    // jsdom cannot serialise var() inside calc(), so assert the raw attribute.
-    expect(hero.getAttribute('style')).toContain('padding-top: calc(var(--public-header-h, 6rem) + 2rem)');
+    // jsdom drops inline calc(var(...)) styles, so assert the source carries the variable-based padding.
+    const source = readFileSync(resolve(__dirname, 'ForConsultantsPage.tsx'), 'utf8');
+    expect(source).toContain("paddingTop: 'calc(var(--public-header-h, 6rem) + 2rem)'");
+    expect(hero.className).not.toMatch(/\bpt-\d/);
     expect(h1.className).toContain('text-3xl');
     expect(h1.className).toContain('md:text-5xl');
   });
