@@ -1,4 +1,4 @@
-import { Helmet } from 'react-helmet-async';
+import { PRICING_SEO, useHeadTags } from '@/lib/useHeadTags';
 import { Link } from 'react-router-dom';
 import { ArrowRight, HeadphonesIcon } from 'lucide-react';
 import Navbar from '@/components/landing/Navbar';
@@ -23,11 +23,17 @@ export default function PricingPage() {
     })),
   };
 
+  useHeadTags({
+    description: PRICING_SEO.description,
+    canonical: 'https://www.aisupport360.com/pricing',
+    ogTitle: PRICING_SEO.title,
+    ogDescription: PRICING_SEO.description,
+    ogUrl: 'https://www.aisupport360.com/pricing',
+    jsonLd: faqJsonLd,
+  });
+
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
-      </Helmet>
       <Navbar />
 
       <section className="bg-gradient-to-b from-primary/5 to-background pb-12 pt-28">

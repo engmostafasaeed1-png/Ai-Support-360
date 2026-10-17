@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+import { CONSULTANT_SEO, useHeadTags } from '@/lib/useHeadTags';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -93,11 +93,17 @@ export default function ForConsultantsPage() {
     })),
   };
 
+  useHeadTags({
+    description: CONSULTANT_SEO.description,
+    canonical: 'https://www.aisupport360.com/for-consultants',
+    ogTitle: CONSULTANT_SEO.title,
+    ogDescription: CONSULTANT_SEO.description,
+    ogUrl: 'https://www.aisupport360.com/for-consultants',
+    jsonLd: faqJsonLd,
+  });
+
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
-      </Helmet>
       <Navbar />
 
       <main id="main-content">
