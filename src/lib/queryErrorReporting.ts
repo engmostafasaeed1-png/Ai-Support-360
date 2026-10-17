@@ -34,12 +34,17 @@ const EXPECTED_CODE = /^(?:22[0-9A-Z]{3}|23[0-9A-Z]{3}|28[0-9A-Z]{3}|42501|P0001
 const NETWORK_OR_SESSION =
   /Failed to fetch|NetworkError|Load failed|Network request failed|Failed to send a request to the Edge Function|The operation was aborted|signal is aborted|AbortError|JWT expired|Auth session missing|not authenticated|Invalid login credentials/i;
 
+// Expected business rules the server refuses on purpose; the screen already shows the message as a toast.
+const KNOWN_BUSINESS_MESSAGE =
+  /has not entered bank details for payouts yet/i;
+
 const NOT_SIGNED_IN = /^Not signed in( yet)?$/i;
 const SIGNED_OUT_REFUSAL = /(permission denied|not signed in|jwt|invalid token|row-level security)/i;
 
 /** True when the failure is the normal answer to a bad request or a lost connection and not a problem of the app. */
 export function isExpectedFailure(info: ErrorInfo): boolean {
   if (info.code && EXPECTED_CODE.test(info.code)) return true;
+  if (KNOWN_BUSINESS_MESSAGE.test(info.message)) return true;
   if (info.status !== undefined && info.status >= 400 && info.status < 500) return true;
   return NETWORK_OR_SESSION.test(info.message);
 }
