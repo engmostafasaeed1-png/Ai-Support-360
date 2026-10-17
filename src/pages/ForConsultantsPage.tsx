@@ -139,7 +139,7 @@ export default function ForConsultantsPage() {
         {/* 2. How it works */}
         <section className="py-16" aria-labelledby="fc-how">
           <div className="container mx-auto max-w-5xl px-4">
-            <h2 id="fc-how" className="mb-10 text-center text-3xl font-bold text-foreground">
+            <h2 id="fc-how" className="public-anchor mb-10 text-center text-3xl font-bold text-foreground">
               {t('forConsultants.how_title', 'How it works')}
             </h2>
             <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -160,7 +160,7 @@ export default function ForConsultantsPage() {
         {/* 3. Payout calculator */}
         <section className="bg-muted/30 py-16" aria-labelledby="fc-calc">
           <div className="container mx-auto max-w-4xl px-4">
-            <h2 id="fc-calc" className="mb-3 text-center text-3xl font-bold text-foreground">
+            <h2 id="fc-calc" className="public-anchor mb-3 text-center text-3xl font-bold text-foreground">
               {t('forConsultants.calc_title', 'Keep 100% of your rate')}
             </h2>
             <p className="mx-auto mb-10 max-w-2xl text-center text-muted-foreground">
@@ -261,7 +261,7 @@ export default function ForConsultantsPage() {
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-destructive/10">
                   <Siren className="h-5 w-5 text-destructive" aria-hidden="true" />
                 </span>
-                <h2 id="fc-critical" className="text-2xl font-bold text-foreground md:text-3xl">
+                <h2 id="fc-critical" className="public-anchor text-2xl font-bold text-foreground md:text-3xl">
                   {t('forConsultants.critical_title', '+30% for fast critical replies')}
                 </h2>
               </div>
@@ -283,7 +283,7 @@ export default function ForConsultantsPage() {
           <div className="container mx-auto max-w-5xl px-4">
             <div className="mb-10 text-center">
               <BadgeCheck className="mx-auto mb-3 h-8 w-8 text-accent" aria-hidden="true" />
-              <h2 id="fc-badges" className="text-3xl font-bold text-foreground">
+              <h2 id="fc-badges" className="public-anchor text-3xl font-bold text-foreground">
                 {t('forConsultants.badges_title', 'Earn a badge that clients can see')}
               </h2>
             </div>
@@ -305,7 +305,7 @@ export default function ForConsultantsPage() {
         {/* 6. What you get */}
         <section className="py-16" aria-labelledby="fc-benefits">
           <div className="container mx-auto max-w-5xl px-4">
-            <h2 id="fc-benefits" className="mb-10 text-center text-3xl font-bold text-foreground">
+            <h2 id="fc-benefits" className="public-anchor mb-10 text-center text-3xl font-bold text-foreground">
               {t('forConsultants.benefits_title', 'What you get')}
             </h2>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -324,7 +324,7 @@ export default function ForConsultantsPage() {
         {/* 7. FAQ */}
         <section className="bg-muted/30 py-16" aria-labelledby="fc-faq">
           <div className="container mx-auto max-w-3xl px-4">
-            <h2 id="fc-faq" className="mb-8 text-center text-3xl font-bold text-foreground">
+            <h2 id="fc-faq" className="public-anchor mb-8 text-center text-3xl font-bold text-foreground">
               {t('forConsultants.faq_title', 'Questions consultants ask')}
             </h2>
             <Accordion type="single" collapsible className="space-y-3">
@@ -349,7 +349,7 @@ export default function ForConsultantsPage() {
         {/* 8. Final strip */}
         <section className="py-16" aria-labelledby="fc-final">
           <div className="container mx-auto px-4 text-center">
-            <h2 id="fc-final" className="mb-6 text-3xl font-bold text-foreground">
+            <h2 id="fc-final" className="public-anchor mb-6 text-3xl font-bold text-foreground">
               {t('forConsultants.final_title', 'Ready to start?')}
             </h2>
             <Button asChild size="lg" className="gradient-primary border-0">
