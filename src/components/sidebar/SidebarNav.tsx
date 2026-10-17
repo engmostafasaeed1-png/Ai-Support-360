@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, ChevronRight, Search, X } from 'lucide-react';
+import { CheckCircle2, ChevronRight, ExternalLink, Search, X } from 'lucide-react';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -45,13 +45,39 @@ interface NavRowProps {
 }
 
 function NavRow({ item, label, active, collapsed, done, badge }: NavRowProps) {
+  const { t } = useTranslation();
   const Icon = done ? CheckCircle2 : item.icon;
+  const external = item.external === true;
+  // A public-site link is never the current portal page.
+  const isActive = active && !external;
+  const name = external
+    ? String(t('sidebar.opens_new_tab', '{{label}} (opens in a new tab)', { label }))
+    : label;
+
+  const content = (
+    <>
+      <Icon aria-hidden="true" focusable="false" className={done ? 'text-emerald-400' : undefined} />
+      {!collapsed && <span>{label}</span>}
+      {!collapsed && external && (
+        <ExternalLink aria-hidden="true" focusable="false" className="h-3 w-3 shrink-0 opacity-60" />
+      )}
+      {!collapsed && badge ? (
+        <span className="ms-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-accent-foreground">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      ) : null}
+      {collapsed && badge ? (
+        <span aria-hidden="true" className="absolute end-1 top-1 h-2 w-2 rounded-full bg-accent" />
+      ) : null}
+    </>
+  );
+
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         asChild
-        isActive={active}
-        tooltip={label}
+        isActive={isActive}
+        tooltip={name}
         className={cn(
           'relative h-9 gap-3 rounded-md px-3 text-start text-[13px] font-medium text-sidebar-foreground/75',
           'hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
@@ -59,18 +85,15 @@ function NavRow({ item, label, active, collapsed, done, badge }: NavRowProps) {
           'data-[active=true]:before:absolute data-[active=true]:before:inset-y-2 data-[active=true]:before:start-0 data-[active=true]:before:w-[3px] data-[active=true]:before:rounded-full data-[active=true]:before:bg-sidebar-primary',
         )}
       >
-        <Link to={item.path} data-tour={item.tourId} aria-current={active ? 'page' : undefined} aria-label={collapsed ? label : undefined}>
-          <Icon aria-hidden="true" focusable="false" className={done ? 'text-emerald-400' : undefined} />
-          {!collapsed && <span>{label}</span>}
-          {!collapsed && badge ? (
-            <span className="ms-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-accent-foreground">
-              {badge > 99 ? '99+' : badge}
-            </span>
-          ) : null}
-          {collapsed && badge ? (
-            <span aria-hidden="true" className="absolute end-1 top-1 h-2 w-2 rounded-full bg-accent" />
-          ) : null}
-        </Link>
+        {external ? (
+          <a href={item.path} target="_blank" rel="noopener noreferrer" data-tour={item.tourId} aria-label={name}>
+            {content}
+          </a>
+        ) : (
+          <Link to={item.path} data-tour={item.tourId} aria-current={isActive ? 'page' : undefined} aria-label={collapsed ? label : undefined}>
+            {content}
+          </Link>
+        )}
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
@@ -203,7 +226,8 @@ export default function SidebarNav({
                   if (e.key === 'Enter') {
                     const first = filtered[0]?.items[0];
                     if (first) {
-                      navigate(first.path);
+                      if (first.external) window.open(first.path, '_blank', 'noopener,noreferrer');
+                      else navigate(first.path);
                       setQuery('');
                     }
                   }
