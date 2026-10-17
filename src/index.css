@@ -6,6 +6,8 @@
 
 @layer base {
   :root {
+    /* Real height of the fixed public header; the Navbar keeps it in sync via ResizeObserver. */
+    --public-header-h: 6rem;
     --background: 0 0% 100%;
     --foreground: 218 44% 13%;
     --canvas: 220 33% 97%;
