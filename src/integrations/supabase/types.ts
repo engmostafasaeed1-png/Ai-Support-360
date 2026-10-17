@@ -3813,6 +3813,7 @@ export type Database = {
           created_at: string
           delivery_error: string | null
           delivery_status: string
+          emailed_at: string | null
           id: string
           is_read: boolean | null
           last_attempt_at: string
@@ -3828,6 +3829,7 @@ export type Database = {
           created_at?: string
           delivery_error?: string | null
           delivery_status?: string
+          emailed_at?: string | null
           id?: string
           is_read?: boolean | null
           last_attempt_at?: string
@@ -3843,6 +3845,7 @@ export type Database = {
           created_at?: string
           delivery_error?: string | null
           delivery_status?: string
+          emailed_at?: string | null
           id?: string
           is_read?: boolean | null
           last_attempt_at?: string
@@ -8786,6 +8789,11 @@ export type Database = {
         Args: { p_limit?: number; p_status?: string }
         Returns: Json
       }
+      admin_notification_email_count: { Args: never; Returns: number }
+      admin_notification_email_rate: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       admin_payout_details_status: {
         Args: never
         Returns: {
@@ -8911,6 +8919,7 @@ export type Database = {
         Returns: boolean
       }
       choose_first_oauth_role: { Args: { _role: string }; Returns: string }
+      claim_admin_notification_email: { Args: { _id: string }; Returns: Json }
       clean_bank_account: { Args: { _details: Json }; Returns: Json }
       clean_billing_text: {
         Args: { _label: string; _max: number; _v: string }
@@ -9077,6 +9086,15 @@ export type Database = {
         Returns: number
       }
       critical_ticket_view: { Args: { _ticket_id: string }; Returns: Json }
+      finish_admin_notification_email: {
+        Args: {
+          _attempt: number
+          _error: string
+          _handled: boolean
+          _id: string
+        }
+        Returns: undefined
+      }
       flag_sla_breaches: { Args: never; Returns: number }
       get_demo_request_by_token: {
         Args: { _token: string }
@@ -9398,6 +9416,7 @@ export type Database = {
           created_at: string
           delivery_error: string | null
           delivery_status: string
+          emailed_at: string | null
           id: string
           is_read: boolean | null
           last_attempt_at: string
