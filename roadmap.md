@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Email consultants on payout approval with actual amount, currency and expected date; test and deploy.
+- [x] Email consultants on payout approval with actual amount, currency and expected date; tested and deployed. Real approval/email delivery not exercised to avoid changing live financial records.
 
 - [x] Compact invoice details with fixed payment actions, test footer states, and verify three screen sizes.
 
