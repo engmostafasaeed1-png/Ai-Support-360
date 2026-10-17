@@ -11,6 +11,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.aisupport360.com/for-consultants</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.aisupport360.com/services/s4hana-support</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>

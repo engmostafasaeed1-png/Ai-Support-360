@@ -52,7 +52,7 @@ export default function ConsultantsSection() {
               Join our verified network, complete your interview, and start receiving matched support requests.
             </p>
             <Button asChild variant="outline" className="rounded-2xl h-11 font-semibold">
-              <Link to="/signup?role=consultant">{t('hero.cta_consultant')}</Link>
+              <Link to="/for-consultants">{t('hero.cta_consultant')}</Link>
             </Button>
           </div>
         </div>

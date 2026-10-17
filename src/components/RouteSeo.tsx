@@ -20,6 +20,11 @@ const ROUTES: Record<string, Meta> = {
     description:
       'SAP support priced on the hours you approve: you accept the hourly rate and each timesheet, and invoices show platform fees and VAT.',
   },
+  '/for-consultants': {
+    title: `SAP Consultant Jobs: Keep 100% of Your Rate | ${BRAND}`,
+    description:
+      'Set your own SAP consulting rate and keep 100% of it. Clients pay the fees on top. Verified consultants get matched requests, fast payouts and visible trust badges.',
+  },
   '/services/s4hana-support': {
     title: `SAP S/4HANA Support Services — ${BRAND}`,
     description:

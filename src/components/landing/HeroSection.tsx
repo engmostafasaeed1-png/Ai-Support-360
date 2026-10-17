@@ -115,7 +115,7 @@ export default function HeroSection() {
 
             {/* Secondary actions */}
             <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm">
-              <Link to="/signup?role=consultant" className="text-primary-foreground/70 hover:text-primary-foreground underline-offset-4 hover:underline transition-colors">
+              <Link to="/for-consultants" className="text-primary-foreground/70 hover:text-primary-foreground underline-offset-4 hover:underline transition-colors">
                 {t('hero.cta_consultant')}
               </Link>
               <span className="text-primary-foreground/30">•</span>

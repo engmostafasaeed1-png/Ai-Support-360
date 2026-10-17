@@ -36,6 +36,7 @@ export default function Navbar() {
     { label: t('nav.consultants'), href: '/#consultants' },
     { label: t('nav.pricing'), href: '/#pricing' },
     { label: t('nav.knowledge'), href: '/#faq' },
+    { label: t('nav.for_consultants', 'For consultants'), href: '/for-consultants' },
   ];
 
   return (

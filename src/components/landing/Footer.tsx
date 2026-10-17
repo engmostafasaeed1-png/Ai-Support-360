@@ -23,6 +23,7 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
       { label: t('nav.consultants'), href: '/#consultants' },
       { label: t('nav.pricing'), href: '/pricing' },
       { label: t('nav.knowledge'), href: '/#faq' },
+      { label: t('nav.for_consultants', 'For consultants'), href: '/for-consultants' },
     ],
     company: [
       { label: t('footer.about'), href: '/#about' },
