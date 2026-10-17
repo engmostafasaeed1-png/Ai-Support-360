@@ -19,6 +19,25 @@ function renderPage(url = '/for-consultants') {
 }
 
 describe('ForConsultantsPage', () => {
+  it('pads the hero below the real header height via the CSS variable', () => {
+    renderPage();
+    const h1 = screen.getByRole('heading', { level: 1 });
+    const hero = h1.closest('section')!;
+    // jsdom drops inline calc(var(...)) styles, so assert the source carries the variable-based padding.
+    const source = readFileSync(resolve(__dirname, 'ForConsultantsPage.tsx'), 'utf8');
+    expect(source).toContain("paddingTop: 'calc(var(--public-header-h, 6rem) + 2rem)'");
+    expect(hero.className).not.toMatch(/\bpt-\d/);
+    expect(h1.className).toContain('text-3xl');
+    expect(h1.className).toContain('md:text-5xl');
+  });
+
+  it('gives in-page anchor headings a scroll margin below the header', () => {
+    renderPage();
+    for (const id of ['fc-how', 'fc-calc', 'fc-critical', 'fc-badges', 'fc-benefits', 'fc-faq', 'fc-final']) {
+      expect(document.getElementById(id)!.className).toContain('public-anchor');
+    }
+  });
+
   it('renders exactly one h1', () => {
     renderPage();
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);

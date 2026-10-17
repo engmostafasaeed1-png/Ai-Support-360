@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/hooks/useLanguage';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Globe } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import horizontalLogo from '@/assets/brand/horizontal-tight.webp.asset.json';
 
@@ -11,6 +11,22 @@ export default function Navbar() {
   const { toggleLanguage } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+
+  // Publish the real header height so fixed-offset pages can auto-fit it.
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const setVar = () =>
+      document.documentElement.style.setProperty('--public-header-h', `${el.offsetHeight}px`);
+    setVar();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(setVar);
+    observer?.observe(el);
+    return () => {
+      observer?.disconnect();
+      document.documentElement.style.removeProperty('--public-header-h');
+    };
+  }, []);
 
   // Close mobile menu on Esc
   useEffect(() => {
@@ -41,6 +57,7 @@ export default function Navbar() {
 
   return (
     <nav
+      ref={navRef}
       className={`fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-white via-white/95 to-white/90 backdrop-blur-xl transition-shadow duration-300 ${
         scrolled
           ? 'shadow-[0_14px_44px_-18px_hsl(var(--primary)/0.35)]'

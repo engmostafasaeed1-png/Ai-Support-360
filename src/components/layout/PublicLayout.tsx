@@ -12,7 +12,10 @@ export default function PublicLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
-      <div className="flex flex-1 flex-col pt-[84px] sm:pt-[100px] lg:pt-[112px] xl:pt-[116px] [&>*]:flex-1 [&>*]:!min-h-0">
+      <div
+        className="flex flex-1 flex-col [&>*]:flex-1 [&>*]:!min-h-0"
+        style={{ paddingTop: 'var(--public-header-h, 84px)' }}
+      >
         <Suspense
           fallback={
             <div role="status" className="flex min-h-[40vh] items-center justify-center">

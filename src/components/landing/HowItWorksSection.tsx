@@ -45,7 +45,7 @@ export default function HowItWorksSection() {
   }));
 
   return (
-    <section id="how-it-works" className={`relative py-24 md:py-32 overflow-hidden ${surface.section}`}>
+    <section id="how-it-works" className={`public-anchor relative py-24 md:py-32 overflow-hidden ${surface.section}`}>
       {/* Decorative background mesh */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/3 -left-32 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[140px] motion-safe:animate-mesh-shift" />

@@ -41,7 +41,7 @@ export default function CategoriesSection() {
   const navigate = useNavigate();
 
   return (
-    <section id="categories" className="relative py-24 md:py-32 bg-muted/30 overflow-hidden">
+    <section id="categories" className="public-anchor relative py-24 md:py-32 bg-muted/30 overflow-hidden">
       {/* Ambient mesh */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/3 w-[420px] h-[420px] bg-primary/10 rounded-full blur-[140px] motion-safe:animate-mesh-shift" />

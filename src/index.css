@@ -4,8 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  /* In-page anchor targets clear the fixed public header when scrolled to. */
+  .public-anchor {
+    scroll-margin-top: calc(var(--public-header-h, 6rem) + 1rem);
+  }
+}
+
 @layer base {
   :root {
+    /* Real height of the fixed public header; the Navbar keeps it in sync via ResizeObserver. */
+    --public-header-h: 6rem;
     --background: 0 0% 100%;
     --foreground: 218 44% 13%;
     --canvas: 220 33% 97%;
@@ -335,7 +344,8 @@ textarea:focus-visible {
 /* Skip to main content link */
 .skip-to-main {
   position: absolute;
-  left: -9999px;
+  /* Logical offset keeps the hidden link inside the canvas in RTL too. */
+  inset-inline-start: -9999px;
   top: auto;
   width: 1px;
   height: 1px;
@@ -345,7 +355,7 @@ textarea:focus-visible {
 .skip-to-main:focus {
   position: fixed;
   top: 8px;
-  left: 8px;
+  inset-inline-start: 8px;
   width: auto;
   height: auto;
   padding: 8px 16px;

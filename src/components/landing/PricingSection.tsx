@@ -12,7 +12,7 @@ export default function PricingSection() {
   const { data: terms } = usePricingTerms();
 
   return (
-    <section id="pricing" className="relative overflow-hidden bg-muted/30 py-24 md:py-32">
+    <section id="pricing" className="public-anchor relative overflow-hidden bg-muted/30 py-24 md:py-32">
       {/* Background mesh */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-primary/10 blur-[160px] motion-safe:animate-mesh-shift" />
