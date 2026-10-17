@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import { readFileSync } from 'node:fs';
@@ -84,10 +84,13 @@ describe('ForConsultantsPage', () => {
     }
   });
 
-  it('emits FAQPage JSON-LD with all ten questions', () => {
+  it('emits FAQPage JSON-LD with all ten questions', async () => {
     renderPage();
-    const script = document.head.querySelector('script[type="application/ld+json"]');
-    expect(script).not.toBeNull();
+    let script: Element | null = null;
+    await waitFor(() => {
+      script = document.head.querySelector('script[type="application/ld+json"]');
+      expect(script).not.toBeNull();
+    });
     const data = JSON.parse(script!.textContent!);
     expect(data['@type']).toBe('FAQPage');
     expect(data.mainEntity).toHaveLength(10);
