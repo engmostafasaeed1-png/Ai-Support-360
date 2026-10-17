@@ -50,6 +50,7 @@ const Index = lazyWithRetry(() => import("./pages/Index.tsx"), 'Index');
 const NotFound = lazyWithRetry(() => import("./pages/NotFound.tsx"), 'NotFound');
 const MeetingHandoffPage = lazyWithRetry(() => import("./pages/MeetingHandoffPage.tsx"), 'MeetingHandoffPage');
 const PricingPage = lazyWithRetry(() => import("./pages/PricingPage.tsx"), 'PricingPage');
+const ForConsultantsPage = lazyWithRetry(() => import("./pages/ForConsultantsPage.tsx"), 'ForConsultantsPage');
 const LegalPage = lazyWithRetry(() => import("./pages/LegalPage.tsx"), 'LegalPage');
 const ServiceModulePage = lazyWithRetry(() => import("./pages/ServiceModulePage.tsx"), 'ServiceModulePage');
 const DemoRequestConfirmationPage = lazyWithRetry(() => import("./pages/DemoRequestConfirmationPage.tsx"), 'DemoRequestConfirmationPage');
@@ -277,6 +278,7 @@ const App = () => (
             <Route path="/join/:sessionId" element={<MeetingHandoffPage />} />
             <Route path="/index" element={<Navigate to="/" replace />} />
             <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/for-consultants" element={<ForConsultantsPage />} />
             {['privacy-policy', 'terms-and-conditions', 'refund-policy', 'subscription-and-cancellation', 'service-delivery', 'cookie-policy', 'acceptable-use'].map((slug) => (
               <Route key={slug} path={`/${slug}`} element={<LegalPage slug={slug} />} />
             ))}
