@@ -20,10 +20,10 @@ export default function Navbar() {
     const setVar = () =>
       document.documentElement.style.setProperty('--public-header-h', `${el.offsetHeight}px`);
     setVar();
-    const observer = new ResizeObserver(setVar);
-    observer.observe(el);
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(setVar);
+    observer?.observe(el);
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
       document.documentElement.style.removeProperty('--public-header-h');
     };
   }, []);
