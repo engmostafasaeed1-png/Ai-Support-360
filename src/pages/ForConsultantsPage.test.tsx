@@ -85,8 +85,8 @@ describe('ForConsultantsPage', () => {
   });
 
   it('emits FAQPage JSON-LD with all ten questions', () => {
-    const { container } = renderPage();
-    const script = container.querySelector('script[type="application/ld+json"]');
+    renderPage();
+    const script = document.head.querySelector('script[type="application/ld+json"]');
     expect(script).not.toBeNull();
     const data = JSON.parse(script!.textContent!);
     expect(data['@type']).toBe('FAQPage');
