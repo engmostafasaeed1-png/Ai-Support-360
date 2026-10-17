@@ -7,15 +7,20 @@ import type { NavGroup, NavItem } from './navTypes';
 // Links that deliberately lead into another portal.
 const CROSS_PORTAL = ['/admin', '/super-admin'];
 
-const portals: Array<[string, NavGroup[], string, NavItem[]]> = [
-  ['client', clientNavGroups, '/client', [clientPrimaryAction]],
-  ['consultant', consultantNavGroups, '/consultant', []],
-  ['admin', adminNavGroups, '/admin', []],
-  ['super-admin', superAdminNavGroups, '/super-admin', []],
+const portals: Array<[string, NavGroup[], string, NavItem[], number]> = [
+  ['client', clientNavGroups, '/client', [clientPrimaryAction], 36],
+  ['consultant', consultantNavGroups, '/consultant', [], 23],
+  ['admin', adminNavGroups, '/admin', [], 23],
+  ['super-admin', superAdminNavGroups, '/super-admin', [], 10],
 ];
 
-describe.each(portals)('%s navigation config', (_name, groups, root, extra) => {
+describe.each(portals)('%s navigation config', (_name, groups, root, extra, count) => {
   const items = [...extra, ...groups.flatMap((g) => g.items)];
+
+  it('has the expected number of menu items', () => {
+    expect(items).toHaveLength(count);
+  });
+
 
   it('has unique group ids and no empty group', () => {
     const ids = groups.map((g) => g.id);
@@ -33,10 +38,10 @@ describe.each(portals)('%s navigation config', (_name, groups, root, extra) => {
     expect(new Set(paths).size).toBe(paths.length);
   });
 
-  it('keeps every page inside its portal, except deliberate cross-portal links', () => {
+  it('keeps every page inside its portal, except deliberate cross-portal links and public-site links', () => {
     for (const item of items) {
       const inside = item.path === root || item.path.startsWith(`${root}/`);
-      expect(inside || CROSS_PORTAL.includes(item.path)).toBe(true);
+      expect(inside || CROSS_PORTAL.includes(item.path) || item.external === true).toBe(true);
     }
   });
 

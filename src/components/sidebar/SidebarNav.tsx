@@ -51,7 +51,7 @@ function NavRow({ item, label, active, collapsed, done, badge }: NavRowProps) {
   // A public-site link is never the current portal page.
   const isActive = active && !external;
   const name = external
-    ? String(t('sidebar.opens_new_tab', '{{label}} (opens in a new tab)', { label }))
+    ? String(t('sidebar.opens_new_tab', { defaultValue: '{{label}} (opens in a new tab)', label }))
     : label;
 
   const content = (
