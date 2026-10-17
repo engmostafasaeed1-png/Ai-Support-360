@@ -3,7 +3,7 @@ import {
   Activity, AlertOctagon, BadgeCheck, BarChart3, BellRing, BookMarked, BookOpenCheck, Blocks, Brain, Building,
   CalendarClock, ClipboardList, Crown, Database, DollarSign, FileSignature, FileText, Fingerprint,
   Flag, Gauge, GitPullRequestArrow, Gift, Headset, HelpCircle, Inbox, Kanban, Layers3, LayoutDashboard,
-  ListChecks, MessagesSquare, Monitor, MonitorSmartphone, PanelTop, PieChart, Plug, Plus, Radio, Receipt,
+  ListChecks, Megaphone, MessagesSquare, Monitor, MonitorSmartphone, PanelTop, PieChart, Plug, Plus, Radio, Receipt,
   Rocket, ScrollText, Search, Server, Settings, Settings2, Shield, ShieldCheck, ShoppingBag,
   SlidersHorizontal, Sparkles, Star, StarHalf, Timer, UserCheck, UserCircle, UserCog, Users, Video,
   Wallet, Wand2, Workflow, Wrench,
@@ -197,6 +197,8 @@ export const consultantNavGroups: NavGroup[] = [
       { key: 'verification', icon: Fingerprint, path: '/consultant/verification' },
       { key: 'notifications', icon: BellRing, path: '/consultant/notifications' },
       { key: 'settings', icon: SlidersHorizontal, path: '/consultant/settings' },
+      // Public landing page: a new tab keeps the portal session and the current place.
+      { key: 'landing_page', icon: Megaphone, path: '/for-consultants', labelKey: 'nav.landing_page', fallback: 'Landing page', external: true },
     ],
   },
 ];

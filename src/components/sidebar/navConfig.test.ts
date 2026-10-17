@@ -7,15 +7,19 @@ import type { NavGroup, NavItem } from './navTypes';
 // Links that deliberately lead into another portal.
 const CROSS_PORTAL = ['/admin', '/super-admin'];
 
-const portals: Array<[string, NavGroup[], string, NavItem[]]> = [
-  ['client', clientNavGroups, '/client', [clientPrimaryAction]],
-  ['consultant', consultantNavGroups, '/consultant', []],
-  ['admin', adminNavGroups, '/admin', []],
-  ['super-admin', superAdminNavGroups, '/super-admin', []],
+const portals: Array<[string, NavGroup[], string, NavItem[], number]> = [
+  ['client', clientNavGroups, '/client', [clientPrimaryAction], 36],
+  ['consultant', consultantNavGroups, '/consultant', [], 23],
+  ['admin', adminNavGroups, '/admin', [], 23],
+  ['super-admin', superAdminNavGroups, '/super-admin', [], 10],
 ];
 
-describe.each(portals)('%s navigation config', (_name, groups, root, extra) => {
+describe.each(portals)('%s navigation config', (_name, groups, root, extra, count) => {
   const items = [...extra, ...groups.flatMap((g) => g.items)];
+
+  it('has the expected number of menu items', () => {
+    expect(items).toHaveLength(count);
+  });
 
   it('has unique group ids and no empty group', () => {
     const ids = groups.map((g) => g.id);
@@ -33,10 +37,10 @@ describe.each(portals)('%s navigation config', (_name, groups, root, extra) => {
     expect(new Set(paths).size).toBe(paths.length);
   });
 
-  it('keeps every page inside its portal, except deliberate cross-portal links', () => {
+  it('keeps every page inside its portal, except deliberate cross-portal links and public-site links', () => {
     for (const item of items) {
       const inside = item.path === root || item.path.startsWith(`${root}/`);
-      expect(inside || CROSS_PORTAL.includes(item.path)).toBe(true);
+      expect(inside || CROSS_PORTAL.includes(item.path) || item.external === true).toBe(true);
     }
   });
 
@@ -57,5 +61,33 @@ describe('consultant tour ids', () => {
       'nav-profile': 'profile', 'nav-my-bids': 'proposals', 'nav-open-requests': 'open_tickets',
       'nav-sessions': 'calendar', 'nav-messages': 'chat', 'nav-earnings': 'earnings',
     });
+  });
+});
+
+describe('consultant landing-page link', () => {
+  const item = consultantNavGroups.flatMap((g) => g.items).find((i) => i.key === 'landing_page');
+
+  it('points at the public page and opens in a new tab', () => {
+    expect(item).toMatchObject({
+      path: '/for-consultants',
+      labelKey: 'nav.landing_page',
+      fallback: 'Landing page',
+      external: true,
+    });
+    // The tour only targets the items it lists, so this one needs no data-tour id.
+    expect(item?.tourId).toBeUndefined();
+  });
+
+  it('is offered to consultants only', () => {
+    for (const [, groups, , extra] of portals) {
+      const all = [...extra, ...groups.flatMap((g) => g.items)];
+      expect(all.some((i) => i.key === 'landing_page')).toBe(groups === consultantNavGroups);
+    }
+  });
+
+  it('sits at the bottom of the menu, not among the work items', () => {
+    const last = consultantNavGroups[consultantNavGroups.length - 1];
+    expect(last.id).toBe('account');
+    expect(last.items[last.items.length - 1].key).toBe('landing_page');
   });
 });
