@@ -477,6 +477,13 @@
       "when": 1792199686834,
       "tag": "0067_admin_notification_event_emails_no_credentials",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1792200219234,
+      "tag": "0068_m69_admin_consultant_full_profile",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Administrator full consultant profiles load only through the audited admin-only RPC in the shared sheet, with ephemeral query retention, short-lived document links and timed in-memory bank reveals; this avoids bypassing column permissions or persisting private payout data.
+
 - Administrator notification emails use credential-free pg_net event callbacks and service-only atomic claims with bounded retries and managed idempotency; only stored notification content and the administrator's own address may be sent, without new queues or schedules.
 
 - Send payout approval emails from the dedicated authenticated payout notification function after the existing status RPC succeeds, deriving recipient, money and date server-side and deduplicating by payout ID; email failures must not undo financial actions.

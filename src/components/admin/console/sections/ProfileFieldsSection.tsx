@@ -17,6 +17,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SectionShell } from './shared';
+import ConsultantFullProfileSheet from '@/components/admin/ConsultantFullProfileSheet';
 import {
   fetchProfileFieldRules, PROFILE_FIELD_RULES_KEY, PROFILE_RULES_CONFIG_KEY,
   useProfileRulesConfig, type FieldMode, type ProfileFieldRule,
@@ -33,6 +34,7 @@ export function changedRules(saved: ProfileFieldRule[], draft: Record<string, Fi
 }
 
 export default function ProfileFieldsSection() {
+  const [fullProfileId, setFullProfileId] = useState<string | null>(null);
   const { t } = useTranslation();
   const qc = useQueryClient();
   const rulesQ = useQuery({ queryKey: PROFILE_FIELD_RULES_KEY, queryFn: fetchProfileFieldRules, staleTime: 5 * 60 * 1000 });
@@ -210,7 +212,7 @@ export default function ProfileFieldsSection() {
                     <TableCell>{c.display_name || '-'}</TableCell>
                     <TableCell><Badge variant="secondary">{c.verification_status}</Badge></TableCell>
                     <TableCell><div className="flex flex-wrap gap-1">{c.missing.map(k => <Badge key={k} variant="outline">{labelOf.get(k) || k}</Badge>)}</div></TableCell>
-                    <TableCell><Link className="text-sm text-primary underline" to={`/admin/approvals?consultant=${c.consultant_id}`}>{t('admin.profileFields.open', 'Open')}</Link></TableCell>
+                    <TableCell><div className="flex flex-wrap gap-2 items-center"><Button variant="outline" size="sm" onClick={() => setFullProfileId(c.consultant_id)}>{t('admin.fullProfile.view', 'View full profile')}</Button><Link className="text-sm text-primary underline" to={`/admin/approvals?consultant=${c.consultant_id}`}>{t('admin.profileFields.open', 'Open')}</Link></div></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -264,6 +266,7 @@ export default function ProfileFieldsSection() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConsultantFullProfileSheet consultantId={fullProfileId} onClose={() => setFullProfileId(null)} />
     </SectionShell>
   );
 }

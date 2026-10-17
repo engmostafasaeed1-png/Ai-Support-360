@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import React from 'react';
 import { render, screen, cleanup, waitFor, renderHook, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 
 const REVOKED = ['linkedin_url', 'github_url', 'personal_website', 'profile_video_url', 'credly_username', 'cv_url', 'nationality'];
 
@@ -41,7 +42,7 @@ const LINKS = { consultant_id: 'c1', linkedin_url: 'https://www.linkedin.com/in/
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  return <QueryClientProvider client={client}><MemoryRouter>{children}</MemoryRouter></QueryClientProvider>;
 }
 function consultantSelectsAreSafe() {
   const own = db.selects.filter(s => s.table === 'consultants');

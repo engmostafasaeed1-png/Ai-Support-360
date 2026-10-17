@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import ConsultantFullProfileSheet from '@/components/admin/ConsultantFullProfileSheet';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '@/hooks/useDebounce';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,6 +43,8 @@ async function call(action: string, payload: Record<string, unknown> = {}) {
 }
 
 export default function UsersPage() {
+  const { t } = useTranslation();
+  const [fullProfileId, setFullProfileId] = useState<string | null>(null);
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -59,6 +63,12 @@ export default function UsersPage() {
     queryKey: ['admin-manage-users'],
     queryFn: async () => (await call('list')).users as AdminUser[],
   });
+  const consultantUserIds = users.filter(u => u.roles.includes('consultant')).map(u => u.id);
+  const consultantIds = useQuery({ queryKey: ['admin-user-consultant-ids', consultantUserIds], enabled: consultantUserIds.length > 0, queryFn: async () => {
+    const { data, error } = await supabase.from('consultants').select('id,user_id').in('user_id', consultantUserIds);
+    if (error) throw error;
+    return new Map((data || []).map(c => [c.user_id, c.id]));
+  } });
 
   const filtered = useMemo(() => {
     const list = users.filter((u) =>
@@ -115,6 +125,7 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
+      <ConsultantFullProfileSheet consultantId={fullProfileId} onClose={() => setFullProfileId(null)} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Users</h1>
@@ -225,6 +236,7 @@ export default function UsersPage() {
                       <td className="py-3 px-4 text-muted-foreground">{fmt(u.created_at)}</td>
                       <td className="py-3 px-4 text-muted-foreground">{fmt(u.last_sign_in_at)}</td>
                       <td className="py-3 px-4 text-end">
+                        {consultantIds.data?.get(u.id) && <Button variant="outline" size="sm" className="me-2" onClick={() => setFullProfileId(consultantIds.data?.get(u.id) ?? null)}>{t('admin.fullProfile.view', 'View full profile')}</Button>}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Actions for ${u.email}`}><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">

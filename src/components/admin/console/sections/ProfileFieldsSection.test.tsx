@@ -42,6 +42,12 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe('ProfileFieldsSection', () => {
+  it('opens the full profile from the incomplete consultant row', async () => {
+    show(); await screen.findByText(/consultants are missing required fields/);
+    fireEvent.click(screen.getByRole('button', { name: 'View who' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'View full profile' }));
+    await waitFor(() => expect(rpc).toHaveBeenCalledWith('admin_consultant_full_profile', { _cid: 'c1' }));
+  });
   it('renders the 40 fields grouped by section', async () => {
     show();
     await screen.findByTestId('rule-bank_details');

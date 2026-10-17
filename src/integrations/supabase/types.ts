@@ -8758,6 +8758,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_consultant_full_profile: { Args: { _cid: string }; Returns: Json }
       admin_create_invoice: {
         Args: {
           _amount: number
