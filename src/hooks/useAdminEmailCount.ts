@@ -4,7 +4,7 @@ export function useAdminEmailCount() {
   return useQuery({
     queryKey: ['admin-email-count'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('admin_notification_email_count' as never);
+      const { data, error } = await supabase.rpc('admin_notification_email_count');
       if (error) throw error;
       return Number(data ?? 0);
     },

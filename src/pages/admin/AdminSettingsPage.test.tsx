@@ -12,6 +12,7 @@ vi.mock('@/components/admin/CriticalRequestsLive', () => ({ default: () => null 
 vi.mock('@/components/admin/TelegramAdminCard', () => ({ default: () => null }));
 vi.mock('@/components/admin/PushAdminCard', () => ({ default: () => null }));
 import AdminSettingsPage from './AdminSettingsPage';
+vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
 afterEach(() => { cleanup(); state.settings = {}; state.update.mockClear(); });
 describe('administrator email switch', () => {
   it('defaults on and saves to the existing settings store', () => {
