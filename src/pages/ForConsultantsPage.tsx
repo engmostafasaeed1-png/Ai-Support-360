@@ -108,9 +108,12 @@ export default function ForConsultantsPage() {
 
       <main id="main-content">
         {/* 1. Hero */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-primary/5 to-background pb-16 pt-28">
+        <section
+          className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-primary/5 to-background pb-16"
+          style={{ paddingTop: 'calc(var(--public-header-h, 6rem) + 2rem)' }}
+        >
           <div className="container mx-auto px-4 text-center">
-            <h1 className="mb-4 text-4xl font-bold text-foreground md:text-5xl">
+            <h1 className="mb-4 text-3xl font-bold text-foreground md:text-5xl">
               {t('forConsultants.hero_title', 'Keep 100% of your rate')}
             </h1>
             <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
