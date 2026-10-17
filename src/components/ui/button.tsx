@@ -32,16 +32,20 @@ const buttonVariants = cva(
   },
 );
 
-/** Gradient classes skipped when a caller supplies its own `gradient-primary` background. */
+/** Caller-owned backgrounds must not be covered by the variant's gradient image. */
 const OWN_GRADIENT = /(^|\s)gradient-primary(\s|$)/;
-const VARIANT_GRADIENT = /\b(bg-gradient-to-b|from-\S+|to-\S+-shade)\b/g;
+const VARIANT_GRADIENT = /(?:^|\s)(?:bg-gradient-to-b|from-\S+|to-\S+)(?=\s|$)/g;
+// Use Tailwind's merge groups to distinguish base colours from hover colours,
+// background images, clipping and other bg-* utilities (including arbitrary colours).
+const BACKGROUND_PROBE = "bg-[color:var(--button-background-probe)]";
 
 export function getButtonClasses(opts: { variant?: VariantProps<typeof buttonVariants>["variant"]; size?: VariantProps<typeof buttonVariants>["size"]; className?: string }) {
-  const classes = buttonVariants({ variant: opts.variant, size: opts.size, className: opts.className });
-  if (opts.className && OWN_GRADIENT.test(opts.className)) {
-    return cn(classes.replace(VARIANT_GRADIENT, ""));
-  }
-  return classes;
+  const classes = buttonVariants({ variant: opts.variant, size: opts.size });
+  const ownsBackground = opts.className && (
+    OWN_GRADIENT.test(opts.className) ||
+    !cn(BACKGROUND_PROBE, opts.className).split(/\s+/).includes(BACKGROUND_PROBE)
+  );
+  return cn(ownsBackground ? classes.replace(VARIANT_GRADIENT, "") : classes, opts.className);
 }
 
 export interface ButtonProps
