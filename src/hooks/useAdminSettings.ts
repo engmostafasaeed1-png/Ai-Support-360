@@ -9,6 +9,7 @@ const SETTING_KEYS = [
   'open_registration',
   'email_notifications',
   'admin_alerts',
+  'admin_email_alerts',
   'require_2fa',
   'audit_logging',
 ] as const;
