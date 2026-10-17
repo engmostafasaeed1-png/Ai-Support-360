@@ -1,3 +1,4 @@
+import FoundingBadge from '@/components/consultant/FoundingBadge';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -37,7 +38,7 @@ export default function ProfilePage() {
           </Button>
         </div>
       </div>
-      <div className="flex items-center gap-4"><AvatarUpload /><h2 className="text-lg font-semibold">{profile?.display_name}</h2></div>
+      <div className="flex items-center gap-4"><AvatarUpload /><div className="space-y-1"><h2 className="text-lg font-semibold">{profile?.display_name}</h2><FoundingBadge consultantId={profile?.id} numbered /></div></div>
       <ConsultantOnboarding embedded />
       <section id="payout-details" className="scroll-mt-20">
         <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">

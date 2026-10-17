@@ -1,3 +1,4 @@
+import FoundingSettings from '@/components/admin/FoundingSettings';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe, Layout, Mail } from 'lucide-react';
@@ -181,6 +182,8 @@ export default function AdminSettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <FoundingSettings />
 
       <CriticalServiceSettingsCard />
 

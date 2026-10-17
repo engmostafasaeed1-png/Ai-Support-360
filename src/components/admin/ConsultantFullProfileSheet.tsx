@@ -1,3 +1,4 @@
+import FoundingOverride from '@/components/admin/FoundingOverride';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -71,6 +72,7 @@ export function ConsultantFullProfileBody({ data }: { data: FullConsultantProfil
     <div className="sticky top-0 z-10 bg-background pb-3"><TabsList className="h-auto flex flex-wrap justify-start">{TABS.map(s => <TabsTrigger key={s} value={s}>{label(s)}</TabsTrigger>)}</TabsList></div>
     <TabsContent value="Overview" className="space-y-6">
       <PayoutReadinessBadge ready={Object.keys(pay).length > 0} />
+      {typeof c.id === 'string' && <FoundingOverride consultantId={c.id} />}
       {fields([['E-mail', a.email], ['Sign-in provider', a.provider], ['Registered on', date(a.created_at)], ['Last sign-in', date(a.last_sign_in_at)], ['Verification status', c.verification_status], ['Availability status', c.availability_status], ['Profile visible', bool(c.profile_visible)], ['New case alerts', bool(c.new_case_alerts)], ['AI interview badge', c.ai_interview_badge], ['AI interview date', date(c.ai_interview_completed_at)], ['Credibility credits', c.credibility_credits], ['Rating', c.rating], ['Reviews', c.total_reviews], ['Response time (minutes)', c.response_time_minutes], ['Assigned requests', counts.tickets_assigned], ['Bids', counts.bids], ['Signed NDAs', counts.ndas_signed]])}
       <section><h3 className="mb-2 font-semibold">{label('Missing required fields')}</h3><div className="flex flex-wrap gap-2">{missing.length ? missing.map(k => <Badge key={String(k)} variant="outline">{labels.get(String(k)) || String(k)}</Badge>) : <Badge className="bg-success/10 text-success border-success/20">{label('Profile complete')}</Badge>}</div></section>
     </TabsContent>

@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Feature C: prepare unapplied Founding Consultant SQL, shared badges, admin settings/overrides and rule tests; full unit suite passed and real admin pending-activation state verified.
+- [ ] Activate/test Founding Consultant SQL awards and audited overrides: awaits user-applied docs/sql/founding-consultants.sql; no live data changed.
+
 - [x] Add payout readiness banners and administrator badges; payout details already belongs to the seven-item checklist. Full unit suite: 1,512 passed; automatic TypeScript/build clean.
 - [ ] Daily assignment/accepted-bid payout reminder: blocked by service-only safe_insert_notification and absent server-side daily dedupe; requires database changes not authorized by this frontend-only request.
 

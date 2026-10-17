@@ -1,3 +1,6 @@
+import FoundingBadge from '@/components/consultant/FoundingBadge';
+import { useFoundingConsultants, useFoundingBoost } from '@/hooks/useFoundingConsultants';
+import { foundingTieBreak } from '@/lib/foundingConsultants';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -70,6 +73,8 @@ export default function ConsultantsPage() {
   const [mapSelectedId, setMapSelectedId] = useState<string | null>(null);
 
   const { consultants, realtimeConnected } = useRealtimeConsultants();
+  const { data: foundingAwards } = useFoundingConsultants();
+  const { data: foundingMonths = 0 } = useFoundingBoost();
 
   // Auto-scroll side list when a map marker is clicked
   useEffect(() => {
@@ -129,11 +134,14 @@ export default function ConsultantsPage() {
         });
         break;
       default:
-        result.sort(compareRecommended);
+        result.sort((a, b) => {
+          const primary = STATE_META[a.status].order - STATE_META[b.status].order || b.rating - a.rating || b.reviews - a.reviews;
+          return primary || foundingTieBreak(foundingAwards?.get(a.id), foundingAwards?.get(b.id), foundingMonths) || compareRecommended(a, b);
+        });
     }
 
     return result;
-  }, [consultants, debouncedSearch, industryFilter, availabilityFilter, moduleFilter, minRating, priceRange, languageFilter, verifiedOnly, credlyOnly, sortBy, segmentFilter, countryFilter, verticalFilter]);
+  }, [foundingAwards, foundingMonths, consultants, debouncedSearch, industryFilter, availabilityFilter, moduleFilter, minRating, priceRange, languageFilter, verifiedOnly, credlyOnly, sortBy, segmentFilter, countryFilter, verticalFilter]);
 
   const notOnMapCount = filtered.filter(c => c.lat === null || c.lng === null).length;
 
@@ -465,7 +473,7 @@ export default function ConsultantsPage() {
                     <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
                     <p className="text-[11px] text-muted-foreground truncate">{c.specialty}</p>
                     <p className="text-[11px] text-muted-foreground truncate">{c.place || t('profileRules.locationNotSet', 'Location not set')}</p>
-                    <TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} className="mt-1" />
+                    <FoundingBadge consultantId={c.id} /><TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} className="mt-1" />
                   </div>
                   <div className="text-end shrink-0">
                     <p className="text-sm font-bold text-foreground">${c.rate}</p>
@@ -516,6 +524,7 @@ export default function ConsultantsPage() {
                     <RatingStars rating={c.rating} reviews={c.reviews} size="sm" className="mt-2" />
 
                     <div className="flex flex-wrap gap-1.5 mt-2">
+                      <FoundingBadge consultantId={c.id} />
                       {c.linkedinVerified && <LinkStatus state={c.linkedin_state} label="LinkedIn" />}
                       {c.credlyVerified && <LinkStatus state={c.credly_state} label="Credly" />}
                       {c.badges.map((badge) => {
@@ -531,7 +540,7 @@ export default function ConsultantsPage() {
                       })}
                       {/* Verification Status Badge */}
                       <VerificationBadge status={c.verification_status as any} />
-                      <TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} />
+                      <FoundingBadge consultantId={c.id} /><TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} />
 
                     </div>
 
