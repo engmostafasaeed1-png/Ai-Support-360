@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Email consultants on payout approval with actual amount, currency and expected date; test and deploy.
+
 - [x] Compact invoice details with fixed payment actions, test footer states, and verify three screen sizes.
 
 - [x] Redesign timesheet PDF/CSV tables; test data helpers and inspect 25-entry and single-entry PDFs.
