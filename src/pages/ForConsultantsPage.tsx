@@ -1,3 +1,5 @@
+import { useFoundingSpots } from '@/hooks/useFoundingConsultants';
+import { Award } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { CONSULTANT_SEO, useHeadTags } from '@/lib/useHeadTags';
 import { Link, useSearchParams } from 'react-router-dom';

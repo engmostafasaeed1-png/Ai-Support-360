@@ -30,3 +30,5 @@
 - Consultant profile field visibility/required state comes only from the admin-managed field rules via useProfileFieldRules (FieldGate/RequiredMark); client consultant lists drop ids from hidden_consultant_ids and show everyone if that call fails, so admin rules apply everywhere without blocking saves.
 
 - Public-site links inside a portal menu are declared as `external: true` nav items, and every surface that renders nav groups (sidebar rows, command palette) opens them in a new tab and never marks them active; this keeps a portal session and the user place intact.
+
+- Founding Consultant awards live in a separate read-only badge table with locked server-only allocation and audited admin RPC overrides; optional feature queries fail closed until the user applies the prepared SQL, so existing consultant queries and private profile access remain unchanged.

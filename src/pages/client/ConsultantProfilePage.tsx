@@ -1,3 +1,4 @@
+import FoundingBadge from '@/components/consultant/FoundingBadge';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -391,6 +392,7 @@ export default function ConsultantProfilePage() {
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">{consultant.name}</h1>
                 <VerificationBadge status={verificationStatus} size="md" />
+                <FoundingBadge consultantId={id} numbered />
               </div>
               <p className="mt-0.5 text-base text-muted-foreground">{consultant.specialty}</p>
               <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted-foreground">

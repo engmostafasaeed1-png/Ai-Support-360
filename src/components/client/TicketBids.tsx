@@ -1,3 +1,4 @@
+import FoundingBadge from '@/components/consultant/FoundingBadge';
 import { Fragment, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -77,6 +78,7 @@ export default function TicketBids({ ticketId, ticket = {}, onInvite = () => {},
     <div className="min-w-0 space-y-1"><Link to={`/client/consultants/${p.consultant_id}`} className="font-semibold text-sm text-accent break-words">{p.consultant_name}</Link>
       {p.verification_status === 'verified' && <Badge variant="outline" className="ms-1 text-success gap-1"><ShieldCheck className="h-3 w-3" />Verified</Badge>}
       <RatingStars rating={Number(p.consultant_rating)} reviews={Number(p.consultant_reviews)} size="sm" />
+      <FoundingBadge consultantId={p.consultant_id} />
       <TrustBadge credits={p.credibility_credits} badge={p.ai_interview_badge} />
     </div>
   </div>;
