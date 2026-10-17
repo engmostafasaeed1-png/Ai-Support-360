@@ -470,6 +470,13 @@
       "when": 1792185602292,
       "tag": "0066_oauth_first_role_choice",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1792199686834,
+      "tag": "0067_admin_notification_event_emails_no_credentials",
+      "breakpoints": true
     }
   ]
 }
