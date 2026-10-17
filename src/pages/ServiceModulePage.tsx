@@ -73,7 +73,10 @@ export default function ServiceModulePage({ moduleSlug }: { moduleSlug: string }
       <Navbar />
 
       {/* Hero */}
-      <section className="pt-28 pb-16 bg-gradient-to-b from-primary/5 to-background">
+      <section
+        className="pb-16 bg-gradient-to-b from-primary/5 to-background"
+        style={{ paddingTop: 'calc(var(--public-header-h, 6rem) + 2rem)' }}
+      >
         <div className="container mx-auto px-4 text-center">
           <Badge variant="secondary" className="mb-4 px-4 py-1.5">
             <HeadphonesIcon className="w-3.5 h-3.5 me-1.5" />

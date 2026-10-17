@@ -36,7 +36,10 @@ export default function PricingPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="bg-gradient-to-b from-primary/5 to-background pb-12 pt-28">
+      <section
+        className="bg-gradient-to-b from-primary/5 to-background pb-12"
+        style={{ paddingTop: 'calc(var(--public-header-h, 6rem) + 2rem)' }}
+      >
         <div className="container mx-auto px-4 text-center">
           <Badge variant="secondary" className="mb-4 px-4 py-1.5">
             <HeadphonesIcon className="me-1.5 h-3.5 w-3.5" />

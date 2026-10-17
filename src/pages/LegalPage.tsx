@@ -29,7 +29,10 @@ export default function LegalPage({ slug }: { slug: string }) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      <main className="flex-1 container mx-auto px-4 pt-32 sm:pt-40 pb-16">
+      <main
+        className="flex-1 container mx-auto px-4 pb-16"
+        style={{ paddingTop: 'calc(var(--public-header-h, 6rem) + 2rem)' }}
+      >
         <div className="grid lg:grid-cols-[220px_1fr] gap-8 max-w-6xl mx-auto">
           <nav aria-label="Legal pages" className="lg:sticky lg:top-36 self-start">
             <ul className="flex lg:flex-col gap-2 overflow-x-auto pb-2">

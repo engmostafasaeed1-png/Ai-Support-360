@@ -4,6 +4,13 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  /* In-page anchor targets clear the fixed public header when scrolled to. */
+  .public-anchor {
+    scroll-margin-top: calc(var(--public-header-h, 6rem) + 1rem);
+  }
+}
+
 @layer base {
   :root {
     /* Real height of the fixed public header; the Navbar keeps it in sync via ResizeObserver. */

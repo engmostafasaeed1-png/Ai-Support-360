@@ -28,7 +28,10 @@ export default function HeroSection() {
         overlayOpacity={0.88}
       />
 
-      <div className="container mx-auto px-4 pt-28 sm:pt-36 lg:pt-40 pb-16 sm:pb-24 relative z-10">
+      <div
+        className="container mx-auto px-4 pb-16 sm:pb-24 relative z-10"
+        style={{ paddingTop: 'calc(var(--public-header-h, 6rem) + 2rem)' }}
+      >
         <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-10">
           {/* Title */}
           <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black leading-[0.95] tracking-tight animate-fade-in" style={{ animationDelay: '0.1s' }}>
