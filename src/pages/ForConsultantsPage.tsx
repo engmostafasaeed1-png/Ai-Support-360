@@ -41,6 +41,7 @@ const money = (n: number) => n.toFixed(2);
 /** The public landing page that invites verified SAP consultants to apply. Facts only, no statistics. */
 export default function ForConsultantsPage() {
   const { t } = useTranslation();
+  const { data: foundingSpots = 0 } = useFoundingSpots();
   const [searchParams] = useSearchParams();
   const href = applyHref(searchParams.toString());
 
@@ -131,6 +132,7 @@ export default function ForConsultantsPage() {
                 </span>
               ))}
             </div>
+            {foundingSpots > 0 && <p className="mt-4 inline-flex max-w-full items-center justify-center gap-2 text-sm font-medium text-warning-foreground"><Award className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />{t('founding.offer', 'The first 100 verified consultants become Founding Consultants')}</p>}
             <p className="mt-4 text-sm text-muted-foreground">{t('forConsultants.hero_note', 'Free to apply. Takes about 10 minutes.')}</p>
           </div>
         </section>

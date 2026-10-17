@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
@@ -7,6 +7,8 @@ import { resolve } from 'node:path';
 import '@/i18n/config';
 import ForConsultantsPage, { applyHref } from './ForConsultantsPage';
 import { CONSULTANT_SEO } from '@/lib/useHeadTags';
+const founding = vi.hoisted(() => ({ remaining: 0 }));
+vi.mock('@/hooks/useFoundingConsultants', () => ({ useFoundingSpots: () => ({ data: founding.remaining }) }));
 
 function renderPage(url = '/for-consultants') {
   return render(
@@ -19,6 +21,14 @@ function renderPage(url = '/for-consultants') {
 }
 
 describe('ForConsultantsPage', () => {
+  it('shows the launch offer only while founding spots remain', () => {
+    founding.remaining = 1;
+    const page = renderPage();
+    expect(screen.getByText('The first 100 verified consultants become Founding Consultants')).toBeInTheDocument();
+    page.unmount(); founding.remaining = 0;
+    renderPage();
+    expect(screen.queryByText('The first 100 verified consultants become Founding Consultants')).toBeNull();
+  });
   it('pads the hero below the real header height via the CSS variable', () => {
     renderPage();
     const h1 = screen.getByRole('heading', { level: 1 });
