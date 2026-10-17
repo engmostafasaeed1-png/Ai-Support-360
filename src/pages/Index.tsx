@@ -1,4 +1,3 @@
-import Navbar from '@/components/landing/Navbar';
 import HeroSection from '@/components/landing/HeroSection';
 import ExploreServicesSection from '@/components/landing/ExploreServicesSection';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
@@ -10,7 +9,6 @@ import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import PricingSection from '@/components/landing/PricingSection';
 import FAQSection from '@/components/landing/FAQSection';
 import ContactSection from '@/components/landing/ContactSection';
-import Footer from '@/components/landing/Footer';
 import ScrollFadeIn from '@/components/landing/ScrollFadeIn';
 import { DemoWizardProvider } from '@/components/landing/DemoRequestWizard';
 
@@ -18,7 +16,6 @@ const Index = () => {
   return (
     <DemoWizardProvider>
     <div className="min-h-screen bg-background">
-      <Navbar />
       <HeroSection />
       <ScrollFadeIn>
         <ExploreServicesSection />
@@ -50,7 +47,6 @@ const Index = () => {
       <ScrollFadeIn>
         <ContactSection />
       </ScrollFadeIn>
-      <Footer />
     </div>
     </DemoWizardProvider>
   );

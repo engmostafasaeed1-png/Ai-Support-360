@@ -1,8 +1,6 @@
 import { PRICING_SEO, useHeadTags } from '@/lib/useHeadTags';
 import { Link } from 'react-router-dom';
 import { ArrowRight, HeadphonesIcon } from 'lucide-react';
-import Navbar from '@/components/landing/Navbar';
-import Footer from '@/components/landing/Footer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PaymentMethodsNote, PricingCalculator, PricingFaq, PricingFormula, PricingSteps, pricingFaqs, usePick } from '@/components/pricing/PayPerHourPricing';
@@ -34,7 +32,6 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
 
       <section
         className="bg-gradient-to-b from-primary/5 to-background pb-12"
@@ -101,8 +98,6 @@ export default function PricingPage() {
           </Button>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }

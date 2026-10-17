@@ -1,7 +1,5 @@
 import ReactMarkdown from 'react-markdown';
 import { Link } from 'react-router-dom';
-import Navbar from '@/components/landing/Navbar';
-import Footer from '@/components/landing/Footer';
 import raw from '@/content/legal-policies.md?raw';
 
 export const LEGAL_PAGES = [
@@ -28,7 +26,6 @@ export default function LegalPage({ slug }: { slug: string }) {
   const body = sectionFor(page.heading);
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
       <main
         className="flex-1 container mx-auto px-4 pb-16"
         style={{ paddingTop: 'calc(var(--public-header-h, 6rem) + 2rem)' }}
@@ -73,7 +70,6 @@ export default function LegalPage({ slug }: { slug: string }) {
           </article>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

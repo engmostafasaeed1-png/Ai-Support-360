@@ -1,7 +1,5 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import Navbar from '@/components/landing/Navbar';
-import Footer from '@/components/landing/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, ArrowRight, HeadphonesIcon, Shield, Clock, Languages } from 'lucide-react';
@@ -70,7 +68,6 @@ export default function ServiceModulePage({ moduleSlug }: { moduleSlug: string }
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
 
       {/* Hero */}
       <section
@@ -186,8 +183,6 @@ export default function ServiceModulePage({ moduleSlug }: { moduleSlug: string }
           </Button>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }

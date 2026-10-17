@@ -274,21 +274,25 @@ const App = () => (
           <Suspense fallback={<PageLoader />}>
 <DemoWizardProvider>
           <Routes>
-            <Route path="/" element={<Index />} />
             <Route path="/join/:sessionId" element={<MeetingHandoffPage />} />
             <Route path="/index" element={<Navigate to="/" replace />} />
-            <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/for-consultants" element={<ForConsultantsPage />} />
-            {['privacy-policy', 'terms-and-conditions', 'refund-policy', 'subscription-and-cancellation', 'service-delivery', 'cookie-policy', 'acceptable-use'].map((slug) => (
-              <Route key={slug} path={`/${slug}`} element={<LegalPage slug={slug} />} />
-            ))}
-            <Route path="/services/s4hana-support" element={<ServiceModulePage moduleSlug="s4hana-support" />} />
-            <Route path="/services/btp-support" element={<ServiceModulePage moduleSlug="btp-support" />} />
-            <Route element={<PublicLayout />}>
+            <Route element={<PublicLayout variant="content" />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/for-consultants" element={<ForConsultantsPage />} />
+              {['privacy-policy', 'terms-and-conditions', 'refund-policy', 'subscription-and-cancellation', 'service-delivery', 'cookie-policy', 'acceptable-use'].map((slug) => (
+                <Route key={slug} path={`/${slug}`} element={<LegalPage slug={slug} />} />
+              ))}
+              <Route path="/services/s4hana-support" element={<ServiceModulePage moduleSlug="s4hana-support" />} />
+              <Route path="/services/btp-support" element={<ServiceModulePage moduleSlug="btp-support" />} />
+            </Route>
+            <Route element={<PublicLayout variant="auth" />}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+            </Route>
+            <Route element={<PublicLayout />}>
               <Route path="/unsubscribe" element={<UnsubscribePage />} />
               <Route path="/demo/confirmation/:token" element={<DemoRequestConfirmationPage />} />
               <Route path="/interview/respond/:token" element={<InterviewRespondPage />} />

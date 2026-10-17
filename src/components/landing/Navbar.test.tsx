@@ -36,7 +36,7 @@ describe('Navbar header height variable', () => {
         <Navbar />
       </MemoryRouter>,
     );
-    const nav = container.querySelector('nav')!;
+    const nav = container.querySelector('header')!;
     Object.defineProperty(nav, 'offsetHeight', { value: 117, configurable: true });
 
     expect(resizeCallback).toBeTruthy();
