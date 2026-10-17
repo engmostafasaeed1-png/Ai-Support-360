@@ -11,6 +11,7 @@
     "pricing": "Pricing",
     "knowledge": "Knowledge Base",
     "for_consultants": "For consultants",
+    "landing_page": "Landing page",
     "login": "Login",
     "signup": "Get Started",
     "language": "العربية"
@@ -218,6 +219,7 @@
     "portal_consultant": "Consultant portal",
     "portal_admin": "Admin console",
     "nav_label": "Portal navigation",
+    "opens_new_tab": "{{label}} (opens in a new tab)",
     "search_placeholder": "Find a page…",
     "search_label": "Search menu",
     "search_clear": "Clear search",
