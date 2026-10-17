@@ -23,7 +23,8 @@ describe('ForConsultantsPage', () => {
     renderPage();
     const h1 = screen.getByRole('heading', { level: 1 });
     const hero = h1.closest('section')!;
-    expect(hero.style.paddingTop).toBe('calc(var(--public-header-h, 6rem) + 2rem)');
+    // jsdom cannot serialise var() inside calc(), so assert the raw attribute.
+    expect(hero.getAttribute('style')).toContain('padding-top: calc(var(--public-header-h, 6rem) + 2rem)');
     expect(h1.className).toContain('text-3xl');
     expect(h1.className).toContain('md:text-5xl');
   });
