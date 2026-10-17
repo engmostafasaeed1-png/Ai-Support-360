@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Shared Button removes its variant gradient when callers supply a base background colour, while retaining custom gradients; this preserves existing emergency and status colours without changing the Button API.
+
 - Consultant landing and pricing pages own route head tags through useHeadTags, replacing duplicates and restoring defaults on unmount; do not also emit those tags through RouteSeo Helmet, to avoid competing deferred updates.
 
 - Administrator full consultant profiles load only through the audited admin-only RPC in the shared sheet, with ephemeral query retention, short-lived document links and timed in-memory bank reveals; this avoids bypassing column permissions or persisting private payout data.
