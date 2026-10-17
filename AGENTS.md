@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Consultant landing and pricing pages own route head tags through useHeadTags, replacing duplicates and restoring defaults on unmount; do not also emit those tags through RouteSeo Helmet, to avoid competing deferred updates.
+
 - Administrator full consultant profiles load only through the audited admin-only RPC in the shared sheet, with ephemeral query retention, short-lived document links and timed in-memory bank reveals; this avoids bypassing column permissions or persisting private payout data.
 
 - Administrator notification emails use credential-free pg_net event callbacks and service-only atomic claims with bounded retries and managed idempotency; only stored notification content and the administrator's own address may be sent, without new queues or schedules.

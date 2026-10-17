@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import '@/i18n/config';
 import ForConsultantsPage, { applyHref } from './ForConsultantsPage';
+import { CONSULTANT_SEO } from '@/lib/useHeadTags';
 
 function renderPage(url = '/for-consultants') {
   return render(
@@ -86,12 +87,15 @@ describe('ForConsultantsPage', () => {
 
   it('emits FAQPage JSON-LD with all ten questions', async () => {
     renderPage();
+    expect(document.head.querySelectorAll('link[rel="canonical"]')).toHaveLength(1);
+    expect(document.head.querySelector('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.aisupport360.com/for-consultants');
+    expect(document.head.querySelector('meta[name="description"]')).toHaveAttribute('content', CONSULTANT_SEO.description);
     let script: Element | null = null;
     await waitFor(() => {
       script = document.head.querySelector('script[type="application/ld+json"]');
       expect(script).not.toBeNull();
     });
-    const data = JSON.parse(script!.textContent!);
+    const data = JSON.parse(script?.textContent ?? '{}');
     expect(data['@type']).toBe('FAQPage');
     expect(data.mainEntity).toHaveLength(10);
     expect(data.mainEntity.map((e: { name: string }) => e.name)).toContain('Which countries do you pay to?');

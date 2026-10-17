@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
+import { CONSULTANT_SEO, PRICING_SEO } from '@/lib/useHeadTags';
 
 const BASE_URL = 'https://www.aisupport360.com';
 const BRAND = 'AI Support 360';
@@ -15,16 +16,8 @@ const DEFAULT: Meta = {
 
 const ROUTES: Record<string, Meta> = {
   '/': DEFAULT,
-  '/pricing': {
-    title: `Support Plans & Pricing — ${BRAND}`,
-    description:
-      'SAP support priced on the hours you approve: you accept the hourly rate and each timesheet, and invoices show platform fees and VAT.',
-  },
-  '/for-consultants': {
-    title: `SAP Consultant Jobs: Keep 100% of Your Rate | ${BRAND}`,
-    description:
-      'Set your own SAP consulting rate and keep 100% of it. Clients pay the fees on top. Verified consultants get matched requests, fast payouts and visible trust badges.',
-  },
+  '/pricing': PRICING_SEO,
+  '/for-consultants': CONSULTANT_SEO,
   '/services/s4hana-support': {
     title: `SAP S/4HANA Support Services — ${BRAND}`,
     description:
@@ -101,6 +94,8 @@ export default function RouteSeo() {
   useEffect(() => {
     document.title = meta.title;
   }, [meta.title]);
+  // These two pages own their tags with useHeadTags, without competing Helmet updates.
+  if (pathname === '/for-consultants' || pathname === '/pricing') return null;
   return (
     <Helmet>
       <title>{meta.title}</title>
