@@ -57,7 +57,7 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
                 alt="AI Support 360 — aisupport360.com"
                 width={576}
                 height={128}
-                className={cn('max-w-full object-contain object-left', compact ? 'h-12 w-auto' : 'w-[36rem] h-32')}
+                className={cn('max-w-full object-contain object-left rtl:object-right', compact ? 'h-12 w-auto' : 'w-full max-w-[36rem] h-32')}
               />
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
