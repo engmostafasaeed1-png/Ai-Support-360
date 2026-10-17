@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Feature C: prepare unapplied Founding Consultant SQL, badges, admin settings/overrides and tests; activation awaits user-applied SQL.
+
 - [x] Add payout readiness banners and administrator badges; payout details already belongs to the seven-item checklist. Full unit suite: 1,512 passed; automatic TypeScript/build clean.
 - [ ] Daily assignment/accepted-bid payout reminder: blocked by service-only safe_insert_notification and absent server-side daily dedupe; requires database changes not authorized by this frontend-only request.
 
