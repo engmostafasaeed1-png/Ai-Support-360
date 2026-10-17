@@ -18,8 +18,6 @@ import {
   Sparkles,
   UserPlus,
 } from 'lucide-react';
-import Navbar from '@/components/landing/Navbar';
-import Footer from '@/components/landing/Footer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -104,7 +102,6 @@ export default function ForConsultantsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
 
       <main id="main-content">
         {/* 1. Hero */}
@@ -364,8 +361,6 @@ export default function ForConsultantsPage() {
           </div>
         </section>
       </main>
-
-      <Footer />
     </div>
   );
 }

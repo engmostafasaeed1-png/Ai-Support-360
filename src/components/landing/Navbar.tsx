@@ -3,7 +3,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Globe } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import horizontalLogo from '@/assets/brand/horizontal-tight.webp.asset.json';
 
 export default function Navbar() {
@@ -12,6 +12,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navRef = useRef<HTMLElement>(null);
+  const location = useLocation();
 
   // Publish the real header height so fixed-offset pages can auto-fit it.
   useEffect(() => {
@@ -55,8 +56,16 @@ export default function Navbar() {
     { label: t('nav.for_consultants', 'For consultants'), href: '/for-consultants' },
   ];
 
+  // Current page: hash items match the home section, path items match the path.
+  const isActive = (href: string) => {
+    const [path, hash] = href.split('#');
+    if (hash) return location.pathname === '/' && location.hash === `#${hash}`;
+    if (path === '/') return location.pathname === '/' && !location.hash;
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
+
   return (
-    <nav
+    <header
       ref={navRef}
       className={`fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-white via-white/95 to-white/90 backdrop-blur-xl transition-shadow duration-300 ${
         scrolled
@@ -80,17 +89,18 @@ export default function Navbar() {
           />
         </Link>
 
-        <div className="hidden xl:flex items-center gap-0.5">
+        <nav aria-label="Main" className="hidden xl:flex items-center gap-0.5">
           {navItems.map((item) => (
-            <a
+            <Link
               key={item.href}
-              href={item.href}
-              className="rounded-full px-3 py-2.5 text-sm font-semibold text-muted-foreground outline-none transition-colors duration-200 hover:bg-primary/[0.06] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
+              to={item.href}
+              aria-current={isActive(item.href) ? 'page' : undefined}
+              className="rounded-full aria-[current=page]:bg-primary/[0.08] aria-[current=page]:text-primary px-3 py-2.5 text-sm font-semibold text-muted-foreground outline-none transition-colors duration-200 hover:bg-primary/[0.06] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
             >
               {item.label}
-            </a>
+            </Link>
           ))}
-        </div>
+        </nav>
 
         <div className="hidden xl:flex items-center gap-2">
           <button
@@ -163,19 +173,20 @@ export default function Navbar() {
       >
         <div className="p-4 space-y-1.5">
           {navItems.map((item, i) => (
-            <a
+            <Link
               key={item.href}
-              href={item.href}
+              to={item.href}
+              aria-current={isActive(item.href) ? 'page' : undefined}
               role="menuitem"
               tabIndex={mobileOpen ? 0 : -1}
               style={{ transitionDelay: mobileOpen ? `${60 + i * 35}ms` : '0ms' }}
-              className={`block rounded-full px-4 py-3 text-sm font-medium text-muted-foreground outline-none transition-all duration-300 hover:bg-primary/[0.06] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`block rounded-full px-4 py-3 text-sm font-medium text-muted-foreground outline-none transition-all duration-300 hover:bg-primary/[0.06] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary aria-[current=page]:bg-primary/[0.08] aria-[current=page]:text-primary ${
                 mobileOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
               }`}
               onClick={() => setMobileOpen(false)}
             >
               {item.label}
-            </a>
+            </Link>
           ))}
           <div className="flex items-center gap-2 pt-3 mt-2 border-t border-border/50">
             <button
@@ -201,6 +212,6 @@ export default function Navbar() {
           </div>
         </div>
       </div>
-    </nav>
+    </header>
   );
 }
