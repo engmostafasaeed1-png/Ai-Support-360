@@ -355,7 +355,7 @@ textarea:focus-visible {
 .skip-to-main:focus {
   position: fixed;
   top: 8px;
-  left: 8px;
+  inset-inline-start: 8px;
   width: auto;
   height: auto;
   padding: 8px 16px;
