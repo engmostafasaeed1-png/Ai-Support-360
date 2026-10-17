@@ -41,6 +41,11 @@ describe('isExpectedFailure', () => {
     }
   });
 
+  it('treats the missing-bank-details business rule as expected, not a bug', () => {
+    expect(isExpectedFailure({ message: 'The consultant has not entered bank details for payouts yet', code: '22023' })).toBe(true);
+    expect(isExpectedFailure({ message: 'The consultant has not entered bank details for payouts yet' })).toBe(true);
+  });
+
   it('keeps server errors and code mistakes as real failures', () => {
     for (const code of ['42703', '42P01', '57014', 'PGRST100']) {
       expect(isExpectedFailure({ message: 'x', code }), code).toBe(false);
