@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Apply exact M69 SQL and add the administrator full-profile sheet, entry points, masking tests and live verification.
+- [x] Apply exact M69 SQL and add administrator full-profile sheet and entry points; timed masking, empty/full records, error/deep-link tests passed. Verified real profile at desktop/mobile and audit row; TypeScript clean, 1,458 tests passed.
 
 - [x] Add credential-free notification event callbacks, atomic administrator email claims, switches/count and bounded retries; historical rows backfilled, live test email accepted, switch save/readback verified, TypeScript and 1,449 tests passed. No queue/schedule added; interrupted callbacks need a later invocation, while managed delivery retries accepted mail.
 
