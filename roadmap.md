@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Add credential-free notification event callbacks, atomic administrator email claims, switches/count and bounded retries; backfill historical rows and verify delivery.
+- [x] Add credential-free notification event callbacks, atomic administrator email claims, switches/count and bounded retries; historical rows backfilled, live test email accepted, switch save/readback verified, TypeScript and 1,449 tests passed. No queue/schedule added; interrupted callbacks need a later invocation, while managed delivery retries accepted mail.
 
 - [x] Email consultants on payout approval with actual amount, currency and expected date; tested and deployed. Real approval/email delivery not exercised to avoid changing live financial records.
 
