@@ -124,8 +124,16 @@ export function clearDiagnosticsBuffer() {
 const FOREIGN_CSP_SOURCE =
   /^(?:wss?|https?):\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:\/|$)|^(?:chrome|moz|safari|safari-web|ms-browser)-extension:|kaspersky-labs\.com/i;
 
-function isForeignCspViolation(evt: SecurityPolicyViolationEvent): boolean {
-  return FOREIGN_CSP_SOURCE.test(evt.blockedURI || '') || FOREIGN_CSP_SOURCE.test(evt.sourceFile || '');
+// A browser extension's own script: a full extension URL or the bare scheme name some browsers report.
+const EXTENSION_SOURCE = /^(?:chrome|moz|safari|safari-web)-extension(?::\/\/|$)/i;
+const KEYWORD_BLOCKED = /^(?:blob|data|inline|eval)$/i;
+
+export function isForeignCspViolation(evt: Pick<SecurityPolicyViolationEvent, 'blockedURI' | 'sourceFile' | 'sample'>): boolean {
+  const source = evt.sourceFile || '';
+  if (EXTENSION_SOURCE.test(source)) return true;
+  // blob:/data:/inline/eval with no sample, raised from an extension.
+  if (KEYWORD_BLOCKED.test(evt.blockedURI || '') && !evt.sample && /-extension/i.test(source)) return true;
+  return FOREIGN_CSP_SOURCE.test(evt.blockedURI || '') || FOREIGN_CSP_SOURCE.test(source);
 }
 
 let cspListenerAttached = false;

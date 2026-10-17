@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
 
     // Reports nobody can act on (editor preview, crawlers, library noise) never use the rate limit or the table.
     const agent = `${typeof body.user_agent === 'string' ? body.user_agent : ''} ${req.headers.get('user-agent') ?? ''}`;
-    const ignored = ignoredReason({ message: body.message, url: body.url, userAgent: agent });
+    const ignored = ignoredReason({ message: body.message, url: body.url, userAgent: agent, context: body.context });
     if (ignored) return reply(req, { ok: true, ignored });
 
     const supabase = adminClient();
