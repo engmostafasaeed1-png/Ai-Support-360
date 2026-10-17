@@ -21,7 +21,6 @@ describe.each(portals)('%s navigation config', (_name, groups, root, extra, coun
     expect(items).toHaveLength(count);
   });
 
-
   it('has unique group ids and no empty group', () => {
     const ids = groups.map((g) => g.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -62,5 +61,33 @@ describe('consultant tour ids', () => {
       'nav-profile': 'profile', 'nav-my-bids': 'proposals', 'nav-open-requests': 'open_tickets',
       'nav-sessions': 'calendar', 'nav-messages': 'chat', 'nav-earnings': 'earnings',
     });
+  });
+});
+
+describe('consultant landing-page link', () => {
+  const item = consultantNavGroups.flatMap((g) => g.items).find((i) => i.key === 'landing_page');
+
+  it('points at the public page and opens in a new tab', () => {
+    expect(item).toMatchObject({
+      path: '/for-consultants',
+      labelKey: 'nav.landing_page',
+      fallback: 'Landing page',
+      external: true,
+    });
+    // The tour only targets the items it lists, so this one needs no data-tour id.
+    expect(item?.tourId).toBeUndefined();
+  });
+
+  it('is offered to consultants only', () => {
+    for (const [, groups, , extra] of portals) {
+      const all = [...extra, ...groups.flatMap((g) => g.items)];
+      expect(all.some((i) => i.key === 'landing_page')).toBe(groups === consultantNavGroups);
+    }
+  });
+
+  it('sits at the bottom of the menu, not among the work items', () => {
+    const last = consultantNavGroups[consultantNavGroups.length - 1];
+    expect(last.id).toBe('account');
+    expect(last.items[last.items.length - 1].key).toBe('landing_page');
   });
 });
