@@ -54,7 +54,7 @@ function DocumentLink({ value, label, empty = 'Not provided' }: { value: unknown
 }
 
 export function ConsultantFullProfileBody({ data }: { data: FullConsultantProfile }) {
-  const { t } = useTranslation(); const { labels } = useProfileFieldRules();
+  const { t, i18n } = useTranslation(); const { labels } = useProfileFieldRules();
   const [tab, setTab] = useState('Overview'); const [reveal, setReveal] = useState(false);
   useEffect(() => { setReveal(false); }, [data, tab]);
   useEffect(() => { if (!reveal) return; const timer = setTimeout(() => setReveal(false), 30_000); return () => clearTimeout(timer); }, [reveal]);
@@ -66,7 +66,7 @@ export function ConsultantFullProfileBody({ data }: { data: FullConsultantProfil
   const table = (name: string, records: Row[], columns: [string, string][]) => <section key={name} className="space-y-2"><h3 className="font-semibold">{label(name)}</h3>{!records.length ? <p className="text-sm text-muted-foreground">{text(null)}</p> : <Table><TableHeader><TableRow>{columns.map(([l]) => <TableHead key={l}>{label(l)}</TableHead>)}</TableRow></TableHeader><TableBody>{records.map((r, i) => <TableRow key={content(r.id) || i}>{columns.map(([l, key]) => <TableCell key={key} className="align-top whitespace-pre-wrap break-words">{key === 'document_url' ? <DocumentLink value={r[key]} label={label('Document')} /> : key === 'verified' ? <Badge variant={r[key] ? 'default' : 'secondary'}>{label(r[key] ? 'Verified' : 'Not verified')}</Badge> : key === 'is_current' || key === 'certified' ? bool(r[key]) || text(null) : text(r[key])}</TableCell>)}</TableRow>)}</TableBody></Table>}</section>;
   const missing = Array.isArray(data.missing_required_fields) ? data.missing_required_fields : [];
   const bankStatus = !Object.keys(pay).length ? 'Missing' : pay.verified_at ? 'Verified' : 'Waiting for verification';
-  return <Tabs value={tab} onValueChange={setTab} className="min-w-0">
+  return <Tabs value={tab} onValueChange={setTab} dir={i18n?.dir() === 'rtl' ? 'rtl' : 'ltr'} className="min-w-0">
     <div className="sticky top-0 z-10 bg-background pb-3"><TabsList className="h-auto flex flex-wrap justify-start">{TABS.map(s => <TabsTrigger key={s} value={s}>{label(s)}</TabsTrigger>)}</TabsList></div>
     <TabsContent value="Overview" className="space-y-6">
       {fields([['E-mail', a.email], ['Sign-in provider', a.provider], ['Registered on', date(a.created_at)], ['Last sign-in', date(a.last_sign_in_at)], ['Verification status', c.verification_status], ['Availability status', c.availability_status], ['Profile visible', bool(c.profile_visible)], ['New case alerts', bool(c.new_case_alerts)], ['AI interview badge', c.ai_interview_badge], ['AI interview date', date(c.ai_interview_completed_at)], ['Credibility credits', c.credibility_credits], ['Rating', c.rating], ['Reviews', c.total_reviews], ['Response time (minutes)', c.response_time_minutes], ['Assigned requests', counts.tickets_assigned], ['Bids', counts.bids], ['Signed NDAs', counts.ndas_signed]])}
