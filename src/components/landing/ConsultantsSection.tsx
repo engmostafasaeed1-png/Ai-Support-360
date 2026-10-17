@@ -8,7 +8,7 @@ export default function ConsultantsSection() {
   const { t } = useTranslation();
 
   return (
-    <section id="consultants" className="relative py-24 md:py-32 bg-muted/30 overflow-hidden">
+    <section id="consultants" className="public-anchor relative py-24 md:py-32 bg-muted/30 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-accent/10 rounded-full blur-[140px] motion-safe:animate-mesh-shift" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[140px] motion-safe:animate-mesh-shift-alt" />

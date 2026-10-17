@@ -49,7 +49,7 @@ export default function ContactSection() {
   };
 
   return (
-    <section id="contact" className="relative py-24 md:py-32 bg-muted/30 overflow-hidden">
+    <section id="contact" className="public-anchor relative py-24 md:py-32 bg-muted/30 overflow-hidden">
       {/* Background mesh */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[140px] motion-safe:animate-mesh-shift" />

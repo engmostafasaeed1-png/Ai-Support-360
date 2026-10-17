@@ -64,7 +64,7 @@ export default function ExploreServicesSection() {
   const navigate = useNavigate();
 
   return (
-    <section id="categories" className="relative py-24 overflow-hidden">
+    <section id="categories" className="public-anchor relative py-24 overflow-hidden">
       {/* Ambient background */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,hsl(var(--primary)/0.08),transparent_50%),radial-gradient(circle_at_80%_90%,hsl(var(--accent)/0.08),transparent_55%)]" />

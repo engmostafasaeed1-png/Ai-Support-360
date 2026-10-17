@@ -27,7 +27,7 @@ export default function FAQSection() {
   };
 
   return (
-    <section id="faq" className="relative py-24 md:py-32 overflow-hidden bg-background">
+    <section id="faq" className="public-anchor relative py-24 md:py-32 overflow-hidden bg-background">
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       </Helmet>
