@@ -21,6 +21,8 @@ interface SearchItem {
   href: string;
   icon: React.ElementType;
   group: string;
+  /** Public-site link: opened in a new tab instead of navigating away. */
+  external?: boolean;
 }
 
 // Used outside the portals (public pages).
@@ -83,9 +85,10 @@ const GlobalSearch = () => {
   }, []);
 
   const handleSelect = useCallback(
-    (href: string) => {
+    (href: string, external = false) => {
       setOpen(false);
-      navigate(href);
+      if (external) window.open(href, "_blank", "noopener,noreferrer");
+      else navigate(href);
     },
     [navigate],
   );
@@ -101,6 +104,7 @@ const GlobalSearch = () => {
         href: item.path,
         icon: item.icon as React.ElementType,
         group,
+        external: item.external === true,
       }));
     });
     if (portal.prefix !== "/client") return fromMenu;
@@ -130,7 +134,7 @@ const GlobalSearch = () => {
                 <CommandItem
                   key={`${group}-${item.href}`}
                   value={item.label}
-                  onSelect={() => handleSelect(item.href)}
+                  onSelect={() => handleSelect(item.href, item.external === true)}
                   className="gap-2"
                 >
                   <item.icon className="w-4 h-4 text-muted-foreground" />
