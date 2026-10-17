@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Administrator notification emails use credential-free pg_net event callbacks and service-only atomic claims with bounded retries and managed idempotency; only stored notification content and the administrator's own address may be sent, without new queues or schedules.
+
 - Send payout approval emails from the dedicated authenticated payout notification function after the existing status RPC succeeds, deriving recipient, money and date server-side and deduplicating by payout ID; email failures must not undo financial actions.
 
 - Keep invoice details in a three-zone dialog with shared billing controls and the existing admin confirmation hook; this keeps visible actions consistent with backend permissions.

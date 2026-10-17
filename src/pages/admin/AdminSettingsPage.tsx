@@ -11,6 +11,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useAdminSettings } from '@/hooks/useAdminSettings';
+import { useAdminEmailCount } from '@/hooks/useAdminEmailCount';
 import NDATemplateEditor from '@/components/admin/NDATemplateEditor';
 import CriticalServiceSettingsCard from '@/components/admin/CriticalServiceSettingsCard';
 import CriticalRequestsLive from '@/components/admin/CriticalRequestsLive';
@@ -38,6 +39,7 @@ const GENERAL = [
 export default function AdminSettingsPage() {
   const { t } = useTranslation();
   const { settings, loading, updateSetting } = useAdminSettings();
+  const emailCount = useAdminEmailCount();
   const { toast } = useToast();
   const [portalMargin, setPortalMargin] = useState(5);
   const [marginLoading, setMarginLoading] = useState(true);
@@ -152,13 +154,17 @@ export default function AdminSettingsPage() {
             {([
               ['email_notifications', 'Email Notifications', 'Automatic e-mails (demo requests, verification items, interview replies). Invitations you send yourself always go out.', true],
               ['admin_alerts', 'Admin Alerts', 'In-app notifications to administrators. When off, new alerts for admins are not stored.', true],
+              ['admin_email_alerts', 'E-mail every administrator notification', "Each notification sent to an administrator is also sent to the administrator's e-mail address.", true],
               ['audit_logging', 'Audit Logging', 'Records activity in the audit log. Changes to settings and roles are always recorded.', true],
               ['require_2fa', 'Require two-step sign-in', 'Everyone must use an authenticator app code before the portal opens.', false],
             ] as const).map(([key, label, hint, def]) => (
               <div key={key} className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <Label htmlFor={key}>{label}</Label>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
+                  <Label htmlFor={key}>{key === 'admin_email_alerts' ? t('admin.settings_admin_email_alerts', label) : label}</Label>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{key === 'admin_email_alerts' ? t('admin.settings_admin_email_alerts_hint', hint) : hint}</p>
+                  {key === 'admin_email_alerts' && <p className="mt-1 text-xs text-muted-foreground" role="status">
+                    {emailCount.isError ? t('admin.settings_admin_email_count_error', 'E-mail count is unavailable.') : emailCount.isPending ? t('admin.settings_admin_email_count_loading', 'Loading e-mail count…') : t('admin.settings_admin_email_count', 'Administrator e-mails sent in the last 24 hours: {{count}}', { count: emailCount.data ?? 0 })}
+                  </p>}
                 </div>
                 {loading ? (
                   <Skeleton className="h-5 w-9 shrink-0 rounded-full" />
