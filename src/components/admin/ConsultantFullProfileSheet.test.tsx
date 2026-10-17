@@ -27,6 +27,7 @@ describe('consultant full profile sheet', () => {
   it('loads the audited RPC and presents all six tabs with full records', async () => {
     show();await screen.findByRole('tab',{name:'Overview'});
     expect(rpc).toHaveBeenCalledWith('admin_consultant_full_profile',{_cid:'c1'});
+    expect(screen.getByText('Payout details ready')).toBeInTheDocument();
     for(const name of ['Overview','Personal & links','Experience','Records','Interviews','Payout']) expect(screen.getByRole('tab',{name})).toBeInTheDocument();
     expect(screen.getByText('Biography')).toBeInTheDocument();
     select('Records');expect(screen.getByText('Example company')).toBeInTheDocument();expect(screen.getByText('Example university')).toBeInTheDocument();
@@ -34,6 +35,7 @@ describe('consultant full profile sheet', () => {
   });
   it('handles an almost empty object in every tab without crashing', async () => {
     show({consultant:{},profile:null,payout:null});await screen.findByRole('tab',{name:'Overview'});
+    expect(screen.getByText('Payout details missing')).toBeInTheDocument();
     for(const name of ['Overview','Personal & links','Experience','Records','Interviews','Payout']) {select(name);expect(screen.getAllByText('Not provided').length).toBeGreaterThan(0);}
   });
   it('opens safe outbound links with noopener and renders biography as text', async () => {

@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Reuse the consultant payout reminder on dashboard and Earnings and render administrator readiness badges from existing presence/status metadata only; this keeps bank identifiers out of readiness UI.
+
 - Shared Button removes its variant gradient when callers supply a base background colour, while retaining custom gradients; this preserves existing emergency and status colours without changing the Button API.
 
 - Consultant landing and pricing pages own route head tags through useHeadTags, replacing duplicates and restoring defaults on unmount; do not also emit those tags through RouteSeo Helmet, to avoid competing deferred updates.

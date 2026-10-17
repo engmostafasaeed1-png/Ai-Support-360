@@ -24,6 +24,7 @@ import PricingSettingsCard from '@/components/admin/PricingSettingsCard';
 import InvoiceSellerCard from '@/components/admin/InvoiceSellerCard';
 import BankTransferSettingsCard from '@/components/admin/BankTransferSettingsCard';
 import InvoiceBankControls, { type InvoiceBankControlsInvoice } from '@/components/admin/InvoiceBankControls';
+import PayoutReadinessBadge from '@/components/admin/PayoutReadinessBadge';
 
 const money = (n: number | string | null | undefined, currency = 'USD') => {
   try {
@@ -355,6 +356,7 @@ export default function PaymentsAdminPage() {
                       <TableRow key={p.id}>
                         <TableCell className="text-sm">
                           <div className="font-medium">{p.consultant_name}</div>
+                          <PayoutReadinessBadge ready={p.has_details === true} />
                           <div className="text-xs text-muted-foreground">{when(p.created_at)}</div>
                         </TableCell>
                         <TableCell className="text-end text-sm">{p.gross_amount != null ? money(p.gross_amount, p.currency) : '-'}</TableCell>
