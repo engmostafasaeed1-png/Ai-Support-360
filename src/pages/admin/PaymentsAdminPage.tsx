@@ -390,12 +390,17 @@ export default function PaymentsAdminPage() {
                           {p.status === 'failed' && p.note && <div className="text-xs text-destructive mt-0.5 max-w-[200px]">{p.note}</div>}
                         </TableCell>
                         <TableCell className="text-end whitespace-nowrap">
+                          {!p.has_details && p.status !== 'completed' && (
+                            <p className="text-xs text-amber-700 dark:text-amber-400 max-w-[220px] ms-auto mb-1 text-end">
+                              Consultant has not entered bank details yet — ask them to add them in Profile &gt; Payout details.
+                            </p>
+                          )}
                           {p.status === 'pending' && (
-                            <Button size="sm" variant="outline" className="h-8 text-xs me-1" disabled={setPayout.isPending} onClick={() => setPayout.mutate({ id: p.id, status: 'processing' })}>Start</Button>
+                            <Button size="sm" variant="outline" className="h-8 text-xs me-1" disabled={setPayout.isPending || !p.has_details} title={!p.has_details ? 'Consultant has not entered bank details yet' : undefined} onClick={() => setPayout.mutate({ id: p.id, status: 'processing' })}>Start</Button>
                           )}
                           {(p.status === 'pending' || p.status === 'processing') && (
                             <>
-                              <Button size="sm" className="h-8 text-xs me-1" onClick={() => setPayoutDialog({ payout: p, status: 'completed' })}>Mark paid</Button>
+                              <Button size="sm" className="h-8 text-xs me-1" disabled={!p.has_details} title={!p.has_details ? 'Consultant has not entered bank details yet' : undefined} onClick={() => setPayoutDialog({ payout: p, status: 'completed' })}>Mark paid</Button>
                               <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setPayoutDialog({ payout: p, status: 'failed' })}>Failed</Button>
                             </>
                           )}
