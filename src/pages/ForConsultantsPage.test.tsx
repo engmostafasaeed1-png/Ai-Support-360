@@ -90,11 +90,10 @@ describe('ForConsultantsPage', () => {
     expect(document.head.querySelectorAll('link[rel="canonical"]')).toHaveLength(1);
     expect(document.head.querySelector('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.aisupport360.com/for-consultants');
     expect(document.head.querySelector('meta[name="description"]')).toHaveAttribute('content', CONSULTANT_SEO.description);
-    let script: Element | null = null;
     await waitFor(() => {
-      script = document.head.querySelector('script[type="application/ld+json"]');
-      expect(script).not.toBeNull();
+      expect(document.head.querySelector('script[type="application/ld+json"]')).not.toBeNull();
     });
+    const script = document.head.querySelector('script[type="application/ld+json"]');
     const data = JSON.parse(script?.textContent ?? '{}');
     expect(data['@type']).toBe('FAQPage');
     expect(data.mainEntity).toHaveLength(10);

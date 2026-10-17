@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 export const CONSULTANT_SEO = {
   title: 'SAP Consultant Jobs: Keep 100% of Your Rate | AI Support 360',
-  description: 'Set your SAP consulting rate and keep 100% of it. Clients pay the fees on top. Verified consultants get matched requests, payouts and visible trust badges.',
+  description: 'Set your SAP consulting rate and keep 100% of it. Clients pay fees on top. Verified consultants get matched requests, payouts and visible trust badges',
 };
 
 export const PRICING_SEO = {
