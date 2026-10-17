@@ -21,10 +21,8 @@ import { template as platformInvitation } from './platform-invitation.tsx'
 import { template as criticalRequestAlert } from './critical-request-alert.tsx'
 import { template as verificationItems } from './verification-items.tsx'
 import { template as payoutApproved } from './payout-approved.tsx'
-import { template as adminNotification } from './admin-notification.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
-  'admin-notification': adminNotification,
   'payout-approved': payoutApproved,
   'demo-request-received': demoRequestReceived,
   'demo-request-alert': demoRequestAlert,
