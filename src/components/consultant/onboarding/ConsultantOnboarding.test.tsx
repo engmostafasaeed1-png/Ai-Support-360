@@ -67,7 +67,7 @@ const mounts = { skills: 0, experience: 0 };
 let cvChanged: (() => void) | undefined;
 vi.mock('@/components/consultant/SapExpertiseCard', () => ({ default: () => { useEffect(() => { mounts.skills++; }, []); return null; } }));
 vi.mock('@/components/consultant/ProfileExperienceCard', () => ({ default: () => { useEffect(() => { mounts.experience++; }, []); return null; } }));
-vi.mock('@/components/consultant/ExperienceCvCard', () => ({ default: ({ onProfileChanged }: any) => { cvChanged = onProfileChanged; return null; } }));
+vi.mock('@/components/consultant/ExperienceCvCard', () => ({ default: ({ onImported }: any) => { cvChanged = onImported; return null; } }));
 
 import ConsultantOnboarding from './ConsultantOnboarding';
 

@@ -41,6 +41,24 @@ describe('profile section saving safety', () => {
     view.rerender({ name: 'New' }); await act(() => vi.advanceTimersByTimeAsync(4000));
     expect(beforeManual).not.toHaveBeenCalled(); expect(persist).toHaveBeenCalledTimes(1);
   });
+  it('a source reload adopts untouched fields without overwriting a dirty field', async () => {
+    const persist = vi.fn().mockResolvedValue(undefined);
+    const view = renderHook(({ name, city, sourceRevision }) => useSectionAutosave({ values: { name, city }, sourceRevision, ready: true, persist }), { initialProps: { name: 'Saved', city: 'Riyadh', sourceRevision: 0 } });
+    view.rerender({ name: 'Typed', city: 'Riyadh', sourceRevision: 0 });
+    view.rerender({ name: 'Typed', city: 'Jeddah', sourceRevision: 1 });
+    await act(() => vi.advanceTimersByTimeAsync(4000));
+    expect(persist).toHaveBeenCalledExactlyOnceWith({ name: 'Typed' });
+  });
+  it('keeps the in-flight nested snapshot separate from later edits', async () => {
+    let finish: (() => void) | undefined;
+    const persist = vi.fn().mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve; }));
+    const view = renderHook(({ rows }) => useSectionAutosave({ values: { rows }, ready: true, persist }), { initialProps: { rows: [{ id: 'one', label: 'Saved' }] } });
+    view.rerender({ rows: [{ id: 'one', label: 'First' }] }); await act(() => vi.advanceTimersByTimeAsync(4000));
+    view.rerender({ rows: [{ id: 'one', label: 'Second' }] });
+    await act(async () => { finish?.(); await Promise.resolve(); });
+    expect(persist.mock.calls[0][0]).toEqual({ rows: [{ id: 'one', label: 'First' }] });
+    expect(view.result.current.dirty).toBe(true);
+  });
   it('manual-only sensitive sections never autosave or flush automatically', async () => {
     const persist = vi.fn();
     const view = renderHook(({ name }) => useSectionAutosave({ values: { name }, ready: true, automatic: false, persist }), { initialProps: { name: 'Saved' } });

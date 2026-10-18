@@ -137,6 +137,7 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
     if (editingId === id) setEditingId(null);
   };
 
+  const insertedSlots = useRef(new Map<string, string>());
   const automatic = useProfileAutosaveReady();
   const beforeManual = useProfileSavePrompt();
   const state = useSectionAutosave({ values: { slots: drafts }, ready: open && !isLoading && !!data?.consultantId && draftLoaded && applied.current !== null, resetKey: open ? 'open' : 'closed', automatic: automatic.data === true, beforeManual,
@@ -145,6 +146,7 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
       if (!data?.consultantId) throw new Error('Your consultant profile could not be found.');
       const sent = patch.slots as DraftSlot[];
       for (const slot of sent) {
+        const resolved = insertedSlots.current.get(slot.id); if (resolved) slot.id = resolved;
         if (slot.removed) {
           if (!slot.id.startsWith('new-')) { const { error } = await supabase.from('availability_slots').delete().eq('id', slot.id).eq('consultant_id', data.consultantId); if (error) throw error; }
           continue;
@@ -153,7 +155,7 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
         if (slot.id.startsWith('new-')) {
           const { data: inserted, error } = await supabase.from('availability_slots').insert({ ...values, consultant_id: data.consultantId }).select('id').single();
           if (error || !inserted) throw error ?? new Error('Could not save your availability');
-          const localId = slot.id; slot.id = inserted.id;
+          const localId = slot.id; insertedSlots.current.set(localId, inserted.id); slot.id = inserted.id;
           setDrafts(current => current.map(item => item.id === localId ? { ...item, id: inserted.id } : item));
         } else {
           const original = data.slots.find(s => s.id === slot.id);

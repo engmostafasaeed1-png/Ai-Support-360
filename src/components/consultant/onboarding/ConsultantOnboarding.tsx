@@ -369,7 +369,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
               seen.add(key(row));
             }
           }
-          const removed = original.filter(id => !ids.includes(id));
+          const removed = original.filter(id => !rows.some(row => row.id === id));
           if (removed.length) {
             const { error } = await supabase.from(table).delete().in('id', removed).eq('consultant_id', consultant.id);
             if (error) throw error;
