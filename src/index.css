@@ -47,6 +47,10 @@
 
     --warning: 38 92% 50%;
     --warning-foreground: 28 80% 12%;
+    --badge-gold: 38 80% 30%;
+    --badge-silver: 215 18% 38%;
+    --badge-bronze: 24 65% 34%;
+    --gradient-profile-header: linear-gradient(120deg, hsl(var(--accent) / 0.12), hsl(var(--success) / 0.06));
 
     --info: 226 68% 50%;
     --info-foreground: 0 0% 100%;
@@ -107,6 +111,9 @@
 
     --warning: 38 92% 56%;
     --warning-foreground: 28 80% 10%;
+    --badge-gold: 42 90% 70%;
+    --badge-silver: 215 20% 78%;
+    --badge-bronze: 26 80% 72%;
 
     --info: 226 80% 68%;
     --info-foreground: 218 50% 8%;
