@@ -6,11 +6,13 @@ export function changedFields<T extends Record<string, unknown>>(current: T, sav
 }
 export type SectionSave = ReturnType<typeof useSectionAutosave>;
 /** In-memory draft only: captures a snapshot, serializes writes and acknowledges only that snapshot. */
-export function useSectionAutosave<T extends Record<string, unknown>>({ values, ready, automatic = true, validate, persist, beforeManual }: {
-  values: T; ready: boolean; automatic?: boolean; validate?: (patch: Partial<T>) => string | null;
+export function useSectionAutosave<T extends Record<string, unknown>>({ values, ready, automatic = true, validate, persist, beforeManual, resetKey }: {
+  values: T; ready: boolean; automatic?: boolean; resetKey?: string; validate?: (patch: Partial<T>) => string | null;
   persist: (patch: Partial<T>) => Promise<void>; beforeManual?: (proceed: () => void) => void;
 }) {
   const baseline = useRef<T | null>(null);
+  const identity = useRef(resetKey);
+  if (identity.current !== resetKey) { identity.current = resetKey; baseline.current = null; }
   const latest = useRef({ values, ready, automatic, validate, persist, beforeManual });
   latest.current = { values, ready, automatic, validate, persist, beforeManual };
   const flight = useRef<Promise<void> | null>(null);
