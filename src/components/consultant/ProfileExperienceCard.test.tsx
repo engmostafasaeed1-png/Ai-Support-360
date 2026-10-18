@@ -107,13 +107,12 @@ describe('ProfileExperienceCard', () => {
   it('saves the changed columns with one update and shows the success toast', async () => {
     withRules(<ProfileExperienceCard />);
     await waitFor(() => expect(screen.getByText('Utilities')).toBeTruthy());
+    fireEvent.click(screen.getByText('Public sector'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Government ministries & authorities' }));
     fireEvent.click(screen.getByRole('button', { name: /Save/ }));
     await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith('Experience saved'));
     const payload = consultantsUpdate.mock.calls[0][0] as Record<string, unknown>;
-    expect(payload).toHaveProperty('industries', ['Utilities']);
-    expect(payload).toHaveProperty('project_scale', null);
-    expect(payload).toHaveProperty('working_week', null);
-    expect(payload).toHaveProperty('language_levels', { en: 'Native' });
+    expect(payload).toEqual({ customer_segments: ['Government ministries & authorities'] });
     expect(payload).not.toHaveProperty('id');
   });
 
@@ -121,6 +120,8 @@ describe('ProfileExperienceCard', () => {
     updateError = { message: 'contact details are not allowed' };
     withRules(<ProfileExperienceCard />);
     await waitFor(() => expect(screen.getByText('Utilities')).toBeTruthy());
+    fireEvent.click(screen.getByText('Public sector'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Government ministries & authorities' }));
     fireEvent.click(screen.getByRole('button', { name: /Save/ }));
     await waitFor(() => expect(toastError).toHaveBeenCalledWith('contact details are not allowed'));
   });
