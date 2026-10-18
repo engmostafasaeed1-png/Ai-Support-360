@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/hooks/useLanguage';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Globe } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type MouseEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import horizontalLogo from '@/assets/brand/horizontal-tight.webp.asset.json';
 
@@ -64,6 +64,17 @@ export default function Navbar() {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
+  // React Router does nothing when the link target already matches the location,
+  // so the hash-scroll effects never re-run. Scroll directly in that case.
+  const handleNavClick = (href: string) => (e: MouseEvent) => {
+    const [path, hash] = href.split('#');
+    if (!hash) return;
+    if (location.pathname === (path || '/') && location.hash === `#${hash}`) {
+      e.preventDefault();
+      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <header
       ref={navRef}
@@ -94,6 +105,7 @@ export default function Navbar() {
             <Link
               key={item.href}
               to={item.href}
+              onClick={handleNavClick(item.href)}
               aria-current={isActive(item.href) ? 'page' : undefined}
               className="rounded-full aria-[current=page]:bg-primary/[0.08] aria-[current=page]:text-primary px-3 py-2.5 text-sm font-semibold text-muted-foreground outline-none transition-colors duration-200 hover:bg-primary/[0.06] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
             >
@@ -176,6 +188,10 @@ export default function Navbar() {
             <Link
               key={item.href}
               to={item.href}
+              onClick={(e) => {
+                handleNavClick(item.href)(e);
+                setMobileOpen(false);
+              }}
               aria-current={isActive(item.href) ? 'page' : undefined}
               role="menuitem"
               tabIndex={mobileOpen ? 0 : -1}
@@ -183,7 +199,6 @@ export default function Navbar() {
               className={`block rounded-full px-4 py-3 text-sm font-medium text-muted-foreground outline-none transition-all duration-300 hover:bg-primary/[0.06] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary aria-[current=page]:bg-primary/[0.08] aria-[current=page]:text-primary ${
                 mobileOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
               }`}
-              onClick={() => setMobileOpen(false)}
             >
               {item.label}
             </Link>

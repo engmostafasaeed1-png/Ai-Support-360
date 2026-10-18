@@ -1,4 +1,4 @@
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, fireEvent, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Navbar from './Navbar';
@@ -46,5 +46,27 @@ describe('Navbar header height variable', () => {
 
     unmount();
     expect(document.documentElement.style.getPropertyValue('--public-header-h')).toBe('');
+  });
+
+  it('scrolls to the section again when its link is clicked while already on that hash', () => {
+    const section = document.createElement('div');
+    section.id = 'pricing';
+    const scrollIntoView = vi.fn();
+    section.scrollIntoView = scrollIntoView;
+    document.body.appendChild(section);
+
+    render(
+      <MemoryRouter initialEntries={['/#pricing']}>
+        <Navbar />
+      </MemoryRouter>,
+    );
+
+    const link = screen
+      .getAllByRole('link')
+      .find((a) => a.getAttribute('href') === '/#pricing')!;
+    fireEvent.click(link);
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+    section.remove();
   });
 });
