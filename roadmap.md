@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Connect the profile dialog to a real AI interview start, verify persisted badge awards and first-completion-only credits.
+
 - [x] Refresh Feature D manual-save dialog with honest benefits, real progress/badges, accessible mobile/RTL/dark presentation; 15 regression tests passed and signed-in save/reload, 375 px and focus trapping verified.
 
 - [x] Feature D: section Save/status controls, dirty-only four-second autosave controller, completion/interview guidance, notification-trigger audit and safety tests; signed-in save/reload verified.
