@@ -1,3 +1,6 @@
+import OnboardingSection from '@/components/consultant/saving/OnboardingSection';
+import { useProfileAutosaveReady } from '@/hooks/useProfileAutosaveReady';
+import { useProfileFieldRules } from '@/hooks/useProfileFieldRules';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -132,6 +135,9 @@ const stepIcons = [Upload, User, Cpu, Award, Briefcase, GraduationCap, FolderKan
 
 export default function ConsultantOnboarding({ embedded = false }: { embedded?: boolean }) {
   const { t } = useTranslation();
+  const autosaveReady = useProfileAutosaveReady();
+  const fieldRules = useProfileFieldRules();
+  const [loadSucceeded, setLoadSucceeded] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const payoutQ = useMyPayoutDetails();
@@ -209,6 +215,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           availability: (slots.data || []).flatMap(s => s.day_of_week === null ? [] : [{ dayOfWeek: s.day_of_week, startTime: s.start_time, endTime: s.end_time }]),
         };
         setData(prev => mergeLoaded(prev, loaded, dirtyKeys.current));
+        setLoadSucceeded(true);
       } catch {
         toast.error(tRef.current('onboarding.error_generic'));
       } finally {
@@ -505,6 +512,87 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     }
   };
 
+  const sectionValues = (keys: (keyof OnboardingData)[]) => Object.fromEntries(keys.map(key => [key, data[key]]));
+  const validateSection = (keys: (keyof OnboardingData)[]) => (_patch: Record<string, unknown>) => {
+    const fields: Partial<Record<keyof OnboardingData, string>> = { displayName: 'display_name', bio: 'bio', hourlyRate: 'hourly_rate', nationality: 'nationality', city: 'city', country: 'country', timezone: 'timezone', languages: 'languages', linkedinUrl: 'linkedin_url', credlyUsername: 'credly_username', githubUrl: 'github_url', personalWebsite: 'personal_website', certifications: 'certifications', education: 'education', projects: 'projects' };
+    for (const key of keys) {
+      const field = fields[key]; const value = data[key];
+      if (field && fieldRules.isRequired(field) && (value === null || value === '' || (typeof value === 'string' && !value.trim()) || (Array.isArray(value) && !value.length) || (key === 'hourlyRate' && Number(value) <= 0))) return t('profile_save.required', 'Complete the required fields in this section before saving.');
+    }
+    if (keys.includes('linkedinUrl') && data.linkedinUrl.trim() && !normalizeLinkedinUrl(data.linkedinUrl)) return LINKEDIN_HINT;
+    if (keys.includes('credlyUsername') && data.credlyUsername.trim() && !normalizeCredlyUsername(data.credlyUsername)) return CREDLY_HINT;
+    if (keys.includes('hourlyRate') && (!Number.isFinite(data.hourlyRate) || data.hourlyRate < 0)) return t('profile_save.rate_invalid', 'Enter a valid hourly rate.');
+    if (keys.includes('certifications') && data.certifications.some(c => !c.name.trim() || (c.issueDate && c.expiryDate && c.expiryDate < c.issueDate))) return t('profile_save.rows_invalid', 'Complete each entry and check its dates before saving.');
+    if (keys.includes('education') && data.education.some(e => !e.institution.trim() || (e.startYear && e.endYear && e.endYear < e.startYear))) return t('profile_save.rows_invalid', 'Complete each entry and check its dates before saving.');
+    if (keys.includes('projects') && data.projects.some(p => !p.projectName.trim())) return t('profile_save.rows_invalid', 'Complete each entry and check its dates before saving.');
+    return null;
+  };
+  const persistSection = async (patch: Record<string, unknown>) => {
+    if (!loadSucceeded || !consultantId) throw new Error(t('onboarding.error_generic'));
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error(t('onboarding.error_auth'));
+    const check = (result: { error: unknown }) => { if (result.error) throw result.error; };
+    if ('displayName' in patch) check(await supabase.from('profiles').update({ display_name: String(patch.displayName) }).eq('user_id', user.id));
+    if ('nationality' in patch) check(await supabase.from('consultant_private').upsert({ consultant_id: consultantId, nationality: String(patch.nationality) || null }, { onConflict: 'consultant_id' }));
+    const columns: Record<string, string> = { bio: 'bio', hourlyRate: 'hourly_rate', currency: 'currency', timezone: 'timezone', languages: 'languages', city: 'city', country: 'country', linkedinUrl: 'linkedin_url', credlyUsername: 'credly_username', githubUrl: 'github_url', personalWebsite: 'personal_website' };
+    const values: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(patch)) if (columns[key]) values[columns[key]] = value;
+    if ('linkedinUrl' in patch) values.linkedin_url = normalizeLinkedinUrl(String(patch.linkedinUrl)) || null;
+    if ('credlyUsername' in patch) values.credly_username = normalizeCredlyUsername(String(patch.credlyUsername)) || null;
+    if ('city' in patch || 'country' in patch) {
+      const place = (data.country && data.city ? cityPoint(data.country, data.city) : null) ?? (data.country ? countryPoint(data.country) : null);
+      values.latitude = place?.lat ?? null; values.longitude = place?.lng ?? null;
+    }
+    if (Object.keys(values).length) check(await supabase.from('consultants').update(values as never).eq('id', consultantId));
+    const sync = async (table: 'certifications' | 'consultant_education' | 'consultant_projects', rows: { id?: string; [key: string]: unknown }[], original: string[]) => {
+      const { data: existing, error } = await supabase.from(table).select('*').eq('consultant_id', consultantId);
+      if (error) throw error;
+      const ids: string[] = [];
+      for (const row of rows) {
+        const { id, ...values } = row;
+        const before = existing?.find(x => x.id === id) as Record<string, unknown> | undefined;
+        if (id) {
+          const changed = Object.fromEntries(Object.entries(values).filter(([key, value]) => JSON.stringify(before?.[key]) !== JSON.stringify(value)));
+          if (Object.keys(changed).length) check(await supabase.from(table).update(changed as never).eq('id', id).eq('consultant_id', consultantId));
+          ids.push(id);
+        } else {
+          const { data: inserted, error } = await supabase.from(table).insert({ ...values, consultant_id: consultantId } as never).select('id').single();
+          if (error || !inserted) throw error ?? new Error(t('onboarding.error_generic'));
+          row.id = inserted.id; ids.push(inserted.id);
+        }
+      }
+      const removed = original.filter(id => !rows.some(row => row.id === id));
+      if (removed.length) check(await supabase.from(table).delete().in('id', removed).eq('consultant_id', consultantId));
+      return ids;
+    };
+    if ('certifications' in patch) {
+      const rows = [];
+      for (const cert of patch.certifications as OnboardingData['certifications']) {
+        let document_url: string | undefined;
+        if (cert.file) { const path = `${user.id}/certifications/${Date.now()}-${safeFileName(cert.file.name)}`; check(await supabase.storage.from('consultant-documents').upload(path, cert.file)); document_url = path; }
+        rows.push({ id: cert.id, name: cert.name.trim(), issuer: cert.issuer || null, issue_date: cert.issueDate || null, expiry_date: cert.expiryDate || null, ...(document_url ? { document_url } : {}) });
+      }
+      const ids = await sync('certifications', rows, savedRows.certifications);
+      (patch.certifications as OnboardingData['certifications']).forEach((row, i) => { row.id = ids[i]; delete row.file; });
+      setSavedRows(prev => ({ ...prev, certifications: ids }));
+    }
+    if ('education' in patch) {
+      const draft = patch.education as OnboardingData['education'];
+      const ids = await sync('consultant_education', draft.map(e => ({ id: e.id, institution: e.institution.trim(), degree: e.degree || null, field_of_study: e.fieldOfStudy || null, start_year: e.startYear, end_year: e.endYear })), savedRows.education);
+      draft.forEach((row, i) => { row.id = ids[i]; }); setSavedRows(prev => ({ ...prev, education: ids }));
+    }
+    if ('projects' in patch) {
+      const draft = patch.projects as OnboardingData['projects'];
+      const ids = await sync('consultant_projects', draft.map(p => ({ id: p.id, project_name: p.projectName.trim(), client_industry: p.clientIndustry || null, sap_modules: [...new Set(p.sapModules)], description: p.description || null, duration_months: p.durationMonths, role: p.role || null })), savedRows.projects);
+      draft.forEach((row, i) => { row.id = ids[i]; }); setSavedRows(prev => ({ ...prev, projects: ids }));
+    }
+    // A completed snapshot only clears keys which have not changed while the request was running.
+    for (const [key, value] of Object.entries(patch)) if (JSON.stringify(latestData.current[key as keyof OnboardingData]) === JSON.stringify(value)) dirtyKeys.current.delete(key);
+    await queryClient.invalidateQueries({ queryKey: ['consultant-profile'] });
+  };
+  const latestData = useRef(data); latestData.current = data;
+  const section = (keys: (keyof OnboardingData)[], children: React.ReactNode, manual = false) => <OnboardingSection values={sectionValues(keys)} automatic={!manual && autosaveReady.data === true} disabled={isGuest || !loadSucceeded || fieldRules.isLoading} persist={persistSection} validate={validateSection(keys)}>{children}</OnboardingSection>;
+
   const canNext = () => {
     if (currentStep === 0) return true; // Import is always skippable
     if (currentStep === 1) {
@@ -522,23 +610,34 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
   if (loading) return <div role="status" className="py-8 text-center text-muted-foreground">{t('common.loading')}</div>;
 
   if (embedded) return (
-    <div className="space-y-8">
+    <div className="space-y-8" onBlurCapture={() => {
+      const partial: Partial<OnboardingData> = {};
+      const selectors: Partial<Record<keyof OnboardingData, string>> = { displayName: '#displayName', bio: '#bio', hourlyRate: '#hourlyRate', linkedinUrl: 'input[aria-label="LinkedIn profile address"]', credlyUsername: 'input[aria-label="Credly username or profile address"]', githubUrl: 'input[aria-label="GitHub profile address"]', personalWebsite: 'input[aria-label="Personal website address"]' };
+      for (const [key, selector] of Object.entries(selectors)) {
+        const k = key as keyof OnboardingData; const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(selector);
+        if (!el) continue;
+        const value = k === 'hourlyRate' ? Number(el.value) : el.value;
+        if (value !== data[k]) Object.assign(partial, { [k]: value });
+      }
+      if (Object.keys(partial).length) updateData(partial);
+    }}>
+      {autosaveReady.data !== true && <p role="status" className="text-xs text-muted-foreground">{t('profile_save.setup_pending', 'Automatic saving is not active yet. Use Save to keep your changes.')}</p>}
       <EmbeddedSetupMessages data={{ ...data, interviewDone: !!loadedProfile?.ai_interview_completed_at }} userId={loadedProfile?.user_id} />
       <section id="profile-details" className="space-y-4">
         <EmbeddedGuideCard section="profile-details" stepKey="profile" />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">{t('consultant_profile_hub.details')}</h2>
-          <Button onClick={handleSaveAndContinue} disabled={submitting || isGuest}>{submitting ? t('common.loading') : t('common.save', 'Save')}</Button>
+
         </div>
-        <ProfileStep data={data} onChange={updateData} />
+        <ProfileStep data={data} onChange={updateData} renderSection={section} />
       </section>
       <FieldGate field={['skills', 'sap_role', 'seniority_level', 'total_sap_years', 'sap_roles', 'sap_technologies']}><section id="expertise"><EmbeddedGuideCard section="expertise" stepKey="skills" /><SapExpertiseCard key={`skills-${importRevision}`} onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section></FieldGate>
       <section id="profile-experience"><EmbeddedGuideCard section="profile-experience" stepKey="projects" /><ProfileExperienceCard key={`experience-${importRevision}`} payoutReady={payoutReady(payoutQ.data?.details)} onCompletenessChange={embeddedGuides.setCompleteness} /></section>
       <FieldGate field={['work_history', 'cv']}><section id="experience"><EmbeddedGuideCard section="experience" stepKey="work" /><ExperienceCvCard onProfileChanged={() => { setImportRevision(r => r + 1); setLoadedRevision(r => r + 1); }} /></section></FieldGate>
-      <FieldGate field="certifications"><section id="certifications"><EmbeddedGuideCard section="certifications" stepKey="certifications" /><CertificationsStep data={data} onChange={updateData} /></section></FieldGate>
-      <FieldGate field="education"><section id="education"><EmbeddedGuideCard section="education" stepKey="education" /><EducationStep data={data} onChange={updateData} /></section></FieldGate>
-      <FieldGate field="projects"><section id="projects"><EmbeddedGuideCard section="projects" stepKey="projects" /><ProjectsStep data={data} onChange={updateData} /></section></FieldGate>
-      <div className="flex justify-end"><Button onClick={handleSaveAndContinue} disabled={submitting || isGuest}>{submitting ? t('common.loading') : t('common.save', 'Save')}</Button></div>
+      <FieldGate field="certifications"><section id="certifications"><EmbeddedGuideCard section="certifications" stepKey="certifications" />{section(['certifications'], <><p className="text-xs text-muted-foreground">{t('profile_save.cert_manual', 'Certificate changes require another verification check. Save them manually.')}</p><CertificationsStep data={data} onChange={updateData} /></>, true)}</section></FieldGate>
+      <FieldGate field="education"><section id="education"><EmbeddedGuideCard section="education" stepKey="education" />{section(['education'], <EducationStep data={data} onChange={updateData} />)}</section></FieldGate>
+      <FieldGate field="projects"><section id="projects"><EmbeddedGuideCard section="projects" stepKey="projects" />{section(['projects'], <ProjectsStep data={data} onChange={updateData} />)}</section></FieldGate>
+
       <FieldGate field="availability"><section id="availability" className="space-y-4">
         <EmbeddedGuideCard section="availability" stepKey="availability" />
         <div className="flex flex-wrap items-center justify-between gap-2">

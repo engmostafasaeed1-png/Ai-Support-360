@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -49,10 +50,12 @@ const currencies = ['USD', 'EUR', 'SAR', 'AED', 'GBP', 'QAR', 'KWD', 'BHD', 'OMR
 interface Props {
   data: OnboardingData;
   onChange: (partial: Partial<OnboardingData>) => void;
+  renderSection?: (keys: (keyof OnboardingData)[], children: ReactNode, manual?: boolean) => ReactNode;
 }
 
-export default function ProfileStep({ data, onChange }: Props) {
+export default function ProfileStep({ data, onChange, renderSection }: Props) {
   const { t } = useTranslation();
+  const section = renderSection ?? ((_keys: (keyof OnboardingData)[], children: ReactNode) => children);
 
   const toggleLang = (code: string) => {
     const langs = data.languages.includes(code)
@@ -67,7 +70,7 @@ export default function ProfileStep({ data, onChange }: Props) {
 
   return (
     <div className="space-y-5">
-      <FieldGate field="display_name"><div className="space-y-1.5">
+      {section(['displayName', 'bio'], <><FieldGate field="display_name"><div className="space-y-1.5">
         <Label htmlFor="displayName">{t('onboarding.display_name')}<RequiredMark field="display_name" /></Label><FieldHint field="displayName" />
         <Input
           id="displayName"
@@ -91,7 +94,9 @@ export default function ProfileStep({ data, onChange }: Props) {
         <p className="text-[10px] text-muted-foreground text-end">{data.bio.length}/8000</p>
       </div></FieldGate>
 
+      </>)}
       {/* Location & Personal */}
+      {section(['nationality', 'country', 'city'], <>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <FieldGate field="nationality"><div className="space-y-1.5">
           <Label>Nationality<RequiredMark field="nationality" /></Label>
@@ -125,7 +130,9 @@ export default function ProfileStep({ data, onChange }: Props) {
         Choose your city so that clients find you on the map. They see the area of the city, never an address.
       </p>
 
+      </>)}
       {/* Rate & Currency */}
+      {section(['hourlyRate', 'currency', 'timezone'], <>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <FieldGate field="hourly_rate"><div className="space-y-1.5">
           <Label htmlFor="hourlyRate">{t('onboarding.hourly_rate')}<RequiredMark field="hourly_rate" /></Label><FieldHint field="hourlyRate" />
@@ -155,7 +162,9 @@ export default function ProfileStep({ data, onChange }: Props) {
         </div></FieldGate>
       </div>
 
+      </>)}
       {/* Social Links */}
+      {section(['linkedinUrl', 'credlyUsername', 'githubUrl', 'personalWebsite'], <>
       <FieldGate field={['linkedin_url', 'credly_username', 'github_url', 'personal_website']}><div className="space-y-3">
         <div className="flex items-center"><Label className="text-sm font-medium">Social & Web Links</Label><FieldHint field="linkedin" /></div>
         <div className="space-y-2">
@@ -203,7 +212,10 @@ export default function ProfileStep({ data, onChange }: Props) {
         </p>
       </div></FieldGate>
 
+      <p className="text-xs text-muted-foreground">{t('profile_save.links_manual', 'Changing LinkedIn or Credly links clears their checked status. Save links manually.')}</p>
+      </>, true)}
       {/* Languages - Multi-select badges */}
+      {section(['languages'], <>
       <FieldGate field="languages"><div className="space-y-1.5">
         <Label>{t('onboarding.languages')}<RequiredMark field="languages" /></Label><FieldHint field="languages" />
         <div className="flex flex-wrap gap-2">
@@ -219,7 +231,7 @@ export default function ProfileStep({ data, onChange }: Props) {
             </Button>
           ))}
         </div>
-      </div></FieldGate>
+      </div></FieldGate></>)}
     </div>
   );
 }
