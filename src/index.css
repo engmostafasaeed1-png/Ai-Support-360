@@ -5,6 +5,12 @@
 @tailwind utilities;
 
 @layer utilities {
+  @media (prefers-reduced-motion: reduce) {
+    body:has(.profile-save-dialog) [data-state] {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
   /* In-page anchor targets clear the fixed public header when scrolled to. */
   .public-anchor {
     scroll-margin-top: calc(var(--public-header-h, 6rem) + 1rem);

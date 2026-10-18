@@ -47,3 +47,29 @@ Browser beforeunload warns when dirty; browser termination cannot guarantee deli
 | profile_save.slots_invalid | Check your time slots for overlaps and invalid times. |
 
 Existing reused strings: Save, Dismiss, Close, Company and job title are required, End date must be after start date, Years of SAP experience must be 0–50, Your consultant profile could not be found., Could not save your availability. Completion missing-item labels reuse the existing profileCompleteness labels.
+
+## Manual-save dialog refresh: English strings for Arabic
+The 10–15 minute estimate matches the existing consultant landing page and profile guide; it is an estimate, not a guaranteed duration. Directory ranking and accepted-bid promises are intentionally omitted: current directory ordering does not guarantee either outcome.
+
+| Key | English |
+| --- | --- |
+| profile_save.boost_title | Boost your profile before you save |
+| profile_save.boost_description | Let clients see a clearer picture of your expertise. You can save now and finish later. |
+| profile_save.completion_label | Profile completion |
+| profile_save.interview_label | AI interview |
+| profile_save.not_taken | Not taken |
+| profile_save.badge_earned | {{badge}} badge earned |
+| profile_save.interview_completed | Interview completed |
+| profile_save.missing_labels | Missing: {{missing}} |
+| profile_save.why_matters | Why it matters |
+| profile_save.directory_benefit | A complete profile helps clients assess your expertise when browsing the directory and inviting bids. |
+| profile_save.badge_benefit | An AI interview badge shows your assessed SAP knowledge and gives clients another way to evaluate your skills. |
+| profile_save.trust_benefit | Your badge and complete profile help clients make an informed choice. Bid acceptance is never guaranteed. |
+| profile_save.duration_benefit | Allow about 10–15 minutes for the AI interview. |
+| profile_save.tier_gold | Gold |
+| profile_save.tier_silver | Silver |
+| profile_save.tier_bronze | Bronze |
+| profile_save.tier_verified | Verified |
+| profile_save.save_later | Save and continue later |
+| profile_save.complete_profile | Complete my profile |
+| profile_save.interview_now | Take the AI interview now |
