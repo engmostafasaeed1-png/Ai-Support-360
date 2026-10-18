@@ -80,7 +80,7 @@ export default function ProfileImportance({ children }: { children: ReactNode })
             <div className="flex min-w-0 flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-3 text-center">
               <span className="text-sm font-medium">{t('profile_save.interview_label', 'AI interview')}</span>
               <Award aria-hidden="true" className={`h-9 w-9 ${interviewDone ? 'text-success' : 'text-muted-foreground'}`} />
-              <span className="text-sm font-semibold">{!interviewDone ? t('profile_save.not_taken', 'Not taken') : badge ? fill(t('profile_save.badge_earned', '{{badge}} badge earned'), { badge: t(`profile_save.tier_${badge.toLowerCase()}`, badge) }) : t('profile_save.interview_completed', 'Interview completed')}</span>
+              <span className="text-sm font-semibold">{!interviewDone ? t('profile_save.not_taken', 'Not taken') : badge ? fill(t('profile_save.badge_earned', '{{badge}} badge earned'), { badge: String(t(`profile_save.tier_${badge.toLowerCase()}`, badge)) }) : t('profile_save.interview_completed', 'Interview completed')}</span>
             </div>
           </div>
           {incomplete && missing && <p className="text-xs leading-relaxed text-muted-foreground">{fill(t('profile_save.missing_labels', 'Missing: {{missing}}'), { missing })}</p>}
