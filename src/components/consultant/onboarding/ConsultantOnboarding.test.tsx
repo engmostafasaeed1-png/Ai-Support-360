@@ -36,7 +36,7 @@ vi.mock('@/integrations/supabase/client', () => ({
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('@/lib/confetti', () => ({ fireConfetti: vi.fn() }));
 vi.mock('@/contexts/GuestModeContext', () => ({ useGuestMode: () => ({ isGuest: false }) }));
-vi.mock('@/hooks/useProfileFieldRules', () => ({ useProfileFieldRules: () => ({ isRequired: () => false, isLoading: false }) }));
+vi.mock('@/hooks/useProfileFieldRules', () => ({ useProfileFieldRules: () => ({ isRequired: () => false, isVisible: () => true, isLoading: false }) }));
 vi.mock('@/hooks/useProfileAutosaveReady', () => ({ useProfileAutosaveReady: () => ({ data: false }) }));
 vi.mock('@/hooks/useBilling', () => ({ useMyPayoutDetails: () => ({ data: null }) }));
 vi.mock('@/hooks/useConsultantProfile', () => ({ useConsultantProfile: () => ({ data: null }) }));
