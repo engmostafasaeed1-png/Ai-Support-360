@@ -32,3 +32,5 @@
 - Public-site links inside a portal menu are declared as `external: true` nav items, and every surface that renders nav groups (sidebar rows, command palette) opens them in a new tab and never marks them active; this keeps a portal session and the user place intact.
 
 - Founding Consultant awards live in a separate read-only badge table with locked server-only allocation and audited admin RPC overrides; optional feature queries fail closed until the user applies the prepared SQL, so existing consultant queries and private profile access remain unchanged.
+
+- Consultant profile drafts use the shared section autosave controller with load baselines and immutable in-flight snapshots; automatic writes require the audited backend readiness RPC, while verification-sensitive links/certificates and payout details stay manual, preventing empty-data overwrites and audit flooding.
