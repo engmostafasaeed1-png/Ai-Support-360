@@ -64,6 +64,17 @@ export default function Navbar() {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
+  // React Router does nothing when the link target already matches the location,
+  // so the hash-scroll effects never re-run. Scroll directly in that case.
+  const handleNavClick = (href: string) => (e: React.MouseEvent) => {
+    const [path, hash] = href.split('#');
+    if (!hash) return;
+    if (location.pathname === (path || '/') && location.hash === `#${hash}`) {
+      e.preventDefault();
+      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <header
       ref={navRef}
@@ -94,6 +105,7 @@ export default function Navbar() {
             <Link
               key={item.href}
               to={item.href}
+              onClick={handleNavClick(item.href)}
               aria-current={isActive(item.href) ? 'page' : undefined}
               className="rounded-full aria-[current=page]:bg-primary/[0.08] aria-[current=page]:text-primary px-3 py-2.5 text-sm font-semibold text-muted-foreground outline-none transition-colors duration-200 hover:bg-primary/[0.06] hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
             >
