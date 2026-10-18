@@ -5,6 +5,12 @@
 @tailwind utilities;
 
 @layer utilities {
+  body:has(.profile-save-dialog) > [data-state][class*="backdrop-blur-sm"] {
+    z-index: 80;
+  }
+  .profile-save-dialog {
+    z-index: 81;
+  }
   @media (prefers-reduced-motion: reduce) {
     body:has(.profile-save-dialog) [data-state] {
       animation: none !important;
