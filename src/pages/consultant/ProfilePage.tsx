@@ -1,3 +1,4 @@
+import ProfileImportance from '@/components/consultant/saving/ProfileImportance';
 import FoundingBadge from '@/components/consultant/FoundingBadge';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -27,7 +28,7 @@ export default function ProfilePage() {
   }, [isLoading, hash]);
   if (isLoading) return <Skeleton className="h-80 w-full" />;
   return (
-    <EmbeddedGuideProvider setup={new URLSearchParams(search).get('section') === 'setup'}><div className="space-y-6">
+    <EmbeddedGuideProvider setup={new URLSearchParams(search).get('section') === 'setup'}><ProfileImportance><div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-foreground">{t('consultant_profile_hub.title')}</h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -56,6 +57,6 @@ export default function ProfilePage() {
       </section>
       <ReinterviewDialog open={reinterviewOpen} onOpenChange={setReinterviewOpen}
         consultantId={profile?.id || ''} consultantName={profile?.display_name || ''} />
-    </div></EmbeddedGuideProvider>
+    </div></ProfileImportance></EmbeddedGuideProvider>
   );
 }

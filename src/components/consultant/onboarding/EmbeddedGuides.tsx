@@ -17,12 +17,12 @@ const read = (key: string): boolean | null => {
 const write = (key: string, value: boolean) => {
   try { localStorage.setItem(key, value ? '1' : '0'); } catch { /* storage unavailable */ }
 };
-const Context = createContext({ enabled: true, setup: false, strength: null as number | null, setEnabled: (_value: boolean) => {}, setCompleteness: (_value: Completeness) => {} });
+const Context = createContext({ enabled: true, setup: false, strength: null as number | null, completeness: null as Completeness | null, setEnabled: (_value: boolean) => {}, setCompleteness: (_value: Completeness) => {} });
 
 export function EmbeddedGuideProvider({ setup, children }: { setup: boolean; children: ReactNode }) {
   const [enabled, updateEnabled] = useState(() => read('consultant-step-guides') ?? true);
   const [completeness, setCompleteness] = useState<Completeness | null>(null);
-  return <Context.Provider value={{ enabled, setup, strength: completeness?.percent ?? null, setCompleteness,
+  return <Context.Provider value={{ enabled, setup, strength: completeness?.percent ?? null, completeness, setCompleteness,
     setEnabled: value => { updateEnabled(value); write('consultant-step-guides', value); } }}>{children}</Context.Provider>;
 }
 
