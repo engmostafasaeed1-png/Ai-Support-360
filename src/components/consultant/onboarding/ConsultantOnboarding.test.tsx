@@ -36,6 +36,8 @@ vi.mock('@/integrations/supabase/client', () => ({
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('@/lib/confetti', () => ({ fireConfetti: vi.fn() }));
 vi.mock('@/contexts/GuestModeContext', () => ({ useGuestMode: () => ({ isGuest: false }) }));
+vi.mock('@/hooks/useProfileFieldRules', () => ({ useProfileFieldRules: () => ({ isRequired: () => false, isVisible: () => true, isLoading: false }) }));
+vi.mock('@/hooks/useProfileAutosaveReady', () => ({ useProfileAutosaveReady: () => ({ data: false }) }));
 vi.mock('@/hooks/useBilling', () => ({ useMyPayoutDetails: () => ({ data: null }) }));
 vi.mock('@/hooks/useConsultantProfile', () => ({ useConsultantProfile: () => ({ data: null }) }));
 vi.mock('./EmbeddedGuides', () => ({
@@ -46,14 +48,14 @@ vi.mock('./OnboardingGuidePanel', () => ({
   OnboardingWelcome: () => null, OnboardingFinish: () => null, welcomeSeen: () => true, markWelcomeSeen: () => {},
 }));
 vi.mock('./steps/ProfileStep', () => ({
-  default: ({ data, onChange }: any) => (
+  default: ({ data, onChange, renderSection }: any) => renderSection(['displayName', 'bio', 'linkedinUrl'], (
     <div>
       <input id="displayName" aria-label="Display name" value={data.displayName} onChange={e => onChange({ displayName: e.target.value })} />
       <textarea id="bio" aria-label="Bio" value={data.bio} onChange={e => onChange({ bio: e.target.value })} />
       <input aria-label="LinkedIn profile address" value={data.linkedinUrl} onChange={e => onChange({ linkedinUrl: e.target.value })} />
       <input aria-label="City" value={data.city} readOnly />
     </div>
-  ),
+  )),
 }));
 vi.mock('./steps/CertificationsStep', () => ({ default: () => null }));
 vi.mock('./steps/EducationStep', () => ({ default: () => null }));
@@ -65,7 +67,7 @@ const mounts = { skills: 0, experience: 0 };
 let cvChanged: (() => void) | undefined;
 vi.mock('@/components/consultant/SapExpertiseCard', () => ({ default: () => { useEffect(() => { mounts.skills++; }, []); return null; } }));
 vi.mock('@/components/consultant/ProfileExperienceCard', () => ({ default: () => { useEffect(() => { mounts.experience++; }, []); return null; } }));
-vi.mock('@/components/consultant/ExperienceCvCard', () => ({ default: ({ onProfileChanged }: any) => { cvChanged = onProfileChanged; return null; } }));
+vi.mock('@/components/consultant/ExperienceCvCard', () => ({ default: ({ onImported }: any) => { cvChanged = onImported; return null; } }));
 
 import ConsultantOnboarding from './ConsultantOnboarding';
 
@@ -109,11 +111,13 @@ describe('ConsultantOnboarding embedded: unsaved typing', () => {
     render(ui());
     const input = await screen.findByLabelText('LinkedIn profile address');
     // Autofill sets the DOM value directly; React state never sees it.
-    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+    if (!setter) throw new Error('Input setter unavailable');
     setter.call(input, 'https://www.linkedin.com/in/autofilled');
+    fireEvent.blur(input);
     await act(async () => { fireEvent.click(screen.getAllByRole('button', { name: 'Save' })[0]); });
     await waitFor(() => expect(writes.some(w => w.table === 'consultants')).toBe(true));
-    const save = writes.find(w => w.table === 'consultants')!.arg;
+    const save = writes.find(w => w.table === 'consultants')?.arg;
     expect(save.linkedin_url).toBe('https://www.linkedin.com/in/autofilled');
   });
 
@@ -121,8 +125,9 @@ describe('ConsultantOnboarding embedded: unsaved typing', () => {
     render(ui());
     await screen.findByDisplayValue('Saved Name');
     expect(mounts.skills).toBe(1);
+    fireEvent.change(screen.getByLabelText('Bio'), { target: { value: 'Updated bio' } });
     await act(async () => { fireEvent.click(screen.getAllByRole('button', { name: 'Save' })[0]); });
-    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Save' })[0]).not.toBeDisabled());
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Save' })[0]).toBeDisabled());
     expect(mounts.skills).toBe(1);
     expect(mounts.experience).toBe(1);
   });

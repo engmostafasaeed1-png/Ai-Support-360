@@ -1,3 +1,8 @@
+import { useSectionAutosave } from '@/hooks/useSectionAutosave';
+import { useProfileAutosaveReady } from '@/hooks/useProfileAutosaveReady';
+import { useProfileSavePrompt } from './saving/ProfileImportance';
+import SectionSaveControls from './saving/SectionSaveControls';
+import { useProfileFieldRules } from '@/hooks/useProfileFieldRules';
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,10 +52,10 @@ type Row = {
   sap_technologies: string[] | null;
 };
 
-export default function ProfileExperienceCard({ payoutReady = false, onCompletenessChange }: { payoutReady?: boolean; onCompletenessChange?: (value: ReturnType<typeof profileCompleteness>) => void } = {}) {
+export default function ProfileExperienceCard({ payoutReady = false, onCompletenessChange, sourceRevision = 0 }: { sourceRevision?: number; payoutReady?: boolean; onCompletenessChange?: (value: ReturnType<typeof profileCompleteness>) => void } = {}) {
   const [consultantId, setConsultantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [languages, setLanguages] = useState<string[]>([]);
   const [skillsCount, setSkillsCount] = useState(0);
   const [base, setBase] = useState<Row | null>(null);
@@ -75,10 +80,11 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
       if (!me) return setLoading(false);
       const cid = me.id;
       setConsultantId(cid);
-      const [{ data }, { count }] = await Promise.all([
+      const [{ data, error }, { count, error: skillError }] = await Promise.all([
         supabase.from('consultants').select(COLUMNS).eq('id', cid).maybeSingle(),
         supabase.from('consultant_skills').select('id', { count: 'exact', head: true }).eq('consultant_id', cid),
       ]);
+      if (error || skillError) throw error || skillError;
       setSkillsCount(count ?? 0);
       if (data) {
         const row = data as unknown as Row;
@@ -98,8 +104,22 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
         setLanguageLevels(row.language_levels ?? {});
       }
       setLoading(false);
-    });
+    }).catch(error => { setLoadError(error.message); setLoading(false); });
   }, []);
+
+  useEffect(() => {
+    if (!consultantId || !sourceRevision) return;
+    let active = true;
+    void Promise.all([
+      supabase.from('consultants').select('sap_roles, seniority_level, total_sap_years, sap_technologies, languages').eq('id', consultantId).maybeSingle(),
+      supabase.from('consultant_skills').select('id', { count: 'exact', head: true }).eq('consultant_id', consultantId),
+    ]).then(([result, counts]) => {
+      if (!active || result.error || counts.error || !result.data) return;
+      setBase(current => current ? { ...current, ...result.data } : current);
+      setLanguages(result.data.languages ?? []); setSkillsCount(counts.count ?? 0);
+    });
+    return () => { active = false; };
+  }, [consultantId, sourceRevision]);
 
   const completeness = useMemo(() => profileCompleteness({
     sap_roles: base?.sap_roles,
@@ -124,27 +144,20 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
   const missing = completeness.items.filter((i) => !i.done).slice(0, 4);
   useEffect(() => { if (!loading) onCompletenessChange?.(completeness); }, [loading, completeness, onCompletenessChange]);
 
-  const save = async () => {
-    if (!consultantId) return;
-    setSaving(true);
-    const { error } = await supabase.from('consultants').update({
-      industries,
-      customer_segments: segments,
-      vertical_solutions: verticals,
-      localization_countries: locCountries,
-      localization_solutions: locSolutions,
-      project_types: projectTypes,
-      deployment_experience: deployment,
-      project_scale: scale || null,
-      work_modes: workModes,
-      working_week: workingWeek || null,
-      onsite_countries: onsiteCountries,
-      language_levels: languageLevels,
-    } as never).eq('id', consultantId);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success('Experience saved');
-  };
+  const automatic = useProfileAutosaveReady();
+  const rules = useProfileFieldRules();
+  const beforeManual = useProfileSavePrompt();
+  const values = { industries, customer_segments: segments, vertical_solutions: verticals, localization_countries: locCountries, localization_solutions: locSolutions, project_types: projectTypes, deployment_experience: deployment, project_scale: scale || null, work_modes: workModes, working_week: workingWeek || null, onsite_countries: onsiteCountries, language_levels: languageLevels };
+  const state = useSectionAutosave({ values, ready: !loading && !!base && !!consultantId && !rules.isLoading, automatic: automatic.data === true, beforeManual,
+    validate: patch => Object.entries(patch).some(([key, value]) => rules.isRequired(key) && (value === null || value === '' || (Array.isArray(value) && !value.length) || (typeof value === 'object' && value !== null && !Object.keys(value).length))) ? 'Complete the required fields in this section before saving.' : null,
+    persist: async patch => {
+      if (!consultantId) throw new Error('Your consultant profile could not be found.');
+      const { error } = await supabase.from('consultants').update(patch as never).eq('id', consultantId);
+      if (error) { toast.error(error.message); throw error; }
+      if (!automatic.data) toast.success('Experience saved');
+    },
+  });
+
 
   if (loading) {
     return <Card className="rounded-2xl border-border/50"><CardContent className="p-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></CardContent></Card>;
@@ -154,9 +167,10 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
     <Card className="rounded-2xl border-border/50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base flex items-center gap-2"><Briefcase className="h-4 w-4" /> Industry, customer and solution experience</CardTitle>
-        <Button size="sm" onClick={save} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Save className="h-4 w-4 me-1" />}Save</Button>
+        <SectionSaveControls state={state} disabled={loading} />
       </CardHeader>
       <CardContent className="space-y-6">
+        {loadError && <p role="alert" className="text-xs text-destructive">{loadError}</p>}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">Profile completeness: {completeness.percent}%</span>

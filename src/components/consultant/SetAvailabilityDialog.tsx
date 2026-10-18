@@ -1,3 +1,7 @@
+import { useSectionAutosave } from '@/hooks/useSectionAutosave';
+import { useProfileAutosaveReady } from '@/hooks/useProfileAutosaveReady';
+import SectionSaveControls from './saving/SectionSaveControls';
+import { useProfileSavePrompt } from './saving/ProfileImportance';
 import { useSessionReady } from '@/hooks/useSessionReady';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -40,6 +44,7 @@ const dateLabel = (key: string) =>
 export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: React.ReactNode; onSaved?: () => void }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
   const [mode, setMode] = useState<'weekly' | 'date'>('weekly');
   const [day, setDay] = useState('1');
   const [date, setDate] = useState('');
@@ -82,6 +87,7 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
     applied.current = snapshot(fresh);
     if (!untouched) return;
     setDrafts(fresh);
+    setDraftLoaded(true);
     setEditingId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs only when the saved slots change
   }, [data]);
@@ -131,46 +137,44 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
     if (editingId === id) setEditingId(null);
   };
 
-  const save = async () => {
-    if (!data?.consultantId) { toast.error('Your consultant profile could not be found.'); return; }
-    setBusy(true);
-    try {
-      const toDelete = drafts.filter(d => d.removed && !d.id.startsWith('new-'));
-      const toInsert = drafts.filter(d => !d.removed && d.id.startsWith('new-'));
-      const toUpdate = drafts.filter(d => !d.removed && !d.id.startsWith('new-'));
-
-      for (const d of toDelete) {
-        const { error } = await supabase.from('availability_slots').delete().eq('id', d.id);
-        if (error) throw error;
+  const insertedSlots = useRef(new Map<string, string>());
+  const automatic = useProfileAutosaveReady();
+  const beforeManual = useProfileSavePrompt();
+  const state = useSectionAutosave({ values: { slots: drafts }, ready: open && !isLoading && !!data?.consultantId && draftLoaded && applied.current !== null, resetKey: open ? 'open' : 'closed', automatic: automatic.data === true, beforeManual,
+    validate: () => visible.some(slot => slot.end_time <= slot.start_time || overlaps(visible, slot, slot.id)) ? 'Check your time slots for overlaps and invalid times.' : null,
+    persist: async patch => {
+      if (!data?.consultantId) throw new Error('Your consultant profile could not be found.');
+      const sent = patch.slots as DraftSlot[];
+      for (const slot of sent) {
+        const resolved = insertedSlots.current.get(slot.id); if (resolved) slot.id = resolved;
+        if (slot.removed) {
+          if (!slot.id.startsWith('new-')) { const { error } = await supabase.from('availability_slots').delete().eq('id', slot.id).eq('consultant_id', data.consultantId); if (error) throw error; }
+          continue;
+        }
+        const values = { day_of_week: slot.day_of_week, specific_date: slot.specific_date, start_time: slot.start_time, end_time: slot.end_time, is_recurring: !slot.specific_date };
+        if (slot.id.startsWith('new-')) {
+          const { data: inserted, error } = await supabase.from('availability_slots').insert({ ...values, consultant_id: data.consultantId }).select('id').single();
+          if (error || !inserted) throw error ?? new Error('Could not save your availability');
+          const localId = slot.id; insertedSlots.current.set(localId, inserted.id); slot.id = inserted.id;
+          setDrafts(current => current.map(item => item.id === localId ? { ...item, id: inserted.id } : item));
+        } else {
+          const original = data.slots.find(s => s.id === slot.id);
+          const before = original ? { ...toDraft(original), is_recurring: !original.specific_date } : {};
+          const delta = Object.fromEntries(Object.entries(values).filter(([key, value]) => (before as Record<string, unknown>)[key] !== value));
+          if (Object.keys(delta).length) { const { error } = await supabase.from('availability_slots').update(delta).eq('id', slot.id).eq('consultant_id', data.consultantId); if (error) throw error; }
+        }
       }
-      for (const d of toInsert) {
-        const { error } = await supabase.from('availability_slots').insert({
-          consultant_id: data.consultantId, day_of_week: d.day_of_week, specific_date: d.specific_date,
-          start_time: d.start_time, end_time: d.end_time, is_recurring: !d.specific_date,
-        });
-        if (error) throw error;
-      }
-      for (const d of toUpdate) {
-        const { error } = await supabase.from('availability_slots').update({
-          day_of_week: d.day_of_week, specific_date: d.specific_date,
-          start_time: d.start_time, end_time: d.end_time, is_recurring: !d.specific_date,
-        }).eq('id', d.id);
-        if (error) throw error;
-      }
-      toast.success('Availability saved');
-      applied.current = null;
-      refresh();
-      setOpen(false);
       onSaved?.();
-    } catch (e) {
-      toast.error(friendlyErrorMessage(e, 'Could not save your availability'));
-    } finally {
-      setBusy(false);
-    }
+      void qc.invalidateQueries({ queryKey: ['availability-slots'] });
+    },
+  });
+  const close = async () => {
+    if (state.dirty) { await state.flush(); return; }
+    setOpen(false); setDraftLoaded(false); applied.current = null; void refresh();
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={value => { if (value) setOpen(true); else void close(); }}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -250,11 +254,8 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
         </div>
 
         <div className="flex gap-2 pt-1">
-          <Button onClick={save} disabled={busy || isLoading || !dirty} className="flex-1 gradient-primary border-0">
-            {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Save availability
-          </Button>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
+          <SectionSaveControls state={state} disabled={isLoading} />
+          <Button variant="outline" onClick={() => void close()} disabled={state.saving}>Close</Button>
         </div>
       </DialogContent>
     </Dialog>

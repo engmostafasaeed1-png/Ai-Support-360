@@ -1,3 +1,7 @@
+import { useSectionAutosave } from '@/hooks/useSectionAutosave';
+import { useProfileAutosaveReady } from '@/hooks/useProfileAutosaveReady';
+import SectionSaveControls from './saving/SectionSaveControls';
+import { useProfileSavePrompt } from './saving/ProfileImportance';
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +35,7 @@ function fmt(d: string | null) {
   return new Date(d).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
 
-export default function ExperienceCvCard({ onProfileChanged }: { onProfileChanged?: () => void }) {
+export default function ExperienceCvCard({ onProfileChanged, onImported }: { onProfileChanged?: () => void; onImported?: () => void }) {
   // userId = consultants.id (row key for consultant tables); authId = auth user id (storage folder).
   const [userId, setUserId] = useState<string | null>(null);
   const [authId, setAuthId] = useState<string | null>(null);
@@ -124,30 +128,33 @@ export default function ExperienceCvCard({ onProfileChanged }: { onProfileChange
     window.open(data.signedUrl, '_blank', 'noopener');
   };
 
-  const saveJob = async () => {
-    if (!userId || !editing) return;
-    if (!editing.company_name.trim() || !editing.job_title.trim()) return toast.error('Company and job title are required');
-    if (!editing.is_current && editing.start_date && editing.end_date && editing.end_date < editing.start_date)
-      return toast.error('End date must be after start date');
-    setSaving(true);
-    const row = {
-      consultant_id: userId,
-      company_name: editing.company_name.trim(),
-      job_title: editing.job_title.trim(),
-      start_date: editing.start_date || null,
-      end_date: editing.is_current ? null : editing.end_date || null,
-      is_current: editing.is_current,
-      description: editing.description?.trim() || null,
-    };
-    const { error } = editing.id
-      ? await supabase.from('consultant_work_history').update(row).eq('id', editing.id)
-      : await supabase.from('consultant_work_history').insert(row);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success('Experience saved');
+  const automatic = useProfileAutosaveReady();
+  const beforeManual = useProfileSavePrompt();
+  const jobState = useSectionAutosave({
+    values: editing ? { company_name: editing.company_name, job_title: editing.job_title, start_date: editing.start_date, end_date: editing.is_current ? null : editing.end_date, is_current: editing.is_current, description: editing.description } : {},
+    ready: !loading && !!editing && !!userId, resetKey: editing ? 'open' : 'closed', automatic: automatic.data === true, beforeManual,
+    validate: () => {
+      if (!editing?.company_name.trim() || !editing.job_title.trim()) return 'Company and job title are required';
+      if (!editing.is_current && editing.start_date && editing.end_date && editing.end_date < editing.start_date) return 'End date must be after start date';
+      return null;
+    },
+    persist: async patch => {
+      if (!userId || !editing) throw new Error('Your consultant profile could not be found.');
+      if (editing.id) {
+        const { error } = await supabase.from('consultant_work_history').update(patch as never).eq('id', editing.id).eq('consultant_id', userId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from('consultant_work_history').insert({ ...editing, id: undefined, consultant_id: userId } as never).select('id').single();
+        if (error || !data) throw error ?? new Error('Could not save changes. Try again.');
+        // Keep the form open; subsequent edits use the stable returned row ID.
+        setEditing(current => current ? { ...current, id: data.id } : current);
+      }
+      void load(userId); onProfileChanged?.();
+    },
+  });
+  const closeJob = async () => {
+    if (jobState.dirty) { await jobState.flush(); return; }
     setEditing(null);
-    load(userId);
-    onProfileChanged?.();
   };
 
   const removeJob = async (id: string) => {
@@ -209,10 +216,10 @@ export default function ExperienceCvCard({ onProfileChanged }: { onProfileChange
       </CardContent>
 
       {userId && (
-        <CvImportDialog open={!!parsed} onOpenChange={(o) => !o && setParsed(null)} userId={userId} data={parsed} onApplied={() => { void load(userId); onProfileChanged?.(); }} />
+        <CvImportDialog open={!!parsed} onOpenChange={(o) => !o && setParsed(null)} userId={userId} data={parsed} onApplied={() => { void load(userId); if (onImported) onImported(); else onProfileChanged?.(); }} />
       )}
 
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+      <Dialog open={!!editing} onOpenChange={o => { if (!o) void closeJob(); }}>
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>{editing?.id ? 'Edit experience' : 'Add experience'}</DialogTitle></DialogHeader>
           {editing && (
@@ -233,8 +240,8 @@ export default function ExperienceCvCard({ onProfileChanged }: { onProfileChange
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
-            <Button onClick={saveJob} disabled={saving}>{saving && <Loader2 className="h-4 w-4 me-1 animate-spin" />}Save</Button>
+            <Button variant="outline" onClick={() => void closeJob()}>Close</Button>
+            <SectionSaveControls state={jobState} />
           </DialogFooter>
         </DialogContent>
       </Dialog>

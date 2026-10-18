@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +32,9 @@ const day = (s?: string | null) => (s ? format(new Date(s), 'MMM d, yyyy') : '')
 
 /** The consultant's own bank details: where the platform transfers the payouts. Values live only in component state. */
 export default function PayoutDetailsCard() {
+  const { t } = useTranslation();
+  const [savedNow, setSavedNow] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const { data, isLoading } = useMyPayoutDetails();
   const save = useSavePayoutDetails();
   const d = data?.details ?? null;
@@ -73,6 +77,11 @@ export default function PayoutDetailsCard() {
   const set = (k: keyof Form) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  const bankDirty = JSON.stringify(form) !== JSON.stringify(fromRow(d)) || (ack && !d?.acknowledged_at);
+  useEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => { if ((editing || !d) && bankDirty) { event.preventDefault(); event.returnValue = ''; } };
+    window.addEventListener('beforeunload', warn); return () => window.removeEventListener('beforeunload', warn);
+  }, [editing, d, bankDirty]);
   if (isLoading) return <Skeleton className="h-72 rounded-2xl" />;
   if (!data) return <p className="text-sm text-muted-foreground">Bank details are for consultant accounts.</p>;
 
@@ -87,9 +96,10 @@ export default function PayoutDetailsCard() {
     && (form.iban.trim() !== '' || form.account_number.trim() !== '') && !ibanBad && !swiftBad && !currencyBad;
 
   const submit = () => {
+    setSaveError(null);
     save.mutate(
       { ...form, acknowledged: ack, ackVersion: PAYOUT_DISCLAIMER_VERSION },
-      { onSuccess: () => { setEditing(false); setAck(false); } },
+      { onSuccess: () => { setEditing(false); setAck(false); setSavedNow(true); }, onError: error => setSaveError(error instanceof Error ? error.message : t('profile_save.failed', 'Could not save changes. Try again.')) },
     );
   };
 
@@ -118,6 +128,8 @@ export default function PayoutDetailsCard() {
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        <p role="status" className="text-xs text-muted-foreground">{save.isPending ? t('profile_save.saving', 'Saving...') : bankDirty && (editing || !d) ? t('profile_save.unsaved', 'Unsaved changes') : savedNow ? t('profile_save.just_now', 'Saved just now') : t('profile_save.all_saved', 'All changes saved')}</p>
+        {saveError && <p role="alert" className="text-xs text-destructive">{saveError}</p>}
         {!d && (
           <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
             <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -206,7 +218,7 @@ export default function PayoutDetailsCard() {
 
             <div className="flex justify-end gap-2">
               {d && <Button variant="outline" onClick={() => { setEditing(false); setAck(false); }}>Cancel</Button>}
-              <Button disabled={!valid || !ack || save.isPending} onClick={submit}>Save bank details</Button>
+              <Button disabled={!valid || !ack || !bankDirty || save.isPending} onClick={submit}>Save bank details</Button>
             </div>
           </>
         )}

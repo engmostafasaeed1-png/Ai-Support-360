@@ -1,4 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useSectionAutosave } from '@/hooks/useSectionAutosave';
+import { useProfileAutosaveReady } from '@/hooks/useProfileAutosaveReady';
+import { useProfileSavePrompt } from './saving/ProfileImportance';
+import SectionSaveControls from './saving/SectionSaveControls';
+import { useProfileFieldRules } from '@/hooks/useProfileFieldRules';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -84,7 +89,8 @@ function Chips({ options, value, onChange, otherPlaceholder = 'Add another…' }
 export default function SapExpertiseCard({ onProfileChanged }: { onProfileChanged?: () => void } = {}) {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [loadSucceeded, setLoadSucceeded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
   const [seniority, setSeniority] = useState<string>('');
   const [years, setYears] = useState<string>('');
@@ -96,8 +102,11 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
   const [newLevel, setNewLevel] = useState('3');
   const [newYears, setNewYears] = useState('');
 
+  const knownSkillIds = useRef<string[]>([]);
   const loadSkills = async (uid: string) => {
-    const { data } = await supabase.from('consultant_skills').select('id, sap_module, proficiency_level, years_experience').eq('consultant_id', uid).order('proficiency_level', { ascending: false });
+    const { data, error } = await supabase.from('consultant_skills').select('id, sap_module, proficiency_level, years_experience').eq('consultant_id', uid).order('proficiency_level', { ascending: false });
+    if (error) throw error;
+    knownSkillIds.current = (data ?? []).map(row => row.id);
     setSkills((data as Skill[]) || []);
   };
 
@@ -108,11 +117,12 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
       if (!me) return setLoading(false);
       const uid = me.id;
       setUserId(uid);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('consultants')
         .select('sap_role, sap_roles, seniority_level, total_sap_years, sap_technologies')
         .eq('id', uid)
         .maybeSingle();
+      if (error) throw error;
       if (data) {
         const labelOf = (k: string) => SAP_ROLES.find(([v]) => v === k)?.[1] ?? k;
         const r = data.sap_roles?.length ? data.sap_roles : data.sap_role ? [data.sap_role] : [];
@@ -122,8 +132,9 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
         setTech(data.sap_technologies ?? []);
       }
       await loadSkills(uid);
+      setLoadSucceeded(!!data);
       setLoading(false);
-    });
+    }).catch(error => { setLoadError(error.message); setLoading(false); });
   }, []);
 
   const moduleOptions = useMemo(() => {
@@ -132,51 +143,58 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
     return ALL_SAP_AREAS.map((a) => a.name).filter((n) => !have.has(n.toLowerCase()) && (!q || n.toLowerCase().includes(q)));
   }, [skills, moduleQuery]);
 
-  const save = async () => {
-    if (!userId) return;
-    const y = years === '' ? null : Number(years);
-    if (y !== null && (!Number.isInteger(y) || y < 0 || y > 50)) return toast.error('Years of SAP experience must be 0–50');
-    setSaving(true);
-    const { error } = await supabase.from('consultants').update({
-      sap_roles: roles,
-      sap_role: SAP_ROLES.find(([, l]) => l === roles[0])?.[0] ?? null,
-      seniority_level: seniority || null,
-      total_sap_years: y,
-      sap_technologies: tech,
-    }).eq('id', userId);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success('SAP expertise saved');
-    onProfileChanged?.();
-  };
+  const automatic = useProfileAutosaveReady();
+  const rules = useProfileFieldRules();
+  const beforeManual = useProfileSavePrompt();
+  const values = { sap_roles: roles, seniority_level: seniority || null, total_sap_years: years === '' ? null : Number(years), sap_technologies: tech };
+  const state = useSectionAutosave({ values, ready: !loading && loadSucceeded && !!userId && !rules.isLoading, automatic: automatic.data === true, beforeManual,
+    validate: patch => {
+      const y = values.total_sap_years;
+      if (y !== null && (!Number.isInteger(y) || y < 0 || y > 50)) return 'Years of SAP experience must be 0–50';
+      if (Object.entries(patch).some(([key, value]) => rules.isRequired(key) && (value === null || value === '' || (Array.isArray(value) && !value.length)))) return 'Complete the required fields in this section before saving.';
+      return null;
+    },
+    persist: async patch => {
+      if (!userId) throw new Error('Your consultant profile could not be found.');
+      const payload = { ...patch, ...('sap_roles' in patch ? { sap_role: SAP_ROLES.find(([, label]) => label === roles[0])?.[0] ?? null } : {}) };
+      const { error } = await supabase.from('consultants').update(payload as never).eq('id', userId);
+      if (error) { toast.error(error.message); throw error; }
+      onProfileChanged?.();
+    },
+  });
 
-  const addSkills = async () => {
-    if (!userId) return;
-    const have = new Set(skills.map((s) => s.sap_module.toLowerCase()));
-    const names = [...picked, ...customModule.split(',').map((x) => x.trim().slice(0, 120))]
-      .filter(Boolean)
-      .filter((n, i, a) => a.findIndex((m) => m.toLowerCase() === n.toLowerCase()) === i && !have.has(n.toLowerCase()));
-    if (!names.length) return;
-    const yrs = newYears === '' ? null : Math.max(0, Math.min(50, Math.round(Number(newYears))));
-    // one row per module: a module that exists already (a second click, another tab) is skipped, not an error
-    const { error } = await supabase.from('consultant_skills').upsert(
-      names.map((n) => ({ consultant_id: userId, sap_module: n, proficiency_level: Number(newLevel), years_experience: yrs })),
-      { onConflict: 'consultant_id,sap_module', ignoreDuplicates: true },
-    );
-    if (error) return toast.error(error.message);
-    toast.success(`${names.length} module${names.length > 1 ? 's' : ''} added`);
+
+  const moduleState = useSectionAutosave({ values: { skills }, ready: !loading && loadSucceeded && !!userId && !rules.isLoading, automatic: automatic.data === true, beforeManual,
+    validate: () => {
+      if (rules.isRequired('skills') && !skills.length) return 'Complete the required fields in this section before saving.';
+      if (skills.some(skill => !skill.sap_module.trim() || (skill.years_experience !== null && (!Number.isFinite(skill.years_experience) || skill.years_experience < 0 || skill.years_experience > 50)))) return 'Years of SAP experience must be 0–50';
+      return null;
+    },
+    persist: async patch => {
+      if (!userId) throw new Error('Your consultant profile could not be found.');
+      const sent = patch.skills ?? [];
+      for (const row of sent) {
+        if (row.id.startsWith('new-')) {
+          const { data: inserted, error } = await supabase.from('consultant_skills').upsert({ consultant_id: userId, sap_module: row.sap_module, proficiency_level: row.proficiency_level, years_experience: row.years_experience }, { onConflict: 'consultant_id,sap_module' }).select('id').single();
+          if (error || !inserted) throw error ?? new Error('Could not save changes. Try again.');
+          const localId = row.id; row.id = inserted.id;
+          setSkills(current => current.map(item => item.id === localId ? { ...item, id: inserted.id } : item));
+        }
+      }
+      const removed = knownSkillIds.current.filter(id => !sent.some(item => item.id === id));
+      if (removed.length) { const { error } = await supabase.from('consultant_skills').delete().in('id', removed).eq('consultant_id', userId); if (error) throw error; }
+      knownSkillIds.current = sent.map(row => row.id);
+      onProfileChanged?.();
+    },
+  });
+  const addSkills = () => {
+    const have = new Set(skills.map(s => s.sap_module.toLowerCase()));
+    const names = [...picked, ...customModule.split(',').map(x => x.trim().slice(0, 120))].filter(Boolean).filter((n, i, list) => list.findIndex(x => x.toLowerCase() === n.toLowerCase()) === i && !have.has(n.toLowerCase()));
+    const yrs = newYears === '' ? null : Number(newYears);
+    setSkills(current => [...current, ...names.map((name, i) => ({ id: `new-${Date.now()}-${i}`, sap_module: name, proficiency_level: Number(newLevel), years_experience: yrs }))]);
     setPicked([]); setCustomModule(''); setNewYears(''); setNewLevel('3'); setModuleQuery('');
-    loadSkills(userId);
-    onProfileChanged?.();
   };
-
-  const removeSkill = async (id: string) => {
-    if (!userId) return;
-    const { error } = await supabase.from('consultant_skills').delete().eq('id', id);
-    if (error) return toast.error(error.message);
-    loadSkills(userId);
-    onProfileChanged?.();
-  };
+  const removeSkill = (id: string) => setSkills(current => current.filter(skill => skill.id !== id));
 
   if (loading) {
     return <Card className="rounded-2xl border-border/50"><CardContent className="p-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></CardContent></Card>;
@@ -186,9 +204,10 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
     <Card className="rounded-2xl border-border/50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base flex items-center gap-2"><Cpu className="h-4 w-4" /> SAP expertise</CardTitle>
-        <Button size="sm" onClick={save} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Save className="h-4 w-4 me-1" />}Save</Button>
+        <SectionSaveControls state={state} disabled={loading} />
       </CardHeader>
       <CardContent className="space-y-6">
+        {loadError && <p role="alert" className="text-xs text-destructive">{loadError}</p>}
         <div className="space-y-2">
           <Label>Roles (choose all that apply)</Label>
           <Chips options={SAP_ROLES.map(([, l]) => l)} value={roles} onChange={setRoles} otherPlaceholder="Other role, e.g. Test manager" />
@@ -209,7 +228,7 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
         </div>
 
         <div className="space-y-2">
-          <Label>SAP modules &amp; skill level</Label><FieldHint field="skillLevel" />
+          <Label>SAP modules &amp; skill level</Label><FieldHint field="skillLevel" /><SectionSaveControls state={moduleState} disabled={loading} />
           {skills.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {skills.map((s) => (
