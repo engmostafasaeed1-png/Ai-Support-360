@@ -132,7 +132,7 @@ export default function ExperienceCvCard({ onProfileChanged }: { onProfileChange
   const beforeManual = useProfileSavePrompt();
   const jobState = useSectionAutosave({
     values: editing ? { company_name: editing.company_name, job_title: editing.job_title, start_date: editing.start_date, end_date: editing.is_current ? null : editing.end_date, is_current: editing.is_current, description: editing.description } : {},
-    ready: !loading && !!editing && !!userId, resetKey: editing?.id ?? (editing ? 'new' : 'closed'), automatic: automatic.data === true, beforeManual,
+    ready: !loading && !!editing && !!userId, resetKey: editing ? 'open' : 'closed', automatic: automatic.data === true, beforeManual,
     validate: () => {
       if (!editing?.company_name.trim() || !editing.job_title.trim()) return 'Company and job title are required';
       if (!editing.is_current && editing.start_date && editing.end_date && editing.end_date < editing.start_date) return 'End date must be after start date';
