@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Connect the profile dialog to the existing AI assessment; resume pending sessions, surface failures, confirm server-awarded badge readback and refresh profile/history. Signed-in start/greeting verified; 27 targeted tests passed.
+- [ ] Verify a completed real assessment and first-completion credits through the UI: awaits consultant's own interview answers; do not invent answers or alter their credibility for QA.
+
 - [x] Refresh Feature D manual-save dialog with honest benefits, real progress/badges, accessible mobile/RTL/dark presentation; 15 regression tests passed and signed-in save/reload, 375 px and focus trapping verified.
 
 - [x] Feature D: section Save/status controls, dirty-only four-second autosave controller, completion/interview guidance, notification-trigger audit and safety tests; signed-in save/reload verified.

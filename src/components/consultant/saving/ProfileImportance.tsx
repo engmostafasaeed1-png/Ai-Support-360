@@ -51,7 +51,7 @@ export default function ProfileImportance({ children }: { children: ReactNode })
     seen.current = true; continuation.current = fn; setOpen(true);
   };
   const complete = () => { proceed(); document.getElementById('profile-details')?.scrollIntoView({ block: 'start' }); };
-  const interview = () => { proceed(); navigate('/consultant/interviews'); };
+  const interview = () => { proceed(); navigate('/consultant/interviews?start=1'); };
   return <Context.Provider value={before}>
     {needed && completeness !== null && !dismissed && <section className="border-b border-border pb-4 space-y-2" aria-label={t('profile_save.importance', 'Complete your profile and AI interview')}>
       <div className="flex justify-between gap-3"><h2 className="font-semibold">{t('profile_save.importance', 'Complete your profile and AI interview')}</h2><Button size="icon" variant="ghost" aria-label={t('getting_started.dismiss', 'Dismiss')} onClick={() => setDismissed(true)}><X className="h-4 w-4" /></Button></div>

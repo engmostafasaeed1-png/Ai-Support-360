@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders as sharedCorsHeaders, adminClient, withinRateLimit } from "../_shared/security.ts";
+import { hasInterviewAnswers, validateInterviewEvaluation } from "../_shared/interviewEvaluation.ts";
 
 const BodySchema = z.object({
   interview_id: z.string().uuid(),
@@ -51,6 +52,7 @@ serve(async (req) => {
   const t0 = Date.now();
   const corsHeaders = sharedCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method !== 'POST') return new Response(null, { status: 405, headers: { ...corsHeaders, Allow: 'POST, OPTIONS' } });
 
   try {
     // Verify authenticated user via JWT
@@ -133,7 +135,7 @@ serve(async (req) => {
       });
     }
 
-    if (action === "evaluate" && interview.status === "completed") {
+    if (action !== 'copilot' && (interview.interview_type !== 'ai' || style === 'live' || !['pending', 'in_progress'].includes(interview.status))) {
       return new Response(JSON.stringify({ error: "This interview has already been evaluated." }), {
         status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -194,6 +196,9 @@ serve(async (req) => {
 
     // If action is "evaluate", do final evaluation
     if (action === "evaluate") {
+      if (interview.status !== 'in_progress' || !hasInterviewAnswers(messages || [])) {
+        return new Response(JSON.stringify({ error: 'Answer at least three interview questions before evaluating.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
       const conversationText = (messages || [])
         .map((m: any) => `${m.role === "user" ? "Consultant" : "Interviewer"}: ${m.content}`)
         .join("\n\n");
@@ -266,14 +271,11 @@ Include one question_scores entry per candidate answer, in the same order the an
       let evaluation;
       try {
         const cleaned = rawContent.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-        evaluation = JSON.parse(cleaned);
+        evaluation = validateInterviewEvaluation(JSON.parse(cleaned));
       } catch {
         throw new Error("Failed to parse evaluation");
       }
       const clampScore = (v: unknown) => Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
-      evaluation.overall_score = clampScore(evaluation.overall_score);
-      evaluation.technical_score = clampScore(evaluation.technical_score);
-      evaluation.soft_skills_score = clampScore(evaluation.soft_skills_score);
 
       // Save every question/answer pair (each answer paired with the interviewer turn right before it)
       const perQuestion = new Map<number, { score: number; sap_module: string }>();
@@ -307,20 +309,31 @@ Include one question_scores entry per candidate answer, in the same order the an
         }
         if (rows.length >= 60) break;
       }
-      await supabase.from("interview_answers").delete().eq("interview_id", interview_id);
-      if (rows.length) await supabase.from("interview_answers").insert(rows);
+      const { error: deleteError } = await supabase.from("interview_answers").delete().eq("interview_id", interview_id);
+      if (deleteError) throw deleteError;
+      if (rows.length) {
+        const { error: answersError } = await supabase.from("interview_answers").insert(rows);
+        if (answersError) throw answersError;
+      }
 
       // Update interview session
-      await supabase.from("interview_sessions").update({
+      const { error: completionError } = await supabase.from("interview_sessions").update({
         status: "completed",
         completed_at: new Date().toISOString(),
         overall_score: evaluation.overall_score,
         technical_score: evaluation.technical_score,
         soft_skills_score: evaluation.soft_skills_score,
         ai_summary: evaluation.summary,
-      }).eq("id", interview_id);
+        skill_results: messages,
+      }).eq("id", interview_id).eq('status', 'in_progress').select('id').single();
+      if (completionError) throw completionError;
 
-      return new Response(JSON.stringify({ evaluation }), {
+      const { data: reward, error: rewardError } = await supabase.from('consultants')
+        .select('ai_interview_badge, credibility_credits, ai_interview_completed_at')
+        .eq('id', interview.consultant_id).single();
+      if (rewardError || !reward?.ai_interview_completed_at || !reward.ai_interview_badge) throw new Error('Could not confirm interview reward');
+
+      return new Response(JSON.stringify({ evaluation, reward }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -328,10 +341,11 @@ Include one question_scores entry per candidate answer, in the same order the an
     // Update status to in_progress + record greeting event on first turn
     const isFirstTurn = !messages || messages.length === 0;
     if (interview.status === "pending") {
-      await supabase.from("interview_sessions").update({
+      const { error: startError } = await supabase.from("interview_sessions").update({
         status: "in_progress",
         started_at: new Date().toISOString(),
       }).eq("id", interview_id);
+      if (startError) throw startError;
     }
     if (isFirstTurn) {
       await supabase.from("audit_logs").insert({

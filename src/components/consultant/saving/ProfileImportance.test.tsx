@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, cleanup } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import ProfileImportance, { claimSavePrompt, useProfileSavePrompt } from './ProfileImportance';
 const data = vi.hoisted(() => ({ interview: null as string | null, badge: null as string | null }));
 vi.mock('@/hooks/useConsultantProfile', () => ({ useConsultantProfile: () => ({ data: { user_id: 'u1', ai_interview_completed_at: data.interview, ai_interview_badge: data.badge } }) }));
@@ -10,6 +10,7 @@ function SaveTrigger({ save }: { save: () => void }) {
   const before = useProfileSavePrompt();
   return <button onClick={() => before?.(save)}>Save draft</button>;
 }
+function CurrentPath() { const location = useLocation(); return <output data-testid="path">{location.pathname}{location.search}</output>; }
 describe('manual save guidance frequency', () => {
   beforeEach(() => { cleanup(); sessionStorage.clear(); data.interview = null; data.badge = null; });
   it('appears once per user session for an incomplete profile', () => {
@@ -37,10 +38,11 @@ describe('manual save guidance frequency', () => {
   });
   it('the interview action also saves the draft before leaving', () => {
     const save = vi.fn();
-    render(<MemoryRouter><ProfileImportance><SaveTrigger save={save} /></ProfileImportance></MemoryRouter>);
+    render(<MemoryRouter><CurrentPath /><ProfileImportance><SaveTrigger save={save} /></ProfileImportance></MemoryRouter>);
     fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
     fireEvent.click(screen.getByRole('button', { name: 'Take the AI interview now' }));
     expect(save).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('path').textContent).toBe('/consultant/interviews?start=1');
   });
   it('completed interviews offer profile completion and preserve saving', () => {
     data.interview = '2026-10-18T12:00:00Z'; data.badge = 'Gold';

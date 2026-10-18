@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,16 +10,24 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Video, Play, CheckCircle, Clock, Brain, ExternalLink } from 'lucide-react';
 import AIInterviewFlow from '@/components/consultant/AIInterviewFlow';
 import { format } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSessionReady } from '@/hooks/useSessionReady';
 
 export default function InterviewsPage() {
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
   const [activeInterviewId, setActiveInterviewId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { signedIn } = useSessionReady();
+  const starting = useRef(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const [startError, setStartError] = useState('');
 
   const { data: interviews, isLoading, refetch } = useQuery({
     queryKey: ['consultant-interviews'],
+    enabled: isGuest || signedIn,
     queryFn: async () => {
       if (isGuest) {
         return [
@@ -48,6 +56,43 @@ export default function InterviewsPage() {
   const pendingInterviews = interviews?.filter(i => i.status === 'pending' || i.status === 'in_progress') || [];
   const completedInterviews = interviews?.filter(i => i.status === 'completed' || i.status === 'reviewed') || [];
 
+  const handleStartOptionalInterview = async () => {
+    if (isGuest || starting.current) return;
+    starting.current = true;
+    setIsStarting(true);
+    setStartError('');
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error(t('interview.sign_in', 'Please sign in again.'));
+      const { data: consultant, error: profileError } = await supabase.from('consultants').select('id').eq('user_id', user.id).maybeSingle();
+      if (profileError) throw profileError;
+      if (!consultant) throw new Error(t('interview.profile_required', 'Save your profile before starting the interview.'));
+      // Resume a self-started assessment instead of creating duplicate pending interviews.
+      const { data: pending, error: pendingError } = await supabase.from('interview_sessions')
+        .select('id').eq('consultant_id', consultant.id).eq('interview_type', 'ai')
+        .is('requested_by', null).in('status', ['pending', 'in_progress'])
+        .neq('interview_style', 'live').order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (pendingError) throw pendingError;
+      if (pending) { setActiveInterviewId(pending.id); return; }
+      const { data: session, error } = await supabase.from('interview_sessions')
+        .insert({ consultant_id: consultant.id, interview_type: 'ai', status: 'pending', interview_style: 'standard' })
+        .select('id').single();
+      if (error) throw error;
+      setActiveInterviewId(session.id);
+      void refetch();
+    } catch {
+      setStartError(t('interview.start_failed', 'Could not start the interview. Check that your profile is saved and try again.'));
+    } finally { starting.current = false; setIsStarting(false); }
+  };
+
+  useEffect(() => {
+    if (searchParams.get('start') !== '1' || !signedIn || isGuest) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete('start');
+    setSearchParams(next, { replace: true });
+    void handleStartOptionalInterview();
+  }, [signedIn, isGuest, searchParams, setSearchParams]);
+
   if (activeInterviewId) {
     return (
       <div className="space-y-4">
@@ -59,33 +104,14 @@ export default function InterviewsPage() {
           onComplete={() => {
             setActiveInterviewId(null);
             refetch();
+            void queryClient.invalidateQueries({ queryKey: ['consultant-profile'] });
+            void queryClient.invalidateQueries({ queryKey: ['interview-history'] });
           }}
           onCancel={() => setActiveInterviewId(null)}
         />
       </div>
     );
   }
-
-  const handleStartOptionalInterview = async () => {
-    if (isGuest) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: consultant } = await supabase
-      .from('consultants')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    if (!consultant) return;
-    const { data: session, error } = await supabase
-      .from('interview_sessions')
-      .insert([{ consultant_id: consultant.id, interview_type: 'ai' as const, status: 'pending' as const }])
-      .select('id')
-      .single();
-    if (!error && session) {
-      setActiveInterviewId(session.id);
-      refetch();
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -99,10 +125,11 @@ export default function InterviewsPage() {
             Completing an AI interview is <strong>optional</strong>, but it earns you a verified badge + credibility credits clients can see.
           </p>
         </div>
-        <Button onClick={handleStartOptionalInterview} className="gradient-primary border-0 gap-2">
+        <Button onClick={handleStartOptionalInterview} disabled={isStarting || isGuest || !signedIn} className="gradient-primary border-0 gap-2">
           <Brain className="w-4 h-4" /> Start AI Interview
         </Button>
       </div>
+      {startError && <p role="alert" className="text-sm text-destructive">{startError}</p>}
 
       {/* Reward tier card */}
       <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">

@@ -13,6 +13,8 @@ import { Slider } from '@/components/ui/slider';
 import ReactMarkdown from 'react-markdown';
 import aiMaleAvatar from '@/assets/ai-interviewer-male.jpg';
 import aiFemaleAvatar from '@/assets/ai-interviewer-female.jpg';
+import { useQueryClient } from '@tanstack/react-query';
+import { TrustBadge } from './TrustBadge';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -211,6 +213,8 @@ function ScoreBar({ label, score, icon }: { label: string; score: number; icon: 
 
 export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: Props) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [reward, setReward] = useState<{ ai_interview_badge: string; credibility_credits: number } | null>(null);
   const [phase, setPhase] = useState<'disclaimer' | 'chat' | 'evaluating' | 'results'>('disclaimer');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -349,6 +353,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     const saved = data?.skill_results as unknown as ChatMessage[] | null;
     if (saved && Array.isArray(saved) && saved.length > 0 && data?.status === 'in_progress') {
       setMessages(saved);
+      setInterviewStarted(true);
       messagesRef.current = saved;
       const lastMsg = saved[saved.length - 1];
       if (lastMsg?.role === 'user') {
@@ -565,6 +570,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         }
       }
       if (assistantText) {
+        messagesRef.current = [...chatHistory, { role: 'assistant', content: assistantText }];
+        setMessages(messagesRef.current);
         if (!interviewStarted) {
           setInterviewStarted(true);
           setStartedAt(new Date());
@@ -654,15 +661,20 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         analyzeBodyLanguage(),
       ]);
 
-      if (!evalResp.ok) throw new Error('Evaluation failed');
       const data = await evalResp.json();
-      if (data.error) throw new Error(data.error);
+      if (!evalResp.ok || data.error) throw new Error(data.error || 'Evaluation failed');
+      if (!data.evaluation || !data.reward?.ai_interview_badge) throw new Error('Could not confirm interview reward. Please try again.');
       setEvaluation(data.evaluation);
+      setReward(data.reward);
+      void queryClient.invalidateQueries({ queryKey: ['consultant-profile'] });
+      void queryClient.invalidateQueries({ queryKey: ['consultant-interviews'] });
+      void queryClient.invalidateQueries({ queryKey: ['interview-history'] });
       setBodyLanguage(blResult);
       setPhase('results');
     } catch (err: any) {
       console.error('Eval error:', err);
       setError(err.message);
+      shouldAutoResumeRef.current = true;
       setPhase('chat');
     }
   };
@@ -683,6 +695,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
               </div>
               <h2 className="text-xl font-bold text-foreground">Interview Complete</h2>
               <p className="text-sm text-muted-foreground mt-1">{evaluation.summary}</p>
+              {reward && <div className="mt-3 flex justify-center"><TrustBadge badge={reward.ai_interview_badge} credits={reward.credibility_credits} size="md" /></div>}
             </div>
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="p-4 rounded-xl bg-muted/20 text-center">

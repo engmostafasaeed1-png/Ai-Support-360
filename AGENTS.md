@@ -33,4 +33,5 @@
 
 - Founding Consultant awards live in a separate read-only badge table with locked server-only allocation and audited admin RPC overrides; optional feature queries fail closed until the user applies the prepared SQL, so existing consultant queries and private profile access remain unchanged.
 
-- Profile drafts use shared autosave with loaded baselines, immutable snapshots and backend readiness gating; sensitive fields stay manual to prevent empty writes and audit flooding. Keep save guidance in ProfileImportance/Radix with persisted progress, scoped stacking and reduced motion to preserve focus, continuation and session rules.
+- Profile autosave uses loaded baselines, immutable snapshots and readiness gating; sensitive fields stay manual to prevent empty writes and audit flooding. Radix save guidance preserves focus, continuation and session rules.
+- Profile interview actions use explicit start intent; evaluation confirms persisted trigger-awarded badges and refreshes profile/history caches to avoid client-fabricated awards.
