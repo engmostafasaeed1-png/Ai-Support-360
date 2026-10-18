@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Feature D: audit section saves, dirty-only four-second autosave, completion/interview guidance, notification-trigger inspection and tests; no database changes applied.
+
 - [x] Feature C: prepare unapplied Founding Consultant SQL, shared badges, admin settings/overrides and rule tests; full unit suite passed and real admin pending-activation state verified.
 - [ ] Activate/test Founding Consultant SQL awards and audited overrides: awaits user-applied docs/sql/founding-consultants.sql; no live data changed.
 
