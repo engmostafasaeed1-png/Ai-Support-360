@@ -14,11 +14,13 @@ const tableData: Record<string, unknown> = {
   profiles: { display_name: 'Saved Name' },
   consultants: { id: 'c1', bio: 'Saved bio', hourly_rate: 50, currency: 'USD', timezone: 'Asia/Riyadh', languages: ['en'], city: 'Riyadh', country: 'SA' },
 };
+const writes: { table: string; arg: any }[] = [];
 const builder = (table: string): any => {
   const b: any = new Proxy({}, {
     get(_t, prop) {
       if (prop === 'then') return (res: any) => res({ data: [], error: null });
       if (prop === 'maybeSingle' || prop === 'single') return () => Promise.resolve({ data: tableData[table] ?? null, error: null });
+      if (prop === 'update' || prop === 'upsert' || prop === 'insert') return (arg: any) => { writes.push({ table, arg }); return b; };
       return () => b;
     },
   });
@@ -46,8 +48,9 @@ vi.mock('./OnboardingGuidePanel', () => ({
 vi.mock('./steps/ProfileStep', () => ({
   default: ({ data, onChange }: any) => (
     <div>
-      <input aria-label="Display name" value={data.displayName} onChange={e => onChange({ displayName: e.target.value })} />
-      <textarea aria-label="Bio" value={data.bio} onChange={e => onChange({ bio: e.target.value })} />
+      <input id="displayName" aria-label="Display name" value={data.displayName} onChange={e => onChange({ displayName: e.target.value })} />
+      <textarea id="bio" aria-label="Bio" value={data.bio} onChange={e => onChange({ bio: e.target.value })} />
+      <input aria-label="LinkedIn profile address" value={data.linkedinUrl} onChange={e => onChange({ linkedinUrl: e.target.value })} />
       <input aria-label="City" value={data.city} readOnly />
     </div>
   ),
