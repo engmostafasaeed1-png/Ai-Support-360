@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/hooks/useLanguage';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Globe } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type MouseEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import horizontalLogo from '@/assets/brand/horizontal-tight.webp.asset.json';
 
@@ -66,7 +66,7 @@ export default function Navbar() {
 
   // React Router does nothing when the link target already matches the location,
   // so the hash-scroll effects never re-run. Scroll directly in that case.
-  const handleNavClick = (href: string) => (e: React.MouseEvent) => {
+  const handleNavClick = (href: string) => (e: MouseEvent) => {
     const [path, hash] = href.split('#');
     if (!hash) return;
     if (location.pathname === (path || '/') && location.hash === `#${hash}`) {
