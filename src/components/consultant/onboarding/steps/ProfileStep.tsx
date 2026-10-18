@@ -185,6 +185,7 @@ export default function ProfileStep({ data, onChange }: Props) {
               value={data.githubUrl}
               onChange={e => onChange({ githubUrl: e.target.value })}
               placeholder="https://github.com/username"
+              aria-label="GitHub profile address"
             /><RequiredMark field="github_url" />
           </div></FieldGate>
           <FieldGate field="personal_website"><div className="flex items-center gap-2">
@@ -193,6 +194,7 @@ export default function ProfileStep({ data, onChange }: Props) {
               value={data.personalWebsite}
               onChange={e => onChange({ personalWebsite: e.target.value })}
               placeholder="https://your-website.com"
+              aria-label="Personal website address"
             /><RequiredMark field="personal_website" />
           </div></FieldGate>
         </div>

@@ -246,16 +246,35 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     setData(prev => ({ ...prev, ...partial }));
   };
 
+  // Browser autofill paints fields yellow and fills them without a React change event, so the form state
+  // stays empty and a save would wipe the visible values. Read the real input values at save time.
+  const autofilled = (selector: string, stateValue: string) => {
+    const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(selector);
+    return el && el.value !== stateValue ? el.value : stateValue;
+  };
+
   const handleSaveAndContinue = async () => {
     if (isGuest) {
       setCurrentStep(STEP_COUNT - 1);
       return;
     }
+    const displayName = autofilled('#displayName', data.displayName);
+    const bio = autofilled('#bio', data.bio);
+    const hourlyRate = Number(autofilled('#hourlyRate', String(data.hourlyRate))) || 0;
+    const linkedinRaw = autofilled('input[aria-label="LinkedIn profile address"]', data.linkedinUrl);
+    const credlyRaw = autofilled('input[aria-label="Credly username or profile address"]', data.credlyUsername);
+    const githubRaw = autofilled('input[aria-label="GitHub profile address"]', data.githubUrl);
+    const websiteRaw = autofilled('input[aria-label="Personal website address"]', data.personalWebsite);
+    if (displayName !== data.displayName || bio !== data.bio || hourlyRate !== data.hourlyRate ||
+        linkedinRaw !== data.linkedinUrl || credlyRaw !== data.credlyUsername ||
+        githubRaw !== data.githubUrl || websiteRaw !== data.personalWebsite) {
+      setData(prev => ({ ...prev, displayName, bio, hourlyRate, linkedinUrl: linkedinRaw, credlyUsername: credlyRaw, githubUrl: githubRaw, personalWebsite: websiteRaw }));
+    }
     // Same rules as the database: a wrong LinkedIn or Credly value is shown here, before anything is saved.
-    const linkedinUrl = data.linkedinUrl.trim() ? normalizeLinkedinUrl(data.linkedinUrl) : null;
-    const credlyUsername = data.credlyUsername.trim() ? normalizeCredlyUsername(data.credlyUsername) : null;
-    if ((data.linkedinUrl.trim() && !linkedinUrl) || (data.credlyUsername.trim() && !credlyUsername)) {
-      toast.error(data.linkedinUrl.trim() && !linkedinUrl ? LINKEDIN_HINT : CREDLY_HINT);
+    const linkedinUrl = linkedinRaw.trim() ? normalizeLinkedinUrl(linkedinRaw) : null;
+    const credlyUsername = credlyRaw.trim() ? normalizeCredlyUsername(credlyRaw) : null;
+    if ((linkedinRaw.trim() && !linkedinUrl) || (credlyRaw.trim() && !credlyUsername)) {
+      toast.error(linkedinRaw.trim() && !linkedinUrl ? LINKEDIN_HINT : CREDLY_HINT);
       setCurrentStep(1);
       return;
     }
@@ -270,7 +289,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
       // Update or create profile
       const { error: profileError } = await supabase.from('profiles').upsert({
         user_id: user.id,
-        display_name: data.displayName,
+        display_name: displayName,
         onboarding_completed: true,
       }, { onConflict: 'user_id' });
 
@@ -280,15 +299,15 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
       // it needs read permission on every written column, and the contact-link columns are write-only for the consultant.
       const consultantValues = {
         user_id: user.id,
-        bio: data.bio,
-        hourly_rate: data.hourlyRate,
+        bio,
+        hourly_rate: hourlyRate,
         currency: data.currency,
         timezone: data.timezone,
         languages: data.languages,
         linkedin_url: linkedinUrl,
         credly_username: credlyUsername,
-        github_url: data.githubUrl || null,
-        personal_website: data.personalWebsite || null,
+        github_url: githubRaw.trim() || null,
+        personal_website: websiteRaw.trim() || null,
         city: data.city || null,
         country: data.country || null,
         latitude: place ? place.lat : null,
