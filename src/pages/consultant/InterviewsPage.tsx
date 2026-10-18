@@ -105,7 +105,7 @@ export default function InterviewsPage() {
             setActiveInterviewId(null);
             refetch();
             void queryClient.invalidateQueries({ queryKey: ['consultant-profile'] });
-            void queryClient.invalidateQueries({ queryKey: ['consultant-interview-history'] });
+            void queryClient.invalidateQueries({ queryKey: ['interview-history'] });
           }}
           onCancel={() => setActiveInterviewId(null)}
         />

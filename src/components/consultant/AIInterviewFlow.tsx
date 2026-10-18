@@ -353,6 +353,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     const saved = data?.skill_results as unknown as ChatMessage[] | null;
     if (saved && Array.isArray(saved) && saved.length > 0 && data?.status === 'in_progress') {
       setMessages(saved);
+      setInterviewStarted(true);
       messagesRef.current = saved;
       const lastMsg = saved[saved.length - 1];
       if (lastMsg?.role === 'user') {
@@ -569,6 +570,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
         }
       }
       if (assistantText) {
+        messagesRef.current = [...chatHistory, { role: 'assistant', content: assistantText }];
+        setMessages(messagesRef.current);
         if (!interviewStarted) {
           setInterviewStarted(true);
           setStartedAt(new Date());
@@ -671,6 +674,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
     } catch (err: any) {
       console.error('Eval error:', err);
       setError(err.message);
+      shouldAutoResumeRef.current = true;
       setPhase('chat');
     }
   };
