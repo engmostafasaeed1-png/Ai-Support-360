@@ -273,8 +273,8 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     // Same rules as the database: a wrong LinkedIn or Credly value is shown here, before anything is saved.
     const linkedinUrl = linkedinRaw.trim() ? normalizeLinkedinUrl(linkedinRaw) : null;
     const credlyUsername = credlyRaw.trim() ? normalizeCredlyUsername(credlyRaw) : null;
-    if ((data.linkedinUrl.trim() && !linkedinUrl) || (data.credlyUsername.trim() && !credlyUsername)) {
-      toast.error(data.linkedinUrl.trim() && !linkedinUrl ? LINKEDIN_HINT : CREDLY_HINT);
+    if ((linkedinRaw.trim() && !linkedinUrl) || (credlyRaw.trim() && !credlyUsername)) {
+      toast.error(linkedinRaw.trim() && !linkedinUrl ? LINKEDIN_HINT : CREDLY_HINT);
       setCurrentStep(1);
       return;
     }
@@ -289,7 +289,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
       // Update or create profile
       const { error: profileError } = await supabase.from('profiles').upsert({
         user_id: user.id,
-        display_name: data.displayName,
+        display_name: displayName,
         onboarding_completed: true,
       }, { onConflict: 'user_id' });
 
