@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit } from "../_shared/security.ts";
+import { validateInterviewEvaluation } from '../_shared/interviewEvaluation.ts';
 
 const BodySchema = z.object({
   interview_id: z.string().uuid(),
@@ -133,7 +134,7 @@ Return ONLY valid JSON.`;
     let evaluation;
     try {
       const cleaned = rawContent.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-      evaluation = JSON.parse(cleaned);
+      evaluation = validateInterviewEvaluation(JSON.parse(cleaned));
     } catch {
       console.error("Failed to parse:", rawContent);
       throw new Error("Failed to parse evaluation");
@@ -144,7 +145,7 @@ Return ONLY valid JSON.`;
       const evalAnswer = evaluation.answers?.[i];
       const ans = answers[i] as { id?: string; answer?: string };
       if (evalAnswer && ans?.id) {
-        await supabase
+        const { error: answerError } = await supabase
           .from("interview_answers")
           .update({
             answer_transcript: ans.answer,
@@ -153,11 +154,12 @@ Return ONLY valid JSON.`;
           })
           .eq("id", ans.id)
           .eq("interview_id", interview_id);
+        if (answerError) throw answerError;
       }
     }
 
     // Update interview session
-    await supabase
+    const { error: completionError } = await supabase
       .from("interview_sessions")
       .update({
         status: "completed",
@@ -168,6 +170,7 @@ Return ONLY valid JSON.`;
         ai_summary: evaluation.summary,
       })
       .eq("id", interview_id);
+    if (completionError) throw completionError;
 
     return new Response(JSON.stringify({ evaluation }), {
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
