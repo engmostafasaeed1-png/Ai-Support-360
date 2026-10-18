@@ -1,3 +1,8 @@
+import { useSectionAutosave } from '@/hooks/useSectionAutosave';
+import { useProfileAutosaveReady } from '@/hooks/useProfileAutosaveReady';
+import { useProfileSavePrompt } from './saving/ProfileImportance';
+import SectionSaveControls from './saving/SectionSaveControls';
+import { useProfileFieldRules } from '@/hooks/useProfileFieldRules';
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -132,23 +137,26 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
     return ALL_SAP_AREAS.map((a) => a.name).filter((n) => !have.has(n.toLowerCase()) && (!q || n.toLowerCase().includes(q)));
   }, [skills, moduleQuery]);
 
-  const save = async () => {
-    if (!userId) return;
-    const y = years === '' ? null : Number(years);
-    if (y !== null && (!Number.isInteger(y) || y < 0 || y > 50)) return toast.error('Years of SAP experience must be 0–50');
-    setSaving(true);
-    const { error } = await supabase.from('consultants').update({
-      sap_roles: roles,
-      sap_role: SAP_ROLES.find(([, l]) => l === roles[0])?.[0] ?? null,
-      seniority_level: seniority || null,
-      total_sap_years: y,
-      sap_technologies: tech,
-    }).eq('id', userId);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success('SAP expertise saved');
-    onProfileChanged?.();
-  };
+  const automatic = useProfileAutosaveReady();
+  const rules = useProfileFieldRules();
+  const beforeManual = useProfileSavePrompt();
+  const values = { sap_roles: roles, seniority_level: seniority || null, total_sap_years: years === '' ? null : Number(years), sap_technologies: tech };
+  const state = useSectionAutosave({ values, ready: !loading && !!userId && !rules.isLoading, automatic: automatic.data === true, beforeManual,
+    validate: patch => {
+      const y = values.total_sap_years;
+      if (y !== null && (!Number.isInteger(y) || y < 0 || y > 50)) return 'Years of SAP experience must be 0–50';
+      if (Object.entries(patch).some(([key, value]) => rules.isRequired(key) && (value === null || value === '' || (Array.isArray(value) && !value.length)))) return 'Complete the required fields in this section before saving.';
+      return null;
+    },
+    persist: async patch => {
+      if (!userId) throw new Error('Your consultant profile could not be found.');
+      const payload = { ...patch, ...('sap_roles' in patch ? { sap_role: SAP_ROLES.find(([, label]) => label === roles[0])?.[0] ?? null } : {}) };
+      const { error } = await supabase.from('consultants').update(payload as never).eq('id', userId);
+      if (error) { toast.error(error.message); throw error; }
+      onProfileChanged?.();
+    },
+  });
+
 
   const addSkills = async () => {
     if (!userId) return;
@@ -186,7 +194,7 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
     <Card className="rounded-2xl border-border/50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base flex items-center gap-2"><Cpu className="h-4 w-4" /> SAP expertise</CardTitle>
-        <Button size="sm" onClick={save} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Save className="h-4 w-4 me-1" />}Save</Button>
+        <SectionSaveControls state={state} disabled={loading} />
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">

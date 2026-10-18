@@ -1,3 +1,8 @@
+import { useSectionAutosave } from '@/hooks/useSectionAutosave';
+import { useProfileAutosaveReady } from '@/hooks/useProfileAutosaveReady';
+import { useProfileSavePrompt } from './saving/ProfileImportance';
+import SectionSaveControls from './saving/SectionSaveControls';
+import { useProfileFieldRules } from '@/hooks/useProfileFieldRules';
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -124,27 +129,20 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
   const missing = completeness.items.filter((i) => !i.done).slice(0, 4);
   useEffect(() => { if (!loading) onCompletenessChange?.(completeness); }, [loading, completeness, onCompletenessChange]);
 
-  const save = async () => {
-    if (!consultantId) return;
-    setSaving(true);
-    const { error } = await supabase.from('consultants').update({
-      industries,
-      customer_segments: segments,
-      vertical_solutions: verticals,
-      localization_countries: locCountries,
-      localization_solutions: locSolutions,
-      project_types: projectTypes,
-      deployment_experience: deployment,
-      project_scale: scale || null,
-      work_modes: workModes,
-      working_week: workingWeek || null,
-      onsite_countries: onsiteCountries,
-      language_levels: languageLevels,
-    } as never).eq('id', consultantId);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success('Experience saved');
-  };
+  const automatic = useProfileAutosaveReady();
+  const rules = useProfileFieldRules();
+  const beforeManual = useProfileSavePrompt();
+  const values = { industries, customer_segments: segments, vertical_solutions: verticals, localization_countries: locCountries, localization_solutions: locSolutions, project_types: projectTypes, deployment_experience: deployment, project_scale: scale || null, work_modes: workModes, working_week: workingWeek || null, onsite_countries: onsiteCountries, language_levels: languageLevels };
+  const state = useSectionAutosave({ values, ready: !loading && !!base && !!consultantId && !rules.isLoading, automatic: automatic.data === true, beforeManual,
+    validate: patch => Object.entries(patch).some(([key, value]) => rules.isRequired(key) && (value === null || value === '' || (Array.isArray(value) && !value.length) || (typeof value === 'object' && value !== null && !Object.keys(value).length))) ? 'Complete the required fields in this section before saving.' : null,
+    persist: async patch => {
+      if (!consultantId) throw new Error('Your consultant profile could not be found.');
+      const { error } = await supabase.from('consultants').update(patch as never).eq('id', consultantId);
+      if (error) { toast.error(error.message); throw error; }
+      if (!automatic.data) toast.success('Experience saved');
+    },
+  });
+
 
   if (loading) {
     return <Card className="rounded-2xl border-border/50"><CardContent className="p-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></CardContent></Card>;
@@ -154,7 +152,7 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
     <Card className="rounded-2xl border-border/50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base flex items-center gap-2"><Briefcase className="h-4 w-4" /> Industry, customer and solution experience</CardTitle>
-        <Button size="sm" onClick={save} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Save className="h-4 w-4 me-1" />}Save</Button>
+        <SectionSaveControls state={state} disabled={loading} />
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
