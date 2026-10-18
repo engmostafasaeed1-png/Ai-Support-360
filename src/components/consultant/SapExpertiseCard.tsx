@@ -3,7 +3,7 @@ import { useProfileAutosaveReady } from '@/hooks/useProfileAutosaveReady';
 import { useProfileSavePrompt } from './saving/ProfileImportance';
 import SectionSaveControls from './saving/SectionSaveControls';
 import { useProfileFieldRules } from '@/hooks/useProfileFieldRules';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -102,9 +102,11 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
   const [newLevel, setNewLevel] = useState('3');
   const [newYears, setNewYears] = useState('');
 
+  const knownSkillIds = useRef<string[]>([]);
   const loadSkills = async (uid: string) => {
     const { data, error } = await supabase.from('consultant_skills').select('id, sap_module, proficiency_level, years_experience').eq('consultant_id', uid).order('proficiency_level', { ascending: false });
     if (error) throw error;
+    knownSkillIds.current = (data ?? []).map(row => row.id);
     setSkills((data as Skill[]) || []);
   };
 
@@ -171,8 +173,6 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
     persist: async patch => {
       if (!userId) throw new Error('Your consultant profile could not be found.');
       const sent = patch.skills ?? [];
-      const { data: existing, error: readError } = await supabase.from('consultant_skills').select('id, sap_module, proficiency_level, years_experience').eq('consultant_id', userId);
-      if (readError) throw readError;
       for (const row of sent) {
         if (row.id.startsWith('new-')) {
           const { data: inserted, error } = await supabase.from('consultant_skills').upsert({ consultant_id: userId, sap_module: row.sap_module, proficiency_level: row.proficiency_level, years_experience: row.years_experience }, { onConflict: 'consultant_id,sap_module' }).select('id').single();
@@ -181,8 +181,9 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
           setSkills(current => current.map(item => item.id === localId ? { ...item, id: inserted.id } : item));
         }
       }
-      const removed = (existing ?? []).filter(row => !sent.some(item => item.id === row.id)).map(row => row.id);
+      const removed = knownSkillIds.current.filter(id => !sent.some(item => item.id === id));
       if (removed.length) { const { error } = await supabase.from('consultant_skills').delete().in('id', removed).eq('consultant_id', userId); if (error) throw error; }
+      knownSkillIds.current = sent.map(row => row.id);
       onProfileChanged?.();
     },
   });
