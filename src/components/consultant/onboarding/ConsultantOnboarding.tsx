@@ -252,6 +252,10 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
 
   const updateData = (partial: Partial<OnboardingData>) => {
     for (const key of Object.keys(partial)) dirtyKeys.current.add(key);
+    for (const key of ['certifications', 'education', 'projects'] as const) {
+      const rows = partial[key];
+      if (rows) (partial as Record<string, unknown>)[key] = rows.map(row => row.id ? row : { ...row, id: `draft-${crypto.randomUUID()}` });
+    }
     setData(prev => ({ ...prev, ...partial }));
   };
 
@@ -365,7 +369,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
               seen.add(key(row));
             }
           }
-          const removed = original.filter(id => !rows.some(row => row.id === id));
+          const removed = original.filter(id => !ids.includes(id));
           if (removed.length) {
             const { error } = await supabase.from(table).delete().in('id', removed).eq('consultant_id', consultant.id);
             if (error) throw error;
@@ -529,6 +533,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     if (keys.includes('projects') && data.projects.some(p => !p.projectName.trim())) return t('profile_save.rows_invalid', 'Complete each entry and check its dates before saving.');
     return null;
   };
+  const insertedRows = useRef(new Map<string, string>());
   const persistSection = async (patch: Record<string, unknown>) => {
     if (!loadSucceeded || !consultantId) throw new Error(t('onboarding.error_generic'));
     const { data: { user } } = await supabase.auth.getUser();
@@ -551,19 +556,23 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
       if (error) throw error;
       const ids: string[] = [];
       for (const row of rows) {
-        const { id, ...values } = row;
+        const { id: draftId, ...values } = row;
+        const id = draftId?.startsWith('draft-') ? insertedRows.current.get(draftId) : draftId;
         const before = (existing as unknown as Record<string, unknown>[] | null)?.find(x => x.id === id);
         if (id) {
           const changed = Object.fromEntries(Object.entries(values).filter(([key, value]) => JSON.stringify(before?.[key]) !== JSON.stringify(value)));
           if (Object.keys(changed).length) check(await supabase.from(table).update(changed as never).eq('id', id).eq('consultant_id', consultantId));
-          ids.push(id);
+          row.id = id; ids.push(id);
         } else {
           const { data: inserted, error } = await supabase.from(table).insert({ ...values, consultant_id: consultantId } as never).select('id').single();
           if (error || !inserted) throw error ?? new Error(t('onboarding.error_generic'));
+          if (draftId) insertedRows.current.set(draftId, inserted.id);
+          const field = table === 'certifications' ? 'certifications' : table === 'consultant_education' ? 'education' : 'projects';
+          setData(prev => ({ ...prev, [field]: prev[field].map(item => item.id === draftId ? { ...item, id: inserted.id } : item) }));
           row.id = inserted.id; ids.push(inserted.id);
         }
       }
-      const removed = original.filter(id => !rows.some(row => row.id === id));
+      const removed = original.filter(id => !ids.includes(id));
       if (removed.length) check(await supabase.from(table).delete().in('id', removed).eq('consultant_id', consultantId));
       return ids;
     };
@@ -576,20 +585,20 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
       }
       const ids = await sync('certifications', rows, savedRows.certifications);
       (patch.certifications as OnboardingData['certifications']).forEach((row, i) => { row.id = ids[i]; delete row.file; });
-      setData(prev => ({ ...prev, certifications: prev.certifications.map((row, i) => data.certifications[i] && (row.id === data.certifications[i].id) ? { ...row, id: ids[i], ...(row.file === data.certifications[i].file ? { file: undefined } : {}) } : row) }));
+      setData(prev => ({ ...prev, certifications: prev.certifications.map(row => { const sent = (patch.certifications as OnboardingData['certifications']).find(cert => cert.id === row.id); return sent && row.file === data.certifications.find(cert => cert.id === row.id)?.file ? { ...row, file: undefined } : row; }) }));
       setSavedRows(prev => ({ ...prev, certifications: ids }));
     }
     if ('education' in patch) {
       const draft = patch.education as OnboardingData['education'];
       const ids = await sync('consultant_education', draft.map(e => ({ id: e.id, institution: e.institution.trim(), degree: e.degree || null, field_of_study: e.fieldOfStudy || null, start_year: e.startYear, end_year: e.endYear })), savedRows.education);
       draft.forEach((row, i) => { row.id = ids[i]; });
-      setData(prev => ({ ...prev, education: prev.education.map((row, i) => data.education[i] && row.id === data.education[i].id ? { ...row, id: ids[i] } : row) })); setSavedRows(prev => ({ ...prev, education: ids }));
+      setSavedRows(prev => ({ ...prev, education: ids }));
     }
     if ('projects' in patch) {
       const draft = patch.projects as OnboardingData['projects'];
       const ids = await sync('consultant_projects', draft.map(p => ({ id: p.id, project_name: p.projectName.trim(), client_industry: p.clientIndustry || null, sap_modules: [...new Set(p.sapModules)], description: p.description || null, duration_months: p.durationMonths, role: p.role || null })), savedRows.projects);
       draft.forEach((row, i) => { row.id = ids[i]; });
-      setData(prev => ({ ...prev, projects: prev.projects.map((row, i) => data.projects[i] && row.id === data.projects[i].id ? { ...row, id: ids[i] } : row) })); setSavedRows(prev => ({ ...prev, projects: ids }));
+      setSavedRows(prev => ({ ...prev, projects: ids }));
     }
     // A completed snapshot only clears keys which have not changed while the request was running.
     for (const [key, value] of Object.entries(patch)) if (JSON.stringify(latestData.current[key as keyof OnboardingData]) === JSON.stringify(value)) dirtyKeys.current.delete(key);
@@ -637,8 +646,8 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
         <ProfileStep data={data} onChange={updateData} renderSection={section} />
       </section>
       <FieldGate field={['skills', 'sap_role', 'seniority_level', 'total_sap_years', 'sap_roles', 'sap_technologies']}><section id="expertise"><EmbeddedGuideCard section="expertise" stepKey="skills" /><SapExpertiseCard key={`skills-${importRevision}`} onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section></FieldGate>
-      <section id="profile-experience"><EmbeddedGuideCard section="profile-experience" stepKey="projects" /><ProfileExperienceCard key={`experience-${importRevision}`} payoutReady={payoutReady(payoutQ.data?.details)} onCompletenessChange={embeddedGuides.setCompleteness} /></section>
-      <FieldGate field={['work_history', 'cv']}><section id="experience"><EmbeddedGuideCard section="experience" stepKey="work" /><ExperienceCvCard onProfileChanged={() => { setImportRevision(r => r + 1); setLoadedRevision(r => r + 1); }} /></section></FieldGate>
+      <section id="profile-experience"><EmbeddedGuideCard section="profile-experience" stepKey="projects" /><ProfileExperienceCard sourceRevision={loadedRevision} key={`experience-${importRevision}`} payoutReady={payoutReady(payoutQ.data?.details)} onCompletenessChange={embeddedGuides.setCompleteness} /></section>
+      <FieldGate field={['work_history', 'cv']}><section id="experience"><EmbeddedGuideCard section="experience" stepKey="work" /><ExperienceCvCard onProfileChanged={() => setLoadedRevision(r => r + 1)} onImported={() => { setImportRevision(r => r + 1); setLoadedRevision(r => r + 1); }} /></section></FieldGate>
       <FieldGate field="certifications"><section id="certifications"><EmbeddedGuideCard section="certifications" stepKey="certifications" />{section(['certifications'], <><p className="text-xs text-muted-foreground">{t('profile_save.cert_manual', 'Certificate changes require another verification check. Save them manually.')}</p><CertificationsStep data={data} onChange={updateData} /></>, true)}</section></FieldGate>
       <FieldGate field="education"><section id="education"><EmbeddedGuideCard section="education" stepKey="education" />{section(['education'], <EducationStep data={data} onChange={updateData} />)}</section></FieldGate>
       <FieldGate field="projects"><section id="projects"><EmbeddedGuideCard section="projects" stepKey="projects" />{section(['projects'], <ProjectsStep data={data} onChange={updateData} />)}</section></FieldGate>

@@ -35,7 +35,7 @@ function fmt(d: string | null) {
   return new Date(d).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
 
-export default function ExperienceCvCard({ onProfileChanged }: { onProfileChanged?: () => void }) {
+export default function ExperienceCvCard({ onProfileChanged, onImported }: { onProfileChanged?: () => void; onImported?: () => void }) {
   // userId = consultants.id (row key for consultant tables); authId = auth user id (storage folder).
   const [userId, setUserId] = useState<string | null>(null);
   const [authId, setAuthId] = useState<string | null>(null);
@@ -216,7 +216,7 @@ export default function ExperienceCvCard({ onProfileChanged }: { onProfileChange
       </CardContent>
 
       {userId && (
-        <CvImportDialog open={!!parsed} onOpenChange={(o) => !o && setParsed(null)} userId={userId} data={parsed} onApplied={() => { void load(userId); onProfileChanged?.(); }} />
+        <CvImportDialog open={!!parsed} onOpenChange={(o) => !o && setParsed(null)} userId={userId} data={parsed} onApplied={() => { void load(userId); if (onImported) onImported(); else onProfileChanged?.(); }} />
       )}
 
       <Dialog open={!!editing} onOpenChange={o => { if (!o) void closeJob(); }}>

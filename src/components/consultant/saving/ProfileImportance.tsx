@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
@@ -27,6 +27,7 @@ export default function ProfileImportance({ children }: { children: ReactNode })
   const interviewDone = !!profile?.ai_interview_completed_at;
   const incomplete = completeness !== null && completeness.percent < 100;
   const needed = incomplete || !interviewDone;
+  useEffect(() => { setDismissed(false); }, [completeness?.percent, interviewDone]);
   const missing = completeness?.items.filter(item => !item.done).slice(0, 5).map(item => t(`profile_completeness.${item.key}`, item.label)).join(', ') ?? '';
   const completionText = fill(t('profile_save.before', 'Before you save: complete profiles are shown to clients first and are the ones invited to bids; you are at {{percent}} %. Missing: {{missing}}.'), { percent: completeness?.percent ?? 0, missing });
   const interviewText = t('profile_save.interview', 'Take the AI interview to earn a Gold/Silver/Bronze credibility badge - verified consultants with a badge are trusted more by clients.');

@@ -52,7 +52,7 @@ type Row = {
   sap_technologies: string[] | null;
 };
 
-export default function ProfileExperienceCard({ payoutReady = false, onCompletenessChange }: { payoutReady?: boolean; onCompletenessChange?: (value: ReturnType<typeof profileCompleteness>) => void } = {}) {
+export default function ProfileExperienceCard({ payoutReady = false, onCompletenessChange, sourceRevision = 0 }: { sourceRevision?: number; payoutReady?: boolean; onCompletenessChange?: (value: ReturnType<typeof profileCompleteness>) => void } = {}) {
   const [consultantId, setConsultantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -106,6 +106,20 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
       setLoading(false);
     }).catch(error => { setLoadError(error.message); setLoading(false); });
   }, []);
+
+  useEffect(() => {
+    if (!consultantId || !sourceRevision) return;
+    let active = true;
+    void Promise.all([
+      supabase.from('consultants').select('sap_roles, seniority_level, total_sap_years, sap_technologies, languages').eq('id', consultantId).maybeSingle(),
+      supabase.from('consultant_skills').select('id', { count: 'exact', head: true }).eq('consultant_id', consultantId),
+    ]).then(([result, counts]) => {
+      if (!active || result.error || counts.error || !result.data) return;
+      setBase(current => current ? { ...current, ...result.data } : current);
+      setLanguages(result.data.languages ?? []); setSkillsCount(counts.count ?? 0);
+    });
+    return () => { active = false; };
+  }, [consultantId, sourceRevision]);
 
   const completeness = useMemo(() => profileCompleteness({
     sap_roles: base?.sap_roles,
