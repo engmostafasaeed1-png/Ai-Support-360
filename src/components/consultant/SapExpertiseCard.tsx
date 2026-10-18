@@ -89,7 +89,8 @@ function Chips({ options, value, onChange, otherPlaceholder = 'Add another…' }
 export default function SapExpertiseCard({ onProfileChanged }: { onProfileChanged?: () => void } = {}) {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [loadSucceeded, setLoadSucceeded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
   const [seniority, setSeniority] = useState<string>('');
   const [years, setYears] = useState<string>('');
@@ -102,7 +103,8 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
   const [newYears, setNewYears] = useState('');
 
   const loadSkills = async (uid: string) => {
-    const { data } = await supabase.from('consultant_skills').select('id, sap_module, proficiency_level, years_experience').eq('consultant_id', uid).order('proficiency_level', { ascending: false });
+    const { data, error } = await supabase.from('consultant_skills').select('id, sap_module, proficiency_level, years_experience').eq('consultant_id', uid).order('proficiency_level', { ascending: false });
+    if (error) throw error;
     setSkills((data as Skill[]) || []);
   };
 
@@ -113,11 +115,12 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
       if (!me) return setLoading(false);
       const uid = me.id;
       setUserId(uid);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('consultants')
         .select('sap_role, sap_roles, seniority_level, total_sap_years, sap_technologies')
         .eq('id', uid)
         .maybeSingle();
+      if (error) throw error;
       if (data) {
         const labelOf = (k: string) => SAP_ROLES.find(([v]) => v === k)?.[1] ?? k;
         const r = data.sap_roles?.length ? data.sap_roles : data.sap_role ? [data.sap_role] : [];
@@ -127,8 +130,9 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
         setTech(data.sap_technologies ?? []);
       }
       await loadSkills(uid);
+      setLoadSucceeded(!!data);
       setLoading(false);
-    });
+    }).catch(error => { setLoadError(error.message); setLoading(false); });
   }, []);
 
   const moduleOptions = useMemo(() => {
@@ -141,7 +145,7 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
   const rules = useProfileFieldRules();
   const beforeManual = useProfileSavePrompt();
   const values = { sap_roles: roles, seniority_level: seniority || null, total_sap_years: years === '' ? null : Number(years), sap_technologies: tech };
-  const state = useSectionAutosave({ values, ready: !loading && !!userId && !rules.isLoading, automatic: automatic.data === true, beforeManual,
+  const state = useSectionAutosave({ values, ready: !loading && loadSucceeded && !!userId && !rules.isLoading, automatic: automatic.data === true, beforeManual,
     validate: patch => {
       const y = values.total_sap_years;
       if (y !== null && (!Number.isInteger(y) || y < 0 || y > 50)) return 'Years of SAP experience must be 0–50';
@@ -197,6 +201,7 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
         <SectionSaveControls state={state} disabled={loading} />
       </CardHeader>
       <CardContent className="space-y-6">
+        {loadError && <p role="alert" className="text-xs text-destructive">{loadError}</p>}
         <div className="space-y-2">
           <Label>Roles (choose all that apply)</Label>
           <Chips options={SAP_ROLES.map(([, l]) => l)} value={roles} onChange={setRoles} otherPlaceholder="Other role, e.g. Test manager" />

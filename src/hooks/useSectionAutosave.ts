@@ -6,13 +6,21 @@ export function changedFields<T extends Record<string, unknown>>(current: T, sav
 }
 export type SectionSave = ReturnType<typeof useSectionAutosave>;
 /** In-memory draft only: captures a snapshot, serializes writes and acknowledges only that snapshot. */
-export function useSectionAutosave<T extends Record<string, unknown>>({ values, ready, automatic = true, validate, persist, beforeManual, resetKey }: {
-  values: T; ready: boolean; automatic?: boolean; resetKey?: string; validate?: (patch: Partial<T>) => string | null;
+export function useSectionAutosave<T extends Record<string, unknown>>({ values, ready, automatic = true, validate, persist, beforeManual, resetKey, sourceRevision }: {
+  values: T; ready: boolean; automatic?: boolean; resetKey?: string; sourceRevision?: number; validate?: (patch: Partial<T>) => string | null;
   persist: (patch: Partial<T>) => Promise<void>; beforeManual?: (proceed: () => void) => void;
 }) {
   const baseline = useRef<T | null>(null);
   const identity = useRef(resetKey);
+  const source = useRef(sourceRevision);
+  const observed = useRef(values);
   if (identity.current !== resetKey) { identity.current = resetKey; baseline.current = null; }
+  if (source.current !== sourceRevision && baseline.current) {
+    const unsaved = changedFields(observed.current, baseline.current);
+    baseline.current = Object.fromEntries(Object.keys(values).map(key => [key, key in unsaved ? baseline.current?.[key] : values[key]])) as T;
+    source.current = sourceRevision;
+  }
+  observed.current = values;
   const latest = useRef({ values, ready, automatic, validate, persist, beforeManual });
   latest.current = { values, ready, automatic, validate, persist, beforeManual };
   const flight = useRef<Promise<void> | null>(null);
@@ -73,12 +81,18 @@ export function useSectionAutosave<T extends Record<string, unknown>>({ values, 
       event.preventDefault(); event.returnValue = '';
     };
     const flush = () => { if (latest.current.automatic) void save(); };
+    const navigation = (event: MouseEvent) => {
+      const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+      if (link && !link.hasAttribute('target')) flush();
+    };
+    document.addEventListener('click', navigation, true);
     window.addEventListener('beforeunload', unload);
     window.addEventListener('profile-section-change', flush);
     const visibility = () => { if (document.visibilityState === 'hidden') flush(); };
     document.addEventListener('visibilitychange', visibility);
     return () => {
       flush(); mounted.current = false;
+      document.removeEventListener('click', navigation, true);
       window.removeEventListener('beforeunload', unload);
       window.removeEventListener('profile-section-change', flush);
       document.removeEventListener('visibilitychange', visibility);

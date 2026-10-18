@@ -55,7 +55,7 @@ type Row = {
 export default function ProfileExperienceCard({ payoutReady = false, onCompletenessChange }: { payoutReady?: boolean; onCompletenessChange?: (value: ReturnType<typeof profileCompleteness>) => void } = {}) {
   const [consultantId, setConsultantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [languages, setLanguages] = useState<string[]>([]);
   const [skillsCount, setSkillsCount] = useState(0);
   const [base, setBase] = useState<Row | null>(null);
@@ -80,10 +80,11 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
       if (!me) return setLoading(false);
       const cid = me.id;
       setConsultantId(cid);
-      const [{ data }, { count }] = await Promise.all([
+      const [{ data, error }, { count, error: skillError }] = await Promise.all([
         supabase.from('consultants').select(COLUMNS).eq('id', cid).maybeSingle(),
         supabase.from('consultant_skills').select('id', { count: 'exact', head: true }).eq('consultant_id', cid),
       ]);
+      if (error || skillError) throw error || skillError;
       setSkillsCount(count ?? 0);
       if (data) {
         const row = data as unknown as Row;
@@ -103,7 +104,7 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
         setLanguageLevels(row.language_levels ?? {});
       }
       setLoading(false);
-    });
+    }).catch(error => { setLoadError(error.message); setLoading(false); });
   }, []);
 
   const completeness = useMemo(() => profileCompleteness({
@@ -155,6 +156,7 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
         <SectionSaveControls state={state} disabled={loading} />
       </CardHeader>
       <CardContent className="space-y-6">
+        {loadError && <p role="alert" className="text-xs text-destructive">{loadError}</p>}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">Profile completeness: {completeness.percent}%</span>

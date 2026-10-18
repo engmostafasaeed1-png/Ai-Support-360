@@ -138,6 +138,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
   const autosaveReady = useProfileAutosaveReady();
   const fieldRules = useProfileFieldRules();
   const [loadSucceeded, setLoadSucceeded] = useState(false);
+  const [sourceRevision, setSourceRevision] = useState(0);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const payoutQ = useMyPayoutDetails();
@@ -216,6 +217,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
         };
         setData(prev => mergeLoaded(prev, loaded, dirtyKeys.current));
         setLoadSucceeded(true);
+        setSourceRevision(r => r + 1);
       } catch {
         toast.error(tRef.current('onboarding.error_generic'));
       } finally {
@@ -550,7 +552,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
       const ids: string[] = [];
       for (const row of rows) {
         const { id, ...values } = row;
-        const before = existing?.find(x => x.id === id) as Record<string, unknown> | undefined;
+        const before = (existing as unknown as Record<string, unknown>[] | null)?.find(x => x.id === id);
         if (id) {
           const changed = Object.fromEntries(Object.entries(values).filter(([key, value]) => JSON.stringify(before?.[key]) !== JSON.stringify(value)));
           if (Object.keys(changed).length) check(await supabase.from(table).update(changed as never).eq('id', id).eq('consultant_id', consultantId));
@@ -594,7 +596,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     await queryClient.invalidateQueries({ queryKey: ['consultant-profile'] });
   };
   const latestData = useRef(data); latestData.current = data;
-  const section = (keys: (keyof OnboardingData)[], children: React.ReactNode, manual = false) => <OnboardingSection values={sectionValues(keys)} automatic={!manual && autosaveReady.data === true} disabled={isGuest || !loadSucceeded || fieldRules.isLoading} persist={persistSection} validate={validateSection(keys)}>{children}</OnboardingSection>;
+  const section = (keys: (keyof OnboardingData)[], children: React.ReactNode, manual = false) => <OnboardingSection sourceRevision={sourceRevision} values={sectionValues(keys)} automatic={!manual && autosaveReady.data === true} disabled={isGuest || !loadSucceeded || fieldRules.isLoading} persist={persistSection} validate={validateSection(keys)}>{children}</OnboardingSection>;
 
   const canNext = () => {
     if (currentStep === 0) return true; // Import is always skippable
