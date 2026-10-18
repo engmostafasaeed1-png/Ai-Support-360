@@ -578,14 +578,15 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     };
     if ('certifications' in patch) {
       const rows = [];
+      const uploaded = new Map<string | undefined, File>();
       for (const cert of patch.certifications as OnboardingData['certifications']) {
         let document_url: string | undefined;
-        if (cert.file) { const path = `${user.id}/certifications/${Date.now()}-${safeFileName(cert.file.name)}`; check(await supabase.storage.from('consultant-documents').upload(path, cert.file)); document_url = path; }
+        if (cert.file) { uploaded.set(cert.id, cert.file); const path = `${user.id}/certifications/${Date.now()}-${safeFileName(cert.file.name)}`; check(await supabase.storage.from('consultant-documents').upload(path, cert.file)); document_url = path; }
         rows.push({ id: cert.id, name: cert.name.trim(), issuer: cert.issuer || null, issue_date: cert.issueDate || null, expiry_date: cert.expiryDate || null, ...(document_url ? { document_url } : {}) });
       }
       const ids = await sync('certifications', rows, savedRows.certifications);
       (patch.certifications as OnboardingData['certifications']).forEach((row, i) => { row.id = ids[i]; delete row.file; });
-      setData(prev => ({ ...prev, certifications: prev.certifications.map(row => { const sent = (patch.certifications as OnboardingData['certifications']).find(cert => cert.id === row.id); return sent && row.file === data.certifications.find(cert => cert.id === row.id)?.file ? { ...row, file: undefined } : row; }) }));
+      setData(prev => ({ ...prev, certifications: prev.certifications.map(row => { const sent = (patch.certifications as OnboardingData['certifications']).find(cert => cert.id === row.id); const previousId = [...insertedRows.current.entries()].find(([, id]) => id === row.id)?.[0] ?? row.id; return sent && row.file === uploaded.get(previousId) ? { ...row, file: undefined } : row; }) }));
       setSavedRows(prev => ({ ...prev, certifications: ids }));
     }
     if ('education' in patch) {
