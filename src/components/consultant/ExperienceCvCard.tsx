@@ -147,7 +147,7 @@ export default function ExperienceCvCard({ onProfileChanged }: { onProfileChange
         const { data, error } = await supabase.from('consultant_work_history').insert({ ...editing, id: undefined, consultant_id: userId } as never).select('id').single();
         if (error || !data) throw error ?? new Error('Could not save changes. Try again.');
         // Keep the form open; subsequent edits use the stable returned row ID.
-        editing.id = data.id;
+        setEditing(current => current ? { ...current, id: data.id } : current);
       }
       void load(userId); onProfileChanged?.();
     },

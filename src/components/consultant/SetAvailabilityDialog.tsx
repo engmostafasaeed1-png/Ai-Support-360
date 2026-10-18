@@ -44,6 +44,7 @@ const dateLabel = (key: string) =>
 export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: React.ReactNode; onSaved?: () => void }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
   const [mode, setMode] = useState<'weekly' | 'date'>('weekly');
   const [day, setDay] = useState('1');
   const [date, setDate] = useState('');
@@ -86,6 +87,7 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
     applied.current = snapshot(fresh);
     if (!untouched) return;
     setDrafts(fresh);
+    setDraftLoaded(true);
     setEditingId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs only when the saved slots change
   }, [data]);
@@ -137,7 +139,7 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
 
   const automatic = useProfileAutosaveReady();
   const beforeManual = useProfileSavePrompt();
-  const state = useSectionAutosave({ values: { slots: drafts }, ready: open && !isLoading && !!data?.consultantId && applied.current !== null && drafts.length >= 0, resetKey: open ? 'open' : 'closed', automatic: automatic.data === true, beforeManual,
+  const state = useSectionAutosave({ values: { slots: drafts }, ready: open && !isLoading && !!data?.consultantId && draftLoaded && applied.current !== null, resetKey: open ? 'open' : 'closed', automatic: automatic.data === true, beforeManual,
     validate: () => visible.some(slot => slot.end_time <= slot.start_time || overlaps(visible, slot, slot.id)) ? 'Check your time slots for overlaps and invalid times.' : null,
     persist: async patch => {
       if (!data?.consultantId) throw new Error('Your consultant profile could not be found.');
@@ -151,7 +153,8 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
         if (slot.id.startsWith('new-')) {
           const { data: inserted, error } = await supabase.from('availability_slots').insert({ ...values, consultant_id: data.consultantId }).select('id').single();
           if (error || !inserted) throw error ?? new Error('Could not save your availability');
-          slot.id = inserted.id;
+          const localId = slot.id; slot.id = inserted.id;
+          setDrafts(current => current.map(item => item.id === localId ? { ...item, id: inserted.id } : item));
         } else {
           const original = data.slots.find(s => s.id === slot.id);
           const before = original ? { ...toDraft(original), is_recurring: !original.specific_date } : {};
@@ -165,7 +168,7 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
   });
   const close = async () => {
     if (state.dirty) { await state.flush(); return; }
-    setOpen(false); applied.current = null; void refresh();
+    setOpen(false); setDraftLoaded(false); applied.current = null; void refresh();
   };
 
   return (

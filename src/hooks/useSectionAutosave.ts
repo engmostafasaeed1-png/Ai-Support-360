@@ -32,7 +32,7 @@ export function useSectionAutosave<T extends Record<string, unknown>>({ values, 
     const state = latest.current;
     if (!state.ready || !baseline.current) return;
     if (flight.current) { queued.current = true; await flight.current; return; }
-    const sent = changedFields(state.values, baseline.current);
+    const sent = structuredCloneSafe(changedFields(state.values, baseline.current));
     if (!Object.keys(sent).length) return;
     const invalid = state.validate?.(sent);
     if (invalid) { setError(invalid); return; }
@@ -87,6 +87,7 @@ export function useSectionAutosave<T extends Record<string, unknown>>({ values, 
   return { dirty, saving, error: validationError || error, savedNow, automatic, manualSave, flush: save };
 }
 function structuredCloneSafe<T>(value: T): T {
-  // Keep File objects intact; form state updates are immutable, so a shallow snapshot is sufficient.
-  return Array.isArray(value) ? [...value] as T : { ...value };
+  if (value === null || typeof value !== 'object' || value instanceof File) return value;
+  if (Array.isArray(value)) return value.map(structuredCloneSafe) as T;
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, structuredCloneSafe(item)])) as T;
 }

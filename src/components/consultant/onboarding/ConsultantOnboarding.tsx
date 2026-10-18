@@ -527,7 +527,6 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     if (keys.includes('projects') && data.projects.some(p => !p.projectName.trim())) return t('profile_save.rows_invalid', 'Complete each entry and check its dates before saving.');
     return null;
   };
-  const persistedRowIds = useRef(new WeakMap<object, string>());
   const persistSection = async (patch: Record<string, unknown>) => {
     if (!loadSucceeded || !consultantId) throw new Error(t('onboarding.error_generic'));
     const { data: { user } } = await supabase.auth.getUser();
@@ -575,17 +574,20 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
       }
       const ids = await sync('certifications', rows, savedRows.certifications);
       (patch.certifications as OnboardingData['certifications']).forEach((row, i) => { row.id = ids[i]; delete row.file; });
+      setData(prev => ({ ...prev, certifications: prev.certifications.map((row, i) => data.certifications[i] && (row.id === data.certifications[i].id) ? { ...row, id: ids[i], ...(row.file === data.certifications[i].file ? { file: undefined } : {}) } : row) }));
       setSavedRows(prev => ({ ...prev, certifications: ids }));
     }
     if ('education' in patch) {
       const draft = patch.education as OnboardingData['education'];
       const ids = await sync('consultant_education', draft.map(e => ({ id: e.id, institution: e.institution.trim(), degree: e.degree || null, field_of_study: e.fieldOfStudy || null, start_year: e.startYear, end_year: e.endYear })), savedRows.education);
-      draft.forEach((row, i) => { row.id = ids[i]; }); setSavedRows(prev => ({ ...prev, education: ids }));
+      draft.forEach((row, i) => { row.id = ids[i]; });
+      setData(prev => ({ ...prev, education: prev.education.map((row, i) => data.education[i] && row.id === data.education[i].id ? { ...row, id: ids[i] } : row) })); setSavedRows(prev => ({ ...prev, education: ids }));
     }
     if ('projects' in patch) {
       const draft = patch.projects as OnboardingData['projects'];
       const ids = await sync('consultant_projects', draft.map(p => ({ id: p.id, project_name: p.projectName.trim(), client_industry: p.clientIndustry || null, sap_modules: [...new Set(p.sapModules)], description: p.description || null, duration_months: p.durationMonths, role: p.role || null })), savedRows.projects);
-      draft.forEach((row, i) => { row.id = ids[i]; }); setSavedRows(prev => ({ ...prev, projects: ids }));
+      draft.forEach((row, i) => { row.id = ids[i]; });
+      setData(prev => ({ ...prev, projects: prev.projects.map((row, i) => data.projects[i] && row.id === data.projects[i].id ? { ...row, id: ids[i] } : row) })); setSavedRows(prev => ({ ...prev, projects: ids }));
     }
     // A completed snapshot only clears keys which have not changed while the request was running.
     for (const [key, value] of Object.entries(patch)) if (JSON.stringify(latestData.current[key as keyof OnboardingData]) === JSON.stringify(value)) dirtyKeys.current.delete(key);
