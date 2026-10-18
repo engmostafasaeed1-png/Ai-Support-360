@@ -99,7 +99,7 @@ export default function PayoutDetailsCard() {
     setSaveError(null);
     save.mutate(
       { ...form, acknowledged: ack, ackVersion: PAYOUT_DISCLAIMER_VERSION },
-      { onSuccess: () => { setEditing(false); setAck(false); setSavedNow(true); }, onError: error => setSaveError(error.message) },
+      { onSuccess: () => { setEditing(false); setAck(false); setSavedNow(true); }, onError: error => setSaveError(error instanceof Error ? error.message : t('profile_save.failed', 'Could not save changes. Try again.')) },
     );
   };
 

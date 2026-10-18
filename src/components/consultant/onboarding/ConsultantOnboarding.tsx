@@ -527,6 +527,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     if (keys.includes('projects') && data.projects.some(p => !p.projectName.trim())) return t('profile_save.rows_invalid', 'Complete each entry and check its dates before saving.');
     return null;
   };
+  const persistedRowIds = useRef(new WeakMap<object, string>());
   const persistSection = async (patch: Record<string, unknown>) => {
     if (!loadSucceeded || !consultantId) throw new Error(t('onboarding.error_generic'));
     const { data: { user } } = await supabase.auth.getUser();
@@ -545,7 +546,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     }
     if (Object.keys(values).length) check(await supabase.from('consultants').update(values as never).eq('id', consultantId));
     const sync = async (table: 'certifications' | 'consultant_education' | 'consultant_projects', rows: { id?: string; [key: string]: unknown }[], original: string[]) => {
-      const { data: existing, error } = await supabase.from(table).select('*').eq('consultant_id', consultantId);
+      const { data: existing, error } = await supabase.from(table).select(table === 'certifications' ? 'id, name, issuer, issue_date, expiry_date, document_url' : table === 'consultant_education' ? 'id, institution, degree, field_of_study, start_year, end_year' : 'id, project_name, client_industry, sap_modules, description, duration_months, role').eq('consultant_id', consultantId);
       if (error) throw error;
       const ids: string[] = [];
       for (const row of rows) {
