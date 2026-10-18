@@ -104,6 +104,19 @@ describe('ConsultantOnboarding embedded: unsaved typing', () => {
     tableData.consultants = { ...(tableData.consultants as object), city: 'Riyadh' };
   });
 
+  it('saves values the browser autofilled without a React change event', async () => {
+    writes.length = 0;
+    render(ui());
+    const input = await screen.findByLabelText('LinkedIn profile address');
+    // Autofill sets the DOM value directly; React state never sees it.
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
+    setter.call(input, 'https://www.linkedin.com/in/autofilled');
+    await act(async () => { fireEvent.click(screen.getAllByRole('button', { name: 'Save' })[0]); });
+    await waitFor(() => expect(writes.some(w => w.table === 'consultants')).toBe(true));
+    const save = writes.find(w => w.table === 'consultants')!.arg;
+    expect(save.linkedin_url).toBe('https://www.linkedin.com/in/autofilled');
+  });
+
   it('a Save does not remount the skills and experience cards', async () => {
     render(ui());
     await screen.findByDisplayValue('Saved Name');
