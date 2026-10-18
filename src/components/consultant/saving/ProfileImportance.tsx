@@ -95,7 +95,6 @@ export default function ProfileImportance({ children }: { children: ReactNode })
           <Button className="gradient-primary h-auto min-h-11 whitespace-normal text-primary-foreground motion-reduce:transform-none motion-reduce:transition-none" onClick={interviewDone ? complete : interview}>{interviewDone ? t('profile_save.complete_profile', 'Complete my profile') : t('profile_save.interview_now', 'Take the AI interview now')}<ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0 rtl:rotate-180" /></Button>
         </DialogFooter>
       </DialogContent>
-      </DialogContent>
     </Dialog>
   </Context.Provider>;
 }
