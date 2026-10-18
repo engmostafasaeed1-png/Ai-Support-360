@@ -188,6 +188,7 @@ export default function Navbar() {
             <Link
               key={item.href}
               to={item.href}
+              onClick={handleNavClick(item.href)}
               aria-current={isActive(item.href) ? 'page' : undefined}
               role="menuitem"
               tabIndex={mobileOpen ? 0 : -1}
