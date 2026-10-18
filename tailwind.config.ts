@@ -25,6 +25,9 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         canvas: "hsl(var(--canvas))",
+        "badge-gold": "hsl(var(--badge-gold))",
+        "badge-silver": "hsl(var(--badge-silver))",
+        "badge-bronze": "hsl(var(--badge-bronze))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",

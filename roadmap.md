@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Refresh Feature D manual-save dialog with honest benefits, real progress/badges, accessible mobile/RTL/dark presentation; 15 regression tests passed and signed-in save/reload, 375 px and focus trapping verified.
+
 - [x] Feature D: section Save/status controls, dirty-only four-second autosave controller, completion/interview guidance, notification-trigger audit and safety tests; signed-in save/reload verified.
 - [ ] Activate and verify Feature D automatic saving: awaits user-applied docs/sql/profile-autosave.sql; manual section saving works, database unchanged.
 
