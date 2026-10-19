@@ -33,6 +33,7 @@ RETURNS TABLE (
   percent INT,
   missing TEXT[],
   interview_done BOOLEAN,
+  earned_badge TEXT,
   payout_ready BOOLEAN,
   lang TEXT
 )
@@ -96,6 +97,9 @@ BEGIN
           FROM public.consultant_missing_fields(d.consultant_id)) AS percent,
          (SELECT array_agg(f.label) FROM (SELECT f.label FROM public.consultant_missing_fields(d.consultant_id) f LIMIT 5) f) AS missing,
          d.interview_done,
+         (SELECT s.credibility_tier FROM public.interview_sessions s
+          WHERE s.consultant_id = d.consultant_id AND s.interview_type = 'ai' AND s.status = 'completed'
+          ORDER BY s.completed_at DESC NULLS LAST LIMIT 1) AS earned_badge,
          EXISTS (SELECT 1 FROM public.consultant_payout_details pd WHERE pd.consultant_id = d.consultant_id) AS payout_ready,
          COALESCE((SELECT pr.language FROM public.profiles pr WHERE pr.user_id = d.user_id), 'en') AS lang
   FROM due d
