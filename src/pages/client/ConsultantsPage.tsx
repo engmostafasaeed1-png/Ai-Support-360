@@ -24,6 +24,7 @@ import RatingStars from '@/components/client/RatingStars';
 import { sapModules } from '@/data/clientMockData';
 import VerificationBadge from '@/components/consultant/VerificationBadge';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
+import CompletionBadge from '@/components/consultant/CompletionBadge';
 import LinkStatus from '@/components/consultant/LinkStatus';
 import { STATE_META } from '@/lib/mapMarkers';
 import { compareRecommended, hasModule, skillMatchesText, matchesExperienceFilters } from '@/lib/consultantDirectory';
@@ -474,6 +475,7 @@ export default function ConsultantsPage() {
                     <p className="text-[11px] text-muted-foreground truncate">{c.specialty}</p>
                     <p className="text-[11px] text-muted-foreground truncate">{c.place || t('profileRules.locationNotSet', 'Location not set')}</p>
                     <FoundingBadge consultantId={c.id} /><TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} className="mt-1" />
+                    <CompletionBadge percent={c.completion_percent ?? 0} tier={c.ai_interview_badge} className="mt-1" />
                   </div>
                   <div className="text-end shrink-0">
                     <p className="text-sm font-bold text-foreground">${c.rate}</p>
@@ -541,6 +543,7 @@ export default function ConsultantsPage() {
                       {/* Verification Status Badge */}
                       <VerificationBadge status={c.verification_status as any} />
                       <FoundingBadge consultantId={c.id} /><TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} />
+                      <CompletionBadge percent={c.completion_percent ?? 0} tier={c.ai_interview_badge} />
 
                     </div>
 
