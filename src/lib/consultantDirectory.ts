@@ -5,6 +5,7 @@
 import { STATE_META, availabilityState, type AvailabilityState } from './mapMarkers';
 import type { LinkState } from './consultantLinks';
 import { cityPoint, countryPoint, placeLabel } from './geo';
+import { profileCompleteness } from './profileCompleteness';
 
 export interface ConsultantLive {
   id: string;
@@ -43,6 +44,8 @@ export interface ConsultantLive {
   verification_status: string;
   credibility_credits?: number;
   ai_interview_badge?: string | null;
+  /** Profile completion 0-100, payout item excluded (never shown to clients). */
+  completion_percent?: number;
   /** Weekly working hours, e.g. "Mon 09:00–17:00". */
   hours?: string[];
   customer_segments?: string[];
@@ -84,6 +87,11 @@ export interface DirectoryRow {
   project_scale?: string | null;
   work_modes?: string[] | null;
   working_week?: string | null;
+  sap_roles?: string[] | null;
+  seniority_level?: string | null;
+  total_sap_years?: number | null;
+  sap_technologies?: string[] | null;
+  language_levels?: Record<string, unknown> | null;
 }
 
 /** True when the consultant passes a single-choice filter: no choice ('' or 'all') passes everyone; otherwise the label must be in the list. */
@@ -173,6 +181,24 @@ export function toConsultantLive(row: DirectoryRow, displayName: string | null |
     verification_status: row.verification_status || 'pending',
     credibility_credits: row.credibility_credits || 0,
     ai_interview_badge: row.ai_interview_badge || null,
+    completion_percent: profileCompleteness({
+      skills_count: skills.length,
+      sap_roles: row.sap_roles,
+      seniority_level: row.seniority_level,
+      total_sap_years: row.total_sap_years,
+      sap_technologies: row.sap_technologies,
+      industries: row.industries,
+      customer_segments: row.customer_segments,
+      vertical_solutions: row.vertical_solutions,
+      localization_countries: row.localization_countries,
+      localization_solutions: row.localization_solutions,
+      project_types: row.project_types,
+      deployment_experience: row.deployment_experience,
+      project_scale: row.project_scale,
+      work_modes: row.work_modes,
+      working_week: row.working_week,
+      language_levels: row.language_levels,
+    }, { includePayout: false }).percent,
     customer_segments: row.customer_segments || [],
     vertical_solutions: row.vertical_solutions || [],
     localization_countries: row.localization_countries || [],
