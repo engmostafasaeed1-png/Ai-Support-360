@@ -91,7 +91,7 @@ export interface DirectoryRow {
   seniority_level?: string | null;
   total_sap_years?: number | null;
   sap_technologies?: string[] | null;
-  language_levels?: Record<string, unknown> | null;
+  language_levels?: unknown;
 }
 
 /** True when the consultant passes a single-choice filter: no choice ('' or 'all') passes everyone; otherwise the label must be in the list. */
@@ -197,7 +197,7 @@ export function toConsultantLive(row: DirectoryRow, displayName: string | null |
       project_scale: row.project_scale,
       work_modes: row.work_modes,
       working_week: row.working_week,
-      language_levels: row.language_levels,
+      language_levels: row.language_levels && typeof row.language_levels === 'object' && !Array.isArray(row.language_levels) ? row.language_levels as Record<string, unknown> : null,
     }, { includePayout: false }).percent,
     customer_segments: row.customer_segments || [],
     vertical_solutions: row.vertical_solutions || [],
