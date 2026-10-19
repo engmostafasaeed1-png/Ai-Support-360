@@ -205,3 +205,12 @@ describe('matchesExperienceFilters', () => {
     expect(matchesExperienceFilters(c, { segment: 'Mid-market company', country: 'Qatar', vertical: 'all' })).toBe(false);
   });
 });
+
+describe('directory completion percentage', () => {
+  it('is computed from the profile fields with the payout item excluded', () => {
+    const empty = toConsultantLive({ id: 'c1', rating: 0, total_reviews: 0, hourly_rate: 0, availability_status: null, verification_status: null, response_time_minutes: null, industries: null, languages: null, city: null, country: null, latitude: null, longitude: null, linkedin_checked_at: null, credly_checked_at: null } as any, 'A B', []);
+    expect(empty.completion_percent).toBe(0);
+    const full = toConsultantLive({ id: 'c2', rating: 5, total_reviews: 3, hourly_rate: 50, availability_status: 'available', verification_status: 'verified', response_time_minutes: 10, industries: ['Mining'], languages: ['en'], city: null, country: null, latitude: null, longitude: null, linkedin_checked_at: null, credly_checked_at: null, sap_roles: ['Functional consultant'], seniority_level: 'senior', total_sap_years: 8, sap_technologies: ['ABAP'], customer_segments: ['SME'], vertical_solutions: ['IS-U'], localization_countries: ['Egypt'], localization_solutions: ['e-invoice'], project_types: ['Implementation (greenfield)'], deployment_experience: ['Hybrid'], project_scale: 'Medium (20-100 people)', work_modes: ['Remote'], working_week: 'Flexible (both)', language_levels: { en: 'Fluent (business)' } } as any, 'A B', ['SAP FI']);
+    expect(full.completion_percent).toBe(100);
+  });
+});

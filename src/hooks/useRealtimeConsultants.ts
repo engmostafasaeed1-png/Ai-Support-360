@@ -34,7 +34,7 @@ export function useRealtimeConsultants() {
       // The consultants that the signed-in person may see (verified ones; an administrator sees all)
       const { data: consultantRows, error } = await supabase
         .from('consultants')
-        .select('id, user_id, hourly_rate, industries, languages, verification_status, rating, total_reviews, response_time_minutes, availability_status, city, country, latitude, longitude, linkedin_checked_at, credly_checked_at, credibility_credits, ai_interview_badge, show_availability, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, working_week')
+        .select('id, user_id, hourly_rate, industries, languages, verification_status, rating, total_reviews, response_time_minutes, availability_status, city, country, latitude, longitude, linkedin_checked_at, credly_checked_at, credibility_credits, ai_interview_badge, show_availability, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, working_week, sap_roles, seniority_level, total_sap_years, sap_technologies, language_levels')
         .order('rating', { ascending: false });
 
       if (error) throw error;

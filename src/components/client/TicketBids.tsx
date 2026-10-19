@@ -20,6 +20,7 @@ import { useCriticalView } from '@/hooks/useCriticalService';
 import { effectiveRate, formatPercent, surchargeApplies } from '@/lib/criticalService';
 import RatingStars from './RatingStars';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
+import CompletionBadge from '@/components/consultant/CompletionBadge';
 import BidCounterDialog from './BidCounterDialog';
 import BidDeclineDialog from './BidDeclineDialog';
 import BidDeadlineDialog from './BidDeadlineDialog';
@@ -80,6 +81,7 @@ export default function TicketBids({ ticketId, ticket = {}, onInvite = () => {},
       <RatingStars rating={Number(p.consultant_rating)} reviews={Number(p.consultant_reviews)} size="sm" />
       <FoundingBadge consultantId={p.consultant_id} />
       <TrustBadge credits={p.credibility_credits} badge={p.ai_interview_badge} />
+      <CompletionBadge percent={p.completion_percent ?? 0} tier={p.ai_interview_badge} />
     </div>
   </div>;
   const chips = (p: any) => { const counter = counterFor(p); return <div className="flex flex-wrap gap-1">

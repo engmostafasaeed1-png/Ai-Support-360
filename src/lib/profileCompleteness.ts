@@ -31,7 +31,8 @@ const filled = (v: unknown): boolean => {
   return false;
 };
 
-export function profileCompleteness(p: ProfileForCompleteness): { percent: number; done: number; total: number; items: CompletenessItem[] } {
+export function profileCompleteness(p: ProfileForCompleteness, options?: { includePayout?: boolean }): { percent: number; done: number; total: number; items: CompletenessItem[] } {
+  const includePayout = options?.includePayout !== false;
   const items: CompletenessItem[] = [
     { key: 'skills', label: 'SAP modules', hint: 'Add your SAP modules and skill levels: this is the strongest matching signal.', done: (p.skills_count ?? 0) > 0 },
     { key: 'roles', label: 'Roles', hint: 'Choose your roles so functional, technical and basis requests reach the right people.', done: filled(p.sap_roles) },
@@ -47,7 +48,8 @@ export function profileCompleteness(p: ProfileForCompleteness): { percent: numbe
     { key: 'scale', label: 'Project scale', hint: 'Add the largest project size you worked on.', done: filled(p.project_scale) },
     { key: 'work', label: 'Work mode and working week', hint: 'Add remote or on-site, and your working week, so urgent requests reach you at the right time.', done: filled(p.work_modes) && filled(p.working_week) },
     { key: 'languages', label: 'Language levels', hint: 'Add your level in each language you speak.', done: filled(p.language_levels) },
-    { key: 'payout', label: 'Bank details for payouts', hint: 'Add your bank details to receive payouts', done: p.payout_ready === true },
+    // Client-facing views pass includePayout: false so payout status is never exposed.
+    ...(includePayout ? [{ key: 'payout', label: 'Bank details for payouts', hint: 'Add your bank details to receive payouts', done: p.payout_ready === true }] : []),
   ];
   const done = items.filter((i) => i.done).length;
   return { percent: Math.round((100 * done) / items.length), done, total: items.length, items };
