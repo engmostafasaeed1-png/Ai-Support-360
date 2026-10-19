@@ -22,6 +22,7 @@ import { template as criticalRequestAlert } from './critical-request-alert.tsx'
 import { template as verificationItems } from './verification-items.tsx'
 import { template as payoutApproved } from './payout-approved.tsx'
 import { template as adminNotification } from './admin-notification.tsx'
+import { template as profileReminder } from './profile-reminder.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'admin-notification': adminNotification,
@@ -37,4 +38,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'verification-items': verificationItems,
   'platform-invitation': platformInvitation,
   'critical-request-alert': criticalRequestAlert,
+  'profile-reminder': profileReminder,
 }

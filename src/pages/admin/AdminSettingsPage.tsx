@@ -1,4 +1,5 @@
 import FoundingSettings from '@/components/admin/FoundingSettings';
+import ProfileRemindersCard from '@/components/admin/ProfileRemindersCard';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe, Layout, Mail } from 'lucide-react';
@@ -157,6 +158,7 @@ export default function AdminSettingsPage() {
               ['admin_alerts', 'Admin Alerts', 'In-app notifications to administrators. When off, new alerts for admins are not stored.', true],
               ['admin_email_alerts', 'E-mail every administrator notification', "Each notification sent to an administrator is also sent to the administrator's e-mail address.", true],
               ['audit_logging', 'Audit Logging', 'Records activity in the audit log. Changes to settings and roles are always recorded.', true],
+              ['profile_reminder_emails', 'Profile reminder e-mails', 'Daily e-mail to consultants whose profile is incomplete, at 09:00 their time; weekly after 30 days. Stops when the profile is complete and the AI interview is done, or on unsubscribe.', true],
               ['require_2fa', 'Require two-step sign-in', 'Everyone must use an authenticator app code before the portal opens.', false],
             ] as const).map(([key, label, hint, def]) => (
               <div key={key} className="flex items-start justify-between gap-4">
@@ -184,6 +186,8 @@ export default function AdminSettingsPage() {
       </div>
 
       <FoundingSettings />
+
+      <ProfileRemindersCard />
 
       <CriticalServiceSettingsCard />
 

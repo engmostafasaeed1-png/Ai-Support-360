@@ -10,6 +10,7 @@ const SETTING_KEYS = [
   'email_notifications',
   'admin_alerts',
   'admin_email_alerts',
+  'profile_reminder_emails',
   'require_2fa',
   'audit_logging',
 ] as const;

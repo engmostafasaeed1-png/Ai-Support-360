@@ -51,3 +51,5 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = true
   [functions.payout-approved-notify]
     verify_jwt = false
+  [functions.consultant-profile-reminder]
+    verify_jwt = false
