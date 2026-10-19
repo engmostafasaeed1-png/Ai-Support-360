@@ -30,6 +30,7 @@ Deno.serve(async (req) => {
           percent: row.percent ?? 0,
           missing: row.missing ?? [],
           interviewDone: row.interview_done === true,
+          earnedBadge: row.earned_badge || undefined,
           payoutReady: row.payout_ready === true,
           lang,
           profileUrl: `${SITE_URL}/consultant/profile?section=setup`,
@@ -39,13 +40,19 @@ Deno.serve(async (req) => {
       });
       if (res.sent) sent++;
       // One in-app notification per reminder (the log guarantees at most one per 20 h).
+      const pct = row.percent ?? 0;
+      const body = row.interview_done
+        ? (lang === 'ar'
+            ? `ملفك مكتمل بنسبة ${pct}٪ — حافظ على اكتماله ليظهر للعملاء.`
+            : `Your profile is ${pct} % complete — keep it complete to stay visible to clients.`)
+        : (lang === 'ar'
+            ? `ملفك مكتمل بنسبة ${pct}٪ — أكمله وابدأ مقابلة الذكاء الاصطناعي لتكسب شارتك ويظهر ملفك أولاً.`
+            : `Your profile is ${pct} % complete — finish it and take the AI interview to earn your badge and be shown first.`);
       await admin.from('notifications').insert({
         user_id: row.user_id,
         title: lang === 'ar' ? 'أكمل ملفك الشخصي' : 'Complete your profile',
-        body: lang === 'ar'
-          ? `ملفك مكتمل بنسبة ${row.percent ?? 0}٪ — أكمله ليظهر للعملاء.`
-          : `Your profile is ${row.percent ?? 0} % complete — finish it to be shown to clients.`,
-        link: '/consultant/profile?section=setup',
+        body,
+        link: row.interview_done ? '/consultant/profile?section=setup' : '/consultant/interviews?start=1',
       });
     } catch (e) {
       console.error('profile reminder failed', row.consultant_id, e);
