@@ -13,7 +13,8 @@ export default function ProfileRemindersCard() {
   const stats = useQuery({
     queryKey: ['admin-profile-reminder-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('admin_profile_reminder_stats');
+      // RPC ships with docs/sql/profile-reminders.sql; cast until the SQL is applied and types regenerate.
+      const { data, error } = await (supabase.rpc as (fn: string) => Promise<{ data: unknown; error: { message: string } | null }>)('admin_profile_reminder_stats');
       if (error) throw error;
       return data as Stats;
     },
