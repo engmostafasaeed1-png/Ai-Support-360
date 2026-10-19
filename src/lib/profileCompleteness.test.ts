@@ -42,4 +42,17 @@ describe('profile completeness', () => {
     expect(missing?.done).toBe(false);
     expect(profileCompleteness({ payout_ready: true }).items.find((i) => i.key === 'payout')?.done).toBe(true);
   });
+
+  it('excludes the payout item for client-facing views so payout status is never exposed', () => {
+    const r = profileCompleteness({}, { includePayout: false });
+    expect(r.total).toBe(14);
+    expect(r.items.some((i) => i.key === 'payout')).toBe(false);
+    const full = profileCompleteness({
+      skills_count: 3, sap_roles: ['Functional consultant'], seniority_level: 'senior', total_sap_years: 8, sap_technologies: ['ABAP'],
+      industries: ['Mining'], customer_segments: ['Large listed enterprise'], vertical_solutions: ['SAP Mining (mine-to-market, heavy equipment)'],
+      localization_countries: ['Egypt'], localization_solutions: ['Egypt e-invoice & e-receipt (ETA)'], project_types: ['Implementation (greenfield)'],
+      deployment_experience: ['Hybrid'], project_scale: 'Medium (20-100 people)', work_modes: ['Remote'], working_week: 'Flexible (both)', language_levels: { en: 'Fluent (business)' },
+    }, { includePayout: false });
+    expect(full.percent).toBe(100);
+  });
 });
