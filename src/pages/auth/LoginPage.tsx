@@ -29,8 +29,25 @@ import {
   newUserDestination,
   readStoredOAuthRole,
   storeOAuthRole,
+  canonicalOAuthUrl,
+  oauthRedirectUri,
+  friendlyOAuthMessage,
+  providerProfile,
   type FirstRole,
 } from '@/lib/oauthReturn';
+import { reportError } from '@/lib/errorReporter';
+
+let oauthErrorReported = false;
+function reportOAuthErrorOnce(provider: string, detail: string) {
+  if (oauthErrorReported) return;
+  oauthErrorReported = true;
+  reportError({
+    level: 'warn',
+    source: 'oauth',
+    message: `Social sign-in failed (${provider}): ${detail.slice(0, 160)}`,
+    context: { provider, origin: window.location.origin },
+  });
+}
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
@@ -56,7 +73,12 @@ export default function LoginPage() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendSuccessAt, setResendSuccessAt] = useState<Date | null>(null);
   const [resendSuccessEmail, setResendSuccessEmail] = useState<string | null>(null);
-  const [oauthError, setOauthError] = useState(() => readOAuthError(location.search, location.hash));
+  const [oauthError, setOauthError] = useState<{ error: string; description: string } | null>(() => {
+    const e = readOAuthError(location.search, location.hash);
+    if (!e) return null;
+    reportOAuthErrorOnce('google', `${e.error} ${e.description}`);
+    return { ...e, description: friendlyOAuthMessage(e) };
+  });
   const [roleChoice, setRoleChoice] = useState(false);
   const [choosingRole, setChoosingRole] = useState<FirstRole | null>(null);
 
@@ -176,6 +198,18 @@ export default function LoginPage() {
       if (profileInsertError) throw profileInsertError;
     }
 
+    // Social sign-in: fill an empty name/photo from the provider (never overwrite what the user set).
+    if ((user as any).app_metadata?.provider && (user as any).app_metadata.provider !== 'email') {
+      try {
+        const { name, avatar } = providerProfile(user);
+        const { data: prof } = await supabase.from('profiles').select('display_name, avatar_url').eq('user_id', user.id).maybeSingle();
+        const patch: Record<string, string> = {};
+        if (name && (!prof?.display_name || prof.display_name === user.email)) patch.display_name = name;
+        if (avatar && !prof?.avatar_url) patch.avatar_url = avatar;
+        if (Object.keys(patch).length) await supabase.from('profiles').update(patch).eq('user_id', user.id);
+      } catch { /* prefill is optional */ }
+    }
+
     if (role === 'consultant') {
       const { data: existingConsultant, error: consultantLookupError } = await supabase
         .from('consultants')
@@ -279,16 +313,24 @@ export default function LoginPage() {
 
   const handleOAuthLogin = async (provider: 'google' | 'apple' | 'microsoft' | 'lovable') => {
     if (oauthLoading) return;
+    // The sign-in state is kept per address: start (and return) only on the canonical www address.
+    const canonical = canonicalOAuthUrl(window.location.href);
+    if (canonical) {
+      window.location.assign(canonical);
+      return;
+    }
     setOauthLoading(provider);
     try {
       // Remember the intended destination across the OAuth redirect
       if (from) sessionStorage.setItem('oauth_next', from);
       setOauthError(null);
       const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: `${window.location.origin}/login`,
+        redirect_uri: oauthRedirectUri(window.location.origin),
       });
       if (result.error) {
-        toast.error(result.error.message || 'Sign-in failed. Please try again.');
+        const msg = result.error.message || 'sign_in_failed';
+        reportOAuthErrorOnce(provider, msg);
+        setOauthError({ error: 'sign_in_failed', description: friendlyOAuthMessage(msg) });
         return;
       }
       if (result.redirected) return; // browser is navigating to the provider

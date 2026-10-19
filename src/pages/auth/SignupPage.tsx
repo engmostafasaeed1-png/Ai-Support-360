@@ -12,7 +12,8 @@ import { useQuery } from '@tanstack/react-query';
 import PasswordInput from '@/components/auth/PasswordInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 import { cn } from '@/lib/utils';
-import { storeOAuthRole } from '@/lib/oauthReturn';
+import { storeOAuthRole, canonicalOAuthUrl, oauthRedirectUri, friendlyOAuthMessage } from '@/lib/oauthReturn';
+import { lovable } from '@/integrations/lovable/index';
 import { MIN_PASSWORD_LENGTH } from '@/lib/passwordPolicy';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
@@ -84,6 +85,28 @@ function SignupForm() {
   const referralCode = searchParams.get('ref') || '';
 
   const [role, setRole] = useState<Role>(initialRole);
+  const [agreed, setAgreed] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+
+  const handleGoogleSignup = async () => {
+    if (!agreed || googleLoading) return;
+    const canonical = canonicalOAuthUrl(window.location.href);
+    if (canonical) { window.location.assign(canonical + window.location.search); return; }
+    storeOAuthRole(role);
+    setGoogleError(null);
+    setGoogleLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth('google', { redirect_uri: oauthRedirectUri(window.location.origin) });
+      if (result.error) { setGoogleError(friendlyOAuthMessage(result.error.message || '')); return; }
+      if (result.redirected) return;
+      navigate('/login', { replace: true }); // popup flow: session set, /login applies the stored account type
+    } catch {
+      setGoogleError(friendlyOAuthMessage(''));
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
   const [name, setName] = useState('');
   const [email, setEmail] = useState(() => (searchParams.get('email') || '').slice(0, 254));
   const [password, setPassword] = useState('');
@@ -358,7 +381,7 @@ function SignupForm() {
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
             <label className="flex items-start gap-2 text-xs text-muted-foreground w-full">
-              <input type="checkbox" required className="mt-0.5 accent-[hsl(var(--primary))]" aria-label="I agree to the Terms & Conditions and Privacy Policy" />
+              <input type="checkbox" required checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 accent-[hsl(var(--primary))]" aria-label="I agree to the Terms & Conditions and Privacy Policy" />
               <span>
                 I agree to the{' '}
                 <a href="/terms-and-conditions" target="_blank" rel="noopener" className="text-primary underline">Terms &amp; Conditions</a>
@@ -370,6 +393,12 @@ function SignupForm() {
               {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {t('auth.signup_btn')}
             </Button>
+            <Button type="button" variant="outline" className="w-full h-11 rounded-xl" onClick={handleGoogleSignup} disabled={loading || googleLoading || !agreed} aria-describedby={!agreed ? 'google-terms-hint' : undefined}>
+              {googleLoading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
+              {t('auth.signup_google', 'Sign up with Google')}
+            </Button>
+            {!agreed && <p id="google-terms-hint" className="text-[11px] text-muted-foreground">{t('auth.signup_google_terms', 'Tick the Terms box first to sign up with Google.')}</p>}
+            {googleError && <p role="alert" className="text-xs text-destructive">{googleError}</p>}
             <p className="text-sm text-muted-foreground">
               {t('auth.have_account')}{' '}
               <Link to={role === 'consultant' ? '/login?role=consultant' : '/login'} onClick={() => storeOAuthRole(role)} className="text-primary font-medium hover:underline">{t('auth.login_link')}</Link>
