@@ -41,7 +41,7 @@ describe('GettingStartedCard', () => {
     h.input = { base: { c: { ...full, ai_interview_completed_at: null }, skills: 2, slots: 0, bids: 0, pushDevices: 0 }, payout: null };
     renderCard();
     expect(screen.getByText('Getting started')).toBeTruthy();
-    expect(screen.getByText('3 of 8 done')).toBeTruthy();
+    expect(screen.getByText('4 of 8 done')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Take the tour/ }));
     expect(h.start).toHaveBeenCalled();
   });
