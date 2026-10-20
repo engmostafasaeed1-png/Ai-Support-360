@@ -17,15 +17,19 @@ export interface RankingEffect {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-export function responsivenessShare(weights: MatchWeights = MATCH_WEIGHT_DEFAULTS): number {
+const rawShare = (weights: MatchWeights) => {
   const total = Object.values(weights).reduce((a, b) => a + b, 0);
-  return total > 0 ? round2((weights.responsiveness * 100) / total) : 0;
+  return total > 0 ? (weights.responsiveness * 100) / total : 0;
+};
+
+export function responsivenessShare(weights: MatchWeights = MATCH_WEIGHT_DEFAULTS): number {
+  return round2(rawShare(weights));
 }
 
 export function rankingEffect(level: RespLevel, weights: MatchWeights = MATCH_WEIGHT_DEFAULTS): RankingEffect {
-  const share = responsivenessShare(weights);
+  const share = rawShare(weights);
   return {
-    sharePct: share,
+    sharePct: round2(share),
     points: round2(share * LEVEL_FIT[level]),
     vsNew: round2(share * (LEVEL_FIT[level] - LEVEL_FIT.new)),
   };
