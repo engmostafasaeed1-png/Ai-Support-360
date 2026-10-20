@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdminSettings } from '@/hooks/useAdminSettings';
 import { useAssignmentPolicy } from '@/hooks/useAssignmentPolicy';
+import { useAssignmentInfoReady } from '@/hooks/useAssignmentInfo';
 import {
   policyText, timingsProblems, type PolicyMinutes,
 } from '../../../supabase/functions/_shared/assignmentPolicy';
@@ -21,6 +22,9 @@ type Stats = {
   sent_today: number;
   waiting: number;
   no_response_30d: number;
+  info_requests_30d?: number;
+  info_waiting_client?: number;
+  decline_reasons_30d?: Record<string, number>;
   lowest: Array<{ consultant_id: string; name: string | null; answered: number; no_response: number; rate: number | null }>;
 };
 
@@ -44,12 +48,21 @@ const MINUTE_FIELDS = [
   ['hourly_limit', 'Most reminders per consultant per hour'],
 ] as const;
 
+/** Shown once docs/sql/assignment-info-requests.sql is applied. */
+const INFO_FIELD = ['info_wait', 'Client answer time for questions (hours)'] as const;
+const isHours = (k: string) => k === INFO_FIELD[0] || HOUR_FIELDS.some(([f]) => f === k);
+
+const REASON_LABELS: Record<string, string> = {
+  not_my_module: 'Not my module', no_capacity: 'No capacity', rate_budget: 'Rate / budget', timing: 'Timing',
+  info_missing: 'Needed information was not provided', other: 'Other',
+};
+
 type Draft = Record<keyof PolicyMinutes, string>;
 
 const toDraft = (m: PolicyMinutes): Draft => {
   const d = {} as Draft;
   (Object.keys(m) as Array<keyof PolicyMinutes>).forEach((k) => {
-    const hours = HOUR_FIELDS.some(([f]) => f === k);
+    const hours = isHours(k);
     d[k] = String(hours ? Math.round((m[k] / 60) * 100) / 100 : m[k]);
   });
   return d;
@@ -59,7 +72,7 @@ const fromDraft = (d: Draft): PolicyMinutes => {
   const m = {} as PolicyMinutes;
   (Object.keys(d) as Array<keyof PolicyMinutes>).forEach((k) => {
     const n = Number(d[k]);
-    const hours = HOUR_FIELDS.some(([f]) => f === k);
+    const hours = isHours(k);
     m[k] = Number.isFinite(n) ? Math.round(hours ? n * 60 : n) : NaN;
   });
   return m;
@@ -72,6 +85,7 @@ export default function AssignmentRemindersCard() {
   const queryClient = useQueryClient();
   const { settings, loading, updateSetting } = useAdminSettings();
   const policy = useAssignmentPolicy();
+  const infoReady = useAssignmentInfoReady();
   const [draft, setDraft] = useState<Draft>(() => toDraft(policy));
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -147,6 +161,11 @@ export default function AssignmentRemindersCard() {
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           {MINUTE_FIELDS.map(([k, label]) => field(k, label))}
         </div>
+        {infoReady && (
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+            {field(INFO_FIELD[0], INFO_FIELD[1])}
+          </div>
+        )}
         {problems.length > 0 && (
           <ul className="space-y-1 text-xs text-destructive" role="alert">
             {problems.includes('range') && <li>{t('admin.assignment_problem_range', 'Every value must be a whole number of minutes between 1 minute and 7 days (at most 60 reminders per hour).')}</li>}
@@ -168,7 +187,7 @@ export default function AssignmentRemindersCard() {
 
         <div className="rounded-xl bg-muted/60 p-3">
           <p className="text-[11px] font-medium text-foreground">{t('admin.assignment_policy_preview', 'Policy shown to consultants')}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{policyText(problems.length ? policy : next, lang)}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{policyText(problems.length ? policy : next, lang, { info: infoReady })}</p>
         </div>
 
         <div className="space-y-2">
@@ -185,12 +204,29 @@ export default function AssignmentRemindersCard() {
                 [t('admin.assignment_sent_today', 'Reminders sent today'), String(stats.data.sent_today ?? 0)],
                 [t('admin.assignment_waiting', 'Requests waiting for a reply'), String(stats.data.waiting ?? 0)],
                 [t('admin.assignment_no_response', 'No response in the last 30 days'), String(stats.data.no_response_30d ?? 0)],
-              ] as const).map(([label, value]) => (
+                ...(stats.data.info_requests_30d != null ? [
+                  [t('admin.assignment_info_30d', 'Information requests in the last 30 days'), String(stats.data.info_requests_30d)],
+                  [t('admin.assignment_info_waiting', 'Questions waiting for the client'), String(stats.data.info_waiting_client ?? 0)],
+                ] : []),
+              ] as Array<readonly [string, string]>).map(([label, value]) => (
                 <div key={label} className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">{label}</span>
                   <span className="font-medium text-foreground">{value}</span>
                 </div>
               ))}
+              {Object.keys(stats.data.decline_reasons_30d ?? {}).length > 0 && (
+                <div className="pt-2">
+                  <p className="text-xs font-medium text-foreground">{t('admin.assignment_decline_reasons', 'Decline reasons, last 30 days (administrators only)')}</p>
+                  <ul className="mt-1 space-y-1">
+                    {Object.entries(stats.data.decline_reasons_30d ?? {}).sort((a, b) => b[1] - a[1]).map(([k, n]) => (
+                      <li key={k} className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">{t(`assignment_info.reason_${k}`, REASON_LABELS[k] ?? k)}</span>
+                        <span className="font-medium text-foreground">{n}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {(stats.data.lowest ?? []).length > 0 && (
                 <div className="pt-2">
                   <p className="text-xs font-medium text-foreground">{t('admin.assignment_lowest', 'Lowest response rates (administrators only)')}</p>
