@@ -6,7 +6,7 @@ import { Brain, Play, SkipForward, CheckCircle, Medal, ShieldCheck, Sparkles, St
 import AIInterviewFlow from '@/components/consultant/AIInterviewFlow';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
 import { useConsultantProfile } from '@/hooks/useConsultantProfile';
-import { supabase } from '@/integrations/supabase/client';
+import { classifyStartError, ERROR_TEXT, logStartErrorOnce, resolveAiInterviewSession } from '@/lib/interviewStart';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { toast } from 'sonner';
 import { FieldHint } from '../OnboardingGuidePanel';
@@ -48,21 +48,14 @@ export default function InterviewStep({ onInterviewComplete, consultantId }: Pro
     }
 
     try {
-      const { data, error } = await supabase
-        .from('interview_sessions')
-        .insert({
-          consultant_id: consultantId,
-          status: 'pending',
-          interview_type: 'ai',
-        })
-        .select('id')
-        .single();
-      if (error) throw error;
-      setInterviewId(data.id);
+      // Resume or reuse the open AI session instead of adding another pending one.
+      const session = await resolveAiInterviewSession(consultantId);
+      setInterviewId(session.id);
       setStarted(true);
-    } catch (err: any) {
-      console.error(err);
-      toast.error('Failed to start interview');
+    } catch (err) {
+      const code = classifyStartError(err);
+      logStartErrorOnce(code, err, 'onboarding-interview-step');
+      toast.error(t(ERROR_TEXT[code].key, ERROR_TEXT[code].message));
     }
   };
 

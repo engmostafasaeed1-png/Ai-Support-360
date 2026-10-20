@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { RotateCcw, Brain, Landmark } from 'lucide-react';
 import PayoutDetailsCard from '@/components/consultant/PayoutDetailsCard';
 import InterviewTranscript from '@/components/consultant/InterviewTranscript';
+import InterviewStartCard from '@/components/consultant/InterviewStartCard';
 import AvatarUpload from '@/components/profile/AvatarUpload';
 import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
 import AvailabilityToggle from '@/components/consultant/AvailabilityToggle';
@@ -22,8 +23,9 @@ export default function ProfilePage() {
   const [reinterviewOpen, setReinterviewOpen] = useState(false);
   const { hash, search } = useLocation();
   useEffect(() => {
-    if (isLoading || hash !== '#payout-details') return;
-    const id = setTimeout(() => document.getElementById('payout-details')?.scrollIntoView({ block: 'start' }), 300);
+    if (isLoading || !hash || hash.length < 2) return;
+    // Fix links (#payout-details, #expertise, #profile-details...) land on their section.
+    const id = setTimeout(() => document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView({ block: 'start' }), 300);
     return () => clearTimeout(id);
   }, [isLoading, hash]);
   if (isLoading) return <Skeleton className="h-80 w-full" />;
@@ -53,10 +55,11 @@ export default function ProfilePage() {
           <Brain className="w-5 h-5 text-primary" /> {t('interview.history', 'Interview History & Results')}
           <FieldHint field="interview" />
         </h2>
+        <InterviewStartCard />
         <InterviewTranscript consultantId={profile?.id || ''} viewMode="consultant" />
       </section>
       <ReinterviewDialog open={reinterviewOpen} onOpenChange={setReinterviewOpen}
-        consultantId={profile?.id || ''} consultantName={profile?.display_name || ''} />
+        consultantId={profile?.id || ''} consultantName={profile?.display_name || ''} selfService />
     </div></ProfileImportance></EmbeddedGuideProvider>
   );
 }

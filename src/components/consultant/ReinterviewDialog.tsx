@@ -12,12 +12,15 @@ import { cn } from '@/lib/utils';
 import { Bot, MapPin, Video, Loader2 } from 'lucide-react';
 import TimeSlotPicker, { type ProposedSlot } from '@/components/ui/TimeSlotPicker';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   consultantId: string;
   consultantName?: string;
+  /** The consultant's own profile: an AI interview starts (or resumes) right away instead of creating another pending request. */
+  selfService?: boolean;
 }
 
 const interviewTypes = [
@@ -26,8 +29,9 @@ const interviewTypes = [
   { value: 'online' as const, icon: Video, labelKey: 'interview.type_online', descKey: 'interview.type_online_desc' },
 ];
 
-export default function ReinterviewDialog({ open, onOpenChange, consultantId, consultantName }: Props) {
+export default function ReinterviewDialog({ open, onOpenChange, consultantId, consultantName, selfService = false }: Props) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [selectedType, setSelectedType] = useState<'ai' | 'physical' | 'online'>('ai');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,6 +42,12 @@ export default function ReinterviewDialog({ open, onOpenChange, consultantId, co
   const handleSubmit = async () => {
     if (needsScheduling && proposedSlots.length === 0) {
       toast.error(t('interview.select_time_slots', 'Please propose at least one time slot'));
+      return;
+    }
+
+    if (selfService && selectedType === 'ai') {
+      onOpenChange(false);
+      navigate('/consultant/interviews?start=1');
       return;
     }
 

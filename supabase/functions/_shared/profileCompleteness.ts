@@ -18,9 +18,27 @@ export type ProfileForCompleteness = {
   skills_count?: number | null;
   /** Bank details saved with the current payout disclaimer acknowledged. */
   payout_ready?: boolean | null;
+  /** A completed AI interview (consultants.ai_interview_completed_at or an earned interview badge). Pending or not taken = false. */
+  interview_done?: boolean | null;
 };
 
 export type CompletenessItem = { key: string; label: string; hint: string; done: boolean };
+
+/** Default share of the completion percentage that belongs to the AI interview (admin-editable; the database keeps the same default). */
+export const DEFAULT_INTERVIEW_WEIGHT = 15;
+export const MAX_INTERVIEW_WEIGHT = 50;
+
+/** A weight from settings, clamped to 0..50; anything unreadable falls back to the default. */
+export function clampInterviewWeight(value: unknown): number {
+  const n = typeof value === 'string' ? Number(value) : value;
+  if (typeof n !== 'number' || !Number.isFinite(n)) return DEFAULT_INTERVIEW_WEIGHT;
+  return Math.max(0, Math.min(MAX_INTERVIEW_WEIGHT, Math.round(n)));
+}
+
+/** True when the consultant completed an AI interview, read from columns any profile view already has. */
+export function interviewDoneFrom(row: { ai_interview_completed_at?: string | null; ai_interview_badge?: string | null } | null | undefined): boolean {
+  return !!(row?.ai_interview_completed_at || row?.ai_interview_badge);
+}
 
 const filled = (v: unknown): boolean => {
   if (v === null || v === undefined) return false;
@@ -31,9 +49,17 @@ const filled = (v: unknown): boolean => {
   return false;
 };
 
-export function profileCompleteness(p: ProfileForCompleteness, options?: { includePayout?: boolean }): { percent: number; done: number; total: number; items: CompletenessItem[] } {
+/**
+ * Profile fields make up (100 - interview weight) % and a completed AI interview the remaining weight (default 85 / 15),
+ * so 100 % is impossible without a completed interview. The interview is its own item so checklists can show "AI interview - not taken".
+ */
+export function profileCompleteness(
+  p: ProfileForCompleteness,
+  options?: { includePayout?: boolean; interviewWeight?: number },
+): { percent: number; done: number; total: number; items: CompletenessItem[]; fieldsPercent: number; interviewDone: boolean; interviewWeight: number } {
   const includePayout = options?.includePayout !== false;
-  const items: CompletenessItem[] = [
+  const weight = options?.interviewWeight === undefined ? DEFAULT_INTERVIEW_WEIGHT : clampInterviewWeight(options.interviewWeight);
+  const fields: CompletenessItem[] = [
     { key: 'skills', label: 'SAP modules', hint: 'Add your SAP modules and skill levels: this is the strongest matching signal.', done: (p.skills_count ?? 0) > 0 },
     { key: 'roles', label: 'Roles', hint: 'Choose your roles so functional, technical and basis requests reach the right people.', done: filled(p.sap_roles) },
     { key: 'seniority', label: 'Seniority and years', hint: 'Add your seniority level and total SAP years for complex and urgent requests.', done: filled(p.seniority_level) && filled(p.total_sap_years) },
@@ -51,6 +77,16 @@ export function profileCompleteness(p: ProfileForCompleteness, options?: { inclu
     // Client-facing views pass includePayout: false so payout status is never exposed.
     ...(includePayout ? [{ key: 'payout', label: 'Bank details for payouts', hint: 'Add your bank details to receive payouts', done: p.payout_ready === true }] : []),
   ];
-  const done = items.filter((i) => i.done).length;
-  return { percent: Math.round((100 * done) / items.length), done, total: items.length, items };
+  const interviewDone = p.interview_done === true;
+  const interviewItem: CompletenessItem = {
+    key: 'interview',
+    label: interviewDone ? 'AI interview' : 'AI interview - not taken',
+    hint: 'Take the AI interview (about 10-15 minutes) to earn your badge. It counts for part of your profile completion.',
+    done: interviewDone,
+  };
+  const fieldsDone = fields.filter((i) => i.done).length;
+  const fieldsPercent = Math.round((100 * fieldsDone) / fields.length);
+  const percent = Math.round(((100 - weight) * fieldsDone) / fields.length + (interviewDone ? weight : 0));
+  const items = [...fields, interviewItem];
+  return { percent, done: fieldsDone + (interviewDone ? 1 : 0), total: items.length, items, fieldsPercent, interviewDone, interviewWeight: weight };
 }
