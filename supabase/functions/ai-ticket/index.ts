@@ -98,6 +98,7 @@ serve(async (req) => {
       model: z.string().max(100).optional(),
       ticket_id: z.string().uuid().optional(),
       ticket_context: z.record(z.unknown()).optional(),
+      sap_notes_tried: z.array(z.string().max(40)).max(8).optional(),
     }).passthrough();
 
     const parsed = BodySchema.safeParse(parsedBody);
@@ -505,7 +506,7 @@ serve(async (req) => {
         urgency: urgency ?? null, preferred_language: preferred_language ?? null,
         industry: requestContext.industry, customer_segment: requestContext.customer_segment, country: requestContext.country,
         project_type: requestContext.project_type, vertical_solutions: requestContext.vertical_solutions, localization_solutions: requestContext.localization_solutions,
-        deployment: extraContext.deployment, work_mode: extraContext.work_mode, budget_max_rate: extraContext.budget_max_rate,
+        deployment: extraContext.deployment ?? ((clientContext as any)?.sap_hosting_type || null), work_mode: extraContext.work_mode, budget_max_rate: extraContext.budget_max_rate,
         timezone: (clientContext as any)?.timezone ?? null,
       };
       const matchInput: MatchConsultant[] = consultants.map((c) => {
