@@ -568,11 +568,13 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
     return { key: p.key, weight, fit, contribution: Math.round(weight * fit * 100) / 100 };
   });
   const chips = active
-    .filter((p) => p.chip && (p.fit >= 0.5 || p.key === 'favourite'))
+    .filter((p) => p.chip && p.fit >= 0.5 && p.key !== 'favourite')
     .sort((a, b) => weights[b.key] * b.fit - weights[a.key] * a.fit)
     .filter((p, i, list) => p.key === 'evidence' || list.findIndex((q) => q.key !== 'evidence' && String(q.chip).toLowerCase() === String(p.chip).toLowerCase()) === i)
     .slice(0, 4)
     .map((p) => ({ key: p.key, text: p.chip as string }));
+  // "Your favourite" is always shown first for the client's favourites (also when offline: the label is not a score).
+  if (c.favourite) chips.unshift({ key: 'favourite', text: 'yes' });
   // Consultant-side criteria that were not scored (responsiveness while it is not public) do not lower the confidence.
   const allWeight = (Object.keys(weights) as CriterionKey[])
     .filter((k) => (k !== 'responsiveness' && k !== 'favourite') || parts.some((p) => p.key === k))
