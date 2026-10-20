@@ -14,18 +14,21 @@ import { useTelegramStatus } from '@/hooks/useTelegram';
 import { useTourProgress } from '@/hooks/useTourProgress';
 import { payoutReady } from '@/lib/payoutDisclaimer';
 import { profileCompleteness } from '@/lib/profileCompleteness';
+import { hasLocation } from '@/lib/consultantLocation';
 import { GETTING_STARTED_DISMISSED_KEY } from '@/lib/tour';
 import { useConsultantTour } from '@/components/tour/ConsultantTour';
 
 const db = supabase as any;
 
 // Explicit columns only: never select('*') on consultants.
-const COLUMNS = 'id, sap_roles, seniority_level, total_sap_years, sap_technologies, industries, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, working_week, language_levels, ai_interview_completed_at, new_case_alerts';
+const COLUMNS = 'id, sap_roles, seniority_level, total_sap_years, sap_technologies, industries, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, working_week, language_levels, ai_interview_completed_at, new_case_alerts, country, city';
 
 export interface GettingStartedInput {
   completenessPercent: number;
   skills: number;
   interviewDone: boolean;
+  /** Country and city saved (mandatory). Undefined counts as not done. */
+  locationSet?: boolean;
   slots: number;
   payoutReady: boolean;
   alertsOn: boolean;
@@ -38,6 +41,7 @@ export interface GettingStartedItem { key: string; label: string; done: boolean;
 export function gettingStartedItems(i: GettingStartedInput): GettingStartedItem[] {
   return [
     { key: 'profile', label: 'Complete your profile', done: i.completenessPercent >= 80, to: '/consultant/profile' },
+    { key: 'location', label: 'Add your location', done: i.locationSet === true, to: '/consultant/profile#profile-details' },
     { key: 'expertise', label: 'Add your SAP expertise', done: i.skills > 0, to: '/consultant/profile#expertise' },
     { key: 'interview', label: 'Take the AI interview', done: i.interviewDone, to: '/consultant/interviews' },
     { key: 'availability', label: 'Set your availability', done: i.slots > 0, to: '/consultant/profile#availability' },
@@ -85,6 +89,7 @@ function useGettingStartedData() {
     completenessPercent: percent,
     skills: d.skills,
     interviewDone: !!d.c.ai_interview_completed_at,
+    locationSet: hasLocation(d.c),
     slots: d.slots,
     payoutReady: ready,
     alertsOn: d.c.new_case_alerts === true || d.pushDevices > 0 || telegram.data?.active === true,

@@ -375,7 +375,7 @@ export default function ConsultantProfilePage() {
               { label: 'Specialty', value: consultant.specialty },
               { label: 'Rating', value: `${consultant.rating} (${consultant.reviews} reviews)` },
               { label: 'Rate', value: `$${consultant.rate}/hr` },
-              { label: 'Location', value: consultant.city || 'Location not set' },
+              ...(consultant.city ? [{ label: 'Location', value: consultant.city }] : []),
             ]}
             variant="outline"
             size="sm"
@@ -396,10 +396,12 @@ export default function ConsultantProfilePage() {
               </div>
               <p className="mt-0.5 text-base text-muted-foreground">{consultant.specialty}</p>
               <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" />
-                  <span>{consultant.city || 'Location not set'}</span>
-                </div>
+                {consultant.city && (
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 shrink-0" />
+                    <span>{consultant.city}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5 shrink-0" />
                   <span>{detail.responseTime} {t('consultant_profile.min_response')}</span>

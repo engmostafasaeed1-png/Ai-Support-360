@@ -18,7 +18,7 @@ import GettingStartedCard, { gettingStartedItems } from './GettingStartedCard';
 const full = {
   sap_roles: ['x'], seniority_level: 's', total_sap_years: 5, sap_technologies: ['a'], industries: ['b'], customer_segments: ['c'],
   vertical_solutions: ['d'], localization_countries: ['e'], localization_solutions: ['f'], project_types: ['g'], deployment_experience: ['h'],
-  project_scale: 'm', work_modes: ['r'], working_week: 'w', language_levels: { en: 'x' }, ai_interview_completed_at: '2026-10-01', new_case_alerts: true,
+  project_scale: 'm', work_modes: ['r'], working_week: 'w', language_levels: { en: 'x' }, ai_interview_completed_at: '2026-10-01', new_case_alerts: true, country: 'Egypt', city: 'Cairo',
 };
 const ack = { acknowledged_at: '2026-10-01', acknowledged_version: 'v1', verified_at: null };
 
@@ -28,10 +28,10 @@ beforeEach(() => { h.dismissed = null; h.save.mockReset(); h.start.mockReset(); 
 afterEach(() => cleanup());
 
 describe('GettingStartedCard', () => {
-  it('builds the seven items', () => {
+  it('builds the eight items, including the mandatory location', () => {
     const items = gettingStartedItems({ completenessPercent: 80, skills: 1, interviewDone: false, slots: 0, payoutReady: true, alertsOn: false, bids: 0 });
     expect(items.map((i) => i.label)).toEqual([
-      'Complete your profile', 'Add your SAP expertise', 'Take the AI interview', 'Set your availability',
+      'Complete your profile', 'Add your location', 'Add your SAP expertise', 'Take the AI interview', 'Set your availability',
       'Add your bank details', 'Turn on alerts', 'Place your first bid',
     ]);
     expect(items.filter((i) => i.done).map((i) => i.key)).toEqual(['profile', 'expertise', 'bank']);
@@ -41,7 +41,7 @@ describe('GettingStartedCard', () => {
     h.input = { base: { c: { ...full, ai_interview_completed_at: null }, skills: 2, slots: 0, bids: 0, pushDevices: 0 }, payout: null };
     renderCard();
     expect(screen.getByText('Getting started')).toBeTruthy();
-    expect(screen.getByText('3 of 7 done')).toBeTruthy();
+    expect(screen.getByText('4 of 8 done')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Take the tour/ }));
     expect(h.start).toHaveBeenCalled();
   });

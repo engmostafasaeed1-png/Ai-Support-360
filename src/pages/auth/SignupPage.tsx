@@ -19,6 +19,9 @@ import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
 import logo from '@/assets/brand/domain.png.asset.json';
 import VerificationTimeline from '@/components/auth/VerificationTimeline';
+import LocationPicker, { type PickedLocation } from '@/components/consultant/LocationPicker';
+import { locationError } from '@/lib/consultantLocation';
+import { storeSignupLocation } from '@/lib/signupLocation';
 import {
   getVerificationSentAt,
   setVerificationSentAt,
@@ -86,6 +89,8 @@ function SignupForm() {
 
   const [role, setRole] = useState<Role>(initialRole);
   const [agreed, setAgreed] = useState(false);
+  const [place, setPlace] = useState<PickedLocation>({ country: '', city: '' });
+  const [placeError, setPlaceError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
 
@@ -93,6 +98,12 @@ function SignupForm() {
     if (!agreed || googleLoading) return;
     const canonical = canonicalOAuthUrl(window.location.href);
     if (canonical) { window.location.assign(canonical + window.location.search); return; }
+    // Consultants choose country and city first; it is saved on their first sign-in.
+    if (role === 'consultant') {
+      const missing = locationError(place.country, place.city);
+      if (missing) { setPlaceError(missing); return; }
+      storeSignupLocation(place.country, place.city);
+    }
     storeOAuthRole(role);
     setGoogleError(null);
     setGoogleLoading(true);
@@ -195,13 +206,18 @@ function SignupForm() {
       toast.error(t('auth.password_min'));
       return;
     }
+    if (role === 'consultant') {
+      const missing = locationError(place.country, place.city);
+      if (missing) { setPlaceError(missing); toast.error(missing); return; }
+      storeSignupLocation(place.country, place.city);
+    }
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/login`,
-        data: { display_name: name, role, ...(referralCode ? { referral_code: referralCode } : {}) },
+        data: { display_name: name, role, ...(role === 'consultant' ? { country: place.country.trim(), city: place.city.trim() } : {}), ...(referralCode ? { referral_code: referralCode } : {}) },
       },
     });
     setLoading(false);
@@ -349,6 +365,9 @@ function SignupForm() {
               <Label htmlFor="name">{t('auth.name')}</Label>
               <Input id="name" required value={name} onChange={e => setName(e.target.value)} placeholder={t('auth.name_placeholder')} className="h-11 rounded-xl" />
             </div>
+            {role === 'consultant' && (
+              <LocationPicker idPrefix="signup-location" value={place} onChange={v => { setPlace(v); setPlaceError(null); }} error={placeError} />
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="email">{t('auth.email')}</Label>
               <Input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" className="h-11 rounded-xl" />

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useHiddenConsultantIds, withoutHidden } from '@/hooks/useHiddenConsultants';
-import { locationText } from '@/lib/geo';
+import ConsultantLocation from '@/components/consultant/ConsultantLocation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, Gavel, Globe, ShieldCheck, Clock, AlertTriangle, CheckCircle2, Users, Sparkles, Search, UserCheck, Pencil, ArrowLeft, Send } from 'lucide-react';
@@ -270,7 +270,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
           <span>⭐ {c.rating.toFixed(1)}</span>
           {c.hourly_rate && <span>${c.hourly_rate}/hr</span>}
-          <span>{locationText(c.city, c.country)}</span>
+          <ConsultantLocation audience="client" city={c.city} country={c.country} icon={false} />
         </div>
       </div>
       {c.hasModule && (

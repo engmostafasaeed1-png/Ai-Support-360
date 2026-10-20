@@ -3,6 +3,7 @@ import ConsultantSidebar from '@/components/consultant/ConsultantSidebar';
 import PageTransition from '@/components/PageTransition';
 import PageErrorBoundary from '@/components/PageErrorBoundary';
 import MatchRequestPopup from '@/components/consultant/MatchRequestPopup';
+import LocationGate from '@/components/consultant/LocationGate';
 import CriticalAlarm from '@/components/consultant/CriticalAlarm';
 import QuickGuideSheet from '@/components/consultant/QuickGuideSheet';
 import { ConsultantTourProvider } from '@/components/tour/ConsultantTour';
@@ -119,6 +120,7 @@ export default function ConsultantLayout() {
           <Footer compact />
         </div>
         <MatchRequestPopup />
+        <LocationGate />
         <CriticalAlarm />
       </div>
       </ConsultantTourProvider>

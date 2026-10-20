@@ -6,6 +6,7 @@ import { useConsultantMatchRequests, useRespondToMatch } from '@/hooks/useMatchR
 import { Check, X, Inbox, Clock, ShieldCheck, FileSignature, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { toastWithLocationFix } from '@/lib/locationErrors';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -110,7 +111,7 @@ export default function RequestsPage() {
   const doAccept = (requestId: string) => {
     respond.mutate({ requestId, status: 'accepted' }, {
       onSuccess: () => toast.success('Match accepted!'),
-      onError: () => toast.error('Failed to respond. Please try again.'),
+      onError: (e) => toastWithLocationFix(e, 'Failed to respond. Please try again.', { useMessage: false }),
     });
   };
 
@@ -126,7 +127,7 @@ export default function RequestsPage() {
   const handleDecline = (requestId: string) => {
     respond.mutate({ requestId, status: 'rejected' }, {
       onSuccess: () => toast.success('Match declined.'),
-      onError: () => toast.error('Failed to respond. Please try again.'),
+      onError: (e) => toastWithLocationFix(e, 'Failed to respond. Please try again.', { useMessage: false }),
     });
   };
 

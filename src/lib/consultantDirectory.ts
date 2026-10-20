@@ -195,6 +195,8 @@ export function toConsultantLive(row: DirectoryRow, displayName: string | null |
     ai_interview_badge: row.ai_interview_badge || null,
     completion_percent: profileCompleteness({
       interview_done: interviewDoneFrom(row),
+      country: row.country,
+      city: row.city,
       skills_count: skills.length,
       sap_roles: row.sap_roles,
       seniority_level: row.seniority_level,

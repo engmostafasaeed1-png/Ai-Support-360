@@ -98,12 +98,12 @@ describe('ConsultantLinksCard', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalled());
   });
 
-  it('saves no point when no city is chosen', async () => {
+  it('refuses to save without country and city (location is mandatory)', async () => {
     mocks.row.current = { ...ROW, city: null, country: null };
     await openCard();
     fireEvent.click(screen.getByRole('button', { name: /Save place and links/ }));
-    await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
-    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ city: null, country: null, latitude: null, longitude: null }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/country and city/)));
+    expect(mocks.update).not.toHaveBeenCalled();
   });
 
   it('shows the message of the database when it refuses a link', async () => {

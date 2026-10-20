@@ -5,7 +5,7 @@
 -- (award_ai_interview_rewards) is untouched.
 --
 -- Completion = (100 - weight) % for the profile items + weight % for a COMPLETED AI interview
--- (pending / never started = 0). The profile items are the same 15 the app shows
+-- (pending / never started = 0). The profile items are the same 16 the app shows (Fix K added the mandatory location)
 -- (supabase/functions/_shared/profileCompleteness.ts); keep both in step if one changes.
 
 -- 1. Setting (only inserted when missing).
@@ -54,7 +54,7 @@ GRANT EXECUTE ON FUNCTION public.admin_set_profile_interview_weight(INT) TO auth
 
 -- 4. One consultant's completion. Readable by the consultant, administrators and the service role only.
 --    missing_fields = consultant_missing_fields() (admin-required fields, unchanged);
---    missing_items  = labels of the 15 profile items still missing (interview reported separately).
+--    missing_items  = labels of the 16 profile items still missing (location included) (interview reported separately).
 CREATE OR REPLACE FUNCTION public.consultant_completion(_cid UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -91,6 +91,7 @@ BEGIN
                WHERE s.consultant_id = _cid AND s.interview_type = 'ai' AND s.status IN ('completed', 'reviewed'));
 
   v_items := jsonb_build_array(
+    jsonb_build_object('key', 'location',     'label', 'Location (country and city)', 'done', NULLIF(btrim(c.country), '') IS NOT NULL AND NULLIF(btrim(c.city), '') IS NOT NULL),
     jsonb_build_object('key', 'skills',       'label', 'SAP modules',                'done', v_skills > 0),
     jsonb_build_object('key', 'roles',        'label', 'Roles',                      'done', COALESCE(cardinality(c.sap_roles), 0) > 0),
     jsonb_build_object('key', 'seniority',    'label', 'Seniority and years',        'done', NULLIF(btrim(c.seniority_level), '') IS NOT NULL AND COALESCE(c.total_sap_years, 0) > 0),

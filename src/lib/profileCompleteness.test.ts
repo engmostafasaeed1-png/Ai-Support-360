@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { clampInterviewWeight, interviewDoneFrom, profileCompleteness } from './profileCompleteness';
 
 const FULL = {
+  country: 'Egypt', city: 'Cairo',
   skills_count: 3, sap_roles: ['Functional consultant'], seniority_level: 'senior', total_sap_years: 8, sap_technologies: ['ABAP'],
   industries: ['Mining'], customer_segments: ['Large listed enterprise'], vertical_solutions: ['SAP Mining (mine-to-market, heavy equipment)'],
   localization_countries: ['Egypt'], localization_solutions: ['Egypt e-invoice & e-receipt (ETA)'], project_types: ['Implementation (greenfield)'],
@@ -13,7 +14,7 @@ describe('profile completeness', () => {
     const r = profileCompleteness({});
     expect(r.percent).toBe(0);
     expect(r.done).toBe(0);
-    expect(r.total).toBe(16);
+    expect(r.total).toBe(17);
     expect(r.items.every((i) => !i.done && i.hint.length > 10)).toBe(true);
     expect(r.items.find((i) => i.key === 'interview')?.label).toBe('AI interview - not taken');
   });
@@ -60,8 +61,8 @@ describe('profile completeness', () => {
   });
 
   it('rounds the percentage', () => {
-    // 3 of 15 fields x 85 % = 17 %.
-    expect(profileCompleteness({ skills_count: 1, sap_roles: ['x'], industries: ['y'] }).percent).toBe(17);
+    // 3 of 16 fields x 85 % = 15.9 -> 16 %.
+    expect(profileCompleteness({ skills_count: 1, sap_roles: ['x'], industries: ['y'] }).percent).toBe(16);
   });
 
   it('counts the bank details only when saved with the disclaimer acknowledged', () => {
@@ -74,9 +75,17 @@ describe('profile completeness', () => {
 
   it('excludes the payout item for client-facing views so payout status is never exposed', () => {
     const r = profileCompleteness({}, { includePayout: false });
-    expect(r.total).toBe(15);
+    expect(r.total).toBe(16);
     expect(r.items.some((i) => i.key === 'payout')).toBe(false);
     expect(profileCompleteness(FULL, { includePayout: false }).percent).toBe(85);
     expect(profileCompleteness({ ...FULL, interview_done: true }, { includePayout: false }).percent).toBe(100);
+  });
+
+  it('counts the location only when both country and city are set', () => {
+    expect(profileCompleteness({ country: 'Egypt' }).items.find((i) => i.key === 'location')?.done).toBe(false);
+    expect(profileCompleteness({ city: 'Cairo' }).items.find((i) => i.key === 'location')?.done).toBe(false);
+    expect(profileCompleteness({ country: 'Egypt', city: 'Cairo' }).items.find((i) => i.key === 'location')?.done).toBe(true);
+    const { country: _c, city: _t, ...noPlace } = FULL;
+    expect(profileCompleteness({ ...noPlace, payout_ready: true, interview_done: true }).percent).toBe(95);
   });
 });

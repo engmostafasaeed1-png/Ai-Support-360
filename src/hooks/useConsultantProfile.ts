@@ -16,7 +16,7 @@ export function useConsultantProfile() {
 
       const { data: consultant } = await supabase
         .from('consultants')
-        .select('id, bio, hourly_rate, currency, timezone, languages, industries, verification_status, rating, total_reviews, response_time_minutes, availability_status, ai_skills_score, credibility_credits, ai_interview_badge, ai_interview_completed_at')
+        .select('id, bio, hourly_rate, currency, timezone, languages, industries, city, country, verification_status, rating, total_reviews, response_time_minutes, availability_status, ai_skills_score, credibility_credits, ai_interview_badge, ai_interview_completed_at')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -62,9 +62,11 @@ export function useConsultantProfile() {
         credibility_credits: (consultant as any).credibility_credits || 0,
         ai_interview_badge: (consultant as any).ai_interview_badge || null,
         ai_interview_completed_at: (consultant as any).ai_interview_completed_at || null,
+        city: ((consultant as any).city as string | null) ?? null,
+        country: ((consultant as any).country as string | null) ?? null,
       };
     },
     enabled: signedIn && (!isGuest),
-    placeholderData: isGuest ? { ...mockConsultantProfile, avatar_url: null, credly_username: null, credibility_credits: 250, ai_interview_badge: 'Gold', ai_interview_completed_at: new Date().toISOString() } : undefined,
+    placeholderData: isGuest ? { ...mockConsultantProfile, avatar_url: null, credly_username: null, credibility_credits: 250, ai_interview_badge: 'Gold', ai_interview_completed_at: new Date().toISOString(), city: 'Riyadh', country: 'Saudi Arabia' } : undefined,
   });
 }

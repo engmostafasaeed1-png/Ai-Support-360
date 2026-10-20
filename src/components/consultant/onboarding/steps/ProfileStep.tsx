@@ -12,6 +12,7 @@ import type { OnboardingData } from '../ConsultantOnboarding';
 import { FieldHint } from '../OnboardingGuidePanel';
 import { FieldGate, RequiredMark } from '@/components/consultant/ProfileFieldRule';
 import CityPicker from './CityPicker';
+import { locationError, LOCATION_REQUIRED_MESSAGE } from '@/lib/consultantLocation';
 
 const timezones = [
   'Asia/Riyadh', 'Asia/Dubai', 'Asia/Karachi', 'Europe/London',
@@ -129,6 +130,9 @@ export default function ProfileStep({ data, onChange, renderSection }: Props) {
         <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
         Choose your city so that clients find you on the map. They see the area of the city, never an address.
       </p>
+      {locationError(data.country, data.city) && (
+        <p role="alert" data-testid="location-required" className="-mt-2 text-xs text-destructive">{t('location.required', LOCATION_REQUIRED_MESSAGE)}</p>
+      )}
 
       </>)}
       {/* Rate & Currency */}

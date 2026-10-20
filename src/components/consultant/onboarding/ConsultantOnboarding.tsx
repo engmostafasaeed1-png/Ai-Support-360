@@ -31,7 +31,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { fireConfetti } from '@/lib/confetti';
 import { safeFileName } from '@/lib/storagePath';
-import { cityPoint, countryPoint } from '@/lib/geo';
+import { resolvePlacePoint, locationError, LOCATION_REQUIRED_MESSAGE } from '@/lib/consultantLocation';
 import { FieldGate } from '@/components/consultant/ProfileFieldRule';
 import { CREDLY_HINT, LINKEDIN_HINT, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 import { OnboardingGuidePanel, OnboardingGuideAccordion, OnboardingMobileProgress, OnboardingWelcome, OnboardingFinish, welcomeSeen, markWelcomeSeen } from './OnboardingGuidePanel';
@@ -295,9 +295,11 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
       setCurrentStep(1);
       return;
     }
+    const missingPlace = locationError(data.country, data.city);
+    if (missingPlace) { toast.error(t('location.required', missingPlace)); setCurrentStep(1); return; }
     // The place on the map is the centre of the chosen city (the database rounds it to about 1 km).
     // A city that is not in the list ("Other city") or no city: the centre of the country, so the consultant is still on the map.
-    const place = (data.country && data.city ? cityPoint(data.country, data.city) : null) ?? (data.country ? countryPoint(data.country) : null);
+    const place = resolvePlacePoint(data.country, data.city, consultantId ?? '');
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -525,6 +527,8 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
   const sectionValues = (keys: (keyof OnboardingData)[]) => Object.fromEntries(keys.map(key => [key, data[key]]));
   const validateSection = (keys: (keyof OnboardingData)[]) => (_patch: Record<string, unknown>) => {
     const fields: Partial<Record<keyof OnboardingData, string>> = { displayName: 'display_name', bio: 'bio', hourlyRate: 'hourly_rate', nationality: 'nationality', city: 'city', country: 'country', timezone: 'timezone', languages: 'languages', linkedinUrl: 'linkedin_url', credlyUsername: 'credly_username', githubUrl: 'github_url', personalWebsite: 'personal_website', certifications: 'certifications', education: 'education', projects: 'projects' };
+    // Country and city are always required (independent of the enforcement switch); autosave skips this section and keeps the draft.
+    if ((keys.includes('country') || keys.includes('city')) && locationError(data.country, data.city)) return t('location.required', LOCATION_REQUIRED_MESSAGE);
     for (const key of keys) {
       const field = fields[key]; const value = data[key];
       if (field && fieldRules.isRequired(field) && (value === null || value === '' || (typeof value === 'string' && !value.trim()) || (Array.isArray(value) && !value.length) || (key === 'hourlyRate' && Number(value) <= 0))) return t('profile_save.required', 'Complete the required fields in this section before saving.');
@@ -551,7 +555,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     if ('linkedinUrl' in patch) values.linkedin_url = normalizeLinkedinUrl(String(patch.linkedinUrl)) || null;
     if ('credlyUsername' in patch) values.credly_username = normalizeCredlyUsername(String(patch.credlyUsername)) || null;
     if ('city' in patch || 'country' in patch) {
-      const place = (data.country && data.city ? cityPoint(data.country, data.city) : null) ?? (data.country ? countryPoint(data.country) : null);
+      const place = resolvePlacePoint(data.country, data.city, consultantId ?? '');
       values.latitude = place?.lat ?? null; values.longitude = place?.lng ?? null;
     }
     if (Object.keys(values).length) check(await supabase.from('consultants').update(values as never).eq('id', consultantId));
@@ -617,7 +621,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     if (currentStep === 1) {
       const linkedinOk = !data.linkedinUrl.trim() || !!normalizeLinkedinUrl(data.linkedinUrl);
       const credlyOk = !data.credlyUsername.trim() || !!normalizeCredlyUsername(data.credlyUsername);
-      return data.displayName.trim().length > 0 && data.bio.trim().length > 0 && linkedinOk && credlyOk;
+      return data.displayName.trim().length > 0 && data.bio.trim().length > 0 && linkedinOk && credlyOk && !locationError(data.country, data.city);
     }
     if (currentStep === 2) return data.skills.length > 0;
     return true;
@@ -702,6 +706,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     industries: data.projects.map(p => p.clientIndustry).filter(Boolean),
     project_types: data.projects.length > 0 ? ['project'] : [],
     language_levels: data.languages.length > 0 ? Object.fromEntries(data.languages.map(l => [l, 'set'])) : {},
+    country: data.country, city: data.city,
     interview_done: interviewCompleted || interviewDone || !!loadedProfile?.ai_interview_completed_at,
   }, { interviewWeight }).percent;
 

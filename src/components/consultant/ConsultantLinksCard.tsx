@@ -3,13 +3,14 @@ import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Award, ExternalLink, Github, Globe, Linkedin, Loader2, MapPin, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { locationError, resolvePlacePoint } from '@/lib/consultantLocation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { COUNTRIES, citiesOf, cityPoint } from '@/lib/geo';
+import { COUNTRIES, citiesOf } from '@/lib/geo';
 import {
   CREDLY_HINT,
   LINKEDIN_HINT,
@@ -80,7 +81,9 @@ export default function ConsultantLinksCard() {
     setProblem(next);
     if (next.linkedin || next.credly) return;
 
-    const place = form.country && form.city ? cityPoint(form.country, form.city) : null;
+    const missingPlace = locationError(form.country, form.city);
+    if (missingPlace) { toast.error(missingPlace); return; }
+    const place = resolvePlacePoint(form.country, form.city, me.id ?? '');
     setSaving(true);
     const { error } = await supabase
       .from('consultants')

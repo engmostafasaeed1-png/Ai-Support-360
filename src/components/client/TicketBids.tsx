@@ -21,6 +21,7 @@ import { effectiveRate, formatPercent, surchargeApplies } from '@/lib/criticalSe
 import RatingStars from './RatingStars';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
 import CompletionBadge from '@/components/consultant/CompletionBadge';
+import ConsultantLocation from '@/components/consultant/ConsultantLocation';
 import BidCounterDialog from './BidCounterDialog';
 import BidDeclineDialog from './BidDeclineDialog';
 import BidDeadlineDialog from './BidDeadlineDialog';
@@ -78,6 +79,7 @@ export default function TicketBids({ ticketId, ticket = {}, onInvite = () => {},
     <div className="h-9 w-9 shrink-0 rounded-full bg-muted overflow-hidden flex items-center justify-center text-xs">{p.consultant_avatar ? <img src={p.consultant_avatar} alt={p.consultant_name} className="h-full w-full object-cover" /> : p.consultant_name.slice(0, 2)}</div>
     <div className="min-w-0 space-y-1"><Link to={`/client/consultants/${p.consultant_id}`} className="font-semibold text-sm text-accent break-words">{p.consultant_name}</Link>
       {p.verification_status === 'verified' && <Badge variant="outline" className="ms-1 text-success gap-1"><ShieldCheck className="h-3 w-3" />Verified</Badge>}
+      <ConsultantLocation audience="client" city={p.city} country={p.country} className="text-[11px] text-muted-foreground" />
       <RatingStars rating={Number(p.consultant_rating)} reviews={Number(p.consultant_reviews)} size="sm" />
       <FoundingBadge consultantId={p.consultant_id} />
       <TrustBadge credits={p.credibility_credits} badge={p.ai_interview_badge} />

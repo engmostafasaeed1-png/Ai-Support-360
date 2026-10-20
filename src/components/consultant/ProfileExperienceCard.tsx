@@ -31,7 +31,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
   ur: 'Urdu', zh: 'Chinese', pt: 'Portuguese', ja: 'Japanese', ko: 'Korean', tr: 'Turkish',
 };
 
-const COLUMNS = 'id, languages, industries, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, onsite_countries, working_week, language_levels, sap_roles, seniority_level, total_sap_years, sap_technologies';
+const COLUMNS = 'id, languages, industries, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, onsite_countries, working_week, language_levels, sap_roles, seniority_level, total_sap_years, sap_technologies, country, city';
 
 type Row = {
   id: string;
@@ -115,7 +115,7 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
     if (!consultantId || !sourceRevision) return;
     let active = true;
     void Promise.all([
-      supabase.from('consultants').select('sap_roles, seniority_level, total_sap_years, sap_technologies, languages').eq('id', consultantId).maybeSingle(),
+      supabase.from('consultants').select('sap_roles, seniority_level, total_sap_years, sap_technologies, languages, country, city').eq('id', consultantId).maybeSingle(),
       supabase.from('consultant_skills').select('id', { count: 'exact', head: true }).eq('consultant_id', consultantId),
     ]).then(([result, counts]) => {
       if (!active || result.error || counts.error || !result.data) return;
@@ -126,6 +126,7 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
   }, [consultantId, sourceRevision]);
 
   const completeness = useMemo(() => profileCompleteness({
+    country: (base as any)?.country, city: (base as any)?.city,
     sap_roles: base?.sap_roles,
     seniority_level: base?.seniority_level,
     total_sap_years: base?.total_sap_years,

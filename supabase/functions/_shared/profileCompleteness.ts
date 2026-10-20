@@ -1,5 +1,8 @@
 /** How complete is a consultant profile for the AI matching? Every item says what to add and why it helps. */
 export type ProfileForCompleteness = {
+  /** Mandatory location (Fix K): both country and city. */
+  country?: string | null;
+  city?: string | null;
   sap_roles?: string[] | null;
   seniority_level?: string | null;
   total_sap_years?: number | null;
@@ -60,6 +63,7 @@ export function profileCompleteness(
   const includePayout = options?.includePayout !== false;
   const weight = options?.interviewWeight === undefined ? DEFAULT_INTERVIEW_WEIGHT : clampInterviewWeight(options.interviewWeight);
   const fields: CompletenessItem[] = [
+    { key: 'location', label: 'Location (country and city)', hint: 'Add your country and city so clients find you in search and on the map.', done: filled(p.country) && filled(p.city) },
     { key: 'skills', label: 'SAP modules', hint: 'Add your SAP modules and skill levels: this is the strongest matching signal.', done: (p.skills_count ?? 0) > 0 },
     { key: 'roles', label: 'Roles', hint: 'Choose your roles so functional, technical and basis requests reach the right people.', done: filled(p.sap_roles) },
     { key: 'seniority', label: 'Seniority and years', hint: 'Add your seniority level and total SAP years for complex and urgent requests.', done: filled(p.seniority_level) && filled(p.total_sap_years) },

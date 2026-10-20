@@ -288,7 +288,7 @@ serve(async (req) => {
         .select(`
           id, user_id, bio, hourly_rate, currency, timezone, languages, industries,
           availability_status, rating, total_reviews, response_time_minutes,
-          verification_status, ai_skills_score, country, credly_checked_at, linkedin_checked_at,
+          verification_status, ai_skills_score, country, city, credly_checked_at, linkedin_checked_at,
           sap_role, sap_roles, seniority_level, total_sap_years, sap_technologies, localization_countries, project_types,
           customer_segments, vertical_solutions, localization_solutions, deployment_experience, project_scale,
           work_modes, onsite_countries, working_week, language_levels, ai_interview_badge, ai_interview_completed_at, profile_visible

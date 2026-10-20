@@ -186,11 +186,15 @@ export default function ProfileFieldsSection() {
                           {mode !== r.default_mode && <span aria-label={t('admin.profileFields.changed', 'Changed')} className="h-2 w-2 rounded-full bg-primary" />}
                           <span className="text-xs text-muted-foreground">{t('admin.profileFields.default', 'Default: {{mode}}', { mode: modeLabel(r.default_mode) })}</span>
                         </div>
+                        {r.hard_required ? (
+                          <Badge variant="outline" data-testid={`hard-${r.field_key}`}>{t('admin.profileFields.alwaysRequired', 'Always required (needed for search and the map)')}</Badge>
+                        ) : (
                         <ToggleGroup type="single" size="sm" variant="outline" value={mode} onValueChange={v => v && setDraft(d => ({ ...d, [r.field_key]: v as FieldMode }))} aria-label={r.label}>
                           <ToggleGroupItem value="required">{modeLabel('required')}</ToggleGroupItem>
                           <ToggleGroupItem value="optional">{modeLabel('optional')}</ToggleGroupItem>
                           <ToggleGroupItem value="hidden">{modeLabel('hidden')}</ToggleGroupItem>
                         </ToggleGroup>
+                        )}
                       </div>
                     );
                   })}
