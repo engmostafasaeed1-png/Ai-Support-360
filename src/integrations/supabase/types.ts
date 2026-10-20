@@ -1592,6 +1592,63 @@ export type Database = {
           },
         ]
       }
+      consultant_responsiveness: {
+        Row: {
+          computed_at: string
+          consultant_id: string
+          counted_90d: number
+          level: string
+          median_90d: number | null
+          no_response_30d: number
+          public_level: string
+          rate_90d: number | null
+          stars: number | null
+          stats: Json
+          warnings_sent: number
+        }
+        Insert: {
+          computed_at?: string
+          consultant_id: string
+          counted_90d?: number
+          level?: string
+          median_90d?: number | null
+          no_response_30d?: number
+          public_level?: string
+          rate_90d?: number | null
+          stars?: number | null
+          stats?: Json
+          warnings_sent?: number
+        }
+        Update: {
+          computed_at?: string
+          consultant_id?: string
+          counted_90d?: number
+          level?: string
+          median_90d?: number | null
+          no_response_30d?: number
+          public_level?: string
+          rate_90d?: number | null
+          stars?: number | null
+          stats?: Json
+          warnings_sent?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_responsiveness_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "consultant_responsiveness_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultant_skills: {
         Row: {
           certified: boolean | null
@@ -1630,6 +1687,51 @@ export type Database = {
           },
           {
             foreignKeyName: "consultant_skills_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consultant_unavailable_periods: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          ends_at: string
+          id: string
+          reason: string | null
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          ends_at: string
+          id?: string
+          reason?: string | null
+          starts_at: string
+          updated_at?: string
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          ends_at?: string
+          id?: string
+          reason?: string | null
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_unavailable_periods_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "consultant_unavailable_periods_consultant_id_fkey"
             columns: ["consultant_id"]
             isOneToOne: false
             referencedRelation: "consultants"
@@ -1825,6 +1927,7 @@ export type Database = {
           localization_solutions: string[]
           location: unknown
           longitude: number | null
+          max_active_tickets: number | null
           nationality: string | null
           new_case_alerts: boolean
           onsite_countries: string[]
@@ -1883,6 +1986,7 @@ export type Database = {
           localization_solutions?: string[]
           location?: unknown
           longitude?: number | null
+          max_active_tickets?: number | null
           nationality?: string | null
           new_case_alerts?: boolean
           onsite_countries?: string[]
@@ -1941,6 +2045,7 @@ export type Database = {
           localization_solutions?: string[]
           location?: unknown
           longitude?: number | null
+          max_active_tickets?: number | null
           nationality?: string | null
           new_case_alerts?: boolean
           onsite_countries?: string[]
@@ -5601,6 +5706,224 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      responsiveness_disputes: {
+        Row: {
+          admin_note: string | null
+          consultant_id: string
+          created_at: string
+          event_id: string
+          id: string
+          reason: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          admin_note?: string | null
+          consultant_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          reason: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          admin_note?: string | null
+          consultant_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responsiveness_disputes_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "responsiveness_disputes_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "responsiveness_disputes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "responsiveness_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      responsiveness_events: {
+        Row: {
+          consultant_id: string
+          counted: boolean
+          created_at: string
+          due_at: string | null
+          excluded_reason: string | null
+          id: string
+          is_critical: boolean
+          kind: string
+          outcome: string
+          received_at: string
+          resolved_at: string | null
+          responded_at: string | null
+          session_id: string | null
+          source_id: string
+          ticket_id: string | null
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        Insert: {
+          consultant_id: string
+          counted: boolean
+          created_at?: string
+          due_at?: string | null
+          excluded_reason?: string | null
+          id?: string
+          is_critical?: boolean
+          kind: string
+          outcome?: string
+          received_at: string
+          resolved_at?: string | null
+          responded_at?: string | null
+          session_id?: string | null
+          source_id: string
+          ticket_id?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Update: {
+          consultant_id?: string
+          counted?: boolean
+          created_at?: string
+          due_at?: string | null
+          excluded_reason?: string | null
+          id?: string
+          is_critical?: boolean
+          kind?: string
+          outcome?: string
+          received_at?: string
+          resolved_at?: string | null
+          responded_at?: string | null
+          session_id?: string | null
+          source_id?: string
+          ticket_id?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responsiveness_events_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "responsiveness_events_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      responsiveness_notices: {
+        Row: {
+          acked_at: string | null
+          consultant_id: string
+          count_30d: number
+          created_at: string
+          email_error: string | null
+          emailed_at: string | null
+          event_id: string
+          id: string
+          kind: string
+          user_id: string
+          warnings_total: number
+        }
+        Insert: {
+          acked_at?: string | null
+          consultant_id: string
+          count_30d?: number
+          created_at?: string
+          email_error?: string | null
+          emailed_at?: string | null
+          event_id: string
+          id?: string
+          kind: string
+          user_id: string
+          warnings_total?: number
+        }
+        Update: {
+          acked_at?: string | null
+          consultant_id?: string
+          count_30d?: number
+          created_at?: string
+          email_error?: string | null
+          emailed_at?: string | null
+          event_id?: string
+          id?: string
+          kind?: string
+          user_id?: string
+          warnings_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responsiveness_notices_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "responsiveness_notices_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "responsiveness_notices_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "responsiveness_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      responsiveness_runs: {
+        Row: {
+          id: string
+          kind: string
+          ran_at: string
+        }
+        Insert: {
+          id?: string
+          kind?: string
+          ran_at?: string
+        }
+        Update: {
+          id?: string
+          kind?: string
+          ran_at?: string
+        }
+        Relationships: []
       }
       sap_doc_chunks: {
         Row: {
@@ -9640,6 +9963,52 @@ export type Database = {
       respond_to_timesheet: {
         Args: { _approve: boolean; _note?: string; _submission_id: string }
         Returns: undefined
+      }
+      responsiveness_add_event: {
+        Args: {
+          _cid: string
+          _critical: boolean
+          _due: string
+          _kind: string
+          _received: string
+          _session: string
+          _source: string
+          _ticket: string
+        }
+        Returns: string
+      }
+      responsiveness_exclusion: {
+        Args: { _at: string; _cid: string }
+        Returns: string
+      }
+      responsiveness_int: {
+        Args: { _def: number; _hi: number; _k: string; _lo: number; _v: Json }
+        Returns: number
+      }
+      responsiveness_level: {
+        Args: { _counted: number; _median: number; _rate: number; _s: Json }
+        Returns: string
+      }
+      responsiveness_metrics: {
+        Args: { _cid: string; _scope: string; _since: string }
+        Returns: Json
+      }
+      responsiveness_public_config: { Args: never; Returns: Json }
+      responsiveness_public_level: {
+        Args: {
+          _counted: number
+          _level: string
+          _nr30: number
+          _rate: number
+          _s: Json
+        }
+        Returns: string
+      }
+      responsiveness_recompute: { Args: { _cid: string }; Returns: undefined }
+      responsiveness_settings: { Args: never; Returns: Json }
+      responsiveness_stars: {
+        Args: { _level: string; _rate: number }
+        Returns: number
       }
       retry_failed_notification: {
         Args: { _id: string }

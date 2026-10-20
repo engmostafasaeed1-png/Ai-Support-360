@@ -498,6 +498,13 @@
       "when": 1792533861130,
       "tag": "0070_assignment_response_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1792534724880,
+      "tag": "0071_responsiveness_core",
+      "breakpoints": true
     }
   ]
 }
