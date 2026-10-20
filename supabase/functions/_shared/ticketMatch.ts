@@ -11,6 +11,7 @@
  */
 import { contextFit } from './contextFit.ts';
 import { indexProfile, matchProfile, prepareTextMatch, ticketTerms, type MatchedIn, type ProfileEntry, type TextMatch } from './profileText.ts';
+import { responseFit } from './assignmentPolicy.ts';
 
 // ---------------------------------------------------------------- modules
 
@@ -325,6 +326,8 @@ export type MatchConsultant = {
   rating?: number | null;
   total_reviews?: number | null;
   response_time_minutes?: number | null;
+  /** Answered share of assignment requests (assignmentPolicy.responseRate; null below 3 requests or when unknown). Never shown to clients. */
+  assignment_response_rate?: number | null;
   completion_percent?: number | null;
   /** Modules backed by a document an administrator verified. */
   verified_evidence_modules?: string[] | null;
@@ -527,7 +530,9 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
   // Bayesian average: a 5.0 from one review does not beat a 4.8 from forty.
   parts.push({ key: 'rating', fit: reviews > 0 ? ((rating * reviews + 3.5 * 3) / (reviews + 3)) / 5 : 0.4, chip: rating >= 4.5 && reviews >= 3 ? rating.toFixed(1) : undefined });
   const rt = c.response_time_minutes;
-  parts.push({ key: 'response', fit: !rt ? 0.3 : rt <= 30 ? 1 : rt <= 60 ? 0.8 : rt <= 240 ? 0.5 : rt <= 1440 ? 0.3 : 0.1, chip: rt && rt <= 30 ? '30' : undefined });
+  // Reply speed, blended with the answered share of assignment requests once a consultant has 3 or more (Feature L).
+  const answeredRate = c.assignment_response_rate;
+  parts.push({ key: 'response', fit: responseFit(rt, answeredRate), chip: rt && rt <= 30 && (answeredRate == null || answeredRate >= 0.8) ? '30' : undefined });
   const status = c.availability_status;
   parts.push({ key: 'availability', fit: status === 'available' ? 1 : status === 'busy' ? 0.5 : 0, chip: status === 'available' ? 'now' : undefined });
   parts.push({ key: 'completion', fit: Math.max(0, Math.min(100, c.completion_percent ?? 0)) / 100 });
