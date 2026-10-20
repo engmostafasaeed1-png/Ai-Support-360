@@ -68,4 +68,4 @@
 - [x] Feature N: versioned Consultant Service Policy (draft EN/AR), public printable /consultant-policy, final profile step, pop-up/banner/e-mails, grace restrictions, admin page, SQL + checks, tests, Arabic strings (Oct 20)
 - [ ] Feature N SQL: owner has the draft text reviewed, applies docs/sql/consultant-policy.sql, optionally runs docs/sql/consultant-policy.test.sql
 - [x] Feature L addition: decision preview (viewed_at, locked data), Request more information (pause/resume, limits, counts as response), decline reasons; popup, e-mails, notifications, Requests page, client card, admin, policy text, tests, Arabic (Oct 21)
-- [ ] Feature L addition SQL: owner applies docs/sql/assignment-info-requests.sql (optionally runs docs/sql/assignment-info-requests.test.sql); until then the screens keep plain Accept / Decline
+- [x] Feature L addition SQL applied (Oct 21): preview, Request more information and decline reasons live; rolled-back live trial passed
