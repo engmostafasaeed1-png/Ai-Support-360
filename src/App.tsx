@@ -156,6 +156,7 @@ const AdminErrorsPage = lazyWithRetry(() => import("./pages/admin/AdminErrorsPag
 const AdminPaymentsPage = lazyWithRetry(() => import("./pages/admin/PaymentsAdminPage.tsx"), 'AdminPaymentsPage');
 const AdminKnowledgeReviewPage = lazyWithRetry(() => import("./pages/admin/KnowledgeReviewPage.tsx"), 'AdminKnowledgeReviewPage');
 const ProfileFieldsSection = lazyWithRetry(() => import("./components/admin/console/sections/ProfileFieldsSection.tsx"), 'ProfileFieldsSection');
+const MissingLocationSection = lazyWithRetry(() => import("./components/admin/console/sections/MissingLocationSection.tsx"), 'MissingLocationSection');
 const VMwarePricingSection = lazyWithRetry(() => import("./components/admin/console/sections/VMwarePricingSection.tsx"), 'VMwarePricingSection');
 const AdminClientApprovalsPage = lazyWithRetry(() => import("./pages/admin/ClientApprovalsPage.tsx"), 'AdminClientApprovalsPage');
 const AdminClientReviewsPage = lazyWithRetry(() => import("./pages/admin/ClientReviewsPage.tsx"), 'AdminClientReviewsPage');
@@ -388,6 +389,7 @@ const App = () => (
                 <Route path="tickets" element={<TicketManagementSection />} />
                 <Route path="approvals" element={<ConsultantApprovalsSection />} />
                 <Route path="profile-fields" element={<ProfileFieldsSection />} />
+                <Route path="missing-location" element={<MissingLocationSection />} />
                 <Route path="nda" element={<NDAManagementSection />} />
                 <Route path="match-requests" element={<MatchRequestsSection />} />
                 <Route path="projects" element={<ProjectsMilestonesSection />} />
