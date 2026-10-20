@@ -1,4 +1,6 @@
 import MatchScoreBreakdown, { type MatchCriterion } from '@/components/client/MatchScoreBreakdown';
+import MatchWhyChips from '@/components/match/MatchWhyChips';
+import type { Chip } from '../../../supabase/functions/_shared/ticketMatch';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -33,6 +35,7 @@ interface AIRecommendation {
   consultant_id: string;
   match_score: number;
   score_breakdown?: MatchCriterion[];
+  why?: Chip[];
   match_reason: string;
   strengths: string[];
   context_fit_score?: number | null;
@@ -166,6 +169,16 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
       setAiLoading(false);
     }
   };
+
+  // The client edited the request (title, description, areas, urgency, language): recompute the matches that are shown.
+  const matchInputs = JSON.stringify([ticketTitle, ticketDescription, sapModule, ticketUrgency, preferredLanguage]);
+  const lastInputs = useRef(matchInputs);
+  useEffect(() => {
+    if (lastInputs.current === matchInputs) return;
+    lastInputs.current = matchInputs;
+    if (open && aiRecommendations && !aiLoading) void handleAiRecommend();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchInputs]);
 
   const getAiRec = (consultantId: string) => aiRecommendations?.find(r => r.consultant_id === consultantId);
 
@@ -438,6 +451,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
                               {c.modules.length > 4 && <Badge variant="secondary" className="text-[9px]">+{c.modules.length - 4}</Badge>}
                             </div>
                           )}
+                          {rec && <MatchWhyChips why={rec.why} />}
                           {rec && <MatchScoreBreakdown breakdown={rec.score_breakdown} />}
                           {rec && (
                             <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2 italic">
