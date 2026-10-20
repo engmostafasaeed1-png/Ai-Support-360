@@ -1,5 +1,7 @@
 # Architecture rules
 
+Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`); read it before changing files there.
+
 - Reuse the consultant payout reminder on dashboard and Earnings and render administrator readiness badges from existing presence/status metadata only; this keeps bank identifiers out of readiness UI.
 
 - Shared Button removes its variant gradient when callers supply a base background colour, while retaining custom gradients; this preserves existing emergency and status colours without changing the Button API.
@@ -23,8 +25,6 @@
 - Use the consultant Profile page as the single consolidated editor, reusing existing field controls without a duplicate setup tab; legacy onboarding links must land there.
 - Rank consultants only with the shared deterministic matcher (`supabase/functions/_shared/ticketMatch.ts`: hard filters, admin-tunable weights from platform settings, why-chips) on every surface, including the directory's best-match sort; the AI model may only write explanation text, so rankings stay reproducible and explainable.
 - Ticket payment terms and consultant invoices are written only via SECURITY DEFINER RPCs; a client-approved invoice becomes a pending payments row so existing billing handles collection.
-- All AI calls go through the Lovable AI Gateway on its current default chat model with reasoning enabled; function tools are sent through the Responses endpoint via the shared `supabase/functions/_shared/aiResponses.ts` helper (stateless: every call resends its input with `store:false`), because the gateway's chat-completions endpoint serves text generation only.
-- The live interview chat (ai-interview-chat, conversation turns only) asks the gateway for the lowest reasoning effort it accepts (none, then minimal, then low) because a person waits for every reply, and its first message is a fixed greeting sent without calling the model; evaluation, co-pilot and all other AI calls keep reasoning_effort low.
 
 - Keep client bid comparison/deadline rules in the shared client bidding library and client mutations in useClientBids so ticket tabs and lists agree.
 - Share embedded profile guide visibility and the existing completeness result through one provider; reuse wizard guide content so the active editor and interview anchor stay consistent without duplicate scoring or guide copy.

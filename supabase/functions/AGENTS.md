@@ -1,0 +1,4 @@
+# Edge function rules
+
+- All AI calls go through the Lovable AI Gateway on its current default chat model with reasoning enabled; function tools are sent through the Responses endpoint via the shared `supabase/functions/_shared/aiResponses.ts` helper (stateless: every call resends its input with `store:false`), because the gateway's chat-completions endpoint serves text generation only.
+- The live interview chat (ai-interview-chat, conversation turns only) asks the gateway for the lowest reasoning effort it accepts (none, then minimal, then low) because a person waits for every reply, and its first message is a fixed greeting sent without calling the model; evaluation, co-pilot and all other AI calls keep reasoning_effort low.
