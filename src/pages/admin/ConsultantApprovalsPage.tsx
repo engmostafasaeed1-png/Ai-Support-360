@@ -28,6 +28,7 @@ import { placeLabel } from '@/lib/geo';
 import { useAdminPayoutStatus } from '@/hooks/useBilling';
 import { PAYOUT_STATUS_LABELS, payoutStateFor, payoutStatusMap } from '@/lib/payoutStatus';
 import {
+import ConsultantLocation from '@/components/consultant/ConsultantLocation';
   STATE_LABELS, STATE_TONES, STATUS_FILTERS, countByStatus, countForFilter, decisionOptions, isVerificationState,
   type DecisionOption, type VerificationState,
 } from '@/lib/consultantReview';
@@ -289,7 +290,7 @@ export default function ConsultantApprovalsPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground">{c.name}</p>
                       <p className="text-xs text-muted-foreground">{c.modules.join(' · ')}</p>
-                      {c.place && <p className="text-xs text-muted-foreground">{c.place}</p>}
+                      <ConsultantLocation audience="admin" city={c.city} country={c.country} className="text-xs text-muted-foreground" />
                     </div>
                     <div className="flex items-center gap-2">
                       {!isGuest && <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); setFullProfileId(c.id); }}>{t('admin.fullProfile.view', 'View full profile')}</Button>}
