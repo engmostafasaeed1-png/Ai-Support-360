@@ -26,13 +26,13 @@ export default function PolicyDocument({ policy, lang, showTitle = true, showSum
   return (
     <div lang={lang} dir={lang === 'ar' ? 'rtl' : 'ltr'} className={cn('space-y-5 text-start', className)}>
       {showTitle && (
-        <header className="space-y-1">
+        <div className="space-y-1">
           <p className="text-2xl font-bold text-foreground">{text.title}</p>
           <p className="text-sm text-muted-foreground">
             {l.version} {policy.version}
             {policy.effectiveAt ? ` · ${l.effective} ${format(new Date(policy.effectiveAt), 'd MMM yyyy')}` : ''}
           </p>
-        </header>
+        </div>
       )}
       {sections.filter(s => s.heading === null).flatMap(s => s.blocks).filter(b => b.kind === 'note').map((b, i) => (
         <p key={`note-${i}`} className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm font-medium text-foreground">{b.text}</p>
