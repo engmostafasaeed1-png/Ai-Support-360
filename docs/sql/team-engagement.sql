@@ -19,6 +19,10 @@
 --   * Gates apply only to tickets that have at least one non-legacy team member,
 --     i.e. tickets where the client used the new team flow.
 --   * Kill switch: platform setting team_engagement.enabled (default true).
+--   * Clients AND administrators invite/remove several consultants per ticket through the same
+--     team_* functions and four gates; administrator changes are written to audit_logs.
+--   * Sections 15-16: consultant-initiated team requests (max team size, 3 open per consultant per
+--     ticket, one per 24 h, 7-day block after a decline) and a shared team thread.
 --
 -- The four gates per consultant:
 --   1 accepted  : consultant accepted the invitation, or sent a bid
@@ -1693,6 +1697,389 @@ SELECT set_config('app.team_reason', '', true);
 -- -----------------------------------------------------------------------------
 SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname = 'team-engagement-sweep';
 SELECT cron.schedule('team-engagement-sweep', '* * * * *', $cron$SELECT public.team_sweep()$cron$);
+
+-- -----------------------------------------------------------------------------
+-- 15. Consultant-initiated team requests ("Request an additional consultant")
+--     An accepted or working consultant asks the client to add someone. The client (or an
+--     administrator) approves, declines or chooses someone else; an approval only INVITES the
+--     consultant, who then goes through the normal four gates. The client pays each consultant's
+--     own approved rate (payer is always 'client'; no rate sharing between consultants).
+--     Free text goes through the M60 contact check; suggested consultants are referenced by id
+--     only and shown through public profile cards in the portal.
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.ticket_team_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ticket_id uuid NOT NULL REFERENCES public.tickets(id) ON DELETE CASCADE,
+  requester_member_id uuid NOT NULL REFERENCES public.ticket_team_members(id) ON DELETE CASCADE,
+  requester_consultant_id uuid NOT NULL REFERENCES public.consultants(id) ON DELETE CASCADE,
+  reason text NOT NULL CHECK (char_length(reason) BETWEEN 3 AND 300),
+  needed_skill text CHECK (needed_skill IS NULL OR char_length(needed_skill) <= 120),
+  suggested_consultant_id uuid REFERENCES public.consultants(id) ON DELETE SET NULL,
+  chosen_consultant_id uuid REFERENCES public.consultants(id) ON DELETE SET NULL,
+  estimated_hours numeric CHECK (estimated_hours IS NULL OR (estimated_hours > 0 AND estimated_hours <= 1000)),
+  payer text NOT NULL DEFAULT 'client' CHECK (payer = 'client'),
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'declined', 'withdrawn', 'expired')),
+  decision_note text CHECK (decision_note IS NULL OR char_length(decision_note) <= 500),
+  decided_by uuid,
+  decided_role text CHECK (decided_role IS NULL OR decided_role IN ('client', 'admin', 'consultant', 'system')),
+  decided_at timestamptz,
+  created_member_id uuid REFERENCES public.ticket_team_members(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+COMMENT ON TABLE public.ticket_team_requests IS 'Feature I: a team member asks the client to add a consultant. Written only by team_* request functions.';
+CREATE INDEX ticket_team_requests_ticket_idx ON public.ticket_team_requests (ticket_id, status, created_at DESC);
+CREATE INDEX ticket_team_requests_requester_idx ON public.ticket_team_requests (requester_consultant_id, created_at DESC);
+CREATE INDEX ticket_team_requests_suggested_idx ON public.ticket_team_requests (ticket_id, suggested_consultant_id, status);
+
+GRANT SELECT ON public.ticket_team_requests TO authenticated;
+GRANT ALL ON public.ticket_team_requests TO service_role;
+ALTER TABLE public.ticket_team_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Ticket owners see team requests" ON public.ticket_team_requests FOR SELECT TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = ticket_id AND t.client_id = auth.uid()));
+CREATE POLICY "Company members see team requests" ON public.ticket_team_requests FOR SELECT TO authenticated
+  USING (public.ticket_in_my_company(ticket_id));
+CREATE POLICY "Requesters see their own team requests" ON public.ticket_team_requests FOR SELECT TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = requester_consultant_id AND c.user_id = auth.uid()));
+CREATE POLICY "Admins see all team requests" ON public.ticket_team_requests FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'super_admin'));
+
+-- Statuses in which a consultant may ask for an additional consultant (accepted onwards, including legacy active).
+CREATE OR REPLACE FUNCTION public.team_can_request_status(_status text)
+RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
+  SELECT _status IN ('accepted', 'rate_approved', 'nda_signed', 'ready', 'active')
+$$;
+
+CREATE OR REPLACE FUNCTION public.team_notify_admins(_title text, _body text, _link text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE r record;
+BEGIN
+  FOR r IN SELECT DISTINCT ur.user_id FROM public.user_roles ur
+            WHERE ur.role::text IN ('admin', 'super_admin') LIMIT 20 LOOP
+    PERFORM public.team_notify(r.user_id, _title, _body, _link);
+  END LOOP;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.team_request_additional(
+  _ticket_id uuid, _reason text, _needed_skill text DEFAULT NULL,
+  _suggested_consultant_id uuid DEFAULT NULL, _estimated_hours numeric DEFAULT NULL)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  cfg jsonb := public.team_settings(); t record; m public.ticket_team_members; _me uuid; _id uuid; _name text;
+  _r text := NULLIF(btrim(COALESCE(_reason, '')), ''); _skill text := NULLIF(btrim(COALESCE(_needed_skill, '')), '');
+  _max int := GREATEST(COALESCE((cfg ->> 'max_team_size')::int, 5), 1);
+  _pending int := GREATEST(COALESCE((cfg ->> 'team_request_max_pending')::int, 3), 1);
+  _cool int := GREATEST(COALESCE((cfg ->> 'team_request_cooldown_hours')::int, 24), 0);
+  _redecline int := GREATEST(COALESCE((cfg ->> 'team_request_redecline_days')::int, 7), 0);
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not signed in' USING ERRCODE = '28000'; END IF;
+  IF NOT COALESCE((cfg ->> 'enabled')::boolean, true) THEN RAISE EXCEPTION 'Team engagement is switched off' USING ERRCODE = '42501'; END IF;
+  SELECT c.id INTO _me FROM public.consultants c WHERE c.user_id = auth.uid();
+  IF _me IS NULL THEN RAISE EXCEPTION 'Ticket not found' USING ERRCODE = '42501'; END IF;
+  -- one request at a time per consultant, so the limits below cannot be raced
+  PERFORM pg_advisory_xact_lock(hashtext('team-request:' || _me::text));
+
+  SELECT tk.id, tk.client_id, tk.title, tk.status::text AS st, tk.sap_modules INTO t FROM public.tickets tk WHERE tk.id = _ticket_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Ticket not found' USING ERRCODE = '42501'; END IF;
+  SELECT * INTO m FROM public.ticket_team_members tm
+   WHERE tm.ticket_id = _ticket_id AND tm.consultant_id = _me AND public.team_can_request_status(tm.status) LIMIT 1;
+  IF m.id IS NULL THEN
+    RAISE EXCEPTION 'Only a consultant who accepted this request can ask for an additional consultant' USING ERRCODE = '42501';
+  END IF;
+  IF t.st IN ('resolved', 'closed') THEN RAISE EXCEPTION 'This ticket is already finished' USING ERRCODE = '22023'; END IF;
+
+  IF _r IS NULL OR char_length(_r) < 3 OR char_length(_r) > 300 THEN
+    RAISE EXCEPTION 'Please give a short reason (3 to 300 characters)' USING ERRCODE = '22023';
+  END IF;
+  PERFORM public.team_assert_clean_text(_r);
+  _skill := COALESCE(_skill, NULLIF(array_to_string(t.sap_modules, ', '), ''));
+  IF _skill IS NOT NULL THEN
+    _skill := left(_skill, 120);
+    PERFORM public.team_assert_clean_text(_skill);
+  END IF;
+  IF _estimated_hours IS NOT NULL AND (_estimated_hours <= 0 OR _estimated_hours > 1000) THEN
+    RAISE EXCEPTION 'Estimated extra hours must be between 0 and 1000' USING ERRCODE = '22023';
+  END IF;
+
+  IF _suggested_consultant_id IS NOT NULL THEN
+    IF _suggested_consultant_id = _me THEN RAISE EXCEPTION 'You cannot suggest yourself' USING ERRCODE = '22023'; END IF;
+    IF NOT EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = _suggested_consultant_id AND c.verification_status = 'verified') THEN
+      RAISE EXCEPTION 'Please choose a verified consultant from the portal' USING ERRCODE = '22023';
+    END IF;
+    IF EXISTS (SELECT 1 FROM public.ticket_team_members tm WHERE tm.ticket_id = _ticket_id AND tm.consultant_id = _suggested_consultant_id AND public.team_live(tm.status)) THEN
+      RAISE EXCEPTION 'This consultant is already on the team' USING ERRCODE = '22023';
+    END IF;
+    IF EXISTS (SELECT 1 FROM public.ticket_team_requests q WHERE q.ticket_id = _ticket_id AND q.status = 'pending'
+                AND _suggested_consultant_id IN (q.suggested_consultant_id, q.chosen_consultant_id)) THEN
+      RAISE EXCEPTION 'This consultant is already suggested in an open request' USING ERRCODE = '22023';
+    END IF;
+    IF EXISTS (SELECT 1 FROM public.ticket_team_requests q WHERE q.ticket_id = _ticket_id AND q.status = 'declined'
+                AND q.suggested_consultant_id = _suggested_consultant_id
+                AND q.decided_at > now() - make_interval(days => _redecline)) THEN
+      RAISE EXCEPTION 'The client declined this consultant recently; you can suggest them again after % days', _redecline USING ERRCODE = '54000';
+    END IF;
+  END IF;
+
+  IF (SELECT count(*) FROM public.ticket_team_members tm WHERE tm.ticket_id = _ticket_id AND public.team_live(tm.status)) >= _max THEN
+    RAISE EXCEPTION 'The team is already full (% consultants)', _max USING ERRCODE = '22023';
+  END IF;
+  IF (SELECT count(*) FROM public.ticket_team_requests q WHERE q.ticket_id = _ticket_id AND q.requester_consultant_id = _me AND q.status = 'pending') >= _pending THEN
+    RAISE EXCEPTION 'You already have % open team requests on this ticket', _pending USING ERRCODE = '54000';
+  END IF;
+  IF _cool > 0 AND EXISTS (SELECT 1 FROM public.ticket_team_requests q WHERE q.requester_consultant_id = _me
+                            AND q.created_at > now() - make_interval(hours => _cool)) THEN
+    RAISE EXCEPTION 'You can send one team request every % hours', _cool USING ERRCODE = '54000';
+  END IF;
+
+  INSERT INTO public.ticket_team_requests (ticket_id, requester_member_id, requester_consultant_id, reason, needed_skill, suggested_consultant_id, estimated_hours)
+  VALUES (_ticket_id, m.id, _me, _r, _skill, _suggested_consultant_id, _estimated_hours)
+  RETURNING id INTO _id;
+  PERFORM public.team_audit('team_request.created', 'ticket_team_request', _id,
+    jsonb_build_object('ticket_id', _ticket_id, 'requester_consultant_id', _me, 'suggested_consultant_id', _suggested_consultant_id));
+
+  _name := public.team_consultant_name(_me);
+  PERFORM public.team_notify(t.client_id, 'Team request',
+    _name || ' asks to add a consultant to "' || left(COALESCE(t.title, 'your request'), 80) || '": ' || left(_r, 200),
+    '/client/tickets/' || _ticket_id || '?tab=work');
+  PERFORM public.team_notify_admins('Team request (copy)',
+    _name || ' asks to add a consultant to "' || left(COALESCE(t.title, 'a request'), 80) || '".',
+    '/admin/tickets/' || _ticket_id);
+  RETURN _id;
+END $$;
+
+-- Client (or administrator) answers: 'approve' (invite the suggested consultant), 'choose' (invite someone else) or 'decline'.
+CREATE OR REPLACE FUNCTION public.team_decide_request(_request_id uuid, _decision text, _consultant_id uuid DEFAULT NULL, _note text DEFAULT NULL)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE q public.ticket_team_requests; t record; _admin boolean := public.team_is_admin(); _req_user uuid; _target uuid;
+  _n text := NULLIF(btrim(COALESCE(_note, '')), ''); res jsonb; _member uuid; _why text;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not signed in' USING ERRCODE = '28000'; END IF;
+  SELECT * INTO q FROM public.ticket_team_requests WHERE id = _request_id FOR UPDATE;
+  SELECT tk.client_id, tk.title INTO t FROM public.tickets tk WHERE tk.id = q.ticket_id;
+  IF q.id IS NULL OR (t.client_id IS DISTINCT FROM auth.uid() AND NOT _admin) THEN
+    RAISE EXCEPTION 'Team request not found' USING ERRCODE = '42501';
+  END IF;
+  IF q.status <> 'pending' THEN RAISE EXCEPTION 'This team request was already answered' USING ERRCODE = '22023'; END IF;
+  IF _n IS NOT NULL THEN
+    IF char_length(_n) > 500 THEN RAISE EXCEPTION 'The note is too long' USING ERRCODE = '22023'; END IF;
+    PERFORM public.team_assert_clean_text(_n);
+  END IF;
+  SELECT c.user_id INTO _req_user FROM public.consultants c WHERE c.id = q.requester_consultant_id;
+
+  IF _decision = 'decline' THEN
+    UPDATE public.ticket_team_requests SET status = 'declined', decision_note = _n, decided_by = auth.uid(),
+      decided_role = CASE WHEN auth.uid() = t.client_id THEN 'client' ELSE 'admin' END, decided_at = now()
+     WHERE id = q.id;
+    PERFORM public.team_audit('team_request.declined', 'ticket_team_request', q.id, jsonb_build_object('ticket_id', q.ticket_id));
+    PERFORM public.team_notify(_req_user, 'Team request declined',
+      'The client declined your request to add a consultant to "' || left(COALESCE(t.title, 'the request'), 80) || '".'
+        || COALESCE(' Note: ' || left(_n, 200), ''),
+      '/consultant/tickets/' || q.ticket_id);
+    RETURN jsonb_build_object('status', 'declined');
+  ELSIF _decision NOT IN ('approve', 'choose') THEN
+    RAISE EXCEPTION 'Unknown decision' USING ERRCODE = '22023';
+  END IF;
+
+  _target := CASE WHEN _decision = 'choose' THEN _consultant_id ELSE COALESCE(_consultant_id, q.suggested_consultant_id) END;
+  IF _target IS NULL THEN RAISE EXCEPTION 'Please choose a consultant to invite' USING ERRCODE = '22023'; END IF;
+  IF _target = q.requester_consultant_id THEN RAISE EXCEPTION 'This consultant is already on the team' USING ERRCODE = '22023'; END IF;
+
+  -- the normal invitation path: four gates, team size, verified-only, recent-decline rules all apply
+  res := public.team_invite(q.ticket_id,
+    jsonb_build_array(jsonb_build_object('consultant_id', _target, 'mode', 'normal', 'role', 'support', 'primary', false)),
+    'Invited at the request of a team member: ' || q.reason, NULL);
+  _member := ((res -> 'invited' -> 0) ->> 'member_id')::uuid;
+  IF _member IS NULL THEN
+    _why := COALESCE((res -> 'skipped' -> 0) ->> 'reason', CASE WHEN jsonb_array_length(COALESCE(res -> 'already', '[]'::jsonb)) > 0 THEN 'already_on_team' END, 'unknown');
+    RAISE EXCEPTION '%', CASE _why
+      WHEN 'team_full' THEN 'The team is already full'
+      WHEN 'already_on_team' THEN 'This consultant is already on the team'
+      WHEN 'not_verified' THEN 'This consultant is not verified'
+      WHEN 'declined_recently' THEN 'This consultant declined recently and cannot be invited again yet'
+      ELSE 'This consultant could not be invited' END USING ERRCODE = '22023';
+  END IF;
+
+  UPDATE public.ticket_team_requests SET status = 'approved', decision_note = _n, decided_by = auth.uid(),
+    decided_role = CASE WHEN auth.uid() = t.client_id THEN 'client' ELSE 'admin' END, decided_at = now(),
+    chosen_consultant_id = CASE WHEN _target IS DISTINCT FROM q.suggested_consultant_id THEN _target END,
+    created_member_id = _member
+   WHERE id = q.id;
+  PERFORM public.team_audit('team_request.approved', 'ticket_team_request', q.id,
+    jsonb_build_object('ticket_id', q.ticket_id, 'invited_consultant_id', _target, 'member_id', _member, 'decision', _decision));
+  PERFORM public.team_notify(_req_user, 'Team request approved',
+    public.team_consultant_name(_target) || ' was invited to the team for "' || left(COALESCE(t.title, 'the request'), 80)
+      || '"' || CASE WHEN _target IS DISTINCT FROM q.suggested_consultant_id AND q.suggested_consultant_id IS NOT NULL
+                     THEN ' (the client chose a different consultant)' ELSE '' END
+      || '. They start once the four steps are done.',
+    '/consultant/tickets/' || q.ticket_id);
+  RETURN jsonb_build_object('status', 'approved', 'member_id', _member, 'consultant_id', _target);
+END $$;
+
+CREATE OR REPLACE FUNCTION public.team_withdraw_request(_request_id uuid)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE q public.ticket_team_requests;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not signed in' USING ERRCODE = '28000'; END IF;
+  SELECT * INTO q FROM public.ticket_team_requests WHERE id = _request_id FOR UPDATE;
+  IF q.id IS NULL OR NOT EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = q.requester_consultant_id AND c.user_id = auth.uid()) THEN
+    RAISE EXCEPTION 'Team request not found' USING ERRCODE = '42501';
+  END IF;
+  IF q.status <> 'pending' THEN RAISE EXCEPTION 'This team request was already answered' USING ERRCODE = '22023'; END IF;
+  UPDATE public.ticket_team_requests SET status = 'withdrawn', decided_by = auth.uid(), decided_role = 'consultant', decided_at = now() WHERE id = q.id;
+  PERFORM public.team_audit('team_request.withdrawn', 'ticket_team_request', q.id, jsonb_build_object('ticket_id', q.ticket_id));
+END $$;
+
+-- Request cards for the ticket page: clients, company colleagues and admins get all; a consultant gets only their own.
+-- Display names only; no contact details or private profile fields.
+CREATE OR REPLACE FUNCTION public.team_requests(_ticket_id uuid)
+RETURNS TABLE (
+  request_id uuid, status text, reason text, needed_skill text, estimated_hours numeric, payer text,
+  requester_consultant_id uuid, requester_name text, suggested_consultant_id uuid, suggested_name text,
+  chosen_consultant_id uuid, chosen_name text, created_member_id uuid, decision_note text, decided_role text,
+  decided_at timestamptz, created_at timestamptz, mine boolean)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE _all boolean; _me uuid;
+BEGIN
+  IF auth.uid() IS NULL THEN RETURN; END IF;
+  _all := EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = _ticket_id AND t.client_id = auth.uid())
+          OR public.ticket_in_my_company(_ticket_id) OR public.team_is_admin();
+  SELECT c.id INTO _me FROM public.consultants c WHERE c.user_id = auth.uid();
+  RETURN QUERY
+  SELECT q.id, q.status, q.reason, q.needed_skill, q.estimated_hours, q.payer,
+         q.requester_consultant_id, public.team_consultant_name(q.requester_consultant_id),
+         q.suggested_consultant_id, CASE WHEN q.suggested_consultant_id IS NOT NULL THEN public.team_consultant_name(q.suggested_consultant_id) END,
+         q.chosen_consultant_id, CASE WHEN q.chosen_consultant_id IS NOT NULL THEN public.team_consultant_name(q.chosen_consultant_id) END,
+         q.created_member_id, q.decision_note, q.decided_role, q.decided_at, q.created_at,
+         (_me IS NOT NULL AND q.requester_consultant_id = _me)
+    FROM public.ticket_team_requests q
+   WHERE q.ticket_id = _ticket_id AND (_all OR (_me IS NOT NULL AND q.requester_consultant_id = _me))
+   ORDER BY q.created_at DESC
+   LIMIT 100;
+END $$;
+
+-- Called from team_sweep(): open requests end when the requester left, the ticket finished, or nobody answered in 14 days.
+CREATE OR REPLACE FUNCTION public.team_requests_sweep()
+RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE r record; _n int := 0;
+BEGIN
+  FOR r IN SELECT q.id, q.ticket_id FROM public.ticket_team_requests q
+             JOIN public.tickets t ON t.id = q.ticket_id
+             LEFT JOIN public.ticket_team_members m ON m.id = q.requester_member_id
+            WHERE q.status = 'pending'
+              AND (m.id IS NULL OR NOT public.team_can_request_status(m.status)
+                   OR t.status::text IN ('resolved', 'closed') OR q.created_at < now() - interval '14 days')
+            ORDER BY q.created_at LIMIT 500
+            FOR UPDATE OF q SKIP LOCKED LOOP
+    UPDATE public.ticket_team_requests SET status = 'expired', decided_role = 'system', decided_at = now() WHERE id = r.id;
+    PERFORM public.team_audit('team_request.expired', 'ticket_team_request', r.id, jsonb_build_object('ticket_id', r.ticket_id));
+    _n := _n + 1;
+  END LOOP;
+  RETURN _n;
+END $$;
+
+-- -----------------------------------------------------------------------------
+-- 16. Team thread: one shared conversation per ticket for the client, company colleagues,
+--     administrators and members who passed all four gates (ready / active, legacy included).
+--     Display names only; text only; M60 contact check on every message. The existing private
+--     client-consultant threads (sessions + messages) are unchanged.
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.ticket_team_messages (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ticket_id uuid NOT NULL REFERENCES public.tickets(id) ON DELETE CASCADE,
+  sender_id uuid NOT NULL,
+  sender_role text NOT NULL CHECK (sender_role IN ('client', 'consultant', 'admin')),
+  sender_consultant_id uuid REFERENCES public.consultants(id) ON DELETE SET NULL,
+  body text NOT NULL CHECK (char_length(body) BETWEEN 1 AND 4000),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+COMMENT ON TABLE public.ticket_team_messages IS 'Feature I: shared team thread per ticket. Written only by team_post_message().';
+CREATE INDEX ticket_team_messages_ticket_idx ON public.ticket_team_messages (ticket_id, created_at DESC);
+
+GRANT SELECT ON public.ticket_team_messages TO authenticated;
+GRANT ALL ON public.ticket_team_messages TO service_role;
+ALTER TABLE public.ticket_team_messages ENABLE ROW LEVEL SECURITY;
+
+-- 'client' | 'consultant' | 'admin' when the caller may use the team thread, otherwise NULL.
+CREATE OR REPLACE FUNCTION public.team_thread_role(_ticket_id uuid)
+RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT CASE
+    WHEN auth.uid() IS NULL THEN NULL
+    WHEN EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = _ticket_id AND t.client_id = auth.uid()) OR public.ticket_in_my_company(_ticket_id) THEN 'client'
+    WHEN EXISTS (SELECT 1 FROM public.ticket_team_members m JOIN public.consultants c ON c.id = m.consultant_id
+                  WHERE m.ticket_id = _ticket_id AND c.user_id = auth.uid() AND m.status IN ('ready', 'active')) THEN 'consultant'
+    WHEN public.team_is_admin() THEN 'admin'
+  END
+$$;
+
+CREATE POLICY "Team thread participants read messages" ON public.ticket_team_messages FOR SELECT TO authenticated
+  USING (public.team_thread_role(ticket_id) IS NOT NULL);
+
+CREATE OR REPLACE FUNCTION public.team_post_message(_ticket_id uuid, _body text)
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE _role text := public.team_thread_role(_ticket_id); _b text := NULLIF(btrim(COALESCE(_body, '')), ''); _id uuid; _cons uuid;
+  _per_min int := GREATEST(COALESCE((public.team_settings() ->> 'team_chat_per_minute')::int, 20), 1);
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not signed in' USING ERRCODE = '28000'; END IF;
+  IF _role IS NULL THEN RAISE EXCEPTION 'Ticket not found' USING ERRCODE = '42501'; END IF;
+  IF _b IS NULL OR char_length(_b) > 4000 THEN RAISE EXCEPTION 'Write a message of up to 4000 characters' USING ERRCODE = '22023'; END IF;
+  PERFORM public.team_assert_clean_text(_b);
+  IF NOT public.check_rate_limit('team-chat:' || auth.uid()::text, _per_min, 60) THEN
+    RAISE EXCEPTION 'You are sending messages too quickly; please wait a moment' USING ERRCODE = '54000';
+  END IF;
+  IF _role = 'consultant' THEN SELECT c.id INTO _cons FROM public.consultants c WHERE c.user_id = auth.uid(); END IF;
+  INSERT INTO public.ticket_team_messages (ticket_id, sender_id, sender_role, sender_consultant_id, body)
+  VALUES (_ticket_id, auth.uid(), _role, _cons, _b) RETURNING id INTO _id;
+  RETURN _id;
+END $$;
+
+-- Thread page (newest first). Names: consultant display name, client display name, or "Administrator".
+CREATE OR REPLACE FUNCTION public.team_thread(_ticket_id uuid, _before timestamptz DEFAULT NULL, _limit integer DEFAULT 50)
+RETURNS TABLE (message_id uuid, sender_role text, sender_name text, mine boolean, body text, created_at timestamptz)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF public.team_thread_role(_ticket_id) IS NULL THEN RETURN; END IF;
+  RETURN QUERY
+  SELECT tm.id, tm.sender_role,
+         CASE tm.sender_role
+           WHEN 'consultant' THEN public.team_consultant_name(tm.sender_consultant_id)
+           WHEN 'admin' THEN 'Administrator'
+           ELSE COALESCE((SELECT NULLIF(btrim(p.display_name), '') FROM public.profiles p WHERE p.user_id = tm.sender_id), 'Client') END,
+         tm.sender_id = auth.uid(), tm.body, tm.created_at
+    FROM public.ticket_team_messages tm
+   WHERE tm.ticket_id = _ticket_id AND (_before IS NULL OR tm.created_at < _before)
+   ORDER BY tm.created_at DESC
+   LIMIT LEAST(GREATEST(COALESCE(_limit, 50), 1), 100);
+END $$;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.ticket_team_messages;
+  END IF;
+END $$;
+
+-- -----------------------------------------------------------------------------
+-- 17. Privileges for sections 15 and 16
+-- -----------------------------------------------------------------------------
+REVOKE ALL ON FUNCTION public.team_notify_admins(text, text, text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.team_requests_sweep() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.team_requests_sweep() TO service_role;
+GRANT EXECUTE ON FUNCTION public.team_can_request_status(text) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.team_thread_role(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.team_thread_role(uuid) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.team_request_additional(uuid, text, text, uuid, numeric) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.team_decide_request(uuid, text, uuid, text) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.team_withdraw_request(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.team_requests(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.team_post_message(uuid, text) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.team_thread(uuid, timestamptz, integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.team_request_additional(uuid, text, text, uuid, numeric) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.team_decide_request(uuid, text, uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.team_withdraw_request(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.team_requests(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.team_post_message(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.team_thread(uuid, timestamptz, integer) TO authenticated;
 
 -- =============================================================================
 -- To switch the gates off without removing anything:
