@@ -46,6 +46,26 @@ describe('isExpectedFailure', () => {
     expect(isExpectedFailure({ message: 'The consultant has not entered bank details for payouts yet' })).toBe(true);
   });
 
+  it('treats the bank-details input rules as expected, even without a database code', () => {
+    for (const message of [
+      'The account number must have 4 to 34 letters, digits or dashes',
+      'The IBAN is not valid: check the letters and digits',
+      'The SWIFT / BIC must have 8 or 11 letters and digits',
+      'The account holder and the bank name need 2 to 120 characters',
+      'Enter an IBAN or an account number',
+      'Please read the disclaimer and confirm it before saving your bank details',
+    ]) {
+      expect(isExpectedFailure({ message }), message).toBe(true);
+    }
+  });
+
+  it('never sends a bank-details input message to the error reports', () => {
+    vi.clearAllMocks();
+    reportQueryFailure('Mutation failed', new Error('The account number must have 4 to 34 letters, digits or dashes'));
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps server errors and code mistakes as real failures', () => {
     for (const code of ['42703', '42P01', '57014', 'PGRST100']) {
       expect(isExpectedFailure({ message: 'x', code }), code).toBe(false);
