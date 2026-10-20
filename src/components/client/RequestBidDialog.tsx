@@ -17,6 +17,7 @@ import { Loader2, Gavel, Globe, ShieldCheck, Clock, AlertTriangle, CheckCircle2,
 import { useTicketBids } from '@/hooks/useClientBids';
 import { deadlineFromOption, deadlineOptions, type DeadlineOption } from '@/lib/clientBidding';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MatchWhyChips from '@/components/match/MatchWhyChips';
 
 type BidMode = 'select' | 'open' | 'manual' | 'ai';
 
@@ -120,11 +121,27 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
     }
   }, [open, isOpenForBids]);
 
-  // AI recommendation: sort by module match + rating
-  const aiRecommended = (consultants || [])
-    .filter(c => c.hasModule)
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 5);
+  // Recommended: the same explainable ranking used on the ticket page (full request, hard filters, why-chips).
+  const { data: matchResult, isLoading: loadingMatches } = useQuery({
+    queryKey: ['bid-matches', ticketId],
+    enabled: open && mode === 'ai',
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('ai-ticket', {
+        body: { action: 'match_consultants', ticket_id: ticketId, title: ticketTitle || 'Untitled', sap_module: ticketModule },
+      });
+      if (error) throw error;
+      return (data?.result?.recommendations ?? []) as any[];
+    },
+  });
+  const byId = new Map((consultants || []).map(c => [c.id, c]));
+  const aiRecommended = (matchResult ?? [])
+    .filter(r => !hiddenIds || !(hiddenIds as any).has?.(r.consultant_id))
+    .map(r => {
+      const base = byId.get(r.consultant_id);
+      return { id: r.consultant_id, name: base?.name || r.name || 'Consultant', hourly_rate: base?.hourly_rate ?? r.hourly_rate, rating: Number(base?.rating ?? r.rating) || 0,
+        city: base?.city, country: base?.country, skills: base?.skills ?? r.top_skills ?? [], hasModule: false, match: r };
+    });
 
   const filteredConsultants = (consultants || []).filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -246,6 +263,12 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
       )}
     </div>
   );
+  const MatchedCard = ({ c }: { c: any }) => (
+    <div>
+      <ConsultantCard c={c} />
+      <div className="ps-9 pb-1"><MatchWhyChips why={c.match?.why} score={c.match?.match_score} /></div>
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -258,13 +281,13 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
               </Button>
             )}
             <Gavel className="w-5 h-5 text-accent" />
-            {mode === 'select' ? 'Request Bids' : mode === 'open' ? 'Public bids' : mode === 'manual' ? 'Select Consultants' : 'AI Recommended'}
+            {mode === 'select' ? 'Request Bids' : mode === 'open' ? 'Public bids' : mode === 'manual' ? 'Select Consultants' : 'Recommended'}
           </DialogTitle>
           <DialogDescription className="text-sm">
             {mode === 'select' && 'Choose how you want to invite consultants to bid'}
             {mode === 'open' && 'Open your ticket for all verified consultants'}
             {mode === 'manual' && 'Search and select consultants to invite privately'}
-            {mode === 'ai' && 'AI-recommended consultants based on ticket requirements'}
+            {mode === 'ai' && 'Best-matching consultants for this request, with the reasons for each match'}
           </DialogDescription>
         </DialogHeader>
 
@@ -301,8 +324,8 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
               />
               <ModeOption
                 icon={<Sparkles className="w-5 h-5 text-accent" />}
-                title="Private Bid — AI Recommended"
-                description="AI selects best-matching consultants for your ticket"
+                title="Private Bid — Recommended"
+                description="Best-matching consultants for your request, with the reasons"
                 onClick={() => setMode('ai')}
               />
             </div>
@@ -356,8 +379,8 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
               />
               <ModeOption
                 icon={<Sparkles className="w-5 h-5 text-accent" />}
-                title="AI Recommendations"
-                description="Get AI-suggested consultants based on your ticket"
+                title="Recommendations"
+                description="Best-matching consultants for your request"
                 onClick={() => setMode('ai')}
               />
               <Button variant="ghost" size="sm" className="text-xs" onClick={() => setIsEditing(false)}>
@@ -446,20 +469,20 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
                 </span>
               </div>
 
-              {loadingConsultants ? (
+              {loadingConsultants || loadingMatches ? (
                 Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)
               ) : aiRecommended.length === 0 ? (
                 <Card className="rounded-xl border-border/50">
                   <CardContent className="py-6 text-center">
-                    <p className="text-xs text-muted-foreground">No module-matched consultants found. Try manual selection.</p>
+                    <p className="text-xs text-muted-foreground">No matching consultants found for this request. Try manual selection.</p>
                     <Button variant="link" size="sm" className="text-xs mt-1" onClick={() => setMode('manual')}>
                       Browse All Consultants
                     </Button>
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                  {aiRecommended.map(c => <ConsultantCard key={c.id} c={c} />)}
+                <div className="space-y-1.5 max-h-72 overflow-y-auto">
+                  {aiRecommended.map(c => <MatchedCard key={c.id} c={c} />)}
                 </div>
               )}
 
