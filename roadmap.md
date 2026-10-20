@@ -52,8 +52,9 @@
 - [ ] Feature H addition (read every consultant profile field): profile-text matcher written but not tested or switched on; SQL file not written. Waiting for the owner to say continue.
 - [x] Feature I step 1: read-only inventory + design, approved by the owner (Oct 20)
 - [x] Feature I phase 1: team engagement SQL file docs/sql/team-engagement.sql written and syntax-checked (Oct 20)
-- [ ] Feature I SQL: owner applies docs/sql/team-engagement.sql
-- [ ] Feature I phase 2 (after the SQL is applied): engage dialog, Team panel with per-member stepper, engagement confirmation card, consultant invitation answers, admin settings, email/push/Telegram for critical, tests, Arabic strings
+- [x] Feature I phase 1 addition: admin multi-assign through the same gates with audit, consultant team requests (limits, approve/decline/choose), team thread; SQL + post-apply checks (docs/sql/team-engagement.test.sql) + rule tests + Arabic strings (docs/team-engagement.md) (Oct 20)
+- [ ] Feature I SQL: owner applies docs/sql/team-engagement.sql, then runs docs/sql/team-engagement.test.sql
+- [ ] Feature I phase 2 (after the SQL is applied): engage dialog, Team panel with per-member stepper (client and admin), engagement confirmation card, consultant invitation answers, team request button + request cards, team chat, client e-mail for team requests, admin settings, email/push/Telegram for critical, tests, Arabic strings
 
 - [x] Fix J: AI interview start resumes/reuses open sessions with visible reasons, preflight and text-only; completion includes a weighted AI interview (default 15 %).
 - [ ] Fix J database update `docs/sql/interview-completion.sql` (then `profile-reminders.sql`): awaits owner applying it; until then the app uses the default 15 % share and the admin share control reports it is not yet available.
