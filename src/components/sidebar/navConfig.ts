@@ -175,6 +175,7 @@ export const consultantNavGroups: NavGroup[] = [
     items: [
       { key: 'reports', icon: PieChart, path: '/consultant/reports' },
       { key: 'reviews', icon: StarHalf, path: '/consultant/reviews' },
+      { key: 'responsiveness', icon: Gauge, path: '/consultant/responsiveness', fallback: 'My responsiveness' },
       { key: 'satisfaction', icon: Star, path: '/consultant/satisfaction' },
     ],
   },
@@ -226,6 +227,7 @@ export const adminNavGroups: NavGroup[] = [
       { key: 'approvals', icon: UserCheck, path: '/admin/approvals' },
       { key: 'client_approvals', icon: BadgeCheck, path: '/admin/client-approvals', fallback: 'Client approvals' },
       { key: 'client_ratings', icon: StarHalf, path: '/admin/client-reviews', fallback: 'Client ratings' },
+      { key: 'responsiveness_admin', icon: Gauge, path: '/admin/responsiveness', fallback: 'Consultant responsiveness' },
       { key: 'interview_training', icon: Brain, path: '/admin/interview-training' },
       { key: 'question_library', icon: BookMarked, path: '/admin/question-library', fallback: 'Question library' },
       { key: 'interview_templates', icon: LayoutTemplate, path: '/admin/interview-templates', fallback: 'Interview templates' },

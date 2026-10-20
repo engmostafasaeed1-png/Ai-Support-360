@@ -70,6 +70,8 @@ const ConsultantDashboard = lazyWithRetry(() => import("./pages/consultant/Consu
 const CasesPage = lazyWithRetry(() => import("./pages/consultant/CasesPage.tsx"), 'CasesPage');
 const CaseDetailPage = lazyWithRetry(() => import("./pages/consultant/CaseDetailPage.tsx"), 'CaseDetailPage');
 const RequestsPage = lazyWithRetry(() => import("./pages/consultant/RequestsPage.tsx"), 'RequestsPage');
+const ResponsivenessPage = lazyWithRetry(() => import("./pages/consultant/ResponsivenessPage.tsx"), 'ResponsivenessPage');
+const ResponsivenessAdminPage = lazyWithRetry(() => import("./pages/admin/ResponsivenessAdminPage.tsx"), 'ResponsivenessAdminPage');
 const ProposalsPage = lazyWithRetry(() => import("./pages/consultant/ProposalsPage.tsx"), 'ProposalsPage');
 const OpenTicketsPage = lazyWithRetry(() => import("./pages/consultant/OpenTicketsPage.tsx"), 'OpenTicketsPage');
 const WorkDiaryPage = lazyWithRetry(() => import("./pages/consultant/WorkDiaryPage.tsx"), 'WorkDiaryPage');
@@ -320,6 +322,7 @@ const App = () => (
               <Route path="onboarding" element={<OnboardingPage />} />
               <Route path="remote-access" element={<RemoteAccessPage />} />
               <Route path="reviews" element={<ReviewsPage />} />
+              <Route path="responsiveness" element={<ResponsivenessPage />} />
               <Route path="settings" element={<ConsultantSettingsPage />} />
               <Route path="knowledge" element={<ConsultantKnowledgePage />} />
               <Route path="proposals" element={<ProposalsPage />} />
@@ -437,6 +440,7 @@ const App = () => (
               <Route path="oncall" element={<OnCallSchedulePage />} />
               <Route path="errors" element={<AdminErrorsPage />} />
               <Route path="payments" element={<AdminPaymentsPage />} />
+              <Route path="responsiveness" element={<ResponsivenessAdminPage />} />
               <Route path="knowledge-review" element={<AdminKnowledgeReviewPage />} />
               <Route path="client-approvals" element={<AdminClientApprovalsPage />} />
               <Route path="client-reviews" element={<AdminClientReviewsPage />} />
