@@ -1,5 +1,6 @@
 // Consultant directory filters: one typed state, kept in the URL query string (shareable), applied to the loaded list,
 // with counts per option and a "best match" ranking that reuses the deterministic ticket matcher.
+import type { RespLevel } from '../../supabase/functions/_shared/responsiveness';
 import type { ConsultantLive, WeeklySlot } from './consultantDirectory';
 import { STATE_META } from './mapMarkers';
 import {
@@ -245,8 +246,9 @@ export function filtersAsTicket(f: DirectoryFilters): MatchTicket {
   };
 }
 
-export function toMatchConsultant(c: ConsultantLive, founding: ReadonlySet<string>): MatchConsultant {
+export function toMatchConsultant(c: ConsultantLive, founding: ReadonlySet<string>, levels?: ReadonlyMap<string, RespLevel> | null): MatchConsultant {
   return {
+    ...(levels ? { responsiveness_level: levels.get(c.id) ?? 'new' } : {}),
     id: c.id, verification_status: c.verification_status, availability_status: c.status,
     skills: (c.skills ?? [c.specialty]).map((m) => ({ module: m, years: c.total_sap_years ?? null })),
     certifications: (c.certifications ?? []).map((name) => ({ name })),
@@ -261,13 +263,13 @@ export function toMatchConsultant(c: ConsultantLive, founding: ReadonlySet<strin
 export type DirectoryMatch = { score: number; chips: Chip[] };
 
 /** Match % and why-chips per consultant; null when no filter or search gives the ranking something to match. */
-export function directoryMatches(list: ConsultantLive[], f: DirectoryFilters, founding: ReadonlySet<string>): Map<string, DirectoryMatch> | null {
+export function directoryMatches(list: ConsultantLive[], f: DirectoryFilters, founding: ReadonlySet<string>, levels?: ReadonlyMap<string, RespLevel> | null): Map<string, DirectoryMatch> | null {
   const t = filtersAsTicket(f);
   if (!t.title && !t.sap_modules && !t.industry && !t.customer_segment && !t.country && !t.deployment && !t.work_mode && !t.budget_max_rate && !t.vertical_solutions) return null;
   const s = extractTicketSignals(t);
   const out = new Map<string, DirectoryMatch>();
   for (const c of list) {
-    const r = scoreConsultant(toMatchConsultant(c, founding), t, s);
+    const r = scoreConsultant(toMatchConsultant(c, founding, levels), t, s);
     out.set(c.id, { score: r.score, chips: r.chips });
   }
   return out;
