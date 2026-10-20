@@ -1,4 +1,4 @@
--- Feature M: consultant responsiveness statistics (fair metrics, warnings, card level, blended rating, ranking, disputes).
+-- Feature M: consultant responsiveness statistics (fair metrics, polite notices, card level, blended rating, ranking, disputes).
 -- NOT APPLIED by the agent: review and apply yourself, AFTER docs/sql/assignment-response.sql (Feature L).
 --
 -- What it counts (all computed here, never in the browser):
@@ -548,40 +548,41 @@ BEGIN
   v_lang := public.assignment_user_lang(ev.uid);
   v_title := left(COALESCE(ev.ttitle, CASE WHEN v_lang = 'ar' THEN 'طلب' ELSE 'a request' END), 80);
   IF _kind LIKE 'warning_%' THEN
+    -- Owner rule: polite notifications, never the word "warning".
     v_k := substr(_kind, 9)::INT;
     IF v_lang = 'ar' THEN
-      v_t := 'تحذير ' || v_k || ' من ' || v_w || ': لا يوجد رد';
-      v_b := 'لم ترد على "' || v_title || '" في الوقت المحدد، ويُحتسب ذلك ضمن نسبة ردك. تحذير ' || v_k || ' من ' || v_w
-             || ': تكرار عدم الرد سيُظهر شارة "الاستجابة" على بطاقتك ويؤثر على ترتيبك. يمكنك الاعتراض خلال ' || (s->>'dispute_days') || ' أيام.';
+      v_t := 'إشعار ودي ' || v_k || ' من ' || v_w || ': طلب لم يُرد عليه في الوقت';
+      v_b := 'لاحظنا أن الطلب "' || v_title || '" لم يُرد عليه خلال المهلة المحددة، لذا يُحتسب ضمن نسبة استجابتك. هذا الإشعار الودي ' || v_k || ' من ' || v_w
+             || '. إذا تكرر عدم الرد فقد يظهر مؤشر الاستجابة على بطاقتك وقد يتأثر ترتيبك. يسعدنا استلام اعتراضك خلال ' || (s->>'dispute_days') || ' أيام إذا لم يكن ذلك بسببك.';
     ELSE
-      v_t := 'Warning ' || v_k || ' of ' || v_w || ': no response';
-      v_b := 'You did not answer "' || v_title || '" in time and it counts against your response rate. Warning ' || v_k || ' of ' || v_w
-             || ': repeated non-response will show a Response badge on your card and affect your ranking. You can dispute it within '
+      v_t := 'Friendly notice ' || v_k || ' of ' || v_w || ': a request was not answered in time';
+      v_b := 'We noticed that "' || v_title || '" was not answered within the time limit, so it is included in your response rate. This is friendly notice ' || v_k || ' of ' || v_w
+             || '. If more requests go unanswered, a Responsiveness indicator may appear on your card and your ranking may be affected. If it was not your fault, you are welcome to dispute it within '
              || (s->>'dispute_days') || ' days.';
     END IF;
   ELSIF _kind = 'badge_visible' THEN
     IF v_lang = 'ar' THEN
-      v_t := 'مؤشر الاستجابة: يحتاج إلى تحسين';
-      v_b := 'لم ترد على "' || v_title || '" في الوقت المحدد. هذه المرة رقم ' || v_n || ' خلال 30 يوماً، لذا يمكن أن يظهر مؤشر الاستجابة على بطاقتك بمستوى "يحتاج إلى تحسين" ويؤثر على ترتيبك. يتحسن تلقائياً عندما ترد على الطلبات الجديدة في الوقت.';
+      v_t := 'أصبح مؤشر الاستجابة ظاهراً على بطاقتك';
+      v_b := 'لاحظنا أن الطلب "' || v_title || '" لم يُرد عليه خلال المهلة المحددة. وبما أن هذا الطلب رقم ' || v_n || ' دون رد خلال 30 يوماً، فقد تُظهر بطاقتك الآن مستوى "يحتاج إلى تحسين" للاستجابة وقد يتأثر ترتيبك. يتحسن المؤشر تلقائياً عندما ترد على الطلبات الجديدة في الوقت، ويسعدنا مساعدتك.';
     ELSE
-      v_t := 'Responsiveness: Needs improvement';
-      v_b := 'You did not answer "' || v_title || '" in time. This is no-response number ' || v_n || ' in 30 days, so your Responsiveness indicator can show "Needs improvement" on your card and affects your ranking. It recovers automatically as you answer new requests in time.';
+      v_t := 'Your Responsiveness indicator is now shown';
+      v_b := 'We noticed that "' || v_title || '" was not answered within the time limit. As this is unanswered request number ' || v_n || ' in 30 days, your card may now show "Needs improvement" for responsiveness and your ranking may be affected. It improves automatically as you answer new requests in time, and we are happy to help.';
     END IF;
   ELSIF _kind = 'counted' THEN
     IF v_lang = 'ar' THEN
-      v_t := 'عدم رد محتسب';
-      v_b := 'لم ترد على "' || v_title || '" في الوقت المحدد، ويُحتسب ذلك ضمن نسبة ردك (' || v_n || ' خلال آخر 30 يوماً).';
+      v_t := 'طلب لم يُرد عليه في الوقت';
+      v_b := 'لاحظنا أن الطلب "' || v_title || '" لم يُرد عليه خلال المهلة المحددة، لذا يُحتسب ضمن نسبة استجابتك (' || v_n || ' خلال آخر 30 يوماً).';
     ELSE
-      v_t := 'No response counted';
-      v_b := 'You did not answer "' || v_title || '" in time. It counts against your response rate (' || v_n || ' in the last 30 days).';
+      v_t := 'A request was not answered in time';
+      v_b := 'We noticed that "' || v_title || '" was not answered within the time limit, so it is included in your response rate (' || v_n || ' in the last 30 days).';
     END IF;
   ELSIF _kind = 'not_counted' THEN
     IF v_lang = 'ar' THEN
-      v_t := 'لا يوجد رد، غير محتسب';
-      v_b := 'لم ترد على "' || v_title || '" في الوقت المحدد، لكنه وصل خارج أوقات توفرك، لذلك لا يُحتسب في نسبة ردك.';
+      v_t := 'طلب لم يُرد عليه (غير محتسب)';
+      v_b := 'لم يُرد على الطلب "' || v_title || '" خلال المهلة، لكنه وصل خارج أوقات توفرك، لذلك لا يُحتسب في نسبة استجابتك. لا يلزم أي إجراء.';
     ELSE
-      v_t := 'No response, not counted';
-      v_b := 'You did not answer "' || v_title || '" in time, but it arrived outside your availability, so it is not counted in your response rate.';
+      v_t := 'A request was not answered (not counted)';
+      v_b := '"' || v_title || '" was not answered within the time limit, but it arrived outside your availability, so it is not included in your response rate. No action is needed.';
     END IF;
   ELSIF _kind = 'dispute_upheld' THEN
     v_t := CASE WHEN v_lang = 'ar' THEN 'تم قبول اعتراضك' ELSE 'Dispute accepted' END;
@@ -589,8 +590,8 @@ BEGIN
                 ELSE 'The no-response on "' || v_title || '" was removed from your statistics.' END;
   ELSE
     v_t := CASE WHEN v_lang = 'ar' THEN 'لم يُقبل اعتراضك' ELSE 'Dispute not accepted' END;
-    v_b := CASE WHEN v_lang = 'ar' THEN 'لا يزال عدم الرد على "' || v_title || '" محتسباً.'
-                ELSE 'The no-response on "' || v_title || '" still counts.' END;
+    v_b := CASE WHEN v_lang = 'ar' THEN 'بعد المراجعة، لا يزال عدم الرد على "' || v_title || '" محتسباً. شكراً لتفهمك.'
+                ELSE 'After review, the no-response on "' || v_title || '" still counts. Thank you for your understanding.' END;
   END IF;
   PERFORM public.safe_insert_notification(ev.uid, v_t, v_b, 'responsiveness', '/consultant/responsiveness?event=' || _event_id);
 END;

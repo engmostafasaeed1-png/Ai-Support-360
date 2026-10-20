@@ -138,10 +138,18 @@ describe('warnings 1 of 2, 2 of 2, then the indicator', () => {
     expect(publicLevel('needs_improvement', { counted: 10, rate: 70 }, 0)).toBe('fair');
   });
 
-  it('the warning text names the warning number and the consequence', () => {
+  it('the notice is a polite "friendly notice" with its number and the consequence, never a warning', () => {
     const c = noticeCopy({ lang: 'en', kind: 'warning_1', ticketTitle: 'FB50', warningsTotal: 2 });
-    expect(c.title).toBe('Warning 1 of 2: no response');
-    expect(c.body).toContain('repeated non-response will show a Response badge on your card and affect your ranking');
+    expect(c.title).toBe('Friendly notice 1 of 2: a request was not answered in time');
+    expect(c.body).toContain('a Responsiveness indicator may appear on your card and your ranking may be affected');
+    const ar = noticeCopy({ lang: 'ar', kind: 'warning_2', ticketTitle: 'FB50', warningsTotal: 2 });
+    expect(ar.title).toBe('إشعار ودي 2 من 2: طلب لم يُرد عليه في الوقت');
+    for (const kind of ['warning_1', 'warning_2', 'badge_visible', 'counted', 'not_counted', 'dispute_rejected']) {
+      for (const lang of ['en', 'ar'] as const) {
+        const x = noticeCopy({ lang, kind, ticketTitle: 'FB50', warningsTotal: 2 });
+        expect(`${x.title} ${x.body}`).not.toMatch(/warning|تحذير/i);
+      }
+    }
     expect(noticeCopy({ lang: 'en', kind: 'not_counted', ticketTitle: 'FB50' }).body).toContain('outside your availability');
   });
 });
