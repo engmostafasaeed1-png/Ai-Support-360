@@ -443,8 +443,11 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
   const parts: Array<{ key: CriterionKey; fit: number; chip?: string }> = [];
   const moduleFit = (w: string) => (cm.codes.includes(w) ? 1 : cm.codes.some((h) => related(h, w)) ? 0.5 : 0);
 
-  // Modules: the chosen areas count fully; modules only named in the text count as keywords below.
-  const primary = s.areaModules.length > 0 ? s.areaModules : s.textModules;
+  // Modules: the functional/technical modules of the chosen areas count fully (when the areas name none, those found in the text);
+  // products (S/4HANA, ECC, HANA) and the other modules named in the text count as keywords below.
+  const isModule = (x: string) => MODULE_BY_CODE.get(x)?.kind === 'module';
+  const areaFunc = s.areaModules.filter(isModule);
+  const primary = areaFunc.length > 0 ? areaFunc : s.textModules.filter(isModule);
   if (primary.length > 0) {
     const hits = primary.filter((w) => cm.codes.includes(w));
     parts.push({ key: 'module', fit: share(primary, moduleFit), chip: hits.length ? hits.map((h) => MODULE_BY_CODE.get(h)?.label ?? h).slice(0, 2).join(', ') : undefined });
@@ -457,7 +460,7 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
   const keywordItems: Array<{ label: string; module: string | null; product?: string }> = [
     ...s.tcodes.map((x) => ({ label: x.code, module: x.module })),
     ...s.errors.map((x) => ({ label: x.code, module: x.module })),
-    ...(s.areaModules.length > 0 ? s.textModules : []).map((x) => ({ label: MODULE_BY_CODE.get(x)?.label ?? x, module: x })),
+    ...s.modules.filter((x) => isModule(x) && !primary.includes(x)).map((x) => ({ label: MODULE_BY_CODE.get(x)?.label ?? x, module: x })),
     ...s.products.map((p) => ({ label: p, module: null, product: p })),
   ];
   if (keywordItems.length > 0) {
