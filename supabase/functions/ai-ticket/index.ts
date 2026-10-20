@@ -492,7 +492,7 @@ serve(async (req) => {
           ? optional(() => supabase.from("ticket_match_requests").select("consultant_id, status").eq("ticket_id", parsed.data.ticket_id!).eq("status", "rejected"))
           : Promise.resolve(null),
         // Profiles the administrator hides from client lists (incomplete profiles) are not matched either.
-        optional(() => caller.rpc("hidden_consultant_ids")),
+        optional(() => createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") || "", { global: { headers: { Authorization: authHeader } } }).rpc("hidden_consultant_ids")),
       ]);
       const foundingSet = new Set(((founding ?? []) as any[]).map((r) => r.consultant_id));
       const inactiveSet = new Set(((inactiveIds ?? []) as any[]).map((r) => (typeof r === "string" ? r : r?.consultant_id)).filter(Boolean));
