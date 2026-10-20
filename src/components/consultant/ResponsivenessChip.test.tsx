@@ -3,6 +3,16 @@ import { render, screen } from '@testing-library/react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 const state = { publicOn: false, reviewWeight: 15, byId: new Map(), levels: null as Map<string, string> | null };
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    i18n: { language: 'en' },
+    t: (_k: string, d?: string | Record<string, unknown>, o?: Record<string, unknown>) => {
+      const text = typeof d === 'string' ? d : _k;
+      const vars = (typeof d === 'object' ? d : o) ?? {};
+      return text.replace(/\{\{(\w+)\}\}/g, (_m, v) => String(vars[v] ?? ''));
+    },
+  }),
+}));
 vi.mock('@/hooks/useResponsiveness', () => ({ usePublicResponsiveness: () => state }));
 
 import ResponsivenessChip from './ResponsivenessChip';

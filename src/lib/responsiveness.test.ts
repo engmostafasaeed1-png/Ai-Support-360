@@ -34,12 +34,10 @@ describe('fairness: only requests that arrive while the consultant is available 
   });
 
   it('uses the consultant time zone', () => {
-    const slots = [{ day_of_week: 2, specific_date: null, start_time: '09:00', end_time: '12:00' }];
-    // 15:00 Riyadh is 13:00 in Berlin (summer time ends 25 Oct): outside a 09-12 slot in both, inside one ending 14:00 in Berlin only.
-    expect(availabilityExclusion({ ...base, slots, at: tuesday3pmRiyadh, timezone: 'Europe/Berlin' })).toBe('outside_hours');
-    const later = [{ day_of_week: 2, specific_date: null, start_time: '09:00', end_time: '14:00' }];
-    expect(availabilityExclusion({ ...base, slots: later, at: tuesday3pmRiyadh, timezone: 'Europe/Berlin' })).toBeNull();
-    expect(availabilityExclusion({ ...base, slots: later, at: tuesday3pmRiyadh, timezone: 'Asia/Riyadh' })).toBe('outside_hours');
+    // 12:00 UTC is 15:00 in Riyadh and 14:00 in Berlin (summer time until 25 Oct).
+    const slots = [{ day_of_week: 2, specific_date: null, start_time: '09:00', end_time: '15:00' }];
+    expect(availabilityExclusion({ ...base, slots, at: tuesday3pmRiyadh, timezone: 'Europe/Berlin' })).toBeNull();
+    expect(availabilityExclusion({ ...base, slots, at: tuesday3pmRiyadh, timezone: 'Asia/Riyadh' })).toBe('outside_hours');
   });
 
   it('a one-date slot counts on that date', () => {
