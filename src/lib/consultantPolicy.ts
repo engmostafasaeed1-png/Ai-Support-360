@@ -36,6 +36,8 @@ const BODY_EN = `${POLICY_DRAFT_NOTE_EN}
 - If you have not answered, we remind you after 2 hours, 4 hours and 1 day (Critical requests: after 10, 20 and 30 minutes) by in-app notification, pop-up and e-mail.
 - If there is no reply within the limit, the request is marked "No response". The client is told and may invite another consultant, open the request for bids or wait longer. The no-response is recorded for your response rate.
 - Declining within the time limit counts as a response and never counts against you.
+- Before deciding you can open the ticket description (the client sees that you viewed it; this is not an answer and the clock keeps running). Files, credentials, remote access, links and contact details stay locked until the NDA, the agreed rate and the assignment.
+- You can also ask the client for more information (up to 3 times per request, one question at a time). Your clock pauses until the client answers and then resumes with at least 2 hours left. Asking within the time limit counts as a response; if the client does not answer in time, the request is not counted against you. A reason for declining is optional and is never shown publicly.
 - For bid invitations, the bid deadline shown on the ticket applies instead.
 - Accepting a request does not replace the agreed rate, the confidentiality agreement (NDA) or the other steps required before work starts.
 
@@ -74,6 +76,8 @@ const BODY_AR = `${POLICY_DRAFT_NOTE_AR}
 - إذا لم ترد، نذكّرك بعد ساعتين و4 ساعات ويوم واحد (الطلبات الحرجة: بعد 10 و20 و30 دقيقة) عبر إشعار داخل المنصة ونافذة منبثقة وبريد إلكتروني.
 - إذا لم يصل رد خلال المهلة، يُوسم الطلب بأنه "بلا رد". ويُبلَّغ العميل، ويجوز له دعوة مستشار آخر أو فتح الطلب للعروض أو الانتظار مدة أطول. ويُسجَّل عدم الرد في معدل استجابتك.
 - الرفض خلال المهلة يُعد ردًا ولا يُحتسب ضدك أبدًا.
+- قبل أن تقرر يمكنك فتح وصف التذكرة (يرى العميل أنك اطلعت عليه؛ وهذا لا يُعد ردًا ويستمر العدّاد). وتبقى الملفات وبيانات الدخول والوصول عن بُعد والروابط وبيانات التواصل مقفلة حتى اتفاقية السرية والسعر المتفق عليه والإسناد.
+- يمكنك أيضًا طلب معلومات إضافية من العميل (حتى 3 مرات لكل طلب، سؤال واحد في كل مرة). يتوقف العدّاد حتى يجيب العميل ثم يستأنف مع ساعتين على الأقل. ويُعد السؤال خلال المهلة ردًا، وإذا لم يُجب العميل في الوقت المحدد فلا يُحتسب الطلب ضدك. وذكر سبب الرفض اختياري ولا يُعرض علنًا أبدًا.
 - في دعوات تقديم العروض، يسري الموعد النهائي للعروض الظاهر في التذكرة بدلًا من ذلك.
 - قبول الطلب لا يغني عن السعر المتفق عليه ولا عن اتفاقية السرية (NDA) ولا عن الخطوات الأخرى اللازمة قبل بدء العمل.
 
