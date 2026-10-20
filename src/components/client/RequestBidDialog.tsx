@@ -22,9 +22,8 @@ import TaskProgressPanel from '@/components/progress/TaskProgressPanel';
 import { matchSteps, understoodSummary, type MatchPhase } from '@/lib/matchProgress';
 import { invokeWithTimeout } from '@/lib/invokeWithTimeout';
 import FavouriteButton, { FavouriteChip } from '@/components/favourites/FavouriteButton';
-import GroupInvitePanel, { useAskedConsultants } from '@/components/favourites/GroupInvitePanel';
+import { DirectoryGroupInvite, useAskedConsultants } from '@/components/favourites/GroupInvitePanel';
 import { useClientFavourites } from '@/hooks/useClientFavourites';
-import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
 
 type BidMode = 'select' | 'open' | 'manual' | 'ai' | 'group';
 
@@ -108,11 +107,9 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
   const { data: allConsultants, isLoading: loadingConsultants } = useVerifiedConsultants(ticketModule);
   const hiddenIds = useHiddenConsultantIds(open);
   const fav = useClientFavourites();
-  const { consultants: directory } = useRealtimeConsultants();
   const asked = useAskedConsultants(ticketId, open && mode === 'group');
   // Hidden profiles and the client's "do not suggest" list are never offered.
   const consultants = allConsultants ? withoutHidden(allConsultants, hiddenIds).filter(c => !fav.blocked.has(c.id)) : allConsultants;
-  const groupCandidates = directory.filter(c => c.verification_status === 'verified').map(c => ({ id: c.id, name: c.name, subtitle: c.specialty }));
 
   const pendingBids = (proposals || []).filter((p: any) => p.status === 'pending').length;
   const totalBids = (proposals || []).length;
@@ -436,8 +433,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
           {mode === 'group' && (
             <div className="space-y-3">
               <Textarea placeholder="Add a message to your invitation (optional)..." value={bidMessage} onChange={e => setBidMessage(e.target.value)} className="min-h-[60px] text-xs" />
-              <GroupInvitePanel
-                candidates={groupCandidates}
+              <DirectoryGroupInvite
                 alreadyAsked={asked}
                 modules={[ticketModule]}
                 actionLabel="Send private bid invitations"

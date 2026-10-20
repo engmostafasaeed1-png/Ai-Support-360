@@ -140,3 +140,10 @@ export default function GroupInvitePanel({ candidates, alreadyAsked, modules = [
     </div>
   );
 }
+
+/** The group panel fed by the live consultant directory (hidden profiles already left out); mounted only while it is shown. */
+export function DirectoryGroupInvite(props: Omit<React.ComponentProps<typeof GroupInvitePanel>, 'candidates'>) {
+  const { consultants } = useRealtimeConsultants();
+  const candidates = consultants.filter(c => c.verification_status === 'verified').map(c => ({ id: c.id, name: c.name, subtitle: c.specialty }));
+  return <GroupInvitePanel {...props} candidates={candidates} />;
+}
