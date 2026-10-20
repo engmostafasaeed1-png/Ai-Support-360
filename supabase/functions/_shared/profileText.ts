@@ -148,7 +148,7 @@ export function extractTerms(text: string | null | undefined): TermBag {
   const seen = new Set<string>();
   const count = (id: string) => { tokens += 1; if (seen.has(id)) repeats += 1; else seen.add(id); };
   for (const re of [MESSAGE, SPLIT_MESSAGE]) {
-    s = s.replace(re, (all, cls: string, num: string) => { const id = `k:${cls}${num}`; add(id, `${cls.toUpperCase()} ${num}`, 3); count(id); return all.slice(0, all.length - (cls.length + num.length + (all.endsWith(` ${num}`) && all.includes(`${cls} `) ? 1 : 0))) + ' '; });
+    s = s.replace(re, (_all, cls: string, num: string) => { const id = `k:${cls}${num}`; add(id, `${cls.toUpperCase()} ${num}`, 3); count(id); return ' '; });
   }
   for (const { key, re } of COMPILED) {
     s = s.replace(re, () => { const id = `c:${key}`; add(id, LABEL_OF.get(key) ?? key, 2); count(id); return ' '; });

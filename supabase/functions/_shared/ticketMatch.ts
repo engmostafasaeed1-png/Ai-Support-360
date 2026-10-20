@@ -10,6 +10,7 @@
  * Used by the ai-ticket function (server ranking) and by the client directory (best-match sort and chips).
  */
 import { contextFit } from './contextFit.ts';
+import { indexProfile, matchProfile, prepareTextMatch, ticketTerms, type MatchedIn, type ProfileEntry, type TextMatch } from './profileText.ts';
 
 // ---------------------------------------------------------------- modules
 
@@ -330,6 +331,11 @@ export type MatchConsultant = {
   resolved_in_areas?: number | null;
   solved_similar?: number | null;
   founding?: boolean | null;
+  /** Profile search document (profileText.buildProfileEntries); when no candidate has one the text criterion is left out. */
+  profile_entries?: ProfileEntry[] | null;
+  /** Database full-text signals (ts_rank_cd and trigram similarity, 0..1) once docs/sql/profile-search.sql is applied. */
+  text_rank?: number | null;
+  text_trigram?: number | null;
 };
 
 export type ConsultantModules = { codes: string[]; subs: string[]; years: Map<string, number>; evidence: Set<string> };
@@ -364,9 +370,9 @@ export function consultantModules(c: MatchConsultant): ConsultantModules {
 // ---------------------------------------------------------------- weights
 
 export const MATCH_WEIGHT_DEFAULTS = {
-  module: 26, sub_module: 6, keywords: 10, experience: 8, role: 4,
-  industry: 5, segment: 3, country: 6, deployment: 3, work_mode: 2, timezone: 3, rate: 4,
-  badge: 5, rating: 4, response: 3, availability: 3, completion: 2, evidence: 2, founding: 1,
+  module: 20, sub_module: 6, keywords: 7, profile_text: 12, experience: 7, role: 4,
+  industry: 4, segment: 3, country: 6, deployment: 3, work_mode: 2, timezone: 3, rate: 4,
+  badge: 5, rating: 3, response: 3, availability: 3, completion: 2, evidence: 2, founding: 1,
 } as const;
 export type MatchWeights = Record<keyof typeof MATCH_WEIGHT_DEFAULTS, number>;
 export type CriterionKey = keyof typeof MATCH_WEIGHT_DEFAULTS;
@@ -431,7 +437,7 @@ export function hardFilter(c: MatchConsultant, t: MatchTicket, s: TicketSignals,
 
 export type Chip = { key: CriterionKey; text: string };
 export type Criterion = { key: CriterionKey; weight: number; fit: number; contribution: number };
-export type MatchResult = { consultant_id: string; score: number; breakdown: Criterion[]; chips: Chip[]; coverage: number };
+export type MatchResult = { consultant_id: string; score: number; breakdown: Criterion[]; chips: Chip[]; coverage: number; matched?: { terms: string[]; in: Partial<Record<MatchedIn, number>> } | null };
 
 const BADGE_FIT: Record<string, number> = { gold: 1, silver: 0.8, bronze: 0.6, verified: 0.4 };
 
@@ -448,7 +454,7 @@ export function tzOffsetHours(zone: string | null | undefined, at: Date = new Da
 
 const share = (wanted: string[], have: (w: string) => number) => (wanted.length ? wanted.reduce((sum, w) => sum + have(w), 0) / wanted.length : 0);
 
-export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSignals, weights: MatchWeights = MATCH_WEIGHT_DEFAULTS, cm = consultantModules(c)): MatchResult {
+export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSignals, weights: MatchWeights = MATCH_WEIGHT_DEFAULTS, cm = consultantModules(c), text?: TextMatch | null): MatchResult {
   const parts: Array<{ key: CriterionKey; fit: number; chip?: string }> = [];
   const moduleFit = (w: string) => (cm.codes.includes(w) ? 1 : cm.codes.some((h) => related(h, w)) ? 0.5 : 0);
 
@@ -478,6 +484,8 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
     const hit = keywordItems.find((k) => fit(k) === 1);
     parts.push({ key: 'keywords', fit: share(keywordItems.map((_, i) => String(i)), (i) => fit(keywordItems[Number(i)])), chip: hit?.label });
   }
+  // Profile text: the ticket's words found anywhere in the profile (undefined = no profile documents available, criterion left out).
+  if (text !== undefined) parts.push({ key: 'profile_text', fit: text?.fit ?? 0, chip: text?.terms.length ? text.terms.slice(0, 2).join(', ') : undefined });
   if (s.modules.length > 0) {
     const matched = s.modules.filter((m) => cm.codes.includes(m));
     const years = Math.max(0, ...matched.map((m) => cm.years.get(m) ?? 0));
@@ -551,6 +559,7 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
     chips,
     // Match confidence: the share of all criteria the ticket gave enough information to score.
     coverage: Math.round((100 * total) / allWeight),
+    matched: text && text.terms.length ? { terms: text.terms, in: text.in } : null,
   };
 }
 
@@ -562,12 +571,20 @@ export function rankConsultants(t: MatchTicket, consultants: MatchConsultant[], 
   const weights = options.weights ?? MATCH_WEIGHT_DEFAULTS;
   const excluded: RankOutput['excluded'] = [];
   const ranked: Array<MatchResult & { _c: MatchConsultant }> = [];
+  const eligible: Array<{ c: MatchConsultant; cm: ConsultantModules }> = [];
   for (const c of consultants) {
     const cm = consultantModules(c);
     const reason = hardFilter(c, t, s, options.excluded, cm);
     if (reason) { excluded.push({ consultant_id: c.id, reason }); continue; }
-    ranked.push({ ...scoreConsultant(c, t, s, weights, cm), _c: c });
+    eligible.push({ c, cm });
   }
+  const withDocs = eligible.some(({ c }) => Array.isArray(c.profile_entries));
+  const indexes = withDocs ? eligible.map(({ c }) => indexProfile(c.profile_entries)) : [];
+  const prep = withDocs ? prepareTextMatch(ticketTerms(t), indexes) : null;
+  eligible.forEach(({ c, cm }, i) => {
+    const text = prep && prep.terms.length ? matchProfile(prep, indexes[i], { rank: c.text_rank, trigram: c.text_trigram }) : undefined;
+    ranked.push({ ...scoreConsultant(c, t, s, weights, cm, text), _c: c });
+  });
   ranked.sort((a, b) => b.score - a.score || (Number(b._c.rating) || 0) - (Number(a._c.rating) || 0) || (b._c.total_reviews ?? 0) - (a._c.total_reviews ?? 0) || a.consultant_id.localeCompare(b.consultant_id));
   return { ranked: ranked.map(({ _c, ...r }) => r), excluded, signals: s, questions: clarifyingQuestions(t, s) };
 }
