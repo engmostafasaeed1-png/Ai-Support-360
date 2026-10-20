@@ -46,6 +46,7 @@ export const clientNavGroups: NavGroup[] = [
     items: [
       { key: 'tickets', icon: Headset, path: '/client/tickets' },
       { key: 'consultants', icon: Search, path: '/client/consultants' },
+      { key: 'consultant_responsiveness', icon: Timer, path: '/client/responsiveness', fallback: 'Responsiveness' },
       { key: 'sessions', icon: CalendarClock, path: '/client/sessions' },
       { key: 'video_sessions', icon: Video, path: '/client/video-sessions' },
       { key: 'chat', icon: MessagesSquare, path: '/client/chat' },
