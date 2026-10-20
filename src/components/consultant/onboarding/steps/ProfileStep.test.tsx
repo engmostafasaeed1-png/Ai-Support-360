@@ -13,8 +13,8 @@ const BASE: OnboardingData = {
   timezone: 'Africa/Cairo',
   languages: ['en'],
   nationality: 'Egyptian',
-  city: '',
-  country: '',
+  city: 'Cairo',
+  country: 'Egypt',
   linkedinUrl: '',
   githubUrl: '',
   personalWebsite: '',
@@ -63,11 +63,22 @@ describe('ProfileStep (links and place)', () => {
     expect(screen.getByRole('alert').textContent).toMatch(/Credly/);
   });
 
-  it('asks for the country before the city, then offers the city drop-down', () => {
+  it('requires country and city: shows an inline error until both are chosen', () => {
+    show({ country: '', city: '' });
+    expect(screen.getByTestId('location-required').textContent).toMatch(/country and city/);
+    cleanup();
+    show({ country: 'Egypt', city: '' });
+    expect(screen.getByTestId('location-required')).toBeTruthy();
+    cleanup();
     show();
+    expect(screen.queryByTestId('location-required')).toBeNull();
+  });
+
+  it('asks for the country before the city, then offers the city drop-down', () => {
+    show({ country: '', city: '' });
     expect(screen.getByText('Select country first')).toBeTruthy();
     cleanup();
-    show({ country: 'Egypt' });
+    show({ country: 'Egypt', city: '' });
     expect(screen.getByText('Select city')).toBeTruthy();
   });
 
