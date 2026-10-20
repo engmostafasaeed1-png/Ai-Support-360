@@ -31,7 +31,7 @@ export default function PolicyAcceptForm({ version, submitLabel, onAccept, disab
       <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-3">
         <Checkbox id={`${id}-accept`} checked={checked} onCheckedChange={v => { setChecked(v === true); setError(null); }} disabled={disabled || busy} aria-required="true" className="mt-0.5" />
         <label htmlFor={`${id}-accept`} className="text-sm leading-6 text-foreground">
-          {t('consultantPolicy.checkbox', 'I have read and accept the Consultant Service Policy (version {{v}})', { v: version })}
+          {t('consultantPolicy.checkbox', 'I have read and accept the Consultant Service Policy')} ({t('consultantPolicy.versionWord', 'version')} {version})
         </label>
       </div>
       <Button type="button" onClick={submit} disabled={!checked || busy || disabled} className="w-full gap-2 gradient-primary text-primary-foreground sm:w-auto" aria-describedby={!checked ? `${id}-hint` : undefined}>
