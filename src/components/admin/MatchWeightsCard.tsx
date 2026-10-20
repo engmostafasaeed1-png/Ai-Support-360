@@ -16,7 +16,7 @@ const keys = Object.keys(MATCH_WEIGHT_DEFAULTS) as CriterionKey[];
 /** Admin: tunable matching weights (0..50 each; only their proportions matter). Saved in platform settings. */
 export default function MatchWeightsCard() {
   const { i18n } = useTranslation();
-  const ar = i18n.language.startsWith('ar');
+  const ar = !!i18n?.language?.startsWith('ar');
   const { toast } = useToast();
   const qc = useQueryClient();
   const [draft, setDraft] = useState<Record<CriterionKey, string>>(() => Object.fromEntries(keys.map((k) => [k, String(MATCH_WEIGHT_DEFAULTS[k])])) as Record<CriterionKey, string>);

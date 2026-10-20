@@ -60,7 +60,7 @@ interface Props {
 
 export default function DirectoryFilterPanel({ filters: f, consultants, ctx, onChange, onClear, saved, onSave, onApplySaved, onDeleteSaved }: Props) {
   const { t, i18n } = useTranslation();
-  const ar = i18n.language.startsWith('ar');
+  const ar = !!i18n?.language?.startsWith('ar');
   const anyLabel = t('directory.any', 'Any');
   const [saveName, setSaveName] = useState('');
 
@@ -107,7 +107,7 @@ export default function DirectoryFilterPanel({ filters: f, consultants, ctx, onC
           </div>
           <FacetSelect id="f-years" label={t('directory.years', 'Years of experience')} value={f.years ? String(f.years) : ''} anyLabel={anyLabel}
             options={[3, 5, 10, 15].map((y) => ({ value: String(y), label: t('directory.years_min', '{{n}}+ years', { n: y }) }))}
-            counts={counts('years', [3, 5, 10, 15]) as unknown as Map<string, number> && new Map([3, 5, 10, 15].map((y) => [String(y), counts('years', [y]).get(y as unknown as string) ?? 0]))}
+            counts={new Map([3, 5, 10, 15].map((y) => [String(y), counts('years', [y]).get(y as unknown as string) ?? 0]))}
             onChange={(v) => onChange({ years: Number(v) || 0 })} />
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">{t('directory.industry', 'Industry')}</Label>

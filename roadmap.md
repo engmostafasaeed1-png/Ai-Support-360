@@ -46,3 +46,5 @@
 - [x] Show and verify registration guides, welcome checklist and remembered completion in the embedded consultant profile only.
 - [x] Move hero platform badge below subtitle and add top clearance for fixed navbar.
 - [x] Consultant sidebar link to the public /for-consultants landing page, opened in a new tab (Oct 17)
+- [x] Feature H: matching audit, deterministic explainable ranking on all match surfaces, full directory filters in the URL and clustered map (Oct 20)
+- [ ] Feature H SQL: owner applies docs/sql/matching.sql (match run log, budget/work mode/deployment request fields, suspended-account filter)

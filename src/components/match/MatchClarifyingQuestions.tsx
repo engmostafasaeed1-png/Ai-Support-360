@@ -12,7 +12,7 @@ type Answers = Partial<Record<ClarifyKey, string>>;
 /** Shown when the request is too vague to match well: 2-3 short questions; the answers improve the request and matching runs again. */
 export default function MatchClarifyingQuestions({ questions, onSubmit, onSkip }: { questions: ClarifyKey[]; onSubmit: (answers: Answers) => void; onSkip?: () => void }) {
   const { i18n } = useTranslation();
-  const ar = i18n.language.startsWith('ar');
+  const ar = !!i18n?.language?.startsWith('ar');
   const id = useId();
   const [answers, setAnswers] = useState<Answers>({});
   if (!questions.length) return null;
