@@ -74,6 +74,164 @@ export type Database = {
         }
         Relationships: []
       }
+      assignment_decline_reasons: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          reasons: string[]
+          request_id: string
+          ticket_id: string
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          reasons?: string[]
+          request_id: string
+          ticket_id: string
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          reasons?: string[]
+          request_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_decline_reasons_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "assignment_decline_reasons_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_decline_reasons_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "ticket_match_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_decline_reasons_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assignment_info_requests: {
+        Row: {
+          answer: string | null
+          answer_document_id: string | null
+          answer_email_at: string | null
+          answer_file_name: string | null
+          answer_file_type: string | null
+          answered_at: string | null
+          ask_email_at: string | null
+          asked_at: string
+          client_due_at: string
+          closed_at: string | null
+          consultant_id: string
+          created_at: string
+          id: string
+          question: string
+          request_id: string
+          status: string
+          ticket_id: string
+          timed_out_at: string | null
+          timeout_email_at: string | null
+          topics: string[]
+        }
+        Insert: {
+          answer?: string | null
+          answer_document_id?: string | null
+          answer_email_at?: string | null
+          answer_file_name?: string | null
+          answer_file_type?: string | null
+          answered_at?: string | null
+          ask_email_at?: string | null
+          asked_at?: string
+          client_due_at: string
+          closed_at?: string | null
+          consultant_id: string
+          created_at?: string
+          id?: string
+          question?: string
+          request_id: string
+          status?: string
+          ticket_id: string
+          timed_out_at?: string | null
+          timeout_email_at?: string | null
+          topics?: string[]
+        }
+        Update: {
+          answer?: string | null
+          answer_document_id?: string | null
+          answer_email_at?: string | null
+          answer_file_name?: string | null
+          answer_file_type?: string | null
+          answered_at?: string | null
+          ask_email_at?: string | null
+          asked_at?: string
+          client_due_at?: string
+          closed_at?: string | null
+          consultant_id?: string
+          created_at?: string
+          id?: string
+          question?: string
+          request_id?: string
+          status?: string
+          ticket_id?: string
+          timed_out_at?: string | null
+          timeout_email_at?: string | null
+          topics?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_info_requests_answer_document_id_fkey"
+            columns: ["answer_document_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_info_requests_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "assignment_info_requests_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_info_requests_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_match_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_info_requests_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assignment_reminder_log: {
         Row: {
           cancelled_at: string | null
@@ -7366,8 +7524,14 @@ export type Database = {
           expired_at: string | null
           extended_at: string | null
           id: string
+          info_first_asked_at: string | null
+          info_paused_at: string | null
+          info_remaining_seconds: number | null
+          info_requests_count: number
+          info_resumed_at: string | null
           is_critical: boolean
           last_reminder_at: string | null
+          last_viewed_at: string | null
           message: string | null
           reminders_sent: number
           responded_at: string | null
@@ -7377,6 +7541,7 @@ export type Database = {
           status: Database["public"]["Enums"]["match_request_status"]
           ticket_id: string
           updated_at: string
+          viewed_at: string | null
         }
         Insert: {
           consultant_id: string
@@ -7384,8 +7549,14 @@ export type Database = {
           expired_at?: string | null
           extended_at?: string | null
           id?: string
+          info_first_asked_at?: string | null
+          info_paused_at?: string | null
+          info_remaining_seconds?: number | null
+          info_requests_count?: number
+          info_resumed_at?: string | null
           is_critical?: boolean
           last_reminder_at?: string | null
+          last_viewed_at?: string | null
           message?: string | null
           reminders_sent?: number
           responded_at?: string | null
@@ -7395,6 +7566,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["match_request_status"]
           ticket_id: string
           updated_at?: string
+          viewed_at?: string | null
         }
         Update: {
           consultant_id?: string
@@ -7402,8 +7574,14 @@ export type Database = {
           expired_at?: string | null
           extended_at?: string | null
           id?: string
+          info_first_asked_at?: string | null
+          info_paused_at?: string | null
+          info_remaining_seconds?: number | null
+          info_requests_count?: number
+          info_resumed_at?: string | null
           is_critical?: boolean
           last_reminder_at?: string | null
+          last_viewed_at?: string | null
           message?: string | null
           reminders_sent?: number
           responded_at?: string | null
@@ -7413,6 +7591,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["match_request_status"]
           ticket_id?: string
           updated_at?: string
+          viewed_at?: string | null
         }
         Relationships: [
           {
@@ -9399,12 +9578,30 @@ export type Database = {
         Returns: undefined
       }
       assignment_admin_digest: { Args: never; Returns: number }
+      assignment_decline_hints: {
+        Args: { _ticket_id: string }
+        Returns: string[]
+      }
       assignment_duration_label: {
         Args: { _lang: string; _minutes: number; _prefer_days?: boolean }
         Returns: string
       }
+      assignment_info_ready: { Args: never; Returns: boolean }
+      assignment_info_topic_label: {
+        Args: { _lang: string; _topic: string }
+        Returns: string
+      }
+      assignment_info_wake: { Args: { _info_id: string }; Returns: undefined }
+      assignment_mask_text: {
+        Args: { _deny: string[]; _text: string }
+        Returns: string
+      }
       assignment_policy_minutes: { Args: never; Returns: Json }
       assignment_policy_text: { Args: { _lang: string }; Returns: string }
+      assignment_request_preview: {
+        Args: { _request_id: string }
+        Returns: Json
+      }
       assignment_response_rates: {
         Args: { _consultant_ids?: string[] }
         Returns: {
@@ -9453,6 +9650,24 @@ export type Database = {
       }
       choose_first_oauth_role: { Args: { _role: string }; Returns: string }
       claim_admin_notification_email: { Args: { _id: string }; Returns: Json }
+      claim_assignment_info_emails: {
+        Args: { _info_id?: string; _limit?: number }
+        Returns: {
+          client_due_at: string
+          consultant_name: string
+          info_id: string
+          kind: string
+          lang: string
+          question: string
+          recipient_user_id: string
+          request_id: string
+          response_due_at: string
+          ticket_id: string
+          ticket_title: string
+          timezone: string
+          topics: string[]
+        }[]
+      }
       claim_assignment_reminders: {
         Args: { _limit?: number; _request_id?: string }
         Returns: {
@@ -9508,6 +9723,10 @@ export type Database = {
       clean_bank_account: { Args: { _details: Json }; Returns: Json }
       clean_billing_text: {
         Args: { _label: string; _max: number; _v: string }
+        Returns: string
+      }
+      client_answer_assignment_info: {
+        Args: { _answer: string; _document_id?: string; _info_id: string }
         Returns: string
       }
       client_approval_required: { Args: never; Returns: boolean }
@@ -9586,6 +9805,10 @@ export type Database = {
         }[]
       }
       consultant_completion: { Args: { _cid: string }; Returns: Json }
+      consultant_decline_assignment: {
+        Args: { _reasons?: string[]; _request_id: string }
+        Returns: undefined
+      }
       consultant_dispute_no_response: {
         Args: { _event_id: string; _reason: string }
         Returns: string
@@ -9614,6 +9837,10 @@ export type Database = {
           _include_bids?: boolean
         }
         Returns: boolean
+      }
+      consultant_request_assignment_info: {
+        Args: { _question: string; _request_id: string; _topics: string[] }
+        Returns: string
       }
       consultant_set_capacity: { Args: { _max: number }; Returns: undefined }
       consultant_set_ticket_status: {
@@ -9837,6 +10064,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      mask_contact_details: { Args: { _text: string }; Returns: string }
       my_client_approval: { Args: never; Returns: Json }
       my_company_invitations: {
         Args: never

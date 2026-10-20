@@ -1,5 +1,5 @@
 -- Feature L addition: decision preview, "Request more information" and decline reasons for assignment requests.
--- NOT APPLIED by the agent - review and apply yourself. Needs docs/sql/assignment-response.sql (live since 2026-10-20);
+-- APPLIED 2026-10-21 (drizzle migration 0073, identical text). Needs docs/sql/assignment-response.sql (live since 2026-10-20);
 -- works with or without docs/sql/responsiveness.sql (probed with to_regclass / to_regprocedure).
 --
 -- 1. "Open ticket description": assignment_request_preview returns a decision preview (title, description as written with

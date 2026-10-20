@@ -512,6 +512,13 @@
       "when": 1792534840330,
       "tag": "0072_responsiveness_events_and_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1792537784179,
+      "tag": "0073_assignment_info_requests",
+      "breakpoints": true
     }
   ]
 }
