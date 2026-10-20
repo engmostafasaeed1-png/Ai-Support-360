@@ -408,17 +408,16 @@ textarea:focus-visible {
   * {
     display: none !important;
   }
-  /* Exception: the public Consultant Service Policy page is printable (header, footer and controls stay hidden). */
-  body:has([data-policy-print]) {
+  /* Exception: the public Consultant Service Policy page is printable: only the policy and its containers are shown. */
+  *:has([data-policy-print]) {
     display: block !important;
     visibility: visible !important;
   }
-  body:has([data-policy-print]) * {
+  [data-policy-print],
+  [data-policy-print] * {
     display: revert !important;
   }
-  body:has([data-policy-print]) header,
-  body:has([data-policy-print]) footer,
-  body:has([data-policy-print]) .print\:hidden {
+  [data-policy-print] .print\:hidden {
     display: none !important;
   }
 }
