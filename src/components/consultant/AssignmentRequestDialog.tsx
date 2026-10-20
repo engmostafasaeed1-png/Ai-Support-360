@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BellRing, Check, Eye, X, Zap } from 'lucide-react';
+import { BellRing, Check, Eye, FileText, HelpCircle, X, Zap } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,8 @@ export interface AssignmentPopupItem {
   reminders_sent: number;
   proposed_rate: number | null;
   currency: string | null;
+  /** The client answered the consultant's information request (the clock runs again). */
+  info_answered?: boolean;
 }
 
 interface Props {
@@ -32,11 +34,20 @@ interface Props {
   onView: () => void;
   /** Close without answering (also Escape and the close button): the popup returns after the next reminder or sign-in. */
   onLater: () => void;
+  /** Feature L addition is live: "Open ticket description" and "Request more information" are offered. */
+  infoReady?: boolean;
+  onPreview?: () => void;
+  onAskInfo?: () => void;
+  /** Why another information request is not possible (one open, or 3 used); the button is disabled with this hint. */
+  askBlockedText?: string | null;
   children?: ReactNode;
 }
 
 /** The "New assignment request" popup. Presentational: data, acknowledgement and answers live in MatchRequestPopup. */
-export default function AssignmentRequestDialog({ item, policy, now, waitingCount, busy, acceptDisabled, onAccept, onDecline, onView, onLater, children }: Props) {
+export default function AssignmentRequestDialog({
+  item, policy, now, waitingCount, busy, acceptDisabled, onAccept, onDecline, onView, onLater,
+  infoReady = false, onPreview, onAskInfo, askBlockedText, children,
+}: Props) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
   const reminder = (item?.reminders_sent ?? 0) > 0;
@@ -44,9 +55,11 @@ export default function AssignmentRequestDialog({ item, policy, now, waitingCoun
   const deadlineText = deadline
     ? new Date(deadline).toLocaleString(lang === 'ar' ? 'ar' : undefined, { dateStyle: 'medium', timeStyle: 'short' })
     : null;
-  const title = reminder
-    ? t('assignment_policy.popup_reminder_title', 'Reminder: assignment request waiting')
-    : t('assignment_policy.popup_title', 'New assignment request');
+  const title = item?.info_answered
+    ? t('assignment_info.answered_popup_title', 'The client answered your question')
+    : reminder
+      ? t('assignment_policy.popup_reminder_title', 'Reminder: assignment request waiting')
+      : t('assignment_policy.popup_title', 'New assignment request');
 
   return (
     <Dialog open={!!item} onOpenChange={(open) => { if (!open) onLater(); }}>
@@ -106,7 +119,7 @@ export default function AssignmentRequestDialog({ item, policy, now, waitingCoun
             </dl>
 
             <p className="rounded-xl bg-muted/60 p-3 text-xs leading-relaxed text-muted-foreground">
-              {policyText(policy, lang)}
+              {policyText(policy, lang, { info: infoReady })}
             </p>
             {waitingCount > 0 && (
               <p className="text-xs text-muted-foreground">
@@ -115,17 +128,42 @@ export default function AssignmentRequestDialog({ item, policy, now, waitingCoun
             )}
             {children}
 
-            <DialogFooter className="flex-col gap-2 sm:flex-row sm:gap-2">
+            {infoReady && onPreview && (
+              <Button variant="secondary" className="w-full" onClick={onPreview} disabled={busy}>
+                <FileText className="me-1 h-4 w-4" aria-hidden="true" /> {t('assignment_info.preview_button', 'Open ticket description')}
+              </Button>
+            )}
+            <DialogFooter className="flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-2">
               <Button variant="outline" className="text-destructive hover:bg-destructive/10" onClick={onDecline} disabled={busy}>
                 <X className="me-1 h-4 w-4" aria-hidden="true" /> {t('assignment_policy.decline', 'Decline')}
               </Button>
-              <Button variant="outline" onClick={onView} disabled={busy}>
-                <Eye className="me-1 h-4 w-4" aria-hidden="true" /> {t('assignment_policy.view', 'View details')}
-              </Button>
+              {infoReady && onAskInfo ? (
+                <Button
+                  variant="outline"
+                  onClick={onAskInfo}
+                  disabled={busy || !!askBlockedText}
+                  title={askBlockedText ?? undefined}
+                  aria-describedby={askBlockedText ? 'assignment-ask-blocked' : undefined}
+                >
+                  <HelpCircle className="me-1 h-4 w-4" aria-hidden="true" /> {t('assignment_info.ask_button', 'Request more information')}
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={onView} disabled={busy}>
+                  <Eye className="me-1 h-4 w-4" aria-hidden="true" /> {t('assignment_policy.view', 'View details')}
+                </Button>
+              )}
               <Button className="gradient-primary border-0" onClick={onAccept} disabled={busy || acceptDisabled}>
                 <Check className="me-1 h-4 w-4" aria-hidden="true" /> {t('assignment_policy.accept', 'Accept')}
               </Button>
             </DialogFooter>
+            {infoReady && askBlockedText && (
+              <p id="assignment-ask-blocked" className="text-center text-xs text-muted-foreground">{askBlockedText}</p>
+            )}
+            {infoReady && onAskInfo && (
+              <button type="button" onClick={onView} className="mx-auto block text-xs text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">
+                {t('assignment_policy.view', 'View details')}
+              </button>
+            )}
             <button type="button" onClick={onLater} className="mx-auto block text-xs text-muted-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">
               {t('assignment_policy.later', 'Remind me later')}
             </button>
