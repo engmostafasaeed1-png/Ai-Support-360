@@ -19,6 +19,13 @@ export interface PinView {
   hours?: string[];
   /** The pin is only the centre of the country. */
   approximate?: boolean;
+  /** AI interview badge tier (Gold, Silver, Bronze, Verified). */
+  tier?: string | null;
+  /** Public profile photo (https only). */
+  avatarUrl?: string | null;
+  /** Match % and why-chips for the current filters, when there are any. */
+  matchScore?: number | null;
+  chips?: string[];
 }
 
 export interface PopupLabels {
@@ -27,6 +34,9 @@ export interface PopupLabels {
   openRequest: string;
   noPlace: string;
   approximate?: string;
+  invite?: string;
+  match?: string;
+  badge?: string;
 }
 
 export const DEFAULT_LABELS: PopupLabels = {
@@ -41,6 +51,8 @@ export interface PopupHandlers {
   onView?: (id: string) => void;
   /** Sessions are arranged inside a request: this opens the page for a new request. */
   onOpenRequest?: () => void;
+  /** Invite this consultant to a new request. When given, it replaces "Open a request". */
+  onInvite?: (id: string) => void;
 }
 
 const STATE_TEXT: Record<AvailabilityState, string> = { available: '#16a34a', busy: '#d97706', offline: '#6b7280' };
@@ -102,13 +114,22 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
   const meta = STATE_META[view.status];
   const root = make('div', { padding: '4px' });
   root.dataset.popupId = view.id;
+  if (typeof document !== 'undefined' && document.documentElement.dir === 'rtl') root.dir = 'rtl';
 
   const head = make('div', { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' });
   const avatar = make(
     'div',
-    { width: '44px', height: '44px', borderRadius: '12px', backgroundColor: view.status === 'offline' ? '#64748b' : '#1B2559', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '14px', flexShrink: '0' },
-    view.avatar,
+    { width: '44px', height: '44px', borderRadius: '12px', backgroundColor: view.status === 'offline' ? '#64748b' : '#1B2559', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '14px', flexShrink: '0', overflow: 'hidden' },
+    view.avatarUrl && /^https:\/\//.test(view.avatarUrl) ? undefined : view.avatar,
   );
+  if (view.avatarUrl && /^https:\/\//.test(view.avatarUrl)) {
+    const img = make('img', { width: '100%', height: '100%', objectFit: 'cover' });
+    img.src = view.avatarUrl;
+    img.alt = '';
+    img.loading = 'lazy';
+    img.referrerPolicy = 'no-referrer';
+    avatar.append(img);
+  }
   const who = make('div', { minWidth: '0' });
   const ellipsis = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } as const;
   who.append(
@@ -136,6 +157,18 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
 
   root.append(head, rating, priceRow);
 
+  const tags = [
+    view.matchScore != null ? `${view.matchScore}% ${labels.match ?? 'match'}` : null,
+    view.tier ? `${view.tier} ${labels.badge ?? 'badge'}` : null,
+    ...(view.chips ?? []).slice(0, 4),
+  ].filter((x): x is string => !!x);
+  if (tags.length > 0) {
+    const row = make('div', { display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' });
+    row.dataset.part = 'chips';
+    tags.forEach((text, i) => row.append(make('span', { fontSize: '10px', padding: '2px 8px', borderRadius: '999px', backgroundColor: i === 0 && view.matchScore != null ? '#dbeafe' : '#f3f4f6', color: '#1f2937' }, text)));
+    root.append(row);
+  }
+
   const links = [linkText('LinkedIn', view.linkedinState), linkText('Credly', view.credlyState)].filter((text): text is string => text !== null);
   if (links.length > 0) {
     const row = make('div', { display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' });
@@ -155,9 +188,9 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
   const open = make('button', { flex: '1', fontSize: '10px', fontWeight: '500', padding: '6px 12px', borderRadius: '8px', backgroundColor: 'white', border: '1px solid #e5e7eb', cursor: 'pointer' }, labels.viewProfile);
   open.type = 'button';
   open.addEventListener('click', () => handlers.onView?.(view.id));
-  const request = make('button', { flex: '1', fontSize: '10px', fontWeight: '500', padding: '6px 12px', borderRadius: '8px', backgroundColor: '#1B2559', color: 'white', border: 'none', cursor: 'pointer' }, labels.openRequest);
+  const request = make('button', { flex: '1', fontSize: '10px', fontWeight: '500', padding: '6px 12px', borderRadius: '8px', backgroundColor: '#1B2559', color: 'white', border: 'none', cursor: 'pointer' }, handlers.onInvite ? (labels.invite ?? 'Invite') : labels.openRequest);
   request.type = 'button';
-  request.addEventListener('click', () => handlers.onOpenRequest?.());
+  request.addEventListener('click', () => (handlers.onInvite ? handlers.onInvite(view.id) : handlers.onOpenRequest?.()));
   actions.append(request, open);
   root.append(actions);
 
