@@ -199,7 +199,7 @@ export default function AssignmentRemindersCard() {
           )}
           {stats.data && (
             <>
-              {([
+              {(([
                 [t('admin.assignment_last_run', 'Last check'), stats.data.last_run ? new Date(stats.data.last_run).toLocaleString() : '—'],
                 [t('admin.assignment_sent_today', 'Reminders sent today'), String(stats.data.sent_today ?? 0)],
                 [t('admin.assignment_waiting', 'Requests waiting for a reply'), String(stats.data.waiting ?? 0)],
@@ -208,7 +208,7 @@ export default function AssignmentRemindersCard() {
                   [t('admin.assignment_info_30d', 'Information requests in the last 30 days'), String(stats.data.info_requests_30d)],
                   [t('admin.assignment_info_waiting', 'Questions waiting for the client'), String(stats.data.info_waiting_client ?? 0)],
                 ] : []),
-              ] as Array<readonly [string, string]>).map(([label, value]) => (
+              ] as unknown) as Array<readonly [string, string]>).map(([label, value]) => (
                 <div key={label} className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">{label}</span>
                   <span className="font-medium text-foreground">{value}</span>
