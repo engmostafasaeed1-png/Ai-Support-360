@@ -14,13 +14,15 @@ export interface PolicyMinutes {
   hourly_limit: number;
   /** "Wait longer": extra time the client may give once. */
   extend: number;
+  /** Time the client has to answer a consultant's "Request more information" before it is returned to them. */
+  info_wait: number;
 }
 
 /** Owner defaults: 2 h / 4 h / 24 h, reply window 24 h; Critical 10 / 20 / 30 min, window 30 min; extend 24 h once. */
 export const POLICY_DEFAULTS: PolicyMinutes = {
   r1: 120, r2: 240, r3: 1440, expire: 1440,
   critical_r1: 10, critical_r2: 20, critical_r3: 30, critical_expire: 30,
-  hourly_limit: 6, extend: 1440,
+  hourly_limit: 6, extend: 1440, info_wait: 1440,
 };
 
 const MIN = 60_000;
@@ -140,15 +142,26 @@ export interface PopupRequest {
   response_due_at?: string | null;
   reminders_sent?: number | null;
   extended_at?: string | null;
+  /** Set while the consultant waits for the client's answer to "Request more information" (the clock is paused). */
+  info_paused_at?: string | null;
+  /** Last time the client answered and the clock resumed. */
+  info_resumed_at?: string | null;
 }
 
-/** Changes with every reminder and with an extension, so the popup comes back after each of them. */
-export const popupKey = (r: PopupRequest): string => `${r.id}:${r.reminders_sent ?? 0}:${r.extended_at ? 1 : 0}`;
+/** Changes with every reminder, an extension and every client answer, so the popup comes back after each of them. */
+export const popupKey = (r: PopupRequest): string => {
+  const base = `${r.id}:${r.reminders_sent ?? 0}:${r.extended_at ? 1 : 0}`;
+  const resumed = r.info_resumed_at ? Date.parse(r.info_resumed_at) : NaN;
+  return Number.isFinite(resumed) ? `${base}:i${resumed}` : base;
+};
 
-/** One popup at a time: the pending request with the nearest deadline that was not acknowledged for its current reminder. */
+/**
+ * One popup at a time: the pending request with the nearest deadline that was not acknowledged for its current reminder.
+ * Requests waiting for the client's answer to an information request do not pop up (the clock is paused).
+ */
 export function nextPopup<T extends PopupRequest>(requests: T[], acknowledged: ReadonlySet<string>): T | null {
   const open = requests
-    .filter((r) => r.status === 'pending' && !acknowledged.has(popupKey(r)))
+    .filter((r) => r.status === 'pending' && !r.info_paused_at && !acknowledged.has(popupKey(r)))
     .sort((a, b) => deadlineOf(a) - deadlineOf(b));
   return open[0] ?? null;
 }
@@ -182,8 +195,24 @@ function arCount(n: number, one: string, two: string, few: string, many: string)
   return `${n} ${many}`;
 }
 
-/** The response policy, built from the current timings (with the defaults it is the owner's exact wording). */
-export function policyText(m: PolicyMinutes = POLICY_DEFAULTS, lang: Lang = 'en'): string {
+/**
+ * The response policy, built from the current timings (with the defaults it is the owner's exact wording).
+ * `info`: the "Request more information" option is live (docs/sql/assignment-info-requests.sql), so one sentence is added.
+ */
+export function policyText(m: PolicyMinutes = POLICY_DEFAULTS, lang: Lang = 'en', opts: { info?: boolean } = {}): string {
+  const base = basePolicyText(m, lang);
+  if (!opts.info) return base;
+  return `${base} ${infoPolicySentence(lang)}`;
+}
+
+/** The sentence added once information requests are live (mirrored by assignment_policy_text in the SQL file). */
+export function infoPolicySentence(lang: Lang = 'en'): string {
+  return lang === 'ar'
+    ? 'يمكنك أيضاً طلب معلومات إضافية من العميل: يتوقف العدّاد حتى يجيب، ويُحتسب طلبك في الوقت المحدد رداً.'
+    : 'You can also ask the client for more information: the clock pauses until they answer, and asking in time counts as a response.';
+}
+
+function basePolicyText(m: PolicyMinutes, lang: Lang): string {
   if (lang === 'ar') {
     return `يرجى القبول أو الرفض خلال ${durationLabel(m.expire, 'ar', false)} (${durationLabel(m.critical_expire, 'ar', false)} للطلبات الحرجة). نذكّرك بعد ${durationLabel(m.r1, 'ar')} و${durationLabel(m.r2, 'ar')} و${durationLabel(m.r3, 'ar')}. إذا لم يصل رد يُبلَّغ العميل وقد يختار استشارياً آخر؛ وتكرار عدم الرد يخفض معدل استجابتك وترتيبك.`;
   }
@@ -213,10 +242,12 @@ export interface ClientRequestRow {
   status: string;
   response_due_at?: string | null;
   extended_at?: string | null;
+  info_paused_at?: string | null;
 }
 
 export type ClientRequestView =
   | { kind: 'waiting'; deadline: number | null }
+  | { kind: 'paused' }
   | { kind: 'no_response'; canExtend: boolean }
   | { kind: 'done' };
 
@@ -225,6 +256,7 @@ export type ClientRequestView =
  * plus Wait longer only once per request and only while the ticket is open.
  */
 export function clientRequestView(r: ClientRequestRow, ticketClosed = false): ClientRequestView {
+  if (r.status === 'pending' && r.info_paused_at) return { kind: 'paused' };
   if (r.status === 'pending') {
     const d = r.response_due_at ? Date.parse(r.response_due_at) : NaN;
     return { kind: 'waiting', deadline: Number.isFinite(d) ? d : null };
@@ -272,10 +304,12 @@ export function sweepGuarded(lastRunAt: number | null, now: number): boolean {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Only a well-formed request id narrows the run; anything else is treated as a plain sweep. */
-export function parseRunBody(body: unknown): { requestId: string | null } {
-  const id = body && typeof body === 'object' ? (body as Record<string, unknown>).request_id : null;
-  return { requestId: typeof id === 'string' && UUID_RE.test(id) ? id.toLowerCase() : null };
+/** Only a well-formed request id (or information request id) narrows the run; anything else is treated as a plain sweep. */
+export function parseRunBody(body: unknown): { requestId: string | null; infoId: string | null } {
+  const src = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+  const ok = (v: unknown) => (typeof v === 'string' && UUID_RE.test(v) ? v.toLowerCase() : null);
+  const requestId = ok(src.request_id);
+  return { requestId, infoId: requestId ? null : ok(src.info_id) };
 }
 
 /** Public response body: counts only, never user data or error text. */
