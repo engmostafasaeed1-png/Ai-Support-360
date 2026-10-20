@@ -203,7 +203,7 @@ export default function MatchRequestPopup() {
   return (
     <>
     <DecisionPreviewDialog requestId={sub?.kind === 'preview' ? subId : null} onClose={() => setSub(null)} actions={previewActions} />
-    <RequestInfoDialog requestId={sub?.kind === 'ask' ? subId : null} used={infoRows.length} onClose={() => setSub(null)} onSent={done} />
+    <RequestInfoDialog requestId={sub?.kind === 'ask' ? subId : null} used={infoRows.length} onClose={() => setSub(null)} onSent={() => { acknowledge(); done(); }} />
     <DeclineReasonDialog
       requestId={sub?.kind === 'decline' ? subId : null}
       ready={infoReady}
