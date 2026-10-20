@@ -55,6 +55,5 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = false
   [functions.assignment-reminders]
     verify_jwt = false
-
-[functions.responsiveness-run]
-  verify_jwt = false
+  [functions.responsiveness-run]
+    verify_jwt = false
