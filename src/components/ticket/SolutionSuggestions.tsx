@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { invokeWithTimeout } from '@/lib/invokeWithTimeout';
+import TaskProgressPanel from '@/components/progress/TaskProgressPanel';
+import { makeSteps, setStep as withStep } from '@/lib/progressSteps';
 import {
   BASIS_LABEL,
   SAP_DOCS_LICENSE_URL,
@@ -125,6 +127,7 @@ export default function SolutionSuggestions({ title, description, areas, other, 
   const [result, setResult] = useState<SuggestResult | null>(() => cache.get(signature) ?? null);
   const [verdicts, setVerdicts] = useState<Record<number, 'helpful' | 'not_helpful'>>({});
   const [sending, setSending] = useState(false);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
   const latest = useRef(signature);
   latest.current = signature;
 
@@ -137,6 +140,7 @@ export default function SolutionSuggestions({ title, description, areas, other, 
       return;
     }
     setStatus('loading');
+    setStartedAt(Date.now());
     setVerdicts({});
     try {
       const { data, error } = await invokeWithTimeout('ai-suggest', {
@@ -213,17 +217,19 @@ export default function SolutionSuggestions({ title, description, areas, other, 
           )}
         </div>
 
-        {status === 'loading' && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
-            <Loader2 className="h-4 w-4 animate-spin" /> Looking through the knowledge base...
-          </div>
-        )}
-
-        {status === 'error' && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Info className="h-4 w-4" /> Suggestions are not available right now. You can go on with your request.
-            <Button variant="outline" size="sm" className="ms-auto h-7 text-xs" onClick={() => void run(true)}>Try again</Button>
-          </div>
+        {(status === 'loading' || status === 'error') && (
+          <TaskProgressPanel
+            title="Looking for possible solutions"
+            steps={withStep(
+              withStep(makeSteps([{ key: 'read', label: 'Reading your request' }, { key: 'search', label: 'Searching the knowledge base', open: true }]), 'read', 'done'),
+              'search',
+              status === 'error' ? 'error' : 'active',
+            )}
+            startedAt={startedAt}
+            error={status === 'error' ? 'Suggestions are not available right now. You can go on with your request.' : null}
+            onRetry={() => void run(true)}
+            className="border-border/40 shadow-none"
+          />
         )}
 
         {status === 'done' && result && (

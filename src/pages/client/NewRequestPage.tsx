@@ -2,6 +2,11 @@ import MatchScoreBreakdown, { type MatchCriterion } from '@/components/client/Ma
 import MatchWhyChips from '@/components/match/MatchWhyChips';
 import MatchClarifyingQuestions from '@/components/match/MatchClarifyingQuestions';
 import type { Chip, ClarifyKey } from '../../../supabase/functions/_shared/ticketMatch';
+import TaskProgressPanel, { TaskDoneNote } from '@/components/progress/TaskProgressPanel';
+import { makeSteps, setStep as withStep, type ProgressStep, type StepDef, type StepState } from '@/lib/progressSteps';
+import { MATCH_STEP_LABELS, matchSteps, understoodSummary, type MatchPhase } from '@/lib/matchProgress';
+import { clearPending, readPending, requestFingerprint, requestStorage, saveTicketOnce } from '@/lib/ticketSubmission';
+import { TimeoutError } from '@/lib/withTimeout';
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
 import { useTranslation } from 'react-i18next';
@@ -129,6 +134,28 @@ interface AiMatchConsultants {
   overall_rationale: string;
 }
 
+const expertsFound = (n: number) => (n === 1 ? '1 expert found' : `${n} experts found`);
+
+/** A short, honest sentence for a failed match call (shown in the progress panel, not only in a toast). */
+function matchErrorText(err: unknown): string {
+  const msg = String((err as { message?: string })?.message ?? err ?? '');
+  if (err instanceof TimeoutError) return 'Finding experts took too long and was stopped.';
+  if (/credits exhausted/i.test(msg)) return 'AI credits are used up. Please ask your administrator to add credits.';
+  if (/rate limited/i.test(msg)) return 'The matching service is busy. Please try again in a moment.';
+  if (isNetworkError(err)) return 'The connection was lost while we were finding experts.';
+  return 'We could not load expert recommendations.';
+}
+
+/** A short sentence for a failed save; the form is kept and Retry never creates a second ticket. */
+function saveErrorText(err: unknown, generic: string): string {
+  const e = err as { code?: string; message?: string; friendly?: boolean } | null;
+  if (e?.friendly && e.message) return e.message;
+  if (e?.code === '53400') return String(e.message);
+  if (e?.code === '23514') return 'Please check the title (up to 300 characters) and the description (up to 50,000 characters).';
+  if (isNetworkError(err)) return 'We could not confirm that your request was saved. Press Retry: it will not create a second ticket.';
+  return generic;
+}
+
 const urgencyLevels = [
   { value: 'low', label: 'urgency_low', desc: 'urgency_low_desc', color: 'border-muted hover:border-muted-foreground' },
   { value: 'medium', label: 'urgency_medium', desc: 'urgency_medium_desc', color: 'border-yellow-300 hover:border-yellow-500' },
@@ -168,9 +195,31 @@ export default function NewRequestPage() {
   // the experts the client asks (up to 3): they get a match request when the ticket is created
   const [picked, setPicked] = useState<PickedExpert[]>([]);
   const [createdTicketId, setCreatedTicketId] = useState<string | null>(null);
-  // One id per request: when the answer of the server is lost after the ticket was saved, the second try sends the same id,
-  // the database answers "already there" and we carry on with that ticket instead of creating a duplicate.
-  const ticketIdRef = useRef<{ key: string; id: string } | null>(null);
+  // One id per request, kept in this tab until the request is done: a retry, or a retry after a page refresh,
+  // sends the same id, the database answers "already there" and no second ticket is created.
+  const storage = useMemo(() => requestStorage(), []);
+  // set once the ticket is saved: Retry then only repeats the steps after the save
+  const savedTicketRef = useRef<string | null>(null);
+  const [submitSteps, setSubmitSteps] = useState<ProgressStep[] | null>(null);
+  const [submitStartedAt, setSubmitStartedAt] = useState<number | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  // "Show my request now": the confirmation opens and the expert ranking finishes behind it
+  const continueInBackground = useRef(false);
+  const [bgMatching, setBgMatching] = useState(false);
+  const [bgMatchError, setBgMatchError] = useState<string | null>(null);
+  // a request that was saved just before the page was reloaded
+  const [restoredTicket, setRestoredTicket] = useState<{ id: string; title: string } | null>(null);
+  useEffect(() => {
+    const pending = readPending(storage);
+    if (!pending) return;
+    let cancelled = false;
+    void supabase.from('tickets').select('id, title').eq('id', pending.id).maybeSingle().then(({ data }) => {
+      if (cancelled || !data) return;
+      setRestoredTicket({ id: data.id, title: data.title });
+      clearPending(storage);
+    });
+    return () => { cancelled = true; };
+  }, [storage]);
   // Optional matching context; prefilled once from the company profile
   const { data: companyProfile } = useClientProfileData();
   const [contextInput, setContextInput] = useState<TicketContextInput>({});
@@ -359,12 +408,33 @@ export default function NewRequestPage() {
     }
   }, [form.title, form.description, form.sap_module, form.urgency, selectedModel]);
 
-  const runAiMatchConsultants = useCallback(async () => {
-    setAiLoading('match_consultants');
-    try {
+  // The request as the matcher reads it; also used for the instant "We understood: ..." line.
+  const matchTicket = useMemo(() => ({
+    title: form.title,
+    description: form.description,
+    area_details: form.area_details,
+    sap_modules: form.sap_modules,
+    sap_module: form.sap_module,
+    sap_module_other: form.sap_module_other || null,
+    sap_notes_tried: form.sap_notes_tried,
+    urgency: form.urgency,
+    preferred_language: form.preferred_language,
+    ...(ticketContext ?? {}),
+  }), [form.title, form.description, form.area_details, form.sap_modules, form.sap_module, form.sap_module_other, form.sap_notes_tried, form.urgency, form.preferred_language, ticketContext]);
+  const matchKey = JSON.stringify([matchTicket, selectedModel]);
+  // One match call per request content: a running or finished call is reused (the review step and the submit share it).
+  const matchPromise = useRef<{ key: string; promise: Promise<AiMatchConsultants> } | null>(null);
+  const [recsKey, setRecsKey] = useState('');
+  const [matchRun, setMatchRun] = useState<{ phase: MatchPhase | 'cancelled'; startedAt: number; understood: string; error?: string; found?: number } | null>(null);
+  const matchToken = useRef(0);
+
+  const fetchMatches = useCallback((ticketId?: string): Promise<AiMatchConsultants> => {
+    if (matchPromise.current?.key === matchKey) return matchPromise.current.promise;
+    const promise = (async () => {
       const { data, error } = await invokeWithTimeout('ai-ticket', {
         body: withTicketContext({
           action: 'match_consultants',
+          ...(ticketId && { ticket_id: ticketId }),
           title: form.title,
           description: form.description,
           sap_module: form.sap_module,
@@ -378,15 +448,36 @@ export default function NewRequestPage() {
         }, ticketContext),
       });
       if (error) throw error;
-      if (handleAiError(data)) return;
-      if (data?.result) setAiRecommendations(data.result);
+      if (data?.error) throw new Error(String(data.error));
+      return (data?.result as AiMatchConsultants | undefined) ?? { recommendations: [], overall_rationale: '' };
+    })();
+    matchPromise.current = { key: matchKey, promise };
+    promise.catch(() => { if (matchPromise.current?.promise === promise) matchPromise.current = null; });
+    return promise;
+  }, [matchKey, form.title, form.description, form.sap_module, form.sap_modules, form.sap_module_other, form.area_details, form.urgency, form.preferred_language, form.sap_notes_tried, selectedModel, ticketContext]);
+
+  const runAiMatchConsultants = useCallback(async () => {
+    const token = ++matchToken.current;
+    const key = matchKey;
+    setMatchRun({ phase: 'ranking', startedAt: Date.now(), understood: understoodSummary(matchTicket) });
+    try {
+      const result = await fetchMatches();
+      if (token !== matchToken.current) return; // cancelled, or a newer run started
+      setAiRecommendations(result);
+      setRecsKey(key);
+      setMatchRun(prev => prev && { ...prev, phase: 'done', found: result.recommendations.length });
     } catch (err) {
+      if (token !== matchToken.current) return;
       console.error('AI consultant matching failed:', err);
-      toast.error('Could not load expert recommendations');
-    } finally {
-      setAiLoading(null);
+      setMatchRun(prev => prev && { ...prev, phase: 'error', error: matchErrorText(err) });
     }
-  }, [form.title, form.description, form.sap_module, form.sap_modules, form.sap_module_other, form.area_details, form.urgency, form.preferred_language, form.sap_notes_tried, selectedModel, ticketContext]);
+  }, [matchKey, matchTicket, fetchMatches]);
+
+  // Cancel only stops waiting: nothing is saved or sent by a match run.
+  const cancelMatch = () => {
+    matchToken.current++;
+    setMatchRun(prev => prev && { ...prev, phase: 'cancelled' });
+  };
 
   useEffect(() => {
     if (!matchRerunPending) return;
@@ -455,6 +546,17 @@ export default function NewRequestPage() {
   const handleSubmit = async () => {
     // a second click while the first request is still running must not create a second ticket
     if (submitLock.current) return;
+    if (!savedTicketRef.current) {
+      const result = ticketSchema.safeParse(form);
+      if (!result.success) {
+        toast.error(result.error.issues[0]?.message || 'Please fix form errors');
+        return;
+      }
+      if (form.urgency === 'critical' && critical.on && !critical.agreed) {
+        toast.error('Please confirm the terms of the critical request, or switch it off');
+        return;
+      }
+    }
     submitLock.current = true;
     setSubmitting(true);
     try {
@@ -465,64 +567,146 @@ export default function NewRequestPage() {
     }
   };
 
-  const submitRequest = async () => {
-    const result = ticketSchema.safeParse(form);
-    if (!result.success) {
-      const firstError = result.error.issues[0]?.message || 'Please fix form errors';
-      toast.error(firstError);
+  const markSubmit = (key: string, state: StepState, detail?: string) =>
+    setSubmitSteps(prev => (prev ? withStep(prev, key, state, detail) : prev));
+
+  const finishSubmit = () => {
+    savedTicketRef.current = null;
+    toast.success(t('ticket_create.submit_success'));
+    // the finished steps stay on screen for a moment, then the confirmation with the experts opens
+    window.setTimeout(() => { setSubmitted(true); setSubmitSteps(null); }, 900);
+  };
+
+  const showRequestNow = () => {
+    continueInBackground.current = true;
+    savedTicketRef.current = null;
+    setSubmitted(true);
+    setSubmitSteps(null);
+    toast.success(t('ticket_create.submit_success'));
+  };
+
+  // Steps after the save: read the request, then rank the experts (reusing the ranking of the review step when nothing changed).
+  const runSubmitMatching = async (ticketId: string) => {
+    setSubmitError(null);
+    markSubmit('understand', 'done', understoodSummary(matchTicket));
+    if (aiRecommendations && recsKey === matchKey) {
+      markSubmit('rank', 'done', `Ready from your review: ${expertsFound(aiRecommendations.recommendations.length)}`);
+      finishSubmit();
       return;
     }
+    markSubmit('rank', 'active');
+    setBgMatching(true);
+    setBgMatchError(null);
+    const key = matchKey;
+    try {
+      const result = await fetchMatches(ticketId);
+      setAiRecommendations(result);
+      setRecsKey(key);
+      markSubmit('rank', 'done', expertsFound(result.recommendations.length));
+      if (!continueInBackground.current) finishSubmit();
+    } catch (err) {
+      console.error('AI consultant matching failed:', err);
+      if (continueInBackground.current) {
+        setBgMatchError(matchErrorText(err));
+      } else {
+        markSubmit('rank', 'error');
+        setSubmitError(`Your request is saved. ${matchErrorText(err)}`);
+      }
+    } finally {
+      setBgMatching(false);
+    }
+  };
+
+  const retryBgMatch = async () => {
+    if (!createdTicketId) return;
+    setBgMatching(true);
+    setBgMatchError(null);
+    const key = matchKey;
+    try {
+      const result = await fetchMatches(createdTicketId);
+      setAiRecommendations(result);
+      setRecsKey(key);
+    } catch (err) {
+      setBgMatchError(matchErrorText(err));
+    } finally {
+      setBgMatching(false);
+    }
+  };
+
+  const submitRequest = async () => {
+    // the ticket is already saved and a later step failed: repeat only what comes after the save
+    if (savedTicketRef.current) {
+      await runSubmitMatching(savedTicketRef.current);
+      return;
+    }
+    const defs: StepDef[] = [{ key: 'save', label: 'Saving your request' }];
+    if (attachedFiles.length > 0) defs.push({ key: 'files', label: 'Attaching your files', detail: `0 of ${attachedFiles.length}` });
+    if (picked.length > 0 || linkedTickets.length > 0) {
+      defs.push({ key: 'send', label: picked.length > 0 ? 'Sending your requests to the experts you chose' : 'Linking related tickets' });
+    }
+    defs.push({ key: 'understand', label: MATCH_STEP_LABELS.understand }, { key: 'rank', label: MATCH_STEP_LABELS.rank, open: true });
+    setSubmitSteps(withStep(makeSteps(defs), 'save', 'active'));
+    setSubmitError(null);
+    setSubmitStartedAt(Date.now());
+    continueInBackground.current = false;
+
+    let ticketId: string;
+    let userId: string;
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error(t('onboarding.error_auth')); return; }
-      if (form.urgency === 'critical' && critical.on && !critical.agreed) {
-        toast.error('Please confirm the terms of the critical request, or switch it off');
-        return;
-      }
+      if (!user) throw Object.assign(new Error(t('onboarding.error_auth')), { friendly: true });
+      userId = user.id;
+      const fingerprint = requestFingerprint([form.title.trim(), form.description.trim(), form.sap_modules, form.urgency, form.ticket_type, criticalColumns(form.urgency, critical)]);
+      const saved = await saveTicketOnce({
+        storage,
+        fingerprint,
+        insert: (id) => supabase.from('tickets').insert(withTicketContext({
+          id,
+          client_id: user.id,
+          tenant_id: tenant?.id || null,
+          sap_module: form.sap_modules[0] || form.sap_module,
+          sap_modules: form.sap_modules,
+          sap_module_other: form.sap_modules.some(isOtherArea) ? form.sap_module_other.trim() : null,
+          area_details: form.area_details.trim() || null,
+          sap_notes_tried: form.sap_notes_tried,
+          title: form.title,
+          description: form.description,
+          urgency: form.urgency as any,
+          preferred_session_type: form.preferred_session as any,
+          preferred_language: form.preferred_language,
+          ai_suggested_category: (!triageIsStale && aiCategorization?.category) || null,
+          ai_suggested_priority: (!triageIsStale && aiCategorization?.suggested_priority) || null,
+          ticket_type: form.ticket_type,
+          ...criticalColumns(form.urgency, critical),
+        }, ticketContext) as any),
+      });
+      ticketId = saved.id;
+    } catch (err) {
+      console.error(err);
+      markSubmit('save', 'error');
+      setSubmitError(saveErrorText(err, t('onboarding.error_generic')));
+      return;
+    }
+    savedTicketRef.current = ticketId;
+    setCreatedTicketId(ticketId);
+    markSubmit('save', 'done');
+    // the consultants who were alerted by the database also get an e-mail (best effort, in the background)
+    if (form.urgency === 'critical' && critical.on) void notifyCriticalByEmail(ticketId);
 
-      const requestKey = JSON.stringify([form.title.trim(), form.description.trim(), form.sap_modules, form.urgency, form.ticket_type, criticalColumns(form.urgency, critical)]);
-      if (!ticketIdRef.current || ticketIdRef.current.key !== requestKey) {
-        ticketIdRef.current = { key: requestKey, id: crypto.randomUUID() };
-      }
-      const ticketId = ticketIdRef.current.id;
-
-      const { error } = await supabase.from('tickets').insert(withTicketContext({
-        id: ticketId,
-        client_id: user.id,
-        tenant_id: tenant?.id || null,
-        sap_module: form.sap_modules[0] || form.sap_module,
-        sap_modules: form.sap_modules,
-        sap_module_other: form.sap_modules.some(isOtherArea) ? form.sap_module_other.trim() : null,
-        area_details: form.area_details.trim() || null,
-        sap_notes_tried: form.sap_notes_tried,
-        title: form.title,
-        description: form.description,
-        urgency: form.urgency as any,
-        preferred_session_type: form.preferred_session as any,
-        preferred_language: form.preferred_language,
-        ai_suggested_category: (!triageIsStale && aiCategorization?.category) || null,
-        ai_suggested_priority: (!triageIsStale && aiCategorization?.suggested_priority) || null,
-        ticket_type: form.ticket_type,
-        ...criticalColumns(form.urgency, critical),
-      }, ticketContext) as any);
-
-      // 23505 on the primary key means an earlier try with this id was saved although its answer was lost: carry on with that ticket
-      const alreadySaved = !!error && error.code === '23505' && /tickets_pkey/.test(`${error.message} ${error.details ?? ''}`);
-      if (error && !alreadySaved) throw error;
-      const ticketData = { id: ticketId };
-      // the consultants who were alerted by the database also get an e-mail (best effort, in the background)
-      if (form.urgency === 'critical' && critical.on) void notifyCriticalByEmail(ticketId);
-
-      // Upload attached files
-      const failedFiles: string[] = [];
-      if (ticketData && attachedFiles.length > 0) {
-        for (const file of attachedFiles) {
-          const storagePath = `${ticketData.id}/${user.id}/${Date.now()}_${safeFileName(file.name)}`;
-          const { error: uploadError } = await supabase.storage.from('ticket-documents').upload(storagePath, file);
-          if (uploadError) { failedFiles.push(file.name); continue; }
+    // Upload attached files
+    const failedFiles: string[] = [];
+    if (attachedFiles.length > 0) {
+      const total = attachedFiles.length;
+      markSubmit('files', 'active', `0 of ${total}`);
+      for (const [i, file] of attachedFiles.entries()) {
+        const storagePath = `${ticketId}/${userId}/${Date.now()}_${safeFileName(file.name)}`;
+        const { error: uploadError } = await supabase.storage.from('ticket-documents').upload(storagePath, file);
+        if (uploadError) {
+          failedFiles.push(file.name);
+        } else {
           await supabase.from('ticket_documents').insert({
-            ticket_id: ticketData.id,
-            uploaded_by: user.id,
+            ticket_id: ticketId,
+            uploaded_by: userId,
             file_name: file.name,
             file_url: storagePath,
             file_size: file.size,
@@ -530,56 +714,52 @@ export default function NewRequestPage() {
             version: 1,
           } as any);
         }
+        markSubmit('files', 'active', `${i + 1} of ${total}`);
       }
-
-      if (failedFiles.length > 0) {
-        toast.error(`Your ticket was created, but these files could not be attached: ${failedFiles.join(', ')}. You can add them from the ticket page.`);
-      }
-
-      // Create ticket links
-      let failedLinks = 0;
-      if (ticketData && linkedTickets.length > 0) {
-        for (const link of linkedTickets) {
-          const { error: linkError } = await supabase.from('ticket_links').insert({
-            source_ticket_id: ticketData.id,
-            target_ticket_id: link.id,
-            link_type: link.linkType,
-            created_by: user.id,
-          } as any);
-          if (linkError && linkError.code !== '23505') failedLinks++;
-        }
-      }
-
-      // Ask the experts the client picked to take the ticket: the existing match-request flow (each expert gets a notice and can accept or decline)
-      const notSentExpertIds: string[] = [];
-      if (ticketData && picked.length > 0) {
-        for (const expert of picked) {
-          const { error: askError } = await supabase.from('ticket_match_requests').insert({
-            ticket_id: ticketData.id,
-            consultant_id: expert.id,
-            sent_by: user.id,
-          } as any);
-          if (askError && askError.code !== '23505') notSentExpertIds.push(expert.id);
-        }
-        if (notSentExpertIds.length > 0) {
-          toast.error('Your ticket was created, but not every expert request could be sent. You can send them again from the ticket page.');
-        }
-      }
-      // what did not get through is shown on the confirmation page, not only in a toast
-      setSendIssues({ files: failedFiles, links: failedLinks, expertIds: notSentExpertIds });
-      ticketIdRef.current = null;
-      setCreatedTicketId(ticketData?.id ?? null);
-      setSubmitted(true);
-      toast.success(t('ticket_create.submit_success'));
-    } catch (err) {
-      console.error(err);
-      toast.error(
-        (err as any)?.code === '53400' ? String((err as any).message)
-        : (err as any)?.code === '23514' ? 'Please check the title (up to 300 characters) and the description (up to 50,000 characters).'
-        : isNetworkError(err) ? 'We could not confirm that your request was saved. Please press Submit again: it will not create a second ticket.'
-        : t('onboarding.error_generic'),
-      );
+      markSubmit('files', 'done', failedFiles.length ? `${total - failedFiles.length} of ${total} attached` : `${total} of ${total} attached`);
     }
+
+    // Create ticket links, then ask the experts the client picked (the existing match-request flow)
+    let failedLinks = 0;
+    const notSentExpertIds: string[] = [];
+    if (picked.length > 0 || linkedTickets.length > 0) {
+      markSubmit('send', 'active');
+      for (const link of linkedTickets) {
+        const { error: linkError } = await supabase.from('ticket_links').insert({
+          source_ticket_id: ticketId,
+          target_ticket_id: link.id,
+          link_type: link.linkType,
+          created_by: userId,
+        } as any);
+        if (linkError && linkError.code !== '23505') failedLinks++;
+      }
+      for (const expert of picked) {
+        const { error: askError } = await supabase.from('ticket_match_requests').insert({
+          ticket_id: ticketId,
+          consultant_id: expert.id,
+          sent_by: userId,
+        } as any);
+        if (askError && askError.code !== '23505') notSentExpertIds.push(expert.id);
+      }
+      const sentCount = picked.length - notSentExpertIds.length;
+      markSubmit('send', 'done', picked.length > 0 ? `${sentCount} of ${picked.length} sent` : undefined);
+    }
+    // what did not get through is shown on the confirmation page
+    setSendIssues({ files: failedFiles, links: failedLinks, expertIds: notSentExpertIds });
+    clearPending(storage);
+    await runSubmitMatching(ticketId);
+  };
+
+  const backToForm = () => {
+    setSubmitSteps(null);
+    setSubmitError(null);
+  };
+
+  const continueWithoutMatches = () => {
+    savedTicketRef.current = null;
+    setSubmitted(true);
+    setSubmitSteps(null);
+    setSubmitError(null);
   };
 
   // ====== THE SUGGESTIONS SOLVED IT: no ticket ======
@@ -606,8 +786,8 @@ export default function NewRequestPage() {
     return (
       <div className="max-w-3xl mx-auto space-y-6 py-8">
         <div className="text-center">
-          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
-            <Check className="w-10 h-10 text-green-600" />
+          <div className="w-20 h-20 rounded-full bg-success/15 flex items-center justify-center mx-auto mb-6 motion-safe:animate-scale-in">
+            <Check className="w-10 h-10 text-success" />
           </div>
           <h2 className="text-2xl font-bold mb-2">{t('ticket_create.submitted_title')}</h2>
           <p className="text-muted-foreground mb-6">{t('ticket_create.submitted_desc')}</p>
@@ -647,7 +827,7 @@ export default function NewRequestPage() {
 
         {/* AI Recommended Consultants */}
         <Card className="rounded-2xl border-accent/20 bg-accent/5">
-          <CardHeader className="pb-2 flex-row items-center justify-between">
+          <CardHeader className="pb-2 flex-row flex-wrap items-center justify-between gap-2">
             <div>
               <CardTitle className="text-base flex items-center gap-2">
                 <Crown className="w-4 h-4 text-accent" />
@@ -678,10 +858,27 @@ export default function NewRequestPage() {
                 )}
               </div>
             ))}
-            {aiRecommendations && aiRecommendations.recommendations.length > 0 ? (
-              aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
-                <RecommendationCard key={rec.consultant_id} rec={rec} rank={i + 1} navigate={navigate} />
-              ))
+            {bgMatching ? (
+              <div className="space-y-2" data-testid="bg-matching">
+                <p className="flex items-center gap-2 text-xs text-muted-foreground" role="status" aria-live="polite">
+                  <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin" aria-hidden="true" /> Still ranking the best experts for your request...
+                </p>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-16 rounded-xl bg-muted/40 motion-safe:animate-pulse" aria-hidden="true" />
+                ))}
+              </div>
+            ) : bgMatchError ? (
+              <div className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm" role="alert">
+                <p>{`Your request is saved. ${bgMatchError}`}</p>
+                <Button size="sm" variant="outline" onClick={() => void retryBgMatch()}>Retry</Button>
+              </div>
+            ) : aiRecommendations && aiRecommendations.recommendations.length > 0 ? (
+              <div className="space-y-3 motion-safe:animate-fade-in">
+                <TaskDoneNote text={expertsFound(aiRecommendations.recommendations.length)} />
+                {aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
+                  <RecommendationCard key={rec.consultant_id} rec={rec} rank={i + 1} navigate={navigate} />
+                ))}
+              </div>
             ) : picked.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">No AI recommendations. You can invite experts from your ticket page.</p>
             ) : null}
@@ -693,7 +890,9 @@ export default function NewRequestPage() {
             setSubmitted(false); setStep(0);
             setForm({ sap_module: '', sap_modules: [], sap_module_other: '', area_details: '', sap_notes_tried: [], issue_type: '', title: '', description: '', urgency: 'medium', preferred_session: 'video', preferred_language: 'en', ticket_type: 'standard' });
             setAiCategorization(null); setAiSummary(null); setAiMatch(null); setAiRecommendations(null); setAttachedFiles([]); setLinkedTickets([]);
-            setPicked([]); setCreatedTicketId(null); setSendIssues({ files: [], links: 0, expertIds: [] }); ticketIdRef.current = null; setCritical(NO_CRITICAL_CHOICE);
+            setPicked([]); setCreatedTicketId(null); setSendIssues({ files: [], links: 0, expertIds: [] }); setCritical(NO_CRITICAL_CHOICE);
+            clearPending(storage); savedTicketRef.current = null; continueInBackground.current = false;
+            setMatchRun(null); setRecsKey(''); matchPromise.current = null; setBgMatchError(null);
           }} variant="outline">
             {t('ticket_create.submit_another')}
           </Button>
@@ -711,6 +910,19 @@ export default function NewRequestPage() {
         <h1 className="text-2xl font-bold">{t('ticket_create.title')}</h1>
         <p className="text-sm text-muted-foreground mt-1">{t('ticket_create.subtitle')}</p>
       </div>
+
+      {restoredTicket && (
+        <Card className="rounded-2xl border-success/30 bg-success/5" role="status" data-testid="restored-ticket">
+          <CardContent className="flex flex-wrap items-center gap-3 p-4 text-sm">
+            <Check className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+            <p className="min-w-0 flex-1">{`Your request "${restoredTicket.title}" was saved before the page reloaded. You do not need to send it again.`}</p>
+            <Button size="sm" variant="outline" asChild>
+              <a href={`/client/tickets/${restoredTicket.id}`}>Open it</a>
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setRestoredTicket(null)}>Dismiss</Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stepper */}
       <div className="flex items-center gap-2">
@@ -732,6 +944,7 @@ export default function NewRequestPage() {
         <AIModelSelector value={selectedModel} onChange={setSelectedModel} compact />
       </div>
 
+      <div className={submitSteps ? 'hidden' : 'space-y-6'}>
       {step === 0 && (
         <Card className="rounded-2xl border-border/50">
           <CardHeader><CardTitle className="text-base">{t('ticket_create.select_module')}</CardTitle></CardHeader>
@@ -1183,7 +1396,7 @@ export default function NewRequestPage() {
           {/* AI Recommended Consultants */}
           {(
             <Card className="rounded-2xl border-accent/20 bg-gradient-to-br from-accent/5 to-primary/5">
-              <CardHeader className="pb-2 flex-row items-center justify-between">
+              <CardHeader className="pb-2 flex-row flex-wrap items-center justify-between gap-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Crown className="w-4 h-4 text-accent" />
                   AI-Recommended Experts
@@ -1213,13 +1426,26 @@ export default function NewRequestPage() {
                   </div>
                 )}
 
-                {aiLoading === 'match_consultants' ? (
-                  <div className="flex items-center gap-3 py-6 justify-center">
-                    <Loader2 className="w-5 h-5 animate-spin text-accent" />
-                    <span className="text-sm text-muted-foreground">Analyzing consultants and ranking best matches...</span>
+                {matchRun && (matchRun.phase === 'ranking' || matchRun.phase === 'error') ? (
+                  <TaskProgressPanel
+                    title="Finding the best experts"
+                    steps={matchSteps(matchRun.phase, matchRun.understood)}
+                    startedAt={matchRun.startedAt}
+                    error={matchRun.phase === 'error' ? matchRun.error : null}
+                    onRetry={() => void runAiMatchConsultants()}
+                    cancel={{ label: 'Cancel', onClick: cancelMatch }}
+                    errorAction={{ label: 'Choose experts myself', onClick: () => { setMatchRun(null); setManualPickOpen(true); } }}
+                    skeletonCount={3}
+                    className="border-border/40 shadow-none"
+                  />
+                ) : matchRun?.phase === 'cancelled' ? (
+                  <div className="space-y-3 py-6 text-center" data-testid="match-cancelled">
+                    <p className="text-sm text-muted-foreground">Finding experts was stopped. Your request is not affected.</p>
+                    <Button size="sm" variant="outline" onClick={() => void runAiMatchConsultants()}>Find the best experts</Button>
                   </div>
                 ) : aiRecommendations && aiRecommendations.recommendations.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-3 motion-safe:animate-fade-in">
+                    {matchRun?.phase === 'done' && <TaskDoneNote text={expertsFound(matchRun.found ?? aiRecommendations.recommendations.length)} />}
                     {(aiRecommendations as any).questions?.length > 0 && !skipQuestions && (
                       <MatchClarifyingQuestions
                         questions={(aiRecommendations as any).questions as ClarifyKey[]}
@@ -1350,21 +1576,40 @@ export default function NewRequestPage() {
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={() => setStep(step - 1)} disabled={step === 0 || submitting}>
-          <ArrowLeft className="w-4 h-4 me-1 rtl:rotate-180" /> {t('onboarding.back')}
-        </Button>
-        {step < steps.length - 1 ? (
-          <Button onClick={handleNext} className="gradient-primary border-0">
-            {t('onboarding.next')} <ArrowRight className="w-4 h-4 ms-1 rtl:rotate-180" />
-          </Button>
-        ) : (
-          <Button onClick={handleSubmit} disabled={submitting} className="gradient-primary border-0">
-            {submitting ? <Loader2 className="w-4 h-4 me-1 animate-spin" /> : <Check className="w-4 h-4 me-1" />} {t('ticket_create.submit_request')}
-          </Button>
-        )}
       </div>
+
+      {/* Submitting: step-by-step progress instead of the form (the form stays filled in behind it) */}
+      {submitSteps && (
+        <TaskProgressPanel
+          title="Submitting your request"
+          steps={submitSteps}
+          startedAt={submitStartedAt}
+          error={submitError}
+          onRetry={() => void handleSubmit()}
+          cancel={submitSteps.some(s => s.key === 'rank' && s.state === 'active') ? { label: 'Show my request now', onClick: showRequestNow } : undefined}
+          errorAction={savedTicketRef.current ? { label: 'Continue without recommendations', onClick: continueWithoutMatches } : { label: 'Back to the form', onClick: backToForm }}
+          note={submitSteps.some(s => s.key === 'rank' && s.state === 'active') ? undefined : 'Please keep this page open until your request is saved.'}
+          skeletonCount={submitSteps.some(s => s.key === 'rank' && s.state === 'active') ? 3 : 0}
+        />
+      )}
+
+      {/* Navigation */}
+      {!submitSteps && (
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={() => setStep(step - 1)} disabled={step === 0 || submitting}>
+            <ArrowLeft className="w-4 h-4 me-1 rtl:rotate-180" /> {t('onboarding.back')}
+          </Button>
+          {step < steps.length - 1 ? (
+            <Button onClick={handleNext} className="gradient-primary border-0">
+              {t('onboarding.next')} <ArrowRight className="w-4 h-4 ms-1 rtl:rotate-180" />
+            </Button>
+          ) : (
+            <Button onClick={handleSubmit} disabled={submitting} aria-busy={submitting} className="gradient-primary border-0">
+              {submitting ? <Loader2 className="w-4 h-4 me-1 animate-spin" /> : <Check className="w-4 h-4 me-1" />} {t('ticket_create.submit_request')}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1468,14 +1713,14 @@ function RecommendationCard({ rec, rank, navigate, picked, pickDisabled, onToggl
           </div>
 
           {/* Bottom row */}
-          <div className="flex items-center justify-between mt-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5">
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">${rec.hourly_rate}<span className="font-normal text-muted-foreground">/hr</span></span>
               {rec.response_time_minutes > 0 && (
                 <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" />{rec.response_time_minutes}min avg</span>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {onTogglePick && (
                 <Button
                   size="sm"

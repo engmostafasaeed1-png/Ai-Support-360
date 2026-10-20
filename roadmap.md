@@ -48,3 +48,5 @@
 - [x] Consultant sidebar link to the public /for-consultants landing page, opened in a new tab (Oct 17)
 - [x] Feature H: matching audit, deterministic explainable ranking on all match surfaces, full directory filters in the URL and clustered map (Oct 20)
 - [ ] Feature H SQL: owner applies docs/sql/matching.sql (match run log, budget/work mode/deployment request fields, suspended-account filter)
+- [x] Feature H part 4: step-based progress for ticket submit and every expert-matching place (wizard, ticket page, bid invitations, admin match, solution suggestions), duplicate-safe submit, tests (Oct 20)
+- [ ] Feature H addition (read every consultant profile field): profile-text matcher written but not tested or switched on; SQL file not written. Waiting for the owner to say continue.
