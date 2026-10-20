@@ -519,6 +519,13 @@
       "when": 1792537784179,
       "tag": "0073_assignment_info_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1792540733822,
+      "tag": "0074_client_favourites",
+      "breakpoints": true
     }
   ]
 }
