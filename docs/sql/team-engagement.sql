@@ -223,7 +223,7 @@ $$;
 
 -- M60: the same contact-bypass protection as bids, questions and chat.
 CREATE OR REPLACE FUNCTION public.team_assert_clean_text(_text text)
-RETURNS void LANGUAGE plpgsql IMMUTABLE SET search_path = public AS $$
+RETURNS void LANGUAGE plpgsql STABLE SET search_path = public AS $$
 BEGIN
   IF public.contact_details_in_text(_text) THEN
     RAISE EXCEPTION 'Please do not write e-mail addresses, phone numbers, web links or messenger names here: contact details are shared inside the portal once you are assigned to a request.'
@@ -401,7 +401,7 @@ DECLARE m public.ticket_team_members; g jsonb; s text;
   _acc boolean; _rate boolean; _nda boolean; _conf boolean;
 BEGIN
   SELECT * INTO m FROM public.ticket_team_members WHERE id = _member_id FOR UPDATE;
-  IF NOT FOUND OR m.is_legacy OR NOT public.team_pre_ready(m.status) OR m.status = 'selected' AND m.invited_at IS NULL THEN RETURN; END IF;
+  IF NOT FOUND OR m.is_legacy OR NOT public.team_pre_ready(m.status) OR (m.status = 'selected' AND m.invited_at IS NULL) THEN RETURN; END IF;
   g := public.team_gates(m.id);
   _acc := (g ->> 'accepted')::boolean; _rate := (g ->> 'rate')::boolean;
   _nda := (g ->> 'nda')::boolean; _conf := (g ->> 'confirmed')::boolean;
@@ -422,10 +422,7 @@ BEGIN
     confirmed_at = CASE WHEN _conf THEN COALESCE(confirmed_at, now()) ELSE NULL END,
     ready_at = CASE WHEN s = 'ready' THEN now() ELSE ready_at END,
     expires_at = CASE WHEN _acc THEN NULL ELSE expires_at END
-  WHERE id = m.id AND (status IS DISTINCT FROM s OR (_acc AND expires_at IS NOT NULL)
-    OR (_acc AND accepted_at IS NULL) OR (_rate AND rate_approved_at IS NULL) OR (_nda AND nda_signed_at IS NULL)
-    OR (_conf IS DISTINCT FROM (confirmed_at IS NOT NULL))
-    OR (((g ->> 'bid_pending')::boolean OR (g ->> 'bid_accepted')::boolean) AND bid_sent_at IS NULL));
+  WHERE id = m.id;
   IF s = 'ready' THEN PERFORM public.team_activate(m.id); END IF;
 END $$;
 
@@ -546,7 +543,7 @@ CREATE OR REPLACE FUNCTION public.team_invite(_ticket_id uuid, _items jsonb, _me
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   cfg jsonb := public.team_settings(); t record; it jsonb; _cons uuid; _mode text; _role text; _primary boolean;
-  _msg text := NULLIF(btrim(COALESCE(_message, '')), ''); _expires timestamptz; _mr record; _member uuid; _cons_user uuid;
+  _msg text := NULLIF(btrim(COALESCE(_message, '')), ''); _expires timestamptz; _mr_id uuid; _mr_st text; _member uuid; _cons_user uuid;
   invited jsonb := '[]'::jsonb; already jsonb := '[]'::jsonb; skipped jsonb := '[]'::jsonb; _busy integer;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not signed in' USING ERRCODE = '28000'; END IF;
@@ -554,7 +551,7 @@ BEGIN
   SELECT tk.id, tk.client_id, tk.title, tk.status::text AS st, tk.critical_response INTO t FROM public.tickets tk WHERE tk.id = _ticket_id FOR UPDATE;
   IF NOT FOUND OR (t.client_id <> auth.uid() AND NOT public.team_is_admin()) THEN RAISE EXCEPTION 'Ticket not found' USING ERRCODE = '42501'; END IF;
   IF t.st IN ('resolved', 'closed') THEN RAISE EXCEPTION 'This ticket is already finished' USING ERRCODE = '22023'; END IF;
-  IF jsonb_typeof(_items) <> 'array' OR jsonb_array_length(_items) = 0 OR jsonb_array_length(_items) > 20 THEN
+  IF _items IS NULL OR jsonb_typeof(_items) <> 'array' OR jsonb_array_length(_items) = 0 OR jsonb_array_length(_items) > 20 THEN
     RAISE EXCEPTION 'Choose between 1 and 20 consultants' USING ERRCODE = '22023';
   END IF;
   IF _msg IS NOT NULL THEN
@@ -595,14 +592,15 @@ BEGIN
       ELSE now() + make_interval(hours => COALESCE((cfg ->> 'response_hours')::int, 24)) END;
 
     -- reuse the existing invitation row (one per ticket and consultant)
-    SELECT r.id, r.status::text AS st INTO _mr FROM public.ticket_match_requests r WHERE r.ticket_id = _ticket_id AND r.consultant_id = _cons;
+    _mr_id := NULL; _mr_st := NULL;
+    SELECT r.id, r.status::text INTO _mr_id, _mr_st FROM public.ticket_match_requests r WHERE r.ticket_id = _ticket_id AND r.consultant_id = _cons;
     SELECT c.user_id INTO _cons_user FROM public.consultants c WHERE c.id = _cons;
-    IF _mr.id IS NULL THEN
+    IF _mr_id IS NULL THEN
       INSERT INTO public.ticket_match_requests (ticket_id, consultant_id, sent_by, message)
       VALUES (_ticket_id, _cons, auth.uid(), CASE WHEN _mode = 'bid' THEN 'Private bid invitation' || COALESCE(': ' || _msg, '') ELSE _msg END)
-      RETURNING id INTO _mr.id;
-    ELSIF _mr.st IN ('rejected', 'withdrawn') THEN
-      UPDATE public.ticket_match_requests SET status = 'pending'::public.match_request_status, responded_at = NULL WHERE id = _mr.id;
+      RETURNING id INTO _mr_id;
+    ELSIF _mr_st IN ('rejected', 'withdrawn') THEN
+      UPDATE public.ticket_match_requests SET status = 'pending'::public.match_request_status, responded_at = NULL WHERE id = _mr_id;
       PERFORM public.team_notify(_cons_user, 'New invitation',
         'You are invited again to "' || left(COALESCE(t.title, 'a request'), 80) || '". Please answer before ' || to_char(_expires AT TIME ZONE 'Asia/Riyadh', 'YYYY-MM-DD HH24:MI') || ' (Riyadh time).',
         '/consultant/requests');
@@ -616,7 +614,7 @@ BEGIN
     END IF;
 
     INSERT INTO public.ticket_team_members (ticket_id, consultant_id, engagement_mode, team_role, is_primary, status, invite_message, match_request_id, created_by)
-    VALUES (_ticket_id, _cons, _mode, _role, _primary, 'selected', _msg, _mr.id, auth.uid())
+    VALUES (_ticket_id, _cons, _mode, _role, _primary, 'selected', _msg, _mr_id, auth.uid())
     RETURNING id INTO _member;
     UPDATE public.ticket_team_members SET status = 'invited', invited_at = now(), expires_at = _expires WHERE id = _member;
     PERFORM public.team_recompute(_member);  -- an earlier accepted invitation or bid counts straight away
@@ -624,7 +622,6 @@ BEGIN
     SELECT count(*) INTO _busy FROM public.ticket_team_members m
      WHERE m.consultant_id = _cons AND m.ticket_id <> _ticket_id AND m.status IN ('ready', 'active');
     invited := invited || jsonb_build_object('consultant_id', _cons, 'member_id', _member, 'expires_at', _expires, 'active_elsewhere', _busy);
-    _mr := NULL;
   END LOOP;
 
   RETURN jsonb_build_object('invited', invited, 'already', already, 'skipped', skipped);
@@ -770,6 +767,11 @@ BEGIN
     PERFORM set_config('app.team_reason', 'another_chosen', true);
     UPDATE public.ticket_team_members SET status = 'not_selected', ended_at = now(), end_reason = 'another_chosen', expires_at = NULL, is_primary = false
      WHERE ticket_id = p.ticket_id AND id <> _member AND engagement_mode = 'bid' AND status IN ('invited', 'viewed', 'bid_sent');
+    -- bid invitations that were never answered are closed too (the withdrawal notice says another consultant was chosen)
+    UPDATE public.ticket_match_requests r SET status = 'withdrawn'::public.match_request_status
+     WHERE r.ticket_id = p.ticket_id AND r.consultant_id <> p.consultant_id AND r.status = 'pending'
+       AND EXISTS (SELECT 1 FROM public.ticket_team_members m WHERE m.ticket_id = r.ticket_id AND m.consultant_id = r.consultant_id
+                    AND m.status = 'not_selected' AND m.end_reason = 'another_chosen');
     PERFORM set_config('app.team_reason', '', true);
   END IF;
   PERFORM public.team_recompute(_member);
@@ -982,6 +984,7 @@ RETURNS TABLE (
   expires_at timestamptz, notice_until timestamptz, end_reason text, blocked_reason text, suggest_next boolean,
   client_nudged_at timestamptz, consultant_nudged_at timestamptz, ticket_gated boolean)
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+#variable_conflict use_column
 DECLARE _all boolean; _me uuid;
 BEGIN
   IF auth.uid() IS NULL THEN RETURN; END IF;
@@ -1169,8 +1172,9 @@ BEGIN
     VALUES (_ticket_id, _consultant_id, 'normal', CASE WHEN _lead THEN 'lead' ELSE 'support' END, 'active', true, now(), now(), auth.uid());
     PERFORM set_config('app.team_reason', '', true);
   ELSIF public.team_pre_ready(_st) THEN
-    -- only an administrator can get here on a gated ticket (the guards block everyone else)
-    PERFORM set_config('app.team_reason', 'admin override', true);
+    -- on a gated ticket only an administrator gets here (the guards block everyone else);
+    -- with the kill switch off, a direct assignment also lands here
+    PERFORM set_config('app.team_reason', 'assigned directly', true);
     UPDATE public.ticket_team_members SET status = 'ready', ready_at = now(), expires_at = NULL WHERE id = _id;
     PERFORM set_config('app.team_reason', '', true);
   END IF;
@@ -1180,13 +1184,19 @@ CREATE OR REPLACE FUNCTION public.team_sync_assignment()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   IF current_setting('app.team_activation', true) = '1' THEN RETURN NULL; END IF;
-  IF TG_OP IN ('INSERT', 'UPDATE') AND NEW.status::text = 'active' THEN
-    PERFORM public.team_ensure_member(NEW.ticket_id, NEW.consultant_id, NEW.role::text = 'lead');
-  ELSIF TG_OP = 'DELETE' OR (TG_OP = 'UPDATE' AND OLD.status::text = 'active' AND NEW.status::text <> 'active') THEN
-    UPDATE public.ticket_team_members m SET status = 'removed', ended_at = now(), end_reason = 'assignment ended', is_primary = false
-     WHERE m.ticket_id = OLD.ticket_id AND m.consultant_id = OLD.consultant_id AND m.is_legacy AND m.status = 'active'
-       AND NOT EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = OLD.ticket_id AND t.consultant_id = OLD.consultant_id);
+  IF TG_OP <> 'DELETE' THEN
+    IF NEW.status::text = 'active' THEN
+      PERFORM public.team_ensure_member(NEW.ticket_id, NEW.consultant_id, NEW.role::text = 'lead');
+    END IF;
+    IF TG_OP = 'INSERT' OR OLD.status::text <> 'active' OR (NEW.status::text = 'active' AND NEW.consultant_id = OLD.consultant_id) THEN
+      RETURN NULL;
+    END IF;
   END IF;
+  -- an assignment ended (deleted, deactivated or moved to another consultant): end the legacy row
+  UPDATE public.ticket_team_members m SET status = 'removed', ended_at = now(), end_reason = 'assignment ended', is_primary = false
+   WHERE m.ticket_id = OLD.ticket_id AND m.consultant_id = OLD.consultant_id AND m.is_legacy AND m.status = 'active'
+     AND NOT EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = OLD.ticket_id AND t.consultant_id = OLD.consultant_id)
+     AND NOT EXISTS (SELECT 1 FROM public.ticket_assignments a WHERE a.ticket_id = OLD.ticket_id AND a.consultant_id = OLD.consultant_id AND a.status = 'active');
   RETURN NULL;
 END $$;
 CREATE TRIGGER trg_team_sync_assignment AFTER INSERT OR UPDATE OF status, consultant_id OR DELETE ON public.ticket_assignments
@@ -1407,6 +1417,36 @@ BEGIN
       VALUES (_client_id, 'Consultant Accepted Match',
         'Consultant "' || COALESCE(_consultant_name, 'A consultant') || '" accepted the match for "' || COALESCE(_ticket_title, 'your ticket') || '". You can now choose them.',
         'match_request', '/client/tickets/' || NEW.ticket_id, _tenant);
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+-- Withdrawn invitations: honest wording when the team flow closed them (no answer in time / another consultant chosen).
+CREATE OR REPLACE FUNCTION public.notify_match_request_withdrawn()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  _consultant_user uuid;
+  _title text;
+  _why text := COALESCE(current_setting('app.team_reason', true), '');
+BEGIN
+  IF NEW.status::text = 'withdrawn' AND OLD.status::text IS DISTINCT FROM 'withdrawn' THEN
+    IF _why = 'no answer in time' THEN RETURN NEW; END IF;  -- team_sweep sends its own notice
+    SELECT c.user_id INTO _consultant_user FROM public.consultants c WHERE c.id = NEW.consultant_id;
+    SELECT t.title INTO _title FROM public.tickets t WHERE t.id = NEW.ticket_id;
+    IF _consultant_user IS NOT NULL THEN
+      IF _why = 'another_chosen' THEN
+        PERFORM public.safe_insert_notification(_consultant_user, 'Another consultant was chosen',
+          'The client chose another consultant for "' || COALESCE(_title, 'a ticket') || '". Thank you for your time.', 'match_request', '/consultant/requests');
+      ELSE
+        PERFORM public.safe_insert_notification(_consultant_user, 'Match request withdrawn',
+          'The client withdrew the match request for "' || COALESCE(_title, 'a ticket') || '".', 'match_request', '/consultant/requests');
+      END IF;
     END IF;
   END IF;
   RETURN NEW;
