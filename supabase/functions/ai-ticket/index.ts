@@ -5,6 +5,7 @@ import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit, getUserRol
 import { weightedMatch } from "../_shared/matchScoring.ts";
 import { contextFit, readRequestContext } from "../_shared/contextFit.ts";
 import { matchInputsHash, rankConsultants, readMatchWeights, weightsVersion, type MatchConsultant, type MatchTicket } from "../_shared/ticketMatch.ts";
+import { responseRate } from "../_shared/assignmentPolicy.ts";
 import { clampInterviewWeight, DEFAULT_INTERVIEW_WEIGHT, interviewDoneFrom, profileCompleteness } from "../_shared/profileCompleteness.ts";
 import { scrubText } from "../_shared/scrub.ts";
 import { responsesRequest, userTextItem, extractFirstFunctionCall } from "../_shared/aiResponses.ts";
@@ -492,7 +493,7 @@ serve(async (req) => {
       const optional = async <T,>(run: () => PromiseLike<{ data: T | null; error: unknown }>): Promise<T | null> => {
         try { const { data, error } = await run(); return error ? null : data; } catch { return null; }
       };
-      const [founding, inactiveIds, declined, hiddenIds] = await Promise.all([
+      const [founding, inactiveIds, declined, hiddenIds, responseRows] = await Promise.all([
         optional(() => supabase.from("founding_consultants").select("consultant_id").is("revoked_at", null)),
         optional(() => supabase.rpc("matching_inactive_consultants")),
         parsed.data.ticket_id
@@ -500,7 +501,12 @@ serve(async (req) => {
           : Promise.resolve(null),
         // Profiles the administrator hides from client lists (incomplete profiles) are not matched either.
         optional(() => createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") || "", { global: { headers: { Authorization: authHeader } } }).rpc("hidden_consultant_ids")),
+        // Feature L response rate (service role; absent until docs/sql/assignment-response.sql is applied, then neutral).
+        optional(() => supabase.rpc("assignment_response_rates", { _consultant_ids: consultants.map((c) => c.id) })),
       ]);
+      const answeredRate = new Map<string, number | null>(
+        ((responseRows ?? []) as any[]).map((r) => [r.consultant_id, responseRate(Number(r.answered) || 0, Number(r.no_response) || 0)]),
+      );
       const foundingSet = new Set(((founding ?? []) as any[]).map((r) => r.consultant_id));
       const inactiveSet = new Set(((inactiveIds ?? []) as any[]).map((r) => (typeof r === "string" ? r : r?.consultant_id)).filter(Boolean));
       // Excluded: consultants who declined this ticket, and the client themself.
@@ -535,6 +541,7 @@ serve(async (req) => {
           project_types: c.project_types, deployment_experience: c.deployment_experience, work_modes: c.work_modes,
           timezone: c.timezone, hourly_rate: Number(c.hourly_rate) || 0, ai_interview_badge: c.ai_interview_badge,
           rating: Number(c.rating) || 0, total_reviews: c.total_reviews, response_time_minutes: c.response_time_minutes,
+          assignment_response_rate: answeredRate.get(c.id) ?? null,
           completion_percent: profileCompleteness({ ...c, skills_count: e.skills.length, interview_done: interviewDoneFrom(c), language_levels: c.language_levels && typeof c.language_levels === "object" ? c.language_levels : null }, { includePayout: false, interviewWeight }).percent,
           resolved_in_areas: e.resolved_tickets_in_these_areas, solved_similar: e.solved_similar_issues,
           founding: foundingSet.has(c.id),

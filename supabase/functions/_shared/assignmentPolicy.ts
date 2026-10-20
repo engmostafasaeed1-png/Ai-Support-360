@@ -207,6 +207,57 @@ export function responseRate(answered: number, noResponse: number): number | nul
   return Math.max(0, answered) / total;
 }
 
+// ---------------------------------------------------------------- client card
+
+export interface ClientRequestRow {
+  status: string;
+  response_due_at?: string | null;
+  extended_at?: string | null;
+}
+
+export type ClientRequestView =
+  | { kind: 'waiting'; deadline: number | null }
+  | { kind: 'no_response'; canExtend: boolean }
+  | { kind: 'done' };
+
+/**
+ * What the client sees on a sent request: waiting with a countdown, or "No response" with Invite another / Open for bids,
+ * plus Wait longer only once per request and only while the ticket is open.
+ */
+export function clientRequestView(r: ClientRequestRow, ticketClosed = false): ClientRequestView {
+  if (r.status === 'pending') {
+    const d = r.response_due_at ? Date.parse(r.response_due_at) : NaN;
+    return { kind: 'waiting', deadline: Number.isFinite(d) ? d : null };
+  }
+  if (r.status === 'expired') return { kind: 'no_response', canExtend: !r.extended_at && !ticketClosed };
+  return { kind: 'done' };
+}
+
+// ---------------------------------------------------------------- admin timings form
+
+export type TimingsProblem = 'range' | 'order' | 'critical_order';
+
+/**
+ * Checks the admin timings before saving (the server would silently fall back to the defaults instead):
+ * every value 1 minute to 7 days, reminders in order and not after the reply window, for normal and Critical requests.
+ */
+export function timingsProblems(m: PolicyMinutes): TimingsProblem[] {
+  const out: TimingsProblem[] = [];
+  const values = Object.values(m);
+  if (values.some((v) => !Number.isInteger(v) || v < 1 || v > MAX_MINUTES) || m.hourly_limit > 60) out.push('range');
+  if (!(m.r1 < m.r2 && m.r2 < m.r3 && m.r3 <= m.expire)) out.push('order');
+  if (!(m.critical_r1 < m.critical_r2 && m.critical_r2 < m.critical_r3 && m.critical_r3 <= m.critical_expire)) out.push('critical_order');
+  return out;
+}
+
+/** Response-rate share of the ranking's "response" criterion: half reply speed, half answered requests (when known). */
+export function responseFit(responseTimeMinutes: number | null | undefined, rate: number | null | undefined): number {
+  const rt = responseTimeMinutes;
+  const speed = !rt ? 0.3 : rt <= 30 ? 1 : rt <= 60 ? 0.8 : rt <= 240 ? 0.5 : rt <= 1440 ? 0.3 : 0.1;
+  if (rate == null || !Number.isFinite(rate)) return speed;
+  return 0.5 * speed + 0.5 * Math.max(0, Math.min(1, rate));
+}
+
 // ---------------------------------------------------------------- edge function entry
 
 /**

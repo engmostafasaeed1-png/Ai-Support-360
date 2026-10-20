@@ -3,12 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Bell, CircleHelp, Inbox, LayoutList, ListChecks, MessagesSquare, CalendarClock, Receipt, Sparkles, UserCircle, Wallet,
+  Bell, CircleHelp, Clock, Inbox, LayoutList, ListChecks, MessagesSquare, CalendarClock, Receipt, Sparkles, UserCircle, Wallet,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTourProgress } from '@/hooks/useTourProgress';
 import { TOUR_KEY, resumeStep, shouldAutoStart } from '@/lib/tour';
 import ProductTour, { type TourStep } from './ProductTour';
+import { useAssignmentPolicyText } from '@/components/consultant/AssignmentPolicyNote';
 
 interface TourContextValue { start: () => void; running: boolean }
 
@@ -22,6 +23,7 @@ export const AUTO_START_DELAY_MS = 800;
 /** The consultant tour content (English defaults, translated with t()). */
 export function useConsultantTourSteps(): TourStep[] {
   const { t } = useTranslation();
+  const replyPolicy = useAssignmentPolicyText();
   return useMemo(() => [
     { id: 'welcome', placement: 'center', icon: Sparkles, title: t('tour.c.welcome_title', 'Welcome'),
       body: t('tour.c.welcome', 'Welcome to AI Support 360. This 2-minute tour shows you where everything is.') },
@@ -33,6 +35,8 @@ export function useConsultantTourSteps(): TourStep[] {
       body: t('tour.c.open_requests', 'Find requests that match your SAP modules. You see the deadline, how many bids there are, and you can ask the client a question before bidding.') },
     { id: 'nav-my-bids', target: 'nav-my-bids', placement: 'end', icon: Receipt, title: t('tour.c.my_bids_title', 'My bids'),
       body: t('tour.c.my_bids', 'Track every bid. Revise or withdraw it until the client answers, and answer counter-offers here.') },
+    { id: 'reply-policy', placement: 'center', icon: Clock, title: t('tour.c.reply_title', 'Answer assignment requests in time'),
+      body: replyPolicy },
     { id: 'nav-sessions', target: 'nav-sessions', placement: 'end', icon: CalendarClock, title: t('tour.c.sessions_title', 'Sessions and schedule'),
       body: t('tour.c.sessions', 'Your booked sessions and meeting rooms. Clients can book only inside your availability.') },
     { id: 'nav-messages', target: 'nav-messages', placement: 'end', icon: MessagesSquare, title: t('tour.c.messages_title', 'Messages'),
@@ -45,7 +49,7 @@ export function useConsultantTourSteps(): TourStep[] {
       body: t('tour.c.bell', 'New requests and bid answers arrive here. Turn on phone alerts (and Telegram) in Settings so you never miss a critical request.') },
     { id: 'help-button', target: 'help-button', placement: 'bottom', icon: CircleHelp, title: t('tour.c.help_title', 'Help'),
       body: t('tour.c.help', 'Open the quick guide any time, or take this tour again.') },
-  ], [t]);
+  ], [t, replyPolicy]);
 }
 
 /** Nav steps whose menu item is not on the page (feature switched off / hidden) are left out on wide screens.

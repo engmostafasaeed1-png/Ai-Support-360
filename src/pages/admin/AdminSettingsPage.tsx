@@ -1,6 +1,7 @@
 import FoundingSettings from '@/components/admin/FoundingSettings';
 import MatchWeightsCard from '@/components/admin/MatchWeightsCard';
 import ProfileRemindersCard from '@/components/admin/ProfileRemindersCard';
+import AssignmentRemindersCard from '@/components/admin/AssignmentRemindersCard';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe, Layout, Mail } from 'lucide-react';
@@ -189,6 +190,8 @@ export default function AdminSettingsPage() {
       <FoundingSettings />
 
       <ProfileRemindersCard />
+
+      <AssignmentRemindersCard />
 
       <MatchWeightsCard />
 
