@@ -1,4 +1,6 @@
 import FoundingBadge from '@/components/consultant/FoundingBadge';
+import ResponsivenessChip from '@/components/consultant/ResponsivenessChip';
+import { BlendedRatingStars, ResponsivenessReviewLine } from '@/components/consultant/ResponsivenessRating';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -393,6 +395,7 @@ export default function ConsultantProfilePage() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">{consultant.name}</h1>
                 <VerificationBadge status={verificationStatus} size="md" />
                 <FoundingBadge consultantId={id} numbered />
+                <ResponsivenessChip consultantId={id} />
               </div>
               <p className="mt-0.5 text-base text-muted-foreground">{consultant.specialty}</p>
               <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
@@ -428,7 +431,7 @@ export default function ConsultantProfilePage() {
               <div className="grid grid-cols-2 gap-3">
                 <Button variant="outline" onClick={() => setTab('reviews')} data-testid="rating-tile"
                   className="h-auto min-w-0 items-start justify-start whitespace-normal rounded-lg p-3 text-start">
-                  <RatingStars rating={consultant.rating} reviews={consultant.reviews} />
+                  <BlendedRatingStars consultantId={id} rating={consultant.rating} reviews={consultant.reviews} interactive={false} />
                 </Button>
                 <div className="min-w-0 rounded-lg border border-border bg-card p-3">
                   <p className="break-words text-2xl font-bold leading-none text-foreground">${consultant.rate}<span className="text-sm font-medium text-muted-foreground">/hr</span></p>
@@ -743,7 +746,7 @@ export default function ConsultantProfilePage() {
             <CardContent>
               {/* Rating summary */}
               <div className="flex items-center gap-6 p-4 rounded-xl bg-muted/20 border border-border/30 mb-6">
-                <RatingStars rating={consultant.rating} reviews={consultant.reviews} size="lg" className="shrink-0" />
+                <BlendedRatingStars consultantId={id} rating={consultant.rating} reviews={consultant.reviews} size="lg" className="shrink-0" />
                 <div className="flex-1 space-y-1.5">
                   {[5, 4, 3, 2, 1].map(star => {
                     const reviews_ = liveReviews && liveReviews.length > 0 ? liveReviews : detail.reviews;
@@ -760,6 +763,8 @@ export default function ConsultantProfilePage() {
                   })}
                 </div>
               </div>
+
+              <ResponsivenessReviewLine consultantId={id} />
 
               {/* Review list */}
               {(liveReviews && liveReviews.length > 0 ? liveReviews : detail.reviews).length === 0 ? (

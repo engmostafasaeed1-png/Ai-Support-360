@@ -12,6 +12,7 @@
 import { contextFit } from './contextFit.ts';
 import { indexProfile, matchProfile, prepareTextMatch, ticketTerms, type MatchedIn, type ProfileEntry, type TextMatch } from './profileText.ts';
 import { responseFit } from './assignmentPolicy.ts';
+import { isLevel, LEVEL_FIT, type RespLevel } from './responsiveness.ts';
 
 // ---------------------------------------------------------------- modules
 
@@ -334,6 +335,8 @@ export type MatchConsultant = {
   resolved_in_areas?: number | null;
   solved_similar?: number | null;
   founding?: boolean | null;
+  /** Public responsiveness level (Feature M; set only while responsiveness_public is on). undefined = criterion left out. */
+  responsiveness_level?: RespLevel | null;
   /** Profile search document (profileText.buildProfileEntries); when no candidate has one the text criterion is left out. */
   profile_entries?: ProfileEntry[] | null;
   /** Database full-text signals (ts_rank_cd and trigram similarity, 0..1) once docs/sql/profile-search.sql is applied. */
@@ -375,7 +378,7 @@ export function consultantModules(c: MatchConsultant): ConsultantModules {
 export const MATCH_WEIGHT_DEFAULTS = {
   module: 20, sub_module: 6, keywords: 7, profile_text: 12, experience: 7, role: 4,
   industry: 4, segment: 3, country: 6, deployment: 3, work_mode: 2, timezone: 3, rate: 4,
-  badge: 5, rating: 3, response: 3, availability: 3, completion: 2, evidence: 2, founding: 1,
+  badge: 5, rating: 3, response: 3, availability: 3, completion: 2, evidence: 2, founding: 1, responsiveness: 3,
 } as const;
 export type MatchWeights = Record<keyof typeof MATCH_WEIGHT_DEFAULTS, number>;
 export type CriterionKey = keyof typeof MATCH_WEIGHT_DEFAULTS;
@@ -542,6 +545,11 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
     parts.push({ key: 'evidence', fit: matched.length ? backed.length / matched.length : 0, chip: backed.length ? (MODULE_BY_CODE.get(backed[0])?.label ?? backed[0]) : undefined });
   }
   parts.push({ key: 'founding', fit: c.founding ? 1 : 0 });
+  // Responsiveness level (Feature M): only while the owner made it public; "New" is neutral.
+  if (c.responsiveness_level !== undefined) {
+    const lvl: RespLevel = isLevel(c.responsiveness_level) ? c.responsiveness_level : 'new';
+    parts.push({ key: 'responsiveness', fit: LEVEL_FIT[lvl], chip: lvl === 'excellent' ? 'excellent' : undefined });
+  }
 
   const active = parts.filter((p) => weights[p.key] > 0);
   const total = active.reduce((sum, p) => sum + weights[p.key], 0) || 1;
@@ -556,7 +564,10 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
     .filter((p, i, list) => p.key === 'evidence' || list.findIndex((q) => q.key !== 'evidence' && String(q.chip).toLowerCase() === String(p.chip).toLowerCase()) === i)
     .slice(0, 4)
     .map((p) => ({ key: p.key, text: p.chip as string }));
-  const allWeight = Object.values(weights).reduce((a, b) => a + b, 0) || 1;
+  // Consultant-side criteria that were not scored (responsiveness while it is not public) do not lower the confidence.
+  const allWeight = (Object.keys(weights) as CriterionKey[])
+    .filter((k) => k !== 'responsiveness' || parts.some((p) => p.key === 'responsiveness'))
+    .reduce((a, k) => a + weights[k], 0) || 1;
   return {
     consultant_id: c.id,
     score: Math.round(breakdown.reduce((sum, b) => sum + b.contribution, 0)),

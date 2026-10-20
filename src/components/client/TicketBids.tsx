@@ -18,9 +18,10 @@ import { compareBids, comparisonHighlights, estimatedTotal, biddingIsOpen, biddi
 import { formatRemaining } from '@/lib/bidding';
 import { useCriticalView } from '@/hooks/useCriticalService';
 import { effectiveRate, formatPercent, surchargeApplies } from '@/lib/criticalService';
-import RatingStars from './RatingStars';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
 import CompletionBadge from '@/components/consultant/CompletionBadge';
+import ResponsivenessChip from '@/components/consultant/ResponsivenessChip';
+import { BlendedRatingStars } from '@/components/consultant/ResponsivenessRating';
 import ConsultantLocation from '@/components/consultant/ConsultantLocation';
 import BidCounterDialog from './BidCounterDialog';
 import BidDeclineDialog from './BidDeclineDialog';
@@ -80,10 +81,11 @@ export default function TicketBids({ ticketId, ticket = {}, onInvite = () => {},
     <div className="min-w-0 space-y-1"><Link to={`/client/consultants/${p.consultant_id}`} className="font-semibold text-sm text-accent break-words">{p.consultant_name}</Link>
       {p.verification_status === 'verified' && <Badge variant="outline" className="ms-1 text-success gap-1"><ShieldCheck className="h-3 w-3" />Verified</Badge>}
       <ConsultantLocation audience="client" city={p.city} country={p.country} className="text-[11px] text-muted-foreground" />
-      <RatingStars rating={Number(p.consultant_rating)} reviews={Number(p.consultant_reviews)} size="sm" />
+      <BlendedRatingStars consultantId={p.consultant_id} rating={Number(p.consultant_rating)} reviews={Number(p.consultant_reviews)} size="sm" />
       <FoundingBadge consultantId={p.consultant_id} />
       <TrustBadge credits={p.credibility_credits} badge={p.ai_interview_badge} />
       <CompletionBadge percent={p.completion_percent ?? 0} tier={p.ai_interview_badge} />
+      <ResponsivenessChip consultantId={p.consultant_id} />
     </div>
   </div>;
   const chips = (p: any) => { const counter = counterFor(p); return <div className="flex flex-wrap gap-1">

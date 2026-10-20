@@ -93,7 +93,10 @@ describe('weights and hashes', () => {
     expect(readMatchWeights(null)).toEqual(MATCH_WEIGHT_DEFAULTS);
     expect(readMatchWeights('{"module": 80, "founding": -3, "bogus": 5}')).toMatchObject({ module: 50, founding: 0 });
     expect(readMatchWeights('not json')).toEqual(MATCH_WEIGHT_DEFAULTS);
-    expect(Object.values(MATCH_WEIGHT_DEFAULTS).reduce((a, b) => a + b, 0)).toBe(100);
+    // The always-scored criteria add up to 100; responsiveness (Feature M) is an extra 3 that only counts while it is public.
+    const { responsiveness, ...always } = MATCH_WEIGHT_DEFAULTS;
+    expect(Object.values(always).reduce((a, b) => a + b, 0)).toBe(100);
+    expect(responsiveness).toBe(3);
   });
   it('weights version and input hash are stable and change with inputs', () => {
     expect(weightsVersion(readMatchWeights(null))).toBe(weightsVersion({ ...MATCH_WEIGHT_DEFAULTS }));

@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import ConsultantLocation from '@/components/consultant/ConsultantLocation';
 import { extendAssignmentRequest, useAssignmentPolicy } from '@/hooks/useAssignmentPolicy';
 import { clientRequestView, durationLabel, timeLeftLabel } from '../../../supabase/functions/_shared/assignmentPolicy';
+import ResponsivenessChip from '@/components/consultant/ResponsivenessChip';
 
 interface Props {
   ticketId: string;
@@ -176,6 +177,7 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{r.consultant_name}</p>
                     <ConsultantLocation audience="client" city={r.city} country={r.country} className="text-[11px] text-muted-foreground" />
+                    <ResponsivenessChip consultantId={r.consultant_id} className="mt-0.5" />
                     <p className="text-[11px] text-muted-foreground">Sent {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}</p>
                   </div>
                   <Badge variant="secondary" className={`text-[10px] capitalize ${statusStyles[r.status] || ''}`}>{statusLabel(r.status)}</Badge>

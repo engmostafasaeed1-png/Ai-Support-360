@@ -23,6 +23,7 @@ export const CRITERION_LABELS: Record<CriterionKey, [string, string]> = {
   completion: ['Profile completion', 'اكتمال الملف'],
   evidence: ['Evidence-backed claims', 'ادعاءات مدعومة بإثبات'],
   founding: ['Founding Consultant', 'مستشار مؤسس'],
+  responsiveness: ['Responsiveness', 'الاستجابة'],
 };
 
 /** Short prefix shown before a chip's value, so "FB50" reads "T-code FB50" and "gold" reads "Gold badge". */
@@ -38,6 +39,7 @@ export function chipText(key: CriterionKey, text: string, ar: boolean): string {
     case 'experience': return ar ? `خبرة ${text.replace(/\s*yrs?/, '')} سنة` : text.replace(/yrs?/, 'years');
     case 'evidence': return ar ? `${text} موثّق` : `${text} verified`;
     case 'founding': return ar ? 'مستشار مؤسس' : 'Founding Consultant';
+    case 'responsiveness': return ar ? 'استجابة ممتازة' : 'Excellent responsiveness';
     case 'profile_text': return ar ? `الملف يذكر ${text}` : `Profile mentions ${text}`;
     default: return text;
   }

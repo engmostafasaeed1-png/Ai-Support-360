@@ -9,8 +9,8 @@ const CROSS_PORTAL = ['/admin', '/super-admin'];
 
 const portals: Array<[string, NavGroup[], string, NavItem[], number]> = [
   ['client', clientNavGroups, '/client', [clientPrimaryAction], 36],
-  ['consultant', consultantNavGroups, '/consultant', [], 23],
-  ['admin', adminNavGroups, '/admin', [], 23],
+  ['consultant', consultantNavGroups, '/consultant', [], 24],
+  ['admin', adminNavGroups, '/admin', [], 24],
   ['super-admin', superAdminNavGroups, '/super-admin', [], 10],
 ];
 

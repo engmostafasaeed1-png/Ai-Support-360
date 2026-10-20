@@ -25,6 +25,7 @@ import { template as adminNotification } from './admin-notification.tsx'
 import { template as profileReminder } from './profile-reminder.tsx'
 import { template as assignmentRequest } from './assignment-request.tsx'
 import { template as assignmentNoResponse } from './assignment-no-response.tsx'
+import { template as responsivenessNotice } from './responsiveness-notice.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'admin-notification': adminNotification,
@@ -43,4 +44,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'profile-reminder': profileReminder,
   'assignment-request': assignmentRequest,
   'assignment-no-response': assignmentNoResponse,
+  'responsiveness-notice': responsivenessNotice,
 }
