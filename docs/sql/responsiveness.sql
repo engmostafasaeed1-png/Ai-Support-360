@@ -1167,7 +1167,8 @@ DECLARE
   _client uuid;
   _areas text[];
   _toks text[];
-  _demote boolean := public.platform_flag('responsiveness_public', false);
+  _skip uuid[] := ARRAY[]::uuid[];
+  _more uuid[];
 BEGIN
   SELECT t.client_id, COALESCE(t.sap_modules, '{}'::text[]) INTO _client, _areas FROM public.tickets t WHERE t.id = _ticket_id;
   IF NOT FOUND THEN
@@ -1175,6 +1176,15 @@ BEGIN
   END IF;
   SELECT COALESCE(array_agg(DISTINCT x), '{}'::text[]) INTO _toks
     FROM unnest(_areas) a, unnest(public.sap_area_tokens(a)) x;
+  IF to_regclass('public.consultant_responsiveness') IS NOT NULL AND to_regprocedure('public.platform_flag(text,boolean)') IS NOT NULL THEN
+    EXECUTE $q$SELECT COALESCE(array_agg(r.consultant_id), ARRAY[]::uuid[]) FROM public.consultant_responsiveness r
+               WHERE public.platform_flag('responsiveness_public', false) AND r.public_level = 'needs_improvement'$q$ INTO _more;
+    _skip := _skip || COALESCE(_more, ARRAY[]::uuid[]);
+  END IF;
+  IF to_regprocedure('public.consultant_policy_blocked_ids()') IS NOT NULL THEN
+    EXECUTE 'SELECT public.consultant_policy_blocked_ids()' INTO _more;
+    _skip := _skip || COALESCE(_more, ARRAY[]::uuid[]);
+  END IF;
   RETURN QUERY
   WITH elig AS (
     SELECT c.id AS cid, c.user_id AS uid, c.sap_technologies AS techs
@@ -1182,8 +1192,7 @@ BEGIN
      WHERE c.verification_status = 'verified'
        AND c.user_id <> _client
        AND COALESCE(c.new_case_alerts, true)
-       AND NOT (_demote AND EXISTS (SELECT 1 FROM public.consultant_responsiveness r
-                                     WHERE r.consultant_id = c.id AND r.public_level = 'needs_improvement'))
+       AND NOT (c.id = ANY(_skip))
   ), matched AS (
     SELECT e.cid, e.uid
       FROM elig e

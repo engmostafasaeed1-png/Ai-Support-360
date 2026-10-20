@@ -408,6 +408,18 @@ textarea:focus-visible {
   * {
     display: none !important;
   }
+  /* Exception: the public Consultant Service Policy page is printable: only the policy and its containers are shown. */
+  *:has([data-policy-print]) {
+    display: block !important;
+    visibility: visible !important;
+  }
+  [data-policy-print],
+  [data-policy-print] * {
+    display: revert !important;
+  }
+  [data-policy-print] .print\:hidden {
+    display: none !important;
+  }
 }
 
 /* Protected value overlay for screenshots */

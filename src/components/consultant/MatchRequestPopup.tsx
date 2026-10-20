@@ -11,6 +11,7 @@ import { useAssignmentPolicy } from '@/hooks/useAssignmentPolicy';
 import { toastWithLocationFix } from '@/lib/locationErrors';
 import { readAcks, sessionIdOf, writeAck } from '@/lib/assignmentPopupAcks';
 import { LocationBlockedNotice, useLocationBlocked } from '@/components/consultant/LocationBanner';
+import { PolicyBlockedNotice, usePolicyBlocked } from '@/components/consultant/policy/PolicyBanner';
 import AssignmentRequestDialog, { type AssignmentPopupItem } from '@/components/consultant/AssignmentRequestDialog';
 import { nextPopup, popupKey, type PopupRequest } from '../../../supabase/functions/_shared/assignmentPolicy';
 
@@ -78,6 +79,7 @@ export default function MatchRequestPopup() {
   const policy = useAssignmentPolicy();
   const respond = useRespondToMatch();
   const locationBlocked = useLocationBlocked();
+  const policyBlocked = usePolicyBlocked();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [acked, setAcked] = useState<Set<string>>(new Set());
   const [now, setNow] = useState(() => Date.now());
@@ -173,13 +175,14 @@ export default function MatchRequestPopup() {
       now={now}
       waitingCount={waiting}
       busy={respond.isPending || checkingNda}
-      acceptDisabled={locationBlocked}
+      acceptDisabled={locationBlocked || policyBlocked}
       onAccept={() => void accept()}
       onDecline={() => answer('rejected')}
       onView={view}
       onLater={acknowledge}
     >
       <LocationBlockedNotice />
+      <PolicyBlockedNotice />
     </AssignmentRequestDialog>
   );
 }

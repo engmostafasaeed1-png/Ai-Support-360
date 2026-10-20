@@ -46,6 +46,11 @@ const ROUTES: Record<string, Meta> = {
     description: 'Set a new password for your SAP support portal account.',
     noindex: true,
   },
+  '/consultant-policy': {
+    title: `Consultant Service Policy — ${BRAND}`,
+    description: 'How consultants answer assignment requests, how responsiveness is measured fairly, and the platform rules consultants accept.',
+    noindex: true,
+  },
   '/unsubscribe': {
     title: `Email preferences — ${BRAND}`,
     description: 'Manage or unsubscribe from SAP support portal emails.',

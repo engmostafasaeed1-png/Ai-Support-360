@@ -1,6 +1,6 @@
 # Architecture rules
 
-Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`); read it before changing files there.
+Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql/`); read it before changing files there.
 
 - Reuse the consultant payout reminder on dashboard and Earnings and render administrator readiness badges from existing presence/status metadata only; this keeps bank identifiers out of readiness UI.
 - Shared Button removes its variant gradient when callers supply a base background colour, while retaining custom gradients; this preserves existing emergency and status colours without changing the Button API.

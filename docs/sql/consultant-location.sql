@@ -108,18 +108,29 @@ GRANT EXECUTE ON FUNCTION public.consultant_location_blocked(uuid) TO authentica
 -- 3a. Hidden from directory, map and matching (existing rule kept; location rule added, independent of "enforce").
 CREATE OR REPLACE FUNCTION public.hidden_consultant_ids()
  RETURNS uuid[]
- LANGUAGE sql
+ LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$
-  SELECT COALESCE(array_agg(c.id), ARRAY[]::uuid[])
+DECLARE
+  _ids uuid[];
+  _more uuid[];
+BEGIN
+  IF auth.uid() IS NULL THEN RETURN ARRAY[]::uuid[]; END IF;
+  SELECT COALESCE(array_agg(c.id), ARRAY[]::uuid[]) INTO _ids
     FROM public.consultants c
-   WHERE auth.uid() IS NOT NULL
-     AND (
-       (COALESCE((SELECT enforce FROM public.profile_rules_config WHERE id), false)
-        AND cardinality(public.consultant_missing_fields(c.id)) > 0)
-       OR public.consultant_location_blocked(c.id)
-     )
+   WHERE COALESCE((SELECT enforce FROM public.profile_rules_config WHERE id), false)
+     AND cardinality(public.consultant_missing_fields(c.id)) > 0;
+  IF to_regprocedure('public.consultant_location_blocked(uuid)') IS NOT NULL THEN
+    EXECUTE 'SELECT COALESCE(array_agg(c.id), ARRAY[]::uuid[]) FROM public.consultants c WHERE public.consultant_location_blocked(c.id)' INTO _more;
+    _ids := _ids || COALESCE(_more, ARRAY[]::uuid[]);
+  END IF;
+  IF to_regprocedure('public.consultant_policy_blocked_ids()') IS NOT NULL THEN
+    EXECUTE 'SELECT public.consultant_policy_blocked_ids()' INTO _more;
+    _ids := _ids || COALESCE(_more, ARRAY[]::uuid[]);
+  END IF;
+  RETURN ARRAY(SELECT DISTINCT x FROM unnest(_ids) AS x);
+END
 $function$;
 
 -- 3b. New bids: the existing guard, with a clear location message first.

@@ -42,6 +42,7 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
       { label: 'Service Delivery', href: '/service-delivery' },
       { label: 'Cookie Policy', href: '/cookie-policy' },
       { label: 'Acceptable Use', href: '/acceptable-use' },
+      { label: t('footer.consultantPolicy', 'Consultant Service Policy'), href: '/consultant-policy' },
     ],
   };
 

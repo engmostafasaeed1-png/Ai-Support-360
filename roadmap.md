@@ -65,3 +65,5 @@
 - [ ] Feature L SQL: owner applies docs/sql/assignment-response.sql (status, log, claim, cron every 5 minutes); syntax-checked, not executed. Until then no reminders, No response notices or stats.
 - [x] Feature M: responsiveness statistics (availability-fair metrics, warnings 1/2, chip on cards, blended rating, ranking weight, disputes, admin page, `responsiveness_public` off by default); function deployed, 1,755 tests pass (Oct 20)
 - [ ] Feature M SQL: owner applies docs/sql/responsiveness.sql AFTER docs/sql/assignment-response.sql; syntax-checked, not executed. Team panel chip waits for Feature I phase 2.
+- [x] Feature N: versioned Consultant Service Policy (draft EN/AR), public printable /consultant-policy, final profile step, pop-up/banner/e-mails, grace restrictions, admin page, SQL + checks, tests, Arabic strings (Oct 20)
+- [ ] Feature N SQL: owner has the draft text reviewed, applies docs/sql/consultant-policy.sql, optionally runs docs/sql/consultant-policy.test.sql
