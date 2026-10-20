@@ -74,6 +74,65 @@ export type Database = {
         }
         Relationships: []
       }
+      assignment_reminder_log: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          digested_at: string | null
+          due_at: string
+          email_error: string | null
+          id: string
+          request_id: string
+          sent_at: string | null
+          step: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          digested_at?: string | null
+          due_at: string
+          email_error?: string | null
+          id?: string
+          request_id: string
+          sent_at?: string | null
+          step: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          digested_at?: string | null
+          due_at?: string
+          email_error?: string | null
+          id?: string
+          request_id?: string
+          sent_at?: string | null
+          step?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_reminder_log_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_match_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assignment_reminder_runs: {
+        Row: {
+          id: string
+          ran_at: string
+        }
+        Insert: {
+          id?: string
+          ran_at?: string
+        }
+        Update: {
+          id?: string
+          ran_at?: string
+        }
+        Relationships: []
+      }
       attachments: {
         Row: {
           created_at: string
@@ -6981,9 +7040,16 @@ export type Database = {
         Row: {
           consultant_id: string
           created_at: string
+          expired_at: string | null
+          extended_at: string | null
           id: string
+          is_critical: boolean
+          last_reminder_at: string | null
           message: string | null
+          reminders_sent: number
           responded_at: string | null
+          response_due_at: string | null
+          response_kind: string
           sent_by: string
           status: Database["public"]["Enums"]["match_request_status"]
           ticket_id: string
@@ -6992,9 +7058,16 @@ export type Database = {
         Insert: {
           consultant_id: string
           created_at?: string
+          expired_at?: string | null
+          extended_at?: string | null
           id?: string
+          is_critical?: boolean
+          last_reminder_at?: string | null
           message?: string | null
+          reminders_sent?: number
           responded_at?: string | null
+          response_due_at?: string | null
+          response_kind?: string
           sent_by: string
           status?: Database["public"]["Enums"]["match_request_status"]
           ticket_id: string
@@ -7003,9 +7076,16 @@ export type Database = {
         Update: {
           consultant_id?: string
           created_at?: string
+          expired_at?: string | null
+          extended_at?: string | null
           id?: string
+          is_critical?: boolean
+          last_reminder_at?: string | null
           message?: string | null
+          reminders_sent?: number
           responded_at?: string | null
+          response_due_at?: string | null
+          response_kind?: string
           sent_by?: string
           status?: Database["public"]["Enums"]["match_request_status"]
           ticket_id?: string
@@ -8788,6 +8868,7 @@ export type Database = {
         Args: { _amount: number; _consultant_id: string; _note: string }
         Returns: undefined
       }
+      admin_assignment_reminder_stats: { Args: never; Returns: Json }
       admin_client_approval_counts: { Args: never; Returns: Json }
       admin_confirm_payment: {
         Args: {
@@ -8967,6 +9048,22 @@ export type Database = {
         Args: { _date: string; _slot: string; _timezone: string }
         Returns: undefined
       }
+      assignment_admin_digest: { Args: never; Returns: number }
+      assignment_duration_label: {
+        Args: { _lang: string; _minutes: number; _prefer_days?: boolean }
+        Returns: string
+      }
+      assignment_policy_minutes: { Args: never; Returns: Json }
+      assignment_policy_text: { Args: { _lang: string }; Returns: string }
+      assignment_response_rates: {
+        Args: { _consultant_ids?: string[] }
+        Returns: {
+          answered: number
+          consultant_id: string
+          no_response: number
+        }[]
+      }
+      assignment_user_lang: { Args: { _user_id: string }; Returns: string }
       audit_changed: { Args: { _new: Json; _old: Json }; Returns: Json }
       audit_is_sensitive_key: { Args: { _k: string }; Returns: boolean }
       audit_scrub_row: { Args: { _row: Json }; Returns: Json }
@@ -9006,6 +9103,30 @@ export type Database = {
       }
       choose_first_oauth_role: { Args: { _role: string }; Returns: string }
       claim_admin_notification_email: { Args: { _id: string }; Returns: Json }
+      claim_assignment_reminders: {
+        Args: { _limit?: number; _request_id?: string }
+        Returns: {
+          can_extend: boolean
+          consultant_name: string
+          is_critical: boolean
+          lang: string
+          log_id: string
+          minutes_left: number
+          proposed_rate: number
+          rate_currency: string
+          recipient: string
+          recipient_user_id: string
+          request_id: string
+          response_due_at: string
+          response_kind: string
+          sap_area: string
+          step: string
+          ticket_id: string
+          ticket_title: string
+          timezone: string
+          urgency: string
+        }[]
+      }
       claim_profile_reminders: {
         Args: { _limit?: number }
         Returns: {
@@ -9026,6 +9147,10 @@ export type Database = {
         Returns: string
       }
       client_approval_required: { Args: never; Returns: boolean }
+      client_extend_assignment_request: {
+        Args: { _request_id: string }
+        Returns: string
+      }
       client_info_ready: {
         Args: { _company_name: string; _sap_modules: string[] }
         Returns: boolean
