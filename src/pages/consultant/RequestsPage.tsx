@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useConsultantMatchRequests, useRespondToMatch } from '@/hooks/useMatchRequests';
-import { Check, X, Inbox, Clock, ShieldCheck, FileSignature, Download } from 'lucide-react';
+import { Check, X, Inbox, Clock, ShieldCheck, FileSignature, Download, FileText, HelpCircle, PauseCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { toastWithLocationFix } from '@/lib/locationErrors';
@@ -15,6 +15,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import NDASigningModal from '@/components/consultant/NDASigningModal';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
+import { useAssignmentInfoReady, useInfoRequests } from '@/hooks/useAssignmentInfo';
+import DecisionPreviewDialog from '@/components/consultant/assignment/DecisionPreviewDialog';
+import RequestInfoDialog from '@/components/consultant/assignment/RequestInfoDialog';
+import DeclineReasonDialog from '@/components/consultant/assignment/DeclineReasonDialog';
+import InfoThread from '@/components/consultant/assignment/InfoThread';
+import { infoRequestBlock } from '../../../supabase/functions/_shared/assignmentInfo';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -41,6 +47,13 @@ export default function RequestsPage() {
   const [pendingAcceptId, setPendingAcceptId] = useState<string | null>(null);
   const [ndaClientId, setNdaClientId] = useState<string | null>(null);
   const [ndaClientName, setNdaClientName] = useState<string>('');
+  const infoReady = useAssignmentInfoReady();
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [askId, setAskId] = useState<string | null>(null);
+  const [declineId, setDeclineId] = useState<string | null>(null);
+  const pendingIds = (requests || []).filter((r: any) => r.status === 'pending' || r.info_requests_count > 0).map((r: any) => r.id as string);
+  const { data: infoRows = [] } = useInfoRequests({ requestIds: pendingIds }, infoReady);
+  const infoFor = (id: string) => infoRows.filter((r) => r.request_id === id);
 
   // Get current consultant
   const { data: consultantData } = useQuery({
@@ -129,6 +142,7 @@ export default function RequestsPage() {
   };
 
   const handleDecline = (requestId: string) => {
+    if (infoReady) { setDeclineId(requestId); return; }
     respond.mutate({ requestId, status: 'rejected' }, {
       onSuccess: () => toast.success('Match declined.'),
       onError: (e) => toastWithLocationFix(e, 'Failed to respond. Please try again.', { useMessage: false }),
@@ -172,6 +186,16 @@ export default function RequestsPage() {
     if (req) handleAccept(req.id, req.ticket_id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params, requests, ticketClientMap, ndaMap]);
+  // E-mail link "Open ticket description": ?request=<id>&preview=1 opens the preview once.
+  const handledPreview = useRef<string | null>(null);
+  useEffect(() => {
+    const id = params.get('request');
+    if (!infoReady || !id || params.get('preview') !== '1' || handledPreview.current === id || !requests) return;
+    handledPreview.current = id;
+    const next = new URLSearchParams(params); next.delete('preview'); setParams(next, { replace: true });
+    if (requests.some((r: any) => r.id === id && r.status === 'pending')) setPreviewId(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params, requests, infoReady]);
   useEffect(() => {
     if (focusId) document.getElementById(`request-${focusId}`)?.scrollIntoView({ block: 'center' });
   }, [focusId, requests]);
@@ -189,7 +213,7 @@ export default function RequestsPage() {
         </p>
       </div>
 
-      <p className="rounded-xl bg-muted/60 p-3 text-xs text-muted-foreground">{policyText(policy, lang)}</p>
+      <p className="rounded-xl bg-muted/60 p-3 text-xs text-muted-foreground">{policyText(policy, lang, { info: infoReady })}</p>
 
       <div className="flex gap-1.5 flex-wrap">
         {['all', 'pending', 'accepted', 'rejected', 'expired'].map(s => (
@@ -217,7 +241,15 @@ export default function RequestsPage() {
           </Card>
         ) : (
           filtered.map((req: any) => {
-            const badge = statusBadge[req.status] || statusBadge.pending;
+            const paused = req.status === 'pending' && !!req.info_paused_at;
+            const badge = paused
+              ? { label: t('assignment_info.status_pending_info', 'Pending information'), className: 'bg-sky-100 text-sky-700' }
+              : statusBadge[req.status] || statusBadge.pending;
+            const thread = infoFor(req.id);
+            const askBlock = infoRequestBlock(req.status, thread);
+            const askBlockedText = askBlock === 'open'
+              ? t('assignment_info.block_open', "Waiting for the client's answer to your question.")
+              : askBlock === 'limit' ? t('assignment_info.block_limit', 'You have asked 3 times on this request.') : null;
             const clientInfo = ticketClientMap?.get(req.ticket_id);
             const hasNda = clientInfo ? ndaMap?.has(clientInfo.client_id) : false;
             return (
@@ -240,12 +272,19 @@ export default function RequestsPage() {
                       {req.message && (
                         <p className="text-xs text-muted-foreground mt-2 italic">"{req.message}"</p>
                       )}
-                      {req.status === 'pending' && (
+                      {req.status === 'pending' && !paused && (
                         <div className="flex items-center gap-1 mt-2 text-xs text-amber-600">
                           <Clock className="w-3 h-3" />
                           Awaiting your response{req.response_due_at ? ` · ${timeLeftLabel(Date.parse(req.response_due_at), Date.now(), lang)}` : ''}
                         </div>
                       )}
+                      {paused && (
+                        <div className="flex items-center gap-1 mt-2 text-xs text-sky-700 dark:text-sky-400">
+                          <PauseCircle className="w-3 h-3" aria-hidden="true" />
+                          {t('assignment_info.paused_consultant', "Waiting for the client's answer · reply clock paused")}
+                        </div>
+                      )}
+                      {infoReady && <InfoThread rows={thread} />}
                       {/* NDA status indicator */}
                       {hasNda && (
                         <div className="flex items-center gap-1 mt-1.5 text-xs text-green-600">
@@ -278,7 +317,24 @@ export default function RequestsPage() {
                         </Badge>
                       </div>
                       {req.status === 'pending' && (
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex flex-wrap items-center justify-end gap-2 mt-1">
+                          {infoReady && (
+                            <>
+                              <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setPreviewId(req.id)}>
+                                <FileText className="w-3.5 h-3.5 me-1" aria-hidden="true" /> {t('assignment_info.preview_button', 'Open ticket description')}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-xs"
+                                onClick={() => setAskId(req.id)}
+                                disabled={!!askBlockedText}
+                                title={askBlockedText ?? undefined}
+                              >
+                                <HelpCircle className="w-3.5 h-3.5 me-1" aria-hidden="true" /> {t('assignment_info.ask_button', 'Request more information')}
+                              </Button>
+                            </>
+                          )}
                           <Button
                             size="sm"
                             variant="outline"
@@ -307,6 +363,28 @@ export default function RequestsPage() {
           })
         )}
       </div>
+
+      {(() => {
+        const req: any = (requests || []).find((r: any) => r.id === previewId);
+        const thread = previewId ? infoFor(previewId) : [];
+        const blocked = req ? infoRequestBlock(req.status, thread) : 'not_pending';
+        const actions = req && req.status === 'pending' ? (
+          <>
+            <Button variant="outline" className="text-destructive hover:bg-destructive/10" onClick={() => { setPreviewId(null); setDeclineId(req.id); }}>
+              {t('assignment_policy.decline', 'Decline')}
+            </Button>
+            <Button variant="outline" disabled={!!blocked} onClick={() => { setPreviewId(null); setAskId(req.id); }}>
+              {t('assignment_info.ask_button', 'Request more information')}
+            </Button>
+            <Button className="gradient-primary border-0" disabled={respond.isPending} onClick={() => { setPreviewId(null); handleAccept(req.id, req.ticket_id); }}>
+              {t('assignment_policy.accept', 'Accept')}
+            </Button>
+          </>
+        ) : null;
+        return <DecisionPreviewDialog requestId={previewId} onClose={() => setPreviewId(null)} actions={actions} />;
+      })()}
+      <RequestInfoDialog requestId={askId} used={askId ? infoFor(askId).length : 0} onClose={() => setAskId(null)} />
+      <DeclineReasonDialog requestId={declineId} ready={infoReady} onClose={() => setDeclineId(null)} />
 
       {/* NDA Modal */}
       {consultantData?.id && ndaClientId && (
