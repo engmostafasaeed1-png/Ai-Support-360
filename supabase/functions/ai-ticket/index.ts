@@ -493,7 +493,7 @@ serve(async (req) => {
       const optional = async <T,>(run: () => PromiseLike<{ data: T | null; error: unknown }>): Promise<T | null> => {
         try { const { data, error } = await run(); return error ? null : data; } catch { return null; }
       };
-      const [founding, inactiveIds, declined, hiddenIds, responseRows] = await Promise.all([
+      const [founding, inactiveIds, declined, hiddenIds, responseRows, respLevels] = await Promise.all([
         optional(() => supabase.from("founding_consultants").select("consultant_id").is("revoked_at", null)),
         optional(() => supabase.rpc("matching_inactive_consultants")),
         parsed.data.ticket_id
@@ -503,7 +503,11 @@ serve(async (req) => {
         optional(() => createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") || "", { global: { headers: { Authorization: authHeader } } }).rpc("hidden_consultant_ids")),
         // Feature L response rate (service role; absent until docs/sql/assignment-response.sql is applied, then neutral).
         optional(() => supabase.rpc("assignment_response_rates", { _consultant_ids: consultants.map((c) => c.id) })),
+        // Feature M public responsiveness level: rows only while responsiveness_public is on (else the criterion is left out).
+        optional(() => supabase.rpc("responsiveness_public_summary", { _consultant_ids: consultants.map((c) => c.id) })),
       ]);
+      const respRows = Array.isArray(respLevels) ? (respLevels as any[]) : [];
+      const respLevel = new Map<string, string>(respRows.map((r) => [r.consultant_id, r.level]));
       const answeredRate = new Map<string, number | null>(
         ((responseRows ?? []) as any[]).map((r) => [r.consultant_id, responseRate(Number(r.answered) || 0, Number(r.no_response) || 0)]),
       );
@@ -545,6 +549,7 @@ serve(async (req) => {
           completion_percent: profileCompleteness({ ...c, skills_count: e.skills.length, interview_done: interviewDoneFrom(c), language_levels: c.language_levels && typeof c.language_levels === "object" ? c.language_levels : null }, { includePayout: false, interviewWeight }).percent,
           resolved_in_areas: e.resolved_tickets_in_these_areas, solved_similar: e.solved_similar_issues,
           founding: foundingSet.has(c.id),
+          ...(respRows.length ? { responsiveness_level: (respLevel.get(c.id) ?? "new") as any } : {}),
         };
       });
       const ranking = rankConsultants(matchTicket, matchInput, { weights, excluded });
