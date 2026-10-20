@@ -61,5 +61,5 @@
 - [x] Fix K: consultant location mandatory (country + city), shown everywhere, sign-up picker, prompt/banner/checklist, admin 'Who is missing location'.
 - [ ] Fix K database update `docs/sql/consultant-location.sql` (after interview-completion.sql): awaits owner; until then no grace deadline, no blocking, admin page read-only.
 
-- [ ] Feature L: assignment response policy (popup, e-mails, reminders 2 h/4 h/24 h and Critical 10/20/30 min, No response escalation to the client, admin settings, response rate in matching, policy text in popup/e-mails/notifications/settings/tour/guide/Terms)
-- [ ] Feature L SQL: owner applies docs/sql/assignment-response.sql (status, log, claim, cron every 5 minutes)
+- [x] Feature L: popup, e-mails, reminders 2 h/4 h/24 h and Critical 10/20/30 min, client countdown + No response card (Invite another / Open for bids / Wait longer once), admin timings card + stats, response rate in ranking, policy text in popup/e-mails/notifications/Settings/tour/guide/Terms; reminder function deployed, 1,724 tests pass (Oct 20)
+- [ ] Feature L SQL: owner applies docs/sql/assignment-response.sql (status, log, claim, cron every 5 minutes); syntax-checked, not executed. Until then no reminders, No response notices or stats.
