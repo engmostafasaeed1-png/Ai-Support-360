@@ -5,7 +5,7 @@ import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit, getUserRol
 import { weightedMatch } from "../_shared/matchScoring.ts";
 import { contextFit, readRequestContext } from "../_shared/contextFit.ts";
 import { matchInputsHash, rankConsultants, readMatchWeights, weightsVersion, type MatchConsultant, type MatchTicket } from "../_shared/ticketMatch.ts";
-import { profileCompleteness } from "../_shared/profileCompleteness.ts";
+import { clampInterviewWeight, DEFAULT_INTERVIEW_WEIGHT, interviewDoneFrom, profileCompleteness } from "../_shared/profileCompleteness.ts";
 import { scrubText } from "../_shared/scrub.ts";
 import { responsesRequest, userTextItem, extractFirstFunctionCall } from "../_shared/aiResponses.ts";
 
@@ -273,6 +273,13 @@ serve(async (req) => {
       if (!requestContext.customer_segment) requestContext.customer_segment = (clientContext as any)?.customer_segment || null;
       if (!requestContext.country) requestContext.country = (clientContext as any)?.country || null;
 
+      // Admin-set share of completion that belongs to the AI interview; default until the prepared SQL is applied.
+      let interviewWeight = DEFAULT_INTERVIEW_WEIGHT;
+      try {
+        const { data: w, error: wErr } = await supabase.rpc("profile_interview_weight");
+        if (!wErr && w !== null && w !== undefined) interviewWeight = clampInterviewWeight(w);
+      } catch { /* default */ }
+
       // Only verified consultants can be asked to take a ticket (the match request is refused for anyone else).
       const consultants: any[] = [];
       for (let offset = 0; ; offset += 500) {
@@ -284,7 +291,7 @@ serve(async (req) => {
           verification_status, ai_skills_score, country, credly_checked_at, linkedin_checked_at,
           sap_role, sap_roles, seniority_level, total_sap_years, sap_technologies, localization_countries, project_types,
           customer_segments, vertical_solutions, localization_solutions, deployment_experience, project_scale,
-          work_modes, onsite_countries, working_week, language_levels, ai_interview_badge, profile_visible
+          work_modes, onsite_countries, working_week, language_levels, ai_interview_badge, ai_interview_completed_at, profile_visible
         `)
         .eq("verification_status", "verified")
         .order("id").range(offset, offset + 499);
@@ -528,7 +535,7 @@ serve(async (req) => {
           project_types: c.project_types, deployment_experience: c.deployment_experience, work_modes: c.work_modes,
           timezone: c.timezone, hourly_rate: Number(c.hourly_rate) || 0, ai_interview_badge: c.ai_interview_badge,
           rating: Number(c.rating) || 0, total_reviews: c.total_reviews, response_time_minutes: c.response_time_minutes,
-          completion_percent: profileCompleteness({ ...c, skills_count: e.skills.length, language_levels: c.language_levels && typeof c.language_levels === "object" ? c.language_levels : null }, { includePayout: false }).percent,
+          completion_percent: profileCompleteness({ ...c, skills_count: e.skills.length, interview_done: interviewDoneFrom(c), language_levels: c.language_levels && typeof c.language_levels === "object" ? c.language_levels : null }, { includePayout: false, interviewWeight }).percent,
           resolved_in_areas: e.resolved_tickets_in_these_areas, solved_similar: e.solved_similar_issues,
           founding: foundingSet.has(c.id),
         };
