@@ -1,7 +1,7 @@
 import * as React from 'npm:react@18.3.1'
 import { Body, Button, Container, Head, Heading, Hr, Html, Preview, Section, Text } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
-import { durationLabel, policyText, POLICY_DEFAULTS } from '../assignmentPolicy.ts'
+import { durationLabel, policyText, readPolicyMinutes } from '../assignmentPolicy.ts'
 
 /** New assignment request (step "request") and its reminders (r1, r2, r3). One template, EN/AR by the consultant's language. */
 interface Props {
@@ -19,6 +19,8 @@ interface Props {
   minutesLeft?: number
   timezone?: string
   requestUrl?: string
+  /** Current admin timings (assignment_policy_minutes); defaults when missing. */
+  policy?: Record<string, number>
 }
 
 const STR = {
@@ -68,7 +70,7 @@ function formatDeadline(iso: string | undefined, lang: 'en' | 'ar', tz: string):
 const AssignmentRequestEmail = ({
   lang = 'en', step = 'request', ticketTitle, sapArea, urgency, critical = false, bid = false,
   proposedRate, currency, deadline, minutesLeft, timezone = 'Asia/Riyadh',
-  requestUrl = 'https://www.aisupport360.com/consultant/requests',
+  requestUrl = 'https://www.aisupport360.com/consultant/requests', policy,
 }: Props) => {
   const l = lang === 'ar' ? 'ar' : 'en'
   const t = STR[l]
@@ -102,7 +104,7 @@ const AssignmentRequestEmail = ({
           <Button href={requestUrl} style={button}>{t.button}</Button>
           <Hr style={hr} />
           <Text style={boxTitle}>{t.policyTitle}</Text>
-          <Text style={small}>{policyText(POLICY_DEFAULTS, l)}</Text>
+          <Text style={small}>{policyText(readPolicyMinutes(policy), l)}</Text>
           <Text style={small}>{t.privacy}</Text>
         </Container>
       </Body>

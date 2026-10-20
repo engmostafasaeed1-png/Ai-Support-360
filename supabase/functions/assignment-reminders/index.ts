@@ -6,7 +6,7 @@
 // Safety lives in the service-only claim_assignment_reminders RPC (atomic FOR UPDATE SKIP LOCKED, due times, stop rules,
 // per-consultant hourly limit, admin switch assignment_reminders, max 200 per run). Responses contain counts only.
 import { adminClient, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
-import { parseRunBody, runResponse, sweepGuarded } from '../_shared/assignmentPolicy.ts';
+import { parseRunBody, readPolicyMinutes, runResponse, sweepGuarded, type PolicyMinutes } from '../_shared/assignmentPolicy.ts';
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
 
 interface ClaimRow {
@@ -32,7 +32,7 @@ interface ClaimRow {
 }
 
 // deno-lint-ignore no-explicit-any
-async function sendOne(admin: any, row: ClaimRow): Promise<void> {
+async function sendOne(admin: any, row: ClaimRow, policy: PolicyMinutes): Promise<void> {
   const { data: u } = await admin.auth.admin.getUserById(row.recipient_user_id);
   const email = u?.user?.email;
   if (!email) return;
@@ -68,6 +68,7 @@ async function sendOne(admin: any, row: ClaimRow): Promise<void> {
           minutesLeft: row.minutes_left ?? undefined,
           timezone: row.timezone || 'Asia/Riyadh',
           requestUrl: `${SITE_URL}/consultant/requests?request=${row.request_id}`,
+          policy,
         },
         idempotencyKey: `assignment-${row.log_id}`,
       });
@@ -110,8 +111,13 @@ Deno.serve(async (req) => {
 
   // Claims are already recorded; send in the background so the caller returns quickly.
   const task = async () => {
+    let policy = readPolicyMinutes(null);
+    try {
+      const { data: pm } = await admin.rpc('assignment_policy_minutes');
+      policy = readPolicyMinutes(pm);
+    } catch { /* defaults */ }
     for (const row of rows) {
-      try { await sendOne(admin, row); }
+      try { await sendOne(admin, row, policy); }
       catch { console.error('assignment reminder send failed'); }
     }
     if (!requestId) {
