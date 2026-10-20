@@ -35,7 +35,7 @@ export function useConsultantMatchRequests() {
 
       const { data, error } = await supabase
         .from('ticket_match_requests')
-        .select('id, ticket_id, status, message, created_at, responded_at')
+        .select('*')
         .eq('consultant_id', consultant.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
