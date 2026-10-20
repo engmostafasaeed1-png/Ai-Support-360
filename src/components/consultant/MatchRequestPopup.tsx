@@ -7,6 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useRespondToMatch } from '@/hooks/useMatchRequests';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { toast } from 'sonner';
+import { toastWithLocationFix } from '@/lib/locationErrors';
+import { LocationBlockedNotice, useLocationBlocked } from '@/components/consultant/LocationBanner';
 
 interface MatchPopupData {
   id: string;
@@ -68,6 +70,7 @@ export default function MatchRequestPopup() {
     return () => { cleanup.then(fn => fn?.()); };
   }, [isGuest]);
 
+  const locationBlocked = useLocationBlocked();
   const handleRespond = (status: 'accepted' | 'rejected') => {
     if (!popup) return;
     respond.mutate({ requestId: popup.id, status }, {
@@ -75,7 +78,7 @@ export default function MatchRequestPopup() {
         toast.success(status === 'accepted' ? 'Match accepted!' : 'Match declined.');
         setPopup(null);
       },
-      onError: () => toast.error('Failed to respond.'),
+      onError: (e) => toastWithLocationFix(e, 'Failed to respond.', { useMessage: false }),
     });
   };
 
@@ -113,6 +116,7 @@ export default function MatchRequestPopup() {
           </div>
         )}
 
+        <LocationBlockedNotice />
         <DialogFooter className="gap-2 sm:gap-2">
           <Button
             variant="outline"
@@ -125,7 +129,7 @@ export default function MatchRequestPopup() {
           <Button
             className="gradient-primary border-0"
             onClick={() => handleRespond('accepted')}
-            disabled={respond.isPending}
+            disabled={respond.isPending || locationBlocked}
           >
             <Check className="w-4 h-4 me-1" /> Accept Match
           </Button>

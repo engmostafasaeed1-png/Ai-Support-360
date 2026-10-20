@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import ConsultantLocation from '@/components/consultant/ConsultantLocation';
 
 interface Assignment {
   id: string;
@@ -34,6 +35,8 @@ interface Assignment {
   notes: string | null;
   created_at: string;
   consultant_name: string;
+  city?: string | null;
+  country?: string | null;
   avatar_url: string | null;
 }
 
@@ -72,7 +75,7 @@ function useTicketAssignments(ticketId: string) {
         let avatar_url: string | null = null;
         const { data: c } = await supabase
           .from('consultants')
-          .select('user_id')
+          .select('user_id, city, country')
           .eq('id', a.consultant_id)
           .single();
         if (c) {
@@ -86,7 +89,7 @@ function useTicketAssignments(ticketId: string) {
             avatar_url = p.avatar_url;
           }
         }
-        assignments.push({ ...a, consultant_name, avatar_url });
+        assignments.push({ ...a, consultant_name, avatar_url, city: (c as any)?.city ?? null, country: (c as any)?.country ?? null });
       }
       return assignments;
     },
@@ -206,6 +209,7 @@ export default function TicketAssignments({ ticketId, isReadOnly }: TicketAssign
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{a.consultant_name}</p>
+                      <ConsultantLocation audience="client" city={a.city} country={a.country} className="text-[11px] text-muted-foreground" />
                       <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                         <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 gap-0.5 ${roleColors[a.role]}`}>
                           <RoleIcon className="w-2.5 h-2.5" /> {a.role}

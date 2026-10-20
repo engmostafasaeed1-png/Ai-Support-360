@@ -272,7 +272,7 @@ export default function ConsultantsPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
                     <p className="text-[11px] text-muted-foreground truncate">{c.specialty}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{c.place || t('profileRules.locationNotSet', 'Location not set')}</p>
+                    {c.place && <p className="text-[11px] text-muted-foreground truncate">{c.place}</p>}
                     <FoundingBadge consultantId={c.id} /><TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} className="mt-1" />
                     <CompletionBadge percent={c.completion_percent ?? 0} tier={c.ai_interview_badge} className="mt-1" />
                     {matches && <MatchWhyChips why={matches.get(c.id)?.chips} score={matches.get(c.id)?.score} />}

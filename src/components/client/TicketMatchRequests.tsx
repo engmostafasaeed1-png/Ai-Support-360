@@ -8,6 +8,7 @@ import { Loader2, Send, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import ConsultantLocation from '@/components/consultant/ConsultantLocation';
 
 interface Props {
   ticketId: string;
@@ -44,9 +45,11 @@ export default function TicketMatchRequests({ ticketId, clientId }: Props) {
       if (error) throw error;
       const rows = data ?? [];
       const names = new Map<string, string>();
+      const places = new Map<string, { city: string | null; country: string | null }>();
       const consultantIds = [...new Set(rows.map((r) => r.consultant_id))];
       if (consultantIds.length > 0) {
-        const { data: consultants } = await supabase.from('consultants').select('id, user_id').in('id', consultantIds);
+        const { data: consultants } = await supabase.from('consultants').select('id, user_id, city, country').in('id', consultantIds);
+        (consultants ?? []).forEach((c: any) => places.set(c.id, { city: c.city ?? null, country: c.country ?? null }));
         const userIds = (consultants ?? []).map((c) => c.user_id);
         if (userIds.length > 0) {
           const { data: profiles } = await supabase.from('profile_directory').select('user_id, display_name').in('user_id', userIds);
@@ -54,7 +57,7 @@ export default function TicketMatchRequests({ ticketId, clientId }: Props) {
           (consultants ?? []).forEach((c) => names.set(c.id, byUser.get(c.user_id) || 'Consultant'));
         }
       }
-      return rows.map((r) => ({ ...r, consultant_name: names.get(r.consultant_id) || 'Consultant' }));
+      return rows.map((r) => ({ ...r, consultant_name: names.get(r.consultant_id) || 'Consultant', city: places.get(r.consultant_id)?.city ?? null, country: places.get(r.consultant_id)?.country ?? null }));
     },
     enabled: !!ticketId,
   });
@@ -91,6 +94,7 @@ export default function TicketMatchRequests({ ticketId, clientId }: Props) {
             <div key={r.id} className="flex items-center gap-3 rounded-xl border border-border/40 p-3">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{r.consultant_name}</p>
+                <ConsultantLocation audience="client" city={r.city} country={r.country} className="text-[11px] text-muted-foreground" />
                 <p className="text-[11px] text-muted-foreground">Sent {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}</p>
               </div>
               <Badge variant="secondary" className={`text-[10px] capitalize ${statusStyles[r.status] || ''}`}>{r.status}</Badge>

@@ -24,6 +24,7 @@ import AvailabilityToggle from '@/components/consultant/AvailabilityToggle';
 import CriticalDashboardNotice from '@/components/consultant/CriticalDashboardNotice';
 import PayoutDetailsNudge from '@/components/consultant/PayoutDetailsNudge';
 import GettingStartedCard from '@/components/consultant/GettingStartedCard';
+import LocationBanner from '@/components/consultant/LocationBanner';
 
 const sessionTypeIcons: Record<string, typeof Video> = {
   video: Video,
@@ -211,6 +212,7 @@ export default function ConsultantDashboard() {
   return (
     <PullToRefresh>
     <div className="space-y-6">
+      <LocationBanner />
       <PayoutDetailsNudge />
       <CriticalDashboardNotice />
       <WelcomeBanner />

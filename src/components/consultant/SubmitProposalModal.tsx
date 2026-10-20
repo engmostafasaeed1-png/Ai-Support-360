@@ -12,6 +12,8 @@ import { effectiveRate, formatCountdown, formatPercent, msLeft } from '@/lib/cri
 import { Send, Paperclip, X, FileText, RefreshCw } from 'lucide-react';
 import VoiceInput from '@/components/ui/voice-input';
 import { toast } from 'sonner';
+import { toastWithLocationFix } from '@/lib/locationErrors';
+import { LocationBlockedNotice, useLocationBlocked } from '@/components/consultant/LocationBanner';
 import { useQueryClient } from '@tanstack/react-query';
 import { bidCountdown, bidsSoFar, toneClass } from '@/lib/bidding';
 
@@ -36,6 +38,7 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
   const deadlineClock = useNow(open ? 30_000 : 0);
   const deadline = bidCountdown(bidDeadline, deadlineClock);
   const submit = useSubmitProposal();
+  const locationBlocked = useLocationBlocked();
   const { data: versions } = useProposalVersions(ticketId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -94,7 +97,7 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
           setForm({ cover_letter: '', proposed_rate: '', estimated_hours: '', timeline_days: '' });
           setFiles([]);
         },
-        onError: (e: any) => toast.error(e?.message || 'Your bid could not be sent.'),
+        onError: (e: any) => toastWithLocationFix(e, 'Your bid could not be sent.'),
       }
     );
   };
@@ -261,7 +264,8 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
 
         {/* Sticky submit button */}
         <div className="pt-2 border-t border-border/50">
-          <Button onClick={handleSubmit} disabled={submit.isPending} className="w-full gradient-primary border-0 h-10">
+          <LocationBlockedNotice />
+          <Button onClick={handleSubmit} disabled={submit.isPending || locationBlocked} className="w-full gradient-primary border-0 h-10">
             {submit.isPending ? 'Sending...' : isRevision ? `Send revised bid (v${nextVersion})` : 'Send bid'}
           </Button>
         </div>

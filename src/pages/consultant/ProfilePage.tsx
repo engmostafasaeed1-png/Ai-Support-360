@@ -9,6 +9,8 @@ import { RotateCcw, Brain, Landmark } from 'lucide-react';
 import PayoutDetailsCard from '@/components/consultant/PayoutDetailsCard';
 import InterviewTranscript from '@/components/consultant/InterviewTranscript';
 import InterviewStartCard from '@/components/consultant/InterviewStartCard';
+import LocationBanner from '@/components/consultant/LocationBanner';
+import ConsultantLocation from '@/components/consultant/ConsultantLocation';
 import AvatarUpload from '@/components/profile/AvatarUpload';
 import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
 import AvailabilityToggle from '@/components/consultant/AvailabilityToggle';
@@ -41,7 +43,8 @@ export default function ProfilePage() {
           </Button>
         </div>
       </div>
-      <div className="flex items-center gap-4"><AvatarUpload /><div className="space-y-1"><h2 className="text-lg font-semibold">{profile?.display_name}</h2><FoundingBadge consultantId={profile?.id} numbered /></div></div>
+      <div className="flex items-center gap-4"><AvatarUpload /><div className="space-y-1"><h2 className="text-lg font-semibold">{profile?.display_name}</h2><ConsultantLocation audience="owner" city={profile?.city} country={profile?.country} className="text-sm text-muted-foreground" /><FoundingBadge consultantId={profile?.id} numbered /></div></div>
+      <LocationBanner compact />
       <ConsultantOnboarding embedded />
       <section id="payout-details" className="scroll-mt-20">
         <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">

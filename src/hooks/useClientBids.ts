@@ -36,7 +36,7 @@ export function useTicketBids(ticketId: string | undefined, enabled = true) {
       if (!rows?.length) return { bids: [], pending: [], counters: [] };
       const ids = [...new Set(rows.map((r: any) => r.consultant_id))];
       const [consultants, attachments, counters] = await Promise.all([
-        db.from('consultants').select('id, user_id, rating, total_reviews, verification_status, credibility_credits, ai_interview_badge, industries, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, working_week, sap_roles, seniority_level, total_sap_years, sap_technologies, language_levels').in('id', ids),
+        db.from('consultants').select('id, user_id, city, country, rating, total_reviews, verification_status, credibility_credits, ai_interview_badge, industries, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, working_week, sap_roles, seniority_level, total_sap_years, sap_technologies, language_levels').in('id', ids),
         db.from('proposal_attachments').select('id, proposal_id, file_name, file_url').in('proposal_id', rows.map((r: any) => r.id)),
         db.from('proposal_counters').select('id, proposal_id, ticket_id, consultant_id, proposed_rate, estimated_hours, timeline_days, message, status, created_at, responded_at, new_proposal_id').eq('ticket_id', ticketId),
       ]);
@@ -49,7 +49,7 @@ export function useTicketBids(ticketId: string | undefined, enabled = true) {
         const person = people.data?.find((person: any) => person.user_id === c?.user_id);
         // Completion without the payout item: payout status is never shown to clients.
         const completion = c ? profileCompleteness({ ...c, skills_count: undefined, interview_done: interviewDoneFrom(c) }, { includePayout: false, interviewWeight }).percent : 0;
-        return { ...p, consultant_name: person?.display_name || 'Unknown', consultant_avatar: person?.avatar_url, consultant_rating: c?.rating || 0, consultant_reviews: c?.total_reviews || 0, verification_status: c?.verification_status, credibility_credits: c?.credibility_credits, ai_interview_badge: c?.ai_interview_badge, completion_percent: completion, attachments: attachments.data?.filter((a: any) => a.proposal_id === p.id) || [] };
+        return { ...p, consultant_name: person?.display_name || 'Unknown', consultant_avatar: person?.avatar_url, consultant_rating: c?.rating || 0, consultant_reviews: c?.total_reviews || 0, verification_status: c?.verification_status, credibility_credits: c?.credibility_credits, ai_interview_badge: c?.ai_interview_badge, completion_percent: completion, city: c?.city ?? null, country: c?.country ?? null, attachments: attachments.data?.filter((a: any) => a.proposal_id === p.id) || [] };
       });
       const bids = latestBids<any>(enriched).filter(r => r.bid.rejection_reason !== 'superseded');
       return { bids, pending: bids.filter(r => r.bid.status === 'pending'), counters: counters.data || [] };

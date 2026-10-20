@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { locationError, resolvePlacePoint } from '@/lib/consultantLocation';
 import { Loader2 } from 'lucide-react';
 import AvatarUpload from './AvatarUpload';
 import { normalizeLinkedinUrl, LINKEDIN_HINT } from '@/lib/consultantLinks';
-import { cityPoint } from '@/lib/geo';
+
 
 interface ProfileData {
   display_name: string;
@@ -119,8 +120,10 @@ export default function ProfileEditDialog({ open, onOpenChange, role }: Props) {
           toast.error(LINKEDIN_HINT);
           return;
         }
-        // Keep the stored map point in step with the city, so clients do not see the old city's pin.
-        const point = data.city && data.country ? cityPoint(data.country, data.city) : null;
+        // Country and city are mandatory for consultants; the map point follows the city (country centre for an unlisted city).
+        const missingPlace = locationError(data.country, data.city);
+        if (missingPlace) { toast.error(missingPlace); return; }
+        const point = resolvePlacePoint(data.country, data.city, uid);
         const { error: cErr } = await supabase.from('consultants').update({
           bio: data.bio || null,
           hourly_rate: data.hourly_rate ? parseFloat(data.hourly_rate) : 0,

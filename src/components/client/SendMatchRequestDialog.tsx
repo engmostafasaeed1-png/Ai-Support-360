@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useHiddenConsultantIds, withoutHidden } from '@/hooks/useHiddenConsultants';
+import ConsultantLocation from '@/components/consultant/ConsultantLocation';
 import { toast } from 'sonner';
 import ContextFitBadges from '@/components/client/ContextFitBadges';
 import { Loader2, Search, Star, Brain, Send, CheckCircle2, Sparkles, Wifi, WifiOff, Clock, Filter, SlidersHorizontal, ArrowUpDown, X } from 'lucide-react';
@@ -82,7 +83,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
     queryFn: async () => {
       let query = supabase
         .from('consultants')
-        .select(`id, user_id, hourly_rate, currency, rating, total_reviews, ai_skills_score, availability_status, languages, response_time_minutes,
+        .select(`id, user_id, hourly_rate, currency, rating, total_reviews, ai_skills_score, availability_status, languages, response_time_minutes, city, country,
           consultant_skills (sap_module, proficiency_level, years_experience)`)
         .eq('verification_status', 'verified')
         .limit(200);
@@ -117,6 +118,8 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
             id: c.id,
             name: profile?.display_name || 'Unknown',
             avatar_url: profile?.avatar_url,
+            city: c.city ?? null,
+            country: c.country ?? null,
             hourly_rate: c.hourly_rate || 0,
             currency: c.currency || 'USD',
             rating: c.rating || 0,
@@ -477,6 +480,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
                             <span className="flex items-center gap-1"><Star className="w-3 h-3 text-amber-500" /> {c.rating}</span>
                             <span className="flex items-center gap-1"><Brain className="w-3 h-3 text-accent" /> {c.ai_score}</span>
                             <span>${c.hourly_rate}/hr</span>
+                            <ConsultantLocation audience="client" city={c.city} country={c.country} />
                             {c.totalYears > 0 && <span>{c.totalYears}y exp</span>}
                             {c.response_time > 0 && <span className="flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{c.response_time}m</span>}
                           </div>
