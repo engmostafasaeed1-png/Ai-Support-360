@@ -57,3 +57,5 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = false
   [functions.responsiveness-run]
     verify_jwt = false
+  [functions.consultant-policy-run]
+    verify_jwt = false
