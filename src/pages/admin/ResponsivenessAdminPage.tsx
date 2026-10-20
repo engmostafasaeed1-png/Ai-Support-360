@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 const FIELDS: Array<[keyof RespSettings, string]> = [
   ['min_sample', 'Minimum counted requests before anything is public'],
   ['rate_threshold', 'Needs improvement below this response rate (%)'],
-  ['warnings', 'Warnings before the indicator shows (badge from the next one)'],
+  ['warnings', 'Friendly notices before the indicator shows (indicator from the next one)'],
   ['review_weight', 'Responsiveness share of the overall rating (%)'],
   ['excellent_median', 'Excellent: median under (minutes)'],
   ['excellent_rate', 'Excellent: rate at least (%)'],
@@ -73,7 +73,7 @@ function SettingsCard() {
         <div className="flex items-start justify-between gap-4 rounded-xl border border-border/60 p-3">
           <div className="min-w-0">
             <Label htmlFor="responsiveness_public">{t('admin.resp_public', 'Show responsiveness to clients (cards, rating, ranking, critical alarms)')}</Label>
-            <p className="mt-0.5 text-xs text-muted-foreground">{t('admin.resp_public_hint', 'Off by default: statistics, warnings and disputes still run, but nothing shows on cards, the overall rating is unchanged, ranking ignores it and nobody is left out of critical alarms.')}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{t('admin.resp_public_hint', 'Off by default: statistics, friendly notices and disputes still run, but nothing shows on cards, the overall rating is unchanged, ranking ignores it and nobody is left out of critical alarms.')}</p>
           </div>
           {loading ? <Skeleton className="h-5 w-9 rounded-full" /> : (
             <Switch id="responsiveness_public" checked={flags.responsiveness_public === true} onCheckedChange={(v) => { void updateSetting('responsiveness_public', v); qc.invalidateQueries({ queryKey: ['responsiveness-public'] }); }} />
@@ -145,7 +145,7 @@ function DisputesTab() {
 
 const COLS: Array<[RespSortKey, string]> = [
   ['name', 'Consultant'], ['public_level', 'Level'], ['rate_90d', 'Response rate (90 d)'], ['median_90d', 'Median reply'],
-  ['counted_90d', 'Counted (90 d)'], ['no_response_30d', 'No responses (30 d)'], ['warnings_sent', 'Warnings (90 d)'], ['disputes_open', 'Disputes'],
+  ['counted_90d', 'Counted (90 d)'], ['no_response_30d', 'No responses (30 d)'], ['warnings_sent', 'Friendly notices (90 d)'], ['disputes_open', 'Disputes'],
 ];
 
 /** Admin "Consultant responsiveness": sortable table with filters and CSV, the disputes queue and the settings. */

@@ -19,10 +19,10 @@ import ResponsivenessNoticePopup from './ResponsivenessNoticePopup';
 describe('responsiveness popup', () => {
   it('shows one notice at a time until it is acknowledged, then the next', async () => {
     render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><ResponsivenessNoticePopup /></MemoryRouter></QueryClientProvider>);
-    expect(screen.getByRole('dialog')).toHaveTextContent('Warning 1 of 2: no response');
+    expect(screen.getByRole('dialog')).toHaveTextContent('Friendly notice 1 of 2: a request was not answered in time');
     expect(screen.getByRole('button', { name: 'Dispute' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Understood' }));
     await waitFor(() => expect(ack).toHaveBeenCalledWith('n1'));
-    await waitFor(() => expect(screen.getByRole('dialog')).toHaveTextContent('Warning 2 of 2: no response'));
+    await waitFor(() => expect(screen.getByRole('dialog')).toHaveTextContent('Friendly notice 2 of 2: a request was not answered in time'));
   });
 });
