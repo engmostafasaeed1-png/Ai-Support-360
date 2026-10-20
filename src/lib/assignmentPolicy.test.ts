@@ -147,3 +147,23 @@ describe('assignment policy text', () => {
     expect(responseRate(3, 1)).toBe(0.75);
   });
 });
+
+import { parseRunBody, runResponse, sweepGuarded } from '../../supabase/functions/_shared/assignmentPolicy';
+
+describe('assignment reminder function entry', () => {
+  it('ignores a sweep within 4 minutes of the previous one, allows it after', () => {
+    expect(sweepGuarded(T0 - 3 * MIN, T0)).toBe(true);
+    expect(sweepGuarded(T0 - 4 * MIN, T0)).toBe(false);
+    expect(sweepGuarded(null, T0)).toBe(false);
+  });
+
+  it('narrows a run only to a well-formed request id', () => {
+    expect(parseRunBody({ request_id: '0f8fad5b-d9cb-469f-a165-70867728950e' }).requestId).toBe('0f8fad5b-d9cb-469f-a165-70867728950e');
+    expect(parseRunBody({ request_id: "x' or 1=1" }).requestId).toBeNull();
+    expect(parseRunBody(null).requestId).toBeNull();
+  });
+
+  it('returns counts only', () => {
+    expect(runResponse({ skipped: false, claimed: 3, ok: true })).toEqual({ skipped: false, claimed: 3, ok: true });
+  });
+});

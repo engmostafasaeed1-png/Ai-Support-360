@@ -206,3 +206,28 @@ export function responseRate(answered: number, noResponse: number): number | nul
   if (total < 3) return null;
   return Math.max(0, answered) / total;
 }
+
+// ---------------------------------------------------------------- edge function entry
+
+/**
+ * Repeat-call guard of the 5-minute sweep. Kept just under the cron interval: a 30-minute guard would hold back the
+ * 10 / 20 / 30-minute Critical reminders. A call for one request (the immediate first e-mail) is bounded by that request instead.
+ */
+export const SWEEP_GUARD_MS = 4 * 60_000;
+
+export function sweepGuarded(lastRunAt: number | null, now: number): boolean {
+  return lastRunAt != null && now - lastRunAt >= 0 && now - lastRunAt < SWEEP_GUARD_MS;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Only a well-formed request id narrows the run; anything else is treated as a plain sweep. */
+export function parseRunBody(body: unknown): { requestId: string | null } {
+  const id = body && typeof body === 'object' ? (body as Record<string, unknown>).request_id : null;
+  return { requestId: typeof id === 'string' && UUID_RE.test(id) ? id.toLowerCase() : null };
+}
+
+/** Public response body: counts only, never user data or error text. */
+export function runResponse(r: { skipped: boolean; claimed: number; ok: boolean }): { skipped: boolean; claimed: number; ok: boolean } {
+  return { skipped: r.skipped, claimed: Math.max(0, r.claimed | 0), ok: r.ok };
+}

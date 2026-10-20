@@ -53,3 +53,5 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = false
   [functions.consultant-profile-reminder]
     verify_jwt = false
+  [functions.assignment-reminders]
+    verify_jwt = false
