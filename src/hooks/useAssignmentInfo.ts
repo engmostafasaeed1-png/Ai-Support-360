@@ -131,6 +131,11 @@ export function useAnswerInfo(ticketId: string) {
         if (problem) throw new Error(problem);
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) throw new Error('Your session has ended. Please sign in again.');
+        // Same versioning as the Documents tab, so a file with an existing name becomes its next version.
+        const { data: existing } = await supabase
+          .from('ticket_documents').select('version').eq('ticket_id', ticketId).eq('file_name', v.file.name)
+          .order('version', { ascending: false }).limit(1);
+        const version = existing && existing.length > 0 ? Number((existing[0] as { version: number }).version) + 1 : 1;
         const path = `${ticketId}/${session.user.id}/${Date.now()}_${safeFileName(v.file.name)}`;
         const { error: upErr } = await supabase.storage.from('ticket-documents').upload(path, v.file);
         if (upErr) throw upErr;
@@ -138,7 +143,7 @@ export function useAnswerInfo(ticketId: string) {
           .from('ticket_documents')
           .insert({
             ticket_id: ticketId, uploaded_by: session.user.id, file_name: v.file.name, file_url: path,
-            file_size: v.file.size, mime_type: v.file.type || null, version: 1, comment: 'Answer to a consultant question',
+            file_size: v.file.size, mime_type: v.file.type || null, version, comment: 'Answer to a consultant question',
           } as never)
           .select('id')
           .single();

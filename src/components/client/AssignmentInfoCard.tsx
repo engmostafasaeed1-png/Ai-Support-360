@@ -5,7 +5,7 @@ import { Loader2, MessageCircleQuestion, Paperclip, Send, X } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ACCEPT_ATTR, ATTACHMENT_HINT } from '@/lib/attachments';
+import { ALLOWED_ATTACHMENT_TYPES, ATTACHMENT_HINT } from '@/lib/attachments';
 import { infoActionMessage, useAnswerInfo, type InfoRequestRow } from '@/hooks/useAssignmentInfo';
 import { durationLabel } from '../../../supabase/functions/_shared/assignmentPolicy';
 import { ANSWER_MAX_TEXT, clientInfoView, contactDetailsInText, fileTypeLabel } from '../../../supabase/functions/_shared/assignmentInfo';
@@ -120,7 +120,7 @@ export default function AssignmentInfoCard({ row, ticketId, consultantName, canA
                   ref={fileRef}
                   type="file"
                   className="sr-only"
-                  accept={ACCEPT_ATTR}
+                  accept={ALLOWED_ATTACHMENT_TYPES.join(',')}
                   aria-label={t('assignment_info.attach', 'Attach a file (optional)')}
                   onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                 />
