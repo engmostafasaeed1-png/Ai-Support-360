@@ -10,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Clock, Gavel, Hourglass, Loader2, Send, UserPlus, X } from 'lucide-react';
+import { Clock, Eye, Gavel, Hourglass, Lightbulb, Loader2, PauseCircle, Send, UserPlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +18,8 @@ import ConsultantLocation from '@/components/consultant/ConsultantLocation';
 import { extendAssignmentRequest, useAssignmentPolicy } from '@/hooks/useAssignmentPolicy';
 import { clientRequestView, durationLabel, timeLeftLabel } from '../../../supabase/functions/_shared/assignmentPolicy';
 import ResponsivenessChip from '@/components/consultant/ResponsivenessChip';
+import AssignmentInfoCard from '@/components/client/AssignmentInfoCard';
+import { useAssignmentInfoReady, useDeclineHints, useInfoRequests } from '@/hooks/useAssignmentInfo';
 
 interface Props {
   ticketId: string;
@@ -41,6 +43,7 @@ const statusStyles: Record<string, string> = {
 type Row = {
   id: string; consultant_id: string; status: string; created_at: string;
   response_due_at?: string | null; extended_at?: string | null;
+  info_paused_at?: string | null; viewed_at?: string | null;
   consultant_name: string; city: string | null; country: string | null;
 };
 
@@ -90,6 +93,7 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
       return rows.map((r) => ({
         id: r.id, consultant_id: r.consultant_id, status: String(r.status), created_at: r.created_at,
         response_due_at: r.response_due_at ?? null, extended_at: r.extended_at ?? null,
+        info_paused_at: r.info_paused_at ?? null, viewed_at: r.viewed_at ?? null,
         consultant_name: names.get(r.consultant_id) || 'Consultant',
         city: places.get(r.consultant_id)?.city ?? null, country: places.get(r.consultant_id)?.country ?? null,
       }));
@@ -97,7 +101,9 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
     enabled: !!ticketId,
   });
 
-  const anyWaiting = (requests ?? []).some((r) => r.status === 'pending' && r.response_due_at);
+  const infoReady = useAssignmentInfoReady();
+  const { data: infoRows = [] } = useInfoRequests({ ticketId }, infoReady);
+  const anyWaiting = (requests ?? []).some((r) => r.status === 'pending' && (r.response_due_at || r.info_paused_at));
   useEffect(() => {
     if (!anyWaiting) return;
     const id = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -105,6 +111,21 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
   }, [anyWaiting]);
 
   const isOwner = !!me && me === clientId;
+  const anyDeclined = (requests ?? []).some((r) => r.status === 'rejected');
+  const { data: hints = [] } = useDeclineHints(ticketId, infoReady && isOwner && anyDeclined);
+
+  // Notification / e-mail link ?info=<id>: scroll to the question once.
+  const handledInfo = useRef<string | null>(null);
+  useEffect(() => {
+    const id = params.get('info');
+    if (!id || handledInfo.current === id || infoRows.length === 0) return;
+    handledInfo.current = id;
+    window.setTimeout(() => {
+      const el = document.getElementById(`info-${id}`);
+      el?.scrollIntoView({ block: 'center' });
+      el?.querySelector('textarea')?.focus();
+    }, 50);
+  }, [params, infoRows]);
 
   // E-mail links: ?noresponse=<id>&action=invite|bids|wait
   useEffect(() => {
@@ -179,6 +200,13 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
                     <ConsultantLocation audience="client" city={r.city} country={r.country} className="text-[11px] text-muted-foreground" />
                     <ResponsivenessChip consultantId={r.consultant_id} className="mt-0.5" />
                     <p className="text-[11px] text-muted-foreground">Sent {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}</p>
+                    {r.viewed_at && (
+                      <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <Eye className="h-3 w-3" aria-hidden="true" />
+                        {t('assignment_info.viewed_by', 'Viewed by {{name}}', { name: r.consultant_name })}
+                        <span className="sr-only">,</span> · {formatDistanceToNow(new Date(r.viewed_at), { addSuffix: true })}
+                      </p>
+                    )}
                   </div>
                   <Badge variant="secondary" className={`text-[10px] capitalize ${statusStyles[r.status] || ''}`}>{statusLabel(r.status)}</Badge>
                   {isOwner && r.status === 'pending' && (
@@ -187,6 +215,16 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
                     </Button>
                   )}
                 </div>
+
+                {view.kind === 'paused' && (
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <PauseCircle className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+                    {t('assignment_info.paused_client', "{{name}}'s reply time is paused until you answer.", { name: r.consultant_name })}
+                  </p>
+                )}
+                {infoReady && infoRows.filter((i) => i.request_id === r.id).map((i) => (
+                  <AssignmentInfoCard key={i.id} row={i} ticketId={ticketId} consultantName={r.consultant_name} canAnswer={isOwner} now={now} />
+                ))}
 
                 {view.kind === 'waiting' && view.deadline != null && (
                   <p className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-live="polite">
@@ -229,6 +267,16 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
             );
           })}
         </div>
+        {isOwner && hints.length > 0 && (
+          <div className="rounded-xl border border-border/40 bg-muted/30 p-3">
+            <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+              <Lightbulb className="h-3.5 w-3.5 text-primary" aria-hidden="true" /> {t('assignment_info.tips_title', 'Tips for the next best match')}
+            </p>
+            <ul className="list-disc space-y-0.5 ps-5 text-xs text-muted-foreground">
+              {hints.map((h) => <li key={h}>{t(`assignment_info.tip_${h}`, '')}</li>)}
+            </ul>
+          </div>
+        )}
       </CardContent>
 
       <AlertDialog open={!!confirmWait} onOpenChange={(o) => { if (!o) setConfirmWait(null); }}>

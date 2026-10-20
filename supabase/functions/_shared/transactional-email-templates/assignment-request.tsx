@@ -19,6 +19,10 @@ interface Props {
   minutesLeft?: number
   timezone?: string
   requestUrl?: string
+  /** "Open ticket description" link (decision preview). */
+  previewUrl?: string
+  /** The three options (Accept / Decline / Request more information) are live. */
+  infoOptions?: boolean
   /** Current admin timings (assignment_policy_minutes); defaults when missing. */
   policy?: Record<string, number>
 }
@@ -38,6 +42,11 @@ const STR = {
     policyTitle: 'Response policy',
     privacy: 'Client contact details stay inside the portal until you are assigned. Accepting still needs the NDA and an approved rate before work starts.',
     hour: '/ hour',
+    optionsIntro: 'A client would like you to work on this request. Read the ticket description first if you like, then choose in the portal:',
+    options: ['Accept', 'Decline (a reason is optional)', 'Request more information - the reply clock pauses until the client answers'],
+    openRequest: 'Open request',
+    preview: 'Open ticket description',
+    previewNote: 'The preview shows the description and the list of attachments. Files, access details and contact details unlock after the NDA, an approved rate and the assignment.',
   },
   ar: {
     newTitle: 'طلب تعيين جديد',
@@ -53,6 +62,11 @@ const STR = {
     policyTitle: 'سياسة الرد',
     privacy: 'تبقى بيانات تواصل العميل داخل البوابة حتى يتم تعيينك. القبول يتطلب أيضاً اتفاقية السرية وسعراً معتمداً قبل بدء العمل.',
     hour: '/ ساعة',
+    optionsIntro: 'يرغب أحد العملاء في أن تعمل على هذا الطلب. يمكنك قراءة وصف التذكرة أولاً، ثم اختر في البوابة:',
+    options: ['القبول', 'الرفض (ذكر السبب اختياري)', 'طلب معلومات إضافية - يتوقف عدّاد الرد حتى يجيب العميل'],
+    openRequest: 'افتح الطلب',
+    preview: 'افتح وصف التذكرة',
+    previewNote: 'تعرض المعاينة الوصف وقائمة المرفقات. أما الملفات وبيانات الوصول وبيانات التواصل فتُتاح بعد اتفاقية السرية والسعر المعتمد والتعيين.',
   },
 } as const
 
@@ -70,7 +84,7 @@ function formatDeadline(iso: string | undefined, lang: 'en' | 'ar', tz: string):
 const AssignmentRequestEmail = ({
   lang = 'en', step = 'request', ticketTitle, sapArea, urgency, critical = false, bid = false,
   proposedRate, currency, deadline, minutesLeft, timezone = 'Asia/Riyadh',
-  requestUrl = 'https://www.aisupport360.com/consultant/requests', policy,
+  requestUrl = 'https://www.aisupport360.com/consultant/requests', previewUrl, infoOptions = false, policy,
 }: Props) => {
   const l = lang === 'ar' ? 'ar' : 'en'
   const t = STR[l]
@@ -92,7 +106,12 @@ const AssignmentRequestEmail = ({
         <Container style={container}>
           {critical && <Text style={criticalChip}>⚡ {t.critical}</Text>}
           <Heading style={h1}>{title}</Heading>
-          <Text style={text}>{bid ? t.bidIntro : t.intro}</Text>
+          <Text style={text}>{bid ? t.bidIntro : infoOptions ? t.optionsIntro : t.intro}</Text>
+          {infoOptions && (
+            <Section style={{ margin: '0 0 16px' }}>
+              {t.options.map((o) => <Text key={o} style={row}>• {o}</Text>)}
+            </Section>
+          )}
           <Section style={box}>
             {rows.map(([k, v]) => (
               <Text key={k} style={row}><strong>{k}:</strong> {v}</Text>
@@ -101,10 +120,18 @@ const AssignmentRequestEmail = ({
           {minutesLeft != null && (
             <Text style={leftStyle}>{minutesLeft > 0 ? t.left(durationLabel(minutesLeft, l, false)) : t.timeUp}</Text>
           )}
-          <Button href={requestUrl} style={button}>{t.button}</Button>
+          <Button href={requestUrl} style={button}>{infoOptions ? t.openRequest : t.button}</Button>
+          {infoOptions && previewUrl && (
+            <>
+              <Text style={{ margin: '12px 0 4px' }}>
+                <a href={previewUrl} style={link}>{t.preview}</a>
+              </Text>
+              <Text style={small}>{t.previewNote}</Text>
+            </>
+          )}
           <Hr style={hr} />
           <Text style={boxTitle}>{t.policyTitle}</Text>
-          <Text style={small}>{policyText(readPolicyMinutes(policy), l)}</Text>
+          <Text style={small}>{policyText(readPolicyMinutes(policy), l, { info: infoOptions })}</Text>
           <Text style={small}>{t.privacy}</Text>
         </Container>
       </Body>
@@ -126,6 +153,7 @@ export const template = {
   previewData: {
     lang: 'en', step: 'r1', ticketTitle: 'FB50 posting error after S/4HANA migration', sapArea: 'SAP FI', urgency: 'high',
     critical: false, proposedRate: 60, currency: 'USD', deadline: '2026-10-21T08:00:00Z', minutesLeft: 1320,
+    infoOptions: true, previewUrl: 'https://www.aisupport360.com/consultant/requests?preview=1',
   },
 } satisfies TemplateEntry
 
@@ -138,6 +166,7 @@ const row = { fontSize: '14px', color: '#1B2559', margin: '4px 0', lineHeight: '
 const leftStyle = { fontSize: '14px', fontWeight: 'bold', color: '#b45309', margin: '0 0 16px' }
 const criticalChip = { display: 'inline-block', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '999px', padding: '4px 12px', fontSize: '12px', fontWeight: 'bold', margin: '0 0 12px' }
 const button = { background: 'linear-gradient(135deg, #1B2559, #3B82F6)', backgroundColor: '#1B2559', color: '#ffffff', borderRadius: '12px', padding: '13px 24px', fontSize: '15px', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block' }
+const link = { color: '#1B2559', fontSize: '14px', fontWeight: 'bold', textDecoration: 'underline' }
 const hr = { borderColor: '#e2e8f0', margin: '24px 0' }
 const boxTitle = { fontSize: '14px', fontWeight: 'bold', color: '#0f172a', margin: '0 0 8px' }
 const small = { fontSize: '13px', color: '#475569', margin: '0 0 10px', lineHeight: '1.5' }

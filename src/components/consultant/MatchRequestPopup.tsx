@@ -13,7 +13,13 @@ import { readAcks, sessionIdOf, writeAck } from '@/lib/assignmentPopupAcks';
 import { LocationBlockedNotice, useLocationBlocked } from '@/components/consultant/LocationBanner';
 import { PolicyBlockedNotice, usePolicyBlocked } from '@/components/consultant/policy/PolicyBanner';
 import AssignmentRequestDialog, { type AssignmentPopupItem } from '@/components/consultant/AssignmentRequestDialog';
+import DecisionPreviewDialog from '@/components/consultant/assignment/DecisionPreviewDialog';
+import RequestInfoDialog from '@/components/consultant/assignment/RequestInfoDialog';
+import DeclineReasonDialog from '@/components/consultant/assignment/DeclineReasonDialog';
+import { useAssignmentInfoReady, useInfoRequests } from '@/hooks/useAssignmentInfo';
+import { Button } from '@/components/ui/button';
 import { nextPopup, popupKey, type PopupRequest } from '../../../supabase/functions/_shared/assignmentPolicy';
+import { infoRequestBlock } from '../../../supabase/functions/_shared/assignmentInfo';
 
 type PendingRequest = PopupRequest & AssignmentPopupItem & { ticket_id: string; client_id: string | null };
 
@@ -52,6 +58,9 @@ async function loadPending(): Promise<PendingRequest[]> {
       response_due_at: r.response_due_at ?? null,
       reminders_sent: r.reminders_sent ?? 0,
       extended_at: r.extended_at ?? null,
+      info_paused_at: r.info_paused_at ?? null,
+      info_resumed_at: r.info_resumed_at ?? null,
+      info_answered: !!r.info_resumed_at,
       ticket_id: r.ticket_id,
       client_id: t.client_id ?? null,
       ticket_title: t.title || 'New request',
@@ -84,6 +93,9 @@ export default function MatchRequestPopup() {
   const [acked, setAcked] = useState<Set<string>>(new Set());
   const [now, setNow] = useState(() => Date.now());
   const [checkingNda, setCheckingNda] = useState(false);
+  const infoReady = useAssignmentInfoReady();
+  // Only one window at a time: the popup steps aside while the preview, question or decline window is open.
+  const [sub, setSub] = useState<null | { kind: 'preview' | 'ask' | 'decline'; id: string }>(null);
 
   useEffect(() => {
     let alive = true;
@@ -108,6 +120,11 @@ export default function MatchRequestPopup() {
   }, [enabled, queryClient]);
 
   const current = useMemo(() => nextPopup(pending, acked), [pending, acked]);
+  const { data: infoRows = [] } = useInfoRequests({ requestIds: current ? [current.id] : [] }, infoReady && !!current);
+  const askBlock = current ? infoRequestBlock(current.status, infoRows) : null;
+  const askBlockedText = askBlock === 'open'
+    ? t('assignment_info.block_open', "Waiting for the client's answer to your question.")
+    : askBlock === 'limit' ? t('assignment_info.block_limit', 'You have asked 3 times on this request.') : null;
   const waiting = useMemo(() => pending.filter((r) => r.id !== current?.id && !acked.has(popupKey(r))).length, [pending, acked, current]);
 
   useEffect(() => {
@@ -168,21 +185,50 @@ export default function MatchRequestPopup() {
 
   if (!enabled) return null;
 
+  const subId = sub?.id ?? null;
+  const previewActions = current && sub?.kind === 'preview' ? (
+    <>
+      <Button variant="outline" className="text-destructive hover:bg-destructive/10" onClick={() => setSub({ kind: 'decline', id: current.id })}>
+        {t('assignment_policy.decline', 'Decline')}
+      </Button>
+      <Button variant="outline" disabled={!!askBlockedText} title={askBlockedText ?? undefined} onClick={() => setSub({ kind: 'ask', id: current.id })}>
+        {t('assignment_info.ask_button', 'Request more information')}
+      </Button>
+      <Button className="gradient-primary border-0" disabled={respond.isPending || checkingNda || locationBlocked || policyBlocked} onClick={() => { setSub(null); void accept(); }}>
+        {t('assignment_policy.accept', 'Accept')}
+      </Button>
+    </>
+  ) : null;
+
   return (
+    <>
+    <DecisionPreviewDialog requestId={sub?.kind === 'preview' ? subId : null} onClose={() => setSub(null)} actions={previewActions} />
+    <RequestInfoDialog requestId={sub?.kind === 'ask' ? subId : null} used={infoRows.length} onClose={() => setSub(null)} onSent={() => { acknowledge(); done(); }} />
+    <DeclineReasonDialog
+      requestId={sub?.kind === 'decline' ? subId : null}
+      ready={infoReady}
+      onClose={() => setSub(null)}
+      onDeclined={() => { acknowledge(); done(); }}
+    />
     <AssignmentRequestDialog
-      item={current}
+      item={sub ? null : current}
+      infoReady={infoReady}
+      onPreview={() => current && setSub({ kind: 'preview', id: current.id })}
+      onAskInfo={() => current && setSub({ kind: 'ask', id: current.id })}
+      askBlockedText={askBlockedText}
       policy={policy}
       now={now}
       waitingCount={waiting}
       busy={respond.isPending || checkingNda}
       acceptDisabled={locationBlocked || policyBlocked}
       onAccept={() => void accept()}
-      onDecline={() => answer('rejected')}
+      onDecline={() => (infoReady && current ? setSub({ kind: 'decline', id: current.id }) : answer('rejected'))}
       onView={view}
       onLater={acknowledge}
     >
       <LocationBlockedNotice />
       <PolicyBlockedNotice />
     </AssignmentRequestDialog>
+    </>
   );
 }
