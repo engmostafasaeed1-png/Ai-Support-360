@@ -29,12 +29,11 @@ export function chipText(key: CriterionKey, text: string, ar: boolean): string {
   switch (key) {
     case 'badge': return ar ? `شارة ${tier}` : `${tier} badge`;
     case 'rating': return ar ? `تقييم ${text}` : `Rated ${text}`;
-    case 'response': return ar ? `يرد خلال ${text} د` : `Replies in ${text} min`;
+    case 'response': return ar ? `يرد خلال ${text} دقيقة` : `Replies within ${text} min`;
     case 'availability': return ar ? 'متاح الآن' : 'Available now';
     case 'timezone': return ar ? 'منطقة زمنية متقاربة' : 'Time zone overlap';
     case 'rate': return ar ? 'ضمن الميزانية' : 'Within budget';
     case 'experience': return ar ? `خبرة ${text.replace(/\s*yrs?/, '')} سنة` : text.replace(/yrs?/, 'years');
-    case 'completion': return ar ? `الملف مكتمل ${text}` : `Profile ${text} complete`;
     case 'evidence': return ar ? `${text} موثّق` : `${text} verified`;
     case 'founding': return ar ? 'مستشار مؤسس' : 'Founding Consultant';
     default: return text;

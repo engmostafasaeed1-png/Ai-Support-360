@@ -524,7 +524,7 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
   if (s.modules.length > 0) {
     const matched = s.modules.filter((m) => cm.codes.includes(m));
     const backed = matched.filter((m) => cm.evidence.has(m) || (c.resolved_in_areas ?? 0) > 0);
-    parts.push({ key: 'evidence', fit: matched.length ? backed.length / matched.length : 0, chip: backed.length ? 'verified' : undefined });
+    parts.push({ key: 'evidence', fit: matched.length ? backed.length / matched.length : 0, chip: backed.length ? (MODULE_BY_CODE.get(backed[0])?.label ?? backed[0]) : undefined });
   }
   parts.push({ key: 'founding', fit: c.founding ? 1 : 0 });
 
@@ -538,7 +538,7 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
   const chips = active
     .filter((p) => p.chip && p.fit >= 0.5)
     .sort((a, b) => weights[b.key] * b.fit - weights[a.key] * a.fit)
-    .filter((p, i, list) => list.findIndex((q) => String(q.chip).toLowerCase() === String(p.chip).toLowerCase()) === i)
+    .filter((p, i, list) => p.key === 'evidence' || list.findIndex((q) => q.key !== 'evidence' && String(q.chip).toLowerCase() === String(p.chip).toLowerCase()) === i)
     .slice(0, 4)
     .map((p) => ({ key: p.key, text: p.chip as string }));
   const allWeight = Object.values(weights).reduce((a, b) => a + b, 0) || 1;
@@ -547,6 +547,7 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
     score: Math.round(breakdown.reduce((sum, b) => sum + b.contribution, 0)),
     breakdown,
     chips,
+    // Match confidence: the share of all criteria the ticket gave enough information to score.
     coverage: Math.round((100 * total) / allWeight),
   };
 }

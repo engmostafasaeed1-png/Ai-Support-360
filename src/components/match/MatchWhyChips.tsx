@@ -21,7 +21,7 @@ export default function MatchWhyChips({ why, score, coverage, showCoverage = fal
         </span>
       ))}
       {showCoverage && coverage != null && (
-        <span className="text-[10px] text-muted-foreground" title={ar ? 'نسبة الدرجة المستندة إلى بيانات مثبتة' : 'Share of the score backed by verified evidence'}>
+        <span className="text-[10px] text-muted-foreground" title={ar ? 'نسبة المعايير التي توفرت لها معلومات كافية في الطلب' : 'Share of the criteria the request gave enough information to score'}>
           {ar ? `ثقة التطابق ${coverage}%` : `Match confidence ${coverage}%`}
         </span>
       )}
