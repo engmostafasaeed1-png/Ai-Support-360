@@ -2516,6 +2516,42 @@ export type Database = {
         }
         Relationships: []
       }
+      founding_consultants: {
+        Row: {
+          awarded_at: string
+          consultant_id: string
+          founding_number: number | null
+          revoked_at: string | null
+        }
+        Insert: {
+          awarded_at?: string
+          consultant_id: string
+          founding_number?: number | null
+          revoked_at?: string | null
+        }
+        Update: {
+          awarded_at?: string
+          consultant_id?: string
+          founding_number?: number | null
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "founding_consultants_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "founding_consultants_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_sync_log: {
         Row: {
           action: string
@@ -8808,6 +8844,10 @@ export type Database = {
         }
         Returns: string
       }
+      admin_founding_settings: {
+        Args: { _boost?: number; _enabled?: boolean; _limit?: number }
+        Returns: Json
+      }
       admin_get_invoice_counter: { Args: never; Returns: Json }
       admin_hide_client_review: {
         Args: { _hidden: boolean; _reason?: string; _review_id: string }
@@ -8867,6 +8907,10 @@ export type Database = {
           _percent: number
         }
         Returns: Json
+      }
+      admin_set_founding_consultant: {
+        Args: { _cid: string; _grant: boolean; _reason: string }
+        Returns: undefined
       }
       admin_set_invoice_bank_account: {
         Args: { _details: Json; _note?: string; _payment_id: string }
@@ -9153,6 +9197,9 @@ export type Database = {
         Returns: undefined
       }
       flag_sla_breaches: { Args: never; Returns: number }
+      founding_boost_duration: { Args: never; Returns: number }
+      founding_settings: { Args: never; Returns: Json }
+      founding_spots_remaining: { Args: never; Returns: number }
       get_demo_request_by_token: {
         Args: { _token: string }
         Returns: {
@@ -9580,6 +9627,15 @@ export type Database = {
       }
       set_environment_consultants: {
         Args: { _consultant_ids: string[]; _environment_id: string }
+        Returns: undefined
+      }
+      set_founding_award: {
+        Args: {
+          _automatic?: boolean
+          _cid: string
+          _grant: boolean
+          _reason: string
+        }
         Returns: undefined
       }
       set_ticket_payment_terms: {
