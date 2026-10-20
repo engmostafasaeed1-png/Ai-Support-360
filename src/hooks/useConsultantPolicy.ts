@@ -97,7 +97,7 @@ export function useMyPolicy() {
     },
     onSuccess: () => Promise.all([
       qc.invalidateQueries({ queryKey: MY_POLICY_KEY }),
-      qc.invalidateQueries({ queryKey: ['hidden-consultants'] }),
+      qc.invalidateQueries({ queryKey: ['hidden-consultant-ids'] }),
     ]),
   });
 

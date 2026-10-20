@@ -79,7 +79,7 @@ export default function PolicyRegistrationStep({ verificationStatus }: { verific
             }}
           />
         </>
-      ) : null}
+      ) : readLink}
     </section>
   );
 }
