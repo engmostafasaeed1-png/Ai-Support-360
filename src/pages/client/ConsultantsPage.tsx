@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
-  Search, Star, BadgeCheck, Zap, Heart, Filter, Map, LayoutGrid,
+  Search, Star, BadgeCheck, Zap, Heart, Filter, Map as MapIcon, LayoutGrid,
   Wifi, WifiOff, X, ChevronDown, ChevronUp, Clock, Globe, DollarSign,
   Users, Circle, Award, ShieldAlert, ShieldCheck, ShieldQuestion, MapPin,
 } from 'lucide-react';
@@ -198,7 +198,7 @@ export default function ConsultantsPage() {
             <LayoutGrid className="w-4 h-4" /><span className="hidden sm:inline">{t('directory.view_list', 'List')}</span>
           </button>
           <button type="button" aria-pressed={view === 'map'} aria-label={t('directory.view_map', 'Map')} onClick={() => update({ view: 'map' })} className={`flex items-center gap-1 px-2.5 py-2 text-xs transition-colors ${view === 'map' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted'}`}>
-            <Map className="w-4 h-4" /><span className="hidden sm:inline">{t('directory.view_map', 'Map')}</span>
+            <MapIcon className="w-4 h-4" /><span className="hidden sm:inline">{t('directory.view_map', 'Map')}</span>
           </button>
         </div>
       </div>
