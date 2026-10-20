@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useClientFavourites } from '@/hooks/useClientFavourites';
+import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
 import { finalInvitees, invitePreview, orderedGroups, preferredGroupFor, requestAreas, type SkipReason } from '@/lib/clientFavourites';
 import { GroupBadge } from './GroupIcon';
 
@@ -142,7 +143,7 @@ export default function GroupInvitePanel({ candidates, alreadyAsked, modules = [
 }
 
 /** The group panel fed by the live consultant directory (hidden profiles already left out); mounted only while it is shown. */
-export function DirectoryGroupInvite(props: Omit<React.ComponentProps<typeof GroupInvitePanel>, 'candidates'>) {
+export function DirectoryGroupInvite(props: Omit<ComponentProps<typeof GroupInvitePanel>, 'candidates'>) {
   const { consultants } = useRealtimeConsultants();
   const candidates = consultants.filter(c => c.verification_status === 'verified').map(c => ({ id: c.id, name: c.name, subtitle: c.specialty }));
   return <GroupInvitePanel {...props} candidates={candidates} />;
