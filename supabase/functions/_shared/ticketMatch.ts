@@ -399,6 +399,10 @@ export function matchInputsHash(t: MatchTicket): string {
 
 // ---------------------------------------------------------------- hard filters
 
+const LANG_NAMES: Record<string, string> = { english: 'en', arabic: 'ar', 'العربية': 'ar', 'الإنجليزية': 'en', german: 'de', french: 'fr', spanish: 'es', hindi: 'hi', urdu: 'ur', turkish: 'tr' };
+/** Language codes and names compare as codes ("English" = "en"). */
+export const langCode = (l: string | null | undefined): string => { const v = String(l ?? '').trim().toLowerCase(); return LANG_NAMES[v] ?? v; };
+
 export type ExclusionReason = 'not_verified' | 'inactive' | 'excluded' | 'no_area_overlap' | 'language' | 'cannot_respond';
 
 export function hardFilter(c: MatchConsultant, t: MatchTicket, s: TicketSignals, excluded: ReadonlySet<string> = new Set(), cm = consultantModules(c)): ExclusionReason | null {
@@ -415,8 +419,8 @@ export function hardFilter(c: MatchConsultant, t: MatchTicket, s: TicketSignals,
       || (MODULE_BY_CODE.get(have)?.kind === 'module' && families.has(MODULE_BY_CODE.get(have)?.family)));
     if (!overlap) return 'no_area_overlap';
   }
-  const lang = String(t.preferred_language ?? '').trim().toLowerCase();
-  if (lang && !(c.languages ?? []).map((l) => l.toLowerCase()).includes(lang)) return 'language';
+  const lang = langCode(t.preferred_language);
+  if (lang && !(c.languages ?? []).map(langCode).includes(lang)) return 'language';
   if (t.urgency === 'critical' && c.availability_status !== 'available') return 'cannot_respond';
   return null;
 }

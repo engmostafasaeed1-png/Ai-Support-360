@@ -58,6 +58,15 @@ describe('field changes move the ranking', () => {
   });
 });
 
+describe('language codes', () => {
+  it('treats language names and codes the same', async () => {
+    const { langCode } = await import('../../supabase/functions/_shared/ticketMatch');
+    expect(langCode('English')).toBe('en');
+    expect(langCode('ar')).toBe('ar');
+    expect(langCode(' Arabic ')).toBe('ar');
+  });
+});
+
 describe('extraction', () => {
   it('maps the three module vocabularies to the same code', () => {
     expect(modulesIn('SAP FI')).toContain('FI');
