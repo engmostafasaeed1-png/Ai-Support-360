@@ -515,7 +515,15 @@ export default function TicketDetailPage() {
           </SectionWrapper>
 
           {/* ─── Available Consultants (Acceptors) ─── */}
-          {isClient && <TicketMatchRequests ticketId={ticket.id} clientId={ticket.client_id} />}
+          {isClient && (
+            <TicketMatchRequests
+              ticketId={ticket.id}
+              clientId={ticket.client_id}
+              ticketClosed={ticket.status === 'resolved' || ticket.status === 'closed'}
+              onInviteAnother={() => setMatchOpen(true)}
+              onOpenBids={() => setBidOpen(true)}
+            />
+          )}
 
           <TicketAcceptors ticketId={ticket.id} currentConsultantId={ticket.consultant_id} />
 
