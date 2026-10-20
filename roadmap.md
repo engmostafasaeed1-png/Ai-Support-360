@@ -57,3 +57,5 @@
 
 - [x] Fix J: AI interview start resumes/reuses open sessions with visible reasons, preflight and text-only; completion includes a weighted AI interview (default 15 %).
 - [ ] Fix J database update `docs/sql/interview-completion.sql` (then `profile-reminders.sql`): awaits owner applying it; until then the app uses the default 15 % share and the admin share control reports it is not yet available.
+- [x] Fix K: consultant location mandatory (country + city), shown everywhere, sign-up picker, prompt/banner/checklist, admin 'Who is missing location'.
+- [ ] Fix K database update `docs/sql/consultant-location.sql` (after interview-completion.sql): awaits owner; until then no grace deadline, no blocking, admin page read-only.
