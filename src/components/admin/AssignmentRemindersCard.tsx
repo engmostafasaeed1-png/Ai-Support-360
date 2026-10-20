@@ -25,7 +25,7 @@ type Stats = {
 };
 
 type RpcResult = { data: unknown; error: { message: string } | null };
-const rpc = supabase.rpc as unknown as (fn: string) => Promise<RpcResult>;
+const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string) => Promise<RpcResult>;
 
 /** Fields of the form: normal timings in hours, Critical timings in minutes. */
 const HOUR_FIELDS = [
