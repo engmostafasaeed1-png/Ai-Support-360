@@ -96,8 +96,38 @@ describe('PayoutDetailsCard', () => {
     fill(/^Bank \*/, 'Test Bank');
     fill(/^IBAN/, 'GB82WEST12345698765433');
     fireEvent.click(screen.getByRole('checkbox'));
-    expect(screen.getByText('This IBAN is not valid')).toBeTruthy();
+    expect(screen.getByText('The IBAN is not valid: check the letters and digits')).toBeTruthy();
     expect((screen.getByRole('button', { name: 'Save bank details' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('shows the account-number rule next to the field and keeps saving disabled', async () => {
+    renderCard();
+    await screen.findByText(/Before you save/);
+    fill(/Account holder/, 'Jane Doe');
+    fill(/^Bank \*/, 'Test Bank');
+    fill(/Account number/, '12');
+    fireEvent.click(screen.getByRole('checkbox'));
+    expect(screen.getByText('The account number must have 4 to 34 letters, digits or dashes')).toBeTruthy();
+    expect(screen.getByLabelText(/Account number/).getAttribute('aria-invalid')).toBe('true');
+    const saveBtn = screen.getByRole('button', { name: 'Save bank details' }) as HTMLButtonElement;
+    expect(saveBtn.disabled).toBe(true);
+    fill(/Account number/, '12_34');
+    expect(screen.getByText('The account number must have 4 to 34 letters, digits or dashes')).toBeTruthy();
+    fill(/Account number/, '1234-5678');
+    expect(screen.queryByText('The account number must have 4 to 34 letters, digits or dashes')).toBeNull();
+    expect(saveBtn.disabled).toBe(false);
+    expect(h.rpc).not.toHaveBeenCalled();
+  });
+
+  it('asks for the disclaimer next to the checkbox when everything else is valid', async () => {
+    renderCard();
+    await screen.findByText(/Before you save/);
+    fill(/Account holder/, 'Jane Doe');
+    fill(/^Bank \*/, 'Test Bank');
+    fill(/Account number/, '12345678');
+    expect(screen.getByText('Please read the disclaimer and confirm it before saving your bank details')).toBeTruthy();
+    fireEvent.click(screen.getByRole('checkbox'));
+    expect(screen.queryByText('Please read the disclaimer and confirm it before saving your bank details')).toBeNull();
   });
 
   it('shows the database message in a toast', async () => {

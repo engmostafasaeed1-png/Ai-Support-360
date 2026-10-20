@@ -11,7 +11,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Landmark, AlertTriangle, ShieldCheck, Lock, Eye, EyeOff, Pencil } from 'lucide-react';
 import { useMyPayoutDetails, useSavePayoutDetails, type PayoutDetails } from '@/hooks/useBilling';
-import { isValidIban, maskAccount, maskIban } from '@/lib/iban';
+import { maskAccount, maskIban } from '@/lib/iban';
+import { PAYOUT_MESSAGES, payoutFieldErrors, type PayoutField } from '@/lib/payoutValidation';
 import { PAYOUT_DISCLAIMER_POINTS, PAYOUT_DISCLAIMER_VERSION, payoutCardState } from '@/lib/payoutDisclaimer';
 
 export const REVEAL_MS = 30_000;
@@ -42,6 +43,7 @@ export default function PayoutDetailsCard() {
   const [form, setForm] = useState<Form>(EMPTY);
   const [ack, setAck] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [touched, setTouched] = useState<Partial<Record<PayoutField, boolean>>>({});
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hide = () => {
@@ -71,6 +73,7 @@ export default function PayoutDetailsCard() {
     hide();
     setForm(fromRow(d));
     setAck(false);
+    setTouched({});
     setEditing(true);
   };
 
@@ -88,12 +91,20 @@ export default function PayoutDetailsCard() {
   const state = payoutCardState(d);
   const showForm = editing || !d;
 
-  const ibanBad = form.iban.trim() !== '' && !isValidIban(form.iban);
-  const swift = form.swift_bic.replace(/\s+/g, '');
-  const swiftBad = swift !== '' && !/^[A-Za-z0-9]{8}([A-Za-z0-9]{3})?$/.test(swift);
-  const currencyBad = !/^[A-Za-z]{3}$/.test(form.currency.trim());
-  const valid = form.account_holder.trim().length >= 2 && form.bank_name.trim().length >= 2
-    && (form.iban.trim() !== '' || form.account_number.trim() !== '') && !ibanBad && !swiftBad && !currencyBad;
+  // Same rules as the server: a wrong value is shown next to its field while typing, a missing one after leaving the field.
+  const errors = payoutFieldErrors(form);
+  const valid = Object.keys(errors).length === 0;
+  const errorOf = (k: PayoutField) => {
+    const msg = errors[k];
+    if (!msg) return undefined;
+    const lengthRule = msg === PAYOUT_MESSAGES.names || msg === PAYOUT_MESSAGES.ibanOrAccount;
+    return touched[k] || (!lengthRule && form[k].trim() !== '') ? msg : undefined;
+  };
+  const blur = (k: PayoutField) => () => setTouched((t0) => ({ ...t0, [k]: true }));
+  const fieldProps = (k: PayoutField) => ({
+    onBlur: blur(k), 'aria-invalid': !!errorOf(k), 'aria-describedby': errorOf(k) ? `pd-${k}-error` : undefined,
+  });
+  const fieldError = (k: PayoutField) => errorOf(k) ? <p id={`pd-${k}-error`} className="text-xs text-destructive">{errorOf(k)}</p> : null;
 
   const submit = () => {
     setSaveError(null);
@@ -168,34 +179,38 @@ export default function PayoutDetailsCard() {
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="pd-holder" className="text-xs">Account holder *</Label>
-                <Input id="pd-holder" autoComplete="off" value={form.account_holder} onChange={set('account_holder')} maxLength={120} />
+                <Input id="pd-holder" autoComplete="off" value={form.account_holder} onChange={set('account_holder')} maxLength={120} {...fieldProps('account_holder')} />
+                {fieldError('account_holder')}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="pd-bank" className="text-xs">Bank *</Label>
-                <Input id="pd-bank" autoComplete="off" value={form.bank_name} onChange={set('bank_name')} maxLength={120} />
+                <Input id="pd-bank" autoComplete="off" value={form.bank_name} onChange={set('bank_name')} maxLength={120} {...fieldProps('bank_name')} />
+                {fieldError('bank_name')}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="pd-iban" className="text-xs">IBAN</Label>
-                <Input id="pd-iban" autoComplete="off" value={form.iban} onChange={set('iban')} maxLength={42} aria-invalid={ibanBad} />
-                {ibanBad && <p className="text-xs text-destructive">This IBAN is not valid</p>}
+                <Input id="pd-iban" autoComplete="off" value={form.iban} onChange={set('iban')} maxLength={42} {...fieldProps('iban')} />
+                {fieldError('iban')}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="pd-acc" className="text-xs">Account number (if you have no IBAN)</Label>
-                <Input id="pd-acc" autoComplete="off" value={form.account_number} onChange={set('account_number')} maxLength={40} />
+                <Input id="pd-acc" autoComplete="off" value={form.account_number} onChange={set('account_number')} maxLength={40} {...fieldProps('account_number')} />
+                {fieldError('account_number')}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="pd-swift" className="text-xs">SWIFT / BIC</Label>
-                <Input id="pd-swift" autoComplete="off" value={form.swift_bic} onChange={set('swift_bic')} maxLength={11} aria-invalid={swiftBad} />
-                {swiftBad && <p className="text-xs text-destructive">The SWIFT / BIC must have 8 or 11 letters and digits</p>}
+                <Input id="pd-swift" autoComplete="off" value={form.swift_bic} onChange={set('swift_bic')} maxLength={11} {...fieldProps('swift_bic')} />
+                {fieldError('swift_bic')}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="pd-country" className="text-xs">Country</Label>
-                <Input id="pd-country" autoComplete="off" value={form.country} onChange={set('country')} maxLength={60} />
+                <Input id="pd-country" autoComplete="off" value={form.country} onChange={set('country')} maxLength={60} {...fieldProps('country')} />
+                {fieldError('country')}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="pd-cur" className="text-xs">Currency of the account</Label>
-                <Input id="pd-cur" autoComplete="off" value={form.currency} onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value.toUpperCase() }))} maxLength={3} className="w-28" aria-invalid={currencyBad} />
-                {currencyBad && <p className="text-xs text-destructive">Use a 3-letter currency code such as USD</p>}
+                <Input id="pd-cur" autoComplete="off" value={form.currency} onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value.toUpperCase() }))} maxLength={3} className="w-28" {...fieldProps('currency')} />
+                {fieldError('currency')}
               </div>
             </div>
             <div className="space-y-1.5">
@@ -212,6 +227,7 @@ export default function PayoutDetailsCard() {
                 <Checkbox id="pd-ack" checked={ack} onCheckedChange={(v) => setAck(v === true)} aria-required="true" />
                 <Label htmlFor="pd-ack" className="text-xs leading-snug">I have read the disclaimer above and I acknowledge it</Label>
               </div>
+              {!ack && valid && bankDirty && <p className="text-xs text-destructive">{PAYOUT_MESSAGES.ack}</p>}
             </div>
 
             <p className="text-xs text-muted-foreground">If you change any detail, the platform checks it again before your next payout.</p>
