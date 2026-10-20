@@ -1,7 +1,7 @@
 // Synthetic consultants and tickets for the matching audit and golden tests. No production data: every name and value is invented.
 import type { MatchConsultant, MatchTicket } from '../../../supabase/functions/_shared/ticketMatch';
 
-const base = { verification_status: 'verified', active: true, languages: ['en'], completion_percent: 70, total_reviews: 10, rating: 4.4, response_time_minutes: 120 } as const;
+const base = { verification_status: 'verified', active: true, languages: ['en'] as string[], completion_percent: 70, total_reviews: 10, rating: 4.4, response_time_minutes: 120 };
 
 export const FIXTURE_CONSULTANTS: Array<MatchConsultant & { label: string }> = [
   { ...base, id: 'c01', label: 'FI senior, Saudi, Arabic', skills: [{ module: 'SAP FI', years: 12, certified: true }, { module: 'SAP CO', years: 8 }, { module: 'FI - General Ledger (FI-GL)', years: 10 }], certifications: [{ name: 'SAP Certified Application Associate - Financial Accounting with SAP S/4HANA', verified: true }], technologies: ['S/4HANA On-Premise'], sap_roles: ['functional'], languages: ['en', 'ar'], localization_countries: ['Saudi Arabia'], localization_solutions: ['Saudi Arabia ZATCA e-invoicing (FATOORA, phase 1 and 2)'], industries: ['Oil & gas - upstream'], deployment_experience: ['On-premise', 'Public cloud (S/4HANA Cloud)'], timezone: 'Asia/Riyadh', availability_status: 'available', ai_interview_badge: 'Gold', rating: 4.8, total_reviews: 20, response_time_minutes: 25, hourly_rate: 90, completion_percent: 95 },
