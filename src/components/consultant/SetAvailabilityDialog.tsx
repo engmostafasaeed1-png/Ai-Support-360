@@ -77,11 +77,12 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
     },
   });
 
-  // Load the saved slots into the editable draft list when they arrive
+  // Load the saved slots into the editable draft list when they arrive or the dialog opens.
   // Load the saved slots only while the list has no unsaved changes, so a refetch does not drop them.
+  // `open` is a dependency because a reopen with unchanged (structurally shared) data must still re-seed the draft.
   const applied = useRef<string | null>(null);
   useEffect(() => {
-    if (!data) return;
+    if (!data || !open) return;
     const fresh = data.slots.map(toDraft);
     const untouched = applied.current === null || snapshot(drafts.filter(d => !d.removed)) === applied.current;
     applied.current = snapshot(fresh);
@@ -89,8 +90,8 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
     setDrafts(fresh);
     setDraftLoaded(true);
     setEditingId(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs only when the saved slots change
-  }, [data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs only when the saved slots change or the dialog opens
+  }, [data, open]);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ['my-availability-slots'] });
 
@@ -165,7 +166,9 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
         }
       }
       onSaved?.();
-      void qc.invalidateQueries({ queryKey: ['availability-slots'] });
+      // Refresh other availability views (e.g. the calendar). The dialog's own list is refreshed on close,
+      // so a refetch does not replace the draft while the consultant is still editing.
+      void qc.invalidateQueries({ queryKey: ['my-availability-slots'], predicate: q => q.queryKey.length > 1 });
     },
   });
   const close = async () => {
