@@ -27,7 +27,9 @@ async function loadPending(): Promise<PendingRequest[]> {
   // '*' keeps working before and after docs/sql/assignment-response.sql adds the deadline columns.
   const { data: rows, error } = await supabase.from('ticket_match_requests').select('*').eq('consultant_id', c.id).eq('status', 'pending');
   if (error) throw error;
-  const list = (rows ?? []) as Array<Record<string, any>>;
+  // Requests from before the response policy (no deadline) only pop up during their first week.
+  const weekAgo = Date.now() - 7 * 24 * 3_600_000;
+  const list = ((rows ?? []) as Array<Record<string, any>>).filter((r) => r.response_due_at || Date.parse(r.created_at) >= weekAgo);
   if (list.length === 0) return [];
   const ticketIds = [...new Set(list.map((r) => r.ticket_id as string))];
   const [{ data: tickets }, { data: rates }] = await Promise.all([
