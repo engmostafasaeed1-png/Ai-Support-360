@@ -18,6 +18,11 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
+vi.mock('@/hooks/useAssignmentPolicy', async () => {
+  const m = await import('../../../supabase/functions/_shared/assignmentPolicy');
+  return { useAssignmentPolicy: () => m.POLICY_DEFAULTS };
+});
+
 import { ConsultantTourProvider, useConsultantTour, AUTO_START_DELAY_MS } from './ConsultantTour';
 
 function StartButton() {
