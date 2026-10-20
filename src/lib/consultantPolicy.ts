@@ -167,6 +167,7 @@ export interface PolicyStatus {
 }
 
 export function clampGraceDays(days: number | null | undefined): number {
+  if (days === null || days === undefined) return DEFAULT_POLICY_GRACE_DAYS;
   const n = Number(days);
   if (!Number.isFinite(n)) return DEFAULT_POLICY_GRACE_DAYS;
   return Math.min(MAX_POLICY_GRACE_DAYS, Math.max(0, Math.trunc(n)));
