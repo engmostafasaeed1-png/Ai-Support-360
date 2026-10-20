@@ -140,7 +140,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
   const autosaveReady = useProfileAutosaveReady();
   const fieldRules = useProfileFieldRules();
   const interviewWeight = useInterviewWeight();
-  const interviewDone = useInterviewEligibility().data?.interviewDone === true;
+  const interviewCompleted = useInterviewEligibility().data?.interviewDone === true;
   const [loadSucceeded, setLoadSucceeded] = useState(false);
   const [sourceRevision, setSourceRevision] = useState(0);
   const navigate = useNavigate();
@@ -702,7 +702,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     industries: data.projects.map(p => p.clientIndustry).filter(Boolean),
     project_types: data.projects.length > 0 ? ['project'] : [],
     language_levels: data.languages.length > 0 ? Object.fromEntries(data.languages.map(l => [l, 'set'])) : {},
-    interview_done: interviewDone,
+    interview_done: interviewCompleted || interviewDone || !!loadedProfile?.ai_interview_completed_at,
   }, { interviewWeight }).percent;
 
   return (
