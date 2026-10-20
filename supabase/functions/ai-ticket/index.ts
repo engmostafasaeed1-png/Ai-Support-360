@@ -493,7 +493,9 @@ serve(async (req) => {
       const optional = async <T,>(run: () => PromiseLike<{ data: T | null; error: unknown }>): Promise<T | null> => {
         try { const { data, error } = await run(); return error ? null : data; } catch { return null; }
       };
-      const [founding, inactiveIds, declined, hiddenIds, responseRows, respLevels] = await Promise.all([
+      const callerClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") || "", { global: { headers: { Authorization: authHeader } } });
+      const tenantArg = typeof (parsed.data as any).tenant_id === "string" && /^[0-9a-f-]{36}$/i.test((parsed.data as any).tenant_id) ? (parsed.data as any).tenant_id : null;
+      const [founding, inactiveIds, declined, hiddenIds, responseRows, respLevels, clientPrefs] = await Promise.all([
         optional(() => supabase.from("founding_consultants").select("consultant_id").is("revoked_at", null)),
         optional(() => supabase.rpc("matching_inactive_consultants")),
         parsed.data.ticket_id
@@ -505,7 +507,14 @@ serve(async (req) => {
         optional(() => supabase.rpc("assignment_response_rates", { _consultant_ids: consultants.map((c) => c.id) })),
         // Feature M public responsiveness level: rows only while responsiveness_public is on (else the criterion is left out).
         optional(() => supabase.rpc("responsiveness_public_summary", { _consultant_ids: consultants.map((c) => c.id) })),
+        // Feature O: the requesting client's favourites and "do not suggest" list, read in the caller's own context
+        // (returns nothing to anyone outside that client/company, administrators included). Absent until the SQL is applied.
+        optional(() => callerClient.rpc("client_match_preferences", { _tenant_id: parsed.data.ticket_id ? null : tenantArg, _ticket_id: parsed.data.ticket_id ?? null })),
       ]);
+      const prefs = (clientPrefs && typeof clientPrefs === "object" ? clientPrefs : {}) as { favourites?: unknown; blocked?: unknown };
+      const idList = (v: unknown) => new Set((Array.isArray(v) ? v : []).filter((x): x is string => typeof x === "string"));
+      const favouriteSet = idList(prefs.favourites);
+      const blockedSet = idList(prefs.blocked);
       const respRows = Array.isArray(respLevels) ? (respLevels as any[]) : [];
       const respLevel = new Map<string, string>(respRows.map((r) => [r.consultant_id, r.level]));
       const answeredRate = new Map<string, number | null>(
@@ -517,6 +526,8 @@ serve(async (req) => {
       const excluded = new Set<string>(((declined ?? []) as any[]).map((r) => r.consultant_id));
       for (const id of (Array.isArray(hiddenIds) ? hiddenIds : []) as unknown[]) if (typeof id === "string") excluded.add(id);
       for (const c of consultants) if (c.user_id === clientUserId) excluded.add(c.id);
+      // "Do not suggest": never recommended to this client (the consultant is not told).
+      for (const id of blockedSet) excluded.add(id);
 
       const matchTicket: MatchTicket = {
         id: parsed.data.ticket_id ?? null,
@@ -550,6 +561,8 @@ serve(async (req) => {
           resolved_in_areas: e.resolved_tickets_in_these_areas, solved_similar: e.solved_similar_issues,
           founding: foundingSet.has(c.id),
           ...(respRows.length ? { responsiveness_level: (respLevel.get(c.id) ?? "new") as any } : {}),
+          // Small favourite boost, only for clients who have favourites (left out otherwise).
+          ...(favouriteSet.size ? { favourite: favouriteSet.has(c.id) } : {}),
         };
       });
       const ranking = rankConsultants(matchTicket, matchInput, { weights, excluded });
@@ -632,6 +645,7 @@ ${JSON.stringify(batch, null, 2)}`,
           const text = prose.get(r.consultant_id);
           return {
             consultant_id: r.consultant_id,
+            favourite: favouriteSet.has(r.consultant_id),
             match_score: r.score,
             score_breakdown: r.breakdown.map((b) => ({ key: b.key, weight: b.weight, score: Math.round(b.fit * 100), contribution: b.contribution })),
             why: r.chips,

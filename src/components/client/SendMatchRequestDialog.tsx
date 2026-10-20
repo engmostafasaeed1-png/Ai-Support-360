@@ -22,6 +22,10 @@ import TaskProgressPanel, { TaskDoneNote } from '@/components/progress/TaskProgr
 import { matchSteps, understoodSummary, type MatchPhase } from '@/lib/matchProgress';
 import { invokeWithTimeout } from '@/lib/invokeWithTimeout';
 import { TimeoutError } from '@/lib/withTimeout';
+import FavouriteButton, { FavouriteChip } from '@/components/favourites/FavouriteButton';
+import GroupInvitePanel from '@/components/favourites/GroupInvitePanel';
+import { useClientFavourites } from '@/hooks/useClientFavourites';
+import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
 
 interface Props {
   ticketId: string;
@@ -72,6 +76,10 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
   const [aiLoading, setAiLoading] = useState(false);
   const [matchRun, setMatchRun] = useState<{ phase: MatchPhase; startedAt: number; understood: string; error?: string; found?: number } | null>(null);
   const matchToken = useRef(0);
+  const fav = useClientFavourites();
+  const { consultants: directory } = useRealtimeConsultants();
+  const [tab, setTab] = useState<'all' | 'groups'>('all');
+  const [groupSending, setGroupSending] = useState(false);
 
   const activeFilterCount = [availabilityFilter !== 'all', moduleFilter !== 'all', minRating !== 'all', maxRate !== 'all'].filter(Boolean).length;
 
@@ -147,7 +155,8 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
         });
     },
   });
-  const visibleConsultants = allConsultants ? withoutHidden(allConsultants, hiddenIds) : allConsultants;
+  // Hidden profiles and the client's "do not suggest" list are never offered.
+  const visibleConsultants = allConsultants ? withoutHidden(allConsultants, hiddenIds).filter((c: any) => !fav.blocked.has(c.id)) : allConsultants;
   // With match results, the best matches come first, in match order; the others keep the browse order.
   const matchRank = new Map((aiRecommendations ?? []).map((r, i) => [r.consultant_id, i]));
   const consultants = visibleConsultants && matchRank.size > 0
@@ -231,6 +240,26 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
       queryClient.invalidateQueries({ queryKey: ['client-match-acceptors', ticketId] });
     }
   };
+
+  // "Invite whole group" / several people: one normal request per person (each still accepts, agrees the rate, signs the NDA...).
+  const sendToMany = async (ids: string[]) => {
+    setGroupSending(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { toast.error('Not authenticated'); setGroupSending(false); return; }
+    let sent = 0; let already = 0;
+    for (const consultantId of ids) {
+      const { error } = await supabase.from('ticket_match_requests').insert({ ticket_id: ticketId, consultant_id: consultantId, sent_by: user.id, message: message.trim() || null } as any);
+      if (!error) sent += 1; else if (error.code === '23505') already += 1;
+    }
+    setGroupSending(false);
+    queryClient.invalidateQueries({ queryKey: ['available-consultants'] });
+    queryClient.invalidateQueries({ queryKey: ['client-match-acceptors', ticketId] });
+    if (sent > 0) toast.success(`Requests sent to ${sent} consultant(s).${already ? ` ${already} had already been asked.` : ''}`);
+    else if (already > 0) toast.info('These consultants have already been asked.');
+    else toast.error('Could not send the requests. Please try again.');
+  };
+  const askedIds = new Set<string>((allConsultants ?? []).filter((c: any) => c.alreadySent).map((c: any) => c.id));
+  const groupCandidates = directory.filter((c) => c.verification_status === 'verified').map((c) => ({ id: c.id, name: c.name, subtitle: c.specialty }));
 
   const availabilityBadge = (status: string) => {
     switch (status) {
@@ -439,8 +468,24 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
             />
           </div>
 
+          {fav.ready && (
+            <div className="flex gap-1 rounded-lg bg-muted/50 p-1" role="tablist" aria-label="Who to ask">
+              {(['all', 'groups'] as const).map((k) => (
+                <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+                  className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium ${tab === k ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}>
+                  {k === 'all' ? 'All consultants' : 'From my groups'}
+                </button>
+              ))}
+            </div>
+          )}
+          {fav.ready && tab === 'groups' && (
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <GroupInvitePanel candidates={groupCandidates} alreadyAsked={askedIds} modules={[sapModule]} actionLabel="Send requests" busy={groupSending} onConfirm={sendToMany} />
+            </div>
+          )}
+
           {/* Consultant list */}
-          <div className={`flex-1 overflow-y-auto space-y-2 min-h-0 ${aiLoading ? 'hidden' : ''}`}>
+          <div className={`flex-1 overflow-y-auto space-y-2 min-h-0 ${aiLoading || (fav.ready && tab === 'groups') ? 'hidden' : ''}`}>
             {isLoading ? (
               [1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)
             ) : !sortedConsultants?.length ? (
@@ -466,6 +511,8 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-semibold text-foreground text-sm">{c.name}</p>
+                            <FavouriteButton consultantId={c.id} name={c.name} size="sm" />
+                            <FavouriteChip consultantId={c.id} />
                             {availabilityBadge(c.availability)}
                             {c.hasModule && (
                               <Badge variant="secondary" className="text-[9px] bg-accent/10 text-accent">Relevant</Badge>

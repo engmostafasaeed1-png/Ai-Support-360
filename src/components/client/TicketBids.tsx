@@ -1,4 +1,5 @@
 import FoundingBadge from '@/components/consultant/FoundingBadge';
+import FavouriteButton from '@/components/favourites/FavouriteButton';
 import { Fragment, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -78,7 +79,7 @@ export default function TicketBids({ ticketId, ticket = {}, onInvite = () => {},
   if (error) return <p role="alert" className="text-destructive">{error.message}</p>;
   const consultant = (p: any) => <div className="flex items-start gap-2 min-w-0">
     <div className="h-9 w-9 shrink-0 rounded-full bg-muted overflow-hidden flex items-center justify-center text-xs">{p.consultant_avatar ? <img src={p.consultant_avatar} alt={p.consultant_name} className="h-full w-full object-cover" /> : p.consultant_name.slice(0, 2)}</div>
-    <div className="min-w-0 space-y-1"><Link to={`/client/consultants/${p.consultant_id}`} className="font-semibold text-sm text-accent break-words">{p.consultant_name}</Link>
+    <div className="min-w-0 space-y-1"><Link to={`/client/consultants/${p.consultant_id}`} className="font-semibold text-sm text-accent break-words">{p.consultant_name}</Link><FavouriteButton consultantId={p.consultant_id} name={p.consultant_name} size="sm" className="ms-1 align-middle" />
       {p.verification_status === 'verified' && <Badge variant="outline" className="ms-1 text-success gap-1"><ShieldCheck className="h-3 w-3" />Verified</Badge>}
       <ConsultantLocation audience="client" city={p.city} country={p.country} className="text-[11px] text-muted-foreground" />
       <BlendedRatingStars consultantId={p.consultant_id} rating={Number(p.consultant_rating)} reviews={Number(p.consultant_reviews)} size="sm" />

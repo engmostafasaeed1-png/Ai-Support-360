@@ -2,7 +2,7 @@ import {
   LayoutTemplate,
   Activity, AlertOctagon, BadgeCheck, BarChart3, BellRing, BookMarked, BookOpenCheck, Blocks, Brain, Building,
   CalendarClock, ClipboardList, Crown, Database, DollarSign, FileSignature, FileText, Fingerprint,
-  Flag, Gauge, GitPullRequestArrow, Gift, Headset, HelpCircle, Inbox, Kanban, Layers3, LayoutDashboard,
+  Flag, Gauge, Heart, GitPullRequestArrow, Gift, Headset, HelpCircle, Inbox, Kanban, Layers3, LayoutDashboard,
   ListChecks, Megaphone, MessagesSquare, Monitor, MonitorSmartphone, PanelTop, PieChart, Plug, Plus, Radio, Receipt,
   Rocket, ScrollText, Search, Server, Settings, Settings2, Shield, ShieldCheck, ShoppingBag,
   SlidersHorizontal, Sparkles, Star, StarHalf, Timer, UserCheck, UserCircle, UserCog, Users, Video,
@@ -46,6 +46,7 @@ export const clientNavGroups: NavGroup[] = [
     items: [
       { key: 'tickets', icon: Headset, path: '/client/tickets' },
       { key: 'consultants', icon: Search, path: '/client/consultants' },
+      { key: 'my_consultants', icon: Heart, path: '/client/my-consultants', fallback: 'My consultants' },
       { key: 'consultant_responsiveness', icon: Timer, path: '/client/responsiveness', fallback: 'Responsiveness' },
       { key: 'sessions', icon: CalendarClock, path: '/client/sessions' },
       { key: 'video_sessions', icon: Video, path: '/client/video-sessions' },

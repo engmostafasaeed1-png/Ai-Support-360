@@ -53,6 +53,8 @@ export interface PopupHandlers {
   onOpenRequest?: () => void;
   /** Invite this consultant to a new request. When given, it replaces "Open a request". */
   onInvite?: (id: string) => void;
+  /** Feature O favourite toggle; omitted when the client may not edit favourites. Resolves to the new state. */
+  favourite?: { on: boolean; toggle: (id: string) => Promise<boolean>; addLabel: string; removeLabel: string };
 }
 
 const STATE_TEXT: Record<AvailabilityState, string> = { available: '#16a34a', busy: '#d97706', offline: '#6b7280' };
@@ -192,6 +194,28 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
   request.type = 'button';
   request.addEventListener('click', () => (handlers.onInvite ? handlers.onInvite(view.id) : handlers.onOpenRequest?.()));
   actions.append(request, open);
+  const fav = handlers.favourite;
+  if (fav) {
+    let on = fav.on;
+    const heart = make('button', { fontSize: '14px', lineHeight: '1', padding: '6px 10px', borderRadius: '8px', backgroundColor: 'white', border: '1px solid #e5e7eb', cursor: 'pointer' });
+    heart.type = 'button';
+    heart.dataset.part = 'favourite';
+    const paint = () => {
+      heart.textContent = on ? '\u2665' : '\u2661';
+      heart.style.color = on ? '#dc2626' : '#6b7280';
+      heart.setAttribute('aria-pressed', String(on));
+      heart.setAttribute('aria-label', on ? fav.removeLabel : fav.addLabel);
+      heart.title = on ? fav.removeLabel : fav.addLabel;
+    };
+    paint();
+    heart.addEventListener('click', async () => {
+      heart.disabled = true;
+      try { on = await fav.toggle(view.id); } catch { /* the page shows the error */ }
+      heart.disabled = false;
+      paint();
+    });
+    actions.append(heart);
+  }
   root.append(actions);
 
   return root;

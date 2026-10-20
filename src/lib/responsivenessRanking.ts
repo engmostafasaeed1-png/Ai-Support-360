@@ -17,8 +17,9 @@ export interface RankingEffect {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+// The favourite boost (Feature O) only counts for clients with favourites, so it is left out of the typical total.
 const rawShare = (weights: MatchWeights) => {
-  const total = Object.values(weights).reduce((a, b) => a + b, 0);
+  const total = (Object.keys(weights) as Array<keyof MatchWeights>).filter((k) => k !== 'favourite').reduce((a, k) => a + weights[k], 0);
   return total > 0 ? (weights.responsiveness * 100) / total : 0;
 };
 

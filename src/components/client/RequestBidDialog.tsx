@@ -21,8 +21,12 @@ import MatchWhyChips from '@/components/match/MatchWhyChips';
 import TaskProgressPanel from '@/components/progress/TaskProgressPanel';
 import { matchSteps, understoodSummary, type MatchPhase } from '@/lib/matchProgress';
 import { invokeWithTimeout } from '@/lib/invokeWithTimeout';
+import FavouriteButton, { FavouriteChip } from '@/components/favourites/FavouriteButton';
+import GroupInvitePanel, { useAskedConsultants } from '@/components/favourites/GroupInvitePanel';
+import { useClientFavourites } from '@/hooks/useClientFavourites';
+import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
 
-type BidMode = 'select' | 'open' | 'manual' | 'ai';
+type BidMode = 'select' | 'open' | 'manual' | 'ai' | 'group';
 
 interface Props {
   ticketId: string;
@@ -103,7 +107,12 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
   const proposals = bids?.bids.map(r => r.bid);
   const { data: allConsultants, isLoading: loadingConsultants } = useVerifiedConsultants(ticketModule);
   const hiddenIds = useHiddenConsultantIds(open);
-  const consultants = allConsultants ? withoutHidden(allConsultants, hiddenIds) : allConsultants;
+  const fav = useClientFavourites();
+  const { consultants: directory } = useRealtimeConsultants();
+  const asked = useAskedConsultants(ticketId, open && mode === 'group');
+  // Hidden profiles and the client's "do not suggest" list are never offered.
+  const consultants = allConsultants ? withoutHidden(allConsultants, hiddenIds).filter(c => !fav.blocked.has(c.id)) : allConsultants;
+  const groupCandidates = directory.filter(c => c.verification_status === 'verified').map(c => ({ id: c.id, name: c.name, subtitle: c.specialty }));
 
   const pendingBids = (proposals || []).filter((p: any) => p.status === 'pending').length;
   const totalBids = (proposals || []).length;
@@ -190,8 +199,8 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
     }
   };
 
-  const handleSendPrivateBids = async () => {
-    if (!selectedConsultants.length) {
+  const handleSendPrivateBids = async (ids: string[] = selectedConsultants) => {
+    if (!ids.length) {
       toast.error('Please select at least one consultant');
       return;
     }
@@ -206,7 +215,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
     // The ticket is NOT opened to everybody.
     let sent = 0;
     let already = 0;
-    for (const consultantId of selectedConsultants) {
+    for (const consultantId of ids) {
       const { error } = await supabase.from('ticket_match_requests').insert({
         ticket_id: ticketId,
         consultant_id: consultantId,
@@ -267,6 +276,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-foreground truncate">{c.name}</p>
+        <FavouriteChip consultantId={c.id} className="mt-0.5" />
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
           <span>⭐ {c.rating.toFixed(1)}</span>
           {c.hourly_rate && <span>${c.hourly_rate}/hr</span>}
@@ -276,6 +286,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
       {c.hasModule && (
         <Badge variant="secondary" className="text-[9px] bg-green-500/15 text-green-600 shrink-0">Match</Badge>
       )}
+      <FavouriteButton consultantId={c.id} name={c.name} size="sm" />
     </div>
   );
   const MatchedCard = ({ c }: { c: any }) => (
@@ -296,13 +307,14 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
               </Button>
             )}
             <Gavel className="w-5 h-5 text-accent" />
-            {mode === 'select' ? 'Request Bids' : mode === 'open' ? 'Public bids' : mode === 'manual' ? 'Select Consultants' : 'Recommended'}
+            {mode === 'select' ? 'Request Bids' : mode === 'open' ? 'Public bids' : mode === 'manual' ? 'Select Consultants' : mode === 'group' ? 'Bids from my group' : 'Recommended'}
           </DialogTitle>
           <DialogDescription className="text-sm">
             {mode === 'select' && 'Choose how you want to invite consultants to bid'}
             {mode === 'open' && 'Open your ticket for all verified consultants'}
             {mode === 'manual' && 'Search and select consultants to invite privately'}
             {mode === 'ai' && 'Best-matching consultants for this request, with the reasons for each match'}
+            {mode === 'group' && 'Invite only the members of one of your groups to bid privately'}
           </DialogDescription>
         </DialogHeader>
 
@@ -343,6 +355,14 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
                 description="Best-matching consultants for your request, with the reasons"
                 onClick={() => setMode('ai')}
               />
+              {fav.ready && (
+                <ModeOption
+                  icon={<Users className="w-5 h-5 text-accent" />}
+                  title="Private Bid — My group"
+                  description="Only the members of one of your groups are invited to bid"
+                  onClick={() => setMode('group')}
+                />
+              )}
             </div>
           )}
 
@@ -398,9 +418,33 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
                 description="Best-matching consultants for your request"
                 onClick={() => setMode('ai')}
               />
+              {fav.ready && (
+                <ModeOption
+                  icon={<Users className="w-5 h-5 text-accent" />}
+                  title="Private Bid — My group"
+                  description="Only the members of one of your groups are invited to bid"
+                  onClick={() => setMode('group')}
+                />
+              )}
               <Button variant="ghost" size="sm" className="text-xs" onClick={() => setIsEditing(false)}>
                 <ArrowLeft className="w-3.5 h-3.5 me-1" /> Back
               </Button>
+            </div>
+          )}
+
+          {/* ─── Mode: My group (private invitations to group members only) ─── */}
+          {mode === 'group' && (
+            <div className="space-y-3">
+              <Textarea placeholder="Add a message to your invitation (optional)..." value={bidMessage} onChange={e => setBidMessage(e.target.value)} className="min-h-[60px] text-xs" />
+              <GroupInvitePanel
+                candidates={groupCandidates}
+                alreadyAsked={asked}
+                modules={[ticketModule]}
+                actionLabel="Send private bid invitations"
+                note="Only the people ticked are invited. Each one decides whether to bid; nothing is agreed until you accept a bid."
+                busy={saving}
+                onConfirm={(ids) => handleSendPrivateBids(ids)}
+              />
             </div>
           )}
 
@@ -465,7 +509,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
                     onChange={e => setBidMessage(e.target.value)}
                     className="min-h-[60px] text-xs"
                   />
-                  <Button className="w-full gradient-primary border-0 gap-2" onClick={handleSendPrivateBids} disabled={saving}>
+                  <Button className="w-full gradient-primary border-0 gap-2" onClick={() => void handleSendPrivateBids()} disabled={saving}>
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     Send Private Bid Invitations
                   </Button>
@@ -525,7 +569,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
                     onChange={e => setBidMessage(e.target.value)}
                     className="min-h-[60px] text-xs"
                   />
-                  <Button className="w-full gradient-primary border-0 gap-2" onClick={handleSendPrivateBids} disabled={saving}>
+                  <Button className="w-full gradient-primary border-0 gap-2" onClick={() => void handleSendPrivateBids()} disabled={saving}>
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     Send Private Bid Invitations
                   </Button>

@@ -8,7 +8,7 @@ import type { NavGroup, NavItem } from './navTypes';
 const CROSS_PORTAL = ['/admin', '/super-admin'];
 
 const portals: Array<[string, NavGroup[], string, NavItem[], number]> = [
-  ['client', clientNavGroups, '/client', [clientPrimaryAction], 37],
+  ['client', clientNavGroups, '/client', [clientPrimaryAction], 38],
   ['consultant', consultantNavGroups, '/consultant', [], 24],
   ['admin', adminNavGroups, '/admin', [], 24],
   ['super-admin', superAdminNavGroups, '/super-admin', [], 10],
