@@ -148,7 +148,13 @@ export default function ExperienceCvCard({ onProfileChanged, onImported }: { onP
       } else {
         const row = { ...editing, id: undefined, consultant_id: userId, start_date: editing.start_date || null, end_date: editing.is_current ? null : editing.end_date || null };
         const { data, error } = await supabase.from('consultant_work_history').insert(row as never).select('id').single();
-...
+        if (error || !data) throw error ?? new Error('Could not save changes. Try again.');
+        // Keep the form open; subsequent edits use the stable returned row ID.
+        setEditing(current => current ? { ...current, id: data.id } : current);
+      }
+      void load(userId); onProfileChanged?.();
+    },
+  });
   const discardJob = () => setEditing(null);
   const closeJob = async () => {
     if (jobState.dirty) {
@@ -245,6 +251,7 @@ export default function ExperienceCvCard({ onProfileChanged, onImported }: { onP
             </div>
           )}
           <DialogFooter>
+            {jobState.dirty && <Button variant="ghost" onClick={discardJob} disabled={jobState.saving}>Discard changes</Button>}
             <Button variant="outline" onClick={() => void closeJob()}>Close</Button>
             <SectionSaveControls state={jobState} />
           </DialogFooter>
