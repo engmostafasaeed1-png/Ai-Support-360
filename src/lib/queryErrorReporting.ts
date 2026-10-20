@@ -1,5 +1,6 @@
 import { logger } from '@/lib/logger';
 import { hasActiveSession } from '@/lib/sessionState';
+import { PAYOUT_VALIDATION_MESSAGE } from '@/lib/payoutValidation';
 
 export interface ErrorInfo {
   message: string;
@@ -45,6 +46,8 @@ const SIGNED_OUT_REFUSAL = /(permission denied|not signed in|jwt|invalid token|r
 export function isExpectedFailure(info: ErrorInfo): boolean {
   if (info.code && EXPECTED_CODE.test(info.code)) return true;
   if (KNOWN_BUSINESS_MESSAGE.test(info.message)) return true;
+  // Bank-details input rules (account number, IBAN, SWIFT, names, disclaimer...): the form shows them next to the field.
+  if (PAYOUT_VALIDATION_MESSAGE.test(info.message)) return true;
   if (info.status !== undefined && info.status >= 400 && info.status < 500) return true;
   return NETWORK_OR_SESSION.test(info.message);
 }

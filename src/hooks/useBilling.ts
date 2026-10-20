@@ -218,7 +218,8 @@ export function useSavePayoutDetails() {
         _acknowledged: v.acknowledged,
         _ack_version: v.ackVersion,
       });
-      if (error) throw new Error(error.message);
+      // Keep the database code so error reporting recognises a refused input (22023) as an expected answer.
+      if (error) throw Object.assign(new Error(error.message), { code: error.code });
     },
     onSuccess: () => {
       toast.success('Bank details saved.');
