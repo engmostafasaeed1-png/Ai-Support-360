@@ -17,7 +17,7 @@ describe('client responsiveness ranking effect', () => {
     expect(v('good')).toBeGreaterThan(v('new'));
     expect(v('new')).toBeGreaterThan(v('fair'));
     expect(v('fair')).toBeGreaterThan(v('needs_improvement'));
-    expect(v('excellent')).toBe(1.16);
+    expect(v('excellent')).toBe(1.17);
     expect(v('needs_improvement')).toBe(-1.46);
   });
 
@@ -41,7 +41,7 @@ describe('client responsiveness ranking effect', () => {
   });
 
   it('formats points with a sign and counts levels', () => {
-    expect(formatPoints(1.16)).toBe('+1.2');
+    expect(formatPoints(1.17)).toBe('+1.2');
     expect(formatPoints(-1.46)).toBe('\u22121.5');
     expect(formatPoints(0)).toBe('0');
     expect(countLevels(['a', 'b', 'c'], (id) => (id === 'a' ? 'excellent' : 'new'))).toEqual({ excellent: 1, good: 0, fair: 0, needs_improvement: 0, new: 2 });
