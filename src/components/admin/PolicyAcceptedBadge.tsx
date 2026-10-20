@@ -32,10 +32,10 @@ export default function PolicyAcceptedBadge({ consultantId }: { consultantId: st
   const q = useLatestAcks();
   if (!q.data) return null;
   const a = q.data.map.get(consultantId);
-  if (!a) return <p className="text-xs text-warning" data-testid="policy-badge">{t('admin.policy.notAccepted', 'Policy not accepted yet')}</p>;
+  if (!a) return <p className="text-xs text-muted-foreground" data-testid="policy-badge">{t('admin.policy.notAccepted', 'Policy not accepted yet')}</p>;
   const outdated = q.data.current != null && a.version < q.data.current;
   return (
-    <p className={`text-xs ${outdated ? 'text-warning' : 'text-success'}`} data-testid="policy-badge">
+    <p className={`text-xs ${outdated ? 'text-muted-foreground' : 'text-success'}`} data-testid="policy-badge">
       {t('admin.policy.acceptedOn', 'Policy accepted v{{v}} on {{date}}', { v: a.version, date: format(new Date(a.accepted_at), 'd MMM yyyy') })}
       {outdated ? ` · ${t('admin.policy.newerVersion', 'version {{v}} not yet', { v: q.data.current })}` : ''}
     </p>
