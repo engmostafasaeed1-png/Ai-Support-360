@@ -1,4 +1,4 @@
-import { Info } from 'lucide-react';
+import { Info, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import RatingStars from '@/components/client/RatingStars';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -59,7 +59,12 @@ export function ResponsivenessReviewLine({ consultantId }: { consultantId?: stri
         <span className="text-xs text-muted-foreground">{t('responsiveness.review_new', 'Not enough requests yet to calculate it.')}</span>
       ) : (
         <>
-          <RatingStars rating={r.stars} reviews={0} size="sm" className="[&>div:last-child>span:last-child]:hidden" />
+          <span role="img" aria-label={t('responsiveness.stars_aria', '{{n}} out of 5 stars', { n: r.stars })} className="inline-flex items-center gap-0.5" dir="ltr">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Star key={i} aria-hidden="true" className={`h-3.5 w-3.5 ${i <= (r.stars ?? 0) ? 'fill-warning text-warning' : 'text-muted-foreground/40'}`} />
+            ))}
+            <span className="ms-1 text-xs font-semibold text-foreground">{r.stars}/5</span>
+          </span>
           <span className="text-xs text-muted-foreground">
             {levelName} · {t('responsiveness.chip_details', 'Median reply {{median}} · {{rate}}% answered', { median: formatMinutes(r.median_minutes, ar), rate: r.response_rate ?? 0 })}
           </span>
