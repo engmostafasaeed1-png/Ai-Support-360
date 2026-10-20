@@ -1,25 +1,53 @@
 import { describe, expect, it } from 'vitest';
-import { profileCompleteness } from './profileCompleteness';
+import { clampInterviewWeight, interviewDoneFrom, profileCompleteness } from './profileCompleteness';
+
+const FULL = {
+  skills_count: 3, sap_roles: ['Functional consultant'], seniority_level: 'senior', total_sap_years: 8, sap_technologies: ['ABAP'],
+  industries: ['Mining'], customer_segments: ['Large listed enterprise'], vertical_solutions: ['SAP Mining (mine-to-market, heavy equipment)'],
+  localization_countries: ['Egypt'], localization_solutions: ['Egypt e-invoice & e-receipt (ETA)'], project_types: ['Implementation (greenfield)'],
+  deployment_experience: ['Hybrid'], project_scale: 'Medium (20-100 people)', work_modes: ['Remote'], working_week: 'Flexible (both)', language_levels: { en: 'Fluent (business)' },
+};
 
 describe('profile completeness', () => {
-  it('is 0 for an empty profile and lists every item as missing', () => {
+  it('is 0 for an empty profile and lists every item, including the interview, as missing', () => {
     const r = profileCompleteness({});
     expect(r.percent).toBe(0);
     expect(r.done).toBe(0);
-    expect(r.total).toBe(15);
+    expect(r.total).toBe(16);
     expect(r.items.every((i) => !i.done && i.hint.length > 10)).toBe(true);
+    expect(r.items.find((i) => i.key === 'interview')?.label).toBe('AI interview - not taken');
   });
 
-  it('is 100 for a full profile', () => {
-    const r = profileCompleteness({
-      skills_count: 3, sap_roles: ['Functional consultant'], seniority_level: 'senior', total_sap_years: 8, sap_technologies: ['ABAP'],
-      industries: ['Mining'], customer_segments: ['Large listed enterprise'], vertical_solutions: ['SAP Mining (mine-to-market, heavy equipment)'],
-      localization_countries: ['Egypt'], localization_solutions: ['Egypt e-invoice & e-receipt (ETA)'], project_types: ['Implementation (greenfield)'],
-      deployment_experience: ['Hybrid'], project_scale: 'Medium (20-100 people)', work_modes: ['Remote'], working_week: 'Flexible (both)', language_levels: { en: 'Fluent (business)' },
-      payout_ready: true,
-    });
+  it('stops at 85 % when every field is filled but the AI interview was never completed', () => {
+    const r = profileCompleteness({ ...FULL, payout_ready: true });
+    expect(r.percent).toBe(85);
+    expect(r.fieldsPercent).toBe(100);
+    expect(r.items.filter((i) => !i.done).map((i) => i.key)).toEqual(['interview']);
+  });
+
+  it('is 100 only with a completed AI interview', () => {
+    const r = profileCompleteness({ ...FULL, payout_ready: true, interview_done: true });
     expect(r.percent).toBe(100);
     expect(r.items.filter((i) => !i.done)).toEqual([]);
+    expect(r.items.find((i) => i.key === 'interview')?.label).toBe('AI interview');
+  });
+
+  it('gives a completed interview its full share even with an empty profile', () => {
+    expect(profileCompleteness({ interview_done: true }).percent).toBe(15);
+  });
+
+  it('uses the admin-set interview share', () => {
+    expect(profileCompleteness({ ...FULL, payout_ready: true }, { interviewWeight: 30 }).percent).toBe(70);
+    expect(profileCompleteness({ interview_done: true }, { interviewWeight: 30 }).percent).toBe(30);
+    expect(clampInterviewWeight(80)).toBe(50);
+    expect(clampInterviewWeight(-5)).toBe(0);
+    expect(clampInterviewWeight('abc')).toBe(15);
+  });
+
+  it('counts a pending session as not taken: only a completion date or an earned badge counts', () => {
+    expect(interviewDoneFrom({ ai_interview_completed_at: null, ai_interview_badge: null })).toBe(false);
+    expect(interviewDoneFrom({ ai_interview_completed_at: '2026-10-01T10:00:00Z' })).toBe(true);
+    expect(interviewDoneFrom({ ai_interview_badge: 'Silver' })).toBe(true);
   });
 
   it('counts pairs only when both parts are filled and ignores blanks', () => {
@@ -32,7 +60,8 @@ describe('profile completeness', () => {
   });
 
   it('rounds the percentage', () => {
-    expect(profileCompleteness({ skills_count: 1, sap_roles: ['x'], industries: ['y'] }).percent).toBe(20);
+    // 3 of 15 fields x 85 % = 17 %.
+    expect(profileCompleteness({ skills_count: 1, sap_roles: ['x'], industries: ['y'] }).percent).toBe(17);
   });
 
   it('counts the bank details only when saved with the disclaimer acknowledged', () => {
@@ -45,14 +74,9 @@ describe('profile completeness', () => {
 
   it('excludes the payout item for client-facing views so payout status is never exposed', () => {
     const r = profileCompleteness({}, { includePayout: false });
-    expect(r.total).toBe(14);
+    expect(r.total).toBe(15);
     expect(r.items.some((i) => i.key === 'payout')).toBe(false);
-    const full = profileCompleteness({
-      skills_count: 3, sap_roles: ['Functional consultant'], seniority_level: 'senior', total_sap_years: 8, sap_technologies: ['ABAP'],
-      industries: ['Mining'], customer_segments: ['Large listed enterprise'], vertical_solutions: ['SAP Mining (mine-to-market, heavy equipment)'],
-      localization_countries: ['Egypt'], localization_solutions: ['Egypt e-invoice & e-receipt (ETA)'], project_types: ['Implementation (greenfield)'],
-      deployment_experience: ['Hybrid'], project_scale: 'Medium (20-100 people)', work_modes: ['Remote'], working_week: 'Flexible (both)', language_levels: { en: 'Fluent (business)' },
-    }, { includePayout: false });
-    expect(full.percent).toBe(100);
+    expect(profileCompleteness(FULL, { includePayout: false }).percent).toBe(85);
+    expect(profileCompleteness({ ...FULL, interview_done: true }, { includePayout: false }).percent).toBe(100);
   });
 });

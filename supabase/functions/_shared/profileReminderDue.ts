@@ -5,9 +5,9 @@ export interface ProfileReminderState {
   signedUpAt: number;
   /** Last reminder send (ms epoch), or null when none was sent yet. */
   lastSentAt: number | null;
-  /** Profile completion is 100 %. */
+  /** Every profile item is complete (the fields part of completion; the AI interview is checked separately). */
   complete: boolean;
-  /** At least one AI interview is completed. */
+  /** At least one AI interview is completed; a pending or never-started session does not count. */
   interviewDone: boolean;
   unsubscribed: boolean;
   /** Account disabled. */
