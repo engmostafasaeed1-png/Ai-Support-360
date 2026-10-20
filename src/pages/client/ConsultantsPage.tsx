@@ -21,6 +21,9 @@ import RatingStars from '@/components/client/RatingStars';
 import VerificationBadge from '@/components/consultant/VerificationBadge';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
 import CompletionBadge from '@/components/consultant/CompletionBadge';
+import ResponsivenessChip from '@/components/consultant/ResponsivenessChip';
+import { BlendedRatingStars } from '@/components/consultant/ResponsivenessRating';
+import { usePublicResponsiveness } from '@/hooks/useResponsiveness';
 import LinkStatus from '@/components/consultant/LinkStatus';
 import { STATE_META } from '@/lib/mapMarkers';
 import { compareRecommended, type ConsultantLive } from '@/lib/consultantDirectory';
@@ -82,7 +85,8 @@ export default function ConsultantsPage() {
 
   // All filters except the map area (the map keeps every pin so the person can move around), then the area for the list.
   const withoutArea = useMemo(() => consultants.filter(c => passes(c, filters, ctx, 'bbox')), [consultants, filters, ctx]);
-  const matches = useMemo(() => directoryMatches(withoutArea, filters, foundingSet), [withoutArea, filters, foundingSet]);
+  const { levels: respLevels } = usePublicResponsiveness();
+  const matches = useMemo(() => directoryMatches(withoutArea, filters, foundingSet, respLevels), [withoutArea, filters, foundingSet, respLevels]);
   const filtered = useMemo(
     () => sortDirectory(withoutArea.filter(c => !filters.bbox || (PREDICATES.bbox?.(c, filters, ctx) ?? true)), filters, matches, tieBreak),
     [withoutArea, filters, ctx, matches, tieBreak],
@@ -275,11 +279,12 @@ export default function ConsultantsPage() {
                     {c.place && <p className="text-[11px] text-muted-foreground truncate">{c.place}</p>}
                     <FoundingBadge consultantId={c.id} /><TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} className="mt-1" />
                     <CompletionBadge percent={c.completion_percent ?? 0} tier={c.ai_interview_badge} className="mt-1" />
+                    <ResponsivenessChip consultantId={c.id} className="mt-1" />
                     {matches && <MatchWhyChips why={matches.get(c.id)?.chips} score={matches.get(c.id)?.score} />}
                   </div>
                   <div className="text-end shrink-0">
                     <p className="text-sm font-bold text-foreground">${c.rate}</p>
-                    <RatingStars rating={c.rating} reviews={c.reviews} size="sm" className="max-w-32 justify-end" />
+                    <BlendedRatingStars consultantId={c.id} rating={c.rating} reviews={c.reviews} size="sm" className="max-w-32 justify-end" interactive={false} />
                   </div>
                 </button>
               ))}
@@ -342,7 +347,7 @@ export default function ConsultantsPage() {
                       </p>
                     )}
 
-                    <RatingStars rating={c.rating} reviews={c.reviews} size="sm" className="mt-2" />
+                    <BlendedRatingStars consultantId={c.id} rating={c.rating} reviews={c.reviews} size="sm" className="mt-2" />
                     {matches && <MatchWhyChips why={matches.get(c.id)?.chips} score={matches.get(c.id)?.score} />}
 
                     <div className="flex flex-wrap gap-1.5 mt-2">
@@ -364,6 +369,7 @@ export default function ConsultantsPage() {
                       <VerificationBadge status={c.verification_status as any} />
                       <FoundingBadge consultantId={c.id} /><TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} />
                       <CompletionBadge percent={c.completion_percent ?? 0} tier={c.ai_interview_badge} />
+                      <ResponsivenessChip consultantId={c.id} />
 
                     </div>
 
