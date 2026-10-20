@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import AssignmentPolicyNote from '@/components/consultant/AssignmentPolicyNote';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Bell, Loader2, Shield } from 'lucide-react';
@@ -88,6 +89,7 @@ export default function ConsultantSettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {row('new_case_alerts', 'New case alerts', 'Get a notification when a client sends you a match request, and the alarm when a client opens a critical request for your SAP area. When off, you will not be notified of new requests and you will not get critical alarms.')}
+              <AssignmentPolicyNote />
             </CardContent>
           </Card>
           <Card className="border-border/40">
