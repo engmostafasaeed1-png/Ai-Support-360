@@ -243,15 +243,17 @@ serve(async (req) => {
       // Read existing tickets through the caller's RLS context, never with privileged access.
       let clientUserId = authUser.id;
       let requestContextRaw: unknown = parsed.data.ticket_context;
+      let notesTried: string[] | null = Array.isArray((parsed.data as any).sap_notes_tried) ? (parsed.data as any).sap_notes_tried.filter((n: unknown) => typeof n === "string").slice(0, 8) : null;
       if (parsed.data.ticket_id) {
         const caller = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY") || "", { global: { headers: { Authorization: authHeader } } });
-        const { data: ticket, error } = await caller.from("tickets").select("title, description, sap_module, sap_modules, sap_module_other, area_details, urgency, preferred_language, client_id, ticket_context").eq("id", parsed.data.ticket_id).single();
+        const { data: ticket, error } = await caller.from("tickets").select("title, description, sap_module, sap_modules, sap_module_other, area_details, urgency, preferred_language, client_id, ticket_context, sap_notes_tried").eq("id", parsed.data.ticket_id).single();
         if (error || !ticket) return new Response(JSON.stringify({ error: "Ticket not accessible" }), { status: 403, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
         title = ticket.title; description = ticket.description || ""; sap_module = ticket.sap_module;
         sap_modules = ticket.sap_modules; sap_module_other = ticket.sap_module_other || "";
         areaDetails = ticket.area_details || ""; urgency = ticket.urgency || "medium";
         preferred_language = ticket.preferred_language || "en"; clientUserId = ticket.client_id;
         requestContextRaw = (ticket as any).ticket_context;
+        notesTried = Array.isArray((ticket as any).sap_notes_tried) ? (ticket as any).sap_notes_tried : null;
       }
       const { data: clientContext, error: contextError } = await supabase.from("client_profiles")
         .select("industry, customer_segment, country, headquarters, timezone, sap_product, sap_version, sap_database_type, sap_hosting_type, sap_interfaces, sap_third_party_tools")
@@ -261,6 +263,11 @@ serve(async (req) => {
       // What the request says about itself (industry, customer segment, country, project type, vertical and localization solutions);
       // what it leaves out is taken from the company profile of the client.
       const requestContext = readRequestContext(requestContextRaw);
+      // Extra matching inputs (stored in ticket_context once the matching SQL allows these keys).
+      const rawCtx = (requestContextRaw && typeof requestContextRaw === "object" ? requestContextRaw : {}) as Record<string, unknown>;
+      const ctxText = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 160) : null);
+      const budget = Number(rawCtx.budget_max_rate);
+      const extraContext = { deployment: ctxText(rawCtx.deployment), work_mode: ctxText(rawCtx.work_mode), budget_max_rate: Number.isFinite(budget) && budget > 0 ? budget : null };
       if (!requestContext.industry) requestContext.industry = (clientContext as any)?.industry || null;
       if (!requestContext.customer_segment) requestContext.customer_segment = (clientContext as any)?.customer_segment || null;
       if (!requestContext.country) requestContext.country = (clientContext as any)?.country || null;
@@ -494,7 +501,7 @@ serve(async (req) => {
         id: parsed.data.ticket_id ?? null,
         title, description, area_details: areaDetails,
         sap_modules: sap_modules ?? null, sap_module: sap_module ?? null, sap_module_other: sap_module_other ?? null,
-        sap_notes_tried: Array.isArray((parsed.data as any).sap_notes_tried) ? (parsed.data as any).sap_notes_tried : null,
+        sap_notes_tried: notesTried,
         urgency: urgency ?? null, preferred_language: preferred_language ?? null,
         industry: requestContext.industry, customer_segment: requestContext.customer_segment, country: requestContext.country,
         project_type: requestContext.project_type, vertical_solutions: requestContext.vertical_solutions, localization_solutions: requestContext.localization_solutions,
