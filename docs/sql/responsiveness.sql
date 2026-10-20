@@ -1088,7 +1088,7 @@ BEGIN
   WITH due AS (
     SELECT e.id, e.consultant_id,
            CASE WHEN t.status::TEXT IN ('resolved', 'closed')
-                  OR (e.kind = 'critical' AND t.critical_first_reply_by IS NOT NULL AND t.critical_first_reply_by <> c.user_id)
+                  OR (e.kind = 'critical' AND t.critical_first_reply_by IS NOT NULL AND t.critical_first_reply_by <> e.consultant_id)
                   OR (t.consultant_id IS NOT NULL AND t.consultant_id <> e.consultant_id AND e.kind = 'critical')
                 THEN 'withdrawn' ELSE 'no_response' END AS outcome
       FROM public.responsiveness_events e
