@@ -1,10 +1,8 @@
 # Feature L: assignment response policy
 
-## Turn it on (owner)
+## Status: live (applied 2026-10-20)
 
-1. Apply `docs/sql/assignment-response.sql` (run step 0, the `ALTER TYPE ... ADD VALUE 'expired'` line, on its own first if your SQL editor asks).
-2. Nothing else: the reminder function is already deployed, and the file schedules the 5-minute check itself.
-3. Until the file is applied: the popup, policy text, admin timings form and client card already work with the default timings; no reminders, "No response" notices or statistics exist yet, and the reminder function answers `{"ok":false}`.
+`docs/sql/assignment-response.sql` is applied on the live backend: step 0 and steps 1-10 as two migrations, the default settings and the 5-minute check (288 runs a day) separately. The reminder function answers `{"ok":true}`.
 
 Syntax check: all 56 statements and 14 procedural functions parse (PostgreSQL 17 parser); not executed.
 
