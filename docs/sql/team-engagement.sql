@@ -1453,6 +1453,71 @@ BEGIN
 END;
 $function$;
 
+-- Rate answers: before the start on a gated ticket the next step is the NDA / confirmation, not the timesheet.
+-- Identical to the current function except for the wording of the two messages.
+CREATE OR REPLACE FUNCTION public.respond_to_ticket_rate(_rate_id uuid, _approve boolean, _note text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  _r record;
+  _title text;
+  _cons_user uuid;
+  _n text := left(btrim(COALESCE(_note, '')), 500);
+  _forming boolean;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '28000';
+  END IF;
+  SELECT r.id, r.ticket_id, r.consultant_id, r.hourly_rate, r.currency, r.status, t.title INTO _r
+    FROM public.ticket_rates r JOIN public.tickets t ON t.id = r.ticket_id
+   WHERE r.id = _rate_id AND t.client_id = auth.uid()
+   FOR UPDATE OF r;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Rate not found' USING ERRCODE = '42501';
+  END IF;
+  IF _r.status <> 'proposed' THEN
+    RAISE EXCEPTION 'Only a proposed rate can be approved or declined' USING ERRCODE = '42501';
+  END IF;
+  IF NOT _approve AND char_length(_n) < 3 THEN
+    RAISE EXCEPTION 'Please tell the consultant why the rate is declined' USING ERRCODE = '22023';
+  END IF;
+  IF NOT public.check_rate_limit('rate-respond:' || auth.uid()::text, 60, 3600) THEN
+    RAISE EXCEPTION 'Too many answers in the last hour; please try again later' USING ERRCODE = '54000';
+  END IF;
+  SELECT c.user_id INTO _cons_user FROM public.consultants c WHERE c.id = _r.consultant_id;
+  _forming := public.team_ticket_gated(_r.ticket_id) AND NOT public.team_member_started(_r.ticket_id, _r.consultant_id);
+  IF _approve THEN
+    UPDATE public.ticket_rates SET status = 'replaced'
+     WHERE ticket_id = _r.ticket_id AND consultant_id = _r.consultant_id AND status = 'approved';
+    UPDATE public.ticket_rates
+       SET status = 'approved', decided_by = auth.uid(), decided_at = now(), decision_note = NULLIF(_n, '')
+     WHERE id = _r.id;
+    -- the hours logged before any rate was approved get this rate
+    UPDATE public.ticket_work_logs SET hourly_rate = _r.hourly_rate
+     WHERE ticket_id = _r.ticket_id AND consultant_id = _r.consultant_id AND hourly_rate IS NULL AND submission_id IS NULL;
+  ELSE
+    UPDATE public.ticket_rates
+       SET status = 'rejected', decided_by = auth.uid(), decided_at = now(), decision_note = _n
+     WHERE id = _r.id;
+  END IF;
+  IF _cons_user IS NOT NULL AND _cons_user IS DISTINCT FROM auth.uid() THEN
+    PERFORM public.safe_insert_notification(_cons_user,
+      CASE WHEN _approve THEN 'Hourly rate approved' ELSE 'Hourly rate declined' END,
+      CASE WHEN _approve AND _forming
+           THEN 'The client approved ' || public.ts_num(_r.hourly_rate) || ' ' || _r.currency || ' per hour for "' || left(COALESCE(_r.title, 'the ticket'), 80) || '". Next: sign the NDA and confirm the engagement summary.'
+           WHEN _approve
+           THEN 'The client approved ' || public.ts_num(_r.hourly_rate) || ' ' || _r.currency || ' per hour for "' || left(COALESCE(_r.title, 'the ticket'), 80) || '". You can submit your timesheet now.'
+           ELSE 'The client declined ' || public.ts_num(_r.hourly_rate) || ' ' || _r.currency || ' per hour for "' || left(COALESCE(_r.title, 'the ticket'), 80) || '": ' || left(_n, 200)
+                || CASE WHEN _forming THEN ' You can propose a new rate on the invitation.' ELSE '' END
+      END,
+      'ticket', CASE WHEN _forming THEN '/consultant/requests' ELSE '/consultant/tickets/' || _r.ticket_id::text END);
+  END IF;
+END;
+$function$;
+
 -- -----------------------------------------------------------------------------
 -- 11. Expiry + scheduled removals (service only; run by pg_cron every minute)
 -- -----------------------------------------------------------------------------
