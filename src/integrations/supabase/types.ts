@@ -9179,6 +9179,10 @@ export type Database = {
         Args: { _client_notes?: string; _proposal_id: string }
         Returns: undefined
       }
+      ack_responsiveness_notice: {
+        Args: { _notice_id: string }
+        Returns: undefined
+      }
       add_business_days: {
         Args: { _days: number; _from: string }
         Returns: string
@@ -9285,12 +9289,35 @@ export type Database = {
         }[]
       }
       admin_profile_reminder_stats: { Args: never; Returns: Json }
+      admin_recompute_responsiveness: { Args: never; Returns: number }
       admin_reject_payment_report: {
         Args: { _note: string; _payment_id: string }
         Returns: undefined
       }
+      admin_responsiveness_disputes: { Args: never; Returns: Json }
+      admin_responsiveness_overview: {
+        Args: never
+        Returns: {
+          computed_at: string
+          consultant_id: string
+          counted_90d: number
+          disputes_open: number
+          disputes_total: number
+          level: string
+          median_90d: number
+          name: string
+          no_response_30d: number
+          public_level: string
+          rate_90d: number
+          warnings_sent: number
+        }[]
+      }
       admin_review_client: {
         Args: { p_comment?: string; p_decision: string; p_user_id: string }
+        Returns: undefined
+      }
+      admin_review_responsiveness_dispute: {
+        Args: { _dispute_id: string; _note: string; _uphold: boolean }
         Returns: undefined
       }
       admin_rls_overview: { Args: never; Returns: Json }
@@ -9464,6 +9491,20 @@ export type Database = {
           user_id: string
         }[]
       }
+      claim_responsiveness_notices: {
+        Args: { _limit?: number }
+        Returns: {
+          count_30d: number
+          dispute_days: number
+          event_id: string
+          kind: string
+          lang: string
+          notice_id: string
+          ticket_title: string
+          user_id: string
+          warnings_total: number
+        }[]
+      }
       clean_bank_account: { Args: { _details: Json }; Returns: Json }
       clean_billing_text: {
         Args: { _label: string; _max: number; _v: string }
@@ -9545,6 +9586,10 @@ export type Database = {
         }[]
       }
       consultant_completion: { Args: { _cid: string }; Returns: Json }
+      consultant_dispute_no_response: {
+        Args: { _event_id: string; _reason: string }
+        Returns: string
+      }
       consultant_engaged_on_ticket: {
         Args: { _consultant_id: string; _ticket_id: string }
         Returns: boolean
@@ -9570,6 +9615,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      consultant_set_capacity: { Args: { _max: number }; Returns: undefined }
       consultant_set_ticket_status: {
         Args: { _resolution?: string; _status: string; _ticket_id: string }
         Returns: undefined
@@ -9820,6 +9866,7 @@ export type Database = {
         }[]
       }
       my_profile_completion: { Args: never; Returns: Json }
+      my_responsiveness: { Args: never; Returns: Json }
       new_bid_blocked_by_profile: {
         Args: { _cid: string; _ticket: string }
         Returns: boolean
@@ -9993,6 +10040,14 @@ export type Database = {
         Args: { _cid: string; _scope: string; _since: string }
         Returns: Json
       }
+      responsiveness_notify: {
+        Args: { _event_id: string; _kind: string }
+        Returns: undefined
+      }
+      responsiveness_on_no_response: {
+        Args: { _event_id: string }
+        Returns: undefined
+      }
       responsiveness_public_config: { Args: never; Returns: Json }
       responsiveness_public_level: {
         Args: {
@@ -10004,12 +10059,24 @@ export type Database = {
         }
         Returns: string
       }
+      responsiveness_public_summary: {
+        Args: { _consultant_ids?: string[] }
+        Returns: {
+          consultant_id: string
+          level: string
+          median_minutes: number
+          response_rate: number
+          stars: number
+        }[]
+      }
       responsiveness_recompute: { Args: { _cid: string }; Returns: undefined }
+      responsiveness_recompute_all: { Args: never; Returns: number }
       responsiveness_settings: { Args: never; Returns: Json }
       responsiveness_stars: {
         Args: { _level: string; _rate: number }
         Returns: number
       }
+      responsiveness_sweep: { Args: never; Returns: Json }
       retry_failed_notification: {
         Args: { _id: string }
         Returns: {
