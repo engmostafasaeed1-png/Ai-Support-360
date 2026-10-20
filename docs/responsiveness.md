@@ -1,9 +1,9 @@
 # Feature M: consultant responsiveness
 
-## Setup (owner)
-1. Apply `docs/sql/assignment-response.sql` (Feature L) first, then `docs/sql/responsiveness.sql`. The second file stops with a clear message if Feature L is missing. It is idempotent.
-2. The file backfills existing Feature L requests (no notices for them), calculates the first statistics and schedules `responsiveness-run` every 10 minutes (credential-free, 8-minute guard, counts only).
-3. Review the data on **Admin › Consultant responsiveness**, then switch on "Show responsiveness to clients" (`responsiveness_public`, off by default). Until then nothing shows on cards, ratings are unchanged, ranking ignores it and nobody is left out of critical alarms; statistics, warnings, e-mails and disputes already run.
+## Status: live (applied 2026-10-20, after Feature L)
+1. `docs/sql/responsiveness.sql` is applied on the live backend as two migrations plus the default settings; the backfill found no earlier requests.
+2. `responsiveness-run` is scheduled once an hour at minute 17 (24 runs a day) instead of every 10 minutes: in-app lines and popups are immediate, so only notice e-mails and the closing of overdue alarm/chat items wait up to an hour; the nightly recalculation still runs between 01:00 and 05:00 Riyadh.
+3. Review the data on **Admin › Consultant responsiveness**, then switch on "Show responsiveness to clients" (`responsiveness_public`, off by default). Until then nothing shows on cards, ratings are unchanged, ranking ignores it and nobody is left out of critical alarms; statistics, friendly notices, e-mails and disputes already run.
 
 ## What counts
 - Main split (rate, warnings, badge): assignment requests and private bid invitations. Critical split: Critical requests and critical alarms (answered by a proposal or by dismissing the alarm; ignored when another consultant took the ticket first). Chat split: the first unanswered client message on an active ticket, answered by the consultant's next message, "unanswered" after 24 h (setting).
