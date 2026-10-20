@@ -39,6 +39,8 @@ interface ConsultantMapProps {
   onOpenRequest?: () => void;
   /** Invite a consultant to a new request (replaces "Open a request" in the popup). */
   onInvite?: (id: string) => void;
+  /** Feature O: favourite state and toggle for the popup heart (only when the client may edit favourites). */
+  favourite?: { has: (id: string) => boolean; toggle: (id: string) => Promise<boolean>; addLabel: string; removeLabel: string };
   /** Match % and chips for the current filters. */
   matches?: Map<string, MapMatch> | null;
   /** Called after the person moves or zooms the map (not after the map fits itself to the pins). */
@@ -75,7 +77,7 @@ function clusterElement(count: number, label: string): HTMLElement {
 }
 
 /** The consultants on a map: one pin for every consultant who chose a city, coloured by Online, Busy or Offline. The pins show the area of the city, never an address. */
-export default function ConsultantMap({ consultants, selectedId, onSelectConsultant, onViewProfile, onOpenRequest, onInvite, matches, onBoundsChange }: ConsultantMapProps) {
+export default function ConsultantMap({ consultants, selectedId, onSelectConsultant, onViewProfile, onOpenRequest, onInvite, matches, onBoundsChange, favourite }: ConsultantMapProps) {
   const { t } = useTranslation();
   const holder = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -84,8 +86,8 @@ export default function ConsultantMap({ consultants, selectedId, onSelectConsult
   const lastSelected = useRef<string | null>(null);
 
   // The newest functions of the page are kept here, so that a new function in the page does not rebuild the pins (that would close an open popup).
-  const handlers = useRef({ onSelectConsultant, onViewProfile, onOpenRequest, onInvite, onBoundsChange });
-  handlers.current = { onSelectConsultant, onViewProfile, onOpenRequest, onInvite, onBoundsChange };
+  const handlers = useRef({ onSelectConsultant, onViewProfile, onOpenRequest, onInvite, onBoundsChange, favourite });
+  handlers.current = { onSelectConsultant, onViewProfile, onOpenRequest, onInvite, onBoundsChange, favourite };
   const [zoom, setZoom] = useState(CLUSTER_MAX_ZOOM);
   // True while the map moves by itself (fitting to the pins), so that move is not reported as the person's own.
   const selfMove = useRef(false);
@@ -179,6 +181,12 @@ export default function ConsultantMap({ consultants, selectedId, onSelectConsult
           onView: id => handlers.current.onViewProfile?.(id),
           onOpenRequest: () => handlers.current.onOpenRequest?.(),
           onInvite: handlers.current.onInvite ? id => handlers.current.onInvite?.(id) : undefined,
+          favourite: handlers.current.favourite ? {
+            on: handlers.current.favourite.has(c.id),
+            toggle: id => handlers.current.favourite?.toggle(id) ?? Promise.resolve(false),
+            addLabel: handlers.current.favourite.addLabel,
+            removeLabel: handlers.current.favourite.removeLabel,
+          } : undefined,
         }, labels),
         { maxWidth: 280, minWidth: 240 },
       );
@@ -201,7 +209,7 @@ export default function ConsultantMap({ consultants, selectedId, onSelectConsult
     }
     lastSelected.current = selectedId ?? null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [consultants, pins, selectedId, labelsKey, zoom, matches]);
+  }, [consultants, pins, selectedId, labelsKey, zoom, matches, favourite]);
 
   return (
     <div className="relative isolate rounded-2xl overflow-hidden border border-border/50 shadow-sm" style={{ height: '420px' }}>

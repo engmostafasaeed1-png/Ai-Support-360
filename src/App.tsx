@@ -97,6 +97,7 @@ const NewRequestPage = lazyWithRetry(() => import("./pages/client/NewRequestPage
 const TicketsPage = lazyWithRetry(() => import("./pages/client/TicketsPage.tsx"), 'TicketsPage');
 const TicketDetailPage = lazyWithRetry(() => import("./pages/client/TicketDetailPage.tsx"), 'TicketDetailPage');
 const ConsultantsPage = lazyWithRetry(() => import("./pages/client/ConsultantsPage.tsx"), 'ConsultantsPage');
+const MyConsultantsPage = lazyWithRetry(() => import("./pages/client/MyConsultantsPage.tsx"), 'MyConsultantsPage');
 const ConsultantResponsivenessPage = lazyWithRetry(() => import("./pages/client/ConsultantResponsivenessPage.tsx"), 'ConsultantResponsivenessPage');
 const ConsultantProfilePage = lazyWithRetry(() => import("./pages/client/ConsultantProfilePage.tsx"), 'ConsultantProfilePage');
 const PaymentsPage = lazyWithRetry(() => import("./pages/client/PaymentsPage.tsx"), 'PaymentsPage');
@@ -348,6 +349,7 @@ const App = () => (
               <Route path="consultants" element={<ConsultantsPage />} />
               <Route path="consultants/:id" element={<ConsultantProfilePage />} />
               <Route path="responsiveness" element={<ConsultantResponsivenessPage />} />
+              <Route path="my-consultants" element={<MyConsultantsPage />} />
               <Route path="payments" element={<PaymentsPage />} />
               <Route path="sessions" element={<SessionsPage />} />
               <Route path="video-sessions" element={<VideoSessionsPage />} />

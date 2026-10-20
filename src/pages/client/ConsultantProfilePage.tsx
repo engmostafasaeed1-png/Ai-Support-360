@@ -1,4 +1,5 @@
 import FoundingBadge from '@/components/consultant/FoundingBadge';
+import FavouriteButton, { BlockToggle } from '@/components/favourites/FavouriteButton';
 import ResponsivenessChip from '@/components/consultant/ResponsivenessChip';
 import { BlendedRatingStars, ResponsivenessReviewLine } from '@/components/consultant/ResponsivenessRating';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -396,6 +397,8 @@ export default function ConsultantProfilePage() {
                 <VerificationBadge status={verificationStatus} size="md" />
                 <FoundingBadge consultantId={id} numbered />
                 <ResponsivenessChip consultantId={id} />
+                {id && <FavouriteButton consultantId={id} name={consultant.name} />}
+                {id && <BlockToggle consultantId={id} />}
               </div>
               <p className="mt-0.5 text-base text-muted-foreground">{consultant.specialty}</p>
               <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted-foreground">

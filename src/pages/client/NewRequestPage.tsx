@@ -1,4 +1,7 @@
 import MatchScoreBreakdown, { type MatchCriterion } from '@/components/client/MatchScoreBreakdown';
+import FavouriteButton, { FavouriteChip } from '@/components/favourites/FavouriteButton';
+import GroupInvitePanel from '@/components/favourites/GroupInvitePanel';
+import { useClientFavourites } from '@/hooks/useClientFavourites';
 import MatchWhyChips from '@/components/match/MatchWhyChips';
 import MatchClarifyingQuestions from '@/components/match/MatchClarifyingQuestions';
 import type { Chip, ClarifyKey } from '../../../supabase/functions/_shared/ticketMatch';
@@ -32,7 +35,7 @@ import {
   ArrowLeft, ArrowRight, Check, Sparkles, Brain,
   Clock, AlertTriangle, Info, Loader2, Zap, Target, List,
   Star, BadgeCheck, Circle, Users, Crown, ChevronRight, Search, UserPlus,
-  Upload, X, FileText, Paperclip, Link2, Mic,
+  Upload, X, FileText, Paperclip, Link2, Mic, Heart,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -191,6 +194,8 @@ export default function NewRequestPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedModel, setSelectedModel] = useState<AIModelId>(DEFAULT_MODEL);
   const [manualPickOpen, setManualPickOpen] = useState(false);
+  const [groupPickOpen, setGroupPickOpen] = useState(false);
+  const fav = useClientFavourites();
   const [manualSearch, setManualSearch] = useState('');
   // the experts the client asks (up to 3): they get a match request when the ticket is created
   const [picked, setPicked] = useState<PickedExpert[]>([]);
@@ -445,6 +450,8 @@ export default function NewRequestPage() {
           preferred_language: form.preferred_language,
           sap_notes_tried: form.sap_notes_tried.length ? form.sap_notes_tried : undefined,
           model: selectedModel,
+          // Feature O: favourites and "do not suggest" of this company (or of the client without one).
+          ...(tenant?.id && { tenant_id: tenant.id }),
         }, ticketContext),
       });
       if (error) throw error;
@@ -454,7 +461,7 @@ export default function NewRequestPage() {
     matchPromise.current = { key: matchKey, promise };
     promise.catch(() => { if (matchPromise.current?.promise === promise) matchPromise.current = null; });
     return promise;
-  }, [matchKey, form.title, form.description, form.sap_module, form.sap_modules, form.sap_module_other, form.area_details, form.urgency, form.preferred_language, form.sap_notes_tried, selectedModel, ticketContext]);
+  }, [matchKey, form.title, form.description, form.sap_module, form.sap_modules, form.sap_module_other, form.area_details, form.urgency, form.preferred_language, form.sap_notes_tried, selectedModel, ticketContext, tenant?.id]);
 
   const runAiMatchConsultants = useCallback(async () => {
     const token = ++matchToken.current;
@@ -1401,9 +1408,16 @@ export default function NewRequestPage() {
                   <Crown className="w-4 h-4 text-accent" />
                   AI-Recommended Experts
                 </CardTitle>
-                <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setManualPickOpen(true)}>
-                  <UserPlus className="w-3.5 h-3.5" /> Browse & Choose Manually
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  {fav.ready && (
+                    <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setGroupPickOpen(true)}>
+                      <Heart className="w-3.5 h-3.5" /> From my groups
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setManualPickOpen(true)}>
+                    <UserPlus className="w-3.5 h-3.5" /> Browse & Choose Manually
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {/* The experts the client will ask (up to 3): they get a request when the ticket is created */}
@@ -1479,6 +1493,27 @@ export default function NewRequestPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Feature O: pick experts from the client's groups (the request still has at most MAX_INVITED_EXPERTS) */}
+          <Dialog open={groupPickOpen} onOpenChange={setGroupPickOpen}>
+            <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2"><Heart className="w-5 h-5 text-destructive" /> From my groups</DialogTitle>
+              </DialogHeader>
+              <GroupInvitePanel
+                candidates={allConsultants.filter(c => c.verification_status === 'verified' && !picked.some(p => p.id === c.id)).map(c => ({ id: c.id, name: c.name, subtitle: c.specialty }))}
+                modules={form.sap_modules?.length ? form.sap_modules : [form.sap_module]}
+                limit={Math.max(1, MAX_INVITED_EXPERTS - picked.length)}
+                actionLabel="Add to this request"
+                note={`Up to ${MAX_INVITED_EXPERTS} experts per new request. Each one gets their own request when the ticket is created and still decides whether to accept.`}
+                onConfirm={(ids) => {
+                  const add = allConsultants.filter(c => ids.includes(c.id)).map(c => ({ id: c.id, name: c.name, subtitle: `${c.specialty} · $${c.rate}/hr`, source: 'manual' as const }));
+                  setPicked(prev => [...prev, ...add.filter(a => !prev.some(p => p.id === a.id))].slice(0, MAX_INVITED_EXPERTS));
+                  setGroupPickOpen(false);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
 
           {/* Manual Consultant Picker Dialog */}
           <Dialog open={manualPickOpen} onOpenChange={setManualPickOpen}>
@@ -1658,6 +1693,8 @@ function RecommendationCard({ rec, rank, navigate, picked, pickDisabled, onToggl
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h4 className="font-semibold text-sm text-foreground">{rec.name}</h4>
+            <FavouriteButton consultantId={rec.consultant_id} name={rec.name} size="sm" />
+            <FavouriteChip consultantId={rec.consultant_id} />
             <Badge className={`text-[9px] px-1.5 py-0 h-4 ${rankBadge.cls}`}>{rankBadge.label}</Badge>
             {rec.verification_status === 'verified' && (
               <BadgeCheck className="w-3.5 h-3.5 text-accent shrink-0" />

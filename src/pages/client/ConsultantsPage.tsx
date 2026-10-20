@@ -34,6 +34,10 @@ import { deleteSaved, loadSaved, saveFilter, type SavedFilter } from '@/lib/save
 import DirectoryFilterPanel from '@/components/client/DirectoryFilterPanel';
 import MatchWhyChips from '@/components/match/MatchWhyChips';
 import { chipText } from '@/lib/matchLabels';
+import FavouriteButton, { FavouriteChip } from '@/components/favourites/FavouriteButton';
+import { useClientFavourites } from '@/hooks/useClientFavourites';
+import { favouriteErrorKey } from '@/lib/clientFavourites';
+import { toast } from 'sonner';
 
 const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
   verified: { icon: BadgeCheck, color: 'text-accent' },
@@ -114,6 +118,27 @@ export default function ConsultantsPage() {
   ];
 
   const invite = (id: string) => navigate(`/client/new-request?invite=${encodeURIComponent(id)}`);
+  // Feature O: heart in the map popup (only while the client may edit favourites).
+  const fav = useClientFavourites();
+  const mapFavourite = useMemo(() => {
+    if (!fav.canEdit) return undefined;
+    return {
+      has: (id: string) => fav.favourites.has(id),
+      toggle: async (id: string) => {
+        try {
+          if (fav.favourites.has(id)) { await fav.removeFavourites([id]); return false; }
+          if (fav.blocked.has(id)) { toast.info(t('fav.err.fav_blocked')); return false; }
+          await fav.addFavourite(id);
+          return true;
+        } catch (err) {
+          toast.error(t(`fav.err.${favouriteErrorKey((err as Error).message)}`));
+          return fav.favourites.has(id);
+        }
+      },
+      addLabel: t('fav.add_short'),
+      removeLabel: t('fav.remove_short'),
+    };
+  }, [fav.canEdit, fav.favourites, fav.blocked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-5">
@@ -251,6 +276,7 @@ export default function ConsultantsPage() {
                 onOpenRequest={() => navigate('/client/new-request')}
                 onInvite={invite}
                 onBoundsChange={setMovedBounds}
+                favourite={mapFavourite}
               />
               {areaChanged && (
                 <Button type="button" size="sm" className="absolute top-3 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 z-[1000] shadow-lg gap-1" onClick={() => update({ bbox: movedBounds })}>
@@ -279,6 +305,7 @@ export default function ConsultantsPage() {
                     <FoundingBadge consultantId={c.id} /><TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} className="mt-1" />
                     <CompletionBadge percent={c.completion_percent ?? 0} tier={c.ai_interview_badge} className="mt-1" />
                     <ResponsivenessChip consultantId={c.id} className="mt-1" />
+                    <FavouriteChip consultantId={c.id} className="mt-1" />
                     {matches && <MatchWhyChips why={matches.get(c.id)?.chips} score={matches.get(c.id)?.score} />}
                   </div>
                   <div className="text-end shrink-0">
@@ -334,9 +361,7 @@ export default function ConsultantsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold text-foreground">{c.name}</h3>
-                      <Button variant="ghost" size="icon" className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Heart className="w-4 h-4" />
-                      </Button>
+                      <FavouriteButton consultantId={c.id} name={c.name} />
                     </div>
                     <p className="text-sm text-muted-foreground">{c.skills && c.skills.length > 1 ? c.skills.slice(0, 4).join(' · ') + (c.skills.length > 4 ? ` +${c.skills.length - 4}` : '') : c.specialty}</p>
                     {c.place && (

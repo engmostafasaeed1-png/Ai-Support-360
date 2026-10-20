@@ -94,7 +94,8 @@ describe('weights and hashes', () => {
     expect(readMatchWeights('{"module": 80, "founding": -3, "bogus": 5}')).toMatchObject({ module: 50, founding: 0 });
     expect(readMatchWeights('not json')).toEqual(MATCH_WEIGHT_DEFAULTS);
     // The always-scored criteria add up to 100; responsiveness (Feature M) is an extra 3 that only counts while it is public.
-    const { responsiveness, ...always } = MATCH_WEIGHT_DEFAULTS;
+    const { responsiveness, favourite, ...always } = MATCH_WEIGHT_DEFAULTS;
+    expect(favourite).toBe(2);
     expect(Object.values(always).reduce((a, b) => a + b, 0)).toBe(100);
     expect(responsiveness).toBe(3);
   });

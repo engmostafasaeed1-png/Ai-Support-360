@@ -111,3 +111,20 @@ describe('buildPopupElement', () => {
     expect(buttonWith(popup, 'افتح طلبًا')).toBeTruthy();
   });
 });
+
+describe('buildPopupElement favourite heart (Feature O)', () => {
+  it('has no heart unless the client may save favourites', () => {
+    expect(buildPopupElement(VIEW).querySelector('[data-part="favourite"]')).toBeNull();
+  });
+  it('shows the saved state and switches after a click', async () => {
+    const toggle = vi.fn().mockResolvedValue(false);
+    const el = buildPopupElement(VIEW, { favourite: { on: true, toggle, addLabel: 'Add', removeLabel: 'Remove' } });
+    const heart = el.querySelector('[data-part="favourite"]') as HTMLButtonElement;
+    expect(heart.getAttribute('aria-pressed')).toBe('true');
+    expect(heart.getAttribute('aria-label')).toBe('Remove');
+    heart.click();
+    await vi.waitFor(() => expect(heart.getAttribute('aria-pressed')).toBe('false'));
+    expect(toggle).toHaveBeenCalledWith('c-1');
+    expect(heart.getAttribute('aria-label')).toBe('Add');
+  });
+});

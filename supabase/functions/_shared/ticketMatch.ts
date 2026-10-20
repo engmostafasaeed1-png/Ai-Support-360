@@ -337,6 +337,8 @@ export type MatchConsultant = {
   founding?: boolean | null;
   /** Public responsiveness level (Feature M; set only while responsiveness_public is on). undefined = criterion left out. */
   responsiveness_level?: RespLevel | null;
+  /** Feature O: in the requesting client's favourites. undefined = the client has no favourites (criterion left out). */
+  favourite?: boolean | null;
   /** Profile search document (profileText.buildProfileEntries); when no candidate has one the text criterion is left out. */
   profile_entries?: ProfileEntry[] | null;
   /** Database full-text signals (ts_rank_cd and trigram similarity, 0..1) once docs/sql/profile-search.sql is applied. */
@@ -378,7 +380,7 @@ export function consultantModules(c: MatchConsultant): ConsultantModules {
 export const MATCH_WEIGHT_DEFAULTS = {
   module: 20, sub_module: 6, keywords: 7, profile_text: 12, experience: 7, role: 4,
   industry: 4, segment: 3, country: 6, deployment: 3, work_mode: 2, timezone: 3, rate: 4,
-  badge: 5, rating: 3, response: 3, availability: 3, completion: 2, evidence: 2, founding: 1, responsiveness: 3,
+  badge: 5, rating: 3, response: 3, availability: 3, completion: 2, evidence: 2, founding: 1, responsiveness: 3, favourite: 2,
 } as const;
 export type MatchWeights = Record<keyof typeof MATCH_WEIGHT_DEFAULTS, number>;
 export type CriterionKey = keyof typeof MATCH_WEIGHT_DEFAULTS;
@@ -550,6 +552,13 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
     const lvl: RespLevel = isLevel(c.responsiveness_level) ? c.responsiveness_level : 'new';
     parts.push({ key: 'responsiveness', fit: LEVEL_FIT[lvl], chip: lvl === 'excellent' ? 'excellent' : undefined });
   }
+  // Client favourite (Feature O): a small boost scaled by availability (offline = none) and never weighted above
+  // availability, so it cannot lift a favourite over an equally matched, more available consultant; hard filters run before.
+  if (c.favourite !== undefined) {
+    const avail = status === 'available' ? 1 : status === 'busy' ? 0.5 : 0;
+    parts.push({ key: 'favourite', fit: c.favourite ? avail : 0, chip: c.favourite ? 'yes' : undefined });
+  }
+  if (c.favourite !== undefined && weights.favourite > weights.availability) weights = { ...weights, favourite: weights.availability };
 
   const active = parts.filter((p) => weights[p.key] > 0);
   const total = active.reduce((sum, p) => sum + weights[p.key], 0) || 1;
@@ -559,14 +568,16 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
     return { key: p.key, weight, fit, contribution: Math.round(weight * fit * 100) / 100 };
   });
   const chips = active
-    .filter((p) => p.chip && p.fit >= 0.5)
+    .filter((p) => p.chip && p.fit >= 0.5 && p.key !== 'favourite')
     .sort((a, b) => weights[b.key] * b.fit - weights[a.key] * a.fit)
     .filter((p, i, list) => p.key === 'evidence' || list.findIndex((q) => q.key !== 'evidence' && String(q.chip).toLowerCase() === String(p.chip).toLowerCase()) === i)
     .slice(0, 4)
     .map((p) => ({ key: p.key, text: p.chip as string }));
+  // "Your favourite" is always shown first for the client's favourites (also when offline: the label is not a score).
+  if (c.favourite) chips.unshift({ key: 'favourite', text: 'yes' });
   // Consultant-side criteria that were not scored (responsiveness while it is not public) do not lower the confidence.
   const allWeight = (Object.keys(weights) as CriterionKey[])
-    .filter((k) => k !== 'responsiveness' || parts.some((p) => p.key === 'responsiveness'))
+    .filter((k) => (k !== 'responsiveness' && k !== 'favourite') || parts.some((p) => p.key === k))
     .reduce((a, k) => a + weights[k], 0) || 1;
   return {
     consultant_id: c.id,
