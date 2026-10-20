@@ -34,16 +34,18 @@ Apply `docs/sql/interview-completion.sql`, then `docs/sql/consultant-location.sq
 - Location (country and city)
 - Add your country and city so clients find you in search and on the map.
 - Location not set
-- Add your location
-- Add my location
-- Add your location - needed to appear in search and on the map
-- Save location
-- Country / City / Select country / Select country first / Select city / Search city... / City not in the list? Type it
-- Your pin will be placed at the centre of the country.
-- You have {{n}} day(s) left to add your location.
-- You are hidden from search and the map and cannot place new bids or accept invitations until you add your location.
+- Add your location / Add my location / Save location / Location saved. / Later
+- Add your location - needed to appear in search and on the map.
+- Add your location - needed to appear in search and on the map. Please add it by {{date}}.
+- Needed to appear in search and on the map. Only your city is shown, never an address.
+- Country / City / Select country / Search country / No country found.
+- Your map pin is the centre of {{city}}. Clients see the city, never an address.
+- This city is not in our list, so your map pin is the centre of {{country}}.
+- Your location is missing, so you are hidden from search, the map and matching, and cannot place new bids or accept invitations. Add it to continue.
+- Add your country and city in your profile before placing bids or accepting invitations.
 - Add your country and city to your profile before placing a new bid
 - Add your country and city to your profile before accepting an invitation
+- Something went wrong. Please try again.
 - Always required (needed for search and the map)
 - Who is missing location
 - Consultants without a country and city. After the grace period they are hidden from search, the map and matching, and cannot place new bids or accept invitations until they add it.
@@ -52,3 +54,4 @@ Apply `docs/sql/interview-completion.sql`, then `docs/sql/consultant-location.sq
 - {{n}} consultant(s) without a location / Export CSV / Send reminder now / Reminder sent to {{n}} consultant(s). / {{n}} skipped (already reminded in the last 24 hours). / Could not send the reminder. Please try again.
 - Consultant / Status / Signed up / Deadline / Last reminder / Hidden and blocked / No name / Select all / Every consultant has a location.
 - Choose between 1 and 50 consultants / Too many reminders. Please try again in an hour.
+- Add your location (checklist)
