@@ -23,9 +23,8 @@ import { matchSteps, understoodSummary, type MatchPhase } from '@/lib/matchProgr
 import { invokeWithTimeout } from '@/lib/invokeWithTimeout';
 import { TimeoutError } from '@/lib/withTimeout';
 import FavouriteButton, { FavouriteChip } from '@/components/favourites/FavouriteButton';
-import GroupInvitePanel from '@/components/favourites/GroupInvitePanel';
+import { DirectoryGroupInvite } from '@/components/favourites/GroupInvitePanel';
 import { useClientFavourites } from '@/hooks/useClientFavourites';
-import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
 
 interface Props {
   ticketId: string;
@@ -77,7 +76,6 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
   const [matchRun, setMatchRun] = useState<{ phase: MatchPhase; startedAt: number; understood: string; error?: string; found?: number } | null>(null);
   const matchToken = useRef(0);
   const fav = useClientFavourites();
-  const { consultants: directory } = useRealtimeConsultants();
   const [tab, setTab] = useState<'all' | 'groups'>('all');
   const [groupSending, setGroupSending] = useState(false);
 
@@ -259,7 +257,6 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
     else toast.error('Could not send the requests. Please try again.');
   };
   const askedIds = new Set<string>((allConsultants ?? []).filter((c: any) => c.alreadySent).map((c: any) => c.id));
-  const groupCandidates = directory.filter((c) => c.verification_status === 'verified').map((c) => ({ id: c.id, name: c.name, subtitle: c.specialty }));
 
   const availabilityBadge = (status: string) => {
     switch (status) {
@@ -480,7 +477,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
           )}
           {fav.ready && tab === 'groups' && (
             <div className="flex-1 overflow-y-auto min-h-0">
-              <GroupInvitePanel candidates={groupCandidates} alreadyAsked={askedIds} modules={[sapModule]} actionLabel="Send requests" busy={groupSending} onConfirm={sendToMany} />
+              <DirectoryGroupInvite alreadyAsked={askedIds} modules={[sapModule]} actionLabel="Send requests" busy={groupSending} onConfirm={sendToMany} />
             </div>
           )}
 
