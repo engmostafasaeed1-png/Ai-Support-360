@@ -275,7 +275,7 @@ export function extractTicketSignals(t: MatchTicket): TicketSignals {
     notes: [...new Set([...(t.sap_notes_tried ?? []), ...notesIn(text)])].slice(0, 8),
     products: productsIn(all),
     country: t.country?.trim() || countryIn(text),
-    deployment: t.deployment?.trim() || deploymentIn(all),
+    deployment: (t.deployment?.trim() ? (DEPLOYMENTS.find(([name]) => name === t.deployment!.trim())?.[0] ?? deploymentIn(t.deployment!)) : null) || deploymentIn(all),
     roles: rolesFor(modules),
     language: pl || (arabicShare(text) > 0.3 ? 'ar' : null),
     wordCount: text.split(/\s+/).filter(Boolean).length,
