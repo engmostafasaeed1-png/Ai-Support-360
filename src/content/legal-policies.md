@@ -144,6 +144,11 @@ The current service is billed for approved consultant work rather than a monthly
 
 Provide accurate information, protect your credentials, and notify us promptly of suspected unauthorized access.
 
+## Assignment Requests
+
+Consultants: please accept or decline within 24 hours (30 minutes for Critical requests). We remind you after 2 hours, 4 hours and 1 day. If there is no reply the client is told and may choose another consultant; repeated non-response lowers your response rate and ranking. The response rate is visible only to you through its effect on ranking and to platform administrators; it is not shown to clients. Accepting a request does not replace the agreed rate, the confidentiality agreement or the other steps required before work starts.
+
+
 ## Customer Content
 
 You retain your rights in submitted content. You authorize us to process it as necessary to provide the service, consistent with our Privacy Policy and applicable agreements.
