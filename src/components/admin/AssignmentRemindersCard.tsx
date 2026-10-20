@@ -140,10 +140,10 @@ export default function AssignmentRemindersCard() {
           )}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           {HOUR_FIELDS.map(([k, label]) => field(k, label))}
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           {MINUTE_FIELDS.map(([k, label]) => field(k, label))}
         </div>
         {problems.length > 0 && (
