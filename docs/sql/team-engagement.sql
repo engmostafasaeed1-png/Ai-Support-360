@@ -239,6 +239,16 @@ BEGIN
   END IF;
 END $$;
 
+-- Audit trail for team actions (administrator actions, team requests). Stores ids and status codes only, never contact data.
+CREATE OR REPLACE FUNCTION public.team_audit(_action text, _entity_type text, _entity_id uuid, _meta jsonb DEFAULT '{}'::jsonb)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  INSERT INTO public.audit_logs (user_id, action, entity_type, entity_id, metadata)
+  VALUES (auth.uid(), left(_action, 100), left(_entity_type, 60), _entity_id,
+          COALESCE(_meta, '{}'::jsonb) || jsonb_build_object('actor_role', CASE WHEN auth.uid() IS NULL THEN 'system'
+                                                                               WHEN public.team_is_admin() THEN 'admin' ELSE 'user' END));
+END $$;
+
 -- Gate state of one member, read from the source tables.
 CREATE OR REPLACE FUNCTION public.team_gates(_member_id uuid)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
@@ -349,6 +359,12 @@ BEGIN
   VALUES (NEW.id, NEW.ticket_id, NEW.consultant_id, CASE WHEN TG_OP = 'UPDATE' THEN OLD.status END, NEW.status, auth.uid(), _role,
           left(COALESCE(NULLIF(current_setting('app.team_reason', true), ''),
                         CASE WHEN NOT public.team_live(NEW.status) THEN NEW.end_reason END), 500));
+  -- administrators adding or removing consultants leave an audit entry as well
+  IF _role = 'admin' THEN
+    PERFORM public.team_audit('team_member.' || NEW.status, 'ticket', NEW.ticket_id,
+      jsonb_build_object('member_id', NEW.id, 'consultant_id', NEW.consultant_id,
+                         'from_status', CASE WHEN TG_OP = 'UPDATE' THEN OLD.status END, 'to_status', NEW.status));
+  END IF;
   RETURN NULL;
 END $$;
 
@@ -934,6 +950,10 @@ BEGIN
     UPDATE public.ticket_team_members SET is_primary = false WHERE ticket_id = m.ticket_id AND id <> m.id AND is_primary AND public.team_live(status);
   END IF;
   UPDATE public.ticket_team_members SET team_role = _role, is_primary = COALESCE(_primary, false) WHERE id = m.id;
+  IF public.team_is_admin() THEN
+    PERFORM public.team_audit('team_member.role', 'ticket', m.ticket_id,
+      jsonb_build_object('member_id', m.id, 'consultant_id', m.consultant_id, 'role', _role, 'primary', COALESCE(_primary, false)));
+  END IF;
   IF m.status IN ('ready', 'active') THEN
     PERFORM set_config('app.team_activation', '1', true);
     UPDATE public.ticket_assignments SET role = (CASE WHEN _role = 'lead' THEN 'lead' ELSE 'support' END)::public.assignment_role
@@ -1225,20 +1245,27 @@ CREATE TRIGGER trg_team_sync_ticket_consultant AFTER INSERT OR UPDATE OF consult
   FOR EACH ROW EXECUTE FUNCTION public.team_sync_ticket_consultant();
 
 -- -----------------------------------------------------------------------------
--- 9. Gate guards (only on gated tickets; administrators may override)
+-- 9. Gate guards (only on gated tickets). Administrators go through the same four gates when adding consultants;
+--    they may only skip the removal notice, and every such override is audited.
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.team_guard_ticket()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE _admin boolean;
 BEGIN
-  IF current_setting('app.team_activation', true) = '1' OR public.team_is_admin() OR auth.uid() IS NULL THEN RETURN NEW; END IF;
+  IF current_setting('app.team_activation', true) = '1' OR auth.uid() IS NULL THEN RETURN NEW; END IF;
   IF NOT public.team_ticket_gated(NEW.id) THEN RETURN NEW; END IF;
+  _admin := public.team_is_admin();
   IF NEW.consultant_id IS DISTINCT FROM OLD.consultant_id THEN
     IF NEW.consultant_id IS NOT NULL AND NOT public.team_member_started(NEW.id, NEW.consultant_id) THEN
       RAISE EXCEPTION 'This consultant can start only after all four steps: accepted, hourly rate approved, NDA signed by both and engagement confirmed by both'
         USING ERRCODE = '42501';
     END IF;
     IF OLD.consultant_id IS NOT NULL AND public.team_member_started(NEW.id, OLD.consultant_id) THEN
-      RAISE EXCEPTION 'Use the Team panel to change or remove a consultant (a notice period applies)' USING ERRCODE = '42501';
+      IF NOT _admin THEN
+        RAISE EXCEPTION 'Use the Team panel to change or remove a consultant (a notice period applies)' USING ERRCODE = '42501';
+      END IF;
+      PERFORM public.team_audit('team_override.ticket_consultant', 'ticket', NEW.id,
+        jsonb_build_object('from_consultant_id', OLD.consultant_id, 'to_consultant_id', NEW.consultant_id));
     END IF;
   END IF;
   IF NEW.status::text = 'in_progress' AND OLD.status::text <> 'in_progress'
@@ -1253,20 +1280,27 @@ CREATE TRIGGER trg_team_guard_ticket BEFORE UPDATE OF consultant_id, status ON p
 
 CREATE OR REPLACE FUNCTION public.team_guard_assignment()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE _ticket uuid; _cons uuid;
+DECLARE _admin boolean;
 BEGIN
-  IF current_setting('app.team_activation', true) = '1' OR public.team_is_admin() OR auth.uid() IS NULL THEN
+  IF current_setting('app.team_activation', true) = '1' OR auth.uid() IS NULL THEN
     RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
   END IF;
+  _admin := public.team_is_admin();
   IF TG_OP = 'DELETE' THEN
     IF public.team_ticket_gated(OLD.ticket_id) AND OLD.status::text = 'active' AND public.team_member_started(OLD.ticket_id, OLD.consultant_id) THEN
-      RAISE EXCEPTION 'Use the Team panel to remove a consultant (a notice period applies)' USING ERRCODE = '42501';
+      IF NOT _admin THEN
+        RAISE EXCEPTION 'Use the Team panel to remove a consultant (a notice period applies)' USING ERRCODE = '42501';
+      END IF;
+      PERFORM public.team_audit('team_override.assignment_removed', 'ticket', OLD.ticket_id, jsonb_build_object('consultant_id', OLD.consultant_id));
     END IF;
     RETURN OLD;
   END IF;
   IF TG_OP = 'UPDATE' AND OLD.status::text = 'active' AND (NEW.status::text <> 'active' OR NEW.consultant_id IS DISTINCT FROM OLD.consultant_id)
      AND public.team_ticket_gated(OLD.ticket_id) AND public.team_member_started(OLD.ticket_id, OLD.consultant_id) THEN
-    RAISE EXCEPTION 'Use the Team panel to remove a consultant (a notice period applies)' USING ERRCODE = '42501';
+    IF NOT _admin THEN
+      RAISE EXCEPTION 'Use the Team panel to remove a consultant (a notice period applies)' USING ERRCODE = '42501';
+    END IF;
+    PERFORM public.team_audit('team_override.assignment_removed', 'ticket', OLD.ticket_id, jsonb_build_object('consultant_id', OLD.consultant_id));
   END IF;
   IF NEW.status::text = 'active' AND (TG_OP = 'INSERT' OR OLD.status::text <> 'active' OR NEW.consultant_id IS DISTINCT FROM OLD.consultant_id)
      AND public.team_ticket_gated(NEW.ticket_id) AND NOT public.team_member_started(NEW.ticket_id, NEW.consultant_id) THEN
@@ -1281,7 +1315,7 @@ CREATE TRIGGER trg_team_guard_assignment BEFORE INSERT OR UPDATE OR DELETE ON pu
 CREATE OR REPLACE FUNCTION public.team_guard_work_log()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  IF public.team_is_admin() OR auth.uid() IS NULL THEN RETURN NEW; END IF;
+  IF auth.uid() IS NULL THEN RETURN NEW; END IF;
   IF public.team_ticket_gated(NEW.ticket_id) AND NOT public.team_member_started(NEW.ticket_id, NEW.consultant_id) THEN
     RAISE EXCEPTION 'Time can be logged once all four steps are done: accepted, hourly rate approved, NDA signed by both and engagement confirmed by both'
       USING ERRCODE = '42501';
@@ -1528,7 +1562,7 @@ $function$;
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.team_sweep()
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE r record; _expired int := 0; _ended int := 0;
+DECLARE r record; _expired int := 0; _ended int := 0; _requests int := 0;
 BEGIN
   FOR r IN SELECT m.id, m.ticket_id, m.consultant_id, t.client_id, t.title, c.user_id AS cons_user
              FROM public.ticket_team_members m
@@ -1558,7 +1592,8 @@ BEGIN
     PERFORM public.team_finalize_end(r.id);
     _ended := _ended + 1;
   END LOOP;
-  RETURN jsonb_build_object('expired', _expired, 'ended', _ended);
+  _requests := public.team_requests_sweep();  -- section 15
+  RETURN jsonb_build_object('expired', _expired, 'ended', _ended, 'requests', _requests);
 END $$;
 
 -- -----------------------------------------------------------------------------
@@ -1568,6 +1603,7 @@ END $$;
 REVOKE ALL ON FUNCTION public.team_gates(uuid) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.team_next_step(uuid) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.team_notify(uuid, text, text, text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.team_audit(text, text, uuid, jsonb) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.team_activate(uuid) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.team_recompute(uuid) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.team_finalize_end(uuid) FROM PUBLIC, anon, authenticated;
