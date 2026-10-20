@@ -7,13 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import {
   Search, Star, BadgeCheck, Zap, Heart, Filter, Map as MapIcon, LayoutGrid,
-  Wifi, WifiOff, X, ChevronDown, ChevronUp, Clock, Globe, DollarSign,
-  Users, Circle, Award, ShieldAlert, ShieldCheck, ShieldQuestion, MapPin,
+  Wifi, WifiOff, X, ChevronDown, ChevronUp,
+  Users, Circle, Award, MapPin,
 } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -21,7 +18,6 @@ import { useTranslation } from 'react-i18next';
 import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
 import ConsultantMap from '@/components/client/ConsultantMap';
 import RatingStars from '@/components/client/RatingStars';
-import { sapModules } from '@/data/clientMockData';
 import VerificationBadge from '@/components/consultant/VerificationBadge';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
 import CompletionBadge from '@/components/consultant/CompletionBadge';
@@ -43,14 +39,6 @@ const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
   fast_responder: { icon: Zap, color: 'text-green-500' },
   credly: { icon: Award, color: 'text-orange-500' },
 };
-
-const languages = [
-  { value: 'all', label: 'All Languages' },
-  { value: 'en', label: 'English' },
-  { value: 'ar', label: 'Arabic' },
-  { value: 'fr', label: 'French' },
-  { value: 'de', label: 'German' },
-];
 
 type SortOption = DirectoryFilters['sort'];
 
