@@ -17,6 +17,10 @@ import { useHiddenConsultantIds, withoutHidden } from '@/hooks/useHiddenConsulta
 import { toast } from 'sonner';
 import ContextFitBadges from '@/components/client/ContextFitBadges';
 import { Loader2, Search, Star, Brain, Send, CheckCircle2, Sparkles, Wifi, WifiOff, Clock, Filter, SlidersHorizontal, ArrowUpDown, X } from 'lucide-react';
+import TaskProgressPanel, { TaskDoneNote } from '@/components/progress/TaskProgressPanel';
+import { matchSteps, understoodSummary, type MatchPhase } from '@/lib/matchProgress';
+import { invokeWithTimeout } from '@/lib/invokeWithTimeout';
+import { TimeoutError } from '@/lib/withTimeout';
 
 interface Props {
   ticketId: string;
@@ -65,6 +69,8 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
   const [showFilters, setShowFilters] = useState(false);
   const [aiRecommendations, setAiRecommendations] = useState<AIRecommendation[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [matchRun, setMatchRun] = useState<{ phase: MatchPhase; startedAt: number; understood: string; error?: string; found?: number } | null>(null);
+  const matchToken = useRef(0);
 
   const activeFilterCount = [availabilityFilter !== 'all', moduleFilter !== 'all', minRating !== 'all', maxRate !== 'all'].filter(Boolean).length;
 
@@ -146,9 +152,11 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
     : visibleConsultants;
 
   const handleAiRecommend = async () => {
+    const token = ++matchToken.current;
     setAiLoading(true);
+    setMatchRun({ phase: 'ranking', startedAt: Date.now(), understood: understoodSummary({ title: ticketTitle, description: ticketDescription, sap_module: sapModule, preferred_language: preferredLanguage }) });
     try {
-      const { data, error } = await supabase.functions.invoke('ai-ticket', {
+      const { data, error } = await invokeWithTimeout('ai-ticket', {
         body: {
           action: 'match_consultants',
           ticket_id: ticketId,
@@ -159,20 +167,26 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
           preferred_language: preferredLanguage || 'en',
         },
       });
+      if (token !== matchToken.current) return; // cancelled
       if (error) throw error;
+      if (data?.error) throw new Error(String(data.error));
       const recs = data?.result?.recommendations || [];
       setAiRecommendations(recs);
-      if (recs.length === 0) {
-        toast.info('No matching consultants found for this request');
-      } else {
-        toast.success(`Found ${recs.length} best matches`);
-      }
+      setMatchRun(prev => prev && { ...prev, phase: 'done', found: recs.length });
     } catch (err) {
+      if (token !== matchToken.current) return;
       console.error(err);
-      toast.error('Could not load matches. Please try again.');
+      setMatchRun(prev => prev && { ...prev, phase: 'error', error: err instanceof TimeoutError ? 'Finding experts took too long and was stopped.' : 'We could not load the matches. Nothing was sent to any consultant.' });
     } finally {
-      setAiLoading(false);
+      if (token === matchToken.current) setAiLoading(false);
     }
+  };
+
+  // Cancel only stops waiting; a match run never sends anything.
+  const cancelMatch = () => {
+    matchToken.current++;
+    setAiLoading(false);
+    setMatchRun(null);
   };
 
   // The client edited the request (title, description, areas, urgency, language): recompute the matches that are shown.
@@ -381,15 +395,33 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
           )}
         </div>
 
+          {/* Matching progress (steps, elapsed time, cancel, retry) */}
+          {matchRun && (matchRun.phase === 'ranking' || matchRun.phase === 'error') && (
+            <TaskProgressPanel
+              title="Finding the best experts"
+              steps={matchSteps(matchRun.phase, matchRun.understood)}
+              startedAt={matchRun.startedAt}
+              error={matchRun.phase === 'error' ? matchRun.error : null}
+              onRetry={() => void handleAiRecommend()}
+              cancel={{ label: 'Cancel', onClick: cancelMatch }}
+              errorAction={{ label: 'Show all consultants', onClick: () => setMatchRun(null) }}
+              skeletonCount={3}
+              className="shadow-none"
+            />
+          )}
+
           {/* AI Recommendation banner */}
-          {aiRecommendations && aiRecommendations.length > 0 && (
-            <div className="bg-accent/5 border border-accent/20 rounded-lg px-3 py-2 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-accent shrink-0" />
+          {aiRecommendations && aiRecommendations.length > 0 && !aiLoading && (
+            <div className="bg-accent/5 border border-accent/20 rounded-lg px-3 py-2 flex flex-wrap items-center gap-2 motion-safe:animate-fade-in">
+              {matchRun?.phase === 'done' ? <TaskDoneNote text={matchRun.found === 1 ? '1 expert found' : `${matchRun.found} experts found`} /> : <Sparkles className="w-4 h-4 text-accent shrink-0" />}
               <p className="text-xs text-accent">
                 Ranked <strong>{aiRecommendations.length}</strong> best matches for this ticket. They are listed first with the reasons for each match.
               </p>
-              <Button variant="ghost" size="sm" className="ms-auto text-xs h-6 px-2" onClick={() => setAiRecommendations(null)}>Clear</Button>
+              <Button variant="ghost" size="sm" className="ms-auto text-xs h-6 px-2" onClick={() => { setAiRecommendations(null); setMatchRun(null); }}>Clear</Button>
             </div>
+          )}
+          {matchRun?.phase === 'done' && matchRun.found === 0 && !aiLoading && (
+            <p className="text-xs text-muted-foreground" role="status">No matching consultants found for this request. You can still choose from the list below.</p>
           )}
 
           {/* Optional message */}
@@ -405,7 +437,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
           </div>
 
           {/* Consultant list */}
-          <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+          <div className={`flex-1 overflow-y-auto space-y-2 min-h-0 ${aiLoading ? 'hidden' : ''}`}>
             {isLoading ? (
               [1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)
             ) : !sortedConsultants?.length ? (

@@ -18,6 +18,9 @@ import { useTicketBids } from '@/hooks/useClientBids';
 import { deadlineFromOption, deadlineOptions, type DeadlineOption } from '@/lib/clientBidding';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import MatchWhyChips from '@/components/match/MatchWhyChips';
+import TaskProgressPanel from '@/components/progress/TaskProgressPanel';
+import { matchSteps, understoodSummary, type MatchPhase } from '@/lib/matchProgress';
+import { invokeWithTimeout } from '@/lib/invokeWithTimeout';
 
 type BidMode = 'select' | 'open' | 'manual' | 'ai';
 
@@ -122,18 +125,30 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
   }, [open, isOpenForBids]);
 
   // Recommended: the same explainable ranking used on the ticket page (full request, hard filters, why-chips).
-  const { data: matchResult, isLoading: loadingMatches } = useQuery({
+  const { data: matchResult, isLoading: loadingMatches, isFetching: fetchingMatches, isError: matchFailed, refetch: refetchMatches } = useQuery({
     queryKey: ['bid-matches', ticketId],
     enabled: open && mode === 'ai',
     staleTime: 60_000,
+    retry: false,
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('ai-ticket', {
+      const { data, error } = await invokeWithTimeout('ai-ticket', {
         body: { action: 'match_consultants', ticket_id: ticketId, title: ticketTitle || 'Untitled', sap_module: ticketModule },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(String(data.error));
       return (data?.result?.recommendations ?? []) as any[];
     },
   });
+  const [matchStartedAt, setMatchStartedAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (fetchingMatches) setMatchStartedAt(Date.now());
+  }, [fetchingMatches]);
+  const matchPhase: MatchPhase | null = matchFailed && !fetchingMatches ? 'error' : loadingMatches || (fetchingMatches && !matchResult) ? 'ranking' : null;
+  // Cancel only stops waiting and goes back to the choices; nothing is sent by a match run.
+  const cancelMatches = () => {
+    void queryClient.cancelQueries({ queryKey: ['bid-matches', ticketId] });
+    setMode('select');
+  };
   const byId = new Map((consultants || []).map(c => [c.id, c]));
   const aiRecommended = (matchResult ?? [])
     .filter(r => withoutHidden([{ id: r.consultant_id }], hiddenIds).length > 0)
@@ -469,7 +484,19 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
                 </span>
               </div>
 
-              {loadingConsultants || loadingMatches ? (
+              {matchPhase ? (
+                <TaskProgressPanel
+                  title="Finding the best experts"
+                  steps={matchSteps(matchPhase, understoodSummary({ title: ticketTitle, sap_module: ticketModule }))}
+                  startedAt={matchStartedAt}
+                  error={matchPhase === 'error' ? 'We could not load the matches. Nothing was sent to any consultant.' : null}
+                  onRetry={() => void refetchMatches()}
+                  cancel={{ label: 'Cancel', onClick: cancelMatches }}
+                  errorAction={{ label: 'Choose consultants myself', onClick: () => setMode('manual') }}
+                  skeletonCount={3}
+                  className="shadow-none"
+                />
+              ) : loadingConsultants ? (
                 Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)
               ) : aiRecommended.length === 0 ? (
                 <Card className="rounded-xl border-border/50">

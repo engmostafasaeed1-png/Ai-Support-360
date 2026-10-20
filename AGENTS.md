@@ -36,3 +36,4 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`); read it 
 
 - Profile autosave uses loaded baselines, immutable snapshots and readiness gating; sensitive fields stay manual to prevent empty writes and audit flooding. Radix save guidance preserves focus, continuation and session rules.
 - Profile interview actions use explicit start intent; evaluation confirms persisted trigger-awarded badges and refreshes profile/history caches to avoid client-fabricated awards.
+- Long ticket submits and expert-matching runs show the shared TaskProgressPanel driven by real step states (percent = finished steps, open steps pulse), and new tickets are saved through the ticketSubmission helpers (single-flight plus a tab-stored id); this keeps progress honest and prevents duplicate tickets on double click, retry or refresh.

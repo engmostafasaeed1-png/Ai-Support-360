@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import TaskProgressPanel from '@/components/progress/TaskProgressPanel';
+import { matchSteps, understoodSummary } from '@/lib/matchProgress';
+import { invokeWithTimeout } from '@/lib/invokeWithTimeout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -65,10 +68,10 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
   const { isGuest } = useGuestMode();
 
   // AI-powered matching
-  const { data: aiMatch, isLoading: aiLoading, error: aiError, refetch: refetchAi } = useQuery({
+  const { data: aiMatch, isLoading: aiLoading, isFetching: aiFetching, error: aiError, refetch: refetchAi } = useQuery({
     queryKey: ['ai-match-consultants', ticketId, sapModule],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('ai-ticket', {
+      const { data, error } = await invokeWithTimeout('ai-ticket', {
         body: {
           action: 'match_consultants',
           // The ticket id lets the service read the full request (areas, context, notes) instead of the title only.
@@ -80,12 +83,18 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
         },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(String(data.error));
       return data?.result;
     },
     enabled: open && !isGuest,
     staleTime: 5 * 60 * 1000,
+    retry: false,
     placeholderData: isGuest ? mockAiResults : undefined,
   });
+  const [matchStartedAt, setMatchStartedAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (aiFetching) setMatchStartedAt(Date.now());
+  }, [aiFetching]);
 
   // Check already-sent
   const { data: existingRequests } = useQuery({
@@ -173,14 +182,17 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
         )}
 
         <div className="space-y-3 py-2">
-          {aiLoading ? (
-            [1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)
-          ) : aiError ? (
-            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-center space-y-2">
-              <p className="text-sm font-medium text-destructive">The match suggestions could not be loaded.</p>
-              <p className="text-xs text-muted-foreground">Nothing was sent to any consultant. Please try again in a moment.</p>
-              <Button type="button" size="sm" variant="outline" onClick={() => refetchAi()}>Try again</Button>
-            </div>
+          {aiLoading || (aiError && !aiFetching) || (aiFetching && !aiMatch) ? (
+            <TaskProgressPanel
+              title="Finding the best experts"
+              steps={matchSteps(aiError && !aiFetching ? 'error' : 'ranking', understoodSummary({ title: ticketTitle, description: ticketDescription, sap_module: sapModule }))}
+              startedAt={matchStartedAt}
+              error={aiError && !aiFetching ? 'The match suggestions could not be loaded. Nothing was sent to any consultant.' : null}
+              onRetry={() => void refetchAi()}
+              cancel={{ label: 'Cancel', onClick: () => onOpenChange(false) }}
+              skeletonCount={3}
+              className="shadow-none"
+            />
           ) : available.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">No matching consultants found.</p>
           ) : (
