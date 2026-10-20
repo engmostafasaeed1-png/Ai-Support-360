@@ -255,6 +255,8 @@ export default function NewRequestPage() {
   const [aiMatch, setAiMatch] = useState<AiMatch | null>(null);
   const [aiRecommendations, setAiRecommendations] = useState<AiMatchConsultants | null>(null);
   const [aiLoading, setAiLoading] = useState<string | null>(null);
+  // Set after the client answers the clarifying questions; matching runs again with the improved description.
+  const [matchRerunPending, setMatchRerunPending] = useState(false);
 
   const steps = [
     t('ticket_create.step_module'),
@@ -360,6 +362,7 @@ export default function NewRequestPage() {
           area_details: form.area_details,
           urgency: form.urgency,
           preferred_language: form.preferred_language,
+          sap_notes_tried: form.sap_notes_tried.length ? form.sap_notes_tried : undefined,
           model: selectedModel,
         }, ticketContext),
       });
@@ -372,7 +375,13 @@ export default function NewRequestPage() {
     } finally {
       setAiLoading(null);
     }
-  }, [form.title, form.description, form.sap_module, form.sap_modules, form.sap_module_other, form.area_details, form.urgency, form.preferred_language, selectedModel, ticketContext]);
+  }, [form.title, form.description, form.sap_module, form.sap_modules, form.sap_module_other, form.area_details, form.urgency, form.preferred_language, form.sap_notes_tried, selectedModel, ticketContext]);
+
+  useEffect(() => {
+    if (!matchRerunPending) return;
+    setMatchRerunPending(false);
+    runAiMatchConsultants();
+  }, [matchRerunPending, runAiMatchConsultants]);
 
   const validateStep = (currentStep: number): boolean => {
     const result = ticketSchema.safeParse(form);
