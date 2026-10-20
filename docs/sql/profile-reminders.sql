@@ -1,5 +1,6 @@
 -- Feature B: daily consultant profile-completion reminders.
 -- NOT APPLIED by the agent — review and apply yourself.
+-- Apply docs/sql/interview-completion.sql first (this file uses consultant_completion).
 -- Creates: reminder log table, admin settings, claim + stats RPCs, hourly cron.
 
 -- 1. Log table (replaces the old unique(consultant_id, step) design).
@@ -23,8 +24,11 @@ INSERT INTO public.platform_settings (key, value) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- 3. Claim RPC: returns consultants due right now and records the claim atomically.
--- "Complete" = consultant_missing_fields returns no rows AND a completed AI interview exists.
+-- Requires docs/sql/interview-completion.sql (consultant_completion) to be applied first.
+-- Stops when ALL profile items are complete AND a completed AI interview exists (a pending session does not count),
+-- so "percent" here is the same number the app shows, including the AI interview share.
 -- Runs hourly from cron; sends only at 09:00 in the consultant's time zone (fallback Asia/Riyadh).
+-- Disabled account = banned or deleted sign-in account.
 CREATE OR REPLACE FUNCTION public.claim_profile_reminders(_limit INT DEFAULT 200)
 RETURNS TABLE (
   consultant_id UUID,
@@ -54,67 +58,68 @@ BEGIN
   IF v_flag = 'false' THEN RETURN; END IF;
   SELECT COALESCE(NULLIF(value #>> '{}', '')::INT, 30) INTO v_daily_days
     FROM public.platform_settings WHERE key = 'profile_reminder_daily_days';
-  v_daily_days := COALESCE(v_daily_days, 30);
+  v_daily_days := COALESCE(LEAST(GREATEST(v_daily_days, 1), 365), 30);
 
   RETURN QUERY
-  WITH eligible AS (
-    SELECT c.id AS consultant_id, c.user_id,
-           COALESCE(c.timezone, 'Asia/Riyadh') AS tz,
-           c.created_at AS signed_up_at,
-           (SELECT max(l.sent_at) FROM public.profile_reminder_log l WHERE l.consultant_id = c.id) AS last_sent,
-           NOT EXISTS (SELECT 1 FROM public.consultant_missing_fields(c.id) f) AS complete,
-           EXISTS (SELECT 1 FROM public.interview_sessions s
-                   WHERE s.consultant_id = c.id AND s.interview_type = 'ai' AND s.status = 'completed') AS interview_done,
-           COALESCE((SELECT (p.value #>> '{}')::BOOLEAN FROM public.platform_settings p WHERE p.key = 'x'), false) AS unused
+  WITH locked AS (
+    -- Row locks on the consultant so two overlapping runs never claim the same person.
+    SELECT c.id AS cid, c.user_id AS uid, c.created_at AS signed_up_at,
+           (SELECT max(l.sent_at) FROM public.profile_reminder_log l WHERE l.consultant_id = c.id) AS last_sent
     FROM public.consultants c
-    WHERE COALESCE(c.disabled, false) = false
-      AND EXTRACT(HOUR FROM now() AT TIME ZONE COALESCE(c.timezone, 'Asia/Riyadh')) = 9
+    WHERE EXTRACT(HOUR FROM now() AT TIME ZONE COALESCE(NULLIF(c.timezone, ''), 'Asia/Riyadh')) = 9
+      AND EXISTS (SELECT 1 FROM auth.users u
+                  WHERE u.id = c.user_id AND u.deleted_at IS NULL
+                    AND (u.banned_until IS NULL OR u.banned_until < now()))
+    ORDER BY c.created_at
+    FOR UPDATE OF c SKIP LOCKED
+  ),
+  scored AS (
+    SELECT lk.*, public.consultant_completion(lk.cid) AS comp FROM locked lk
   ),
   due AS (
-    SELECT e.*,
-      CASE WHEN e.last_sent IS NULL THEN 'daily'
-           WHEN now() - e.signed_up_at >= make_interval(days => v_daily_days) THEN 'weekly'
-           ELSE 'daily' END AS kind
-    FROM eligible e
-    WHERE NOT (e.complete AND e.interview_done)
+    SELECT s.*,
+      CASE WHEN s.last_sent IS NOT NULL AND now() - s.signed_up_at >= make_interval(days => v_daily_days)
+           THEN 'weekly' ELSE 'daily' END AS due_kind
+    FROM scored s
+    WHERE NOT ((s.comp ->> 'fields_complete')::BOOLEAN AND (s.comp ->> 'interview_done')::BOOLEAN)
       AND (
-        (e.last_sent IS NULL AND now() - e.signed_up_at >= interval '24 hours')
-        OR (e.last_sent IS NOT NULL AND now() - e.last_sent >= interval '20 hours'
-            AND (now() - e.signed_up_at < make_interval(days => v_daily_days)
-                 OR now() - e.last_sent >= interval '7 days'))
+        (s.last_sent IS NULL AND now() - s.signed_up_at >= interval '24 hours')
+        OR (s.last_sent IS NOT NULL AND now() - s.last_sent >= interval '20 hours'
+            AND (now() - s.signed_up_at < make_interval(days => v_daily_days)
+                 OR now() - s.last_sent >= interval '7 days'))
       )
-    ORDER BY e.signed_up_at
-    LIMIT _limit
-    FOR UPDATE SKIP LOCKED
+    ORDER BY s.signed_up_at
+    LIMIT GREATEST(1, LEAST(COALESCE(_limit, 200), 200))
   ),
   claimed AS (
     INSERT INTO public.profile_reminder_log (consultant_id, kind)
-    SELECT d.consultant_id, d.kind FROM due d
-    RETURNING profile_reminder_log.consultant_id, profile_reminder_log.kind
+    SELECT d.cid, d.due_kind FROM due d
+    RETURNING profile_reminder_log.consultant_id AS cid, profile_reminder_log.kind AS ckind
   )
-  SELECT d.consultant_id, d.user_id, cl.kind,
-         (SELECT COALESCE(round(100.0 * (15 - count(*)) / 15), 0)::INT
-          FROM public.consultant_missing_fields(d.consultant_id)) AS percent,
-         (SELECT array_agg(f.label) FROM (SELECT f.label FROM public.consultant_missing_fields(d.consultant_id) f LIMIT 5) f) AS missing,
-         d.interview_done,
-         (SELECT CASE WHEN s.overall_score >= 85 THEN 'Gold'
-                      WHEN s.overall_score >= 70 THEN 'Silver'
-                      WHEN s.overall_score >= 50 THEN 'Bronze'
-                      ELSE 'Verified' END
-          FROM public.interview_sessions s
-          WHERE s.consultant_id = d.consultant_id AND s.interview_type = 'ai' AND s.status = 'completed'
-          ORDER BY s.completed_at DESC NULLS LAST LIMIT 1) AS earned_badge,
-         EXISTS (SELECT 1 FROM public.consultant_payout_details pd WHERE pd.consultant_id = d.consultant_id) AS payout_ready,
-         COALESCE((SELECT pr.language FROM public.profiles pr WHERE pr.user_id = d.user_id), 'en') AS lang
+  SELECT d.cid, d.uid, cl.ckind,
+         (d.comp ->> 'percent')::INT,
+         (SELECT array_agg(x) FROM (SELECT jsonb_array_elements_text(d.comp -> 'missing_items') AS x LIMIT 5) m),
+         (d.comp ->> 'interview_done')::BOOLEAN,
+         CASE WHEN (d.comp ->> 'interview_done')::BOOLEAN THEN COALESCE(
+           (SELECT c2.ai_interview_badge FROM public.consultants c2 WHERE c2.id = d.cid),
+           (SELECT CASE WHEN s.overall_score >= 85 THEN 'Gold'
+                        WHEN s.overall_score >= 70 THEN 'Silver'
+                        WHEN s.overall_score >= 50 THEN 'Bronze'
+                        ELSE 'Verified' END
+              FROM public.interview_sessions s
+             WHERE s.consultant_id = d.cid AND s.interview_type = 'ai' AND s.status IN ('completed', 'reviewed')
+             ORDER BY s.completed_at DESC NULLS LAST LIMIT 1)) END,
+         (d.comp ->> 'payout_ready')::BOOLEAN,
+         CASE WHEN (SELECT pr.preferred_language FROM public.profiles pr WHERE pr.user_id = d.uid) LIKE 'ar%' THEN 'ar' ELSE 'en' END
   FROM due d
-  JOIN claimed cl ON cl.consultant_id = d.consultant_id;
+  JOIN claimed cl ON cl.cid = d.cid;
 END;
 $$;
 
 REVOKE ALL ON FUNCTION public.claim_profile_reminders(INT) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.claim_profile_reminders(INT) TO service_role;
 
--- 4. Admin stats for the settings card.
+-- 4. Admin stats for the settings card ("incomplete" = profile items missing OR no completed AI interview).
 CREATE OR REPLACE FUNCTION public.admin_profile_reminder_stats()
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -128,16 +133,14 @@ BEGIN
   RETURN jsonb_build_object(
     'last_run', (SELECT max(sent_at) FROM public.profile_reminder_log),
     'sent_today', (SELECT count(*) FROM public.profile_reminder_log WHERE sent_at >= date_trunc('day', now())),
-    'incomplete', (SELECT count(*) FROM public.consultants c
-                   WHERE COALESCE(c.disabled, false) = false
-                     AND (EXISTS (SELECT 1 FROM public.consultant_missing_fields(c.id))
-                          OR NOT EXISTS (SELECT 1 FROM public.interview_sessions s
-                                         WHERE s.consultant_id = c.id AND s.interview_type = 'ai' AND s.status = 'completed'))),
+    'incomplete', (SELECT count(*) FROM public.consultants c, LATERAL public.consultant_completion(c.id) comp
+                   WHERE NOT ((comp ->> 'fields_complete')::BOOLEAN AND (comp ->> 'interview_done')::BOOLEAN)),
     'unsubscribed', (SELECT count(*) FROM public.suppressed_emails)
   );
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.admin_profile_reminder_stats() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.admin_profile_reminder_stats() TO authenticated;
 
 -- 5. Hourly cron: calls the edge function at minute 7 of every hour; the claim RPC

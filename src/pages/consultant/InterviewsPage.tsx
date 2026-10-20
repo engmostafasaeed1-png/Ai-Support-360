@@ -7,23 +7,31 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Video, Play, CheckCircle, Clock, Brain, ExternalLink } from 'lucide-react';
+import { Video, Play, CheckCircle, Clock, Brain, AlertTriangle, Loader2, RotateCcw } from 'lucide-react';
 import AIInterviewFlow from '@/components/consultant/AIInterviewFlow';
+import InterviewPreflight from '@/components/consultant/InterviewPreflight';
 import { format } from 'date-fns';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useInterviewEligibility, INTERVIEW_ELIGIBILITY_KEY } from '@/hooks/useInterviewEligibility';
 import { useSessionReady } from '@/hooks/useSessionReady';
+import { BLOCK_TEXT, ERROR_TEXT, classifyStartError, logStartErrorOnce, pickSessionToResume, resolveAiInterviewSession, type SessionRow, type StartErrorCode } from '@/lib/interviewStart';
 
 export default function InterviewsPage() {
   const { t } = useTranslation();
   const { isGuest } = useGuestMode();
   const [activeInterviewId, setActiveInterviewId] = useState<string | null>(null);
+  const [stage, setStage] = useState<'preflight' | 'interview'>('preflight');
+  const [resumed, setResumed] = useState(false);
+  const [textOnly, setTextOnly] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const { signedIn } = useSessionReady();
+  const eligibility = useInterviewEligibility();
+  const block = isGuest ? null : eligibility.block;
   const starting = useRef(false);
   const [isStarting, setIsStarting] = useState(false);
-  const [startError, setStartError] = useState('');
+  const [startError, setStartError] = useState<StartErrorCode | null>(null);
 
   const { data: interviews, isLoading, refetch } = useQuery({
     queryKey: ['consultant-interviews'],
@@ -53,65 +61,78 @@ export default function InterviewsPage() {
     },
   });
 
-  const pendingInterviews = interviews?.filter(i => i.status === 'pending' || i.status === 'in_progress') || [];
+  // Open AI sessions collapse into the one that would be resumed, so older duplicates never show as separate cards.
+  const openRows = interviews?.filter(i => i.status === 'pending' || i.status === 'in_progress') || [];
+  const aiPick = pickSessionToResume(openRows.filter(i => i.interview_type === 'ai') as SessionRow[], Date.now());
+  const pendingInterviews = openRows.filter(i => (i as any).interview_style === 'live' || i.interview_type !== 'ai' || i.id === aiPick?.id);
   const completedInterviews = interviews?.filter(i => i.status === 'completed' || i.status === 'reviewed') || [];
 
+  const openSession = (id: string, wasResumed: boolean) => {
+    setResumed(wasResumed);
+    setStage('preflight');
+    setActiveInterviewId(id);
+  };
+
   const handleStartOptionalInterview = async () => {
-    if (isGuest || starting.current) return;
+    if (isGuest || starting.current || block) return;
     starting.current = true;
     setIsStarting(true);
-    setStartError('');
+    setStartError(null);
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) throw new Error(t('interview.sign_in', 'Please sign in again.'));
-      const { data: consultant, error: profileError } = await supabase.from('consultants').select('id').eq('user_id', user.id).maybeSingle();
-      if (profileError) throw profileError;
-      if (!consultant) throw new Error(t('interview.profile_required', 'Save your profile before starting the interview.'));
-      // Resume a self-started assessment instead of creating duplicate pending interviews.
-      const { data: pending, error: pendingError } = await supabase.from('interview_sessions')
-        .select('id').eq('consultant_id', consultant.id).eq('interview_type', 'ai')
-        .is('requested_by', null).in('status', ['pending', 'in_progress'])
-        .neq('interview_style', 'live').order('created_at', { ascending: false }).limit(1).maybeSingle();
-      if (pendingError) throw pendingError;
-      if (pending) { setActiveInterviewId(pending.id); return; }
-      const { data: session, error } = await supabase.from('interview_sessions')
-        .insert({ consultant_id: consultant.id, interview_type: 'ai', status: 'pending', interview_style: 'standard' })
-        .select('id').single();
-      if (error) throw error;
-      setActiveInterviewId(session.id);
+      const consultantId = eligibility.data?.consultantId;
+      if (!consultantId) { eligibility.refetch(); throw new Error('consultant profile not loaded'); }
+      const session = await resolveAiInterviewSession(consultantId);
+      openSession(session.id, session.resumed !== null);
       void refetch();
-    } catch {
-      setStartError(t('interview.start_failed', 'Could not start the interview. Check that your profile is saved and try again.'));
+    } catch (err) {
+      const code = classifyStartError(err);
+      setStartError(code);
+      logStartErrorOnce(code, err, 'interviews-page');
     } finally { starting.current = false; setIsStarting(false); }
   };
 
   useEffect(() => {
-    if (searchParams.get('start') !== '1' || !signedIn || isGuest) return;
+    if (searchParams.get('start') !== '1' || isGuest || block === 'checking') return;
     const next = new URLSearchParams(searchParams);
     next.delete('start');
     setSearchParams(next, { replace: true });
-    void handleStartOptionalInterview();
-  }, [signedIn, isGuest, searchParams, setSearchParams]);
+    // A blocked start keeps the reason and its fix visible instead of silently doing nothing.
+    if (!block) void handleStartOptionalInterview();
+  }, [block, isGuest, searchParams, setSearchParams]);
+
+  const closeInterview = () => { setActiveInterviewId(null); void refetch(); };
 
   if (activeInterviewId) {
     return (
       <div className="space-y-4">
-        <Button variant="outline" size="sm" onClick={() => setActiveInterviewId(null)}>
-          ← Back to Interviews
+        <Button variant="outline" size="sm" onClick={closeInterview}>
+          ← {t('interview.back_to_list', 'Back to Interviews')}
         </Button>
-        <AIInterviewFlow
-          interviewId={activeInterviewId}
-          onComplete={() => {
-            setActiveInterviewId(null);
-            refetch();
-            void queryClient.invalidateQueries({ queryKey: ['consultant-profile'] });
-            void queryClient.invalidateQueries({ queryKey: ['interview-history'] });
-          }}
-          onCancel={() => setActiveInterviewId(null)}
-        />
+        {stage === 'preflight' ? (
+          <InterviewPreflight
+            resumed={resumed}
+            onCancel={closeInterview}
+            onContinue={({ textOnly: typed }) => { setTextOnly(typed); setStage('interview'); }}
+          />
+        ) : (
+          <AIInterviewFlow
+            interviewId={activeInterviewId}
+            textOnly={textOnly}
+            onComplete={() => {
+              setActiveInterviewId(null);
+              refetch();
+              void queryClient.invalidateQueries({ queryKey: ['consultant-profile'] });
+              void queryClient.invalidateQueries({ queryKey: ['interview-history'] });
+              void queryClient.invalidateQueries({ queryKey: INTERVIEW_ELIGIBILITY_KEY });
+            }}
+            onCancel={closeInterview}
+          />
+        )}
       </div>
     );
   }
+
+  const blockText = block ? BLOCK_TEXT[block] : null;
 
   return (
     <div className="space-y-6">
@@ -125,11 +146,30 @@ export default function InterviewsPage() {
             Completing an AI interview is <strong>optional</strong>, but it earns you a verified badge + credibility credits clients can see.
           </p>
         </div>
-        <Button onClick={handleStartOptionalInterview} disabled={isStarting || isGuest || !signedIn} className="gradient-primary border-0 gap-2">
-          <Brain className="w-4 h-4" /> Start AI Interview
+        <Button onClick={handleStartOptionalInterview} disabled={isStarting || isGuest || !!block}
+          aria-describedby={blockText ? 'interview-start-reason' : undefined} className="gradient-primary border-0 gap-2">
+          {isStarting || block === 'checking' ? <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" /> : <Brain className="w-4 h-4" />}
+          {aiPick ? t('interview.continue_ai', 'Continue AI Interview') : t('interview.start_ai', 'Start AI Interview')}
         </Button>
       </div>
-      {startError && <p role="alert" className="text-sm text-destructive">{startError}</p>}
+      {blockText && (
+        <div id="interview-start-reason" role="status" className="flex flex-wrap items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground">
+          {block === 'checking' ? <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" /> : <AlertTriangle className="h-4 w-4 text-warning" />}
+          <span>{t(blockText.key, blockText.message)}</span>
+          {blockText.action && (
+            <Button asChild size="sm" variant="outline" className="ms-auto"><Link to={blockText.action.to}>{t(blockText.action.key, blockText.action.label)}</Link></Button>
+          )}
+        </div>
+      )}
+      {startError && (
+        <div role="alert" className="flex flex-wrap items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <span>{t(ERROR_TEXT[startError].key, ERROR_TEXT[startError].message)}</span>
+          <Button size="sm" variant="outline" className="ms-auto" onClick={handleStartOptionalInterview} disabled={isStarting}>
+            <RotateCcw className="me-1 h-4 w-4" /> {t('common.retry', 'Retry')}
+          </Button>
+        </div>
+      )}
 
       {/* Reward tier card */}
       <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
@@ -211,7 +251,7 @@ export default function InterviewsPage() {
                       </div>
                     </div>
                     <Button
-                      onClick={() => (interview as any).interview_style === 'live' ? navigate(`/interview/live/${interview.id}`) : setActiveInterviewId(interview.id)}
+                      onClick={() => (interview as any).interview_style === 'live' ? navigate(`/interview/live/${interview.id}`) : openSession(interview.id, true)}
                       className="gap-2"
                     >
                       <Play className="w-4 h-4" />

@@ -79,7 +79,8 @@ function useGettingStartedData() {
   const d = base.data;
   if (!d) return { loading: false as const, input: null };
   const ready = payoutReady(payout.data?.details);
-  const percent = profileCompleteness({ ...d.c, skills_count: d.skills, payout_ready: ready }).percent;
+  // The checklist has its own AI interview line, so "Complete your profile" uses the profile-fields part only.
+  const percent = profileCompleteness({ ...d.c, skills_count: d.skills, payout_ready: ready }).fieldsPercent;
   const input: GettingStartedInput = {
     completenessPercent: percent,
     skills: d.skills,

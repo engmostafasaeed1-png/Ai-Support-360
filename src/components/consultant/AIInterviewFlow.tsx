@@ -15,6 +15,7 @@ import aiMaleAvatar from '@/assets/ai-interviewer-male.jpg';
 import aiFemaleAvatar from '@/assets/ai-interviewer-female.jpg';
 import { useQueryClient } from '@tanstack/react-query';
 import { TrustBadge } from './TrustBadge';
+import { classifyStartError, ERROR_TEXT, logStartErrorOnce } from '@/lib/interviewStart';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -48,6 +49,8 @@ interface Props {
   interviewId: string;
   onComplete: () => void;
   onCancel: () => void;
+  /** Start without camera or voice; answers are typed. */
+  textOnly?: boolean;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-interview-chat`;
@@ -211,7 +214,7 @@ function ScoreBar({ label, score, icon }: { label: string; score: number; icon: 
   );
 }
 
-export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: Props) {
+export default function AIInterviewFlow({ interviewId, onComplete, onCancel, textOnly = false }: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [reward, setReward] = useState<{ ai_interview_badge: string; credibility_credits: number } | null>(null);
@@ -225,8 +228,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const [error, setError] = useState('');
   const [cameraNotice, setCameraNotice] = useState('');
   const [micNotice, setMicNotice] = useState('');
-  const [micOn, setMicOn] = useState(true);
-  const [camOn, setCamOn] = useState(true);
+  const [micOn, setMicOn] = useState(!textOnly);
+  const [camOn, setCamOn] = useState(!textOnly);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true);
@@ -237,7 +240,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
   const avatarImg = voiceGender === 'male' ? aiMaleAvatar : aiFemaleAvatar;
   const [speechRate, setSpeechRate] = useState(1.0);
   const [interviewLang, setInterviewLang] = useState<'en' | 'fr' | 'ar' | 'es' | 'de' | 'ar-SA'>('en');
-  const [conversationMode, setConversationMode] = useState(true);
+  // Text-only: no camera, no listening; the consultant types every answer.
+  const [conversationMode, setConversationMode] = useState(!textOnly);
   const sendToAIRef = useRef<(h: ChatMessage[]) => Promise<void>>();
   const [capturedFrames, setCapturedFrames] = useState(0);
   const [interviewStarted, setInterviewStarted] = useState(false);
@@ -580,7 +584,10 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
       }
     } catch (err: any) {
       console.error('Stream error:', err);
-      setError(err.message || 'Connection failed');
+      const code = classifyStartError(err);
+      const generic = !err?.message || err.message === 'Failed to connect to interviewer' || code === 'network';
+      setError(generic ? t(ERROR_TEXT[code].key, ERROR_TEXT[code].message) : err.message);
+      logStartErrorOnce(code, err, chatHistory.length === 0 ? 'interview-greeting' : 'interview-turn');
     } finally {
       setIsStreaming(false);
       // Auto-save conversation after each exchange
@@ -1145,8 +1152,14 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel }: P
             {/* Input area */}
             <div className="p-3 border-t border-white/10 bg-black/20">
               {error && (
-                <div className="flex items-center gap-2 text-xs text-red-400 mb-2">
+                <div role="alert" className="flex flex-wrap items-center gap-2 text-xs text-red-400 mb-2">
                   <AlertTriangle className="w-3.5 h-3.5" /> {error}
+                  {!isStreaming && (messages.length === 0 || messages[messages.length - 1]?.role === 'user') && (
+                    <button type="button" onClick={() => { setError(''); void sendToAI(messagesRef.current); }}
+                      className="ms-auto rounded-md border border-red-400/40 px-2 py-0.5 font-medium text-red-300 hover:bg-red-500/10">
+                      {t('common.retry', 'Retry')}
+                    </button>
+                  )}
                 </div>
               )}
               {[cameraNotice, micNotice].filter(Boolean).map((notice) => (

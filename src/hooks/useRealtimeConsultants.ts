@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchInterviewWeight } from '@/lib/interviewWeight';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { mockRecommendedConsultants } from '@/data/clientMockData';
 import { useHiddenConsultantIds, withoutHidden } from '@/hooks/useHiddenConsultants';
@@ -88,8 +89,9 @@ export function useRealtimeConsultants() {
 
       // The place, the availability and the links come from the database as they are: nothing is invented here.
       // A consultant who switched "Show availability status" off appears as Offline, without weekly hours.
+      const interviewWeight = await fetchInterviewWeight();
       return consultantRows.map(c => {
-        const base = toConsultantLive(c as any, profileMap.get(c.user_id)?.display_name, skillsMap.get(c.id) || []);
+        const base = toConsultantLive(c as any, profileMap.get(c.user_id)?.display_name, skillsMap.get(c.id) || [], interviewWeight);
         const avatar = profileMap.get(c.user_id)?.avatar_url;
         const live = { ...base, certifications: certMap.get(c.id) || [], avatar_url: typeof avatar === 'string' && /^https:\/\//.test(avatar) ? avatar : null };
         if (c.show_availability === false) return { ...live, status: 'offline' as const, available: false, hours: [] as string[], slots: [] };

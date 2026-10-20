@@ -36,6 +36,8 @@ import { FieldGate } from '@/components/consultant/ProfileFieldRule';
 import { CREDLY_HINT, LINKEDIN_HINT, normalizeCredlyUsername, normalizeLinkedinUrl } from '@/lib/consultantLinks';
 import { OnboardingGuidePanel, OnboardingGuideAccordion, OnboardingMobileProgress, OnboardingWelcome, OnboardingFinish, welcomeSeen, markWelcomeSeen } from './OnboardingGuidePanel';
 import { profileCompleteness } from '@/lib/profileCompleteness';
+import { useInterviewWeight } from '@/lib/interviewWeight';
+import { useInterviewEligibility } from '@/hooks/useInterviewEligibility';
 import { certificateKey, jobKey, onlyNew, projectKey, skillKey, slotKey, studyKey } from '@/lib/onboardingDedupe';
 import { EmbeddedGuideCard, EmbeddedSetupMessages, useEmbeddedGuides } from './EmbeddedGuides';
 import { FieldHint } from './OnboardingGuidePanel';
@@ -137,6 +139,8 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
   const { t } = useTranslation();
   const autosaveReady = useProfileAutosaveReady();
   const fieldRules = useProfileFieldRules();
+  const interviewWeight = useInterviewWeight();
+  const interviewCompleted = useInterviewEligibility().data?.interviewDone === true;
   const [loadSucceeded, setLoadSucceeded] = useState(false);
   const [sourceRevision, setSourceRevision] = useState(0);
   const navigate = useNavigate();
@@ -698,7 +702,8 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
     industries: data.projects.map(p => p.clientIndustry).filter(Boolean),
     project_types: data.projects.length > 0 ? ['project'] : [],
     language_levels: data.languages.length > 0 ? Object.fromEntries(data.languages.map(l => [l, 'set'])) : {},
-  }).percent;
+    interview_done: interviewCompleted || interviewDone || !!loadedProfile?.ai_interview_completed_at,
+  }, { interviewWeight }).percent;
 
   return (
     <div className="max-w-6xl mx-auto grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] items-start px-1">

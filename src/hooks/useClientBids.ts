@@ -4,7 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { latestBids } from '@/lib/bidding';
 import { counterArgs, counterProblem, deadlineFromOption, declinePayload, type CounterInput, type DeadlineOption } from '@/lib/clientBidding';
-import { profileCompleteness } from '@/lib/profileCompleteness';
+import { interviewDoneFrom, profileCompleteness } from '@/lib/profileCompleteness';
+import { fetchInterviewWeight } from '@/lib/interviewWeight';
 
 const db = supabase as any;
 export function useBiddingClock() {
@@ -42,11 +43,12 @@ export function useTicketBids(ticketId: string | undefined, enabled = true) {
       for (const result of [consultants, attachments, counters]) if (result.error) throw result.error;
       const people = consultants.data?.length ? await db.from('profile_directory').select('user_id, display_name, avatar_url').in('user_id', consultants.data.map((c: any) => c.user_id)) : { data: [] };
       if (people.error) throw people.error;
+      const interviewWeight = await fetchInterviewWeight();
       const enriched = rows.map((p: any) => {
         const c = consultants.data?.find((c: any) => c.id === p.consultant_id);
         const person = people.data?.find((person: any) => person.user_id === c?.user_id);
         // Completion without the payout item: payout status is never shown to clients.
-        const completion = c ? profileCompleteness({ ...c, skills_count: undefined }, { includePayout: false }).percent : 0;
+        const completion = c ? profileCompleteness({ ...c, skills_count: undefined, interview_done: interviewDoneFrom(c) }, { includePayout: false, interviewWeight }).percent : 0;
         return { ...p, consultant_name: person?.display_name || 'Unknown', consultant_avatar: person?.avatar_url, consultant_rating: c?.rating || 0, consultant_reviews: c?.total_reviews || 0, verification_status: c?.verification_status, credibility_credits: c?.credibility_credits, ai_interview_badge: c?.ai_interview_badge, completion_percent: completion, attachments: attachments.data?.filter((a: any) => a.proposal_id === p.id) || [] };
       });
       const bids = latestBids<any>(enriched).filter(r => r.bid.rejection_reason !== 'superseded');

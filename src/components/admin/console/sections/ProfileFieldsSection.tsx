@@ -17,6 +17,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SectionShell } from './shared';
+import InterviewWeightCard from './InterviewWeightCard';
 import ConsultantFullProfileSheet from '@/components/admin/ConsultantFullProfileSheet';
 import {
   fetchProfileFieldRules, PROFILE_FIELD_RULES_KEY, PROFILE_RULES_CONFIG_KEY,
@@ -139,6 +140,8 @@ export default function ProfileFieldsSection() {
           />
         </CardContent>
       </Card>
+
+      <InterviewWeightCard />
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
