@@ -1,8 +1,10 @@
 import { useTranslation } from 'react-i18next';
+import { CRITERION_LABELS } from '@/lib/matchLabels';
 
 export type MatchCriterion = { key: string; weight: number; score: number; contribution: number };
 
 const labels: Record<string, [string, string]> = {
+  ...CRITERION_LABELS,
   skill_match_score: ['Skills, modules & technologies', 'المهارات والوحدات والتقنيات'],
   experience_score: ['CV, experience & similar issues', 'السيرة الذاتية والخبرة والمشكلات المشابهة'],
   interview_score: ['Skills assessment', 'تقييم المهارات'],

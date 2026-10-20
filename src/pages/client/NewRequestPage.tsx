@@ -1,4 +1,7 @@
 import MatchScoreBreakdown, { type MatchCriterion } from '@/components/client/MatchScoreBreakdown';
+import MatchWhyChips from '@/components/match/MatchWhyChips';
+import MatchClarifyingQuestions from '@/components/match/MatchClarifyingQuestions';
+import type { Chip, ClarifyKey } from '../../../supabase/functions/_shared/ticketMatch';
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
 import { useTranslation } from 'react-i18next';
@@ -85,6 +88,8 @@ interface ConsultantRecommendation {
   consultant_id: string;
   match_score: number;
   score_breakdown?: MatchCriterion[];
+  why?: Chip[];
+  coverage?: number;
   match_reason: string;
   strengths: string[];
   skill_match_score?: number;
@@ -1195,6 +1200,16 @@ export default function NewRequestPage() {
                   </div>
                 ) : aiRecommendations && aiRecommendations.recommendations.length > 0 ? (
                   <div className="space-y-3">
+                    {(aiRecommendations as any).questions?.length > 0 && (
+                      <MatchClarifyingQuestions
+                        questions={(aiRecommendations as any).questions as ClarifyKey[]}
+                        onSubmit={(answers) => {
+                          const extra = [answers.module && `SAP module: ${answers.module}`, answers.error && `Error / transaction: ${answers.error}`, answers.country && `Country: ${answers.country}`].filter(Boolean).join('\n');
+                          if (extra) setForm(prev => ({ ...prev, description: `${prev.description.trim()}\n\n${extra}`.slice(0, 8000) }));
+                          setMatchRerunPending(true);
+                        }}
+                      />
+                    )}
                     <p className="text-xs text-muted-foreground mb-3">{aiRecommendations.overall_rationale}</p>
                     {aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
                       <RecommendationCard
@@ -1403,6 +1418,8 @@ function RecommendationCard({ rec, rank, navigate, picked, pickDisabled, onToggl
 
           {/* Match reason */}
           <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{rec.match_reason}</p>
+
+          <MatchWhyChips why={rec.why} />
 
           <ContextFitBadges fit={rec} />
 
