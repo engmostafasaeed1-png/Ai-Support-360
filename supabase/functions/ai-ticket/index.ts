@@ -485,17 +485,20 @@ serve(async (req) => {
       const optional = async <T,>(run: () => PromiseLike<{ data: T | null; error: unknown }>): Promise<T | null> => {
         try { const { data, error } = await run(); return error ? null : data; } catch { return null; }
       };
-      const [founding, inactiveIds, declined] = await Promise.all([
+      const [founding, inactiveIds, declined, hiddenIds] = await Promise.all([
         optional(() => supabase.from("founding_consultants").select("consultant_id").is("revoked_at", null)),
         optional(() => supabase.rpc("matching_inactive_consultants")),
         parsed.data.ticket_id
           ? optional(() => supabase.from("ticket_match_requests").select("consultant_id, status").eq("ticket_id", parsed.data.ticket_id!).eq("status", "rejected"))
           : Promise.resolve(null),
+        // Profiles the administrator hides from client lists (incomplete profiles) are not matched either.
+        optional(() => caller.rpc("hidden_consultant_ids")),
       ]);
       const foundingSet = new Set(((founding ?? []) as any[]).map((r) => r.consultant_id));
       const inactiveSet = new Set(((inactiveIds ?? []) as any[]).map((r) => (typeof r === "string" ? r : r?.consultant_id)).filter(Boolean));
       // Excluded: consultants who declined this ticket, and the client themself.
       const excluded = new Set<string>(((declined ?? []) as any[]).map((r) => r.consultant_id));
+      for (const id of (Array.isArray(hiddenIds) ? hiddenIds : []) as unknown[]) if (typeof id === "string") excluded.add(id);
       for (const c of consultants) if (c.user_id === clientUserId) excluded.add(c.id);
 
       const matchTicket: MatchTicket = {
