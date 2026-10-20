@@ -57,6 +57,17 @@ export interface ConsultantLive {
   project_scale?: string | null;
   work_modes?: string[];
   working_week?: string | null;
+  /** Functional / technical / basis ... (codes from the profile). */
+  sap_roles?: string[];
+  total_sap_years?: number | null;
+  technologies?: string[];
+  timezone?: string | null;
+  /** Weekly slots as stored (consultant's local time). */
+  slots?: WeeklySlot[];
+  /** Names of the consultant's certificates (no documents). */
+  certifications?: string[];
+  /** Profile photo (public avatar), when set. */
+  avatar_url?: string | null;
 }
 
 /** The columns of `consultants` that the directory reads. */
@@ -92,6 +103,7 @@ export interface DirectoryRow {
   total_sap_years?: number | null;
   sap_technologies?: string[] | null;
   language_levels?: unknown;
+  timezone?: string | null;
 }
 
 /** True when the consultant passes a single-choice filter: no choice ('' or 'all') passes everyone; otherwise the label must be in the list. */
@@ -208,6 +220,10 @@ export function toConsultantLive(row: DirectoryRow, displayName: string | null |
     project_scale: row.project_scale || null,
     work_modes: row.work_modes || [],
     working_week: row.working_week || null,
+    sap_roles: row.sap_roles || [],
+    total_sap_years: row.total_sap_years ?? null,
+    technologies: row.sap_technologies || [],
+    timezone: row.timezone ?? null,
   };
 }
 

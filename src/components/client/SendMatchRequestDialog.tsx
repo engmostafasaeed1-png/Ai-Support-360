@@ -1,5 +1,7 @@
 import MatchScoreBreakdown, { type MatchCriterion } from '@/components/client/MatchScoreBreakdown';
-import { useState } from 'react';
+import MatchWhyChips from '@/components/match/MatchWhyChips';
+import type { Chip } from '../../../supabase/functions/_shared/ticketMatch';
+import { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +35,7 @@ interface AIRecommendation {
   consultant_id: string;
   match_score: number;
   score_breakdown?: MatchCriterion[];
+  why?: Chip[];
   match_reason: string;
   strengths: string[];
   context_fit_score?: number | null;
@@ -76,7 +79,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
         .select(`id, user_id, hourly_rate, currency, rating, total_reviews, ai_skills_score, availability_status, languages, response_time_minutes,
           consultant_skills (sap_module, proficiency_level, years_experience)`)
         .eq('verification_status', 'verified')
-        .limit(50);
+        .limit(200);
 
       if (availabilityFilter !== 'all') {
         query = query.eq('availability_status', availabilityFilter);
@@ -135,7 +138,12 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
         });
     },
   });
-  const consultants = allConsultants ? withoutHidden(allConsultants, hiddenIds) : allConsultants;
+  const visibleConsultants = allConsultants ? withoutHidden(allConsultants, hiddenIds) : allConsultants;
+  // With match results, the best matches come first, in match order; the others keep the browse order.
+  const matchRank = new Map((aiRecommendations ?? []).map((r, i) => [r.consultant_id, i]));
+  const consultants = visibleConsultants && matchRank.size > 0
+    ? [...visibleConsultants].sort((a: any, b: any) => (matchRank.get(a.id) ?? 999) - (matchRank.get(b.id) ?? 999))
+    : visibleConsultants;
 
   const handleAiRecommend = async () => {
     setAiLoading(true);
@@ -155,17 +163,27 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
       const recs = data?.result?.recommendations || [];
       setAiRecommendations(recs);
       if (recs.length === 0) {
-        toast.info('No AI recommendations available');
+        toast.info('No matching consultants found for this request');
       } else {
-        toast.success(`AI recommended ${recs.length} consultants`);
+        toast.success(`Found ${recs.length} best matches`);
       }
     } catch (err) {
       console.error(err);
-      toast.error('Failed to get AI recommendations');
+      toast.error('Could not load matches. Please try again.');
     } finally {
       setAiLoading(false);
     }
   };
+
+  // The client edited the request (title, description, areas, urgency, language): recompute the matches that are shown.
+  const matchInputs = JSON.stringify([ticketTitle, ticketDescription, sapModule, ticketUrgency, preferredLanguage]);
+  const lastInputs = useRef(matchInputs);
+  useEffect(() => {
+    if (lastInputs.current === matchInputs) return;
+    lastInputs.current = matchInputs;
+    if (open && aiRecommendations && !aiLoading) void handleAiRecommend();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchInputs]);
 
   const getAiRec = (consultantId: string) => aiRecommendations?.find(r => r.consultant_id === consultantId);
 
@@ -288,7 +306,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
               disabled={aiLoading}
             >
               {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-              AI Recommend
+              {aiRecommendations ? 'Re-run matching' : 'Find best matches'}
             </Button>
           </div>
 
@@ -368,7 +386,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
             <div className="bg-accent/5 border border-accent/20 rounded-lg px-3 py-2 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-accent shrink-0" />
               <p className="text-xs text-accent">
-                AI ranked <strong>{aiRecommendations.length}</strong> best matches for this ticket. Recommended consultants are highlighted.
+                Ranked <strong>{aiRecommendations.length}</strong> best matches for this ticket. They are listed first with the reasons for each match.
               </p>
               <Button variant="ghost" size="sm" className="ms-auto text-xs h-6 px-2" onClick={() => setAiRecommendations(null)}>Clear</Button>
             </div>
@@ -438,6 +456,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
                               {c.modules.length > 4 && <Badge variant="secondary" className="text-[9px]">+{c.modules.length - 4}</Badge>}
                             </div>
                           )}
+                          {rec && <MatchWhyChips why={rec.why} />}
                           {rec && <MatchScoreBreakdown breakdown={rec.score_breakdown} />}
                           {rec && (
                             <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2 italic">

@@ -34,7 +34,7 @@ export function useRealtimeConsultants() {
       // The consultants that the signed-in person may see (verified ones; an administrator sees all)
       const { data: consultantRows, error } = await supabase
         .from('consultants')
-        .select('id, user_id, hourly_rate, industries, languages, verification_status, rating, total_reviews, response_time_minutes, availability_status, city, country, latitude, longitude, linkedin_checked_at, credly_checked_at, credibility_credits, ai_interview_badge, show_availability, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, working_week, sap_roles, seniority_level, total_sap_years, sap_technologies, language_levels')
+        .select('id, user_id, hourly_rate, industries, languages, verification_status, rating, total_reviews, response_time_minutes, availability_status, city, country, latitude, longitude, linkedin_checked_at, credly_checked_at, credibility_credits, ai_interview_badge, show_availability, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, working_week, sap_roles, seniority_level, total_sap_years, sap_technologies, language_levels, timezone')
         .order('rating', { ascending: false });
 
       if (error) throw error;
@@ -65,6 +65,16 @@ export function useRealtimeConsultants() {
         skillsMap.set(s.consultant_id, existing);
       });
 
+      // Certificate names only (for the certification filter); when they can not be read the filter simply finds nobody.
+      const certMap = new Map<string, string[]>();
+      try {
+        const { data: certRows, error: certError } = await supabase
+          .from('certifications')
+          .select('consultant_id, name')
+          .in('consultant_id', consultantIds);
+        if (!certError) (certRows || []).forEach((r: any) => certMap.set(r.consultant_id, [...(certMap.get(r.consultant_id) || []), r.name]));
+      } catch { /* optional */ }
+
       const { data: slotRows } = await supabase
         .from('availability_slots')
         .select('consultant_id, day_of_week, start_time, end_time')
@@ -79,9 +89,12 @@ export function useRealtimeConsultants() {
       // The place, the availability and the links come from the database as they are: nothing is invented here.
       // A consultant who switched "Show availability status" off appears as Offline, without weekly hours.
       return consultantRows.map(c => {
-        const live = toConsultantLive(c, profileMap.get(c.user_id)?.display_name, skillsMap.get(c.id) || []);
-        if (c.show_availability === false) return { ...live, status: 'offline' as const, available: false, hours: [] as string[] };
-        return { ...live, hours: formatWeeklyHours(hoursMap.get(c.id) || []) };
+        const base = toConsultantLive(c as any, profileMap.get(c.user_id)?.display_name, skillsMap.get(c.id) || []);
+        const avatar = profileMap.get(c.user_id)?.avatar_url;
+        const live = { ...base, certifications: certMap.get(c.id) || [], avatar_url: typeof avatar === 'string' && /^https:\/\//.test(avatar) ? avatar : null };
+        if (c.show_availability === false) return { ...live, status: 'offline' as const, available: false, hours: [] as string[], slots: [] };
+        const slots = hoursMap.get(c.id) || [];
+        return { ...live, hours: formatWeeklyHours(slots), slots };
       });
     },
     enabled: !isGuest,

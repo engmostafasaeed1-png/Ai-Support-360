@@ -14,6 +14,8 @@ import { useGuestMode } from '@/contexts/GuestModeContext';
 import { Send, Brain, Star, Sparkles, Shield, Clock, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import ContextFitBadges from '@/components/client/ContextFitBadges';
+import MatchWhyChips from '@/components/match/MatchWhyChips';
+import MatchScoreBreakdown from '@/components/client/MatchScoreBreakdown';
 
 interface Props {
   open: boolean;
@@ -69,6 +71,8 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
       const { data, error } = await supabase.functions.invoke('ai-ticket', {
         body: {
           action: 'match_consultants',
+          // The ticket id lets the service read the full request (areas, context, notes) instead of the title only.
+          ticket_id: ticketId,
           title: ticketTitle,
           description: ticketDescription || ticketTitle,
           sap_module: sapModule,
@@ -153,11 +157,11 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            AI-Powered Match Suggestions
+            Match Suggestions
           </DialogTitle>
           <DialogDescription>
             Intelligent matching for "<span className="font-medium">{ticketTitle}</span>" ({sapModule}).
-            Consultants ranked by skill match, experience, reliability, and availability.
+            Consultants ranked by module fit, details in the request, experience, context and trust signals.
           </DialogDescription>
         </DialogHeader>
 
@@ -173,7 +177,7 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
             [1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)
           ) : aiError ? (
             <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-center space-y-2">
-              <p className="text-sm font-medium text-destructive">The AI match suggestions could not be loaded.</p>
+              <p className="text-sm font-medium text-destructive">The match suggestions could not be loaded.</p>
               <p className="text-xs text-muted-foreground">Nothing was sent to any consultant. Please try again in a moment.</p>
               <Button type="button" size="sm" variant="outline" onClick={() => refetchAi()}>Try again</Button>
             </div>
@@ -214,6 +218,7 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
                         <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {c.response_time_minutes}m</span>
                         <span>${c.hourly_rate}/hr</span>
                       </div>
+                      <MatchWhyChips why={c.why} coverage={c.coverage} showCoverage />
                     </div>
                     <div className="text-right shrink-0">
                       <p className={`text-lg font-bold ${getScoreColor(c.match_score)}`}>{c.match_score}</p>
@@ -230,10 +235,11 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
                   {/* Expanded details */}
                   {isExpanded && (
                     <div className="px-4 pb-4 pt-1 border-t border-border/30 space-y-3">
-                      <p className="text-xs text-muted-foreground">{c.match_reason}</p>
+                      {c.match_reason && <p className="text-xs text-muted-foreground">{c.match_reason}</p>}
                       <ContextFitBadges fit={c} />
 
                       {/* Score breakdown */}
+                      {c.score_breakdown?.length ? <MatchScoreBreakdown breakdown={c.score_breakdown} /> : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {[
                           { label: 'Skill Match', value: c.skill_match_score },
@@ -251,6 +257,7 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
                           </div>
                         ))}
                       </div>
+                      )}
 
                       {/* Strengths & concerns */}
                       <div className="flex flex-wrap gap-1.5">

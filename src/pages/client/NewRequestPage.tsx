@@ -1,4 +1,7 @@
 import MatchScoreBreakdown, { type MatchCriterion } from '@/components/client/MatchScoreBreakdown';
+import MatchWhyChips from '@/components/match/MatchWhyChips';
+import MatchClarifyingQuestions from '@/components/match/MatchClarifyingQuestions';
+import type { Chip, ClarifyKey } from '../../../supabase/functions/_shared/ticketMatch';
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
 import { useTranslation } from 'react-i18next';
@@ -85,6 +88,8 @@ interface ConsultantRecommendation {
   consultant_id: string;
   match_score: number;
   score_breakdown?: MatchCriterion[];
+  why?: Chip[];
+  coverage?: number;
   match_reason: string;
   strengths: string[];
   skill_match_score?: number;
@@ -218,6 +223,16 @@ export default function NewRequestPage() {
   });
   const { consultants: allConsultants, isLoading: consultantsLoading } = useRealtimeConsultants();
 
+  // "Invite" from the consultant directory or its map: that consultant is pre-selected as an expert to ask.
+  const inviteId = useRef(searchParams.get('invite'));
+  useEffect(() => {
+    const id = inviteId.current;
+    if (!id || consultantsLoading) return;
+    inviteId.current = null;
+    const c = allConsultants.find(x => x.id === id);
+    if (c) setPicked(prev => (prev.some(p => p.id === c.id) || prev.length >= MAX_INVITED_EXPERTS ? prev : [...prev, { id: c.id, name: c.name, subtitle: `${c.specialty} · $${c.rate}/hr`, source: 'manual' }]));
+  }, [allConsultants, consultantsLoading]);
+
   // Auto-fill from chatbot query params
   useEffect(() => {
     const module = searchParams.get('module');
@@ -250,6 +265,9 @@ export default function NewRequestPage() {
   const [aiMatch, setAiMatch] = useState<AiMatch | null>(null);
   const [aiRecommendations, setAiRecommendations] = useState<AiMatchConsultants | null>(null);
   const [aiLoading, setAiLoading] = useState<string | null>(null);
+  // Set after the client answers the clarifying questions; matching runs again with the improved description.
+  const [matchRerunPending, setMatchRerunPending] = useState(false);
+  const [skipQuestions, setSkipQuestions] = useState(false);
 
   const steps = [
     t('ticket_create.step_module'),
@@ -355,6 +373,7 @@ export default function NewRequestPage() {
           area_details: form.area_details,
           urgency: form.urgency,
           preferred_language: form.preferred_language,
+          sap_notes_tried: form.sap_notes_tried.length ? form.sap_notes_tried : undefined,
           model: selectedModel,
         }, ticketContext),
       });
@@ -367,7 +386,13 @@ export default function NewRequestPage() {
     } finally {
       setAiLoading(null);
     }
-  }, [form.title, form.description, form.sap_module, form.sap_modules, form.sap_module_other, form.area_details, form.urgency, form.preferred_language, selectedModel, ticketContext]);
+  }, [form.title, form.description, form.sap_module, form.sap_modules, form.sap_module_other, form.area_details, form.urgency, form.preferred_language, form.sap_notes_tried, selectedModel, ticketContext]);
+
+  useEffect(() => {
+    if (!matchRerunPending) return;
+    setMatchRerunPending(false);
+    runAiMatchConsultants();
+  }, [matchRerunPending, runAiMatchConsultants]);
 
   const validateStep = (currentStep: number): boolean => {
     const result = ticketSchema.safeParse(form);
@@ -1195,8 +1220,19 @@ export default function NewRequestPage() {
                   </div>
                 ) : aiRecommendations && aiRecommendations.recommendations.length > 0 ? (
                   <div className="space-y-3">
+                    {(aiRecommendations as any).questions?.length > 0 && !skipQuestions && (
+                      <MatchClarifyingQuestions
+                        questions={(aiRecommendations as any).questions as ClarifyKey[]}
+                        onSkip={skipQuestions ? undefined : () => setSkipQuestions(true)}
+                        onSubmit={(answers) => {
+                          const extra = [answers.module && `SAP module: ${answers.module}`, answers.error && `Error / transaction: ${answers.error}`, answers.country && `Country: ${answers.country}`].filter(Boolean).join('\n');
+                          if (extra) setForm(prev => ({ ...prev, description: `${prev.description.trim()}\n\n${extra}`.slice(0, 8000) }));
+                          setMatchRerunPending(true);
+                        }}
+                      />
+                    )}
                     <p className="text-xs text-muted-foreground mb-3">{aiRecommendations.overall_rationale}</p>
-                    {aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
+                    {(((aiRecommendations as any).questions?.length ?? 0) === 0 || skipQuestions) && aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
                       <RecommendationCard
                         key={rec.consultant_id}
                         rec={rec}
@@ -1403,6 +1439,8 @@ function RecommendationCard({ rec, rank, navigate, picked, pickDisabled, onToggl
 
           {/* Match reason */}
           <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{rec.match_reason}</p>
+
+          <MatchWhyChips why={rec.why} />
 
           <ContextFitBadges fit={rec} />
 

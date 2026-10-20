@@ -1,4 +1,5 @@
 import FoundingSettings from '@/components/admin/FoundingSettings';
+import MatchWeightsCard from '@/components/admin/MatchWeightsCard';
 import ProfileRemindersCard from '@/components/admin/ProfileRemindersCard';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -188,6 +189,8 @@ export default function AdminSettingsPage() {
       <FoundingSettings />
 
       <ProfileRemindersCard />
+
+      <MatchWeightsCard />
 
       <CriticalServiceSettingsCard />
 
