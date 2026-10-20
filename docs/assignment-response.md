@@ -83,3 +83,12 @@ Answered share of requests under this policy, counted only from 3 requests on. U
 | (Terms page, English only) | Assignment Requests section |
 
 The policy sentence itself, the reminder and "No response" notification texts and both e-mails already ship in Arabic (built from the timings), so they need no translation.
+
+## Addition: decision preview, Request more information, decline reasons
+
+Status: screens, e-mails and the reminder function are ready and deployed; `docs/sql/assignment-info-requests.sql` is **not applied**. Until it is, every screen keeps plain Accept / Decline (the app asks `assignment_info_ready`).
+
+- **Open ticket description**: title, description (contact details and client names masked), SAP area/module/details, urgency, industry, country, hours/budget/rate, deadlines, attachment names + type + size only. Files, credentials, remote access, links and contact details stay behind NDA + rate + engagement. Opening it stores `viewed_at`; the client sees "Viewed by <name>". Not an answer, the clock keeps running.
+- **Request more information**: up to 3 topics + 500 characters, contact filter, max 3 per request, one open at a time. The clock pauses, the request counts as responded at that moment (Feature L rate, Feature M first response). The client answers on the ticket (text + optional file through the normal upload); the clock resumes with the time left, at least 2 hours. No answer within `info_wait` (default 24 h, admin field) returns it to the client as "Waiting for your answer"; never counted against the consultant.
+- **Decline reasons** (optional): stored privately for administrators; the ticket owner only sees anonymous "next best" tips.
+- Arabic strings: `assignment_info.*` in the locale files (complete); e-mails are bilingual.

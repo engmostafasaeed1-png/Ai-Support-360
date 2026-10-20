@@ -67,4 +67,5 @@
 - [x] Feature M SQL applied (Oct 20); client display switched on. Team panel chip waits for Feature I phase 2.
 - [x] Feature N: versioned Consultant Service Policy (draft EN/AR), public printable /consultant-policy, final profile step, pop-up/banner/e-mails, grace restrictions, admin page, SQL + checks, tests, Arabic strings (Oct 20)
 - [ ] Feature N SQL: owner has the draft text reviewed, applies docs/sql/consultant-policy.sql, optionally runs docs/sql/consultant-policy.test.sql
-- [ ] Feature L addition: decision preview (viewed_at, locked data), Request more information (pause/resume, limits, counts as response), decline reasons; popup, e-mails, notifications, Requests page, client card, admin, policy text, tests, Arabic (Oct 20)
+- [x] Feature L addition: decision preview (viewed_at, locked data), Request more information (pause/resume, limits, counts as response), decline reasons; popup, e-mails, notifications, Requests page, client card, admin, policy text, tests, Arabic (Oct 21)
+- [ ] Feature L addition SQL: owner applies docs/sql/assignment-info-requests.sql (optionally runs docs/sql/assignment-info-requests.test.sql); until then the screens keep plain Accept / Decline
