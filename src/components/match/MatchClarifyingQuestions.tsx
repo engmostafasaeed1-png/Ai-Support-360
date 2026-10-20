@@ -10,7 +10,7 @@ import { QUESTION_LABELS } from '@/lib/matchLabels';
 type Answers = Partial<Record<ClarifyKey, string>>;
 
 /** Shown when the request is too vague to match well: 2-3 short questions; the answers improve the request and matching runs again. */
-export default function MatchClarifyingQuestions({ questions, onSubmit }: { questions: ClarifyKey[]; onSubmit: (answers: Answers) => void }) {
+export default function MatchClarifyingQuestions({ questions, onSubmit, onSkip }: { questions: ClarifyKey[]; onSubmit: (answers: Answers) => void; onSkip?: () => void }) {
   const { i18n } = useTranslation();
   const ar = i18n.language.startsWith('ar');
   const id = useId();
@@ -48,7 +48,10 @@ export default function MatchClarifyingQuestions({ questions, onSubmit }: { ques
           />
         </div>
       ))}
-      <Button type="submit" size="sm" disabled={!filled}>{ar ? 'تحديث الترشيحات' : 'Update matches'}</Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" size="sm" disabled={!filled}>{ar ? 'تحديث الترشيحات' : 'Update matches'}</Button>
+        {onSkip && <Button type="button" size="sm" variant="ghost" onClick={onSkip}>{ar ? 'عرض الترشيحات على أي حال' : 'Show matches anyway'}</Button>}
+      </div>
     </form>
   );
 }

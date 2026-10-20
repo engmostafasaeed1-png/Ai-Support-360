@@ -257,6 +257,7 @@ export default function NewRequestPage() {
   const [aiLoading, setAiLoading] = useState<string | null>(null);
   // Set after the client answers the clarifying questions; matching runs again with the improved description.
   const [matchRerunPending, setMatchRerunPending] = useState(false);
+  const [skipQuestions, setSkipQuestions] = useState(false);
 
   const steps = [
     t('ticket_create.step_module'),
@@ -1209,9 +1210,10 @@ export default function NewRequestPage() {
                   </div>
                 ) : aiRecommendations && aiRecommendations.recommendations.length > 0 ? (
                   <div className="space-y-3">
-                    {(aiRecommendations as any).questions?.length > 0 && (
+                    {(aiRecommendations as any).questions?.length > 0 && !skipQuestions && (
                       <MatchClarifyingQuestions
                         questions={(aiRecommendations as any).questions as ClarifyKey[]}
+                        onSkip={skipQuestions ? undefined : () => setSkipQuestions(true)}
                         onSubmit={(answers) => {
                           const extra = [answers.module && `SAP module: ${answers.module}`, answers.error && `Error / transaction: ${answers.error}`, answers.country && `Country: ${answers.country}`].filter(Boolean).join('\n');
                           if (extra) setForm(prev => ({ ...prev, description: `${prev.description.trim()}\n\n${extra}`.slice(0, 8000) }));
@@ -1220,7 +1222,7 @@ export default function NewRequestPage() {
                       />
                     )}
                     <p className="text-xs text-muted-foreground mb-3">{aiRecommendations.overall_rationale}</p>
-                    {aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
+                    {(((aiRecommendations as any).questions?.length ?? 0) === 0 || skipQuestions) && aiRecommendations.recommendations.slice(0, 5).map((rec, i) => (
                       <RecommendationCard
                         key={rec.consultant_id}
                         rec={rec}
