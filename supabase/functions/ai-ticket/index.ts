@@ -541,6 +541,7 @@ serve(async (req) => {
           project_types: c.project_types, deployment_experience: c.deployment_experience, work_modes: c.work_modes,
           timezone: c.timezone, hourly_rate: Number(c.hourly_rate) || 0, ai_interview_badge: c.ai_interview_badge,
           rating: Number(c.rating) || 0, total_reviews: c.total_reviews, response_time_minutes: c.response_time_minutes,
+          assignment_response_rate: answeredRate.get(c.id) ?? null,
           completion_percent: profileCompleteness({ ...c, skills_count: e.skills.length, interview_done: interviewDoneFrom(c), language_levels: c.language_levels && typeof c.language_levels === "object" ? c.language_levels : null }, { includePayout: false, interviewWeight }).percent,
           resolved_in_areas: e.resolved_tickets_in_these_areas, solved_similar: e.solved_similar_issues,
           founding: foundingSet.has(c.id),
