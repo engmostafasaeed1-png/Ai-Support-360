@@ -7,7 +7,7 @@ import { policyText } from '../../../supabase/functions/_shared/assignmentPolicy
 export function useAssignmentPolicyText(): string {
   const { i18n } = useTranslation();
   const policy = useAssignmentPolicy();
-  return policyText(policy, i18n.language?.startsWith('ar') ? 'ar' : 'en');
+  return policyText(policy, i18n?.language?.startsWith('ar') ? 'ar' : 'en');
 }
 
 export default function AssignmentPolicyNote({ className = '' }: { className?: string }) {

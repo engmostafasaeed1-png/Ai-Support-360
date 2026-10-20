@@ -45,7 +45,7 @@ type Row = {
 
 export default function TicketMatchRequests({ ticketId, clientId, ticketClosed = false, onInviteAnother, onOpenBids }: Props) {
   const { t, i18n } = useTranslation();
-  const lang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
+  const lang = i18n?.language?.startsWith('ar') ? 'ar' : 'en';
   const queryClient = useQueryClient();
   const policy = useAssignmentPolicy();
   const [busyId, setBusyId] = useState<string | null>(null);

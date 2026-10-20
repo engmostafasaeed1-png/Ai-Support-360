@@ -67,7 +67,7 @@ const fromDraft = (d: Draft): PolicyMinutes => {
 /** Admin switch, timings and statistics of the assignment response policy (Feature L). */
 export default function AssignmentRemindersCard() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
+  const lang = i18n?.language?.startsWith('ar') ? 'ar' : 'en';
   const queryClient = useQueryClient();
   const { settings, loading, updateSetting } = useAdminSettings();
   const policy = useAssignmentPolicy();
