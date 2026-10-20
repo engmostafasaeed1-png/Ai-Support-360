@@ -1,140 +1,183 @@
-import { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Check, X, AlertTriangle, Briefcase } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useRespondToMatch } from '@/hooks/useMatchRequests';
 import { useGuestMode } from '@/contexts/GuestModeContext';
-import { toast } from 'sonner';
+import { useSessionReady } from '@/hooks/useSessionReady';
+import { useAssignmentPolicy } from '@/hooks/useAssignmentPolicy';
 import { toastWithLocationFix } from '@/lib/locationErrors';
+import { readAcks, sessionIdOf, writeAck } from '@/lib/assignmentPopupAcks';
 import { LocationBlockedNotice, useLocationBlocked } from '@/components/consultant/LocationBanner';
+import AssignmentRequestDialog, { type AssignmentPopupItem } from '@/components/consultant/AssignmentRequestDialog';
+import { nextPopup, popupKey, type PopupRequest } from '../../../supabase/functions/_shared/assignmentPolicy';
 
-interface MatchPopupData {
-  id: string;
-  ticket_title: string;
-  sap_module: string;
-  urgency: string;
-  message?: string;
+type PendingRequest = PopupRequest & AssignmentPopupItem & { ticket_id: string; client_id: string | null };
+
+const QUERY_KEY = ['assignment-popup-requests'];
+
+/** Pending assignment requests of the signed-in consultant, with the ticket facts the popup may show (no client contact data). */
+async function loadPending(): Promise<PendingRequest[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data: c } = await supabase.from('consultants').select('id').eq('user_id', user.id).maybeSingle();
+  if (!c) return [];
+  // '*' keeps working before and after docs/sql/assignment-response.sql adds the deadline columns.
+  const { data: rows, error } = await supabase.from('ticket_match_requests').select('*').eq('consultant_id', c.id).eq('status', 'pending');
+  if (error) throw error;
+  const list = (rows ?? []) as Array<Record<string, any>>;
+  if (list.length === 0) return [];
+  const ticketIds = [...new Set(list.map((r) => r.ticket_id as string))];
+  const [{ data: tickets }, { data: rates }] = await Promise.all([
+    supabase.from('tickets').select('id, title, sap_module, sap_modules, urgency, client_id, critical_response').in('id', ticketIds),
+    supabase.from('ticket_rates').select('ticket_id, hourly_rate, currency, status, created_at').eq('consultant_id', c.id).in('ticket_id', ticketIds),
+  ]);
+  const tMap = new Map((tickets ?? []).map((t: any) => [t.id, t]));
+  const rMap = new Map<string, any>();
+  [...(rates ?? [])].sort((a: any, b: any) => String(b.created_at).localeCompare(String(a.created_at)))
+    .forEach((r: any) => { if (r.status !== 'rejected' && !rMap.has(r.ticket_id)) rMap.set(r.ticket_id, r); });
+  return list.map((r) => {
+    const t: any = tMap.get(r.ticket_id) ?? {};
+    const rate = rMap.get(r.ticket_id);
+    const areas: string[] = Array.isArray(t.sap_modules) ? t.sap_modules : [];
+    return {
+      id: r.id,
+      status: r.status,
+      created_at: r.created_at,
+      response_due_at: r.response_due_at ?? null,
+      reminders_sent: r.reminders_sent ?? 0,
+      extended_at: r.extended_at ?? null,
+      ticket_id: r.ticket_id,
+      client_id: t.client_id ?? null,
+      ticket_title: t.title || 'New request',
+      sap_area: t.sap_module || areas.join(', ') || 'SAP',
+      urgency: t.urgency || 'medium',
+      critical: r.is_critical === true || t.urgency === 'critical' || t.critical_response === true,
+      bid: r.response_kind === 'bid' || String(r.message ?? '').startsWith('Private bid invitation'),
+      proposed_rate: rate ? Number(rate.hourly_rate) || null : null,
+      currency: rate?.currency ?? null,
+    };
+  });
 }
 
-const urgencyColors: Record<string, string> = {
-  low: 'bg-muted text-muted-foreground',
-  medium: 'bg-yellow-100 text-yellow-700',
-  high: 'bg-orange-100 text-orange-700',
-  critical: 'bg-red-100 text-red-700',
-};
-
+/**
+ * Feature L popup: shown on every consultant portal page for each pending assignment request, one at a time, until it is
+ * answered or acknowledged ("Remind me later"); it returns after every reminder, after an extension and at the next sign-in.
+ * Accepting keeps the existing NDA step (consultants without a signed NDA for the client finish on the Requests page).
+ */
 export default function MatchRequestPopup() {
-  const [popup, setPopup] = useState<MatchPopupData | null>(null);
-  const respond = useRespondToMatch();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { isGuest } = useGuestMode();
+  const { signedIn } = useSessionReady();
+  const policy = useAssignmentPolicy();
+  const respond = useRespondToMatch();
+  const locationBlocked = useLocationBlocked();
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [acked, setAcked] = useState<Set<string>>(new Set());
+  const [now, setNow] = useState(() => Date.now());
+  const [checkingNda, setCheckingNda] = useState(false);
 
   useEffect(() => {
-    if (isGuest) return;
+    let alive = true;
+    supabase.auth.getSession().then(({ data }) => { if (alive) setSessionId(sessionIdOf(data.session)); });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSessionId(sessionIdOf(s)));
+    return () => { alive = false; sub.subscription.unsubscribe(); };
+  }, []);
+  useEffect(() => { setAcked(readAcks(sessionId)); }, [sessionId]);
 
-    let consultantId: string | null = null;
+  const enabled = signedIn && !isGuest;
+  const { data: pending = [] } = useQuery({ queryKey: QUERY_KEY, queryFn: loadPending, enabled, refetchInterval: 60_000, retry: false });
 
-    const setup = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: c } = await supabase.from('consultants').select('id').eq('user_id', user.id).maybeSingle();
-      if (!c) return;
-      consultantId = c.id;
+  useEffect(() => {
+    if (!enabled) return;
+    const channel = supabase
+      .channel('assignment-popup')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ticket_match_requests' }, () => {
+        queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [enabled, queryClient]);
 
-      const channel = supabase
-        .channel('match-popup')
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'ticket_match_requests',
-          filter: `consultant_id=eq.${consultantId}`,
-        }, async (payload) => {
-          const row = payload.new as any;
-          // Fetch ticket details
-          const { data: ticket } = await supabase.from('tickets').select('title, sap_module, urgency').eq('id', row.ticket_id).maybeSingle();
-          setPopup({
-            id: row.id,
-            ticket_title: ticket?.title || 'New Ticket',
-            sap_module: ticket?.sap_module || '',
-            urgency: ticket?.urgency || 'medium',
-            message: row.message,
-          });
-        })
-        .subscribe();
+  const current = useMemo(() => nextPopup(pending, acked), [pending, acked]);
+  const waiting = useMemo(() => pending.filter((r) => r.id !== current?.id && !acked.has(popupKey(r))).length, [pending, acked, current]);
 
-      return () => { channel.unsubscribe(); };
-    };
+  useEffect(() => {
+    if (!current) return;
+    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    setNow(Date.now());
+    return () => window.clearInterval(id);
+  }, [current]);
 
-    const cleanup = setup();
-    return () => { cleanup.then(fn => fn?.()); };
-  }, [isGuest]);
+  const acknowledge = useCallback(() => {
+    if (current) setAcked(writeAck(sessionId, popupKey(current)));
+  }, [current, sessionId]);
 
-  const locationBlocked = useLocationBlocked();
-  const handleRespond = (status: 'accepted' | 'rejected') => {
-    if (!popup) return;
-    respond.mutate({ requestId: popup.id, status }, {
+  const done = () => {
+    queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: ['consultant-match-requests'] });
+  };
+
+  const answer = (status: 'accepted' | 'rejected') => {
+    if (!current) return;
+    respond.mutate({ requestId: current.id, status }, {
       onSuccess: () => {
-        toast.success(status === 'accepted' ? 'Match accepted!' : 'Match declined.');
-        setPopup(null);
+        toast.success(status === 'accepted' ? t('assignment_policy.accepted', 'Request accepted.') : t('assignment_policy.declined', 'Request declined.'));
+        acknowledge();
+        done();
       },
-      onError: (e) => toastWithLocationFix(e, 'Failed to respond.', { useMessage: false }),
+      onError: (e) => toastWithLocationFix(e, t('assignment_policy.answer_failed', 'Your answer could not be saved. Please try again.'), { useMessage: false }),
     });
   };
 
+  const accept = async () => {
+    if (!current) return;
+    // Same NDA gate as the Requests page: without a signed NDA for this client the answer is finished there.
+    setCheckingNda(true);
+    let hasNda = false;
+    try {
+      const { data: c } = await supabase.from('consultants').select('id').eq('user_id', (await supabase.auth.getUser()).data.user?.id ?? '').maybeSingle();
+      if (c && current.client_id) {
+        const { data } = await supabase.from('nda_agreements').select('id').eq('consultant_id', c.id).eq('client_id', current.client_id).is('revoked_at', null).limit(1);
+        hasNda = (data ?? []).length > 0;
+      }
+    } finally {
+      setCheckingNda(false);
+    }
+    if (hasNda) {
+      answer('accepted');
+      return;
+    }
+    acknowledge();
+    navigate(`/consultant/requests?accept=${current.id}`);
+  };
+
+  const view = () => {
+    if (!current) return;
+    acknowledge();
+    navigate(`/consultant/requests?request=${current.id}`);
+  };
+
+  if (!enabled) return null;
+
   return (
-    <Dialog open={!!popup} onOpenChange={(open) => !open && setPopup(null)}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center">
-              <Briefcase className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <DialogTitle className="text-lg">New Match Request</DialogTitle>
-          </div>
-          <DialogDescription>
-            You've been matched to a support ticket. Review the details and respond.
-          </DialogDescription>
-        </DialogHeader>
-
-        {popup && (
-          <div className="space-y-3 py-2">
-            <div>
-              <p className="font-semibold text-foreground">{popup.ticket_title}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="text-[10px]">{popup.sap_module}</Badge>
-                <Badge variant="secondary" className={`text-[10px] ${urgencyColors[popup.urgency]}`}>
-                  {popup.urgency}
-                </Badge>
-              </div>
-            </div>
-            {popup.message && (
-              <div className="bg-muted/50 rounded-lg p-3">
-                <p className="text-xs text-muted-foreground italic">"{popup.message}"</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        <LocationBlockedNotice />
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button
-            variant="outline"
-            className="text-destructive hover:bg-destructive/10"
-            onClick={() => handleRespond('rejected')}
-            disabled={respond.isPending}
-          >
-            <X className="w-4 h-4 me-1" /> Decline
-          </Button>
-          <Button
-            className="gradient-primary border-0"
-            onClick={() => handleRespond('accepted')}
-            disabled={respond.isPending || locationBlocked}
-          >
-            <Check className="w-4 h-4 me-1" /> Accept Match
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <AssignmentRequestDialog
+      item={current}
+      policy={policy}
+      now={now}
+      waitingCount={waiting}
+      busy={respond.isPending || checkingNda}
+      acceptDisabled={locationBlocked}
+      onAccept={() => void accept()}
+      onDecline={() => answer('rejected')}
+      onView={view}
+      onLater={acknowledge}
+    >
+      <LocationBlockedNotice />
+    </AssignmentRequestDialog>
   );
 }

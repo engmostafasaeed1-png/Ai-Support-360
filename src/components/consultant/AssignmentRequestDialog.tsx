@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BellRing, Check, Eye, X, Zap } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -31,7 +32,7 @@ interface Props {
   onView: () => void;
   /** Close without answering (also Escape and the close button): the popup returns after the next reminder or sign-in. */
   onLater: () => void;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 /** The "New assignment request" popup. Presentational: data, acknowledgement and answers live in MatchRequestPopup. */
