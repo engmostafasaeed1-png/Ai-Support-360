@@ -65,6 +65,20 @@ Answered share of requests under this policy, counted only from 3 requests on. U
 | admin.assignment_lowest | Lowest response rates (administrators only) |
 | admin.assignment_consultant | Consultant |
 | admin.assignment_missed | {{count}} without reply |
+| assignment_policy.popup_reminder_title | Reminder: assignment request waiting |
+| assignment_policy.popup_title | New assignment request |
+| assignment_policy.area | SAP area |
+| assignment_policy.urgency | Urgency |
+| assignment_policy.critical | Critical |
+| assignment_policy.bid_invite | Bid invitation |
+| assignment_policy.proposed_rate | Proposed rate |
+| assignment_policy.hour | hour |
+| assignment_policy.reply_by | Reply by |
+| assignment_policy.more_waiting | {{count}} more request(s) waiting after this one. |
+| assignment_policy.decline | Decline |
+| assignment_policy.view | View details |
+| assignment_policy.accept | Accept |
+| assignment_policy.later | Remind me later |
 | assignment_policy.accepted | Request accepted. |
 | assignment_policy.declined | Request declined. |
 | assignment_policy.answer_failed | Your answer could not be saved. Please try again. |
