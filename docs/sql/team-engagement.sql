@@ -32,12 +32,12 @@
 -- 1. Settings (admin-editable row; defaults also live in team_settings()).
 -- -----------------------------------------------------------------------------
 INSERT INTO public.platform_settings (key, value)
-VALUES ('team_engagement', '{"enabled":true,"response_hours":24,"critical_response_minutes":30,"removal_notice_hours":48,"nudge_hours":24,"reinvite_after_decline_days":7}'::jsonb)
+VALUES ('team_engagement', '{"enabled":true,"response_hours":24,"critical_response_minutes":30,"removal_notice_hours":48,"nudge_hours":24,"reinvite_after_decline_days":7,"max_team_size":5,"team_request_max_pending":3,"team_request_cooldown_hours":24,"team_request_redecline_days":7,"team_chat_per_minute":20}'::jsonb)
 ON CONFLICT (key) DO NOTHING;
 
 CREATE OR REPLACE FUNCTION public.team_settings()
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT '{"enabled":true,"response_hours":24,"critical_response_minutes":30,"removal_notice_hours":48,"nudge_hours":24,"reinvite_after_decline_days":7}'::jsonb
+  SELECT '{"enabled":true,"response_hours":24,"critical_response_minutes":30,"removal_notice_hours":48,"nudge_hours":24,"reinvite_after_decline_days":7,"max_team_size":5,"team_request_max_pending":3,"team_request_cooldown_hours":24,"team_request_redecline_days":7,"team_chat_per_minute":20}'::jsonb
       || COALESCE((SELECT CASE WHEN jsonb_typeof(s.value) = 'object' THEN s.value END
                      FROM public.platform_settings s WHERE s.key = 'team_engagement'), '{}'::jsonb)
 $$;
@@ -584,6 +584,11 @@ BEGIN
     IF EXISTS (SELECT 1 FROM public.ticket_team_members m WHERE m.ticket_id = _ticket_id AND m.consultant_id = _cons AND m.status = 'declined'
                 AND m.declined_at > now() - make_interval(days => COALESCE((cfg ->> 'reinvite_after_decline_days')::int, 7))) THEN
       skipped := skipped || jsonb_build_object('consultant_id', _cons, 'reason', 'declined_recently'); CONTINUE;
+    END IF;
+    -- maximum team size (platform setting max_team_size, default 5); legacy members count too
+    IF (SELECT count(*) FROM public.ticket_team_members m WHERE m.ticket_id = _ticket_id AND public.team_live(m.status))
+       >= GREATEST(COALESCE((cfg ->> 'max_team_size')::int, 5), 1) THEN
+      skipped := skipped || jsonb_build_object('consultant_id', _cons, 'reason', 'team_full'); CONTINUE;
     END IF;
 
     _expires := CASE
