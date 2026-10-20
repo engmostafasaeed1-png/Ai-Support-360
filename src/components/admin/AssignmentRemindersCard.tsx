@@ -25,7 +25,8 @@ type Stats = {
 };
 
 type RpcResult = { data: unknown; error: { message: string } | null };
-const rpc = supabase.rpc as unknown as (fn: string) => Promise<RpcResult>;
+// Called as a method: supabase.rpc reads `this`, so a detached reference throws.
+const rpc = (fn: string): Promise<RpcResult> => (supabase as unknown as { rpc: (f: string) => Promise<RpcResult> }).rpc(fn);
 
 /** Fields of the form: normal timings in hours, Critical timings in minutes. */
 const HOUR_FIELDS = [

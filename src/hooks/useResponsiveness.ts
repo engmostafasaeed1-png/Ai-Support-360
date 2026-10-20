@@ -7,9 +7,11 @@ import {
 } from '../../supabase/functions/_shared/responsiveness';
 
 type RpcResult = { data: unknown; error: { message: string } | null };
-const rpc = supabase.rpc as unknown as (fn: string, args?: Record<string, unknown>) => Promise<RpcResult>;
+// Called as methods: supabase.rpc/from read `this`, so a detached reference throws and every call looks "not applied".
+const rpc = (fn: string, args?: Record<string, unknown>): Promise<RpcResult> =>
+  (supabase as unknown as { rpc: (f: string, a?: Record<string, unknown>) => Promise<RpcResult> }).rpc(fn, args);
 // Feature M tables are not in the generated types until docs/sql/responsiveness.sql is applied.
-const from = supabase.from as unknown as (table: string) => any;
+const from = (table: string): any => (supabase as unknown as { from: (t: string) => any }).from(table);
 
 export interface PublicResponsiveness { level: RespLevel; median_minutes: number | null; response_rate: number | null; stars: number | null }
 export interface PublicResponsivenessData {

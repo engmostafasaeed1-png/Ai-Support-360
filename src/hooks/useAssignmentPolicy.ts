@@ -4,7 +4,9 @@ import { useSessionReady } from '@/hooks/useSessionReady';
 import { POLICY_DEFAULTS, readPolicyMinutes, type PolicyMinutes } from '../../supabase/functions/_shared/assignmentPolicy';
 
 type RpcResult = { data: unknown; error: { message: string } | null };
-const rpc = supabase.rpc as unknown as (fn: string, args?: Record<string, unknown>) => Promise<RpcResult>;
+// Called as a method: supabase.rpc reads `this`, so a detached reference throws.
+const rpc = (fn: string, args?: Record<string, unknown>): Promise<RpcResult> =>
+  (supabase as unknown as { rpc: (f: string, a?: Record<string, unknown>) => Promise<RpcResult> }).rpc(fn, args);
 
 /** Current reminder timings (admin setting); the owner's defaults until docs/sql/assignment-response.sql is applied. */
 export function useAssignmentPolicy(): PolicyMinutes {
