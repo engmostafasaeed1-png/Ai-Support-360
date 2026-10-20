@@ -223,6 +223,16 @@ export default function NewRequestPage() {
   });
   const { consultants: allConsultants, isLoading: consultantsLoading } = useRealtimeConsultants();
 
+  // "Invite" from the consultant directory or its map: that consultant is pre-selected as an expert to ask.
+  const inviteId = useRef(searchParams.get('invite'));
+  useEffect(() => {
+    const id = inviteId.current;
+    if (!id || consultantsLoading) return;
+    inviteId.current = null;
+    const c = allConsultants.find(x => x.id === id);
+    if (c) setPicked(prev => (prev.some(p => p.id === c.id) || prev.length >= MAX_INVITED_EXPERTS ? prev : [...prev, { id: c.id, name: c.name, subtitle: `${c.specialty} · $${c.rate}/hr`, source: 'manual' }]));
+  }, [allConsultants, consultantsLoading]);
+
   // Auto-fill from chatbot query params
   useEffect(() => {
     const module = searchParams.get('module');
