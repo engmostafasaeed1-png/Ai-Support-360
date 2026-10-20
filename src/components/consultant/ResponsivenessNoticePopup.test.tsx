@@ -7,7 +7,7 @@ const notices = [
   { id: 'n1', kind: 'warning_1', event_id: 'e1', count_30d: 1, warnings_total: 2, created_at: '2026-10-20T10:00:00Z' },
   { id: 'n2', kind: 'warning_2', event_id: 'e2', count_30d: 2, warnings_total: 2, created_at: '2026-10-20T11:00:00Z' },
 ];
-const ack = vi.fn(async () => {});
+const ack = vi.fn(async (_id: string) => {});
 vi.mock('@/hooks/useSessionReady', () => ({ useSessionReady: () => ({ signedIn: true }) }));
 vi.mock('@/hooks/useResponsiveness', () => ({
   useResponsivenessNotices: () => ({ data: notices.filter((n) => !ack.mock.calls.some((c) => (c as unknown[])[0] === n.id)) }),
