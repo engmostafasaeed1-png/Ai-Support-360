@@ -130,21 +130,24 @@ export default function ExperienceCvCard({ onProfileChanged, onImported }: { onP
 
   const automatic = useProfileAutosaveReady();
   const beforeManual = useProfileSavePrompt();
+  const validateJob = (job: Job | null) => {
+    if (!job?.company_name.trim() || !job.job_title.trim()) return 'Company and job title are required';
+    if (!job.is_current && job.start_date && job.end_date && job.end_date < job.start_date) return 'End date must be after start date';
+    return null;
+  };
   const jobState = useSectionAutosave({
-    values: editing ? { company_name: editing.company_name, job_title: editing.job_title, start_date: editing.start_date, end_date: editing.is_current ? null : editing.end_date, is_current: editing.is_current, description: editing.description } : {},
+    // Cleared date inputs become null, never '', because the columns are dates.
+    values: editing ? { company_name: editing.company_name, job_title: editing.job_title, start_date: editing.start_date || null, end_date: editing.is_current ? null : editing.end_date || null, is_current: editing.is_current, description: editing.description } : {},
     ready: !loading && !!editing && !!userId, resetKey: editing ? 'open' : 'closed', automatic: automatic.data === true, beforeManual,
-    validate: () => {
-      if (!editing?.company_name.trim() || !editing.job_title.trim()) return 'Company and job title are required';
-      if (!editing.is_current && editing.start_date && editing.end_date && editing.end_date < editing.start_date) return 'End date must be after start date';
-      return null;
-    },
+    validate: () => validateJob(editing),
     persist: async patch => {
       if (!userId || !editing) throw new Error('Your consultant profile could not be found.');
       if (editing.id) {
         const { error } = await supabase.from('consultant_work_history').update(patch as never).eq('id', editing.id).eq('consultant_id', userId);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from('consultant_work_history').insert({ ...editing, id: undefined, consultant_id: userId } as never).select('id').single();
+        const row = { ...editing, id: undefined, consultant_id: userId, start_date: editing.start_date || null, end_date: editing.is_current ? null : editing.end_date || null };
+        const { data, error } = await supabase.from('consultant_work_history').insert(row as never).select('id').single();
         if (error || !data) throw error ?? new Error('Could not save changes. Try again.');
         // Keep the form open; subsequent edits use the stable returned row ID.
         setEditing(current => current ? { ...current, id: data.id } : current);
@@ -152,8 +155,16 @@ export default function ExperienceCvCard({ onProfileChanged, onImported }: { onP
       void load(userId); onProfileChanged?.();
     },
   });
+  const discardJob = () => setEditing(null);
   const closeJob = async () => {
-    if (jobState.dirty) { await jobState.flush(); return; }
+    if (jobState.dirty) {
+      // An unfinished entry cannot be saved; let the consultant leave without it instead of trapping them.
+      if (validateJob(editing)) {
+        if (confirm('Discard your unsaved changes to this experience?')) discardJob();
+        return;
+      }
+      await jobState.flush(); return;
+    }
     setEditing(null);
   };
 
@@ -240,6 +251,7 @@ export default function ExperienceCvCard({ onProfileChanged, onImported }: { onP
             </div>
           )}
           <DialogFooter>
+            {jobState.dirty && <Button variant="ghost" onClick={discardJob} disabled={jobState.saving}>Discard changes</Button>}
             <Button variant="outline" onClick={() => void closeJob()}>Close</Button>
             <SectionSaveControls state={jobState} />
           </DialogFooter>
