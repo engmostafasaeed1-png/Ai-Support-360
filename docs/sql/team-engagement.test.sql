@@ -7,14 +7,13 @@
 -- =============================================================================
 BEGIN;
 
+-- auth.uid() is impersonated below with set_config('request.jwt.claims', ...), local to this transaction.
 DO $$
 DECLARE
   _ticket uuid; _client uuid; _admin uuid;
   _a uuid; _a_user uuid; _b uuid; _c uuid; _c_user uuid; _d uuid;
   _req uuid; _req2 uuid; _member uuid; res jsonb; _n int; _ok boolean; _st text;
 
-  -- impersonate a signed-in user for auth.uid()
-  PROCEDURE_DUMMY int;
 BEGIN
   SELECT t.id, t.client_id INTO _ticket, _client FROM public.tickets t
    WHERE t.client_id IS NOT NULL AND t.status::text NOT IN ('resolved', 'closed') ORDER BY t.created_at LIMIT 1;
@@ -69,8 +68,8 @@ BEGIN
   UPDATE public.ticket_team_requests SET created_at = now() - interval '25 hours' WHERE id = _req;
   INSERT INTO public.ticket_team_requests (ticket_id, requester_member_id, requester_consultant_id, reason, created_at)
   SELECT _ticket, m.id, _a, 'older open request', now() - interval '30 hours'
-    FROM public.ticket_team_members m WHERE m.ticket_id = _ticket AND m.consultant_id = _a AND public.team_live(m.status)
-   CROSS JOIN generate_series(1, 2);
+    FROM public.ticket_team_members m CROSS JOIN generate_series(1, 2)
+   WHERE m.ticket_id = _ticket AND m.consultant_id = _a AND public.team_live(m.status);
   _ok := false; BEGIN PERFORM public.team_request_additional(_ticket, 'Fourth open request', NULL, NULL); EXCEPTION WHEN others THEN _ok := SQLERRM LIKE '%3 open team requests%'; END;
   IF NOT _ok THEN RAISE EXCEPTION 'FAIL: the 3-open-requests limit did not apply'; END IF;
   DELETE FROM public.ticket_team_requests WHERE ticket_id = _ticket AND reason = 'older open request';
