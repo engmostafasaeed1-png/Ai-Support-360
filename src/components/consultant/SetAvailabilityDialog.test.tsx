@@ -37,7 +37,7 @@ describe('SetAvailabilityDialog', () => {
 
     fireEvent.click(screen.getByText('Open availability'));
     await screen.findByText(/09:00 – 12:00/);
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
     await waitFor(() => expect(screen.queryByText(/09:00 – 12:00/)).toBeNull());
 
     fireEvent.click(screen.getByText('Open availability'));

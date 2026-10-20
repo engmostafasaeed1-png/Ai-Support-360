@@ -37,7 +37,7 @@ describe('ExperienceCvCard dialog', () => {
     await screen.findByText(/No experience added yet/);
     fireEvent.click(screen.getByRole('button', { name: /Add experience/ }));
     fireEvent.change(dialogInputs()[1], { target: { value: 'Acme' } }); // company only
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(inserted).not.toHaveBeenCalled();
   });
