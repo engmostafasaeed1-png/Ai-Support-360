@@ -319,7 +319,8 @@
     "question_library": "Question library",
     "interview_templates": "Interview templates",
     "consultant_interviews": "Consultant interviews",
-    "client_approvals": "Client approvals"
+    "client_approvals": "Client approvals",
+    "consultant_responsiveness": "Responsiveness"
   },
   "client_dashboard": {
     "title": "Welcome back",
@@ -1617,5 +1618,32 @@
     "tip_no_capacity": "A consultant had no capacity. Inviting another of the best matches is a good next step.",
     "tip_timing": "A consultant could not meet the timing. A wider timeline may help.",
     "tip_info_missing": "A consultant missed some information. Adding details to the description helps the next match."
+  },
+  "client_resp": {
+    "title": "Consultant responsiveness",
+    "subtitle": "See how quickly each consultant answers requests and how that changes their place in your match results.",
+    "off_title": "Responsiveness is not shown yet",
+    "off_body": "The platform team has not switched on responsiveness for clients. When they do, each consultant's level and its effect on ranking will appear here.",
+    "how_title": "How responsiveness affects match ranking",
+    "how_body": "Every consultant gets a match score out of 100 for your request. Responsiveness is worth up to {{share}} of those points; module fit, skills, experience and the other criteria decide the rest. A consultant who is still New is neutral: not raised and not lowered.",
+    "how_note": "Points are compared with a New consultant on a fully described request. When a request leaves some details out, every remaining criterion, including responsiveness, counts for a little more.",
+    "col_level": "Level",
+    "col_meaning": "What it means",
+    "col_effect": "Effect on ranking",
+    "meaning_excellent": "Answers almost every request, usually very quickly.",
+    "meaning_good": "Answers most requests within a few hours.",
+    "meaning_fair": "Answers, but often takes longer.",
+    "meaning_needs_improvement": "Has missed several requests recently.",
+    "meaning_new": "Not enough requests yet to judge.",
+    "neutral": "Neutral",
+    "points": "{{points}} pts",
+    "filter_label": "Filter by level",
+    "all": "All consultants",
+    "list_title": "Consultants",
+    "search": "Search by name or specialty",
+    "empty": "No consultants match.",
+    "not_enough": "Not enough requests yet",
+    "stats": "Median reply {{median}} · {{rate}}% answered",
+    "view_profile": "View profile"
   }
 }
