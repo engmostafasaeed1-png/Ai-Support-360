@@ -4795,6 +4795,42 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_reminder_log: {
+        Row: {
+          consultant_id: string
+          id: string
+          kind: string
+          sent_at: string
+        }
+        Insert: {
+          consultant_id: string
+          id?: string
+          kind: string
+          sent_at?: string
+        }
+        Update: {
+          consultant_id?: string
+          id?: string
+          kind?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_reminder_log_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "profile_reminder_log_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_rules_config: {
         Row: {
           enforce: boolean
@@ -8804,6 +8840,7 @@ export type Database = {
           updated_at: string
         }[]
       }
+      admin_profile_reminder_stats: { Args: never; Returns: Json }
       admin_reject_payment_report: {
         Args: { _note: string; _payment_id: string }
         Returns: undefined
@@ -8855,6 +8892,10 @@ export type Database = {
       admin_set_profile_field_rules: {
         Args: { _enforce: boolean; _rules: Json }
         Returns: undefined
+      }
+      admin_set_profile_interview_weight: {
+        Args: { _weight: number }
+        Returns: number
       }
       admin_storage_overview: { Args: never; Returns: Json }
       answer_ticket_question: {
@@ -8921,6 +8962,20 @@ export type Database = {
       }
       choose_first_oauth_role: { Args: { _role: string }; Returns: string }
       claim_admin_notification_email: { Args: { _id: string }; Returns: Json }
+      claim_profile_reminders: {
+        Args: { _limit?: number }
+        Returns: {
+          consultant_id: string
+          earned_badge: string
+          interview_done: boolean
+          kind: string
+          lang: string
+          missing: string[]
+          payout_ready: boolean
+          percent: number
+          user_id: string
+        }[]
+      }
       clean_bank_account: { Args: { _details: Json }; Returns: Json }
       clean_billing_text: {
         Args: { _label: string; _max: number; _v: string }
@@ -8997,6 +9052,7 @@ export type Database = {
           scheduled_at: string
         }[]
       }
+      consultant_completion: { Args: { _cid: string }; Returns: Json }
       consultant_engaged_on_ticket: {
         Args: { _consultant_id: string; _ticket_id: string }
         Returns: boolean
@@ -9268,6 +9324,7 @@ export type Database = {
           waiting_for_client: boolean
         }[]
       }
+      my_profile_completion: { Args: never; Returns: Json }
       new_bid_blocked_by_profile: {
         Args: { _cid: string; _ticket: string }
         Returns: boolean
@@ -9301,10 +9358,12 @@ export type Database = {
       }
       pricing_breakdown: { Args: { _base: number }; Returns: Json }
       pricing_terms: { Args: never; Returns: Json }
+      profile_autosave_ready: { Args: never; Returns: boolean }
       profile_field_filled: {
         Args: { _cid: string; _key: string }
         Returns: boolean
       }
+      profile_interview_weight: { Args: never; Returns: number }
       profile_list_is_valid: { Args: { _list: string[] }; Returns: boolean }
       propose_ticket_rate: {
         Args: { _hourly_rate: number; _ticket_id: string }
