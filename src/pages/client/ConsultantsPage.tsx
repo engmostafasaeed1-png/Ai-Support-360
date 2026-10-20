@@ -335,10 +335,12 @@ export default function ConsultantsPage() {
                       </Button>
                     </div>
                     <p className="text-sm text-muted-foreground">{c.skills && c.skills.length > 1 ? c.skills.slice(0, 4).join(' · ') + (c.skills.length > 4 ? ` +${c.skills.length - 4}` : '') : c.specialty}</p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <MapPin className="w-3 h-3 shrink-0" aria-hidden="true" />
-                      {c.place || t('profileRules.locationNotSet', 'Location not set')}
-                    </p>
+                    {c.place && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <MapPin className="w-3 h-3 shrink-0" aria-hidden="true" />
+                        {c.place}
+                      </p>
+                    )}
 
                     <RatingStars rating={c.rating} reviews={c.reviews} size="sm" className="mt-2" />
                     {matches && <MatchWhyChips why={matches.get(c.id)?.chips} score={matches.get(c.id)?.score} />}
