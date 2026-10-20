@@ -50,3 +50,7 @@
 - [ ] Feature H SQL: owner applies docs/sql/matching.sql (match run log, budget/work mode/deployment request fields, suspended-account filter)
 - [x] Feature H part 4: step-based progress for ticket submit and every expert-matching place (wizard, ticket page, bid invitations, admin match, solution suggestions), duplicate-safe submit, tests (Oct 20)
 - [ ] Feature H addition (read every consultant profile field): profile-text matcher written but not tested or switched on; SQL file not written. Waiting for the owner to say continue.
+- [x] Feature I step 1: read-only inventory + design, approved by the owner (Oct 20)
+- [x] Feature I phase 1: team engagement SQL file docs/sql/team-engagement.sql written and syntax-checked (Oct 20)
+- [ ] Feature I SQL: owner applies docs/sql/team-engagement.sql
+- [ ] Feature I phase 2 (after the SQL is applied): engage dialog, Team panel with per-member stepper, engagement confirmation card, consultant invitation answers, admin settings, email/push/Telegram for critical, tests, Arabic strings
