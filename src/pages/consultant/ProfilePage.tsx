@@ -10,6 +10,8 @@ import PayoutDetailsCard from '@/components/consultant/PayoutDetailsCard';
 import InterviewTranscript from '@/components/consultant/InterviewTranscript';
 import InterviewStartCard from '@/components/consultant/InterviewStartCard';
 import LocationBanner from '@/components/consultant/LocationBanner';
+import PolicyBanner from '@/components/consultant/policy/PolicyBanner';
+import PolicyRegistrationStep from '@/components/consultant/policy/PolicyRegistrationStep';
 import ConsultantLocation from '@/components/consultant/ConsultantLocation';
 import AvatarUpload from '@/components/profile/AvatarUpload';
 import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
@@ -45,6 +47,7 @@ export default function ProfilePage() {
       </div>
       <div className="flex items-center gap-4"><AvatarUpload /><div className="space-y-1"><h2 className="text-lg font-semibold">{profile?.display_name}</h2><ConsultantLocation audience="owner" city={profile?.city} country={profile?.country} className="text-sm text-muted-foreground" /><FoundingBadge consultantId={profile?.id} numbered /></div></div>
       <LocationBanner compact />
+      <PolicyBanner inlineAnchor />
       <ConsultantOnboarding embedded />
       <section id="payout-details" className="scroll-mt-20">
         <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
@@ -61,6 +64,8 @@ export default function ProfilePage() {
         <InterviewStartCard />
         <InterviewTranscript consultantId={profile?.id || ''} viewMode="consultant" />
       </section>
+      <PolicyRegistrationStep verificationStatus={profile?.verification_status} />
+      <p className="text-xs text-muted-foreground"><a href="/consultant-policy" target="_blank" rel="noopener" className="text-primary underline">{t('footer.consultantPolicy', 'Consultant Service Policy')}</a></p>
       <ReinterviewDialog open={reinterviewOpen} onOpenChange={setReinterviewOpen}
         consultantId={profile?.id || ''} consultantName={profile?.display_name || ''} selfService />
     </div></ProfileImportance></EmbeddedGuideProvider>

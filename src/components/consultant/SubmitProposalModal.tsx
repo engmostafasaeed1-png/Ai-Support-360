@@ -14,6 +14,7 @@ import VoiceInput from '@/components/ui/voice-input';
 import { toast } from 'sonner';
 import { toastWithLocationFix } from '@/lib/locationErrors';
 import { LocationBlockedNotice, useLocationBlocked } from '@/components/consultant/LocationBanner';
+import { PolicyBlockedNotice, usePolicyBlocked } from '@/components/consultant/policy/PolicyBanner';
 import { useQueryClient } from '@tanstack/react-query';
 import { bidCountdown, bidsSoFar, toneClass } from '@/lib/bidding';
 
@@ -39,6 +40,7 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
   const deadline = bidCountdown(bidDeadline, deadlineClock);
   const submit = useSubmitProposal();
   const locationBlocked = useLocationBlocked();
+  const policyBlocked = usePolicyBlocked();
   const { data: versions } = useProposalVersions(ticketId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -265,7 +267,8 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
         {/* Sticky submit button */}
         <div className="pt-2 border-t border-border/50">
           <LocationBlockedNotice />
-          <Button onClick={handleSubmit} disabled={submit.isPending || locationBlocked} className="w-full gradient-primary border-0 h-10">
+          <PolicyBlockedNotice />
+          <Button onClick={handleSubmit} disabled={submit.isPending || locationBlocked || policyBlocked} className="w-full gradient-primary border-0 h-10">
             {submit.isPending ? 'Sending...' : isRevision ? `Send revised bid (v${nextVersion})` : 'Send bid'}
           </Button>
         </div>

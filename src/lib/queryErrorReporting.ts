@@ -37,7 +37,7 @@ const NETWORK_OR_SESSION =
 
 // Expected business rules the server refuses on purpose; the screen already shows the message as a toast.
 const KNOWN_BUSINESS_MESSAGE =
-  /has not entered bank details for payouts yet/i;
+  /has not entered bank details for payouts yet|Consultant Service Policy/i;
 
 const NOT_SIGNED_IN = /^Not signed in( yet)?$/i;
 const SIGNED_OUT_REFUSAL = /(permission denied|not signed in|jwt|invalid token|row-level security)/i;

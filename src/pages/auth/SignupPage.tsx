@@ -408,6 +408,12 @@ function SignupForm() {
                 <a href="/privacy-policy" target="_blank" rel="noopener" className="text-primary underline">Privacy Policy</a>.
               </span>
             </label>
+            {role === 'consultant' && (
+              <p className="text-xs text-muted-foreground w-full" data-testid="signup-policy-note">
+                {t('consultantPolicy.signupNote', 'Before your profile goes to review you will be asked to accept the')}{' '}
+                <a href="/consultant-policy" target="_blank" rel="noopener" className="text-primary underline">{t('footer.consultantPolicy', 'Consultant Service Policy')}</a>.
+              </p>
+            )}
             <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" disabled={loading}>
               {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {t('auth.signup_btn')}
