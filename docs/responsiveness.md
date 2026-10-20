@@ -75,4 +75,4 @@
 | admin.resp_rank_hint, resp_problems, resp_saved, resp_save_failed | The ranking weight is "Responsiveness" in the match weights card under Settings (default 3).; Please check: {{list}}; Saved. Use "Recalculate now" to apply them to every consultant.; The settings could not be saved. |
 | Match criterion | Responsiveness; chip "Excellent responsiveness" (Arabic already added: الاستجابة / استجابة ممتازة) |
 
-The notice e-mail and popup copy (warning 1 of 2, 2 of 2, badge, counted, not counted, dispute accepted / not accepted) is already bilingual in `supabase/functions/_shared/responsivenessCopy.ts` and in the SQL notifications.
+The notice e-mail and popup copy (friendly notice 1 of 2, 2 of 2, indicator shown, counted, not counted, dispute accepted / not accepted; owner rule: polite wording, never "warning") is already bilingual in `supabase/functions/_shared/responsivenessCopy.ts` and in the SQL notifications.
