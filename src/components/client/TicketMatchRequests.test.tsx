@@ -38,6 +38,7 @@ describe('TicketMatchRequests (client)', () => {
   it('a waiting request shows who it was sent to and the time left', async () => {
     h.rows = [row({ response_due_at: new Date(Date.now() + 3 * 3_600_000).toISOString() })];
     renderCard();
+    await new Promise((r) => setTimeout(r, 300)); console.log('BODY', document.body.textContent);
     expect(await screen.findByText(/Request sent to Sara, waiting for reply\./)).toBeTruthy();
     expect(screen.getByText(/h \d+ min left/)).toBeTruthy();
   });
