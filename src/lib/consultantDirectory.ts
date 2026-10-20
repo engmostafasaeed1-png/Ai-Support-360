@@ -5,7 +5,7 @@
 import { STATE_META, availabilityState, type AvailabilityState } from './mapMarkers';
 import type { LinkState } from './consultantLinks';
 import { cityPoint, countryPoint, placeLabel } from './geo';
-import { profileCompleteness } from './profileCompleteness';
+import { interviewDoneFrom, profileCompleteness } from './profileCompleteness';
 
 export interface ConsultantLive {
   id: string;
@@ -151,7 +151,7 @@ export function initialsOf(name: string): string {
     .slice(0, 2);
 }
 
-export function toConsultantLive(row: DirectoryRow, displayName: string | null | undefined, skills: string[]): ConsultantLive {
+export function toConsultantLive(row: DirectoryRow, displayName: string | null | undefined, skills: string[], interviewWeight?: number): ConsultantLive {
   const name = displayName || 'Consultant';
   const status = availabilityState(row.availability_status);
   const where = consultantPoint(row);
@@ -194,6 +194,7 @@ export function toConsultantLive(row: DirectoryRow, displayName: string | null |
     credibility_credits: row.credibility_credits || 0,
     ai_interview_badge: row.ai_interview_badge || null,
     completion_percent: profileCompleteness({
+      interview_done: interviewDoneFrom(row),
       skills_count: skills.length,
       sap_roles: row.sap_roles,
       seniority_level: row.seniority_level,
@@ -210,7 +211,7 @@ export function toConsultantLive(row: DirectoryRow, displayName: string | null |
       work_modes: row.work_modes,
       working_week: row.working_week,
       language_levels: row.language_levels && typeof row.language_levels === 'object' && !Array.isArray(row.language_levels) ? row.language_levels as Record<string, unknown> : null,
-    }, { includePayout: false }).percent,
+    }, { includePayout: false, interviewWeight }).percent,
     customer_segments: row.customer_segments || [],
     vertical_solutions: row.vertical_solutions || [],
     localization_countries: row.localization_countries || [],

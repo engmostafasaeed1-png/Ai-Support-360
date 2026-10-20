@@ -14,6 +14,7 @@ import { useTelegramStatus } from '@/hooks/useTelegram';
 import { useTourProgress } from '@/hooks/useTourProgress';
 import { payoutReady } from '@/lib/payoutDisclaimer';
 import { profileCompleteness } from '@/lib/profileCompleteness';
+import { useInterviewWeight } from '@/lib/interviewWeight';
 import { GETTING_STARTED_DISMISSED_KEY } from '@/lib/tour';
 import { useConsultantTour } from '@/components/tour/ConsultantTour';
 
@@ -51,6 +52,7 @@ function useGettingStartedData() {
   const payout = useMyPayoutDetails();
   const telegram = useTelegramStatus();
   const signedIn = useSessionReady().signedIn;
+  const interviewWeight = useInterviewWeight();
   const base = useQuery({
     enabled: signedIn,
     queryKey: ['getting-started'],
@@ -79,7 +81,7 @@ function useGettingStartedData() {
   const d = base.data;
   if (!d) return { loading: false as const, input: null };
   const ready = payoutReady(payout.data?.details);
-  const percent = profileCompleteness({ ...d.c, skills_count: d.skills, payout_ready: ready }).percent;
+  const percent = profileCompleteness({ ...d.c, skills_count: d.skills, payout_ready: ready, interview_done: !!d.c.ai_interview_completed_at }, { interviewWeight }).percent;
   const input: GettingStartedInput = {
     completenessPercent: percent,
     skills: d.skills,
