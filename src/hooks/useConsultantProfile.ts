@@ -67,6 +67,6 @@ export function useConsultantProfile() {
       };
     },
     enabled: signedIn && (!isGuest),
-    placeholderData: isGuest ? { ...mockConsultantProfile, avatar_url: null, credly_username: null, credibility_credits: 250, ai_interview_badge: 'Gold', ai_interview_completed_at: new Date().toISOString() } : undefined,
+    placeholderData: isGuest ? { ...mockConsultantProfile, avatar_url: null, credly_username: null, credibility_credits: 250, ai_interview_badge: 'Gold', ai_interview_completed_at: new Date().toISOString(), city: 'Riyadh', country: 'Saudi Arabia' } : undefined,
   });
 }
