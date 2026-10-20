@@ -47,7 +47,7 @@ export const MODULES: ModuleDef[] = [
   def('BW', 'analytics', 'SAP BW', [/\bbw\b|bw\/4|business warehouse|datasphere|businessobjects|\bbobj\b|data warehouse|مستودع البيانات/i]),
   def('SAC', 'analytics', 'SAP Analytics Cloud', [/analytics cloud|\bsac\b|dashboards?|لوحات المعلومات/i]),
   def('MDG', 'erp', 'SAP MDG', [/\bmdg\b|master data|business partners?|\bcvi\b|البيانات الرئيسية/i]),
-  def('MIGRATION', 'erp', 'Migration', [/migrat|conversion|greenfield|brownfield|data load|lsmw|migration cockpit|ترحيل|نقل البيانات/i]),
+  def('MIGRATION', 'erp', 'Migration', [/migrat|conversion|greenfield|brownfield|data load|lsmw|migration cockpit|نقل البيانات|ترحيل البيانات/i]),
   def('SOLMAN', 'erp', 'Solution Manager', [/solution manager|solman|\bcharm\b|cloud alm/i]),
   def('CX', 'cx', 'SAP CX', [/\bcrm\b|commerce cloud|hybris|sales cloud|service cloud|marketing cloud|emarsys|customer experience/i]),
   def('S4', 'erp', 'SAP S/4HANA', [/s\/?4 ?hana|\bs\/4\b|rise with sap|اس ?فور ?هانا|إس ?4/i], 'product'),
@@ -288,7 +288,7 @@ export function clarifyingQuestions(t: MatchTicket, s: TicketSignals = extractTi
   const out: ClarifyKey[] = [];
   const functional = s.modules.filter((c) => MODULE_BY_CODE.get(c)?.kind === 'module');
   if (functional.length === 0) out.push('module');
-  if (s.wordCount < 15 && s.tcodes.length === 0 && s.errors.length === 0) out.push('error');
+  if (s.wordCount < (functional.length ? 8 : 15) && s.tcodes.length === 0 && s.errors.length === 0) out.push('error');
   if (!s.country && out.length > 0) out.push('country');
   return out.slice(0, 3);
 }
@@ -409,7 +409,10 @@ export function hardFilter(c: MatchConsultant, t: MatchTicket, s: TicketSignals,
   const wanted = needed.length > 0 ? needed : s.modules;
   if (wanted.length > 0) {
     const families = new Set(wanted.map((x) => MODULE_BY_CODE.get(x)?.family));
-    const overlap = cm.codes.some((have) => wanted.some((w) => related(have, w)) || (MODULE_BY_CODE.get(have)?.kind === 'module' && families.has(MODULE_BY_CODE.get(have)?.family)));
+    // A product the client chose as an area (e.g. "SAP S/4HANA") also counts as overlap; such consultants then rank on the module score.
+    const areaProducts = s.areaModules.filter((x) => MODULE_BY_CODE.get(x)?.kind === 'product');
+    const overlap = cm.codes.some((have) => wanted.some((w) => related(have, w)) || areaProducts.includes(have)
+      || (MODULE_BY_CODE.get(have)?.kind === 'module' && families.has(MODULE_BY_CODE.get(have)?.family)));
     if (!overlap) return 'no_area_overlap';
   }
   const lang = String(t.preferred_language ?? '').trim().toLowerCase();
@@ -531,6 +534,7 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
   const chips = active
     .filter((p) => p.chip && p.fit >= 0.5)
     .sort((a, b) => weights[b.key] * b.fit - weights[a.key] * a.fit)
+    .filter((p, i, list) => list.findIndex((q) => String(q.chip).toLowerCase() === String(p.chip).toLowerCase()) === i)
     .slice(0, 4)
     .map((p) => ({ key: p.key, text: p.chip as string }));
   const allWeight = Object.values(weights).reduce((a, b) => a + b, 0) || 1;
