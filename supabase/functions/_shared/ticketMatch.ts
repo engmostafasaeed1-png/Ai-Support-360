@@ -54,7 +54,7 @@ export const MODULES: ModuleDef[] = [
   def('ECC', 'erp', 'SAP ECC', [/\becc\b|\br\/3\b|erp 6/i], 'product'),
 ];
 
-const MODULE_BY_CODE = new Map(MODULES.map((m) => [m.code, m]));
+export const MODULE_BY_CODE = new Map(MODULES.map((m) => [m.code, m]));
 
 /** Pairs of modules that are close enough for half credit (and for passing the area filter). */
 const RELATED: Array<[string, string]> = [
@@ -94,6 +94,8 @@ const SUB_MODULES: Array<[string, RegExp]> = [
   ['ABAP-EXT', /extension|enhancement|\bbadis?\b|user exits?|key user|تخصيص|توسيع/i],
 ];
 const SUB_PARENT = (sub: string) => sub.split('-')[0];
+/** Every sub-module code the matcher knows (for filters). */
+export const SUB_MODULE_CODES: string[] = SUB_MODULES.map(([code]) => code);
 
 export function subModulesIn(text: string | null | undefined): string[] {
   const s = String(text ?? '');
