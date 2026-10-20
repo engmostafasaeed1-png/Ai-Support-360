@@ -19,7 +19,7 @@ function EffectBadge({ vsNew }: { vsNew: number }) {
   const Icon = v > 0 ? TrendingUp : v < 0 ? TrendingDown : Minus;
   const tone = v > 0 ? 'border-success/30 bg-success/10 text-success' : v < 0 ? 'border-destructive/30 bg-destructive/10 text-destructive' : 'border-border bg-muted text-muted-foreground';
   return (
-    <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold tabular-nums', tone)}>
+    <span className={cn('inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-semibold tabular-nums', tone)}>
       <Icon className="h-3 w-3" aria-hidden="true" />
       {v === 0 ? t('client_resp.neutral') : t('client_resp.points', { points: formatPoints(v) })}
     </span>
@@ -83,7 +83,7 @@ export default function ConsultantResponsivenessPage() {
                   <thead>
                     <tr className="border-b border-border text-start text-xs text-muted-foreground">
                       <th scope="col" className="py-2 pe-3 text-start font-medium">{t('client_resp.col_level')}</th>
-                      <th scope="col" className="py-2 pe-3 text-start font-medium">{t('client_resp.col_meaning')}</th>
+                      <th scope="col" className="hidden py-2 pe-3 text-start font-medium sm:table-cell">{t('client_resp.col_meaning')}</th>
                       <th scope="col" className="py-2 text-end font-medium">{t('client_resp.col_effect')}</th>
                     </tr>
                   </thead>
@@ -91,9 +91,10 @@ export default function ConsultantResponsivenessPage() {
                     {table.map((r) => (
                       <tr key={r.level} className="border-b border-border/60 last:border-0">
                         <td className="py-2.5 pe-3">
-                          <span className={cn('inline-flex rounded-full border px-2 py-0.5 text-xs font-medium', LEVEL_TONE[r.level])}>{label(r.level)}</span>
+                          <span className={cn('inline-flex whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium', LEVEL_TONE[r.level])}>{label(r.level)}</span>
+                          <p className="mt-1 text-xs text-muted-foreground sm:hidden">{t(`client_resp.meaning_${r.level}`)}</p>
                         </td>
-                        <td className="py-2.5 pe-3 text-muted-foreground">{t(`client_resp.meaning_${r.level}`)}</td>
+                        <td className="hidden py-2.5 pe-3 text-muted-foreground sm:table-cell">{t(`client_resp.meaning_${r.level}`)}</td>
                         <td className="py-2.5 text-end"><EffectBadge vsNew={r.vsNew} /></td>
                       </tr>
                     ))}

@@ -1625,7 +1625,7 @@
     "off_title": "Responsiveness is not shown yet",
     "off_body": "The platform team has not switched on responsiveness for clients. When they do, each consultant's level and its effect on ranking will appear here.",
     "how_title": "How responsiveness affects match ranking",
-    "how_body": "Every consultant gets a match score out of 100 for your request. Responsiveness can move that score by up to {{share}} points; module fit, skills, experience and the other criteria decide the rest. A consultant who is still New is neutral: not raised and not lowered.",
+    "how_body": "Every consultant gets a match score out of 100 for your request. Responsiveness is worth up to {{share}} of those points; module fit, skills, experience and the other criteria decide the rest. A consultant who is still New is neutral: not raised and not lowered.",
     "how_note": "Points are compared with a New consultant on a fully described request. When a request leaves some details out, every remaining criterion, including responsiveness, counts for a little more.",
     "col_level": "Level",
     "col_meaning": "What it means",
