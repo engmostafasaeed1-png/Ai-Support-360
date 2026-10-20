@@ -18,7 +18,6 @@ import { compareBids, comparisonHighlights, estimatedTotal, biddingIsOpen, biddi
 import { formatRemaining } from '@/lib/bidding';
 import { useCriticalView } from '@/hooks/useCriticalService';
 import { effectiveRate, formatPercent, surchargeApplies } from '@/lib/criticalService';
-import RatingStars from './RatingStars';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
 import CompletionBadge from '@/components/consultant/CompletionBadge';
 import ResponsivenessChip from '@/components/consultant/ResponsivenessChip';

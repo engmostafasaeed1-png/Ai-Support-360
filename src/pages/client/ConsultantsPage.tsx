@@ -17,7 +17,6 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useTranslation } from 'react-i18next';
 import { useRealtimeConsultants } from '@/hooks/useRealtimeConsultants';
 import ConsultantMap from '@/components/client/ConsultantMap';
-import RatingStars from '@/components/client/RatingStars';
 import VerificationBadge from '@/components/consultant/VerificationBadge';
 import { TrustBadge } from '@/components/consultant/TrustBadge';
 import CompletionBadge from '@/components/consultant/CompletionBadge';
