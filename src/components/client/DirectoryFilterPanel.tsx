@@ -60,7 +60,7 @@ interface Props {
 
 export default function DirectoryFilterPanel({ filters: f, consultants, ctx, onChange, onClear, saved, onSave, onApplySaved, onDeleteSaved }: Props) {
   const { t, i18n } = useTranslation();
-  const ar = i18n.language.startsWith('ar');
+  const ar = !!i18n?.language?.startsWith('ar');
   const anyLabel = t('directory.any', 'Any');
   const [saveName, setSaveName] = useState('');
 

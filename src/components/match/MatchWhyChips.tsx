@@ -6,7 +6,7 @@ import { chipText } from '@/lib/matchLabels';
 /** "Why this match": up to 4 short reasons from the deterministic ranking, plus the match %. */
 export default function MatchWhyChips({ why, score, coverage, showCoverage = false }: { why?: Chip[] | null; score?: number | null; coverage?: number | null; showCoverage?: boolean }) {
   const { i18n } = useTranslation();
-  const ar = i18n.language.startsWith('ar');
+  const ar = !!i18n?.language?.startsWith('ar');
   if (!why?.length && score == null) return null;
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-1" aria-label={ar ? 'سبب هذا التطابق' : 'Why this match'}>
