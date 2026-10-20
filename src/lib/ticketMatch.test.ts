@@ -37,10 +37,15 @@ describe('hard filters', () => {
 });
 
 describe('field changes move the ranking', () => {
-  it('changing the country from Saudi Arabia to Egypt lifts the Egypt FI consultant', () => {
+  it('changing the country from Saudi Arabia to Egypt raises the Egypt FI consultant', () => {
     const t = { ...FIXTURE_TICKETS[0], industry: null, description: 'Month-end close fails with error F5 702 in FB50.' };
-    const pos = (country: string) => rankConsultants({ ...t, country }, FIXTURE_CONSULTANTS).ranked.findIndex(r => r.consultant_id === 'c02');
-    expect(pos('Egypt')).toBeLessThan(pos('Saudi Arabia'));
+    const score = (country: string) => rankConsultants({ ...t, country }, FIXTURE_CONSULTANTS).ranked.find(r => r.consultant_id === 'c02')!.score;
+    expect(score('Egypt')).toBeGreaterThan(score('Saudi Arabia'));
+  });
+  it('a budget lifts the consultant within budget closer to the top', () => {
+    const t = FIXTURE_TICKETS.find(x => x.budget_max_rate)!;
+    const gap = (budget: number | null) => { const r = rankConsultants({ ...t, budget_max_rate: budget }, FIXTURE_CONSULTANTS).ranked; const s = (id: string) => r.find(x => x.consultant_id === id)!.score; return s('c01') - s('c02'); };
+    expect(gap(60)).toBeLessThan(gap(null));
   });
   it('a budget below the rate lowers the expensive consultant', () => {
     const t = FIXTURE_TICKETS[0];
