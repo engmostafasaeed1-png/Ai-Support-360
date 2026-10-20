@@ -3,16 +3,18 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement, type ReactNode } from 'react';
 
-const calls: Array<{ fn: string; self: unknown }> = [];
-const client = {
-  rest: true,
-  rpc(this: unknown, fn: string) {
-    calls.push({ fn, self: this });
-    if (this !== client) throw new TypeError('detached');
-    if (fn === 'responsiveness_public_config') return Promise.resolve({ data: { public: true, review_weight: 15 }, error: null });
-    return Promise.resolve({ data: [{ consultant_id: 'c1', level: 'new', median_minutes: null, response_rate: null, stars: null }], error: null });
-  },
-};
+const { calls, client } = vi.hoisted(() => {
+  const calls: Array<{ fn: string; self: unknown }> = [];
+  const client = {
+    rpc(this: unknown, fn: string) {
+      calls.push({ fn, self: this });
+      if (this !== client) throw new TypeError('detached');
+      if (fn === 'responsiveness_public_config') return Promise.resolve({ data: { public: true, review_weight: 15 }, error: null });
+      return Promise.resolve({ data: [{ consultant_id: 'c1', level: 'new', median_minutes: null, response_rate: null, stars: null }], error: null });
+    },
+  };
+  return { calls, client };
+});
 vi.mock('@/integrations/supabase/client', () => ({ supabase: client }));
 vi.mock('@/hooks/useSessionReady', () => ({ useSessionReady: () => ({ signedIn: true }) }));
 
