@@ -7,7 +7,10 @@ import { Check, X, Inbox, Clock, ShieldCheck, FileSignature, Download } from 'lu
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { toastWithLocationFix } from '@/lib/locationErrors';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useAssignmentPolicy } from '@/hooks/useAssignmentPolicy';
+import { policyText, timeLeftLabel } from '../../../supabase/functions/_shared/assignmentPolicy';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import NDASigningModal from '@/components/consultant/NDASigningModal';
@@ -25,6 +28,7 @@ const statusBadge: Record<string, { label: string; className: string }> = {
   accepted: { label: 'Accepted', className: 'bg-green-100 text-green-700' },
   rejected: { label: 'Rejected', className: 'bg-red-100 text-red-700' },
   withdrawn: { label: 'Withdrawn', className: 'bg-muted text-muted-foreground' },
+  expired: { label: 'No response', className: 'bg-muted text-muted-foreground' },
 };
 
 export default function RequestsPage() {
@@ -152,6 +156,26 @@ export default function RequestsPage() {
     });
   };
 
+  // Popup / e-mail links: ?accept=<id> continues an accept (NDA first when needed), ?request=<id> highlights the card.
+  const [params, setParams] = useSearchParams();
+  const policy = useAssignmentPolicy();
+  const { i18n } = useTranslation();
+  const lang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
+  const handledAccept = useRef<string | null>(null);
+  const focusId = params.get('request') || params.get('accept');
+  useEffect(() => {
+    const id = params.get('accept');
+    if (!id || handledAccept.current === id || !requests || !ticketClientMap || !ndaMap) return;
+    const req = requests.find((r: any) => r.id === id && r.status === 'pending');
+    handledAccept.current = id;
+    const next = new URLSearchParams(params); next.delete('accept'); next.set('request', id); setParams(next, { replace: true });
+    if (req) handleAccept(req.id, req.ticket_id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params, requests, ticketClientMap, ndaMap]);
+  useEffect(() => {
+    if (focusId) document.getElementById(`request-${focusId}`)?.scrollIntoView({ block: 'center' });
+  }, [focusId, requests]);
+
   const filtered = (requests || []).filter(r => filter === 'all' || r.status === filter);
   const pendingCount = (requests || []).filter(r => r.status === 'pending').length;
 
@@ -165,8 +189,10 @@ export default function RequestsPage() {
         </p>
       </div>
 
+      <p className="rounded-xl bg-muted/60 p-3 text-xs text-muted-foreground">{policyText(policy, lang)}</p>
+
       <div className="flex gap-1.5 flex-wrap">
-        {['all', 'pending', 'accepted', 'rejected'].map(s => (
+        {['all', 'pending', 'accepted', 'rejected', 'expired'].map(s => (
           <Button
             key={s}
             size="sm"
@@ -174,7 +200,7 @@ export default function RequestsPage() {
             className={`text-xs rounded-full h-8 ${filter === s ? 'gradient-primary border-0' : ''}`}
             onClick={() => setFilter(s)}
           >
-            {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+            {s === 'all' ? 'All' : s === 'expired' ? 'No response' : s.charAt(0).toUpperCase() + s.slice(1)}
           </Button>
         ))}
       </div>
@@ -195,7 +221,7 @@ export default function RequestsPage() {
             const clientInfo = ticketClientMap?.get(req.ticket_id);
             const hasNda = clientInfo ? ndaMap?.has(clientInfo.client_id) : false;
             return (
-              <Card key={req.id} className="rounded-2xl border-border/50 hover:shadow-premium hover:border-accent/30 transition-all">
+              <Card key={req.id} id={`request-${req.id}`} className={`rounded-2xl border-border/50 hover:shadow-premium hover:border-accent/30 transition-all ${focusId === req.id ? 'ring-2 ring-primary' : ''}`}>
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -217,7 +243,7 @@ export default function RequestsPage() {
                       {req.status === 'pending' && (
                         <div className="flex items-center gap-1 mt-2 text-xs text-amber-600">
                           <Clock className="w-3 h-3" />
-                          Awaiting your response
+                          Awaiting your response{req.response_due_at ? ` · ${timeLeftLabel(Date.parse(req.response_due_at), Date.now(), lang)}` : ''}
                         </div>
                       )}
                       {/* NDA status indicator */}
