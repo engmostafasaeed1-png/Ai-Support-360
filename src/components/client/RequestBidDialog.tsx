@@ -136,7 +136,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
   });
   const byId = new Map((consultants || []).map(c => [c.id, c]));
   const aiRecommended = (matchResult ?? [])
-    .filter(r => !hiddenIds || !(hiddenIds as any).has?.(r.consultant_id))
+    .filter(r => withoutHidden([{ id: r.consultant_id }], hiddenIds).length > 0)
     .map(r => {
       const base = byId.get(r.consultant_id);
       return { id: r.consultant_id, name: base?.name || r.name || 'Consultant', hourly_rate: base?.hourly_rate ?? r.hourly_rate, rating: Number(base?.rating ?? r.rating) || 0,
