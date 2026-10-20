@@ -484,6 +484,13 @@
       "when": 1792200219234,
       "tag": "0068_m69_admin_consultant_full_profile",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1792533731475,
+      "tag": "0069_assignment_response_enum",
+      "breakpoints": true
     }
   ]
 }

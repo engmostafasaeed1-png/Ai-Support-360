@@ -9765,7 +9765,12 @@ export type Database = {
       integration_status: "active" | "inactive" | "error"
       interview_mode: "ai" | "physical" | "online"
       interview_status: "pending" | "in_progress" | "completed" | "reviewed"
-      match_request_status: "pending" | "accepted" | "rejected" | "withdrawn"
+      match_request_status:
+        | "pending"
+        | "accepted"
+        | "rejected"
+        | "withdrawn"
+        | "expired"
       message_type: "text" | "file" | "voice_note" | "system"
       org_role: "owner" | "admin" | "manager" | "member"
       payment_status: "pending" | "completed" | "refunded" | "disputed"
@@ -9960,7 +9965,13 @@ export const Constants = {
       integration_status: ["active", "inactive", "error"],
       interview_mode: ["ai", "physical", "online"],
       interview_status: ["pending", "in_progress", "completed", "reviewed"],
-      match_request_status: ["pending", "accepted", "rejected", "withdrawn"],
+      match_request_status: [
+        "pending",
+        "accepted",
+        "rejected",
+        "withdrawn",
+        "expired",
+      ],
       message_type: ["text", "file", "voice_note", "system"],
       org_role: ["owner", "admin", "manager", "member"],
       payment_status: ["pending", "completed", "refunded", "disputed"],
