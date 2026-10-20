@@ -125,7 +125,7 @@ describe('favourite boost in matching', () => {
     expect(after).toBeGreaterThan(before);
     expect(after - before).toBeLessThanOrEqual(3);
     const out = rankConsultants(ticket, fav).ranked;
-    expect(out.find((r) => r.consultant_id === 'c02')?.why.some((w) => w.key === 'favourite')).toBe(true);
+    expect(out.find((r) => r.consultant_id === 'c02')?.chips.some((w) => w.key === 'favourite')).toBe(true);
     expect(out.map((r) => r.consultant_id)).not.toContain('c12'); // unverified stays out
     expect(out[0]?.consultant_id).toBe(ticket.expectTop); // the best match stays first
   });
