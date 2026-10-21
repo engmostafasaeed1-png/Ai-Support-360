@@ -18,7 +18,7 @@ const sum = (t: number, s: number, lang: 'en' | 'ar' = 'en', publicOn = true) =>
   success: { publicOn, counts: counts(t, s) },
 });
 const onStars = (root: ParentNode) => root.querySelectorAll('[data-testid="success-stars"] svg[data-on="true"]').length;
-const slots = (root: ParentNode) => root.querySelectorAll('[data-testid="success-stars"] svg').length;
+const slots = (root: ParentNode) => root.querySelectorAll('[data-testid="success-stars"] svg[data-on]').length;
 
 describe('the ring keeps two arcs only', () => {
   it('no success band and no medal on the ring, AI shield stays', () => {
