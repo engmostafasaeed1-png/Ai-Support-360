@@ -123,6 +123,15 @@ export function formatPolicyDuration(minutes: number, lang: PolicyEmailLang): st
 
 const days = (n: number, lang: PolicyEmailLang) => formatPolicyDuration(n * 1440, lang);
 
+/** Reply windows read better in hours: 24 h / 24 ساعة. */
+export function formatPolicyHours(minutes: number, lang: PolicyEmailLang): string {
+  const h = Math.round(minutes / 60);
+  return lang === 'ar' ? arCount(h, 'ساعة واحدة', 'ساعتان', 'ساعات', 'ساعة') : `${h} h`;
+}
+
+const CARD_LETTERS = { en: ['a', 'b', 'c', 'd', 'e', 'f'], ar: ['أ', 'ب', 'ج', 'د', 'هـ', 'و'] };
+export const cardLetter = (i: number, lang: PolicyEmailLang) => CARD_LETTERS[lang][i] ?? String(i + 1);
+
 export interface PolicyWhyCard { icon: string; title: string; text: string }
 
 export const POLICY_EMAIL_STR = {
@@ -271,7 +280,7 @@ export function policyEmailModel(p: PolicyEmailProps) {
     body: parsePolicyEmailBody(p.body),
     cards: t.cards(n),
     numbers: [
-      { value: d(n.expire), label: t.num.reply },
+      { value: n.expire % 60 === 0 && n.expire <= 2880 ? formatPolicyHours(n.expire, lang) : d(n.expire), label: t.num.reply },
       { value: d(n.criticalExpire), label: t.num.critical },
       { value: `${d(n.r1)} · ${d(n.r2)} · ${d(n.r3)}`, label: t.num.reminders },
       { value: String(n.minSample), label: t.num.minSample },
@@ -364,7 +373,7 @@ export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
       row(
         h('td', { width: 52, valign: 'top', align: 'center', style: { width: '52px', padding: '14px 0 14px', fontSize: '24px', lineHeight: '28px', textAlign: 'center', verticalAlign: 'top' } }, c.icon),
         cell({ padding: rtl ? '14px 0 14px 16px' : '14px 16px 14px 0', verticalAlign: 'top' },
-          p({ fontSize: '15px', fontWeight: 'bold', color: C.navy, margin: '0 0 4px' }, `${String.fromCharCode(97 + i)}) ${c.title}`),
+          p({ fontSize: '15px', fontWeight: 'bold', color: C.navy, margin: '0 0 4px' }, `${cardLetter(i, m.lang)}) ${c.title}`),
           p({ fontSize: '14px', lineHeight: '1.6', color: C.text }, c.text),
         ),
       ),
@@ -376,7 +385,7 @@ export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
   for (let i = 0; i < m.numbers.length; i += 2) pairs.push(m.numbers.slice(i, i + 2));
   const numCell = (x: { value: string; label: string } | undefined) => h('td', { width: '50%', valign: 'top', style: { width: '50%', padding: '8px', verticalAlign: 'top', fontFamily: font, textAlign: start } },
     x ? table({ backgroundColor: '#24316e', borderRadius: '12px' }, row(cell({ padding: '12px 14px', backgroundColor: '#24316e', borderRadius: '12px' },
-      p({ fontSize: '19px', fontWeight: 'bold', color: C.white, margin: '0 0 2px' }, x.value),
+      p({ fontSize: x.value.length > 12 ? '16px' : '19px', lineHeight: '1.35', fontWeight: 'bold', color: C.white, margin: '0 0 2px' }, x.value),
       p({ fontSize: '12px', lineHeight: '1.45', color: '#c7d2fe' }, x.label),
     ))) : null);
   const means = row(cell({ padding: '14px 28px 6px' },
@@ -510,7 +519,7 @@ export function policyEmailText(props: PolicyEmailProps): string {
   L.push(m.t.brand.toUpperCase(), '', m.title);
   if (m.effective) L.push(m.effective);
   L.push(m.deadlineLine, m.t.neverBlocked, '', m.hello, '', m.intro, '', `${m.t.button}: ${m.confirmUrl}`, '', m.t.afterDeadline, '', rule, m.t.whyTitle.toUpperCase(), rule, m.t.whyLead, '');
-  m.cards.forEach((c, i) => L.push(`${String.fromCharCode(97 + i)}) ${c.title}`, `   ${c.text}`, ''));
+  m.cards.forEach((c, i) => L.push(`${cardLetter(i, m.lang)}) ${c.title}`, `   ${c.text}`, ''));
   L.push(rule, m.t.meansTitle.toUpperCase(), rule);
   m.numbers.forEach(x => L.push(`- ${x.value}: ${x.label}`));
   L.push(m.t.meansNote, '', rule, m.t.fullTitle.toUpperCase(), rule);
