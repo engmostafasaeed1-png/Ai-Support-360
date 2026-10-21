@@ -39,12 +39,13 @@ export default defineConfig(({ mode }) => ({
       output: {
         // Stable vendor groups: cached across releases and shared by every area of the app.
         manualChunks(id) {
+          // Shared CommonJS helpers go with React so no vendor group depends on a lazy-only one.
+          if (id.includes("commonjsHelpers")) return "vendor-react";
           if (!id.includes("node_modules")) return undefined;
           if (/node_modules\/(react|react-dom|scheduler|react-router|react-router-dom|@remix-run\/router)\//.test(id)) return "vendor-react";
           if (id.includes("node_modules/@supabase/")) return "vendor-supabase";
           if (/node_modules\/(i18next|react-i18next|i18next-browser-languagedetector)\//.test(id)) return "vendor-i18n";
           if (id.includes("node_modules/@tanstack/")) return "vendor-query";
-          if (/node_modules\/(recharts|d3-[^/]+|victory-vendor)\//.test(id)) return "vendor-charts";
           return undefined;
         },
       },
