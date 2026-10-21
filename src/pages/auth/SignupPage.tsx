@@ -94,10 +94,10 @@ function SignupForm() {
   // Referral code from the link (?ref=) or kept from an earlier visit (30 days); consultants can type or change it.
   const [referralInput, setReferralInput] = useState(() => normalizeReferralCode(searchParams.get('ref') || storedReferral() || ''));
   const referralProgram = usePublicReferralSettings();
-  const showReferralField = role === 'consultant' && referralProgram.available && referralProgram.settings.enabled;
   const referralCode = normalizeReferralCode(referralInput);
 
   const [role, setRole] = useState<Role>(initialRole);
+  const showReferralField = role === 'consultant' && referralProgram.available && referralProgram.settings.enabled;
   const [agreed, setAgreed] = useState(false);
   const [place, setPlace] = useState<PickedLocation>({ country: '', city: '' });
   const [placeError, setPlaceError] = useState<string | null>(null);
