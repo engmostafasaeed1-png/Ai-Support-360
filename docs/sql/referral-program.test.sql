@@ -170,10 +170,10 @@ UPDATE public.payouts SET status = 'completed' WHERE id = (SELECT id FROM _rp);
 SELECT pg_temp.check((SELECT count(*) FROM public.referral_reward_lines WHERE referral_payout_id = (SELECT id FROM _rp) AND status = 'paid') = 3, 'lines paid');
 -- A refund after payment: negative available line, deducted next time.
 SELECT pg_temp.as_user((SELECT admin FROM _ids));
-SELECT public.admin_referral_action('reverse_line', (SELECT id FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 1)), 'Chargeback test');
+SELECT public.admin_referral_action('reverse_line', (SELECT id FROM public.referral_reward_lines WHERE kind = 'reward' AND source_payout_id = (SELECT id FROM _p WHERE n = 1)), 'Chargeback test');
 SELECT pg_temp.as_user(NULL);
 SELECT pg_temp.check((SELECT amount = -5.00 AND status = 'available' FROM public.referral_reward_lines WHERE kind = 'reversal'
-                        AND reverses_line_id = (SELECT id FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 1))), 'paid line reversed by negative line');
+                        AND reverses_line_id = (SELECT id FROM public.referral_reward_lines WHERE kind = 'reward' AND source_payout_id = (SELECT id FROM _p WHERE n = 1))), 'paid line reversed by negative line');
 
 -- 11. Referrer views: masked names only, no direct table reads, no admin RPCs --------------------------------------------------------
 SET LOCAL ROLE authenticated;
