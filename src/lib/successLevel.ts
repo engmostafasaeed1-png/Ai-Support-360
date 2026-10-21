@@ -78,7 +78,7 @@ export function successProgress(total: number, solved: number, s: SuccessSetting
   if (total < s.min_requests) return { kind: 'sample', more: s.min_requests - Math.max(0, total) };
   const now = successLevelOf(total, solved, s);
   if (now === 'platinum') return { kind: 'max' };
-  const next: SuccessLevel = now === 'none' ? 'bronze' : SUCCESS_LEVELS[SUCCESS_RANK[now]];
+  const next: SuccessLevel = now === 'none' || now === 'new' ? 'bronze' : SUCCESS_LEVELS[SUCCESS_RANK[now]];
   const t = s[next];
   if (t >= 100) return solved < total ? { kind: 'unreachable', level: next } : { kind: 'max' };
   const k = Math.max(1, Math.ceil((t * total - 100 * solved) / (100 - t)));
