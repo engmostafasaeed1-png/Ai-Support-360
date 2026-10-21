@@ -18,7 +18,7 @@ import ConsultantLocation from '@/components/consultant/ConsultantLocation';
 import { extendAssignmentRequest, useAssignmentPolicy } from '@/hooks/useAssignmentPolicy';
 import { clientRequestView, durationLabel, timeLeftLabel } from '../../../supabase/functions/_shared/assignmentPolicy';
 import ResponsivenessChip from '@/components/consultant/ResponsivenessChip';
-import ConsultantRing from '@/components/consultant/ConsultantRing';
+import ConsultantRing, { ConsultantRingPills } from '@/components/consultant/ConsultantRing';
 import AssignmentInfoCard from '@/components/client/AssignmentInfoCard';
 import { useAssignmentInfoReady, useDeclineHints, useInfoRequests } from '@/hooks/useAssignmentInfo';
 
@@ -202,6 +202,7 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
                   <ConsultantRing consultantId={r.consultant_id} name={r.consultant_name} avatarUrl={r.avatar_url} size="md" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{r.consultant_name}</p>
+                    <ConsultantRingPills consultantId={r.consultant_id} className="my-0.5" />
                     <ConsultantLocation audience="client" city={r.city} country={r.country} className="text-[11px] text-muted-foreground" />
                     <ResponsivenessChip consultantId={r.consultant_id} className="mt-0.5" />
                     <p className="text-[11px] text-muted-foreground">Sent {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}</p>

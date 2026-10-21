@@ -23,7 +23,7 @@ import CompletionBadge from '@/components/consultant/CompletionBadge';
 import ResponsivenessChip from '@/components/consultant/ResponsivenessChip';
 import { BlendedRatingStars } from '@/components/consultant/ResponsivenessRating';
 import { usePublicResponsiveness } from '@/hooks/useResponsiveness';
-import ConsultantRing from '@/components/consultant/ConsultantRing';
+import ConsultantRing, { ConsultantRingPills } from '@/components/consultant/ConsultantRing';
 import { responsivenessScore } from '@/lib/ringAvatar';
 import LinkStatus from '@/components/consultant/LinkStatus';
 import { STATE_META } from '@/lib/mapMarkers';
@@ -351,18 +351,19 @@ export default function ConsultantsPage() {
           </CardContent>
         </Card>
       ) : view !== 'map' ? (
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((c) => (
-            <Card key={c.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all group">
+            <Card key={c.id} className="min-w-0 rounded-2xl border-border/50 hover:shadow-premium transition-all group">
               <CardContent className="p-5">
-                <div className="flex items-start gap-4">
-                  <ConsultantRing consultantId={c.id} name={c.name} initials={c.avatar} avatarUrl={c.avatar_url} size="lg" className="mb-2"
+                <div className="flex flex-col items-start gap-3 sm:flex-row sm:gap-4">
+                  <ConsultantRing consultantId={c.id} name={c.name} initials={c.avatar} avatarUrl={c.avatar_url} size="md" className="mb-2"
                     rating={c.rating} reviews={c.reviews} badge={c.ai_interview_badge} verified={c.verification_status === 'verified'} statusClass={STATE_META[c.status].dot} />
-                  <div className="flex-1 min-w-0">
+                  <div className="w-full flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold text-foreground">{c.name}</h3>
                       <FavouriteButton consultantId={c.id} name={c.name} />
                     </div>
+                    <ConsultantRingPills consultantId={c.id} rating={c.rating} reviews={c.reviews} className="my-1" />
                     <p className="text-sm text-muted-foreground">{c.skills && c.skills.length > 1 ? c.skills.slice(0, 4).join(' · ') + (c.skills.length > 4 ? ` +${c.skills.length - 4}` : '') : c.specialty}</p>
                     {c.place && (
                       <p className="text-xs text-muted-foreground flex items-center gap-1">

@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import RingAvatar from './RingAvatar';
+import RingPills from './RingPills';
+import RingLegend from './RingLegend';
 import { ringSummary } from '@/lib/ringAvatar';
 
 const full = ringSummary({ rating: 4.8, reviews: 12, publicOn: true, resp: { level: 'excellent', median_minutes: 20, response_rate: 95 }, badge: 'gold' });
@@ -51,5 +53,32 @@ describe('RingAvatar', () => {
     const img = container.querySelector('img') as HTMLImageElement;
     fireEvent.error(img);
     expect(screen.getByText('SA')).toBeInTheDocument();
+  });
+});
+
+describe('RingAvatar sizes, pills and legend', () => {
+  it('shows only the number on a tiny badge at sm', () => {
+    render(<RingAvatar name="Sara Ali" summary={full} size="sm" />);
+    expect(screen.getByTestId('ring-short')).toHaveTextContent('4.8');
+  });
+  it('draws a gradient arc with an end dot', () => {
+    render(<RingAvatar name="Sara Ali" summary={full} size="md" />);
+    expect(screen.getByTestId('ring-arc-rating').querySelectorAll('path').length).toBeGreaterThan(2);
+    expect(screen.getByTestId('ring-arc-rating-end')).toBeInTheDocument();
+  });
+  it('shows the rating and reply pills without hover', () => {
+    const s = ringSummary({ rating: 4.8, reviews: 23, publicOn: true, resp: { level: 'excellent', median_minutes: 18, response_rate: 96 } });
+    render(<RingPills summary={s} />);
+    expect(screen.getByTestId('ring-pill-rating')).toHaveTextContent('4.8 (23)');
+    expect(screen.getByTestId('ring-pill-responsiveness')).toHaveTextContent('Fast reply - 18 min');
+  });
+  it('explains the rings in the legend', () => {
+    render(<RingLegend />);
+    fireEvent.click(screen.getByRole('button', { name: 'How to read the ring' }));
+    const box = screen.getByTestId('ring-legend-content');
+    expect(box).toHaveTextContent('Outer ring: client reviews');
+    expect(box).toHaveTextContent('Inner ring: responsiveness');
+    expect(box).toHaveTextContent('Corner badge: AI interview level');
+    expect(box).toHaveTextContent('4.6 and up');
   });
 });

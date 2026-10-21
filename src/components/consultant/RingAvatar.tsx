@@ -1,19 +1,14 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { Medal, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { arcPath, arcPattern, RING_GEOMETRY as G, TONE_COLOR, type RingSummary, type RingTier } from '@/lib/ringAvatar';
+import {
+  arcPath, arcPattern, arcSegments, pointAt, ringGeometry, RING_OUTLINE, RING_SIZES, toneMix, TONE_COLOR, TONE_VARS, trackColor,
+  type RingSize, type RingSummary, type RingTier, type RingTone,
+} from '@/lib/ringAvatar';
 
-export type RingSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-
-/** Pixel size, initials text, corner chip and centre label per size. */
-export const RING_SIZES: Record<RingSize, { px: number; text: string; chip: boolean; label: boolean }> = {
-  xs: { px: 28, text: 'text-[9px]', chip: false, label: false },
-  sm: { px: 40, text: 'text-xs', chip: true, label: false },
-  md: { px: 56, text: 'text-sm', chip: true, label: false },
-  lg: { px: 80, text: 'text-lg', chip: true, label: true },
-  xl: { px: 128, text: 'text-3xl sm:text-4xl', chip: true, label: true },
-};
+export type { RingSize } from '@/lib/ringAvatar';
+export { RING_SIZES } from '@/lib/ringAvatar';
 
 const TIER_CLASS: Record<RingTier, string> = {
   gold: 'text-badge-gold', silver: 'text-badge-silver', bronze: 'text-badge-bronze', verified: 'text-success',
@@ -34,21 +29,46 @@ function useInView<T extends Element>(): [RefObject<T>, boolean] {
   return [ref, seen];
 }
 
-function Arc({ pct, r, w, tone, low, drawn, testId, kind }: {
-  pct: number; r: number; w: number; tone: keyof typeof TONE_COLOR; low: boolean; drawn: boolean; testId: string; kind: string;
+/**
+ * One arc: card-coloured outline, then the gradient arc (short pieces, so the colour runs along the arc),
+ * round caps, a soft glow and a tiny end dot. Revealed by a mask that draws in from 12 o'clock.
+ */
+function Arc({ pct, r, c, w, tone, low, drawn, glow, maskId, testId, kind }: {
+  pct: number; r: number; c: number; w: number; tone: RingTone; low: boolean; drawn: boolean; glow: number; maskId: string; testId: string; kind: string;
 }) {
-  const d = arcPath(pct, r);
+  const d = arcPath(pct, r, c, c);
   if (!d) return null;
-  const { dash, opacity } = arcPattern(tone, low);
-  // Solid arcs draw in (stroke offset); patterned arcs fade in. Both are instant with reduced motion.
-  const style: CSSProperties = dash
-    ? { opacity: drawn ? opacity : 0 }
-    : { strokeDasharray: 100, strokeDashoffset: drawn ? 0 : 100, opacity };
+  const { dash, opacity } = arcPattern(tone, low, w);
+  const [sx, sy] = pointAt(0, r, c, c);
+  const [ex, ey] = pointAt(Math.min(pct, 99.99), r, c, c);
+  const [a] = TONE_VARS[tone];
+  const groupStyle = { '--ring-glow-color': `hsl(var(${a}) / 0.5)`, '--ring-glow-blur': `${glow}px` } as CSSProperties;
   return (
-    <path d={d} pathLength={dash ? undefined : 100} fill="none" stroke={TONE_COLOR[tone]} strokeWidth={w} strokeLinecap={dash ? 'butt' : 'round'}
-      strokeDasharray={dash ?? undefined} style={style}
-      className="motion-safe:transition-[stroke-dashoffset,opacity] motion-safe:duration-700 motion-safe:ease-out"
-      data-testid={testId} data-kind={kind} data-tone={tone} data-pct={pct} data-pattern={dash ? (low ? 'low-sample' : 'low-value') : 'solid'} />
+    <>
+      <mask id={maskId} maskUnits="userSpaceOnUse" x={-20} y={-20} width={c * 2 + 40} height={c * 2 + 40}>
+        <path d={d} fill="none" stroke="white" strokeWidth={w + 16} strokeLinecap="round" pathLength={100}
+          strokeDasharray="100 102" strokeDashoffset={drawn ? 0 : 101} className="ring-draw" />
+      </mask>
+      <g mask={`url(#${maskId})`} data-testid={testId} data-kind={kind} data-tone={tone} data-pct={pct}
+        data-pattern={dash ? (low ? 'low-sample' : 'low-value') : 'solid'}>
+        <path d={d} fill="none" stroke="hsl(var(--card))" strokeWidth={w + RING_OUTLINE * 2} strokeLinecap="round"
+          strokeDasharray={dash ?? undefined} />
+        <g className={cn(!low && 'ring-glow')} style={groupStyle}>
+          {dash ? (
+            <path d={d} fill="none" stroke={TONE_COLOR[tone]} strokeWidth={w} strokeLinecap="round" strokeDasharray={dash} opacity={opacity} />
+          ) : (
+            <>
+              {arcSegments(pct, r, c, c).map((s, i) => (
+                <path key={i} d={s.d} fill="none" stroke={TONE_COLOR[tone]} style={{ stroke: toneMix(tone, s.t) }} strokeWidth={w} strokeLinecap="butt" />
+              ))}
+              <circle cx={sx} cy={sy} r={w / 2} fill={TONE_COLOR[tone]} style={{ fill: toneMix(tone, 0) }} />
+              <circle cx={ex} cy={ey} r={w / 2} fill={TONE_COLOR[tone]} style={{ fill: toneMix(tone, 1) }} />
+            </>
+          )}
+        </g>
+        {!dash && <circle cx={ex} cy={ey} r={Math.max(0.9, w * 0.2)} fill="hsl(var(--card))" opacity={drawn ? 0.95 : 0} className="ring-dot" data-testid={`${testId}-end`} />}
+      </g>
+    </>
   );
 }
 
@@ -73,6 +93,8 @@ export interface RingAvatarProps {
  */
 export default function RingAvatar({ name, initials, avatarUrl, size = 'md', summary, interactive = true, statusClass, className, footer }: RingAvatarProps) {
   const cfg = RING_SIZES[size];
+  const g = ringGeometry(size);
+  const uid = useId().replace(/:/g, '');
   const [ref, inView] = useInView<HTMLSpanElement>();
   const [drawn, setDrawn] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
@@ -89,53 +111,56 @@ export default function RingAvatar({ name, initials, avatarUrl, size = 'md', sum
   const fallback = initials || name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
   const { rating, resp, tier } = summary;
   const showPhoto = !!avatarUrl && failed !== avatarUrl;
+  const inset = g.c - g.photoR;
 
   const visual = (
-    <span ref={ref} className="relative block" style={{ width: cfg.px, height: cfg.px }} dir="ltr">
-      <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false" className="absolute inset-0 h-full w-full overflow-visible" data-testid="ring-svg">
-        <circle cx="50" cy="50" r={G.outerR} fill="none" stroke="hsl(var(--muted))" strokeWidth={G.outerW} data-testid="ring-track-outer" />
-        {resp.state !== 'hidden' && <circle cx="50" cy="50" r={G.innerR} fill="none" stroke="hsl(var(--muted))" strokeWidth={G.innerW} data-testid="ring-track-inner" />}
+    <span ref={ref} className="relative block motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out motion-safe:group-hover/ring:scale-[1.03] motion-safe:group-focus-visible/ring:scale-[1.03]"
+      style={{ width: g.px, height: g.px }} dir="ltr">
+      <svg viewBox={`0 0 ${g.px} ${g.px}`} aria-hidden="true" focusable="false" className="absolute inset-0 h-full w-full overflow-visible" data-testid="ring-svg">
+        <circle cx={g.c} cy={g.c} r={g.outerR} fill="none" stroke={trackColor(rating.tone)} strokeWidth={g.outerW} data-testid="ring-track-outer" />
+        {resp.state !== 'hidden' && <circle cx={g.c} cy={g.c} r={g.innerR} fill="none" stroke={trackColor(resp.tone)} strokeWidth={g.innerW} data-testid="ring-track-inner" />}
         {inView && rating.state !== 'none' && (
-          <Arc pct={rating.pct} r={G.outerR} w={G.outerW} tone={rating.tone} low={rating.state === 'low'} drawn={drawn} testId="ring-arc-rating" kind="rating" />
+          <Arc pct={rating.pct} r={g.outerR} c={g.c} w={g.outerW} tone={rating.tone} low={rating.state === 'low'} drawn={drawn} glow={cfg.glow}
+            maskId={`${uid}o`} testId="ring-arc-rating" kind="rating" />
         )}
         {inView && resp.state === 'ok' && (
-          <Arc pct={resp.pct} r={G.innerR} w={G.innerW} tone={resp.tone} low={false} drawn={drawn} testId="ring-arc-resp" kind="responsiveness" />
+          <Arc pct={resp.pct} r={g.innerR} c={g.c} w={g.innerW} tone={resp.tone} low={false} drawn={drawn} glow={cfg.glow}
+            maskId={`${uid}i`} testId="ring-arc-resp" kind="responsiveness" />
         )}
       </svg>
       <span className={cn('absolute flex items-center justify-center overflow-hidden rounded-full gradient-primary font-bold text-primary-foreground', cfg.text)}
-        style={{ inset: `${G.photoInset}%` }}>
+        style={{ inset }}>
         {showPhoto
           ? <img src={avatarUrl as string} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" onError={() => setFailed(avatarUrl as string)} />
           : <span aria-hidden="true">{fallback}</span>}
       </span>
       {cfg.chip && tier && (
         <span className="absolute -top-0.5 -end-0.5 flex items-center justify-center rounded-full border border-border bg-card shadow-sm"
-          style={{ width: Math.max(14, cfg.px * 0.26), height: Math.max(14, cfg.px * 0.26) }} data-testid="ring-tier" data-tier={tier}>
+          style={{ width: Math.max(16, g.px * 0.24), height: Math.max(16, g.px * 0.24) }} data-testid="ring-tier" data-tier={tier}>
           {tier === 'verified'
             ? <ShieldCheck className={cn('h-[70%] w-[70%]', TIER_CLASS[tier])} aria-hidden="true" />
             : <Medal className={cn('h-[70%] w-[70%]', TIER_CLASS[tier])} aria-hidden="true" />}
         </span>
       )}
-      {statusClass && <span aria-hidden="true" className={cn('absolute bottom-[6%] end-[6%] rounded-full border-2 border-card', statusClass)} style={{ width: Math.max(8, cfg.px * 0.15), height: Math.max(8, cfg.px * 0.15) }} />}
-      {cfg.label && (
-        <span data-testid="ring-label" dir="auto"
-          className={cn('absolute inset-x-0 -bottom-2.5 mx-auto w-max max-w-[150%] whitespace-nowrap rounded-full border border-border bg-card px-2 py-0.5 font-semibold text-foreground shadow-card',
-            size === 'xl' ? 'text-xs' : 'text-[10px]')}>
-          {summary.label}
+      {statusClass && <span aria-hidden="true" className={cn('absolute bottom-[8%] end-[4%] rounded-full border-2 border-card', statusClass)} style={{ width: Math.max(9, g.px * 0.14), height: Math.max(9, g.px * 0.14) }} />}
+      {cfg.short && (
+        <span aria-hidden="true" data-testid="ring-short"
+          className="absolute inset-x-0 -bottom-1.5 mx-auto w-max rounded-full border border-border bg-card px-1 text-[9px] font-bold leading-[14px] text-foreground shadow-sm">
+          {summary.short}
         </span>
       )}
     </span>
   );
 
   if (!interactive) {
-    return <span role="img" aria-label={summary.text} title={summary.text} className={cn('inline-block shrink-0', className)} data-testid="ring-avatar" data-size={size}>{visual}</span>;
+    return <span role="img" aria-label={summary.text} title={summary.text} className={cn('group/ring inline-block shrink-0', className)} data-testid="ring-avatar" data-size={size}>{visual}</span>;
   }
 
   return (
     <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
       <PopoverPrimitive.Anchor asChild>
         <button ref={anchor} type="button" aria-label={summary.text} aria-expanded={open} data-testid="ring-avatar" data-size={size}
-          className={cn('inline-block shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2', className)}
+          className={cn('group/ring inline-block shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2', className)}
           onPointerDown={(e) => { pointer.current = e.pointerType; }}
           onPointerEnter={(e) => { if (e.pointerType === 'mouse') setOpen(true); }}
           onPointerLeave={(e) => { if (e.pointerType === 'mouse') setOpen(false); }}

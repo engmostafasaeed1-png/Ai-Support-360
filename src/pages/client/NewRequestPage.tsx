@@ -1,6 +1,6 @@
 import MatchScoreBreakdown, { type MatchCriterion } from '@/components/client/MatchScoreBreakdown';
 import FavouriteButton, { FavouriteChip } from '@/components/favourites/FavouriteButton';
-import ConsultantRing from '@/components/consultant/ConsultantRing';
+import ConsultantRing, { ConsultantRingPills } from '@/components/consultant/ConsultantRing';
 import GroupInvitePanel from '@/components/favourites/GroupInvitePanel';
 import { useClientFavourites } from '@/hooks/useClientFavourites';
 import MatchWhyChips from '@/components/match/MatchWhyChips';
@@ -1691,6 +1691,7 @@ function RecommendationCard({ rec, rank, navigate, picked, pickDisabled, onToggl
             )}
             <TrustBadge badge={rec.ai_interview_badge} credits={rec.credibility_credits} />
           </div>
+          <ConsultantRingPills consultantId={rec.consultant_id} rating={rec.rating} reviews={rec.total_reviews} className="mt-1" />
 
           {/* Match Score */}
           <div className="flex items-center gap-2 mt-1">

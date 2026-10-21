@@ -3,7 +3,7 @@
 
 import { STATE_META, type AvailabilityState } from './mapMarkers';
 import type { LinkState } from './consultantLinks';
-import { arcPath, arcPattern, RING_GEOMETRY, TONE_COLOR, type RingSummary } from './ringAvatar';
+import { arcPath, arcPattern, arcSegments, pointAt, ringGeometry, RING_OUTLINE, RING_SIZES, toneGradient, toneMix, TONE_COLOR, TONE_VARS, trackColor, type RingPill, type RingSummary } from './ringAvatar';
 
 export interface PinView {
   id: string;
@@ -105,6 +105,17 @@ export function buildMarkerElement(view: PinView, selected: boolean): HTMLElemen
   const tail = make('div', { width: '0', height: '0', borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `8px solid ${body}`, margin: '0 auto' });
 
   root.append(badge, dot, tail);
+  // Map pins are the smallest ring size: only the number, on a tiny badge at the bottom.
+  if (view.ring) {
+    const short = make('div', {
+      position: 'absolute', left: '50%', top: '34px', transform: 'translateX(-50%)', padding: '0 4px', borderRadius: '9999px',
+      fontSize: '9px', fontWeight: '700', lineHeight: '14px', background: 'hsl(var(--card))', color: 'hsl(var(--foreground))',
+      border: '1px solid hsl(var(--border))', whiteSpace: 'nowrap',
+    }, view.ring.short);
+    short.dataset.part = 'ring-short';
+    short.setAttribute('aria-hidden', 'true');
+    root.append(short);
+  }
   return root;
 }
 
@@ -143,7 +154,7 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
     make('div', { fontSize: '10px', color: '#9ca3af' }, view.place || labels.noPlace),
   );
   if (view.approximate) who.append(make('div', { fontSize: '10px', color: '#9ca3af', fontStyle: 'italic' }, labels.approximate || DEFAULT_LABELS.approximate || ''));
-  if (view.ring) who.append(make('div', { fontSize: '11px', fontWeight: '600', marginTop: '2px' }, view.ring.label));
+  if (view.ring) who.append(ringPills(view.ring));
   head.append(view.ring ? ringWrap(avatar, view.ring) : avatar, who);
 
   const rating = make('div', { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' });
@@ -227,44 +238,93 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
+/** Leaflet popups stay light in dark mode, so the ring and pills inside use the light card colours. */
+function lightSurface(node: HTMLElement): void {
+  node.style.setProperty('--card', '0 0% 100%');
+  node.style.setProperty('--foreground', '222 47% 11%');
+  node.style.setProperty('--border', '214 32% 88%');
+}
+
+/** The two always-visible pills of the ring, as DOM (same text as the React pills). */
+export function ringPills(ring: RingSummary): HTMLElement {
+  const row = make('div', { display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' });
+  row.dataset.part = 'ring-pills';
+  lightSurface(row);
+  const pill = (p: RingPill, icon: string, kind: string) => {
+    const el = make('span', {
+      display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '1px 7px', borderRadius: '9999px', fontSize: '11px', fontWeight: '600',
+      border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', color: 'hsl(var(--foreground))', whiteSpace: 'nowrap',
+    });
+    el.dir = 'auto';
+    el.dataset.part = `ring-pill-${kind}`;
+    el.dataset.tone = p.tone;
+    const dot = make('span', { width: '7px', height: '7px', borderRadius: '9999px', background: toneGradient(p.tone), flexShrink: '0' });
+    dot.setAttribute('aria-hidden', 'true');
+    const ic = make('span', { color: TONE_COLOR[p.tone] }, icon);
+    ic.setAttribute('aria-hidden', 'true');
+    el.append(dot, ic, make('span', {}, p.text));
+    row.append(el);
+  };
+  pill(ring.pills.rating, '★', 'rating');
+  if (ring.pills.resp) pill(ring.pills.resp, '⚡', 'responsiveness');
+  return row;
+}
+
 /**
  * Popup version of the performance ring: the same arcs as the React ring (12 o'clock, clockwise in every direction),
  * with the full text as accessible name and native tooltip.
  */
 export function ringWrap(avatar: HTMLElement, ring: RingSummary): HTMLElement {
-  const box = make('div', { position: 'relative', width: '56px', height: '56px', flexShrink: '0' });
+  const g = ringGeometry('md');
+  const glow = RING_SIZES.md.glow;
+  const box = make('div', { position: 'relative', width: `${g.px}px`, height: `${g.px}px`, flexShrink: '0' });
   box.dataset.part = 'ring';
+  lightSurface(box);
   box.setAttribute('role', 'img');
   box.setAttribute('aria-label', ring.text);
   box.title = ring.text;
   box.dir = 'ltr';
   const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.setAttribute('viewBox', `0 0 ${g.px} ${g.px}`);
   svg.setAttribute('aria-hidden', 'true');
-  Object.assign(svg.style, { position: 'absolute', inset: '0', width: '100%', height: '100%' });
-  const G = RING_GEOMETRY;
-  const track = (r: number, w: number) => {
-    const c = document.createElementNS(SVG_NS, 'circle');
-    c.setAttribute('cx', '50'); c.setAttribute('cy', '50'); c.setAttribute('r', String(r));
-    c.setAttribute('fill', 'none'); c.setAttribute('stroke', 'hsl(var(--muted))'); c.setAttribute('stroke-width', String(w));
-    svg.append(c);
+  Object.assign(svg.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', overflow: 'visible' });
+  const el = (tag: string, attrs: Record<string, string | number>, style: Record<string, string> = {}) => {
+    const n = document.createElementNS(SVG_NS, tag) as SVGElement;
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+    Object.assign(n.style, style);
+    return n;
   };
+  const track = (r: number, w: number, color: string) => svg.append(el('circle', { cx: g.c, cy: g.c, r, fill: 'none', stroke: color, 'stroke-width': w }));
   const arc = (pct: number, r: number, w: number, tone: keyof typeof TONE_COLOR, low: boolean, kind: string) => {
-    const d = arcPath(pct, r);
+    const d = arcPath(pct, r, g.c, g.c);
     if (!d) return;
-    const { dash, opacity } = arcPattern(tone, low);
-    const el = document.createElementNS(SVG_NS, 'path');
-    el.setAttribute('d', d); el.setAttribute('fill', 'none'); el.setAttribute('stroke', TONE_COLOR[tone]);
-    el.setAttribute('stroke-width', String(w)); el.setAttribute('stroke-linecap', dash ? 'butt' : 'round'); el.setAttribute('opacity', String(opacity));
-    if (dash) el.setAttribute('stroke-dasharray', dash);
-    el.dataset.kind = kind; el.dataset.tone = tone;
-    svg.append(el);
+    const { dash, opacity } = arcPattern(tone, low, w);
+    const grp = el('g', {});
+    grp.dataset.kind = kind; grp.dataset.tone = tone;
+    grp.append(el('path', { d, fill: 'none', stroke: 'hsl(var(--card))', 'stroke-width': w + RING_OUTLINE * 2, 'stroke-linecap': 'round', ...(dash ? { 'stroke-dasharray': dash } : {}) }));
+    const colour = el('g', {}, { '--ring-glow-color': `hsl(var(${TONE_VARS[tone][0]}) / 0.5)`, '--ring-glow-blur': `${glow}px` });
+    if (!low) colour.setAttribute('class', 'ring-glow');
+    if (dash) {
+      colour.append(el('path', { d, fill: 'none', stroke: TONE_COLOR[tone], 'stroke-width': w, 'stroke-linecap': 'round', 'stroke-dasharray': dash, opacity }));
+    } else {
+      for (const seg of arcSegments(pct, r, g.c, g.c)) colour.append(el('path', { d: seg.d, fill: 'none', stroke: TONE_COLOR[tone], 'stroke-width': w }, { stroke: toneMix(tone, seg.t) }));
+      const [sx, sy] = pointAt(0, r, g.c, g.c);
+      const [ex, ey] = pointAt(Math.min(pct, 99.99), r, g.c, g.c);
+      colour.append(el('circle', { cx: sx, cy: sy, r: w / 2, fill: TONE_COLOR[tone] }, { fill: toneMix(tone, 0) }));
+      colour.append(el('circle', { cx: ex, cy: ey, r: w / 2, fill: TONE_COLOR[tone] }, { fill: toneMix(tone, 1) }));
+      grp.append(colour, el('circle', { cx: ex, cy: ey, r: Math.max(0.9, w * 0.2), fill: 'hsl(var(--card))', opacity: 0.95 }));
+      svg.append(grp);
+      return;
+    }
+    grp.append(colour);
+    svg.append(grp);
   };
-  track(G.outerR, G.outerW);
-  if (ring.resp.state !== 'hidden') track(G.innerR, G.innerW);
-  if (ring.rating.state !== 'none') arc(ring.rating.pct, G.outerR, G.outerW, ring.rating.tone, ring.rating.state === 'low', 'rating');
-  if (ring.resp.state === 'ok') arc(ring.resp.pct, G.innerR, G.innerW, ring.resp.tone, false, 'responsiveness');
-  Object.assign(avatar.style, { position: 'absolute', inset: `${G.photoInset}%`, width: 'auto', height: 'auto', borderRadius: '50%', fontSize: '11px' });
+  track(g.outerR, g.outerW, trackColor(ring.rating.tone));
+  if (ring.resp.state !== 'hidden') track(g.innerR, g.innerW, trackColor(ring.resp.tone));
+  if (ring.rating.state !== 'none') arc(ring.rating.pct, g.outerR, g.outerW, ring.rating.tone, ring.rating.state === 'low', 'rating');
+  if (ring.resp.state === 'ok') arc(ring.resp.pct, g.innerR, g.innerW, ring.resp.tone, false, 'responsiveness');
+  const inset = g.c - g.photoR;
+  Object.assign(avatar.style, { position: 'absolute', inset: `${inset}px`, width: 'auto', height: 'auto', borderRadius: '50%', fontSize: '12px' });
   box.append(svg, avatar);
   return box;
 }
