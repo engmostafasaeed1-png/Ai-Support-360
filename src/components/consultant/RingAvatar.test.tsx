@@ -25,9 +25,16 @@ describe('RingAvatar', () => {
   it('toggles on tap', () => {
     render(<RingAvatar name="Sara Ali" summary={full} />);
     const btn = screen.getByTestId('ring-avatar');
-    fireEvent.pointerDown(btn, { pointerType: 'touch' });
-    fireEvent.click(btn);
+    const tap = () => {
+      const ev = new MouseEvent('pointerdown', { bubbles: true });
+      Object.defineProperty(ev, 'pointerType', { value: 'touch' });
+      btn.dispatchEvent(ev);
+      fireEvent.click(btn);
+    };
+    tap();
     expect(screen.getByTestId('ring-popover')).toBeInTheDocument();
+    tap();
+    expect(screen.queryByTestId('ring-popover')).not.toBeInTheDocument();
   });
   it('has no inner arc or track while responsiveness is private', () => {
     render(<RingAvatar name="Sara Ali" summary={ringSummary({ rating: 4.2, reviews: 5, publicOn: false })} />);

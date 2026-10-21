@@ -78,6 +78,7 @@ export default function RingAvatar({ name, initials, avatarUrl, size = 'md', sum
   const [failed, setFailed] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const pointer = useRef('');
+  const anchor = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!inView || drawn) return;
     if (typeof requestAnimationFrame === 'undefined') { setDrawn(true); return; }
@@ -133,7 +134,7 @@ export default function RingAvatar({ name, initials, avatarUrl, size = 'md', sum
   return (
     <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
       <PopoverPrimitive.Anchor asChild>
-        <button type="button" aria-label={summary.text} aria-expanded={open} data-testid="ring-avatar" data-size={size}
+        <button ref={anchor} type="button" aria-label={summary.text} aria-expanded={open} data-testid="ring-avatar" data-size={size}
           className={cn('inline-block shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2', className)}
           onPointerDown={(e) => { pointer.current = e.pointerType; }}
           onPointerEnter={(e) => { if (e.pointerType === 'mouse') setOpen(true); }}
@@ -147,6 +148,8 @@ export default function RingAvatar({ name, initials, avatarUrl, size = 'md', sum
       </PopoverPrimitive.Anchor>
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content side="top" sideOffset={8} onOpenAutoFocus={(e) => e.preventDefault()} onCloseAutoFocus={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => { if (anchor.current?.contains(e.target as Node)) e.preventDefault(); }}
+          onFocusOutside={(e) => { if (anchor.current?.contains(e.target as Node)) e.preventDefault(); }}
           className="z-50 max-w-72 rounded-xl border border-border/60 bg-popover p-3 text-xs text-popover-foreground shadow-md" data-testid="ring-popover">
           <p className="mb-1 font-semibold">{name}</p>
           <ul className="space-y-1" dir="auto">
