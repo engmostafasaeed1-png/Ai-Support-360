@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { filterLocally, isNotInstalled, toRpcParams, type UserFilters, type UserRow } from '@/lib/userAdmin';
+import { filterLocally, isNotInstalled, normalizeUserDetail, toRpcParams, type UserFilters, type UserRow } from '@/lib/userAdmin';
 
 // The new database functions are not in the generated types until the prepared file is applied.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
