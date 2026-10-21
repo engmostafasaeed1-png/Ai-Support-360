@@ -87,8 +87,8 @@ export function RolesDialog({ user, actorId, actorRoles, superAdminCount, fourEy
   const [roles, setRoles] = useState<string[]>(user.roles);
   const [reason, setReason] = useState('');
   const check = checkRoleChange({ actorId, actorRoles, targetId: user.id, targetRoles: user.roles, next: roles, superAdminCount, reason, fourEyes });
-  const adminLevel = roles.some((r) => (r === 'admin' || r === 'super_admin') !== user.roles.includes(r) || false) ||
-    user.roles.some((r) => (r === 'admin' || r === 'super_admin') && !roles.includes(r));
+  const changed = [...roles.filter((r) => !user.roles.includes(r)), ...user.roles.filter((r) => !roles.includes(r))];
+  const adminLevel = changed.some((r) => r === 'admin' || r === 'super_admin');
   const isSuper = actorRoles.includes('super_admin');
   const msg: Record<string, string> = {
     self: t('um.err_self_role', 'You cannot change your own roles.'),
