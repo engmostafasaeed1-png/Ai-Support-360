@@ -26,4 +26,4 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - Social sign-in starts only via startSocialSignIn (rechecks settings per purpose).
 - Realtime uses `subscribeWhileVisible` with row filters (whole tables only on admin pages); portals and Arabic load lazily, cutting DB/bundle load.
 - Window scroll rules live only in ScrollToTop/lib/scrollUtils; landing reveals use lib/reveal, which hides only what it marks, so content shows without scripts.
-- Sign-up confirmation links open /auth/confirm, which verifies only on a button press (code fallback), so scanners cannot use links up; expired-link errors use ConfirmLinkProblem, never the social error box.
+- Sign-up confirmation links open /auth/confirm, verifying only on a button press (code fallback) so scanners cannot use them up; expired links show ConfirmLinkProblem, never the social error.
