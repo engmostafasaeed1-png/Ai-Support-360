@@ -238,10 +238,18 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
+/** Leaflet popups stay light in dark mode, so the ring and pills inside use the light card colours. */
+function lightSurface(node: HTMLElement): void {
+  node.style.setProperty('--card', '0 0% 100%');
+  node.style.setProperty('--foreground', '222 47% 11%');
+  node.style.setProperty('--border', '214 32% 88%');
+}
+
 /** The two always-visible pills of the ring, as DOM (same text as the React pills). */
 export function ringPills(ring: RingSummary): HTMLElement {
   const row = make('div', { display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' });
   row.dataset.part = 'ring-pills';
+  lightSurface(row);
   const pill = (p: RingPill, icon: string, kind: string) => {
     const el = make('span', {
       display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '1px 7px', borderRadius: '9999px', fontSize: '11px', fontWeight: '600',
@@ -271,6 +279,7 @@ export function ringWrap(avatar: HTMLElement, ring: RingSummary): HTMLElement {
   const glow = RING_SIZES.md.glow;
   const box = make('div', { position: 'relative', width: `${g.px}px`, height: `${g.px}px`, flexShrink: '0' });
   box.dataset.part = 'ring';
+  lightSurface(box);
   box.setAttribute('role', 'img');
   box.setAttribute('aria-label', ring.text);
   box.title = ring.text;
