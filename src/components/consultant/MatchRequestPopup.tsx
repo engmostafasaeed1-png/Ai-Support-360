@@ -18,6 +18,8 @@ import RequestInfoDialog from '@/components/consultant/assignment/RequestInfoDia
 import DeclineReasonDialog from '@/components/consultant/assignment/DeclineReasonDialog';
 import { useAssignmentInfoReady, useInfoRequests } from '@/hooks/useAssignmentInfo';
 import { Button } from '@/components/ui/button';
+import { useNotificationPause } from '@/hooks/useNotificationPause';
+import { popupHeldByPause } from '@/lib/notificationPause';
 import { nextPopup, popupKey, type PopupRequest } from '../../../supabase/functions/_shared/assignmentPolicy';
 import { infoRequestBlock } from '../../../supabase/functions/_shared/assignmentInfo';
 
@@ -119,13 +121,16 @@ export default function MatchRequestPopup() {
     return () => { supabase.removeChannel(channel); };
   }, [enabled, queryClient]);
 
-  const current = useMemo(() => nextPopup(pending, acked), [pending, acked]);
+  // Feature Q: while in-app alerts are paused, a request pops up for its first notice only (reminder re-pops wait); Critical always shows.
+  const { pause } = useNotificationPause();
+  const visible = useMemo(() => pending.filter((r) => !popupHeldByPause(r, pause, Date.now())), [pending, pause]);
+  const current = useMemo(() => nextPopup(visible, acked), [visible, acked]);
   const { data: infoRows = [] } = useInfoRequests({ requestIds: current ? [current.id] : [] }, infoReady && !!current);
   const askBlock = current ? infoRequestBlock(current.status, infoRows) : null;
   const askBlockedText = askBlock === 'open'
     ? t('assignment_info.block_open', "Waiting for the client's answer to your question.")
     : askBlock === 'limit' ? t('assignment_info.block_limit', 'You have asked 3 times on this request.') : null;
-  const waiting = useMemo(() => pending.filter((r) => r.id !== current?.id && !acked.has(popupKey(r))).length, [pending, acked, current]);
+  const waiting = useMemo(() => visible.filter((r) => r.id !== current?.id && !acked.has(popupKey(r))).length, [visible, acked, current]);
 
   useEffect(() => {
     if (!current) return;

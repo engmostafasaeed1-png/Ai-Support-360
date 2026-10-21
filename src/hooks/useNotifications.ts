@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
+import { isHeldNow } from '@/lib/notificationPause';
 
 type Notification = Tables<'notifications'>;
 
@@ -39,6 +40,9 @@ export function useNotifications() {
     }
 
     if (data) {
+      // Feature Q: notices held during a pause stay out of the bell until it ends.
+      const now = Date.now();
+      data = data.filter((n) => !isHeldNow(n as { held_until?: string | null }, now));
       setNotifications(data);
       setUnreadCount(data.filter(n => !n.is_read).length);
     }
@@ -109,11 +113,16 @@ export function useNotifications() {
           // Check if it's for the current user by checking against existing state
           supabase.auth.getUser().then(({ data: { user } }) => {
             if (user && newNotif.user_id === user.id) {
+              const extra = newNotif as Notification & { silent?: boolean; held_until?: string | null };
+              if (isHeldNow(extra, Date.now())) return;
               setNotifications(prev => [newNotif, ...prev]);
               setUnreadCount(prev => prev + 1);
-              toast(newNotif.title, {
-                description: newNotif.body || undefined,
-              });
+              // Paused in-app alerts arrive silently: kept in the bell, no pop-up.
+              if (!extra.silent) {
+                toast(newNotif.title, {
+                  description: newNotif.body || undefined,
+                });
+              }
             }
           });
         }
