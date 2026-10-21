@@ -346,7 +346,7 @@ export default function ComposeMessage({ settings, onSent }: { settings: BulkSet
                 </TabsContent>
               ))}
             </Tabs>
-            <div className="space-y-1"><Label htmlFor="bm-link">{t('bmsg.link_label', 'Link for {{link}} (a page of this site)')}</Label>
+            <div className="space-y-1"><Label htmlFor="bm-link">{t('bmsg.link_label', 'Link for {{link}} (a page of this site)', { link: '{{link}}', interpolation: { escapeValue: false } })}</Label>
               <Input id="bm-link" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="/consultant/profile" aria-invalid={!linkOk} />
               {!linkOk && <p className="text-xs text-destructive">{t('bmsg.link_bad', 'Use a page of www.aisupport360.com, for example /consultant/profile.')}</p>}</div>
             {secrets.length > 0 && (
