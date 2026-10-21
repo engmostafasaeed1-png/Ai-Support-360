@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ClientViewHint from '@/components/admin/ClientViewHint';
 import { useSearchParams } from 'react-router-dom';
 import ConsultantFullProfileSheet from '@/components/admin/ConsultantFullProfileSheet';
 import { useTranslation } from 'react-i18next';
@@ -290,6 +291,7 @@ export default function ConsultantApprovalsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground">{c.name}</p>
+                      <ClientViewHint id={c.id} />
                       <p className="text-xs text-muted-foreground">{c.modules.join(' · ')}</p>
                       <ConsultantLocation audience="admin" city={c.city} country={c.country} className="text-xs text-muted-foreground" />
                       {!isGuest && <PolicyAcceptedBadge consultantId={c.id} />}
