@@ -197,7 +197,9 @@ BEGIN
       (SELECT r.requester_name FROM public.team_requests(_t) r WHERE r.request_id = _req),
       (SELECT r.suggested_name FROM public.team_requests(_t) r WHERE r.request_id = _req)];
     PERFORM pg_temp.ck(_f = 'full' OR NOT ('Mostafa Saeed' = ANY (_changed)), 'client received the full name, format ' || _f);
-    PERFORM pg_temp.ck(_f = 'full' OR NOT EXISTS (SELECT 1 FROM unnest(_changed) x WHERE x ILIKE '%saeed%' OR x ILIKE '%mostafa%'), 'client received a hidden part, format ' || _f);
+    -- hidden parts: the first name always; the family name too unless the consultant chose to show it
+    PERFORM pg_temp.ck(_f = 'full' OR NOT EXISTS (SELECT 1 FROM unnest(_changed) x
+                         WHERE x ILIKE '%mostafa%' OR (_f <> 'initial_family' AND x ILIKE '%saeed%')), 'client received a hidden part, format ' || _f);
     SELECT count(*) INTO _n FROM public.consultant_client_view_names(ARRAY[_c]);
     PERFORM pg_temp.ck(_n = 0, 'admin hint RPC returns nothing to non-admins');
     PERFORM pg_temp.as_user(NULL);
