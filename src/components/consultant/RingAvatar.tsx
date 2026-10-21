@@ -1,11 +1,12 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
-import { Medal, ShieldCheck } from 'lucide-react';
+import { Shield, ShieldCheck, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   arcPath, arcPattern, arcSegments, pointAt, ringGeometry, RING_OUTLINE, RING_SIZES, toneMix, TONE_COLOR, TONE_VARS, trackColor,
   type RingSize, type RingSummary, type RingTier, type RingTone,
 } from '@/lib/ringAvatar';
+import { successColor, successMix, SUCCESS_VARS, type SuccessLevel } from '@/lib/successLevel';
 
 export type { RingSize } from '@/lib/ringAvatar';
 export { RING_SIZES } from '@/lib/ringAvatar';
@@ -72,6 +73,33 @@ function Arc({ pct, r, c, w, tone, low, drawn, glow, maskId, testId, kind }: {
   );
 }
 
+/** Thin third band: success rate, coloured by the Success level (copper, steel, yellow, platinum shine). */
+function SuccessArc({ pct, r, c, w, level, drawn, maskId }: { pct: number; r: number; c: number; w: number; level: SuccessLevel; drawn: boolean; maskId: string }) {
+  const d = arcPath(pct, r, c, c);
+  if (!d) return null;
+  const [ex, ey] = pointAt(Math.min(pct, 99.99), r, c, c);
+  const [sx, sy] = pointAt(0, r, c, c);
+  const glow = { '--ring-glow-color': `hsl(var(${SUCCESS_VARS[level][0]}) / 0.55)`, '--ring-glow-blur': `${level === 'platinum' ? 5 : 3}px` } as CSSProperties;
+  return (
+    <>
+      <mask id={maskId} maskUnits="userSpaceOnUse" x={-20} y={-20} width={c * 2 + 40} height={c * 2 + 40}>
+        <path d={d} fill="none" stroke="white" strokeWidth={w + 12} strokeLinecap="round" pathLength={100}
+          strokeDasharray="100 102" strokeDashoffset={drawn ? 0 : 101} className="ring-draw" />
+      </mask>
+      <g mask={`url(#${maskId})`} data-testid="ring-arc-success" data-kind="success" data-level={level} data-pct={pct}>
+        <path d={d} fill="none" stroke="hsl(var(--card))" strokeWidth={w + RING_OUTLINE * 2} strokeLinecap="round" />
+        <g className="ring-glow" style={glow}>
+          {arcSegments(pct, r, c, c).map((sg, i) => (
+            <path key={i} d={sg.d} fill="none" stroke={successColor(level)} style={{ stroke: successMix(level, level === 'platinum' ? Math.abs(0.5 - sg.t) * 2 : sg.t) }} strokeWidth={w} />
+          ))}
+          <circle cx={sx} cy={sy} r={w / 2} fill={successColor(level)} style={{ fill: successMix(level, level === 'platinum' ? 1 : 0) }} />
+          <circle cx={ex} cy={ey} r={w / 2} fill={successColor(level)} style={{ fill: successMix(level, 1) }} />
+        </g>
+      </g>
+    </>
+  );
+}
+
 export interface RingAvatarProps {
   name: string;
   initials?: string;
@@ -93,7 +121,8 @@ export interface RingAvatarProps {
  */
 export default function RingAvatar({ name, initials, avatarUrl, size = 'md', summary, interactive = true, statusClass, className, footer }: RingAvatarProps) {
   const cfg = RING_SIZES[size];
-  const g = ringGeometry(size);
+  const success = summary.success;
+  const g = ringGeometry(size, !!success && success.state !== 'hidden');
   const uid = useId().replace(/:/g, '');
   const [ref, inView] = useInView<HTMLSpanElement>();
   const [drawn, setDrawn] = useState(false);
@@ -117,6 +146,7 @@ export default function RingAvatar({ name, initials, avatarUrl, size = 'md', sum
     <span ref={ref} className="relative block motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out motion-safe:group-hover/ring:scale-[1.03] motion-safe:group-focus-visible/ring:scale-[1.03]"
       style={{ width: g.px, height: g.px }} dir="ltr">
       <svg viewBox={`0 0 ${g.px} ${g.px}`} aria-hidden="true" focusable="false" className="absolute inset-0 h-full w-full overflow-visible" data-testid="ring-svg">
+        {g.successR != null && <circle cx={g.c} cy={g.c} r={g.successR} fill="none" stroke={success.level ? `hsl(var(${SUCCESS_VARS[success.level][0]}) / 0.18)` : trackColor('none')} strokeWidth={g.successW} data-testid="ring-track-success" />}
         <circle cx={g.c} cy={g.c} r={g.outerR} fill="none" stroke={trackColor(rating.tone)} strokeWidth={g.outerW} data-testid="ring-track-outer" />
         {resp.state !== 'hidden' && <circle cx={g.c} cy={g.c} r={g.innerR} fill="none" stroke={trackColor(resp.tone)} strokeWidth={g.innerW} data-testid="ring-track-inner" />}
         {inView && rating.state !== 'none' && (
@@ -126,6 +156,9 @@ export default function RingAvatar({ name, initials, avatarUrl, size = 'md', sum
         {inView && resp.state === 'ok' && (
           <Arc pct={resp.pct} r={g.innerR} c={g.c} w={g.innerW} tone={resp.tone} low={false} drawn={drawn} glow={cfg.glow}
             maskId={`${uid}i`} testId="ring-arc-resp" kind="responsiveness" />
+        )}
+        {inView && g.successR != null && success.state === 'ok' && success.level && success.pct != null && (
+          <SuccessArc pct={success.pct} r={g.successR} c={g.c} w={g.successW} level={success.level} drawn={drawn} maskId={`${uid}s`} />
         )}
       </svg>
       <span className={cn('absolute flex items-center justify-center overflow-hidden rounded-full gradient-primary font-bold text-primary-foreground', cfg.text)}
@@ -139,7 +172,14 @@ export default function RingAvatar({ name, initials, avatarUrl, size = 'md', sum
           style={{ width: Math.max(16, g.px * 0.24), height: Math.max(16, g.px * 0.24) }} data-testid="ring-tier" data-tier={tier}>
           {tier === 'verified'
             ? <ShieldCheck className={cn('h-[70%] w-[70%]', TIER_CLASS[tier])} aria-hidden="true" />
-            : <Medal className={cn('h-[70%] w-[70%]', TIER_CLASS[tier])} aria-hidden="true" />}
+            : <Shield className={cn('h-[70%] w-[70%]', TIER_CLASS[tier])} style={{ fill: 'currentColor', fillOpacity: 0.2 }} aria-hidden="true" />}
+        </span>
+      )}
+      {cfg.chip && success.state === 'ok' && success.level && (
+        <span className={cn('absolute -bottom-0.5 -start-0.5 flex items-center justify-center rounded-full bg-card shadow-sm', success.level === 'platinum' && 'ring-medal-shine')}
+          style={{ width: Math.max(16, g.px * 0.24), height: Math.max(16, g.px * 0.24), border: `1.5px solid ${successColor(success.level)}` }}
+          data-testid="ring-medal" data-level={success.level}>
+          <Trophy className="h-[64%] w-[64%]" style={{ color: `hsl(var(${SUCCESS_VARS[success.level][1]}))`, fill: successColor(success.level), fillOpacity: 0.35 }} aria-hidden="true" />
         </span>
       )}
       {statusClass && <span aria-hidden="true" className={cn('absolute bottom-[8%] end-[4%] rounded-full border-2 border-card', statusClass)} style={{ width: Math.max(9, g.px * 0.14), height: Math.max(9, g.px * 0.14) }} />}
