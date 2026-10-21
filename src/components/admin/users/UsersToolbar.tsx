@@ -197,7 +197,7 @@ export default function UsersToolbar({ filters, onChange, installed, searchRef, 
                 </Select>
               </div>
             )}
-            {multi('verification', VERIF, (v) => verificationLabel(t, v), t('um.verification', 'Consultant verification'))}
+            {multi('verification', VERIF, (v) => verificationLabel(t, v), t('um.consultant_verification', 'Consultant verification'))}
             {multi('badge', BADGES, (v) => v === 'none' ? t('um.no_badge', 'No badge') : v, t('um.badge', 'Interview badge'))}
             {installed && (
               <div className="grid grid-cols-2 gap-3">
