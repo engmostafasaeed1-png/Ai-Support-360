@@ -10,6 +10,9 @@ vi.mock('@/lib/feedback', async (orig) => {
   return { ...real, submitFeedback: (...a: unknown[]) => submit(...a), canCaptureScreen: () => false };
 });
 
+// Radix checkbox measures itself; jsdom has no ResizeObserver.
+globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as any;
+
 import FeedbackDialog from './FeedbackDialog';
 
 const renderDialog = (signedIn = true) =>
