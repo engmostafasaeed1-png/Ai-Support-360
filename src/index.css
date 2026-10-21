@@ -61,6 +61,16 @@
     --badge-gold: 38 80% 30%;
     --badge-silver: 215 18% 38%;
     --badge-bronze: 24 65% 34%;
+    /* Performance ring (Feature W): two-stop gradients, every stop >= 3:1 on light and dark cards. */
+    --ring-red-a: 0 78% 50%;
+    --ring-red-b: 345 80% 52%;
+    --ring-amber-a: 36 95% 40%;
+    --ring-amber-b: 22 92% 48%;
+    --ring-green-a: 152 68% 36%;
+    --ring-green-b: 176 72% 34%;
+    --ring-gold-a: 40 92% 38%;
+    --ring-gold-b: 48 92% 34%;
+    --ring-none: 222 30% 60%;
     --gradient-profile-header: linear-gradient(120deg, hsl(var(--accent) / 0.12), hsl(var(--success) / 0.06));
 
     --info: 226 68% 50%;
@@ -147,6 +157,16 @@
     --badge-gold: 42 90% 70%;
     --badge-silver: 215 20% 78%;
     --badge-bronze: 26 80% 72%;
+    /* Performance ring (Feature W): two-stop gradients, every stop >= 3:1 on light and dark cards. */
+    --ring-red-a: 0 78% 50%;
+    --ring-red-b: 345 80% 52%;
+    --ring-amber-a: 36 95% 40%;
+    --ring-amber-b: 22 92% 48%;
+    --ring-green-a: 152 68% 36%;
+    --ring-green-b: 176 72% 34%;
+    --ring-gold-a: 40 92% 38%;
+    --ring-gold-b: 48 92% 34%;
+    --ring-none: 222 25% 55%;
 
     --info: 226 80% 68%;
     --info-foreground: 218 50% 8%;
@@ -647,4 +667,15 @@ textarea:focus-visible {
   outline: 2px solid hsl(var(--destructive));
   outline-offset: 3px;
   border-radius: 0.5rem;
+}
+
+/* Performance ring: soft glow in the arc colour (off in dark mode to keep contrast) and ease-out draw-in. */
+@layer components {
+  .ring-glow { filter: drop-shadow(0 0 var(--ring-glow-blur, 6px) var(--ring-glow-color, transparent)); }
+  .dark .ring-glow { filter: none; }
+  .ring-draw { transition: stroke-dashoffset 900ms cubic-bezier(0.22, 1, 0.36, 1); }
+  .ring-dot { transition: opacity 200ms ease-out 700ms; }
+  @media (prefers-reduced-motion: reduce) {
+    .ring-draw, .ring-dot { transition: none; }
+  }
 }
