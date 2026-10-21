@@ -2,14 +2,17 @@ import * as React from 'npm:react@18.3.1';
 import { Body, Button, Container, Head, Heading, Html, Preview, Text } from 'npm:@react-email/components@0.0.22';
 import type { TemplateEntry } from './registry.ts';
 import { adminSubject, safeAdminLink } from '../admin-notification-email.ts';
-interface Props { title?: string; body?: string; link?: string }
-const AdminNotification = ({ title = '', body = '', link }: Props) => {
+import { PauseFooter } from './pause-footer.tsx';
+import type { PauseLinks } from '../notificationPause.ts';
+interface Props { title?: string; body?: string; link?: string; pauseLinks?: PauseLinks }
+const AdminNotification = ({ title = '', body = '', link, pauseLinks }: Props) => {
   const href = safeAdminLink(link);
   return <Html lang="en" dir="ltr"><Head /><Preview>{title}</Preview>
     <Body style={main}><Container style={container}>
       <Text style={brand}>AI Support 360</Text><Heading style={heading}>{title}</Heading>
       <Text style={text}>{body}</Text>
       {href && <Button href={href} style={button}>View notification</Button>}
+      <PauseFooter links={pauseLinks} lang="en" />
     </Container></Body></Html>;
 };
 export const template = {

@@ -1,10 +1,14 @@
 import * as React from 'npm:react@18.3.1'
 import { Body, Button, Container, Head, Heading, Hr, Html, Preview, Section, Text } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
+import { PauseFooter } from './pause-footer.tsx'
+import type { PauseLinks } from '../notificationPause.ts'
 import { durationLabel, policyText, readPolicyMinutes } from '../assignmentPolicy.ts'
 
 /** New assignment request (step "request") and its reminders (r1, r2, r3). One template, EN/AR by the consultant's language. */
 interface Props {
+  /** Feature Q signed pause links, filled in by sendTemplateEmail for non-essential sends. */
+  pauseLinks?: PauseLinks
   lang?: 'en' | 'ar'
   step?: 'request' | 'r1' | 'r2' | 'r3'
   ticketTitle?: string
@@ -84,7 +88,7 @@ function formatDeadline(iso: string | undefined, lang: 'en' | 'ar', tz: string):
 const AssignmentRequestEmail = ({
   lang = 'en', step = 'request', ticketTitle, sapArea, urgency, critical = false, bid = false,
   proposedRate, currency, deadline, minutesLeft, timezone = 'Asia/Riyadh',
-  requestUrl = 'https://www.aisupport360.com/consultant/requests', previewUrl, infoOptions = false, policy,
+  requestUrl = 'https://www.aisupport360.com/consultant/requests', previewUrl, infoOptions = false, policy, pauseLinks,
 }: Props) => {
   const l = lang === 'ar' ? 'ar' : 'en'
   const t = STR[l]
@@ -133,6 +137,7 @@ const AssignmentRequestEmail = ({
           <Text style={boxTitle}>{t.policyTitle}</Text>
           <Text style={small}>{policyText(readPolicyMinutes(policy), l, { info: infoOptions })}</Text>
           <Text style={small}>{t.privacy}</Text>
+          <PauseFooter links={pauseLinks} lang={lang} />
         </Container>
       </Body>
     </Html>

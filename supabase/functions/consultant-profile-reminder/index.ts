@@ -40,6 +40,8 @@ async function sendOne(admin: any, row: DueRow): Promise<void> {
       interviewUrl: `${SITE_URL}/consultant/interviews?start=1`,
     },
     idempotencyKey: `profile-reminder-${row.consultant_id}-${new Date().toISOString().slice(0, 10)}`,
+    // Feature Q: held while the consultant has paused reminder e-mails; the in-app notice below is kept quietly.
+    pause: { userId: row.user_id, category: 'reminders' },
   });
   // One in-app notification per reminder (the log guarantees at most one per 20 h).
   const pct = row.percent ?? 0;
@@ -55,6 +57,7 @@ async function sendOne(admin: any, row: DueRow): Promise<void> {
     title: lang === 'ar' ? 'أكمل ملفك الشخصي' : 'Complete your profile',
     body,
     link: row.interview_done ? '/consultant/profile?section=setup' : '/consultant/interviews?start=1',
+    type: 'profile_reminder',
   });
 }
 

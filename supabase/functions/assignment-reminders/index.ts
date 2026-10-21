@@ -10,6 +10,7 @@
 import { adminClient, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
 import { parseRunBody, readPolicyMinutes, runResponse, sweepGuarded, type PolicyMinutes } from '../_shared/assignmentPolicy.ts';
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
+import { assignmentEmailCategory } from '../_shared/notificationPause.ts';
 
 interface InfoClaimRow {
   info_id: string;
@@ -72,6 +73,7 @@ async function sendInfo(admin: any, row: InfoClaimRow): Promise<void> {
         url,
       },
       idempotencyKey: `assignment-info-${row.info_id}-${row.kind}`,
+      pause: { userId: row.recipient_user_id, category: 'activity' },
     });
   } catch {
     console.error('assignment info e-mail failed');
@@ -92,10 +94,13 @@ async function sendOne(admin: any, row: ClaimRow, policy: PolicyMinutes, infoOpt
   const email = u?.user?.email;
   if (!email) return;
   const lang = row.lang === 'ar' ? 'ar' : 'en';
+  // Feature Q: the first request and Critical e-mails always go out; 2 h / 4 h / 1 day reminders are held during a pause.
+  const pause = { userId: row.recipient_user_id, category: assignmentEmailCategory(row.step, row.recipient, row.is_critical === true) };
   try {
+    let result: { sent: boolean; reason?: string };
     if (row.recipient === 'client') {
       const base = `${SITE_URL}/client/tickets/${row.ticket_id}?noresponse=${row.request_id}`;
-      await sendTemplateEmail('assignment-no-response', email, {
+      result = await sendTemplateEmail('assignment-no-response', email, {
         templateData: {
           lang,
           consultantName: row.consultant_name || undefined,
@@ -106,9 +111,10 @@ async function sendOne(admin: any, row: ClaimRow, policy: PolicyMinutes, infoOpt
           waitUrl: `${base}&action=wait`,
         },
         idempotencyKey: `assignment-${row.log_id}`,
+        pause,
       });
     } else {
-      await sendTemplateEmail('assignment-request', email, {
+      result = await sendTemplateEmail('assignment-request', email, {
         templateData: {
           lang,
           step: row.step,
@@ -128,7 +134,11 @@ async function sendOne(admin: any, row: ClaimRow, policy: PolicyMinutes, infoOpt
           policy,
         },
         idempotencyKey: `assignment-${row.log_id}`,
+        pause,
       });
+    }
+    if (!result.sent && result.reason === 'notifications_paused') {
+      await admin.from('assignment_reminder_log').update({ email_error: 'paused' }).eq('id', row.log_id);
     }
   } catch (error) {
     // Unsubscribed recipients resolve without throwing; anything else is recorded by code only (no text, no addresses).

@@ -3,8 +3,12 @@ import {
   Body, Button, Container, Head, Heading, Hr, Html, Preview, Section, Text,
 } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
+import { PauseFooter } from './pause-footer.tsx'
+import type { PauseLinks } from '../notificationPause.ts'
 
 interface Props {
+  /** Feature Q signed pause links, filled in by sendTemplateEmail for non-essential sends. */
+  pauseLinks?: PauseLinks
   name?: string
   percent?: number
   missing?: string[]
@@ -79,6 +83,7 @@ const ProfileReminderEmail = ({
   lang = 'en',
   profileUrl = 'https://www.aisupport360.com/consultant/profile?section=setup',
   interviewUrl = 'https://www.aisupport360.com/consultant/interviews?start=1',
+  pauseLinks,
 }: Props) => {
   const t = STR[lang === 'ar' ? 'ar' : 'en']
   const p = Math.max(0, Math.min(100, Math.round(percent)))
@@ -133,6 +138,7 @@ const ProfileReminderEmail = ({
           <Text style={itemText}>• {t.b3}</Text>
           {!payoutReady && <Text style={itemText}>• {t.b4}</Text>}
           <Text style={small}>{t.footer}</Text>
+          <PauseFooter links={pauseLinks} lang={lang} />
         </Container>
       </Body>
     </Html>

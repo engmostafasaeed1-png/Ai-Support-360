@@ -1,6 +1,8 @@
 import * as React from 'npm:react@18.3.1'
 import { Body, Button, Container, Head, Heading, Html, Preview, Section, Text } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
+import { PauseFooter } from './pause-footer.tsx'
+import type { PauseLinks } from '../notificationPause.ts'
 import { INFO_TOPICS } from '../assignmentInfo.ts'
 
 /**
@@ -11,6 +13,8 @@ import { INFO_TOPICS } from '../assignmentInfo.ts'
  * The question already passed the contact-bypass filter; the client's answer is not repeated in the e-mail.
  */
 interface Props {
+  /** Feature Q signed pause links, filled in by sendTemplateEmail for non-essential sends. */
+  pauseLinks?: PauseLinks
   lang?: 'en' | 'ar'
   kind?: 'ask' | 'answer' | 'timeout'
   ticketTitle?: string
@@ -78,7 +82,7 @@ export function topicLabels(topics: readonly string[] | undefined, lang: 'en' | 
 
 const AssignmentInfoEmail = ({
   lang = 'en', kind = 'ask', ticketTitle, consultantName, topics, question, clientDueAt, responseDueAt,
-  timezone = 'Asia/Riyadh', url = 'https://www.aisupport360.com',
+  timezone = 'Asia/Riyadh', url = 'https://www.aisupport360.com', pauseLinks,
 }: Props) => {
   const l = lang === 'ar' ? 'ar' : 'en'
   const t = STR[l]
@@ -115,6 +119,7 @@ const AssignmentInfoEmail = ({
               <Text style={small}>{t.privacy}</Text>
             </>
           )}
+          <PauseFooter links={pauseLinks} lang={lang} />
         </Container>
       </Body>
     </Html>

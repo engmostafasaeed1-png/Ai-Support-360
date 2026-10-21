@@ -26,10 +26,15 @@ Deno.serve(async (req) => {
       send: async (row) => {
         const { data, error } = await admin.auth.admin.getUserById(row.user_id);
         if (error || !data.user?.email) throw new Error('Recipient unavailable');
-        return await sendTemplateEmail('admin-notification', data.user.email, {
+        // Feature Q: category stored by the notifications insert trigger; essential (payments, security, Critical) when unknown.
+        const { data: meta } = await admin.from('notifications').select('pause_category').eq('id', row.id).maybeSingle();
+        const category = (['reminders', 'digests', 'activity'] as const).find((c) => c === meta?.pause_category) ?? 'essential';
+        const result = await sendTemplateEmail('admin-notification', data.user.email, {
           templateData: { title: row.title, body: row.body ?? '', link: row.link },
           idempotencyKey: `admin-notification-${row.id}`,
+          pause: { userId: row.user_id, category },
         });
+        return result.sent ? result : { sent: false, reason: result.reason === 'notifications_paused' ? 'paused' : result.reason };
       },
       finish: async (row, handled, errorText) => {
         const { error } = await admin.rpc('finish_admin_notification_email', { _id: row.id, _attempt: row.attempt, _handled: handled, _error: errorText });

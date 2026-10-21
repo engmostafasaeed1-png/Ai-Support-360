@@ -2,6 +2,7 @@ import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { EmailAPIError, sendLovableEmail } from 'npm:@lovable.dev/email-js@0.1.0'
 import { TEMPLATES } from './registry.ts'
+import { buildPauseLinks, type PauseCategory } from '../notificationPause.ts'
 
 // Server-only: reads LOVABLE_API_KEY. Import from edge functions only — never
 // expose sending to the browser.
@@ -17,7 +18,7 @@ const FROM_DOMAIN = "aisupport360.com"
 
 export type SendTemplateEmailResult =
   | { sent: true }
-  | { sent: false; reason: 'recipient_suppressed' | 'notifications_disabled' }
+  | { sent: false; reason: 'recipient_suppressed' | 'notifications_disabled' | 'notifications_paused' }
 
 /** Sends a person starts on purpose; they go out even when automatic email notifications are off. */
 const ALWAYS_SEND = new Set(['platform-invitation', 'interview-invitation', 'interview-invitation-copy'])
@@ -40,11 +41,40 @@ async function emailNotificationsOn(): Promise<boolean> {
   }
 }
 
+const SITE_URL = 'https://www.aisupport360.com'
+
+/**
+ * Feature Q: the one server-side pause gate for e-mail (public.notification_email_check -> notifications_paused).
+ * Before the prepared SQL is applied, or when the lookup fails, nothing is paused and no footer links are offered.
+ */
+async function pauseCheck(userId: string, category: PauseCategory): Promise<{ paused: boolean; links: boolean }> {
+  const url = Deno.env.get('SUPABASE_URL')
+  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!url || !key) return { paused: false, links: false }
+  try {
+    const res = await fetch(`${url}/rest/v1/rpc/notification_email_check`, {
+      method: 'POST',
+      headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ _user_id: userId, _category: category }),
+    })
+    if (!res.ok) return { paused: false, links: false }
+    const v = await res.json()
+    return { paused: v?.paused === true, links: v?.links === true }
+  } catch {
+    return { paused: false, links: false }
+  }
+}
+
 export interface SendTemplateEmailOptions {
   templateData?: Record<string, any>
   /** Dedupes retries of the same logical send; defaults to a random UUID (no dedupe). */
   idempotencyKey?: string
   replyTo?: string
+  /**
+   * Recipient's user id and the notice category. Non-essential categories are skipped while the user has paused
+   * e-mails and get the signed "Pause for 3 days | 1 week | 1 month | Unsubscribe" footer. Essential mail always goes out.
+   */
+  pause?: { userId: string; category: PauseCategory }
 }
 
 /**
@@ -82,7 +112,19 @@ export async function sendTemplateEmail(
     throw new Error('Recipient is required (the template defines no fixed recipient)')
   }
 
-  const templateData = options.templateData ?? {}
+  const templateData: Record<string, any> = { ...(options.templateData ?? {}) }
+  const pause = options.pause
+  if (pause && pause.category !== 'essential' && !ALWAYS_SEND.has(templateName)) {
+    const check = await pauseCheck(pause.userId, pause.category)
+    if (check.paused) return { sent: false, reason: 'notifications_paused' }
+    const secret = Deno.env.get('NOTIFICATION_PAUSE_SECRET') ?? ''
+    if (check.links && secret.length >= 32) {
+      try {
+        templateData.pauseLinks = await buildPauseLinks(secret, pause.userId, SITE_URL, Math.floor(Date.now() / 1000),
+          templateData.lang === 'ar' ? 'ar' : 'en')
+      } catch { /* the e-mail still goes out, only without the footer */ }
+    }
+  }
   const element = React.createElement(template.component, templateData)
   const html = await renderAsync(element)
   const text = await renderAsync(element, { plainText: true })

@@ -17,6 +17,7 @@ import UserDetailSheet from '@/components/admin/users/UserDetailSheet';
 import BulkBar from '@/components/admin/users/BulkBar';
 import BulkInviteDialog from '@/components/admin/users/BulkInviteDialog';
 import { AccessReviewPanel, AdminAuditPanel, PermissionsPanel } from '@/components/admin/users/AccessPanels';
+import { useNotificationPauseOverview } from '@/components/admin/NotificationPauseAdminCard';
 import { callRpc, searchAll, searchIds, useMyAdminPermissions, useUsersSearch, useUsersStats, useInvalidateUsers } from '@/hooks/useUserAdmin';
 import { BULK_LIMIT, DEFAULT_FILTERS, filtersToParams, nextIndex, parseFilters, usersCsv, type UserFilters } from '@/lib/userAdmin';
 
@@ -36,6 +37,7 @@ export default function UsersPage() {
   const invalidate = useInvalidateUsers();
   const search = useUsersSearch(filters, installed);
   const stats = useUsersStats(installed);
+  const pauseOverview = useNotificationPauseOverview();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [focus, setFocus] = useState(-1);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -107,6 +109,8 @@ export default function UsersPage() {
     [t('um.stat_pending', 'Pending approvals'), s?.pending_approvals, { verification: ['pending', 'under_review'] }],
     [t('um.stat_incomplete', 'Incomplete profiles'), installed ? s?.incomplete_profiles : undefined, installed ? { roles: ['consultant'], completion_max: '99' } : null],
     [t('um.stat_inactive', 'Inactive 90+ days'), s?.inactive_90d, { status: ['active'], inactive_days: '90' }],
+    // Feature Q: read-only count (no filter), shown once the pause update is applied.
+    ...(pauseOverview.data ? [[t('npause.stat_paused', 'Notifications paused'), pauseOverview.data.paused_now, null] as [string, number, null]] : []),
   ];
 
   const meProps = { id: session.data ?? '', roles: myRoles.data ?? [] };

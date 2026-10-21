@@ -15,6 +15,7 @@ vi.mock('@/components/admin/FoundingSettings', () => ({ default: () => null }));
 vi.mock('@/components/admin/ProfileRemindersCard', () => ({ default: () => null }));
 vi.mock('@/components/admin/MatchWeightsCard', () => ({ default: () => null }));
 vi.mock('@/components/admin/AssignmentRemindersCard', () => ({ default: () => null }));
+vi.mock('@/components/admin/NotificationPauseAdminCard', () => ({ default: () => null }));
 import AdminSettingsPage from './AdminSettingsPage';
 vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
 afterEach(() => { cleanup(); state.settings = {}; state.update.mockClear(); });

@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import NotificationPauseCard from '@/components/notifications/NotificationPauseCard';
 
 const typeIcons: Record<string, typeof Bell> = {
   message: MessageSquare,
@@ -147,6 +148,8 @@ export default function NotificationsPage() {
           )}
         </div>
       </div>
+
+      <NotificationPauseCard className="rounded-2xl" />
 
       {selectMode && (
         <Card className="p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-primary/30 bg-primary/5">
