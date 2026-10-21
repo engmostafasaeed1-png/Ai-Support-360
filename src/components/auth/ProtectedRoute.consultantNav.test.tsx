@@ -66,6 +66,7 @@ function Layout() {
     <div>
       <nav>
         <Link to="/consultant/profile?section=setup">Open profile</Link>
+        <Link to="/consultant/interviews?start=1">Start interview</Link>
         {targets.map((t) => <Link key={t.key} to={t.path}>{`go:${t.key}`}</Link>)}
       </nav>
       <Outlet />
@@ -104,6 +105,17 @@ async function clickThroughEveryEntry() {
     await waitFor(() => expect(screen.getByTestId('where').textContent).toBe(t.path));
   }
 }
+
+describe('the AI interview start link from the profile (H3)', () => {
+  beforeEach(() => { h.onboarded = false; h.locationSet = true; h.policyState = 'accepted'; });
+  it('reaches /consultant/interviews?start=1 even with an incomplete profile (it used to bounce back to the profile)', async () => {
+    renderPortal();
+    expect(await screen.findByTestId('where')).toHaveTextContent('/consultant/profile');
+    await act(async () => { fireEvent.click(screen.getByText('Start interview')); });
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    await waitFor(() => expect(screen.getByTestId('where').textContent).toBe('/consultant/interviews?start=1'));
+  });
+});
 
 describe('consultant navigation from the profile page (H2)', () => {
   beforeEach(() => {
