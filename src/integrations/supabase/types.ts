@@ -2596,6 +2596,7 @@ export type Database = {
           location: unknown
           longitude: number | null
           max_active_tickets: number | null
+          name_format: string
           nationality: string | null
           new_case_alerts: boolean
           onsite_countries: string[]
@@ -2656,6 +2657,7 @@ export type Database = {
           location?: unknown
           longitude?: number | null
           max_active_tickets?: number | null
+          name_format?: string
           nationality?: string | null
           new_case_alerts?: boolean
           onsite_countries?: string[]
@@ -2716,6 +2718,7 @@ export type Database = {
           location?: unknown
           longitude?: number | null
           max_active_tickets?: number | null
+          name_format?: string
           nationality?: string | null
           new_case_alerts?: boolean
           onsite_countries?: string[]
@@ -3437,6 +3440,171 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      feedback_attachments: {
+        Row: {
+          content_type: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          path: string
+          report_id: string
+          size: number
+        }
+        Insert: {
+          content_type: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          path: string
+          report_id: string
+          size: number
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          path?: string
+          report_id?: string
+          size?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_attachments_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "feedback_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          emailed_at: string | null
+          from_value: string | null
+          id: string
+          kind: string
+          message: string | null
+          report_id: string
+          to_value: string | null
+          visible_to_user: boolean
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          emailed_at?: string | null
+          from_value?: string | null
+          id?: string
+          kind: string
+          message?: string | null
+          report_id: string
+          to_value?: string | null
+          visible_to_user?: boolean
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          emailed_at?: string | null
+          from_value?: string | null
+          id?: string
+          kind?: string
+          message?: string | null
+          report_id?: string
+          to_value?: string | null
+          visible_to_user?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_events_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "feedback_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_reports: {
+        Row: {
+          admin_notes: string | null
+          assigned_to: string | null
+          attachments: number
+          consent_contact: boolean
+          contact_email: string | null
+          context: Json
+          created_at: string
+          description: string
+          duplicate_of: string | null
+          id: string
+          ip_hash: string | null
+          priority: string
+          role: string
+          route: string
+          severity: string | null
+          status: string
+          tenant_id: string | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          assigned_to?: string | null
+          attachments?: number
+          consent_contact?: boolean
+          contact_email?: string | null
+          context?: Json
+          created_at?: string
+          description: string
+          duplicate_of?: string | null
+          id?: string
+          ip_hash?: string | null
+          priority?: string
+          role?: string
+          route?: string
+          severity?: string | null
+          status?: string
+          tenant_id?: string | null
+          title: string
+          type: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          assigned_to?: string | null
+          attachments?: number
+          consent_contact?: boolean
+          contact_email?: string | null
+          context?: Json
+          created_at?: string
+          description?: string
+          duplicate_of?: string | null
+          id?: string
+          ip_hash?: string | null
+          priority?: string
+          role?: string
+          route?: string
+          severity?: string | null
+          status?: string
+          tenant_id?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_reports_duplicate_of_fkey"
+            columns: ["duplicate_of"]
+            isOneToOne: false
+            referencedRelation: "feedback_reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       founding_consultants: {
         Row: {
@@ -10696,16 +10864,6 @@ export type Database = {
           display_name: string | null
           user_id: string | null
         }
-        Insert: {
-          avatar_url?: string | null
-          display_name?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          display_name?: string | null
-          user_id?: string | null
-        }
         Relationships: []
       }
       ticket_questions_public: {
@@ -11525,6 +11683,10 @@ export type Database = {
         Returns: undefined
       }
       complete_session: { Args: { _session_id: string }; Returns: undefined }
+      consultant_admin_name: {
+        Args: { _consultant_id: string }
+        Returns: string
+      }
       consultant_assigned_to_client: {
         Args: { _client_id: string; _consultant_id: string }
         Returns: boolean
@@ -11538,6 +11700,14 @@ export type Database = {
         Returns: {
           duration_minutes: number
           scheduled_at: string
+        }[]
+      }
+      consultant_client_view_names: {
+        Args: { _ids: string[] }
+        Returns: {
+          client_view: string
+          consultant_id: string
+          user_id: string
         }[]
       }
       consultant_completion: { Args: { _cid: string }; Returns: Json }
@@ -11563,6 +11733,18 @@ export type Database = {
       }
       consultant_location_blocked: { Args: { _cid: string }; Returns: boolean }
       consultant_missing_fields: { Args: { _cid: string }; Returns: string[] }
+      consultant_name_clean: { Args: { _w: string }; Returns: string }
+      consultant_name_for: {
+        Args: { _consultant_id: string; _viewer: string }
+        Returns: string
+      }
+      consultant_name_masking_on: { Args: never; Returns: boolean }
+      consultant_name_privacy_config: { Args: never; Returns: Json }
+      consultant_name_unlocked: {
+        Args: { _consultant_id: string; _viewer: string }
+        Returns: boolean
+      }
+      consultant_name_words: { Args: { _name: string }; Returns: string[] }
       consultant_policy_blocked: { Args: { _cid: string }; Returns: boolean }
       consultant_policy_blocked_ids: { Args: never; Returns: string[] }
       consultant_policy_current_version: { Args: never; Returns: number }
@@ -11578,6 +11760,10 @@ export type Database = {
       consultant_profile_visible: {
         Args: { _consultant_id: string }
         Returns: boolean
+      }
+      consultant_public_name: {
+        Args: { _consultant_id: string }
+        Returns: string
       }
       consultant_related_to_client: {
         Args: {
@@ -11661,6 +11847,33 @@ export type Database = {
         Returns: number
       }
       critical_ticket_view: { Args: { _ticket_id: string }; Returns: Json }
+      feedback_add_attachments: {
+        Args: { _files: Json; _report_id: string }
+        Returns: number
+      }
+      feedback_admin_counts: { Args: never; Returns: Json }
+      feedback_admin_log_export: {
+        Args: { _count: number; _filters: Json }
+        Returns: undefined
+      }
+      feedback_admin_reply: {
+        Args: { _id: string; _message: string }
+        Returns: string
+      }
+      feedback_admin_update: {
+        Args: { _ids: string[]; _patch: Json }
+        Returns: number
+      }
+      feedback_claim_retention: { Args: { _limit?: number }; Returns: Json }
+      feedback_clean_text: { Args: { _t: string }; Returns: string }
+      feedback_config: { Args: never; Returns: Json }
+      feedback_is_admin: { Args: { _uid: string }; Returns: boolean }
+      feedback_reply_email_claim: { Args: { _event_id: string }; Returns: Json }
+      feedback_setting_int: {
+        Args: { _default: number; _key: string }
+        Returns: number
+      }
+      feedback_weekly_digest: { Args: never; Returns: number }
       finish_admin_notification_email: {
         Args: {
           _attempt: number
@@ -11671,6 +11884,10 @@ export type Database = {
         Returns: undefined
       }
       flag_sla_breaches: { Args: never; Returns: number }
+      format_consultant_name: {
+        Args: { _format: string; _name: string }
+        Returns: string
+      }
       founding_boost_duration: { Args: never; Returns: number }
       founding_settings: { Args: never; Returns: Json }
       founding_spots_remaining: { Args: never; Returns: number }
@@ -11843,6 +12060,7 @@ export type Database = {
         Returns: boolean
       }
       my_consultant_policy_status: { Args: never; Returns: Json }
+      my_feedback: { Args: never; Returns: Json }
       my_location_status: { Args: never; Returns: Json }
       my_missing_profile_fields: { Args: never; Returns: string[] }
       my_nda_pending_access: {
@@ -11941,6 +12159,10 @@ export type Database = {
       payment_service_fee_percent: { Args: never; Returns: number }
       payment_vat_percent: { Args: never; Returns: number }
       payout_due_date: { Args: { _received: string }; Returns: string }
+      person_name_for: {
+        Args: { _user_id: string; _viewer: string }
+        Returns: string
+      }
       plan_limits_enforced: { Args: never; Returns: boolean }
       platform_flag: {
         Args: { _default: boolean; _key: string }
@@ -12282,6 +12504,10 @@ export type Database = {
           _timezone: string
         }
         Returns: string
+      }
+      submit_feedback: {
+        Args: { _ip_hash: string; _payload: Json; _user_id: string }
+        Returns: Json
       }
       submit_ticket_plan: {
         Args: {
