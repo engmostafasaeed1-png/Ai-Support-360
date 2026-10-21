@@ -7,6 +7,7 @@ interface Props {
   role?: 'consultant' | 'client'
   message?: string
   url?: string
+  language?: 'en' | 'ar'
 }
 
 /**
@@ -32,39 +33,82 @@ const CONSULTANT_CAPABILITIES = [
   'View recorded earnings, platform fees, and payout status.',
 ]
 
-const Email = ({ name, role = 'client', message, url = 'https://www.aisupport360.com/signup' }: Props) => {
+const CLIENT_CAPABILITIES_AR = [
+  'وصف احتياجات دعم SAP ومراجعة اقتراحات الذكاء الاصطناعي ومقالات المعرفة ذات الصلة.',
+  'العثور على استشاريين حسب الخبرة واللغة والتوفر والأسعار.',
+  'مراجعة العروض والاتفاق على الأسعار والجهد المتوقع.',
+  'جدولة الاستشارات باستخدام وسائل التواصل المتاحة.',
+  'مراجعة سجلات العمل واعتماد سجلات الساعات ومتابعة الفواتير.',
+  'إدارة اتفاقيات عدم الإفصاح والوصول إلى معلومات الحالة.',
+]
+
+const CONSULTANT_CAPABILITIES_AR = [
+  'إنشاء ملف مهني يضم المهارات والشهادات والخبرات والمشاريع.',
+  'تحديد أوقات التوفر وأسعار الساعة المقترحة.',
+  'استلام دعوات الدعم المناسبة وقبولها أو الاعتذار عنها.',
+  'تقديم العروض مع الجهد المتوقع ومواعيد التسليم.',
+  'تسجيل العمل وإرسال سجلات الساعات والتواصل مع العملاء.',
+  'عرض الأرباح المسجلة ورسوم المنصة وحالة الدفعات.',
+]
+
+const COPY = {
+  en: {
+    previewC: 'Your consultant account invitation — AI Support 360', previewK: 'Your client account invitation — AI Support 360',
+    labelC: 'CONSULTANT INVITATION', labelK: 'CLIENT INVITATION',
+    hi: (n?: string) => n ? `Hi ${n}, you're invited` : "You're invited",
+    introC: 'Create your consultant account to complete your professional profile and manage assignments, availability, timesheets, and invoices.',
+    introK: 'Create your client account to submit support requests and manage your tickets, approvals, and invoices.',
+    listC: 'IN YOUR CONSULTANT ACCOUNT YOU CAN', listK: 'IN YOUR CLIENT ACCOUNT YOU CAN',
+    buttonC: 'Create my consultant account', buttonK: 'Create my client account',
+    fallback: 'Or open this link:', footer: "If you weren't expecting this invitation, you can ignore this email.",
+  },
+  ar: {
+    previewC: 'دعوة لحساب استشاري — AI Support 360', previewK: 'دعوة لحساب عميل — AI Support 360',
+    labelC: 'دعوة استشاري', labelK: 'دعوة عميل',
+    hi: (n?: string) => n ? `مرحباً ${n}، أنت مدعو` : 'أنت مدعو',
+    introC: 'أنشئ حسابك كاستشاري لإكمال ملفك المهني وإدارة المهام والتوفر وسجلات الساعات والفواتير.',
+    introK: 'أنشئ حسابك كعميل لإرسال طلبات الدعم وإدارة التذاكر والموافقات والفواتير.',
+    listC: 'في حسابك كاستشاري يمكنك', listK: 'في حسابك كعميل يمكنك',
+    buttonC: 'إنشاء حسابي كاستشاري', buttonK: 'إنشاء حسابي كعميل',
+    fallback: 'أو افتح هذا الرابط:', footer: 'إذا لم تكن تتوقع هذه الدعوة، يمكنك تجاهل هذه الرسالة.',
+  },
+}
+
+const Email = ({ name, role = 'client', message, url = 'https://www.aisupport360.com/signup', language = 'en' }: Props) => {
   const isConsultant = role === 'consultant'
-  const capabilities = isConsultant ? CONSULTANT_CAPABILITIES : CLIENT_CAPABILITIES
+  const ar = language === 'ar'
+  const c = ar ? COPY.ar : COPY.en
+  const capabilities = ar
+    ? (isConsultant ? CONSULTANT_CAPABILITIES_AR : CLIENT_CAPABILITIES_AR)
+    : (isConsultant ? CONSULTANT_CAPABILITIES : CLIENT_CAPABILITIES)
   return (
-    <Html lang="en" dir="ltr">
+    <Html lang={ar ? 'ar' : 'en'} dir={ar ? 'rtl' : 'ltr'}>
       <Head />
-      <Preview>{isConsultant ? 'Your consultant account invitation — AI Support 360' : 'Your client account invitation — AI Support 360'}</Preview>
-      <Body style={main}>
+      <Preview>{isConsultant ? c.previewC : c.previewK}</Preview>
+      <Body style={{ ...main, ...(ar ? { fontFamily: "'IBM Plex Sans Arabic', Tahoma, Arial, sans-serif", textAlign: 'right' as const } : {}) }}>
         <Container style={container}>
           <Section style={brandBar}><Text style={brandText}>AI Support 360</Text></Section>
-          <Text style={accountLabel}>{isConsultant ? 'CONSULTANT INVITATION' : 'CLIENT INVITATION'}</Text>
-          <Heading style={h1}>{name ? `Hi ${name}, you're invited` : "You're invited"}</Heading>
+          <Text style={accountLabel}>{isConsultant ? c.labelC : c.labelK}</Text>
+          <Heading style={h1}>{c.hi(name)}</Heading>
           <Text style={text}>
-            {isConsultant
-              ? 'Create your consultant account to complete your professional profile and manage assignments, availability, timesheets, and invoices.'
-              : 'Create your client account to submit support requests and manage your tickets, approvals, and invoices.'}
+            {isConsultant ? c.introC : c.introK}
           </Text>
           <Text style={sectionLabel}>
-            {isConsultant ? 'IN YOUR CONSULTANT ACCOUNT YOU CAN' : 'IN YOUR CLIENT ACCOUNT YOU CAN'}
+            {isConsultant ? c.listC : c.listK}
           </Text>
           <Section style={listBox}>
             {capabilities.map((line, i) => (
-              <Text key={i} style={listItem}>
+              <Text key={i} style={ar ? listItemRtl : listItem}>
                 <span style={bullet}>{'•'}</span> {line}
               </Text>
             ))}
           </Section>
-          {message ? <Text style={quote}>“{message}”</Text> : null}
+          {message ? <Text style={ar ? quoteRtl : quote}>“{message}”</Text> : null}
           <Section style={buttonWrap}>
-            <Button style={button} href={url}>{isConsultant ? 'Create my consultant account' : 'Create my client account'}</Button>
+            <Button style={button} href={url}>{isConsultant ? c.buttonC : c.buttonK}</Button>
           </Section>
-          <Text style={fallback}>Or open this link: {url}</Text>
-          <Text style={footer}>If you weren't expecting this invitation, you can ignore this email.</Text>
+          <Text style={fallback}>{c.fallback} {url}</Text>
+          <Text style={footer}>{c.footer}</Text>
         </Container>
       </Body>
     </Html>
@@ -73,7 +117,10 @@ const Email = ({ name, role = 'client', message, url = 'https://www.aisupport360
 
 export const template = {
   component: Email,
-  subject: (d: Record<string, any>) => d.role === 'consultant' ? 'Your consultant account invitation — AI Support 360' : 'Your client account invitation — AI Support 360',
+  subject: (d: Record<string, any>) => {
+    const c = d.language === 'ar' ? COPY.ar : COPY.en
+    return d.role === 'consultant' ? c.previewC : c.previewK
+  },
   displayName: 'Platform invitation',
   previewData: { name: 'Sara', role: 'consultant', message: 'We would love to have you on board.' },
 } satisfies TemplateEntry
@@ -93,4 +140,6 @@ const quote = { fontSize: '14px', color: '#1B2559', fontStyle: 'italic' as const
 const buttonWrap = { textAlign: 'center' as const, margin: '24px 0' }
 const button = { backgroundColor: '#1B2559', color: '#ffffff', fontSize: '15px', fontWeight: 'bold' as const, borderRadius: '14px', padding: '14px 28px', textDecoration: 'none' }
 const fallback = { fontSize: '12px', color: '#94a3b8', wordBreak: 'break-all' as const }
+const listItemRtl = { ...listItem, padding: '0 18px 0 0' }
+const quoteRtl = { ...quote, borderLeft: 'none', borderRight: '3px solid #3B82F6', paddingLeft: 0, paddingRight: '12px' }
 const footer = { fontSize: '12px', color: '#94a3b8', margin: '24px 0 0' }
