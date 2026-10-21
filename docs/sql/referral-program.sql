@@ -10,6 +10,10 @@
 --   * a reward line is created at the same trigger point as the consultant payout (payouts insert), only while the
 --     referred consultant is verified and the referrer is verified, not suspended and has signed the Service Policy.
 --     It is "pending" until that payout is completed, then "available". Refunds add a negative line, disputes hold it.
+--   * ACTIVATION: a pair (referrer + referred) is "pending" until BOTH passed the AI interview (completed AI session with
+--     overall_score >= referral_min_interview_score, default 50) and BOTH accepted the current referral terms (versioned,
+--     append-only acknowledgements). Only payouts created after the activation moment earn. Pending pairs expire after
+--     referral_activation_days (90) from sign-up; only an administrator can revive them. Fraud holds still apply.
 --   * available rewards >= referral_min_payout ($25) per currency are grouped nightly into a normal payouts row
 --     (reference 'referral:<id>', labelled "Referral reward"), paid with the normal payout run and bank details.
 --
@@ -28,7 +32,9 @@ INSERT INTO public.platform_settings (key, value) VALUES
   ('referral_max_reward_per_referred', 'null'::jsonb),
   ('referral_monthly_cap_per_referrer', 'null'::jsonb),
   ('referral_claim_days', '7'::jsonb),
-  ('referral_terms_version', '1'::jsonb)
+  ('referral_terms_version', '1'::jsonb),
+  ('referral_min_interview_score', '50'::jsonb),
+  ('referral_activation_days', '90'::jsonb)
 ON CONFLICT (key) DO NOTHING;
 
 CREATE OR REPLACE FUNCTION public.referral_setting_num(_key text, _def numeric, _lo numeric, _hi numeric)
@@ -70,7 +76,9 @@ AS $$
     'max_per_referred', public.referral_setting_cap('referral_max_reward_per_referred'),
     'monthly_cap', public.referral_setting_cap('referral_monthly_cap_per_referrer'),
     'claim_days', public.referral_setting_num('referral_claim_days', 7, 0, 30)::int,
-    'terms_version', public.referral_setting_num('referral_terms_version', 1, 1, 1000)::int)
+    'terms_version', public.referral_setting_num('referral_terms_version', 1, 1, 1000)::int,
+    'pass_mark', public.referral_setting_num('referral_min_interview_score', 50, 0, 100),
+    'activation_days', public.referral_setting_num('referral_activation_days', 90, 1, 365)::int)
 $$;
 REVOKE ALL ON FUNCTION public.referral_settings() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.referral_settings() TO service_role;
@@ -83,7 +91,8 @@ CREATE OR REPLACE FUNCTION public.referral_public_settings()
  SET search_path TO 'public'
 AS $$
   SELECT jsonb_build_object('enabled', s->'enabled', 'rate_percent', s->'rate_percent', 'months', s->'months',
-                            'min_payout', s->'min_payout', 'terms_version', s->'terms_version')
+                            'min_payout', s->'min_payout', 'terms_version', s->'terms_version', 'pass_mark', s->'pass_mark',
+                            'activation_days', s->'activation_days')
     FROM (SELECT public.referral_settings() AS s) x
 $$;
 REVOKE ALL ON FUNCTION public.referral_public_settings() FROM PUBLIC;
@@ -169,6 +178,16 @@ CREATE TABLE IF NOT EXISTS public.consultant_referrals (
   approved_by uuid,
   verified_notified_at timestamptz,
   first_reward_notified_at timestamptz,
+  -- Activation (both passed the AI interview + both accepted the terms). Written only by referral_check_activation.
+  activation_status text NOT NULL DEFAULT 'pending' CHECK (activation_status IN ('pending', 'active', 'expired')),
+  activated_at timestamptz,
+  activation_expires_at timestamptz,
+  expired_at timestamptz,
+  referrer_passed_notified_at timestamptz,
+  referred_passed_notified_at timestamptz,
+  reminder_14_at timestamptz,
+  reminder_45_at timestamptz,
+  admin_resend_at timestamptz,
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT consultant_referrals_not_self CHECK (referred_consultant_id <> referrer_consultant_id)
 );
@@ -246,20 +265,58 @@ CREATE POLICY "Admins read referral reward lines" ON public.referral_reward_line
   FOR SELECT TO authenticated
   USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'super_admin'));
 
--- Programme terms acknowledgement (required the first time the Refer & earn page opens).
-CREATE TABLE IF NOT EXISTS public.referral_terms_acks (
-  consultant_id uuid PRIMARY KEY REFERENCES public.consultants(id) ON DELETE CASCADE,
-  version int NOT NULL,
-  accepted_at timestamptz NOT NULL DEFAULT now()
+-- Versioned referral terms (like the Consultant Service Policy) and append-only acknowledgements by both sides.
+CREATE TABLE IF NOT EXISTS public.referral_terms_versions (
+  version int PRIMARY KEY,
+  body_en text NOT NULL,
+  body_ar text NOT NULL,
+  is_draft boolean NOT NULL DEFAULT true,
+  published_at timestamptz NOT NULL DEFAULT now()
 );
-GRANT SELECT ON public.referral_terms_acks TO authenticated;
-GRANT ALL ON public.referral_terms_acks TO service_role;
-ALTER TABLE public.referral_terms_acks ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Own referral terms or admin" ON public.referral_terms_acks;
-CREATE POLICY "Own referral terms or admin" ON public.referral_terms_acks
+GRANT SELECT ON public.referral_terms_versions TO anon, authenticated;
+GRANT ALL ON public.referral_terms_versions TO service_role;
+ALTER TABLE public.referral_terms_versions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Referral terms are public" ON public.referral_terms_versions;
+CREATE POLICY "Referral terms are public" ON public.referral_terms_versions FOR SELECT TO anon, authenticated USING (true);
+INSERT INTO public.referral_terms_versions (version, body_en, body_ar) VALUES (1,
+'DRAFT for legal review. (1) The referral becomes active only when BOTH consultants have passed the AI interview with at least the pass mark and BOTH have accepted these terms; the interview must be taken honestly, without outside help. (2) The referrer earns the published rate of the referred consultant''s fee for the published number of months from the referred consultant''s first paid ticket, only on work invoiced after activation. (3) AI Support 360 pays the reward from its own fee; it is never deducted from the referred consultant or added to the client''s price. (4) AI Support 360 may review, hold, reverse or forfeit rewards in case of fraud, self-referral, shared accounts or dishonest interviews. (5) Rewards are a referral incentive, not wages or salary, and may be taxable; you are responsible for declaring them.',
+'مسودة للمراجعة القانونية. (1) تصبح الإحالة نشطة فقط عندما يجتاز المستشاران كلاهما المقابلة الذكية بدرجة النجاح على الأقل ويوافق كلاهما على هذه الشروط، ويجب إجراء المقابلة بأمانة ودون مساعدة خارجية. (2) يحصل المُحيل على النسبة المعلنة من أتعاب المستشار المُحال للمدة المعلنة من أول تذكرة مدفوعة له، وفقط عن الأعمال المفوترة بعد التفعيل. (3) تدفع AI Support 360 المكافأة من رسومها الخاصة، ولا تُخصم أبدًا من المستشار المُحال ولا تُضاف إلى سعر العميل. (4) يحق لـ AI Support 360 مراجعة المكافآت أو تعليقها أو عكسها أو إسقاطها في حالات الاحتيال أو إحالة النفس أو الحسابات المشتركة أو المقابلات غير الأمينة. (5) المكافآت حافز إحالة وليست أجرًا أو راتبًا، وقد تخضع للضريبة، وأنت مسؤول عن الإقرار بها.')
+ON CONFLICT (version) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS public.referral_acknowledgements (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  consultant_id uuid NOT NULL REFERENCES public.consultants(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL,
+  version int NOT NULL,
+  role text NOT NULL CHECK (role IN ('referrer', 'referred', 'both')),
+  source text NOT NULL DEFAULT 'page' CHECK (source IN ('page', 'share', 'signup', 'popup')),
+  accepted_at timestamptz NOT NULL DEFAULT now(),
+  language text NOT NULL DEFAULT 'en',
+  user_agent text,
+  ip_hash text
+);
+CREATE INDEX IF NOT EXISTS referral_acknowledgements_consultant_idx ON public.referral_acknowledgements (consultant_id, version, accepted_at DESC);
+GRANT SELECT ON public.referral_acknowledgements TO authenticated;
+GRANT ALL ON public.referral_acknowledgements TO service_role;
+ALTER TABLE public.referral_acknowledgements ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Own referral acknowledgements or admin" ON public.referral_acknowledgements;
+CREATE POLICY "Own referral acknowledgements or admin" ON public.referral_acknowledgements
   FOR SELECT TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = consultant_id AND c.user_id = auth.uid())
-         OR public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'super_admin'));
+  USING (user_id = auth.uid() OR public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'super_admin'));
+
+-- Append-only, for everyone (also definer functions and administrators).
+CREATE OR REPLACE FUNCTION public.referral_ack_append_only()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $$
+BEGIN
+  RAISE EXCEPTION 'Referral acknowledgements can not be changed or deleted' USING ERRCODE = '42501';
+END
+$$;
+DROP TRIGGER IF EXISTS trg_referral_ack_append_only ON public.referral_acknowledgements;
+CREATE TRIGGER trg_referral_ack_append_only
+  BEFORE UPDATE OR DELETE ON public.referral_acknowledgements
+  FOR EACH ROW EXECUTE FUNCTION public.referral_ack_append_only();
 
 -- Audit trail of every change (also mirrored into audit_logs for administrator actions).
 CREATE TABLE IF NOT EXISTS public.referral_events (
@@ -288,8 +345,10 @@ CREATE POLICY "Admins read referral events" ON public.referral_events
 CREATE TABLE IF NOT EXISTS public.referral_email_queue (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
-  kind text NOT NULL CHECK (kind IN ('signup', 'verified', 'first_reward')),
+  kind text NOT NULL CHECK (kind IN ('signup', 'invited', 'passed_self', 'passed_other', 'active', 'reminder', 'expired', 'verified', 'first_reward', 'ack_request')),
   referred_name text,
+  next_step text,
+  days int,
   amount numeric(14,2),
   currency text,
   created_at timestamptz NOT NULL DEFAULT now(),
