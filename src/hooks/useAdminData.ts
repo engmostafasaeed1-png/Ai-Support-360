@@ -126,16 +126,7 @@ export function useAdminTickets() {
   const { isGuest } = useGuestMode();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (isGuest) return;
-    const channel = supabase
-      .channel('admin-tickets-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['admin-tickets-kanban'] });
-      })
-      .subscribe();
-    return () => { channel.unsubscribe(); };
-  }, [isGuest, queryClient]);
+  useAdminTicketsChannel(!isGuest, queryClient);
 
   return useQuery({
     queryKey: ['admin-tickets-kanban'],
