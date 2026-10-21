@@ -84,3 +84,7 @@
 - [ ] Feature N SQL: owner has the draft text reviewed, applies docs/sql/consultant-policy.sql, optionally runs docs/sql/consultant-policy.test.sql
 - [x] Feature L addition: decision preview (viewed_at, locked data), Request more information (pause/resume, limits, counts as response), decline reasons; popup, e-mails, notifications, Requests page, client card, admin, policy text, tests, Arabic (Oct 21)
 - [x] Feature L addition SQL applied (Oct 21): preview, Request more information and decline reasons live; rolled-back live trial passed
+
+- [ ] Feature Z: consultant referral programme (codes/attribution, 0.5 % rewards for 12 months, referral payouts, Refer & earn page, admin Referrals page, e-mails, SQL file + scratch test, Arabic strings) — in progress
+- [ ] Feature Z activation rule: pair active only after both pass the AI interview (referral_min_interview_score 50) and both acknowledge versioned terms; pending/active/expired (referral_activation_days 90), reminders at 14/45 days, notifications both sides, admin filters/resend, tests
+- [ ] Switch on Feature Z: awaits owner applying docs/sql/referral-program.sql (then run docs/sql/referral-program.test.sql)
