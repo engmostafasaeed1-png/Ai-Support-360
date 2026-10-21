@@ -57,7 +57,7 @@ export const SignupEmail = ({
         </Section>
         <Text style={note}>
           The button opens our site, where you press "Confirm my e-mail". The link works once and only for a
-          limited time. If it has expired, sign in or sign up again and we will send you a new one.
+          limited time. If it has expired, that page lets you ask for a new e-mail in one click.
         </Text>
         {code ? (
           <Section style={codeBox}>
