@@ -9,6 +9,7 @@ import { responseRate } from "../_shared/assignmentPolicy.ts";
 import { clampInterviewWeight, DEFAULT_INTERVIEW_WEIGHT, interviewDoneFrom, profileCompleteness } from "../_shared/profileCompleteness.ts";
 import { scrubText } from "../_shared/scrub.ts";
 import { responsesRequest, userTextItem, extractFirstFunctionCall } from "../_shared/aiResponses.ts";
+import { maskingFromSetting, publicConsultantName } from "../_shared/consultantName.ts";
 
 const VALID_MODELS = ["openai/gpt-6-astra"];
 
@@ -366,6 +367,13 @@ serve(async (req) => {
         { data: projects }, { data: ndaAgreements }, { data: sessionStats }, { data: solvedBefore },
         { data: cvProfiles }, { data: workHistory }, { data: education }, { data: availabilitySlots },
       ] = enrichmentResults;
+      // Feature X: names as the caller may see them (chosen format; administrators see full names). Before the prepared SQL
+      // adds name_format the read fails and every name is masked, so the AI never sees or repeats a hidden name.
+      const namePrivileged = hasAnyRole(callerRoles, ADMIN_ROLES);
+      const { data: fmtRows, error: fmtError } = await supabase.from("consultants").select("id, name_format").in("id", consultantIds);
+      const nameFormats = new Map<string, unknown>(fmtError ? [] : ((fmtRows ?? []) as any[]).map((r) => [r.id, r.name_format]));
+      const { data: maskRow } = await supabase.from("platform_settings").select("value").eq("key", "consultant_name_masking_enabled").maybeSingle();
+      const nameMaskingOn = maskingFromSetting((maskRow as { value?: unknown } | null)?.value);
       const solvedMap = new Map<string, { solved_similar: number; resolved_in_areas: number }>();
       for (const r of (solvedBefore ?? []) as any[]) {
         solvedMap.set(r.consultant_id, { solved_similar: r.solved_similar ?? 0, resolved_in_areas: r.resolved_in_areas ?? 0 });
@@ -399,7 +407,7 @@ serve(async (req) => {
 
         return {
           id: c.id,
-          name: profile?.display_name || "Consultant",
+          name: publicConsultantName(profile?.display_name, nameFormats.get(c.id), { maskingOn: nameMaskingOn, unlocked: namePrivileged }) || "Consultant",
           avatar_url: profile?.avatar_url,
           bio: c.bio ? scrubText(String(c.bio)).text : null,
           hourly_rate: c.hourly_rate,

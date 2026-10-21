@@ -4,10 +4,10 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 
 - Reuse the consultant payout reminder on dashboard and Earnings and render administrator readiness badges from existing presence/status metadata only; this keeps bank identifiers out of readiness UI.
 - Shared Button drops its variant gradient when callers pass a base background colour (custom gradients kept), preserving emergency/status colours.
-- Consultant landing and pricing pages own route head tags through useHeadTags, replacing duplicates and restoring defaults on unmount; do not also emit those tags through RouteSeo Helmet, to avoid competing deferred updates.
+- Consultant landing/pricing pages own head tags via useHeadTags (dedupe, restore on unmount), never also via RouteSeo, to avoid competing updates.
 - Admin full consultant profiles load only via the audited admin-only RPC in the shared sheet (ephemeral queries, short-lived links, timed in-memory bank reveals), so private payout data is never persisted.
-- Invoice details use shared billing controls and the admin confirmation hook (matches backend permissions).
-- Keep timesheet PDF and CSV row models in the shared timesheet document helpers, using existing screen amounts and approval metadata; this prevents export totals and statuses from diverging.
+- Invoice details use shared billing controls and the admin confirmation hook.
+- Timesheet PDF/CSV rows come only from the shared timesheet document helpers (screen amounts, approval metadata), so exports never diverge.
 - Credibility scores/star fills come only from the shared credibility library; photo performance rings only from lib/ringAvatar via ConsultantRing (map popups via its DOM twin), outer arc pure client rating, inner arc only public responsiveness, so all surfaces agree.
 - Brand artwork uses shared CDN logo pointers.
 - Use the consultant Profile page as the single consolidated editor, reusing existing field controls without a duplicate setup tab; legacy onboarding links must land there.
@@ -24,6 +24,7 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - Team engagement: on gated tickets only team activation writes active assignments and tickets.consultant_id, after all four gates, for client- and admin-added members (admin changes audited); team requests only invite and team rows only mirror existing tables, so access rules follow the gates.
 - index.html head tags carry `data-rh="true"` so Helmet replaces them.
 - Social sign-in starts only via startSocialSignIn (rechecks settings).
+- Others' consultant names come only from the database viewer rule and the shared consultantName formatter, so no screen, e-mail or AI text leaks a hidden name.
 - Realtime uses `subscribeWhileVisible` with row filters (whole tables only on admin pages); portals and Arabic load lazily, cutting DB/bundle load.
 - Window scroll rules live only in ScrollToTop/lib/scrollUtils; landing reveals use lib/reveal, which hides only what it marks, so content shows without scripts.
 - Sign-up confirmation links open /auth/confirm, verifying only on a button press (code fallback) so scanners cannot use them up; expired links show ConfirmLinkProblem, never the social error.

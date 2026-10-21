@@ -191,6 +191,25 @@ export default function AdminSettingsPage() {
         </Card>
       </div>
 
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">{t('admin.settings_name_privacy', 'Consultant name privacy')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <Label htmlFor="consultant_name_masking_enabled">{t('admin.settings_name_masking', 'Hide consultant full names from clients')}</Label>
+              <p className="mt-0.5 text-xs text-muted-foreground">{t('admin.settings_name_masking_hint', 'Clients, other consultants and visitors see the format each consultant chose (default "M. S****") until the consultant is ready on the ticket and both have signed the NDA. Administrators always see full names. Takes effect once the prepared name privacy update is installed.')}</p>
+            </div>
+            {loading ? <Skeleton className="h-5 w-9 shrink-0 rounded-full" /> : (
+              <Switch id="consultant_name_masking_enabled" className="shrink-0"
+                checked={settings.consultant_name_masking_enabled === undefined ? true : settings.consultant_name_masking_enabled !== false}
+                onCheckedChange={(val) => void updateSetting('consultant_name_masking_enabled', val)} />
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <FoundingSettings />
 
       <ProfileRemindersCard />
