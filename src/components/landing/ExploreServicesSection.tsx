@@ -114,7 +114,6 @@ export default function ExploreServicesSection() {
                     key={key}
                     role="button"
                     tabIndex={0}
-                    aria-label={t(`categories.${key}`)}
                     onClick={() => navigate(`/client/consultants?module=${key}`)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
@@ -167,7 +166,6 @@ export default function ExploreServicesSection() {
                     key={key}
                     role="button"
                     tabIndex={0}
-                    aria-label={t('explore.learn_more', { industry: t(`industries.${key}`) })}
                     onClick={() => navigate(`/client/consultants?industry=${key}`)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {

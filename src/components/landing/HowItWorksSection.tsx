@@ -189,7 +189,7 @@ export default function HowItWorksSection() {
                       <s.Icon size={20} strokeWidth={1.75} absoluteStrokeWidth className="text-white" />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-[10px] font-mono font-bold tracking-[0.2em] text-muted-foreground/80 mb-0.5">
+                      <span className="block text-[10px] font-mono font-bold tracking-[0.2em] text-muted-foreground mb-0.5">
                         STEP 0{i + 1}
                       </span>
                       <span className="block font-bold text-foreground text-sm md:text-base leading-snug">

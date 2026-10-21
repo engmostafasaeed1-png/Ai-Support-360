@@ -2603,5 +2603,10 @@
     "img_logo": "Logo (wide)",
     "img_mark": "Logo mark",
     "img_stacked": "Logo (stacked)"
+  },
+  "a11y": {
+    "backToTop": "Back to top",
+    "readingProgress": "Reading progress",
+    "newMessages": "Jump to new messages"
   }
 }

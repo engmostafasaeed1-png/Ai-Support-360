@@ -128,17 +128,12 @@ export default function UsersPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => invalidate()} disabled={search.isFetching}><RefreshCw className={`me-1 h-4 w-4 ${search.isFetching ? 'animate-spin' : ''}`} />{t('um.refresh', 'Refresh')}</Button>
-          {perms.includes('users.export') && <Button variant="outline" size="sm" onClick={() => exportCsv(false)} disabled={!total}><Download className="me-1 h-4 w-4" />{t('um.export_csv', 'Export CSV')}</Button>}
-          {perms.includes('users.invite') && <Button variant="outline" size="sm" onClick={() => setBulkInvite(true)}><Mail className="me-1 h-4 w-4" />{t('um.invite_many', 'Invite people')}</Button>}
-          {perms.includes('users.invite') && <Button className="gradient-primary border-0" size="sm" onClick={() => setInviteOpen(true)}><UserPlus className="me-1 h-4 w-4" />{t('um.invite_one', 'Invite user')}</Button>}
+          {(perms.includes('users.export') || me.isLoading) && <Button variant="outline" size="sm" className={me.isLoading ? 'invisible' : undefined} onClick={() => exportCsv(false)} disabled={!total}><Download className="me-1 h-4 w-4" />{t('um.export_csv', 'Export CSV')}</Button>}
+          {(perms.includes('users.invite') || me.isLoading) && <Button variant="outline" size="sm" className={me.isLoading ? 'invisible' : undefined} onClick={() => setBulkInvite(true)}><Mail className="me-1 h-4 w-4" />{t('um.invite_many', 'Invite people')}</Button>}
+          {(perms.includes('users.invite') || me.isLoading) && <Button className={`gradient-primary border-0 ${me.isLoading ? 'invisible' : ''}`} size="sm" onClick={() => setInviteOpen(true)}><UserPlus className="me-1 h-4 w-4" />{t('um.invite_one', 'Invite user')}</Button>}
         </div>
       </header>
 
-      {installed === false && (
-        <p className="rounded-2xl border border-info/30 bg-info/10 p-3 text-sm text-foreground" role="status">
-          {t('um.legacy_banner', 'Basic mode: paging, more filters, history, notes, groups and 30-day restore turn on once the prepared database update for user management is applied.')}
-        </p>
-      )}
 
       <Tabs value={tab} onValueChange={(v) => setParam('tab', v === 'users' ? null : v)}>
         <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
@@ -201,6 +196,13 @@ export default function UsersPage() {
         <TabsContent value="permissions">{me.data && <PermissionsPanel me={me.data} />}</TabsContent>
         <TabsContent value="history">{me.data && <AdminAuditPanel me={me.data} onOpenUser={(id) => setParam('user', id)} />}</TabsContent>
       </Tabs>
+
+      {/* Shown under the console: it is only known after loading, so placing it above would make the page jump. */}
+      {installed === false && (
+        <p className="rounded-2xl border border-info/30 bg-info/10 p-3 text-sm text-foreground" role="status">
+          {t('um.legacy_banner', 'Basic mode: paging, more filters, history, notes, groups and 30-day restore turn on once the prepared database update for user management is applied.')}
+        </p>
+      )}
 
       <UserDetailSheet userId={openUser} installed={!!installed} perms={perms} me={meProps} superAdminCount={superCount.data ?? 1}
         fourEyes={!!me.data?.four_eyes} onClose={() => setParam('user', null)} onOpenConsultant={setConsultant} />

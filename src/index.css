@@ -85,8 +85,28 @@
     --gradient-end: 226 68% 50%;
     --surface-glass: 0 0% 100% / 0.7;
 
-    --shadow-card: 0 1px 2px hsl(218 44% 13% / 0.04), 0 1px 3px hsl(218 44% 13% / 0.06);
-    --shadow-elevated: 0 4px 12px -2px hsl(218 44% 13% / 0.08), 0 12px 32px -8px hsl(218 44% 13% / 0.14);
+    --shadow-card: 0 1px 1px hsl(218 44% 13% / 0.03), 0 1px 3px hsl(218 44% 13% / 0.05), 0 4px 10px -6px hsl(218 44% 13% / 0.06);
+    --shadow-elevated: 0 1px 2px hsl(218 44% 13% / 0.04), 0 6px 14px -4px hsl(218 44% 13% / 0.08), 0 18px 40px -12px hsl(218 44% 13% / 0.14);
+
+    /* 8-px spacing rhythm and radius scale (Tailwind spacing 2/4/6/8 = 8/16/24/32 px) */
+    --space-1: 0.5rem;
+    --space-2: 1rem;
+    --space-3: 1.5rem;
+    --space-4: 2rem;
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+
+    /* Scrollbars */
+    --scrollbar-thumb: 214 30% 72%;
+    --scrollbar-thumb-hover: 226 60% 55%;
+
+    /* Motion */
+    --motion-fast: 150ms;
+    --motion-base: 200ms;
+    --motion-slow: 250ms;
+    --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .dark {
@@ -142,8 +162,11 @@
     --sidebar-border: 218 40% 14%;
     --sidebar-ring: 226 80% 68%;
 
-    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.4), 0 1px 3px hsl(0 0% 0% / 0.3);
-    --shadow-elevated: 0 4px 12px -2px hsl(0 0% 0% / 0.5), 0 12px 32px -8px hsl(0 0% 0% / 0.6);
+    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.35), 0 4px 12px -6px hsl(0 0% 0% / 0.45);
+    --shadow-elevated: 0 1px 2px hsl(0 0% 0% / 0.4), 0 8px 18px -6px hsl(0 0% 0% / 0.5), 0 20px 44px -12px hsl(0 0% 0% / 0.6);
+
+    --scrollbar-thumb: 218 22% 34%;
+    --scrollbar-thumb-hover: 226 70% 66%;
   }
 }
 
@@ -168,7 +191,47 @@
     font-family: 'Inter', sans-serif;
     font-weight: 600;
     letter-spacing: -0.015em;
+    text-wrap: balance;
   }
+
+  /* Scrolling: native behaviour, thin brand scrollbars, no layout shift when a scrollbar appears */
+  html { scrollbar-gutter: stable; }
+  /* Browsers without the -webkit- scrollbar styling (Firefox) get the standard thin brand scrollbar */
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: hsl(var(--scrollbar-thumb)) transparent;
+    }
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--scrollbar-thumb));
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background-color: hsl(var(--scrollbar-thumb-hover)); }
+  ::-webkit-scrollbar-corner { background: transparent; }
+  /* Dialog scroll lock: the gutter already keeps the page still, so drop the lock's extra margin. */
+  html body[data-scroll-locked] { margin-right: 0 !important; margin-left: 0 !important; }
+
+  /* Smooth only for in-page anchors and "back to top"; never for people who asked for less motion */
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+  }
+
+  /* Section and heading anchors clear the fixed header */
+  :where(h1, h2, h3, h4, h5, h6, section, article)[id] {
+    scroll-margin-top: calc(var(--public-header-h, 6rem) + 1rem);
+  }
+
+  /* Scroll inside overlays, menus and panes never scrolls the page behind */
+  [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"],
+  [data-radix-scroll-area-viewport], [data-radix-select-viewport], [cmdk-list], [vaul-drawer] {
+    overscroll-behavior: contain;
+  }
+  #main-content:focus { outline: none; }
 
   [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3,
   [dir="rtl"] h4, [dir="rtl"] h5, [dir="rtl"] h6 {
@@ -251,29 +314,6 @@
     pointer-events: none;
   }
 
-  /* Smooth scroll */
-  html {
-    scroll-behavior: smooth;
-  }
-
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground) / 0.2);
-    border-radius: 3px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.4);
-  }
-
   /* Focus ring improvements */
   *:focus-visible {
     outline: 2px solid hsl(var(--accent));
@@ -287,6 +327,49 @@
     transform: scale(1);
     opacity: 0;
   }
+}
+
+/* Reading progress fills from the reading start edge */
+.reading-progress-bar { transform-origin: left center; transition: transform 80ms linear; }
+[dir="rtl"] .reading-progress-bar { transform-origin: right center; }
+
+/* Landing sections: visible by default; the script marks only below-the-screen sections (lib/reveal) */
+[data-reveal="pending"] { opacity: 0; transform: translateY(14px); }
+[data-reveal="in"] {
+  opacity: 1;
+  transform: none;
+  transition: opacity 500ms var(--ease-out-soft), transform 500ms var(--ease-out-soft);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
+@media print {
+  [data-reveal] { opacity: 1 !important; transform: none !important; }
+}
+
+/* Horizontally scrolling tables: soft edge shadows hint that more columns are off-screen */
+.table-scroll {
+  overscroll-behavior-x: contain;
+  background:
+    linear-gradient(to right, hsl(var(--card)), hsl(var(--card))) left / 24px 100% no-repeat local,
+    linear-gradient(to left, hsl(var(--card)), hsl(var(--card))) right / 24px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, hsl(var(--foreground) / 0.14), transparent) left / 12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, hsl(var(--foreground) / 0.14), transparent) right / 12px 100% no-repeat scroll;
+}
+.sticky-head thead th { position: sticky; top: 0; z-index: 2; background: hsl(var(--card)); }
+
+/* Card rows become swipe carousels on phones */
+@media (max-width: 639px) {
+  .snap-row-mobile.snap-row-mobile {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scroll-padding-inline: 1rem;
+    padding-bottom: 0.5rem;
+  }
+  .snap-row-mobile.snap-row-mobile > * { flex: 0 0 80%; scroll-snap-align: start; }
 }
 
 /* Chatbot streaming cursor */

@@ -1,6 +1,5 @@
-import { ReactNode } from 'react';
-import { useScrollFadeIn } from '@/hooks/useScrollFadeIn';
-import { cn } from '@/lib/utils';
+import { ReactNode, useEffect, useRef } from 'react';
+import { observeReveal } from '@/lib/reveal';
 
 interface ScrollFadeInProps {
   children: ReactNode;
@@ -8,19 +7,17 @@ interface ScrollFadeInProps {
   delay?: number;
 }
 
+/** Visible by default; a below-the-screen section fades/slides in once when reached (see lib/reveal). */
 export default function ScrollFadeIn({ children, className, delay = 0 }: ScrollFadeInProps) {
-  const { ref, isVisible } = useScrollFadeIn(0.12);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    return el ? observeReveal([el]) : undefined;
+  }, []);
 
   return (
-    <div
-      ref={ref}
-      className={cn(
-        'transition-all duration-700 ease-out',
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8',
-        className
-      )}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
+    <div ref={ref} className={className} style={delay ? ({ '--reveal-delay': `${delay}ms` } as React.CSSProperties) : undefined}>
       {children}
     </div>
   );

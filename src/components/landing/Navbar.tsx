@@ -5,6 +5,7 @@ import { Menu, X, Globe } from 'lucide-react';
 import { useState, useEffect, useRef, type MouseEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import horizontalLogo from '@/assets/brand/horizontal-tight.webp.asset.json';
+import ReadingProgress from '@/components/common/ReadingProgress';
 
 export default function Navbar() {
   const { t } = useTranslation();
@@ -84,6 +85,7 @@ export default function Navbar() {
           : 'shadow-[0_8px_28px_-22px_hsl(var(--foreground)/0.45)]'
       }`}
     >
+      <ReadingProgress />
       <div className="container mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 h-[84px] sm:h-[100px] lg:h-[112px] xl:h-[116px]">
         <Link
           to="/"

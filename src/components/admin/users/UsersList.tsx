@@ -18,7 +18,7 @@ export default function UsersList({ rows, loading, columns, selected, focus, sor
   const allOn = rows.length > 0 && rows.every((r) => selected.has(r.id));
   const someOn = rows.some((r) => selected.has(r.id));
 
-  if (loading) return <div className="space-y-2 p-4" aria-busy="true" aria-label={t('um.loading', 'Loading people')}>{[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>;
+  if (loading) return <div className="space-y-2 p-4 md:min-h-[70vh]" aria-busy="true" aria-label={t('um.loading', 'Loading people')}>{[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>;
 
   const cell = (u: UserRow, c: Column) => {
     switch (c) {
@@ -55,7 +55,7 @@ export default function UsersList({ rows, loading, columns, selected, focus, sor
   return (
     <>
       {/* Desktop table */}
-      <div className="hidden overflow-x-auto md:block">
+      <div className="table-scroll sticky-head hidden max-h-[70vh] overflow-auto md:block">
         <table className="w-full min-w-[760px] text-sm">
           <caption className="sr-only">{t('um.people', 'People')}</caption>
           <thead>

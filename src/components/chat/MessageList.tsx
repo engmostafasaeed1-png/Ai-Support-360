@@ -1,6 +1,7 @@
-import { useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useStickToBottom } from '@/hooks/useStickToBottom';
 import { ChatMessage } from '@/hooks/useChat';
-import { FileText, Download } from 'lucide-react';
+import { FileText, Download, ArrowDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { useChatFileUrl } from '@/hooks/useChatFileUrl';
 
@@ -39,14 +40,13 @@ function ChatFileAttachment({ msg, isMine }: { msg: ChatMessage; isMine: boolean
 }
 
 export default function MessageList({ messages, currentUserId, participantNames }: MessageListProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  const { t } = useTranslation();
+  const last = messages[messages.length - 1];
+  const { ref, hasNew, jump } = useStickToBottom<HTMLDivElement>(messages.length, !!last && last.sender_id === currentUserId);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+    <div className="relative flex min-h-0 flex-1 flex-col">
+    <div ref={ref} className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-3">
       {messages.length === 0 && (
         <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
           No messages yet. Start the conversation!
@@ -115,7 +115,17 @@ export default function MessageList({ messages, currentUserId, participantNames 
           </div>
         );
       })}
-      <div ref={bottomRef} />
+    </div>
+      {hasNew && (
+        <button
+          type="button"
+          onClick={() => jump()}
+          aria-label={t('a11y.newMessages', 'Jump to new messages')}
+          className="absolute bottom-3 left-1/2 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-elevated animate-in fade-in slide-in-from-bottom-2 duration-200 motion-reduce:animate-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <ArrowDown className="h-4 w-4" aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 }

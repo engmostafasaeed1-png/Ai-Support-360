@@ -1,6 +1,6 @@
 import { Suspense, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { scrollBehavior } from '@/lib/scrollUtils';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 
@@ -13,7 +13,7 @@ function useScrollToHash() {
     let timer: ReturnType<typeof setTimeout>;
     const attempt = () => {
       const el = document.getElementById(decodeURIComponent(hash.slice(1)));
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (el) el.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
       else if (tries++ < 20) timer = setTimeout(attempt, 100); // lazy page still loading
     };
     attempt();
@@ -32,8 +32,11 @@ type Variant = 'content' | 'auth' | 'simple';
 export default function PublicLayout({ variant = 'simple' }: { variant?: Variant }) {
   useScrollToHash();
   const fallback = (
-    <div role="status" className="flex min-h-[40vh] items-center justify-center">
-      <Loader2 aria-hidden="true" className="h-6 w-6 animate-spin text-muted-foreground" />
+    <div role="status" className="container mx-auto flex min-h-[40vh] max-w-3xl flex-col gap-4 px-4 py-10">
+      <div aria-hidden="true" className="h-8 w-2/3 animate-pulse rounded-lg bg-muted motion-reduce:animate-none" />
+      <div aria-hidden="true" className="h-4 w-full animate-pulse rounded bg-muted motion-reduce:animate-none" />
+      <div aria-hidden="true" className="h-4 w-5/6 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+      <div aria-hidden="true" className="mt-4 h-32 w-full animate-pulse rounded-2xl bg-muted motion-reduce:animate-none" />
       <span className="sr-only">Loading…</span>
     </div>
   );
@@ -42,7 +45,8 @@ export default function PublicLayout({ variant = 'simple' }: { variant?: Variant
       <Navbar />
       {variant === 'content' ? (
         <div className="flex-1" style={{ paddingTop: 0 }}>
-          <Suspense fallback={<div style={{ paddingTop: 'var(--public-header-h, 6rem)' }}>{fallback}</div>}>
+          {/* Full-height placeholder keeps the footer below the screen until the page arrives (no layout jump). */}
+          <Suspense fallback={<div className="min-h-[100svh]" style={{ paddingTop: 'var(--public-header-h, 6rem)' }}>{fallback}</div>}>
             <Outlet />
           </Suspense>
         </div>
@@ -51,7 +55,7 @@ export default function PublicLayout({ variant = 'simple' }: { variant?: Variant
           className="flex flex-1 flex-col [&>*]:flex-1 [&>*]:!min-h-0"
           style={{ paddingTop: variant === 'auth' ? 'calc(var(--public-header-h, 6rem) + 1rem)' : 'var(--public-header-h, 6rem)' }}
         >
-          <Suspense fallback={fallback}>
+          <Suspense fallback={<div className="min-h-[100svh]">{fallback}</div>}>
             <Outlet />
           </Suspense>
         </div>

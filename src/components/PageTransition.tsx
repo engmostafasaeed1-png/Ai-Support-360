@@ -28,7 +28,7 @@ export default function PageTransition({ children }: PageTransitionProps) {
 
   return (
     <div
-      className={`transition-all duration-400 ease-out will-change-[opacity,transform] ${
+      className={`transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
         isVisible
           ? 'opacity-100 translate-y-0 scale-100'
           : 'opacity-0 translate-y-2 scale-[0.995]'
