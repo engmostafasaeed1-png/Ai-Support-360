@@ -64,6 +64,8 @@ export interface ConsultantLive {
   timezone?: string | null;
   /** Weekly slots as stored (consultant's local time). */
   slots?: WeeklySlot[];
+  /** Feature Y: end of the current hold ("On hold until ..."); the consultant can not be chosen for new work. */
+  holdUntil?: string | null;
   /** Names of the consultant's certificates (no documents). */
   certifications?: string[];
   /** Profile photo (public avatar), when set. */

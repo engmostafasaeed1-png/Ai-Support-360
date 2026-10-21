@@ -42,6 +42,8 @@ import FavouriteButton, { FavouriteChip } from '@/components/favourites/Favourit
 import { useClientFavourites } from '@/hooks/useClientFavourites';
 import { favouriteErrorKey } from '@/lib/clientFavourites';
 import { toast } from 'sonner';
+import { useAvailabilityConfig, useHoldsPublic } from '@/hooks/useAvailabilityHold';
+import { holdDirectoryView, shortAvailability, weeklyFromSlots } from '@/lib/availabilityRules';
 
 const badgeConfig: Record<string, { icon: typeof Star; color: string }> = {
   verified: { icon: BadgeCheck, color: 'text-accent' },
@@ -71,7 +73,14 @@ export default function ConsultantsPage() {
   const [movedBounds, setMovedBounds] = useState<Bounds | null>(null);
   const [saved, setSaved] = useState<SavedFilter[]>(() => loadSaved());
 
-  const { consultants, realtimeConnected } = useRealtimeConsultants();
+  const { consultants: liveConsultants, realtimeConnected } = useRealtimeConsultants();
+  // Feature Y: consultants on hold show "On hold until ..." and can not be chosen (or are hidden when the admin chose "hide").
+  const holdEnds = useHoldsPublic(useMemo(() => liveConsultants.map(c => c.id), [liveConsultants]));
+  const availabilityCfg = useAvailabilityConfig();
+  const lang = i18n?.language?.startsWith('ar') ? 'ar' : 'en';
+  const consultants = useMemo(() => liveConsultants
+    .map(c => (holdEnds.has(c.id) ? { ...c, holdUntil: holdEnds.get(c.id)!, status: 'on_hold' as const, available: false } : c))
+    .filter(c => !holdDirectoryView(c.holdUntil, availabilityCfg.holdDirectory).hidden), [liveConsultants, holdEnds, availabilityCfg.holdDirectory]);
   const { data: foundingAwards } = useFoundingConsultants();
   const { data: foundingMonths = 0 } = useFoundingBoost();
   const foundingSet = useMemo(() => new Set<string>(foundingAwards ? [...foundingAwards.keys()] : []), [foundingAwards]);
@@ -425,13 +434,14 @@ export default function ConsultantsPage() {
                       <div className="flex gap-2">
                         <span className={`text-xs font-medium flex items-center gap-1 ${c.status === 'available' ? 'text-green-600' : c.status === 'busy' ? 'text-amber-600' : 'text-muted-foreground'}`} data-testid={`status-${c.id}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${STATE_META[c.status].dot} ${c.status === 'available' ? 'animate-pulse' : ''}`} />
-                          {STATE_META[c.status].label}
+                          {holdDirectoryView(c.holdUntil, availabilityCfg.holdDirectory, lang).label ?? STATE_META[c.status].label}
                         </span>
                       </div>
                     </div>
 
                     <div className="mt-3 rounded-lg bg-muted/40 px-2.5 py-2" data-testid={`hours-${c.id}`}>
                       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Weekly availability</p>
+                      {(() => { const line = shortAvailability(weeklyFromSlots(c.slots ?? []), lang); return line ? <p className="mb-1 text-xs font-semibold text-foreground" data-testid={`availability-line-${c.id}`}>{line}</p> : null; })()}
                       {c.hours && c.hours.length > 0 ? (
                         <ul className="space-y-0.5">{c.hours.map(h => <li key={h} className="text-xs text-foreground">{h}</li>)}</ul>
                       ) : (
@@ -441,7 +451,8 @@ export default function ConsultantsPage() {
 
                     <p className="mt-3 text-xs text-muted-foreground">Sessions are arranged inside a request, so everything stays protected in the portal.</p>
                     <div className="flex gap-2 mt-2">
-                      <Button size="sm" className="gradient-primary border-0 flex-1 text-xs" onClick={() => invite(c.id)}>Open a request</Button>
+                      <Button size="sm" className="gradient-primary border-0 flex-1 text-xs" onClick={() => invite(c.id)} disabled={!!c.holdUntil}
+                        title={c.holdUntil ? holdDirectoryView(c.holdUntil, 'label', lang).label ?? undefined : undefined}>Open a request</Button>
                       <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => navigate(`/client/consultants/${c.id}`)}>{t('consultants_page.view_profile')}</Button>
                     </div>
                   </div>
