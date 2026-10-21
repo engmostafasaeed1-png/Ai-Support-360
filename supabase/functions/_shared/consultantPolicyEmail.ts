@@ -328,7 +328,7 @@ export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
 
   const button = (testId: string) => table({}, row(h('td', { align: 'center', style: { padding: '0' } },
     h('table', { role: 'presentation', cellPadding: 0, cellSpacing: 0, border: 0, style: { margin: '0 auto' } }, h('tbody', null, row(
-      h('td', { bgColor: C.navy, style: { backgroundColor: C.navy, borderRadius: '12px', textAlign: 'center' } },
+      h('td', { bgcolor: C.navy, style: { backgroundColor: C.navy, borderRadius: '12px', textAlign: 'center' } },
         h('a', { href: m.confirmUrl, 'data-cta': testId, target: '_blank', style: { display: 'inline-block', padding: '14px 30px', fontFamily: font, fontSize: '16px', fontWeight: 'bold', color: C.white, textDecoration: 'none', borderRadius: '12px' } }, m.t.button),
       ),
     ))),
@@ -362,7 +362,7 @@ export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
     p({ fontSize: '14px', lineHeight: '1.6', color: C.text, margin: '0 0 14px' }, m.t.whyLead),
     ...m.cards.map((c, i) => table({ margin: '0 0 10px', backgroundColor: C.blueSoft, border: `1px solid ${C.blueLine}`, borderRadius: '14px' },
       row(
-        h('td', { width: 52, vAlign: 'top', align: 'center', style: { width: '52px', padding: '14px 0 14px', fontSize: '24px', lineHeight: '28px', textAlign: 'center', verticalAlign: 'top' } }, c.icon),
+        h('td', { width: 52, valign: 'top', align: 'center', style: { width: '52px', padding: '14px 0 14px', fontSize: '24px', lineHeight: '28px', textAlign: 'center', verticalAlign: 'top' } }, c.icon),
         cell({ padding: rtl ? '14px 0 14px 16px' : '14px 16px 14px 0', verticalAlign: 'top' },
           p({ fontSize: '15px', fontWeight: 'bold', color: C.navy, margin: '0 0 4px' }, `${String.fromCharCode(97 + i)}) ${c.title}`),
           p({ fontSize: '14px', lineHeight: '1.6', color: C.text }, c.text),
@@ -374,7 +374,7 @@ export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
   // Key numbers
   const pairs: Array<typeof m.numbers> = [];
   for (let i = 0; i < m.numbers.length; i += 2) pairs.push(m.numbers.slice(i, i + 2));
-  const numCell = (x: { value: string; label: string } | undefined) => h('td', { width: '50%', vAlign: 'top', style: { width: '50%', padding: '8px', verticalAlign: 'top', fontFamily: font, textAlign: start } },
+  const numCell = (x: { value: string; label: string } | undefined) => h('td', { width: '50%', valign: 'top', style: { width: '50%', padding: '8px', verticalAlign: 'top', fontFamily: font, textAlign: start } },
     x ? table({ backgroundColor: '#24316e', borderRadius: '12px' }, row(cell({ padding: '12px 14px', backgroundColor: '#24316e', borderRadius: '12px' },
       p({ fontSize: '19px', fontWeight: 'bold', color: C.white, margin: '0 0 2px' }, x.value),
       p({ fontSize: '12px', lineHeight: '1.45', color: '#c7d2fe' }, x.label),
@@ -390,7 +390,7 @@ export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
   // Timeline (section 1)
   const timeline = table({ margin: '12px 0 6px', border: `1px solid ${C.line}`, borderRadius: '12px', backgroundColor: C.white },
     row(h('td', { colSpan: m.timeline.length, style: { padding: '12px 12px 4px', fontFamily: font, textAlign: start, fontSize: '13px', fontWeight: 'bold', color: C.navy } }, '⏱️ ', m.t.timelineTitle)),
-    row(...m.timeline.map((s, i) => h('td', { key: i, width: `${Math.floor(100 / m.timeline.length)}%`, vAlign: 'top', align: 'center', 'data-step': i, style: { padding: '8px 4px 12px', verticalAlign: 'top', textAlign: 'center', fontFamily: font } },
+    row(...m.timeline.map((s, i) => h('td', { key: i, width: `${Math.floor(100 / m.timeline.length)}%`, valign: 'top', align: 'center', 'data-step': i, style: { padding: '8px 4px 12px', verticalAlign: 'top', textAlign: 'center', fontFamily: font } },
       h('div', { style: { height: '4px', lineHeight: '4px', fontSize: '1px', backgroundColor: TIMELINE_COLORS[i] ?? C.accent, borderRadius: '2px', margin: '0 0 8px' } }, '\u00a0'),
       h('div', { style: { fontSize: '12px', fontWeight: 'bold', color: C.ink, lineHeight: '1.35' } }, s.label),
       h('div', { style: { fontSize: '12px', color: C.muted, lineHeight: '1.35' } }, s.at),
@@ -425,7 +425,7 @@ export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
       table({ margin: '0 0 12px', backgroundColor: C.soft, border: `1px solid ${C.line}`, [rtl ? 'borderRight' : 'borderLeft']: `5px solid ${color}`, borderRadius: '12px' },
         row(cell({ padding: '14px 16px 6px' },
           table({}, row(
-            h('td', { width: 34, vAlign: 'top', style: { width: '34px', verticalAlign: 'top' } },
+            h('td', { width: 34, valign: 'top', style: { width: '34px', verticalAlign: 'top' } },
               h('div', { style: { width: '28px', height: '28px', lineHeight: '28px', borderRadius: '14px', backgroundColor: color, color: C.white, fontFamily: font, fontSize: '13px', fontWeight: 'bold', textAlign: 'center' }, 'aria-label': `${m.t.section} ${s.number}` }, s.number)),
             cell({ verticalAlign: 'middle', padding: rtl ? '0 8px 0 0' : '0 0 0 8px' },
               h('h3', { style: { margin: '0', fontFamily: font, fontSize: '16px', lineHeight: '1.4', fontWeight: 'bold', color: C.ink, textAlign: start } }, s.heading)),
@@ -461,7 +461,7 @@ export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
     table({ backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '14px' }, row(cell({ padding: '16px 18px' },
       p({ fontSize: '17px', fontWeight: 'bold', color: '#065f46', margin: '0 0 10px' }, m.t.needTitle),
       ...m.t.need.map(x => table({ margin: '0 0 6px' }, row(
-        h('td', { width: 26, vAlign: 'top', style: { width: '26px', fontSize: '15px', lineHeight: '1.6', verticalAlign: 'top', color: '#059669' } }, '✅'),
+        h('td', { width: 26, valign: 'top', style: { width: '26px', fontSize: '15px', lineHeight: '1.6', verticalAlign: 'top', color: '#059669' } }, '✅'),
         cell({ fontSize: '14px', lineHeight: '1.6', color: '#064e3b' }, x),
       ))),
     ))),
@@ -491,7 +491,7 @@ export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
     ),
     h('body', { dir: m.dir, style: { margin: '0', padding: '0', backgroundColor: '#ffffff', fontFamily: font } },
       h('div', { style: { display: 'none', overflow: 'hidden', lineHeight: '1px', opacity: 0, maxHeight: 0, maxWidth: 0 } }, `${m.title} - ${m.deadlineLine}`),
-      h('table', { role: 'presentation', width: '100%', cellPadding: 0, cellSpacing: 0, border: 0, bgColor: '#ffffff', dir: m.dir, style: { backgroundColor: '#ffffff' } }, h('tbody', null, row(
+      h('table', { role: 'presentation', width: '100%', cellPadding: 0, cellSpacing: 0, border: 0, bgcolor: '#ffffff', dir: m.dir, style: { backgroundColor: '#ffffff' } }, h('tbody', null, row(
         h('td', { align: 'center', style: { padding: '16px 8px' } },
           h('table', { role: 'presentation', width: '100%', cellPadding: 0, cellSpacing: 0, border: 0, dir: m.dir, style: { maxWidth: '640px', width: '100%', margin: '0 auto', backgroundColor: C.white, border: `1px solid ${C.line}`, borderRadius: '18px', borderCollapse: 'separate' } },
             h('tbody', null, header, intro, why, means, full, need, bottom, footer)),
