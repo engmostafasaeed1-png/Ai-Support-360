@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { arcPath, arcPattern, ratingArc, ratingTone, respArc, responsivenessScore, ringSummary, ringTier, speedFactor } from './ringAvatar';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { arcPath, arcPattern, arcSegments, ratingArc, ringGeometry, RING_SIZES, ratingTone, respArc, responsivenessScore, ringSummary, ringTier, speedFactor } from './ringAvatar';
 import { DEFAULT_FILTERS, passes, sortDirectory, type DirectoryContext } from './directoryFilters';
 import type { ConsultantLive } from './consultantDirectory';
 
@@ -109,3 +111,79 @@ describe('directory: responsiveness sort and filter', () => {
     expect(list.filter(c => passes(c, { ...DEFAULT_FILTERS, resp: 'good' }, off))).toHaveLength(3);
   });
 });
+
+describe('visible, modern ring (Feature W addition)', () => {
+  it('uses 6 px outer and 5 px inner arcs at md with a 3 px gap and 4 px to the photo', () => {
+    const md = RING_SIZES.md;
+    expect([md.outerW, md.innerW, md.gap, md.photoGap]).toEqual([6, 5, 3, 4]);
+    const g = ringGeometry('md');
+    expect(g.outerR - g.outerW / 2 - (g.innerR + g.innerW / 2)).toBeCloseTo(3);
+    expect(g.innerR - g.innerW / 2 - g.photoR).toBeCloseTo(4);
+  });
+  it('never draws an arc thinner than 3 px and scales with size', () => {
+    for (const s of Object.values(RING_SIZES)) {
+      expect(s.outerW).toBeGreaterThanOrEqual(3);
+      expect(s.innerW).toBeGreaterThanOrEqual(3);
+    }
+    expect(RING_SIZES.xl.outerW).toBeGreaterThan(RING_SIZES.md.outerW);
+  });
+  it('makes card avatars at least 64 px and the profile header 120-140 px', () => {
+    expect(RING_SIZES.md.px).toBeGreaterThanOrEqual(64);
+    expect(RING_SIZES.xl.px).toBeGreaterThanOrEqual(120);
+    expect(RING_SIZES.xl.px).toBeLessThanOrEqual(140);
+  });
+  it('shows only the number on xs/sm rings', () => {
+    expect(RING_SIZES.xs.short && RING_SIZES.sm.short).toBe(true);
+    expect(RING_SIZES.md.short || RING_SIZES.lg.short || RING_SIZES.xl.short).toBe(false);
+    expect(ringSummary({ rating: 4.8, reviews: 23, publicOn: true }).short).toBe('4.8');
+    expect(ringSummary({ rating: 0, reviews: 0, publicOn: true }).short).toBe('New');
+  });
+  it('writes the pills "4.8 (23)" and "Fast reply - 18 min"', () => {
+    const s = ringSummary({ rating: 4.8, reviews: 23, publicOn: true, resp: { level: 'excellent', median_minutes: 18, response_rate: 96 } });
+    expect(s.pills.rating.text).toBe('4.8 (23)');
+    expect(s.pills.resp?.text).toBe('Fast reply - 18 min');
+    expect(s.pills.resp?.tone).toBe('gold');
+  });
+  it('has no responsiveness pill while responsiveness is private', () => {
+    expect(ringSummary({ rating: 4.8, reviews: 23, publicOn: false }).pills.resp).toBeNull();
+  });
+  it('splits the arc into pieces that run without gaps from 12 o\'clock to the end', () => {
+    const segs = arcSegments(80, 30, 36, 36);
+    expect(segs.length).toBeGreaterThan(1);
+    expect(segs[0].d.startsWith('M 36 6 ')).toBe(true);
+    expect(segs[0].t).toBeLessThan(segs[segs.length - 1].t);
+  });
+  it('keeps every ring colour at 3:1 or more against light and dark cards', () => {
+    const css = readFileSync(resolve(__dirname, '../index.css'), 'utf8');
+    const block = (sel: RegExp) => css.slice(css.search(sel));
+    const val = (src: string, name: string) => {
+      const m = src.match(new RegExp(`--${name}:\\s*([\\d.]+)\\s+([\\d.]+)%\\s+([\\d.]+)%`));
+      if (!m) throw new Error(`missing --${name}`);
+      return [Number(m[1]), Number(m[2]), Number(m[3])] as [number, number, number];
+    };
+    const light = block(/:root\s*\{/);
+    const dark = block(/\.dark\s*\{/);
+    const cards = [val(light, 'card'), val(dark, 'card')];
+    for (const tone of ['red', 'amber', 'green', 'gold']) {
+      for (const stop of ['a', 'b']) {
+        for (const src of [light, dark]) {
+          const c = val(src, `ring-${tone}-${stop}`);
+          for (const card of cards) expect(contrast(c, card), `${tone}-${stop}`).toBeGreaterThanOrEqual(3);
+        }
+      }
+    }
+  });
+});
+
+function luminance([h, s, l]: [number, number, number]): number {
+  const sat = s / 100, lig = l / 100;
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = sat * Math.min(lig, 1 - lig);
+  const ch = (n: number) => lig - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * lin(ch(0)) + 0.7152 * lin(ch(8)) + 0.0722 * lin(ch(4));
+}
+function contrast(a: [number, number, number], b: [number, number, number]): number {
+  const [x, y] = [luminance(a), luminance(b)].sort((m, n) => n - m);
+  return (x + 0.05) / (y + 0.05);
+}
