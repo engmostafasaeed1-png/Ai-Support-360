@@ -129,5 +129,6 @@ export default function NotificationBell({ basePath }: NotificationBellProps) {
       </PopoverContent>
       <PauseNotificationsDialog open={pauseOpen} onOpenChange={setPauseOpen} initialDuration={pauseFor} source="bell" />
     </Popover>
+    </>
   );
 }
