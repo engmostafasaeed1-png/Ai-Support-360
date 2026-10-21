@@ -6,6 +6,7 @@ import {
 import type { ConsultantLive } from './consultantDirectory';
 import { deleteSaved, loadSaved, saveFilter } from './savedFilters';
 import { clusterPoints } from './mapCluster';
+import { successView } from './successLevel';
 
 const person = (id: string, patch: Partial<ConsultantLive> = {}): ConsultantLive => ({
   id, name: `Name ${id}`, specialty: 'SAP FI', skills: ['SAP FI'], rating: 4.5, reviews: 5, rate: 80, avatar: 'NN', available: true, status: 'available',
@@ -104,5 +105,30 @@ describe('map clusters', () => {
   it('groups close pins when zoomed out and splits them when zoomed in', () => {
     expect(clusterPoints(pts, 4).map(g => g.ids)).toEqual([['a', 'b'], ['c']]);
     expect(clusterPoints(pts, 13)).toHaveLength(3);
+  });
+});
+
+describe('Success level filter and sort (Feature W)', () => {
+  const view = (t: number, s: number) => successView(true, { requests_total: t, solved: s, not_solved: t - s, requests_12m: t, solved_12m: s });
+  const success = new Map([['a', view(10, 10)], ['b', view(20, 17)], ['c', view(10, 8)], ['d', view(3, 3)]]);
+  const list = [person('d'), person('c'), person('b'), person('a'), person('e')];
+  it('keeps the success filters in the URL', () => {
+    const f: DirectoryFilters = { ...DEFAULT_FILTERS, success: 'gold', successRate: 85, sort: 'success_level' };
+    expect(parseFilters(new URLSearchParams(serializeFilters(f)))).toMatchObject({ success: 'gold', successRate: 85, sort: 'success_level' });
+    expect(parseFilters(new URLSearchParams('success=diamond')).success).toBe('');
+  });
+  it('filters by minimum level and rate; New consultants never pass a level filter', () => {
+    const x = { ...ctx, success };
+    const keep = (f: Partial<DirectoryFilters>) => list.filter((c) => passes(c, { ...DEFAULT_FILTERS, ...f }, x)).map((c) => c.id).sort();
+    expect(keep({ success: 'gold' })).toEqual(['a', 'b']);
+    expect(keep({ success: 'platinum' })).toEqual(['a']);
+    expect(keep({ successRate: 80 })).toEqual(['a', 'b', 'c']);
+  });
+  it('the filters do nothing while the success display is off', () => {
+    expect(list.filter((c) => passes(c, { ...DEFAULT_FILTERS, success: 'gold', successRate: 90 }, { ...ctx, success: null })).length).toBe(list.length);
+  });
+  it('sorts by level and by rate, New and unknown last', () => {
+    expect(sortDirectory(list, { ...DEFAULT_FILTERS, sort: 'success_level' }, null, tie, null, success).map((c) => c.id).slice(0, 3)).toEqual(['a', 'b', 'c']);
+    expect(sortDirectory(list, { ...DEFAULT_FILTERS, sort: 'success_rate' }, null, tie, null, success).map((c) => c.id).slice(0, 3)).toEqual(['a', 'b', 'c']);
   });
 });
