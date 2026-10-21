@@ -95,6 +95,7 @@ const VerificationTimelineHarness = lazyWithRetry(
   'VerificationTimelineHarness',
 );
 const ResetPasswordPage = lazyWithRetry(() => import("./pages/auth/ResetPasswordPage.tsx"), 'ResetPasswordPage');
+const ConfirmEmailPage = lazyWithRetry(() => import("./pages/auth/ConfirmEmailPage.tsx"), 'ConfirmEmailPage');
 
 // Consultant pages
 const ConsultantDashboard = lazyWithRetry(() => import("./pages/consultant/ConsultantDashboard.tsx"), 'ConsultantDashboard');
@@ -345,6 +346,7 @@ const App = () => (
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/auth/confirm" element={<ConfirmEmailPage />} />
             </Route>
             <Route element={<PublicLayout />}>
               <Route path="/unsubscribe" element={<UnsubscribePage />} />

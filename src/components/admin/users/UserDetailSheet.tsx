@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { AlertTriangle, Ban, CheckCircle2, Copy, Download, KeyRound, LogOut, Mail, MoreHorizontal, Pencil, RotateCcw, Send, Shield, ShieldOff, Trash2, UserX, Users } from 'lucide-react';
+import { AlertTriangle, Ban, CheckCircle2, Copy, MailCheck, Download, KeyRound, LogOut, Mail, MoreHorizontal, Pencil, RotateCcw, Send, Shield, ShieldOff, Trash2, UserX, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { callRpc, useUserDetail } from '@/hooks/useUserAdmin';
 import { restoreDaysLeft, type UserRow } from '@/lib/userAdmin';
@@ -19,7 +19,7 @@ import { useUserActions } from './useUserActions';
 import { STATUS_VARIANT, fmtDate, roleLabel, statusLabel, verificationLabel } from './labels';
 
 type Dialog =
-  | 'edit' | 'roles' | 'suspend' | 'reactivate' | 'force_sign_out' | 'password_reset' | 'resend_verification' | 'mfa_reset'
+  | 'edit' | 'roles' | 'suspend' | 'reactivate' | 'force_sign_out' | 'password_reset' | 'resend_verification' | 'confirm_email' | 'mfa_reset'
   | 'soft_delete' | 'restore' | 'anonymise' | 'delete' | 'merge' | 'unmerge' | 'message' | null;
 
 export interface DetailProps {
@@ -62,7 +62,8 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
   const legacy = !!data.legacy;
   const self = u.id === me.id;
   const targetSuper = u.roles.includes('super_admin');
-  const lockedBySuper = targetSuper && !me.roles.includes('super_admin');
+  const isSuperMe = me.roles.includes('super_admin');
+  const lockedBySuper = targetSuper && !isSuperMe;
   const deleted = u.status === 'deleted';
   const merged = !!u.merged_into;
   const flags = (data.flags ?? {}) as Record<string, boolean>;
@@ -119,6 +120,14 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
               <li key={f}><Badge variant="outline" className="border-warning/40 bg-warning/10 text-foreground"><AlertTriangle className="me-1 h-3 w-3" aria-hidden />{flagLabel(t, f)}</Badge></li>
             ))}
           </ul>
+        )}
+        {!u.email_verified && !deleted && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 p-2 text-xs text-foreground" data-testid="um-unconfirmed">
+            <Mail className="h-4 w-4 shrink-0 text-warning" aria-hidden />
+            <span className="flex-1">{t('um.unconfirmed_note', 'E-mail not confirmed yet: this person cannot sign in until they confirm.')}</span>
+            {can('users.edit') && <Button size="sm" variant="outline" onClick={() => setDialog('resend_verification')}>{t('um.resend_confirmation', 'Resend confirmation e-mail')}</Button>}
+            {isSuperMe && !self && <Button size="sm" variant="outline" onClick={() => setDialog('confirm_email')}><MailCheck className="me-1 h-4 w-4" aria-hidden />{t('um.confirm_email', 'Mark e-mail as confirmed')}</Button>}
+          </div>
         )}
         {/* Actions */}
         <div className="mt-4 flex flex-wrap gap-2">
@@ -294,7 +303,7 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
       <SuspendDialog open={dialog === 'suspend'} user={u} busy={busy} onClose={close}
         onConfirm={async (reason, until) => after(await run('suspend', u.id, { payload: { until: until || null }, reason, ok: t('um.suspended_ok', 'Suspended and signed out'),
           undo: () => run('reactivate', u.id, { ok: t('um.reactivated_ok', 'Reactivated') }) }))} />
-      {(['reactivate', 'force_sign_out', 'password_reset', 'resend_verification', 'mfa_reset', 'soft_delete', 'restore', 'anonymise', 'delete', 'unmerge'] as const).map((a) => (
+      {(['reactivate', 'force_sign_out', 'password_reset', 'resend_verification', 'confirm_email', 'mfa_reset', 'soft_delete', 'restore', 'anonymise', 'delete', 'unmerge'] as const).map((a) => (
         <ReasonDialog key={a} open={dialog === a} busy={busy} onClose={close} {...confirmCopy(t, a, u)} onConfirm={act(a, confirmCopy(t, a, u).ok)} />
       ))}
     </div>
@@ -393,7 +402,7 @@ export function actionLabel(t: any, a: string) {
     set_tags: t('um.a_set_tags', 'Tags changed'), add_note: t('um.a_add_note', 'Internal note added'), delete_note: t('um.a_delete_note', 'Internal note deleted'),
     notify: t('um.a_notify', 'Notification sent'), suspend: t('um.a_suspend', 'Suspended'), reactivate: t('um.a_reactivate', 'Reactivated'),
     force_sign_out: t('um.a_force_sign_out', 'Signed out everywhere'), password_reset: t('um.a_password_reset', 'Password reset sent'),
-    resend_verification: t('um.a_resend', 'Verification e-mail resent'), mfa_reset: t('um.a_mfa_reset', 'Two-step sign-in reset'),
+    resend_verification: t('um.a_resend', 'Verification e-mail resent'), confirm_email: t('um.a_confirm_email', 'E-mail marked as confirmed by a super admin'), mfa_reset: t('um.a_mfa_reset', 'Two-step sign-in reset'),
     soft_delete: t('um.a_soft_delete', 'Deleted (restorable)'), restore: t('um.a_restore', 'Restored'), anonymised: t('um.a_anonymised', 'Anonymised'),
     hard_delete: t('um.a_hard_delete', 'Deleted permanently'), merge: t('um.a_merge', 'Merged into another account'), unmerge: t('um.a_unmerge', 'Unmerged'),
     gdpr_export: t('um.a_gdpr', 'Personal data exported'), export_users: t('um.a_export_users', 'User list exported'), export_audit: t('um.a_export_audit', 'History exported'),
@@ -410,6 +419,7 @@ function confirmCopy(t: any, a: string, u: UserRow) {
     force_sign_out: { title: t('um.signout_title', 'Sign {{n}} out everywhere?', { n }), description: t('um.signout_desc', 'All their sessions end now. They can sign in again.'), confirmLabel: t('um.force_sign_out', 'Sign out everywhere'), ok: t('um.signed_out_ok', 'Signed out everywhere'), needsReason: true },
     password_reset: { title: t('um.pw_title', 'Send password reset?'), description: t('um.pw_desc', '{{n}} gets an e-mail with a link to set a new password.', { n }), confirmLabel: t('um.send', 'Send'), ok: t('um.pw_ok', 'Password reset e-mail sent') },
     resend_verification: { title: t('um.verify_title', 'Resend verification e-mail?'), description: t('um.verify_desc', '{{n}} gets a new link to confirm their e-mail address.', { n }), confirmLabel: t('um.send', 'Send'), ok: t('um.verify_ok', 'Verification e-mail sent') },
+    confirm_email: { title: t('um.confirm_title', 'Mark the e-mail of {{n}} as confirmed?', { n }), description: t('um.confirm_desc', 'Only do this after you made sure the address belongs to this person (for example they wrote to you from it). They can then sign in with their password. This is recorded with your reason.'), confirmLabel: t('um.confirm_email', 'Mark e-mail as confirmed'), ok: t('um.confirm_ok', 'E-mail marked as confirmed'), needsReason: true },
     mfa_reset: { title: t('um.mfa_title', 'Reset two-step sign-in?'), description: t('um.mfa_desc', 'Their authenticator is removed and they are signed out. Only do this after confirming who they are.'), confirmLabel: t('um.mfa_reset', 'Reset two-step sign-in'), ok: t('um.mfa_ok', 'Two-step sign-in reset'), needsReason: true, destructive: true },
     soft_delete: { title: t('um.delete_title', 'Delete {{n}}?', { n }), description: t('um.delete_desc', 'They are signed out and hidden. You can restore the account for 30 days; after that a super admin can anonymise it.'), confirmLabel: t('um.delete_short', 'Delete'), ok: t('um.deleted_ok', 'Deleted — restorable for 30 days'), needsReason: true, destructive: true },
     restore: { title: t('um.restore_title', 'Restore {{n}}?', { n }), description: t('um.restore_desc', 'The account can sign in again.'), confirmLabel: t('um.restore', 'Restore'), ok: t('um.restored_ok', 'Restored') },

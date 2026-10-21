@@ -115,3 +115,11 @@ export const clearResendCooldown = (email: string) => {
   delete store[norm(email)];
   writeCooldown(store);
 };
+
+// ---- Address waiting for confirmation ----------------------------------
+// The sign-up screen remembers the address so a later "link expired" page can prefill it.
+export const PENDING_EMAIL_KEY = 'verification_pending_email';
+
+export const getPendingEmail = (): string => {
+  try { return (localStorage.getItem(PENDING_EMAIL_KEY) || '').slice(0, 254); } catch { return ''; }
+};

@@ -13,11 +13,13 @@ const FOREVER = '876000h';
 const SUPER_ONLY = new Set(['admins.manage', 'users.merge', 'users.mfa_reset', 'users.anonymise', 'users.hard_delete']);
 const ACTION_PERMISSION: Record<string, string> = {
   set_roles: 'users.roles', update_name: 'users.edit', suspend: 'users.suspend', reactivate: 'users.suspend',
-  force_sign_out: 'users.sessions', password_reset: 'users.edit', resend_verification: 'users.edit',
+  force_sign_out: 'users.sessions', password_reset: 'users.edit', resend_verification: 'users.edit', confirm_email: 'users.edit',
   mfa_reset: 'users.mfa_reset', soft_delete: 'users.delete', restore: 'users.delete', anonymise: 'users.anonymise',
   delete: 'users.hard_delete', merge: 'users.merge', unmerge: 'users.merge',
 };
-const REASON_REQUIRED = new Set(['suspend', 'force_sign_out', 'mfa_reset', 'soft_delete', 'anonymise', 'delete', 'merge']);
+const REASON_REQUIRED = new Set(['suspend', 'force_sign_out', 'mfa_reset', 'soft_delete', 'anonymise', 'delete', 'merge', 'confirm_email']);
+/** Actions only a super admin may run, whatever admin groups say. */
+const SUPER_ADMIN_ACTIONS = new Set(['confirm_email']);
 
 class HttpError extends Error {
   constructor(public status: number, message: string) { super(message); }
@@ -168,6 +170,7 @@ Deno.serve(async (req) => {
     const perm = ACTION_PERMISSION[action];
     if (!perm) return jsonResponse(req, { error: 'Unknown action' }, 400);
     if (!(await can(admin, caller.id, callerRoles, perm))) throw new HttpError(403, 'You do not have permission for this action');
+    if (SUPER_ADMIN_ACTIONS.has(action) && !isSuper) throw new HttpError(403, 'Only a super admin can do this');
     if (REASON_REQUIRED.has(action) && reason.length < 5) throw new HttpError(400, 'Please give a reason (at least 5 characters)');
 
     const userId = String(body.user_id || '');
@@ -250,6 +253,16 @@ Deno.serve(async (req) => {
         const { error: e2 } = await anon.auth.resend({ type: 'signup', email: data.user.email, options: { emailRedirectTo: `${SITE_URL}/login` } });
         if (e2) throw e2;
         await record(admin, caller.id, userId, 'resend_verification', {}, reason || null);
+        break;
+      }
+      case 'confirm_email': {
+        // Super admin only, reason required (checked above). Marks the address as confirmed without an e-mail.
+        const { data, error } = await admin.auth.admin.getUserById(userId);
+        if (error || !data.user?.email) throw new HttpError(400, 'User has no email');
+        if (data.user.email_confirmed_at) throw new HttpError(400, 'This e-mail address is already verified');
+        const { error: e2 } = await admin.auth.admin.updateUserById(userId, { email_confirm: true });
+        if (e2) throw e2;
+        await record(admin, caller.id, userId, 'confirm_email', { before: { email_verified: false }, after: { email_verified: true } }, reason);
         break;
       }
       case 'mfa_reset': {

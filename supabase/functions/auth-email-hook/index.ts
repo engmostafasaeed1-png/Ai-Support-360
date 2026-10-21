@@ -7,6 +7,7 @@ import { MagicLinkEmail } from '../_shared/email-templates/magic-link.tsx'
 import { RecoveryEmail } from '../_shared/email-templates/recovery.tsx'
 import { EmailChangeEmail } from '../_shared/email-templates/email-change.tsx'
 import { ReauthenticationEmail } from '../_shared/email-templates/reauthentication.tsx'
+import { confirmCode, confirmPageUrl } from '../_shared/authConfirmLink.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -44,6 +45,7 @@ const SAMPLE_DATA: Record<string, object> = {
     siteUrl: SAMPLE_PROJECT_URL,
     recipient: SAMPLE_EMAIL,
     confirmationUrl: SAMPLE_PROJECT_URL,
+    code: '123456',
   },
   magiclink: {
     siteName: SITE_NAME,
@@ -135,7 +137,9 @@ const handler = createAuthEmailHandler({
           siteName: SITE_NAME,
           siteUrl: SITE_URL,
           recipient: data.email,
-          confirmationUrl: data.url,
+          // Our confirm page (one click) instead of the raw link, so mail scanners cannot use it up.
+          confirmationUrl: confirmPageUrl(data.url, SITE_URL, data.email),
+          code: confirmCode(data.token),
         }),
     },
     invite: {

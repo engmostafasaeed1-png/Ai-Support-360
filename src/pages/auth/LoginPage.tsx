@@ -27,6 +27,8 @@ import {
 } from '@/lib/verificationStorage';
 import {
   readOAuthError,
+  isEmailLinkError,
+  emailRedirectBase,
   isFirstTimeOAuthUser,
   newUserDestination,
   readStoredOAuthRole,
@@ -38,6 +40,8 @@ import {
   type FirstRole,
 } from '@/lib/oauthReturn';
 import { reportError } from '@/lib/errorReporter';
+import { getPendingEmail } from '@/lib/verificationStorage';
+import ConfirmLinkProblem from '@/components/auth/ConfirmLinkProblem';
 
 let oauthErrorReported = false;
 function reportOAuthErrorOnce(provider: string, detail: string) {
@@ -51,6 +55,18 @@ function reportOAuthErrorOnce(provider: string, detail: string) {
   });
 }
 
+let linkErrorReported = false;
+function reportLinkErrorOnce(detail: string) {
+  if (linkErrorReported) return;
+  linkErrorReported = true;
+  reportError({
+    level: 'warn',
+    source: 'auth_email_link',
+    message: `Confirmation link expired or already used: ${detail.slice(0, 160)}`,
+    context: { origin: window.location.origin },
+  });
+}
+
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
 
@@ -61,7 +77,14 @@ export default function LoginPage() {
   const nextParam = new URLSearchParams(location.search).get('next');
   const safeNext = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : null;
   const from = safeNext || (location.state as any)?.from || null;
-  const [email, setEmail] = useState('');
+  const justConfirmed = !!(location.state as any)?.confirmed;
+  const [linkProblem, setLinkProblem] = useState(() => {
+    const e = readOAuthError(location.search, location.hash);
+    if (!e || !isEmailLinkError(e)) return false;
+    reportLinkErrorOnce(`${e.code ?? e.error} ${e.description}`);
+    return true;
+  });
+  const [email, setEmail] = useState(() => (linkProblem ? getPendingEmail() : ''));
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -77,10 +100,18 @@ export default function LoginPage() {
   const [resendSuccessEmail, setResendSuccessEmail] = useState<string | null>(null);
   const [oauthError, setOauthError] = useState<{ error: string; description: string } | null>(() => {
     const e = readOAuthError(location.search, location.hash);
-    if (!e) return null;
+    // An expired or used e-mail link is not a Google error: it gets its own panel (linkProblem).
+    if (!e || isEmailLinkError(e)) return null;
     reportOAuthErrorOnce('google', `${e.error} ${e.description}`);
     return { ...e, description: friendlyOAuthMessage(e) };
   });
+
+  // Remove the error from the address bar so a refresh does not show it again.
+  useEffect(() => {
+    if (linkProblem && (location.hash || location.search.includes('error'))) {
+      window.history.replaceState(null, '', '/login');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [roleChoice, setRoleChoice] = useState(false);
   const [choosingRole, setChoosingRole] = useState<FirstRole | null>(null);
 
@@ -165,11 +196,14 @@ export default function LoginPage() {
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email,
-      options: { emailRedirectTo: `${window.location.origin}/login` },
+      options: { emailRedirectTo: `${emailRedirectBase(window.location.origin)}/login` },
     });
     setResending(false);
     if (error) {
-      toast.error(error.message || 'Could not resend confirmation email.');
+      const limited = (error as any).status === 429 || /rate_limit|security purposes/i.test(`${(error as any).code ?? ''} ${error.message}`);
+      toast.error(limited
+        ? t('auth.link.rate_limited', 'Too many requests for this address. Please wait a minute and try again.')
+        : t('auth.link.resend_failed', 'Could not send a new confirmation e-mail. Please try again.'));
       return;
     }
     const now = new Date();
@@ -296,6 +330,7 @@ export default function LoginPage() {
         const role = await getRoleAndRepairAccount(session.user);
         if (await handleFirstTimeOAuth(session.user, role)) return;
         clearSocialSignupIntent();
+        if (justConfirmed) toast.success(t('auth.link.confirmed_ok', 'Your e-mail is confirmed. Welcome to AI Support 360.'));
 
         const oauthNext = sessionStorage.getItem('oauth_next');
         sessionStorage.removeItem('oauth_next');
@@ -429,7 +464,7 @@ export default function LoginPage() {
       const msg = (error.message || '').toLowerCase();
       const code = (error as any).code as string | undefined;
       if (code === 'email_not_confirmed' || msg.includes('not confirmed') || msg.includes('email not confirmed')) {
-        toast.error('Your email is not verified yet. Please check your inbox.');
+        toast.error(t('auth.link.not_confirmed', 'Your e-mail is not confirmed yet. We are sending you a new confirmation e-mail - check Inbox and Spam.'));
         // Auto-trigger resend if not in cooldown so the user has a fresh link
         if (!resendCooldown && !resending) {
           await handleResendConfirmation();
@@ -464,6 +499,8 @@ export default function LoginPage() {
     setFailedAttempts(0);
     setLockoutUntil(null);
     logAudit('login');
+    // Signed in with e-mail and password, so the address is confirmed: say so after an "expired link" page.
+    if (linkProblem || justConfirmed) toast.success(t('auth.link.confirmed_ok', 'Your e-mail is confirmed. Welcome to AI Support 360.'));
 
     try {
       const role = await getRoleAndRepairAccount(data.session.user);
@@ -526,6 +563,17 @@ export default function LoginPage() {
           <h1 className="font-semibold leading-none tracking-tight text-2xl">{t('auth.login_title')}</h1>
           <CardDescription>{t('auth.login_desc')}</CardDescription>
         </CardHeader>
+        {linkProblem && (
+          <div className="px-6 pb-4">
+            <ConfirmLinkProblem compact initialEmail={email}
+              onSignIn={() => { setLinkProblem(false); setTimeout(() => document.getElementById(email ? 'password' : 'email')?.focus(), 0); }} />
+          </div>
+        )}
+        {justConfirmed && !linkProblem && (
+          <p role="status" className="mx-6 mb-4 rounded-xl border border-success/30 bg-success/10 p-3 text-sm text-foreground">
+            {t('auth.link.confirmed_signin', 'Your e-mail is confirmed. Sign in to continue where you stopped.')}
+          </p>
+        )}
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
             {oauthError && (

@@ -7,6 +7,7 @@
 import { adminClient, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
 import { reminderRunBody, startReminderRun } from '../_shared/profileReminderRun.ts';
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 interface DueRow {
   consultant_id: string;
@@ -25,6 +26,14 @@ async function sendOne(admin: any, row: DueRow): Promise<void> {
   const { data: u } = await admin.auth.admin.getUserById(row.user_id);
   const email = u?.user?.email;
   if (!email) return;
+  // Not confirmed yet: a profile reminder cannot be acted on (signing in is blocked), so send a fresh
+  // confirmation e-mail instead. Same daily/weekly rhythm as the reminders (one claim per 20 h).
+  if (!u.user.email_confirmed_at) {
+    const anon = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { auth: { persistSession: false } });
+    const { error } = await anon.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${SITE_URL}/login` } });
+    if (error) console.error('confirmation resend failed');
+    return;
+  }
   const { data: p } = await admin.from('profiles').select('display_name').eq('user_id', row.user_id).maybeSingle();
   const lang = row.lang === 'ar' ? 'ar' : 'en';
   await sendTemplateEmail('profile-reminder', email, {

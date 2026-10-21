@@ -20,6 +20,7 @@ interface SignupEmailProps {
   siteUrl: string
   recipient: string
   confirmationUrl: string
+  code?: string | null
 }
 
 export const SignupEmail = ({
@@ -27,6 +28,7 @@ export const SignupEmail = ({
   siteUrl,
   recipient,
   confirmationUrl,
+  code,
 }: SignupEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
@@ -53,6 +55,16 @@ export const SignupEmail = ({
             Verify my email
           </Button>
         </Section>
+        <Text style={note}>
+          The button opens our site, where you press "Confirm my e-mail". The link works once and only for a
+          limited time. If it has expired, that page lets you ask for a new e-mail in one click.
+        </Text>
+        {code ? (
+          <Section style={codeBox}>
+            <Text style={codeLabel}>Or enter this code on the confirmation page:</Text>
+            <Text style={codeText}>{code}</Text>
+          </Section>
+        ) : null}
         <Text style={fallback}>
           Or copy and paste this link into your browser:
         </Text>
@@ -109,6 +121,10 @@ const button = {
   textDecoration: 'none',
   display: 'inline-block',
 }
+const note = { fontSize: '13px', color: '#475569', lineHeight: '1.5', margin: '0 0 16px' }
+const codeBox = { backgroundColor: '#F1F5F9', borderRadius: '12px', padding: '12px 16px', margin: '0 0 16px', textAlign: 'center' as const }
+const codeLabel = { fontSize: '12px', color: '#475569', margin: '0 0 4px' }
+const codeText = { fontSize: '26px', fontWeight: 'bold' as const, letterSpacing: '6px', color: '#1B2559', margin: 0, fontFamily: 'Consolas, Menlo, monospace' }
 const fallback = { fontSize: '12px', color: '#94a3b8', margin: '20px 0 4px' }
 const fallbackLink = {
   fontSize: '12px',
