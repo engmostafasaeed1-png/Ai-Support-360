@@ -148,4 +148,65 @@ BEGIN
   RAISE NOTICE 'NAME PRIVACY CHECKS PASSED';
 END $$;
 
+-- 3) Administrators always get the full name (all four formats); non-admins never do in the changed RPCs and views
+DO $$
+DECLARE
+  _c uuid; _c_user uuid; _k uuid; _t uuid; _a uuid; _f text; _n int; _v text; _req uuid;
+  _changed text[];
+BEGIN
+  SELECT ur.user_id INTO _a FROM public.user_roles ur WHERE ur.role::text IN ('admin', 'super_admin') LIMIT 1;
+  SELECT c.id, c.user_id INTO _c, _c_user FROM public.consultants c WHERE c.verification_status = 'verified' ORDER BY c.created_at LIMIT 1;
+  SELECT t.id, t.client_id INTO _t, _k FROM public.tickets t WHERE t.client_id NOT IN (_c_user, _a) ORDER BY t.created_at LIMIT 1;
+  IF _a IS NULL OR _c IS NULL OR _t IS NULL THEN RAISE EXCEPTION 'SKIPPED: needs an administrator, a verified consultant and a client ticket'; END IF;
+
+  SET LOCAL session_replication_role = replica;
+  UPDATE public.profiles SET display_name = 'Mostafa Saeed' WHERE user_id = _c_user;
+  UPDATE public.platform_settings SET value = 'true'::jsonb WHERE key = 'consultant_name_masking_enabled';
+  UPDATE public.nda_agreements SET revoked_at = now() WHERE consultant_id = _c AND revoked_at IS NULL;
+  UPDATE public.ticket_assignments SET status = 'removed' WHERE consultant_id = _c AND status::text = 'active';
+  UPDATE public.ticket_team_members SET status = 'withdrawn' WHERE consultant_id = _c AND status IN ('ready', 'active');
+  UPDATE public.tickets SET consultant_id = NULL WHERE consultant_id = _c;
+  INSERT INTO public.ticket_team_requests (ticket_id, requester_member_id, requester_consultant_id, reason, suggested_consultant_id)
+  VALUES (_t, gen_random_uuid(), _c, 'Need another FI consultant', _c) RETURNING id INTO _req;
+  SET LOCAL session_replication_role = origin;
+
+  FOREACH _f IN ARRAY ARRAY['masked', 'initial_family', 'initials', 'full'] LOOP
+    SET LOCAL session_replication_role = replica;
+    UPDATE public.consultants SET name_format = _f WHERE id = _c;
+    SET LOCAL session_replication_role = origin;
+
+    -- administrator: full real name everywhere
+    PERFORM pg_temp.as_user(_a);
+    PERFORM pg_temp.ck(public.consultant_public_name(_c) = 'Mostafa Saeed', 'admin public name, format ' || _f);
+    SET LOCAL ROLE authenticated;
+    SELECT d.display_name INTO _v FROM public.profile_directory d WHERE d.user_id = _c_user;
+    RESET ROLE;
+    PERFORM pg_temp.ck(_v = 'Mostafa Saeed', 'admin directory name, format ' || _f);
+    SELECT r.requester_name INTO _v FROM public.team_requests(_t) r WHERE r.request_id = _req;
+    PERFORM pg_temp.ck(_v = 'Mostafa Saeed', 'admin team request name, format ' || _f);
+    SELECT v.client_view INTO _v FROM public.consultant_client_view_names(ARRAY[_c]) v;
+    PERFORM pg_temp.ck(_v = public.format_consultant_name('Mostafa Saeed', _f), 'admin hint shows the neutral client view, format ' || _f);
+    PERFORM pg_temp.ck(public.consultant_admin_name(_c) = 'Mostafa Saeed', 'admin notification copy name, format ' || _f);
+
+    -- non-admin viewers (visitor, client without access, the client of the ticket): never the full name unless the format is full
+    PERFORM pg_temp.as_user(_k);
+    _changed := ARRAY[
+      public.consultant_public_name(_c),
+      public.team_consultant_name(_c),
+      (SELECT d.display_name FROM public.profile_directory d WHERE d.user_id = _c_user),
+      (SELECT r.requester_name FROM public.team_requests(_t) r WHERE r.request_id = _req),
+      (SELECT r.suggested_name FROM public.team_requests(_t) r WHERE r.request_id = _req)];
+    PERFORM pg_temp.ck(_f = 'full' OR NOT ('Mostafa Saeed' = ANY (_changed)), 'client received the full name, format ' || _f);
+    -- hidden parts: the first name always; the family name too unless the consultant chose to show it
+    PERFORM pg_temp.ck(_f = 'full' OR NOT EXISTS (SELECT 1 FROM unnest(_changed) x
+                         WHERE x ILIKE '%mostafa%' OR (_f <> 'initial_family' AND x ILIKE '%saeed%')), 'client received a hidden part, format ' || _f);
+    SELECT count(*) INTO _n FROM public.consultant_client_view_names(ARRAY[_c]);
+    PERFORM pg_temp.ck(_n = 0, 'admin hint RPC returns nothing to non-admins');
+    PERFORM pg_temp.as_user(NULL);
+    PERFORM pg_temp.ck(_f = 'full' OR public.consultant_public_name(_c) <> 'Mostafa Saeed', 'visitor received the full name, format ' || _f);
+  END LOOP;
+  PERFORM pg_temp.ck(NOT has_function_privilege('authenticated', 'public.consultant_admin_name(uuid)', 'EXECUTE'), 'consultant_admin_name is internal');
+  RAISE NOTICE 'ADMIN NAME CHECKS PASSED';
+END $$;
+
 ROLLBACK;

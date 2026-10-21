@@ -57,6 +57,13 @@ describe('who sees what', () => {
   });
 });
 
+describe('administrators always see the full real name', () => {
+  it.each(['masked', 'initial_family', 'initials', 'full'] as const)('format %s', (f) => {
+    expect(publicConsultantName('Mostafa Saeed', f, { unlocked: true })).toBe('Mostafa Saeed');
+    expect(publicConsultantName('مصطفى سعيد', f, { unlocked: true })).toBe('مصطفى سعيد');
+  });
+});
+
 describe('directory search cannot find hidden parts of a name', () => {
   const person = (patch: Partial<ConsultantLive>): ConsultantLive => ({
     id: 'c', name: 'M. S****', specialty: 'SAP FI', skills: ['SAP FI'], rating: 4.5, reviews: 5, rate: 80, avatar: 'MS', available: true, status: 'available',
@@ -96,6 +103,19 @@ describe('prepared SQL (docs/sql/consultant-name-privacy.sql)', () => {
     const b = body(fn);
     expect(b).toContain('consultant_name_for(');
     expect(b).not.toMatch(/display_name INTO _(consultant_name|cons_name)\b/);
+  });
+  it('gives administrators the full name in unlock, admin copies and team requests', () => {
+    const unlocked = sql.slice(sql.indexOf('FUNCTION public.consultant_name_unlocked('), sql.indexOf('FUNCTION public.consultant_name_for('));
+    expect(unlocked).toContain("public.has_role(_viewer, 'admin'::app_role) OR public.has_role(_viewer, 'super_admin'::app_role)");
+    expect(body('team_request_additional')).toContain("'Team request (copy)',\n    public.consultant_admin_name(_me)");
+    const tr = body('team_requests');
+    expect(tr).not.toContain('team_consultant_name(');
+    expect(tr.match(/consultant_name_for\(q\.\w+_consultant_id, auth\.uid\(\)\)/g)).toHaveLength(3);
+  });
+  it('lets only administrators read the neutral client view and keeps the admin name internal', () => {
+    const b = sql.slice(sql.indexOf('FUNCTION public.consultant_client_view_names('));
+    expect(b.slice(0, 600)).toMatch(/IF NOT \(public\.has_role\(auth\.uid\(\), 'admin'::app_role\) OR public\.has_role\(auth\.uid\(\), 'super_admin'::app_role\)\) THEN\s+RETURN;/);
+    expect(sql).toMatch(/REVOKE ALL ON FUNCTION public\.consultant_admin_name\(uuid\) FROM PUBLIC, anon, authenticated/);
   });
   it('writes stored team notification texts in the public format, never unlocked', () => {
     expect(body('team_consultant_name')).toContain('consultant_name_for(_consultant_id, NULL)');

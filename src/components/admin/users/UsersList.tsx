@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import ClientViewHint from '@/components/admin/ClientViewHint';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -47,6 +48,7 @@ export default function UsersList({ rows, loading, columns, selected, focus, sor
         : <span className="gradient-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-primary-foreground" aria-hidden>{(u.name || u.email).slice(0, 2).toUpperCase()}</span>}
       <span className="min-w-0">
         <span className="block truncate font-medium text-foreground">{u.name || '—'}{u.is_self && <span className="text-xs text-muted-foreground"> · {t('um.you', 'you')}</span>}</span>
+        {u.consultant_id && <ClientViewHint id={u.consultant_id} className="truncate" />}
         <span className="block truncate text-xs text-muted-foreground" dir="ltr">{u.email}</span>
       </span>
     </button>

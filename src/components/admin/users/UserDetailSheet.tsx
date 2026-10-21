@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ClientViewHint from '@/components/admin/ClientViewHint';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -97,6 +98,7 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
             : <div className="gradient-primary flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-primary-foreground" aria-hidden>{(u.name || u.email).slice(0, 2).toUpperCase()}</div>}
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-lg font-semibold text-foreground">{u.name || u.email}{self && <span className="text-xs font-normal text-muted-foreground"> · {t('um.you', 'you')}</span>}</h2>
+            {u.consultant_id && <ClientViewHint id={u.consultant_id} />}
             <p className="truncate text-sm text-muted-foreground" dir="ltr">{u.email}</p>
             <div className="mt-2 flex flex-wrap gap-1">
               <Badge variant={STATUS_VARIANT[u.status]}>{statusLabel(t, u.status)}</Badge>
