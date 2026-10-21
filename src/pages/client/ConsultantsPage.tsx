@@ -23,7 +23,7 @@ import CompletionBadge from '@/components/consultant/CompletionBadge';
 import ResponsivenessChip from '@/components/consultant/ResponsivenessChip';
 import { BlendedRatingStars } from '@/components/consultant/ResponsivenessRating';
 import { usePublicResponsiveness } from '@/hooks/useResponsiveness';
-import ConsultantRing from '@/components/consultant/ConsultantRing';
+import ConsultantRing, { ConsultantRingPills } from '@/components/consultant/ConsultantRing';
 import { responsivenessScore } from '@/lib/ringAvatar';
 import LinkStatus from '@/components/consultant/LinkStatus';
 import { STATE_META } from '@/lib/mapMarkers';
@@ -363,6 +363,7 @@ export default function ConsultantsPage() {
                       <h3 className="font-semibold text-foreground">{c.name}</h3>
                       <FavouriteButton consultantId={c.id} name={c.name} />
                     </div>
+                    <ConsultantRingPills consultantId={c.id} rating={c.rating} reviews={c.reviews} className="my-1" />
                     <p className="text-sm text-muted-foreground">{c.skills && c.skills.length > 1 ? c.skills.slice(0, 4).join(' · ') + (c.skills.length > 4 ? ` +${c.skills.length - 4}` : '') : c.specialty}</p>
                     {c.place && (
                       <p className="text-xs text-muted-foreground flex items-center gap-1">

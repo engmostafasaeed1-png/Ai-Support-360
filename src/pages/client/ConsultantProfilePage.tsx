@@ -36,6 +36,8 @@ import { consultantPoint, formatWeeklyHours, type WeeklySlot } from '@/lib/consu
 import ConsultantExperienceCard from '@/components/client/ConsultantExperienceCard';
 import WeeklyAvailability from '@/components/client/WeeklyAvailability';
 import RatingStars from '@/components/client/RatingStars';
+import { ConsultantRingPills } from '@/components/consultant/ConsultantRing';
+import RingLegend from '@/components/consultant/RingLegend';
 import CredibilityAvatar from '@/components/client/CredibilityAvatar';
 import { credibility } from '@/lib/consultantCredibility';
 import { bookableTimes, hasWindowOn, localDateKey, type WindowRow } from '@/lib/bookableTimes';
@@ -371,6 +373,10 @@ export default function ConsultantProfilePage() {
             <div className="min-w-0 flex-1 md:pt-4">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">{consultant.name}</h1>
+                <span className="inline-flex items-center gap-1.5">
+                  <ConsultantRingPills size="lg" consultantId={id} rating={consultant.rating} reviews={consultant.reviews} />
+                  <RingLegend />
+                </span>
                 <VerificationBadge status={verificationStatus} size="md" />
                 <FoundingBadge consultantId={id} numbered />
                 <ResponsivenessChip consultantId={id} />

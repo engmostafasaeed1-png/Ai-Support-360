@@ -1,6 +1,6 @@
 import MatchScoreBreakdown, { type MatchCriterion } from '@/components/client/MatchScoreBreakdown';
 import FavouriteButton, { FavouriteChip } from '@/components/favourites/FavouriteButton';
-import ConsultantRing from '@/components/consultant/ConsultantRing';
+import ConsultantRing, { ConsultantRingPills } from '@/components/consultant/ConsultantRing';
 import GroupInvitePanel from '@/components/favourites/GroupInvitePanel';
 import { useClientFavourites } from '@/hooks/useClientFavourites';
 import MatchWhyChips from '@/components/match/MatchWhyChips';
