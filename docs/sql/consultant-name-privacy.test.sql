@@ -128,6 +128,7 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN RESET ROLE;
   END;
   PERFORM pg_temp.ck((SELECT name_format FROM public.consultants WHERE id = _c) = 'initials', 'client cannot change the format');
+  PERFORM pg_temp.as_user(_c_user);
   BEGIN
     UPDATE public.consultants SET name_format = 'shown' WHERE id = _c;
     RAISE EXCEPTION 'FAIL: invalid format accepted';
