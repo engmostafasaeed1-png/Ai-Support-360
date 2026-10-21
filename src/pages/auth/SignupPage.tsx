@@ -95,6 +95,7 @@ function SignupForm() {
   const [referralInput, setReferralInput] = useState(() => normalizeReferralCode(searchParams.get('ref') || storedReferral() || ''));
   const referralProgram = usePublicReferralSettings();
   const referralCode = normalizeReferralCode(referralInput);
+  const [referralAck, setReferralAck] = useState(false);
 
   const [role, setRole] = useState<Role>(initialRole);
   const showReferralField = role === 'consultant' && referralProgram.available && referralProgram.settings.enabled;
@@ -232,7 +233,12 @@ function SignupForm() {
       password,
       options: {
         emailRedirectTo: `${emailRedirectBase(window.location.origin)}/login`,
-        data: { display_name: name, role, ...(role === 'consultant' ? { country: place.country.trim(), city: place.city.trim() } : {}), ...(referralCode ? { referral_code: referralCode, referral_device: deviceId() } : {}) },
+        data: { display_name: name, role, ...(role === 'consultant' ? { country: place.country.trim(), city: place.city.trim() } : {}), ...(referralCode ? { referral_code: referralCode, referral_device: deviceId() } : {}),
+          ...(referralCode && showReferralField && referralAck ? {
+            referral_ack_version: String(referralProgram.settings.terms_version),
+            referral_ack_lang: (document.documentElement.lang || '').startsWith('ar') ? 'ar' : 'en',
+            referral_ack_ua: navigator.userAgent.slice(0, 300),
+          } : {}) },
       },
     });
     setLoading(false);
@@ -386,7 +392,9 @@ function SignupForm() {
             {role === 'consultant' && (
               <LocationPicker idPrefix="signup-location" value={place} onChange={v => { setPlace(v); setPlaceError(null); }} error={placeError} />
             )}
-            {showReferralField && <ReferralCodeField value={referralInput} onChange={setReferralInput} />}
+            {showReferralField && (
+              <ReferralCodeField value={referralInput} onChange={setReferralInput} acknowledged={referralAck} onAcknowledge={setReferralAck} passMark={referralProgram.settings.pass_mark} />
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="email">{t('auth.email')}</Label>
               <Input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" className="h-11 rounded-xl" />
