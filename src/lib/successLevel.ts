@@ -128,7 +128,7 @@ export const SUCCESS_LEVEL_LABEL: Record<SuccessLevel, [string, string]> = {
 
 export const SUCCESS_STRINGS = {
   label: ['Success: {level}', 'النجاح: {level}'],
-  lineOk: ['Success level: {level} - {solved} of {total} requests solved ({pct} %) - last 12 months {pct12}', 'مستوى النجاح: {level} - تم حل {solved} من {total} طلبًا ({pct} ٪) - آخر 12 شهرًا {pct12}'],
+  lineOk: ['Success level: {level} ({stars} of 4 stars) - {solved} of {total} requests solved ({pct} %) - last 12 months {pct12}', 'مستوى النجاح: {level} ({stars} من 4 نجوم) - تم حل {solved} من {total} طلبًا ({pct} ٪) - آخر 12 شهرًا {pct12}'],
   last12Pct: ['{pct} %', '{pct} ٪'],
   last12Counts: ['{solved} of {total} solved', 'تم حل {solved} من {total}'],
   lineNew: ['Success: New - {solved} of {total} requests solved', 'النجاح: جديد - تم حل {solved} من {total} طلبًا'],
@@ -136,10 +136,16 @@ export const SUCCESS_STRINGS = {
   lineNone: ['Success: {solved} of {total} requests solved', 'النجاح: تم حل {solved} من {total} طلبًا'],
   minNote: ['A Success level shows after {n} finished requests.', 'يظهر مستوى النجاح بعد {n} طلبات منتهية.'],
   noneNote: ['A Success level shows from {pct} % solved.', 'يظهر مستوى النجاح ابتداءً من {pct} ٪ من الطلبات المحلولة.'],
-  pillOk: ['{total} requests · {solved} solved · {pct} % ({level})', 'الطلبات: {total} · المحلولة: {solved} · {pct} ٪ ({level})'],
+  pillOk: ['{total} requests · {solved} solved · {pct} %', 'الطلبات: {total} · المحلولة: {solved} · {pct} ٪'],
   pillCounts: ['{total} requests · {solved} solved', 'الطلبات: {total} · المحلولة: {solved}'],
-  pillNew: ['{total} requests · {solved} solved · New', 'الطلبات: {total} · المحلولة: {solved} · جديد'],
   new: ['New', 'جديد'],
+  labelNew: ['Success: New', 'النجاح: جديد'],
+  labelNone: ['Success', 'النجاح'],
+  ariaOk: ['Success level {level}, {stars} of 4 stars, {solved} of {total} requests solved', 'مستوى النجاح {level}، {stars} من 4 نجوم، تم حل {solved} من {total} طلبًا'],
+  ariaNew: ['Success level New, no stars yet, {solved} of {total} requests solved', 'مستوى النجاح جديد، لا نجوم بعد، تم حل {solved} من {total} طلبًا'],
+  ariaNewZero: ['Success level New, no stars yet, no finished requests yet', 'مستوى النجاح جديد، لا نجوم بعد، لا توجد طلبات منتهية بعد'],
+  ariaNone: ['No Success level, {solved} of {total} requests solved', 'لا يوجد مستوى نجاح، تم حل {solved} من {total} طلبًا'],
+  hint: ['One outlined star with a number = client reviews; rosette with 4 level stars = Success level', 'نجمة واحدة مفرغة مع رقم = تقييمات العملاء؛ وردة مع 4 نجوم مستوى = مستوى النجاح'],
   sr: ['Success', 'النجاح'],
   progressSample: ['{n} more finished requests until a Success level shows', '{n} طلبات منتهية أخرى حتى يظهر مستوى النجاح'],
   progressSampleOne: ['1 more finished request until a Success level shows', 'طلب منتهٍ واحد آخر حتى يظهر مستوى النجاح'],
@@ -168,19 +174,42 @@ export function successLines(v: SuccessView, lang: SuccessLang = 'en', s: Succes
   }
   const last12 = v.pct12 != null ? fill(pick(SUCCESS_STRINGS.last12Pct, lang), { pct: v.pct12 }) : fill(pick(SUCCESS_STRINGS.last12Counts, lang), { solved: v.solved12, total: v.total12 });
   return [fill(pick(SUCCESS_STRINGS.lineOk, lang), {
-    level: successLevelName(v.level as SuccessLevel, lang), solved: v.solved, total: v.total, pct: v.pct ?? 0, pct12: last12,
+    level: successLevelName(v.level as SuccessLevel, lang), stars: successStars(v.level), solved: v.solved, total: v.total, pct: v.pct ?? 0, pct12: last12,
   }), note];
 }
 
-/** One line under the name: "42 requests · 38 solved · 90 % (Gold)". */
+/** Level stars: Bronze 1, Silver 2, Gold 3, Platinum 4 (of 4 slots); 0 without a level. */
+export const SUCCESS_STAR_SLOTS = 4;
+export const successStars = (level: SuccessLevel | null | undefined) => (level ? SUCCESS_RANK[level] : 0);
+
+/** Counts pill next to the level stars: "42 requests · 38 solved · 90 %" (no percentage without a level; '' when nothing finished yet). */
 export function successPillText(v: SuccessView, lang: SuccessLang = 'en'): string | null {
   if (v.state === 'hidden') return null;
-  if (v.state === 'ok') return fill(pick(SUCCESS_STRINGS.pillOk, lang), { total: v.total, solved: v.solved, pct: v.pct ?? 0, level: successLevelName(v.level as SuccessLevel, lang) });
-  if (v.state === 'new') return v.total === 0 ? pick(SUCCESS_STRINGS.new, lang) : fill(pick(SUCCESS_STRINGS.pillNew, lang), { total: v.total, solved: v.solved });
+  if (v.state === 'ok') return fill(pick(SUCCESS_STRINGS.pillOk, lang), { total: v.total, solved: v.solved, pct: v.pct ?? 0 });
+  if (v.total === 0) return '';
   return fill(pick(SUCCESS_STRINGS.pillCounts, lang), { total: v.total, solved: v.solved });
 }
 
-/** Small rings: only the medal and the percentage ("90 %"), "New", or "6/12" below Bronze. */
+/** Word next to the stars: "Success: Gold", "Success: New", or just "Success" below Bronze. */
+export function successStarsLabel(v: SuccessView, lang: SuccessLang = 'en'): string | null {
+  if (v.state === 'hidden') return null;
+  if (v.state === 'ok') return successLabel(v.level as SuccessLevel, lang);
+  return pick(v.state === 'new' ? SUCCESS_STRINGS.labelNew : SUCCESS_STRINGS.labelNone, lang);
+}
+
+/** Accessible name of the stars: "Success level Gold, 3 of 4 stars, 38 of 42 requests solved". */
+export function successStarsAria(v: SuccessView, lang: SuccessLang = 'en'): string | null {
+  if (v.state === 'hidden') return null;
+  const n = { solved: v.solved, total: v.total };
+  if (v.state === 'ok') return fill(pick(SUCCESS_STRINGS.ariaOk, lang), { ...n, level: successLevelName(v.level as SuccessLevel, lang), stars: successStars(v.level) });
+  if (v.state === 'new') return v.total === 0 ? pick(SUCCESS_STRINGS.ariaNewZero, lang) : fill(pick(SUCCESS_STRINGS.ariaNew, lang), n);
+  return fill(pick(SUCCESS_STRINGS.ariaNone, lang), n);
+}
+
+/** Tooltip hint that keeps the two kinds of stars apart. */
+export const successStarsHint = (lang: SuccessLang = 'en') => pick(SUCCESS_STRINGS.hint, lang);
+
+/** Hover text of the stars-only form (small sizes): the percentage ("90 %"), "New", or "6/12" below Bronze. */
 export function successCompactText(v: SuccessView, lang: SuccessLang = 'en'): string | null {
   if (v.state === 'hidden') return null;
   if (v.state === 'ok') return lang === 'ar' ? `${v.pct} ٪` : `${v.pct} %`;
