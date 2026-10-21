@@ -36,6 +36,7 @@ export const permissionLabel = (t: TFunction, p: string) => ({
   'content.edit': t('um.perm_content_edit', 'Edit site content'),
   'settings.edit': t('um.perm_settings_edit', 'Change platform settings'),
   'audit.read': t('um.perm_audit_read', 'Read the admin action history'),
+  'messages.send': t('um.perm_messages_send', 'Send bulk messages (Messages / Campaigns)'),
   'admins.manage': t('um.perm_admins_manage', 'Manage admins and admin groups'),
   'users.merge': t('um.perm_users_merge', 'Merge duplicate accounts'),
   'users.mfa_reset': t('um.perm_users_mfa', 'Reset two-step sign-in'),

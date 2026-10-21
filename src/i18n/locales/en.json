@@ -2279,7 +2279,8 @@
     "empty_desc": "Try fewer filters or a different search.",
     "showing": "Showing {{a}}–{{b}} of {{n}}",
     "per_page": "Per page",
-    "shortcuts": "Shortcuts: / search · j / k move · Enter open · x select"
+    "shortcuts": "Shortcuts: / search · j / k move · Enter open · x select",
+    "perm_messages_send": "Send bulk messages (Messages / Campaigns)"
   },
   "npause": {
     "paused_toast": "Notifications paused until {{date}}",
