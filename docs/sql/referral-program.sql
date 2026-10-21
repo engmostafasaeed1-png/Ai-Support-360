@@ -1580,12 +1580,21 @@ BEGIN
   SELECT * INTO x FROM public.consultant_referral_codes WHERE consultant_id = _cid;
   RETURN jsonb_build_object(
     'settings', jsonb_build_object('enabled', s->'enabled', 'rate_percent', s->'rate_percent', 'months', s->'months',
-                                   'min_payout', s->'min_payout', 'terms_version', s->'terms_version'),
+                                   'min_payout', s->'min_payout', 'terms_version', s->'terms_version', 'pass_mark', s->'pass_mark',
+                                   'activation_days', s->'activation_days'),
+    -- Referrer activation checklist: interview passed -> terms acknowledged -> active (sharing unlocked).
+    'activation', jsonb_build_object(
+      'pass_mark', s->'pass_mark',
+      'interview_passed', public.referral_passed_at(_cid) IS NOT NULL,
+      'interview_passed_at', public.referral_passed_at(_cid),
+      'best_score', public.referral_best_score(_cid),
+      'acknowledged', public.referral_acked_at(_cid) IS NOT NULL,
+      'active', public.referral_passed_at(_cid) IS NOT NULL AND public.referral_acked_at(_cid) IS NOT NULL),
     'code', _code,
     'previous_code', x.previous_code,
     'edits_left', greatest(0, 1 - COALESCE(x.edits_used, 0)),
     'disabled', x.disabled_at IS NOT NULL,
-    'terms_accepted_version', (SELECT a.version FROM public.referral_terms_acks a WHERE a.consultant_id = _cid),
+    'terms_accepted_version', (SELECT max(a.version) FROM public.referral_acknowledgements a WHERE a.consultant_id = _cid),
     'funnel', jsonb_build_object(
       'clicks', (SELECT COALESCE(sum(c.clicks), 0) FROM public.referral_clicks c WHERE c.consultant_id = _cid),
       'signups', (SELECT count(*) FROM public.consultant_referrals r WHERE r.referrer_consultant_id = _cid AND r.status <> 'removed'),
@@ -1612,10 +1621,12 @@ $$;
 REVOKE ALL ON FUNCTION public.my_referral_overview(text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.my_referral_overview(text) TO authenticated;
 
--- Referred consultants: masked name, status and dates only.
+-- Referred consultants: masked name, status, activation step and dates only.
+DROP FUNCTION IF EXISTS public.my_referrals();
 CREATE OR REPLACE FUNCTION public.my_referrals()
  RETURNS TABLE (referred_name text, status text, attributed_at timestamptz, verified boolean, first_paid_at timestamptz,
-                window_ends_at timestamptz, earned jsonb)
+                window_ends_at timestamptz, earned jsonb, activation_status text, chip text, my_next text, their_next text,
+                activated_at timestamptz, activation_expires_at timestamptz, they_passed boolean, they_acknowledged boolean)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
@@ -1635,7 +1646,11 @@ BEGIN
          COALESCE((SELECT jsonb_object_agg(e.currency, e.total) FROM (
                      SELECT l.currency, sum(l.amount) total FROM public.referral_reward_lines l
                       WHERE l.referrer_consultant_id = _cid AND l.referred_consultant_id = r.referred_consultant_id AND l.status <> 'reversed'
-                      GROUP BY l.currency) e), '{}'::jsonb)
+                      GROUP BY l.currency) e), '{}'::jsonb),
+         r.activation_status, public.referral_chip(r.referred_consultant_id, _cid),
+         public.referral_next_step(r.referred_consultant_id, _cid), public.referral_next_step(r.referred_consultant_id, r.referred_consultant_id),
+         r.activated_at, r.activation_expires_at,
+         public.referral_passed_at(r.referred_consultant_id) IS NOT NULL, public.referral_acked_at(r.referred_consultant_id) IS NOT NULL
     FROM public.consultant_referrals r
     JOIN public.consultants c ON c.id = r.referred_consultant_id
    WHERE r.referrer_consultant_id = _cid AND r.status <> 'removed'
@@ -1645,6 +1660,40 @@ END
 $$;
 REVOKE ALL ON FUNCTION public.my_referrals() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.my_referrals() TO authenticated;
+
+-- The referred consultant's own invitation: who invited them (masked), activation timeline and next step.
+CREATE OR REPLACE FUNCTION public.my_referral_invite()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  _cid uuid := public.referral_my_consultant();
+  r record;
+  s jsonb := public.referral_settings();
+BEGIN
+  IF _cid IS NULL THEN RETURN NULL; END IF;
+  SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = _cid AND status <> 'removed';
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  RETURN jsonb_build_object(
+    'referrer_name', public.referral_masked_name(r.referrer_consultant_id),
+    'activation_status', r.activation_status,
+    'chip', public.referral_chip(_cid, _cid),
+    'my_next', public.referral_next_step(_cid, _cid),
+    'their_next', public.referral_next_step(_cid, r.referrer_consultant_id),
+    'attributed_at', r.attributed_at,
+    'activation_expires_at', r.activation_expires_at,
+    'activated_at', r.activated_at,
+    'i_passed_at', public.referral_passed_at(_cid),
+    'they_passed', public.referral_passed_at(r.referrer_consultant_id) IS NOT NULL,
+    'i_acknowledged_at', public.referral_acked_at(_cid),
+    'they_acknowledged', public.referral_acked_at(r.referrer_consultant_id) IS NOT NULL,
+    'pass_mark', s->'pass_mark', 'rate_percent', s->'rate_percent', 'months', s->'months', 'terms_version', s->'terms_version');
+END
+$$;
+REVOKE ALL ON FUNCTION public.my_referral_invite() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.my_referral_invite() TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.my_referral_history(_limit int DEFAULT 200)
  RETURNS TABLE (created_at timestamptz, kind text, status text, amount numeric, currency text, fee_amount numeric, rate_percent numeric,
@@ -1669,7 +1718,8 @@ $$;
 REVOKE ALL ON FUNCTION public.my_referral_history(int) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.my_referral_history(int) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.referral_accept_terms(_version int)
+-- Append-only acknowledgement of the current terms version (time, language, user agent, hashed IP).
+CREATE OR REPLACE FUNCTION public.referral_accept_terms(_version int, _source text DEFAULT 'page', _language text DEFAULT 'en', _user_agent text DEFAULT NULL)
  RETURNS void
  LANGUAGE plpgsql
  VOLATILE SECURITY DEFINER
@@ -1678,16 +1728,27 @@ AS $$
 DECLARE
   _cid uuid := public.referral_my_consultant();
   _v int := (public.referral_settings() ->> 'terms_version')::int;
+  _is_referred boolean;
+  _is_referrer boolean;
 BEGIN
   IF _cid IS NULL THEN RAISE EXCEPTION 'Only consultants can accept the referral terms' USING ERRCODE = '42501'; END IF;
   IF _version IS DISTINCT FROM _v THEN RAISE EXCEPTION 'The terms changed. Please reload the page.' USING ERRCODE = '22023'; END IF;
-  INSERT INTO public.referral_terms_acks (consultant_id, version) VALUES (_cid, _v)
-  ON CONFLICT (consultant_id) DO UPDATE SET version = EXCLUDED.version, accepted_at = now();
-  PERFORM public.referral_log(auth.uid(), 'terms_accepted', _cid, NULL, NULL, NULL, NULL, jsonb_build_object('version', _v), NULL);
+  IF NOT public.check_rate_limit('refack:' || auth.uid()::text, 10, 3600) THEN
+    RAISE EXCEPTION 'Too many attempts. Please try again later.' USING ERRCODE = 'P0001';
+  END IF;
+  IF public.referral_acked_at(_cid) IS NOT NULL THEN RETURN; END IF;
+  _is_referred := EXISTS (SELECT 1 FROM public.consultant_referrals WHERE referred_consultant_id = _cid);
+  _is_referrer := _source IN ('page', 'share') OR EXISTS (SELECT 1 FROM public.consultant_referrals WHERE referrer_consultant_id = _cid);
+  INSERT INTO public.referral_acknowledgements (consultant_id, user_id, version, role, source, language, user_agent, ip_hash)
+  VALUES (_cid, auth.uid(), _v,
+          CASE WHEN _is_referred AND _is_referrer THEN 'both' WHEN _is_referred THEN 'referred' ELSE 'referrer' END,
+          CASE WHEN _source IN ('page', 'share', 'signup', 'popup') THEN _source ELSE 'page' END,
+          CASE WHEN _language = 'ar' THEN 'ar' ELSE 'en' END, left(_user_agent, 300), public.referral_hash(public.referral_request_ip()));
+  PERFORM public.referral_log(auth.uid(), 'terms_accepted', _cid, NULL, NULL, NULL, NULL, jsonb_build_object('version', _v, 'source', _source), NULL);
 END
 $$;
-REVOKE ALL ON FUNCTION public.referral_accept_terms(int) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.referral_accept_terms(int) TO authenticated;
+REVOKE ALL ON FUNCTION public.referral_accept_terms(int, text, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.referral_accept_terms(int, text, text, text) TO authenticated;
 
 -- The consultant may change the code once (the old code keeps working for links already shared).
 CREATE OR REPLACE FUNCTION public.referral_update_code(_code text)
