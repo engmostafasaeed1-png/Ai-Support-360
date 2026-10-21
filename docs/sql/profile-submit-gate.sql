@@ -62,9 +62,9 @@ BEGIN
     'submitted_at', _c.profile_submitted_at,
     'verification_status', _c.verification_status,
     'missing', to_jsonb(_missing),
+    -- The policy counts as one item for new registrations (signed up after it took effect) or while it is missing.
     'required_total', _total + CASE WHEN 'service_policy' = ANY(_missing)
-                                     OR (public.consultant_policy_state(_c.id)->>'state') = 'accepted'
-                                        AND _c.created_at >= COALESCE((public.consultant_policy_state(_c.id)->>'effective_at')::timestamptz, 'infinity')
+                                     OR _c.created_at >= COALESCE((public.consultant_policy_state(_c.id)->>'effective_at')::timestamptz, 'infinity')
                                     THEN 1 ELSE 0 END);
 END $$;
 
