@@ -2,7 +2,8 @@
 // owner's address below and never taken from the request. Uses the real published policy version, the live settings
 // numbers and a sample deadline 7 days from now, through the same sendTemplateEmail path consultants get, subject
 // prefixed "[TEST] ". Touches no notice log, notification, acknowledgement or consultant. Rate limited (6 per hour).
-// Body: { "lang": "en" | "ar" | "both" } (default "both").
+// Every mail carries both languages. Body: { "lang": "ar" (Arabic first) | "en" (English first) | "both" } (default
+// "both" = two mails, one Arabic first and one English first).
 import { adminClient, authenticateUser, getUserRoles, jsonResponse, preflight, SITE_URL, withinRateLimit } from '../_shared/security.ts';
 import { formatPolicyDeadline } from '../_shared/consultantPolicyCopy.ts';
 import { policyEmailNumbers } from '../_shared/consultantPolicyEmail.ts';
@@ -26,7 +27,7 @@ Deno.serve(async (req) => {
 
   let body: { lang?: string } = {};
   try { body = await req.json(); } catch { /* defaults */ }
-  const langs: Array<'en' | 'ar'> = body.lang === 'en' ? ['en'] : body.lang === 'ar' ? ['ar'] : ['en', 'ar'];
+  const langs: Array<'en' | 'ar'> = body.lang === 'en' ? ['en'] : body.lang === 'ar' ? ['ar'] : ['ar', 'en'];
 
   const { data: v, error: vErr } = await admin.from('consultant_policy_versions')
     .select('version, title_en, title_ar, summary_en, summary_ar, body_en, body_ar, effective_at')
@@ -50,11 +51,10 @@ Deno.serve(async (req) => {
           kind: 'notice',
           name: p?.display_name || undefined,
           version: v.version,
-          title: lang === 'ar' ? v.title_ar : v.title_en,
-          summary: lang === 'ar' ? v.summary_ar : v.summary_en,
-          body: lang === 'ar' ? v.body_ar : v.body_en,
-          effectiveDate: formatPolicyDeadline(v.effective_at, lang),
-          deadline: formatPolicyDeadline(deadlineIso, lang),
+          texts: {
+            en: { title: v.title_en, summary: v.summary_en, body: v.body_en, effectiveDate: formatPolicyDeadline(v.effective_at, 'en'), deadline: formatPolicyDeadline(deadlineIso, 'en') },
+            ar: { title: v.title_ar, summary: v.summary_ar, body: v.body_ar, effectiveDate: formatPolicyDeadline(v.effective_at, 'ar'), deadline: formatPolicyDeadline(deadlineIso, 'ar') },
+          },
           deadlinePassed: false,
           numbers,
           confirmUrl: `${SITE_URL}/consultant/profile#service-policy`,
@@ -64,10 +64,10 @@ Deno.serve(async (req) => {
         subjectPrefix: '[TEST] ',
         idempotencyKey: `consultant-policy-test-${lang}-${crypto.randomUUID()}`,
       });
-      results.push({ lang, ...r });
+      results.push({ first: lang, ...r });
     } catch (e) {
       const err = e as { code?: string; status?: number; message?: string };
-      results.push({ lang, sent: false, error: err.code ?? err.message ?? 'send failed', status: err.status });
+      results.push({ first: lang, sent: false, error: err.code ?? err.message ?? 'send failed', status: err.status });
     }
   }
   return jsonResponse(req, { version: v.version, deadline: deadlineIso, numbers, results }, 200);

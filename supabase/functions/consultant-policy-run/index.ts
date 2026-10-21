@@ -36,11 +36,11 @@ async function sendOne(admin: any, row: DueRow, text: VersionText | null, number
       kind: row.kind,
       name: p?.display_name || undefined,
       version: row.version,
-      title: text ? (lang === 'ar' ? text.title_ar : text.title_en) : undefined,
-      summary: text ? (lang === 'ar' ? text.summary_ar : text.summary_en) : undefined,
-      // The full published text, never shortened (the e-mail renders every section).
-      body: text ? (lang === 'ar' ? text.body_ar : text.body_en) : undefined,
-      effectiveDate: formatPolicyDeadline(text?.effective_at, lang),
+      // Both languages in one mail (preferred first); the full published text, never shortened.
+      texts: text ? {
+        en: { title: text.title_en, summary: text.summary_en, body: text.body_en, effectiveDate: formatPolicyDeadline(text.effective_at, 'en'), deadline: formatPolicyDeadline(row.deadline, 'en') },
+        ar: { title: text.title_ar, summary: text.summary_ar, body: text.body_ar, effectiveDate: formatPolicyDeadline(text.effective_at, 'ar'), deadline: formatPolicyDeadline(row.deadline, 'ar') },
+      } : undefined,
       deadline: formatPolicyDeadline(row.deadline, lang),
       deadlinePassed: row.deadline ? new Date(row.deadline).getTime() <= Date.now() : false,
       numbers,
