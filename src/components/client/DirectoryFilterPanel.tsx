@@ -19,6 +19,8 @@ import { SUB_MODULE_CODES } from '../../../supabase/functions/_shared/ticketMatc
 import type { SavedFilter } from '@/lib/savedFilters';
 
 const ANY = '__any__';
+const RESP_OPTIONS = ['excellent', 'good', 'fair'] as const;
+const RESP_LABEL: Record<(typeof RESP_OPTIONS)[number], string> = { excellent: 'Excellent', good: 'Good or better', fair: 'Fair or better' };
 
 type Option = { value: string; label: string };
 
@@ -180,6 +182,11 @@ export default function DirectoryFilterPanel({ filters: f, consultants, ctx, onC
             options={[30, 60, 240, 1440].map((m) => ({ value: String(m), label: m < 60 ? t('directory.within_min', 'Within {{n}} min', { n: m }) : t('directory.within_h', 'Within {{n}} h', { n: m / 60 }) }))}
             counts={new Map([30, 60, 240, 1440].map((m) => [String(m), counts('response', [m]).get(m as unknown as string) ?? 0]))}
             onChange={(v) => onChange({ response: Number(v) || 0 })} />
+          {ctx.respLevels && (
+            <FacetSelect id="f-resp" label={t('directory.responsiveness', 'Responsiveness')} value={f.resp} anyLabel={anyLabel}
+              options={RESP_OPTIONS.map((o) => ({ value: o, label: t(`directory.resp_${o}`, RESP_LABEL[o]) }))}
+              counts={counts('resp', [...RESP_OPTIONS])} onChange={(v) => onChange({ resp: v as DirectoryFilters['resp'] })} />
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border/50 pt-4">
