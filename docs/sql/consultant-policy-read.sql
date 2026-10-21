@@ -1,4 +1,4 @@
--- Security fix (prepared, NOT applied): Consultant Service Policy versions were readable with USING (true).
+-- Security fix (APPLIED 2026-10-21 as migration 0076): Consultant Service Policy versions were readable with USING (true).
 -- The published policy stays public on purpose (/consultant-policy works without signing in), but only versions
 -- that have taken effect. A version scheduled for later is visible to administrators only until its date.
 -- No app change is needed: the site already asks for the newest version with effective_at <= now().
