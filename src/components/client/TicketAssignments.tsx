@@ -206,6 +206,7 @@ export default function TicketAssignments({ ticketId, isReadOnly }: TicketAssign
                     <ConsultantRing consultantId={a.consultant_id} name={a.consultant_name} avatarUrl={a.avatar_url} size="sm" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{a.consultant_name}</p>
+                      <ClientViewHint id={a.consultant_id} />
                       <ConsultantLocation audience="client" city={a.city} country={a.country} className="text-[11px] text-muted-foreground" />
                       <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                         <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 gap-0.5 ${roleColors[a.role]}`}>
