@@ -7,6 +7,10 @@ export interface TemplateEntry {
   to?: string
   displayName?: string
   previewData?: Record<string, any>
+  /** Optional one-piece HTML renderer (avoids split multi-byte letters in long Arabic mails); otherwise renderAsync. */
+  html?: (data: Record<string, any>) => string
+  /** Optional hand-written plain-text alternative; otherwise it is derived from the HTML. */
+  text?: (data: Record<string, any>) => string
 }
 
 import { template as demoRequestReceived } from './demo-request-received.tsx'
@@ -26,7 +30,7 @@ import { template as profileReminder } from './profile-reminder.tsx'
 import { template as assignmentRequest } from './assignment-request.tsx'
 import { template as assignmentNoResponse } from './assignment-no-response.tsx'
 import { template as responsivenessNotice } from './responsiveness-notice.tsx'
-import { template as consultantPolicyNotice } from './consultant-policy-notice.tsx'
+import { arabicPreviewTemplate as consultantPolicyNoticeAr, template as consultantPolicyNotice } from './consultant-policy-notice.tsx'
 import { template as assignmentInfo } from './assignment-info.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
@@ -49,4 +53,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'assignment-info': assignmentInfo,
   'responsiveness-notice': responsivenessNotice,
   'consultant-policy-notice': consultantPolicyNotice,
+  'consultant-policy-notice-ar-preview': consultantPolicyNoticeAr,
 }

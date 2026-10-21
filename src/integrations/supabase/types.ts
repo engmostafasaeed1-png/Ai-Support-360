@@ -14,6 +14,167 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_bulk_runs: {
+        Row: {
+          action: string
+          actor_id: string
+          before: Json
+          created_at: string
+          id: string
+          payload: Json
+          target_ids: string[]
+          undo_until: string | null
+          undone_at: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          before?: Json
+          created_at?: string
+          id?: string
+          payload?: Json
+          target_ids: string[]
+          undo_until?: string | null
+          undone_at?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          before?: Json
+          created_at?: string
+          id?: string
+          payload?: Json
+          target_ids?: string[]
+          undo_until?: string | null
+          undone_at?: string | null
+        }
+        Relationships: []
+      }
+      admin_group_members: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          group_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          group_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          group_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "admin_permission_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_permission_groups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          permissions: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          permissions?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          permissions?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      admin_role_grant_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          expires_at: string
+          id: string
+          reason: string
+          requested_by: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+          target_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          expires_at?: string
+          id?: string
+          reason: string
+          requested_by: string
+          role: Database["public"]["Enums"]["app_role"]
+          status?: string
+          target_user_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          expires_at?: string
+          id?: string
+          reason?: string
+          requested_by?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          target_user_id?: string
+        }
+        Relationships: []
+      }
+      admin_saved_views: {
+        Row: {
+          admin_id: string
+          created_at: string
+          id: string
+          name: string
+          params: Json
+        }
+        Insert: {
+          admin_id?: string
+          created_at?: string
+          id?: string
+          name: string
+          params?: Json
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          params?: Json
+        }
+        Relationships: []
+      }
       ai_suggestion_feedback: {
         Row: {
           areas: string[]
@@ -1862,6 +2023,153 @@ export type Database = {
           },
         ]
       }
+      consultant_policy_acknowledgements: {
+        Row: {
+          accepted_at: string
+          consultant_id: string
+          id: string
+          ip_hash: string | null
+          language: string
+          source: string
+          user_agent: string | null
+          user_id: string
+          version: number
+        }
+        Insert: {
+          accepted_at?: string
+          consultant_id: string
+          id?: string
+          ip_hash?: string | null
+          language: string
+          source?: string
+          user_agent?: string | null
+          user_id: string
+          version: number
+        }
+        Update: {
+          accepted_at?: string
+          consultant_id?: string
+          id?: string
+          ip_hash?: string | null
+          language?: string
+          source?: string
+          user_agent?: string | null
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      consultant_policy_notice_log: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          id: string
+          kind: string
+          requested_by: string | null
+          sent_at: string | null
+          version: number
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          requested_by?: string | null
+          sent_at?: string | null
+          version: number
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          requested_by?: string | null
+          sent_at?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
+      consultant_policy_private: {
+        Row: {
+          id: boolean
+          pepper: string
+        }
+        Insert: {
+          id?: boolean
+          pepper?: string
+        }
+        Update: {
+          id?: boolean
+          pepper?: string
+        }
+        Relationships: []
+      }
+      consultant_policy_prompts: {
+        Row: {
+          consultant_id: string
+          first_shown_at: string
+          last_shown_at: string
+          shown_count: number
+          version: number
+        }
+        Insert: {
+          consultant_id: string
+          first_shown_at?: string
+          last_shown_at?: string
+          shown_count?: number
+          version: number
+        }
+        Update: {
+          consultant_id?: string
+          first_shown_at?: string
+          last_shown_at?: string
+          shown_count?: number
+          version?: number
+        }
+        Relationships: []
+      }
+      consultant_policy_versions: {
+        Row: {
+          body_ar: string
+          body_en: string
+          created_at: string
+          effective_at: string
+          id: string
+          published_by: string | null
+          summary_ar: string
+          summary_en: string
+          title_ar: string
+          title_en: string
+          version: number
+        }
+        Insert: {
+          body_ar: string
+          body_en: string
+          created_at?: string
+          effective_at?: string
+          id?: string
+          published_by?: string | null
+          summary_ar: string
+          summary_en: string
+          title_ar: string
+          title_en: string
+          version: number
+        }
+        Update: {
+          body_ar?: string
+          body_en?: string
+          created_at?: string
+          effective_at?: string
+          id?: string
+          published_by?: string | null
+          summary_ar?: string
+          summary_en?: string
+          title_ar?: string
+          title_en?: string
+          version?: number
+        }
+        Relationships: []
+      }
       consultant_private: {
         Row: {
           consultant_id: string
@@ -2804,6 +3112,93 @@ export type Database = {
           used_at?: string | null
         }
         Relationships: []
+      }
+      engagement_confirmations: {
+        Row: {
+          base_rate: number | null
+          client_confirmed_at: string | null
+          client_id: string
+          consultant_confirmed_at: string | null
+          consultant_id: string
+          created_at: string
+          currency: string
+          estimated_hours: number | null
+          hourly_rate: number
+          id: string
+          member_id: string
+          prepared_by: string | null
+          rate_id: string | null
+          response_commitment: string
+          scope_summary: string
+          start_date: string
+          superseded_at: string | null
+          superseded_reason: string | null
+          surcharge_percent: number | null
+          ticket_id: string
+          version: number
+        }
+        Insert: {
+          base_rate?: number | null
+          client_confirmed_at?: string | null
+          client_id: string
+          consultant_confirmed_at?: string | null
+          consultant_id: string
+          created_at?: string
+          currency: string
+          estimated_hours?: number | null
+          hourly_rate: number
+          id?: string
+          member_id: string
+          prepared_by?: string | null
+          rate_id?: string | null
+          response_commitment: string
+          scope_summary: string
+          start_date: string
+          superseded_at?: string | null
+          superseded_reason?: string | null
+          surcharge_percent?: number | null
+          ticket_id: string
+          version: number
+        }
+        Update: {
+          base_rate?: number | null
+          client_confirmed_at?: string | null
+          client_id?: string
+          consultant_confirmed_at?: string | null
+          consultant_id?: string
+          created_at?: string
+          currency?: string
+          estimated_hours?: number | null
+          hourly_rate?: number
+          id?: string
+          member_id?: string
+          prepared_by?: string | null
+          rate_id?: string | null
+          response_commitment?: string
+          scope_summary?: string
+          start_date?: string
+          superseded_at?: string | null
+          superseded_reason?: string | null
+          surcharge_percent?: number | null
+          ticket_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagement_confirmations_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagement_confirmations_rate_id_fkey"
+            columns: ["rate_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_rates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       environment_connections: {
         Row: {
@@ -3965,6 +4360,27 @@ export type Database = {
         }
         Relationships: []
       }
+      location_reminder_log: {
+        Row: {
+          consultant_id: string
+          id: string
+          sent_at: string
+          sent_by: string | null
+        }
+        Insert: {
+          consultant_id: string
+          id?: string
+          sent_at?: string
+          sent_by?: string | null
+        }
+        Update: {
+          consultant_id?: string
+          id?: string
+          sent_at?: string
+          sent_by?: string | null
+        }
+        Relationships: []
+      }
       logo_upload_attempts: {
         Row: {
           bucket: string
@@ -4594,6 +5010,60 @@ export type Database = {
           },
         ]
       }
+      notification_pause_events: {
+        Row: {
+          action: string
+          created_at: string
+          duration: string | null
+          id: string
+          paused_until: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          duration?: string | null
+          id?: string
+          paused_until?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          duration?: string | null
+          id?: string
+          paused_until?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_pause_link_uses: {
+        Row: {
+          action: string
+          nonce: string
+          paused_until: string | null
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          nonce: string
+          paused_until?: string | null
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          nonce?: string
+          paused_until?: string | null
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -4601,11 +5071,14 @@ export type Database = {
           delivery_error: string | null
           delivery_status: string
           emailed_at: string | null
+          held_until: string | null
           id: string
           is_read: boolean | null
           last_attempt_at: string
           link: string | null
+          pause_category: string | null
           retry_count: number
+          silent: boolean
           tenant_id: string | null
           title: string
           type: string | null
@@ -4617,11 +5090,14 @@ export type Database = {
           delivery_error?: string | null
           delivery_status?: string
           emailed_at?: string | null
+          held_until?: string | null
           id?: string
           is_read?: boolean | null
           last_attempt_at?: string
           link?: string | null
+          pause_category?: string | null
           retry_count?: number
+          silent?: boolean
           tenant_id?: string | null
           title: string
           type?: string | null
@@ -4633,11 +5109,14 @@ export type Database = {
           delivery_error?: string | null
           delivery_status?: string
           emailed_at?: string | null
+          held_until?: string | null
           id?: string
           is_read?: boolean | null
           last_attempt_at?: string
           link?: string | null
+          pause_category?: string | null
           retry_count?: number
+          silent?: boolean
           tenant_id?: string | null
           title?: string
           type?: string | null
@@ -5526,6 +6005,7 @@ export type Database = {
         Row: {
           default_mode: string
           field_key: string
+          hard_required: boolean
           label: string
           mode: string
           section: string
@@ -5536,6 +6016,7 @@ export type Database = {
         Insert: {
           default_mode?: string
           field_key: string
+          hard_required?: boolean
           label: string
           mode?: string
           section: string
@@ -5546,6 +6027,7 @@ export type Database = {
         Update: {
           default_mode?: string
           field_key?: string
+          hard_required?: boolean
           label?: string
           mode?: string
           section?: string
@@ -8046,6 +8528,56 @@ export type Database = {
           },
         ]
       }
+      ticket_match_runs: {
+        Row: {
+          created_at: string
+          eligible_count: number
+          excluded_count: number
+          id: string
+          inputs_hash: string
+          run_by: string | null
+          signals: Json
+          ticket_id: string | null
+          top: Json
+          weights: Json
+          weights_version: string
+        }
+        Insert: {
+          created_at?: string
+          eligible_count?: number
+          excluded_count?: number
+          id?: string
+          inputs_hash: string
+          run_by?: string | null
+          signals?: Json
+          ticket_id?: string | null
+          top?: Json
+          weights?: Json
+          weights_version: string
+        }
+        Update: {
+          created_at?: string
+          eligible_count?: number
+          excluded_count?: number
+          id?: string
+          inputs_hash?: string
+          run_by?: string | null
+          signals?: Json
+          ticket_id?: string | null
+          top?: Json
+          weights?: Json
+          weights_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_match_runs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_payment_terms: {
         Row: {
           consultant_id: string
@@ -8364,6 +8896,386 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "ticket_tags_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_team_member_events: {
+        Row: {
+          actor_id: string | null
+          actor_role: string
+          consultant_id: string
+          created_at: string
+          from_status: string | null
+          id: string
+          member_id: string
+          reason: string | null
+          ticket_id: string
+          to_status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role: string
+          consultant_id: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          member_id: string
+          reason?: string | null
+          ticket_id: string
+          to_status: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string
+          consultant_id?: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          member_id?: string
+          reason?: string | null
+          ticket_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_team_member_events_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_team_members: {
+        Row: {
+          accepted_at: string | null
+          availability_note: string | null
+          bid_sent_at: string | null
+          blocked_reason: string | null
+          client_nudged_at: string | null
+          confirmed_at: string | null
+          consultant_id: string
+          consultant_nudged_at: string | null
+          created_at: string
+          created_by: string | null
+          declined_at: string | null
+          end_reason: string | null
+          end_requested_by: string | null
+          ended_at: string | null
+          engagement_mode: string
+          expires_at: string | null
+          id: string
+          invite_message: string | null
+          invited_at: string | null
+          is_legacy: boolean
+          is_primary: boolean
+          match_request_id: string | null
+          nda_signed_at: string | null
+          notice_until: string | null
+          pending_end_status: string | null
+          proposal_id: string | null
+          rate_approved_at: string | null
+          ready_at: string | null
+          replaced_by: string | null
+          status: string
+          suggest_next: boolean
+          team_role: string
+          ticket_id: string
+          updated_at: string
+          viewed_at: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          availability_note?: string | null
+          bid_sent_at?: string | null
+          blocked_reason?: string | null
+          client_nudged_at?: string | null
+          confirmed_at?: string | null
+          consultant_id: string
+          consultant_nudged_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          declined_at?: string | null
+          end_reason?: string | null
+          end_requested_by?: string | null
+          ended_at?: string | null
+          engagement_mode?: string
+          expires_at?: string | null
+          id?: string
+          invite_message?: string | null
+          invited_at?: string | null
+          is_legacy?: boolean
+          is_primary?: boolean
+          match_request_id?: string | null
+          nda_signed_at?: string | null
+          notice_until?: string | null
+          pending_end_status?: string | null
+          proposal_id?: string | null
+          rate_approved_at?: string | null
+          ready_at?: string | null
+          replaced_by?: string | null
+          status?: string
+          suggest_next?: boolean
+          team_role?: string
+          ticket_id: string
+          updated_at?: string
+          viewed_at?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          availability_note?: string | null
+          bid_sent_at?: string | null
+          blocked_reason?: string | null
+          client_nudged_at?: string | null
+          confirmed_at?: string | null
+          consultant_id?: string
+          consultant_nudged_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          declined_at?: string | null
+          end_reason?: string | null
+          end_requested_by?: string | null
+          ended_at?: string | null
+          engagement_mode?: string
+          expires_at?: string | null
+          id?: string
+          invite_message?: string | null
+          invited_at?: string | null
+          is_legacy?: boolean
+          is_primary?: boolean
+          match_request_id?: string | null
+          nda_signed_at?: string | null
+          notice_until?: string | null
+          pending_end_status?: string | null
+          proposal_id?: string | null
+          rate_approved_at?: string | null
+          ready_at?: string | null
+          replaced_by?: string | null
+          status?: string
+          suggest_next?: boolean
+          team_role?: string
+          ticket_id?: string
+          updated_at?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_team_members_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "ticket_team_members_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_team_members_match_request_id_fkey"
+            columns: ["match_request_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_match_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_team_members_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_team_members_replaced_by_fkey"
+            columns: ["replaced_by"]
+            isOneToOne: false
+            referencedRelation: "ticket_team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_team_members_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_team_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sender_consultant_id: string | null
+          sender_id: string
+          sender_role: string
+          ticket_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          sender_consultant_id?: string | null
+          sender_id: string
+          sender_role: string
+          ticket_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          sender_consultant_id?: string | null
+          sender_id?: string
+          sender_role?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_team_messages_sender_consultant_id_fkey"
+            columns: ["sender_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "ticket_team_messages_sender_consultant_id_fkey"
+            columns: ["sender_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_team_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_team_requests: {
+        Row: {
+          chosen_consultant_id: string | null
+          created_at: string
+          created_member_id: string | null
+          decided_at: string | null
+          decided_by: string | null
+          decided_role: string | null
+          decision_note: string | null
+          estimated_hours: number | null
+          id: string
+          needed_skill: string | null
+          payer: string
+          reason: string
+          requester_consultant_id: string
+          requester_member_id: string
+          status: string
+          suggested_consultant_id: string | null
+          ticket_id: string
+        }
+        Insert: {
+          chosen_consultant_id?: string | null
+          created_at?: string
+          created_member_id?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decided_role?: string | null
+          decision_note?: string | null
+          estimated_hours?: number | null
+          id?: string
+          needed_skill?: string | null
+          payer?: string
+          reason: string
+          requester_consultant_id: string
+          requester_member_id: string
+          status?: string
+          suggested_consultant_id?: string | null
+          ticket_id: string
+        }
+        Update: {
+          chosen_consultant_id?: string | null
+          created_at?: string
+          created_member_id?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decided_role?: string | null
+          decision_note?: string | null
+          estimated_hours?: number | null
+          id?: string
+          needed_skill?: string | null
+          payer?: string
+          reason?: string
+          requester_consultant_id?: string
+          requester_member_id?: string
+          status?: string
+          suggested_consultant_id?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_team_requests_chosen_consultant_id_fkey"
+            columns: ["chosen_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "ticket_team_requests_chosen_consultant_id_fkey"
+            columns: ["chosen_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_team_requests_created_member_id_fkey"
+            columns: ["created_member_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_team_requests_requester_consultant_id_fkey"
+            columns: ["requester_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "ticket_team_requests_requester_consultant_id_fkey"
+            columns: ["requester_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_team_requests_requester_member_id_fkey"
+            columns: ["requester_member_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_team_requests_suggested_consultant_id_fkey"
+            columns: ["suggested_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "ticket_team_requests_suggested_consultant_id_fkey"
+            columns: ["suggested_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_team_requests_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
@@ -8871,6 +9783,135 @@ export type Database = {
           source?: string
           target?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_admin_notes: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_admin_state: {
+        Row: {
+          anonymise_after: string | null
+          anonymised_at: string | null
+          delete_reason: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          merge_added_roles: string[]
+          merged_at: string | null
+          merged_by: string | null
+          merged_into: string | null
+          suspended_at: string | null
+          suspended_by: string | null
+          suspended_reason: string | null
+          suspended_until: string | null
+          tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          anonymise_after?: string | null
+          anonymised_at?: string | null
+          delete_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          merge_added_roles?: string[]
+          merged_at?: string | null
+          merged_by?: string | null
+          merged_into?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspended_reason?: string | null
+          suspended_until?: string | null
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          anonymise_after?: string | null
+          anonymised_at?: string | null
+          delete_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          merge_added_roles?: string[]
+          merged_at?: string | null
+          merged_by?: string | null
+          merged_into?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspended_reason?: string | null
+          suspended_until?: string | null
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_notification_pauses: {
+        Row: {
+          back_notice_at: string | null
+          categories: string[]
+          duration: string
+          email: boolean
+          hold_in_app: boolean
+          in_app: boolean
+          mark_unavailable: boolean
+          paused_from: string
+          paused_until: string
+          source: string
+          unavailable_period_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          back_notice_at?: string | null
+          categories?: string[]
+          duration: string
+          email?: boolean
+          hold_in_app?: boolean
+          in_app?: boolean
+          mark_unavailable?: boolean
+          paused_from?: string
+          paused_until: string
+          source?: string
+          unavailable_period_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          back_notice_at?: string | null
+          categories?: string[]
+          duration?: string
+          email?: boolean
+          hold_in_app?: boolean
+          in_app?: boolean
+          mark_unavailable?: boolean
+          paused_from?: string
+          paused_until?: string
+          source?: string
+          unavailable_period_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -9783,6 +10824,15 @@ export type Database = {
       }
     }
     Functions: {
+      accept_consultant_policy: {
+        Args: {
+          _language: string
+          _source: string
+          _user_agent?: string
+          _version: number
+        }
+        Returns: Json
+      }
       accept_proposal: {
         Args: { _client_notes?: string; _proposal_id: string }
         Returns: undefined
@@ -9799,11 +10849,15 @@ export type Database = {
         Args: { _body: string; _submission_id: string }
         Returns: string
       }
+      admin_access_review: { Args: never; Returns: Json }
       admin_adjust_credits: {
         Args: { _amount: number; _consultant_id: string; _note: string }
         Returns: undefined
       }
       admin_assignment_reminder_stats: { Args: never; Returns: Json }
+      admin_audit_search: { Args: { _p?: Json }; Returns: Json }
+      admin_bulk_undo: { Args: { _run_id: string }; Returns: Json }
+      admin_can: { Args: { _perm: string; _uid: string }; Returns: boolean }
       admin_client_approval_counts: { Args: never; Returns: Json }
       admin_confirm_payment: {
         Args: {
@@ -9851,6 +10905,25 @@ export type Database = {
         Returns: number
       }
       admin_consultant_full_profile: { Args: { _cid: string }; Returns: Json }
+      admin_consultant_policy_overview: {
+        Args: never
+        Returns: {
+          accepted_at: string
+          accepted_language: string
+          accepted_version: number
+          consultant_id: string
+          current_version: number
+          deadline: string
+          display_name: string
+          email: string
+          first_shown_at: string
+          last_reminder_at: string
+          reminders: number
+          signed_up_at: string
+          state: string
+          verification_status: string
+        }[]
+      }
       admin_create_invoice: {
         Args: {
           _amount: number
@@ -9864,11 +10937,20 @@ export type Database = {
         }
         Returns: string
       }
+      admin_decide_grant_request: {
+        Args: { _approve: boolean; _id: string; _note?: string }
+        Returns: Json
+      }
+      admin_delete_permission_group: {
+        Args: { _id: string }
+        Returns: undefined
+      }
       admin_founding_settings: {
         Args: { _boost?: number; _enabled?: boolean; _limit?: number }
         Returns: Json
       }
       admin_get_invoice_counter: { Args: never; Returns: Json }
+      admin_grant_requests: { Args: never; Returns: Json }
       admin_hide_client_review: {
         Args: { _hidden: boolean; _reason?: string; _review_id: string }
         Returns: undefined
@@ -9886,11 +10968,35 @@ export type Database = {
         Args: { p_limit?: number; p_status?: string }
         Returns: Json
       }
+      admin_log_export: {
+        Args: { _count: number; _filters?: Json; _kind: string }
+        Returns: undefined
+      }
+      admin_merge_preview: {
+        Args: { _keep: string; _merge: string }
+        Returns: Json
+      }
+      admin_missing_location: {
+        Args: never
+        Returns: {
+          blocked: boolean
+          city: string
+          consultant_id: string
+          country: string
+          deadline: string
+          display_name: string
+          email: string
+          last_reminded_at: string
+          signed_up_at: string
+          verification_status: string
+        }[]
+      }
       admin_notification_email_count: { Args: never; Returns: number }
       admin_notification_email_rate: {
         Args: { _user_id: string }
         Returns: boolean
       }
+      admin_notification_pause_overview: { Args: never; Returns: Json }
       admin_payout_details_status: {
         Args: never
         Returns: {
@@ -9900,7 +11006,21 @@ export type Database = {
           updated_at: string
         }[]
       }
+      admin_permission_catalog: { Args: never; Returns: string[] }
+      admin_permission_groups_list: { Args: never; Returns: Json }
       admin_profile_reminder_stats: { Args: never; Returns: Json }
+      admin_publish_consultant_policy: {
+        Args: {
+          _body_ar: string
+          _body_en: string
+          _effective_at?: string
+          _summary_ar: string
+          _summary_en: string
+          _title_ar: string
+          _title_en: string
+        }
+        Returns: number
+      }
       admin_recompute_responsiveness: { Args: never; Returns: number }
       admin_reject_payment_report: {
         Args: { _note: string; _payment_id: string }
@@ -9937,6 +11057,23 @@ export type Database = {
         Args: { _details: Json }
         Returns: Json
       }
+      admin_save_permission_group: {
+        Args: {
+          _description: string
+          _id: string
+          _name: string
+          _permissions: string[]
+        }
+        Returns: string
+      }
+      admin_send_location_reminder: {
+        Args: { _ids: string[] }
+        Returns: number
+      }
+      admin_send_policy_reminder: {
+        Args: { _consultant_id: string }
+        Returns: boolean
+      }
       admin_set_company_bank_transfer: {
         Args: { _allowed: boolean; _note?: string; _tenant_id: string }
         Returns: undefined
@@ -9955,6 +11092,10 @@ export type Database = {
         Args: { _cid: string; _grant: boolean; _reason: string }
         Returns: undefined
       }
+      admin_set_group_member: {
+        Args: { _group: string; _member: boolean; _user: string }
+        Returns: undefined
+      }
       admin_set_invoice_bank_account: {
         Args: { _details: Json; _note?: string; _payment_id: string }
         Returns: undefined
@@ -9967,6 +11108,7 @@ export type Database = {
         Args: { _next: number; _reason: string }
         Returns: Json
       }
+      admin_set_location_grace: { Args: { _days: number }; Returns: undefined }
       admin_set_payout_status: {
         Args: {
           _bank_reference?: string
@@ -9974,6 +11116,10 @@ export type Database = {
           _payout_id: string
           _status: string
         }
+        Returns: undefined
+      }
+      admin_set_policy_grace_days: {
+        Args: { _days: number }
         Returns: undefined
       }
       admin_set_profile_field_rules: {
@@ -9984,7 +11130,33 @@ export type Database = {
         Args: { _weight: number }
         Returns: number
       }
+      admin_set_security_setting: {
+        Args: { _key: string; _value: boolean }
+        Returns: undefined
+      }
       admin_storage_overview: { Args: never; Returns: Json }
+      admin_user_action: {
+        Args: {
+          _action: string
+          _payload?: Json
+          _reason?: string
+          _uid: string
+        }
+        Returns: Json
+      }
+      admin_user_detail: { Args: { _uid: string }; Returns: Json }
+      admin_user_export: { Args: { _uid: string }; Returns: Json }
+      admin_users_bulk: {
+        Args: {
+          _action: string
+          _dry_run?: boolean
+          _ids: string[]
+          _payload?: Json
+        }
+        Returns: Json
+      }
+      admin_users_search: { Args: { _p?: Json }; Returns: Json }
+      admin_users_stats: { Args: never; Returns: Json }
       answer_ticket_question: {
         Args: { _answer: string; _question_id: string }
         Returns: undefined
@@ -10224,6 +11396,18 @@ export type Database = {
           urgency: string
         }[]
       }
+      claim_consultant_policy_notices: {
+        Args: { _limit?: number }
+        Returns: {
+          consultant_id: string
+          deadline: string
+          kind: string
+          lang: string
+          log_id: string
+          user_id: string
+          version: number
+        }[]
+      }
       claim_profile_reminders: {
         Args: { _limit?: number }
         Returns: {
@@ -10374,7 +11558,20 @@ export type Database = {
         Args: { _ticket_id: string }
         Returns: boolean
       }
+      consultant_location_blocked: { Args: { _cid: string }; Returns: boolean }
       consultant_missing_fields: { Args: { _cid: string }; Returns: string[] }
+      consultant_policy_blocked: { Args: { _cid: string }; Returns: boolean }
+      consultant_policy_blocked_ids: { Args: never; Returns: string[] }
+      consultant_policy_current_version: { Args: never; Returns: number }
+      consultant_policy_mark_shown: {
+        Args: { _version: number }
+        Returns: Json
+      }
+      consultant_policy_setting_int: {
+        Args: { _default: number; _key: string; _max: number; _min: number }
+        Returns: number
+      }
+      consultant_policy_state: { Args: { _cid: string }; Returns: Json }
       consultant_profile_visible: {
         Args: { _consultant_id: string }
         Returns: boolean
@@ -10604,6 +11801,7 @@ export type Database = {
       is_untrusted_writer: { Args: never; Returns: boolean }
       knowledge_terms: { Args: { _query: string }; Returns: string[] }
       knowledge_tsquery: { Args: { _query: string }; Returns: unknown }
+      location_grace_deadline: { Args: { _cid: string }; Returns: string }
       log_client_event: {
         Args: {
           _action: string
@@ -10614,6 +11812,9 @@ export type Database = {
         Returns: undefined
       }
       mask_contact_details: { Args: { _text: string }; Returns: string }
+      matching_inactive_consultants: { Args: never; Returns: string[] }
+      matching_v2_ready: { Args: never; Returns: boolean }
+      my_admin_permissions: { Args: never; Returns: Json }
       my_broadcast_message: {
         Args: { _notification_id: string }
         Returns: Json
@@ -10634,6 +11835,8 @@ export type Database = {
         Args: { _connectable?: boolean; _env: string }
         Returns: boolean
       }
+      my_consultant_policy_status: { Args: never; Returns: Json }
+      my_location_status: { Args: never; Returns: Json }
       my_missing_profile_fields: { Args: never; Returns: string[] }
       my_nda_pending_access: {
         Args: never
@@ -10647,6 +11850,7 @@ export type Database = {
           waiting_for_client: boolean
         }[]
       }
+      my_notification_pause: { Args: never; Returns: Json }
       my_profile_completion: { Args: never; Returns: Json }
       my_responsiveness: { Args: never; Returns: Json }
       new_bid_blocked_by_profile: {
@@ -10656,6 +11860,48 @@ export type Database = {
       next_invoice_number: { Args: { _at?: string }; Returns: string }
       normalize_credly_username: { Args: { _v: string }; Returns: string }
       normalize_linkedin_url: { Args: { _v: string }; Returns: string }
+      notification_category: {
+        Args: { _title: string; _type: string }
+        Returns: string
+      }
+      notification_email_check: {
+        Args: { _category: string; _user_id: string }
+        Returns: Json
+      }
+      notification_pause_apply: {
+        Args: {
+          _categories: string[]
+          _duration: string
+          _email: boolean
+          _hold_in_app: boolean
+          _in_app: boolean
+          _mark_unavailable: boolean
+          _source: string
+          _user_id: string
+        }
+        Returns: string
+      }
+      notification_pause_days: { Args: { _duration: string }; Returns: number }
+      notification_pause_end: {
+        Args: { _action: string; _source: string; _user_id: string }
+        Returns: boolean
+      }
+      notification_pause_link_action: {
+        Args: {
+          _action: string
+          _duration: string
+          _nonce: string
+          _user_id: string
+        }
+        Returns: Json
+      }
+      notification_pause_max_days: { Args: never; Returns: number }
+      notification_pause_state: { Args: { _user_id: string }; Returns: Json }
+      notification_pause_sweep: { Args: never; Returns: number }
+      notifications_paused: {
+        Args: { _category: string; _channel?: string; _user_id: string }
+        Returns: boolean
+      }
       notify_payment_admins: {
         Args: { _body: string; _title: string }
         Returns: undefined
@@ -10669,6 +11915,18 @@ export type Database = {
           _user_id: string
         }
         Returns: undefined
+      }
+      pause_my_notifications: {
+        Args: {
+          _categories?: string[]
+          _duration: string
+          _email?: boolean
+          _hold_in_app?: boolean
+          _in_app?: boolean
+          _mark_unavailable?: boolean
+          _source?: string
+        }
+        Returns: Json
       }
       payment_commission_percent: { Args: never; Returns: number }
       payment_processing_fee_percent: { Args: never; Returns: number }
@@ -10859,6 +12117,7 @@ export type Database = {
         Returns: number
       }
       responsiveness_sweep: { Args: never; Returns: Json }
+      resume_my_notifications: { Args: { _source?: string }; Returns: Json }
       retry_failed_notification: {
         Args: { _id: string }
         Returns: {
@@ -10867,11 +12126,14 @@ export type Database = {
           delivery_error: string | null
           delivery_status: string
           emailed_at: string | null
+          held_until: string | null
           id: string
           is_read: boolean | null
           last_attempt_at: string
           link: string | null
+          pause_category: string | null
           retry_count: number
+          silent: boolean
           tenant_id: string | null
           title: string
           type: string | null
@@ -11026,6 +12288,232 @@ export type Database = {
         Args: { _message?: string; _ticket_id: string }
         Returns: string
       }
+      team_accept_bid: {
+        Args: {
+          _client_notes?: string
+          _only_this?: boolean
+          _primary?: boolean
+          _proposal_id: string
+          _role?: string
+        }
+        Returns: string
+      }
+      team_activate: { Args: { _member_id: string }; Returns: undefined }
+      team_assert_clean_text: { Args: { _text: string }; Returns: undefined }
+      team_audit: {
+        Args: {
+          _action: string
+          _entity_id: string
+          _entity_type: string
+          _meta?: Json
+        }
+        Returns: undefined
+      }
+      team_can_request_status: { Args: { _status: string }; Returns: boolean }
+      team_cancel_end: { Args: { _member_id: string }; Returns: undefined }
+      team_confirm: { Args: { _confirmation_id: string }; Returns: Json }
+      team_consultant_name: {
+        Args: { _consultant_id: string }
+        Returns: string
+      }
+      team_decide_request: {
+        Args: {
+          _consultant_id?: string
+          _decision: string
+          _note?: string
+          _request_id: string
+        }
+        Returns: Json
+      }
+      team_end_internal: {
+        Args: {
+          _by_consultant: boolean
+          _final: string
+          _member_id: string
+          _reason: string
+        }
+        Returns: Json
+      }
+      team_end_member: {
+        Args: { _member_id: string; _reason?: string }
+        Returns: Json
+      }
+      team_ensure_member: {
+        Args: { _consultant_id: string; _lead: boolean; _ticket_id: string }
+        Returns: undefined
+      }
+      team_finalize_end: { Args: { _member_id: string }; Returns: undefined }
+      team_gates: { Args: { _member_id: string }; Returns: Json }
+      team_insert_rate: {
+        Args: { _hourly_rate: number; _member_id: string }
+        Returns: string
+      }
+      team_invite: {
+        Args: {
+          _bid_deadline?: string
+          _items: Json
+          _message?: string
+          _ticket_id: string
+        }
+        Returns: Json
+      }
+      team_is_admin: { Args: never; Returns: boolean }
+      team_live: { Args: { _status: string }; Returns: boolean }
+      team_mark_viewed: { Args: { _member_id: string }; Returns: undefined }
+      team_member_started: {
+        Args: { _consultant_id: string; _ticket_id: string }
+        Returns: boolean
+      }
+      team_next_step: { Args: { _member_id: string }; Returns: Json }
+      team_notify: {
+        Args: { _body: string; _link: string; _title: string; _user_id: string }
+        Returns: undefined
+      }
+      team_notify_admins: {
+        Args: { _body: string; _link: string; _title: string }
+        Returns: undefined
+      }
+      team_nudge: { Args: { _member_id: string }; Returns: string }
+      team_panel: {
+        Args: { _ticket_id: string }
+        Returns: {
+          accepted_at: string
+          approved_rate: number
+          availability_note: string
+          avatar_url: string
+          bid_sent_at: string
+          blocked_reason: string
+          client_nudged_at: string
+          confirmation: Json
+          confirmed_at: string
+          consultant_id: string
+          consultant_nudged_at: string
+          display_name: string
+          end_reason: string
+          ended_at: string
+          engagement_mode: string
+          expires_at: string
+          gates: Json
+          invited_at: string
+          is_legacy: boolean
+          is_primary: boolean
+          member_id: string
+          nda_signed_at: string
+          next_step: Json
+          notice_until: string
+          proposed_rate: number
+          rate_approved_at: string
+          rate_currency: string
+          rate_surcharge_percent: number
+          ready_at: string
+          status: string
+          suggest_next: boolean
+          team_role: string
+          ticket_gated: boolean
+          viewed_at: string
+        }[]
+      }
+      team_post_message: {
+        Args: { _body: string; _ticket_id: string }
+        Returns: string
+      }
+      team_pre_ready: { Args: { _status: string }; Returns: boolean }
+      team_prepare_confirmation: {
+        Args: {
+          _estimated_hours?: number
+          _member_id: string
+          _response_commitment: string
+          _scope: string
+          _start_date: string
+        }
+        Returns: string
+      }
+      team_propose_rate: {
+        Args: { _hourly_rate: number; _member_id: string }
+        Returns: string
+      }
+      team_recompute: { Args: { _member_id: string }; Returns: undefined }
+      team_refuse_nda: {
+        Args: { _member_id: string; _reason?: string }
+        Returns: Json
+      }
+      team_replace_member: {
+        Args: {
+          _member_id: string
+          _mode?: string
+          _new_consultant_id: string
+          _reason?: string
+        }
+        Returns: Json
+      }
+      team_request_additional: {
+        Args: {
+          _estimated_hours?: number
+          _needed_skill?: string
+          _reason: string
+          _suggested_consultant_id?: string
+          _ticket_id: string
+        }
+        Returns: string
+      }
+      team_requests: {
+        Args: { _ticket_id: string }
+        Returns: {
+          chosen_consultant_id: string
+          chosen_name: string
+          created_at: string
+          created_member_id: string
+          decided_at: string
+          decided_role: string
+          decision_note: string
+          estimated_hours: number
+          mine: boolean
+          needed_skill: string
+          payer: string
+          reason: string
+          request_id: string
+          requester_consultant_id: string
+          requester_name: string
+          status: string
+          suggested_consultant_id: string
+          suggested_name: string
+        }[]
+      }
+      team_requests_sweep: { Args: never; Returns: number }
+      team_respond: {
+        Args: {
+          _accept: boolean
+          _availability?: string
+          _hourly_rate?: number
+          _member_id: string
+          _reason?: string
+        }
+        Returns: Json
+      }
+      team_set_role: {
+        Args: { _member_id: string; _primary: boolean; _role: string }
+        Returns: undefined
+      }
+      team_settings: { Args: never; Returns: Json }
+      team_step_text: { Args: { _step: string }; Returns: string }
+      team_sweep: { Args: never; Returns: Json }
+      team_thread: {
+        Args: { _before?: string; _limit?: number; _ticket_id: string }
+        Returns: {
+          body: string
+          created_at: string
+          message_id: string
+          mine: boolean
+          sender_name: string
+          sender_role: string
+        }[]
+      }
+      team_thread_role: { Args: { _ticket_id: string }; Returns: string }
+      team_ticket_gated: { Args: { _ticket_id: string }; Returns: boolean }
+      team_withdraw_request: {
+        Args: { _request_id: string }
+        Returns: undefined
+      }
       telegram_complete_link: {
         Args: { _chat_id: number; _code_hash: string; _username: string }
         Returns: string
@@ -11073,6 +12561,101 @@ export type Database = {
       ts_num: { Args: { _n: number }; Returns: string }
       ui_translations_get: { Args: { _lang: string }; Returns: Json }
       ui_translations_version: { Args: { _lang: string }; Returns: string }
+      um_apply_roles: {
+        Args: {
+          _actor: string
+          _from_request?: boolean
+          _next: string[]
+          _reason: string
+          _target: string
+        }
+        Returns: Json
+      }
+      um_audit: {
+        Args: {
+          _action: string
+          _actor: string
+          _after: Json
+          _before: Json
+          _extra?: Json
+          _reason: string
+          _target: string
+        }
+        Returns: undefined
+      }
+      um_bool: { Args: { _t: string }; Returns: boolean }
+      um_can: { Args: { _perm: string }; Returns: boolean }
+      um_clean_tags: { Args: { _tags: string[] }; Returns: string[] }
+      um_completion: { Args: { _cid: string }; Returns: number }
+      um_display: { Args: { _uid: string }; Returns: string }
+      um_disposable_domain: { Args: { _email: string }; Returns: boolean }
+      um_emails_with_accounts: {
+        Args: { _emails: string[] }
+        Returns: string[]
+      }
+      um_founding_ids: { Args: never; Returns: string[] }
+      um_guard: {
+        Args: { _bucket: string; _limit: number; _perm: string }
+        Returns: string
+      }
+      um_int: { Args: { _t: string }; Returns: number }
+      um_is_last_super_admin: { Args: { _uid: string }; Returns: boolean }
+      um_jarr: { Args: { _j: Json }; Returns: string[] }
+      um_mask_ip: { Args: { _ip: unknown }; Returns: string }
+      um_notify_super_admins: {
+        Args: { _body: string; _link: string; _title: string }
+        Returns: undefined
+      }
+      um_policy_ok_ids: { Args: never; Returns: string[] }
+      um_record_state: {
+        Args: {
+          _action: string
+          _actor: string
+          _payload?: Json
+          _reason?: string
+          _target: string
+        }
+        Returns: Json
+      }
+      um_revoke_sessions: { Args: { _uid: string }; Returns: number }
+      um_suspended_consultant_ids: { Args: never; Returns: string[] }
+      um_ts: { Args: { _t: string }; Returns: string }
+      um_user_base: {
+        Args: never
+        Returns: {
+          anonymise_after: string
+          avatar_url: string
+          badge: string
+          client_approval: string
+          company: string
+          consultant_id: string
+          country: string
+          created_at: string
+          deleted_at: string
+          email: string
+          email_verified: boolean
+          founding: boolean
+          last_active_at: string
+          last_sign_in_at: string
+          merged_into: string
+          mfa_enabled: boolean
+          name: string
+          open_tickets: number
+          payout_ready: boolean
+          phone: string
+          policy_ok: boolean
+          providers: string[]
+          roles: string[]
+          status: string
+          suspended_reason: string
+          suspended_until: string
+          tags: string[]
+          tenant_ids: string[]
+          tenant_names: string[]
+          user_id: string
+          verification_status: string
+        }[]
+      }
       users_share_engagement: {
         Args: { _user_a: string; _user_b: string }
         Returns: boolean
