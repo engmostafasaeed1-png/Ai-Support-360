@@ -87,8 +87,9 @@ export function safeHref(href: string): string | null {
   } catch { return null; }
 }
 
-export function parseInline(line: string): Inline[] {
+export function parseInline(raw: string): Inline[] {
   const out: Inline[] = [];
+  const line = raw.replace(/!\[[^\]]*\]\([^)]*\)/g, ''); // images only on their own line, brand images only
   const re = /\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)\s]+)\)/g;
   let last = 0;
   let m: RegExpExecArray | null;
@@ -117,7 +118,7 @@ export function parseMessage(md: string): Block[] {
   for (const raw of String(md ?? '').split(/\r?\n/)) {
     const line = raw.trimEnd();
     const button = line.trim().match(/^\[\[([^|\]]{1,60})\|([^\]\s]+)\]\]$/);
-    const image = line.trim().match(/^!\[([^\]]{0,120})\]\(brand:([a-z]+)\)$/);
+    const image = line.trim().match(/^!\[([^\]]{0,120})\]\(([^)\s]+)\)$/);
     const item = line.match(/^\s*[-•*]\s+(.*)$/);
     if (!line.trim()) { flush(); continue; }
     if (button) {
@@ -129,7 +130,8 @@ export function parseMessage(md: string): Block[] {
     }
     if (image) {
       flush();
-      if ((BRAND_IMAGES as readonly string[]).includes(image[2])) blocks.push({ kind: 'image', key: image[2] as BrandImage, alt: image[1] });
+      const key = image[2].startsWith('brand:') ? image[2].slice(6) : '';
+      if ((BRAND_IMAGES as readonly string[]).includes(key)) blocks.push({ kind: 'image', key: key as BrandImage, alt: image[1] });
       continue; // any other image is dropped
     }
     if (item) { if (para.length) { blocks.push({ kind: 'p', parts: parseInline(para.join('\n')) }); para = []; } list.push(parseInline(item[1])); continue; }
