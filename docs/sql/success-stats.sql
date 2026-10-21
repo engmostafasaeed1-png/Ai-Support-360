@@ -226,9 +226,9 @@ AS $$
     SELECT t.id, t.title, t.status::TEXT AS t_status, t.close_outcome, t.close_outcome_at, t.resolved_at, t.updated_at AS t_updated,
            t.merged_into_ticket_id, t.client_id,
            tm.status AS m_status, tm.ended_at AS m_ended, tm.updated_at AS m_updated,
-           (COALESCE(tm.started, false) OR t.consultant_id = _cid OR (tm.ticket_id IS NULL AND asg.ticket_id IS NOT NULL)) AS started,
-           (COALESCE(tm.started, false) AND tm.status IN ('removed', 'replaced', 'withdrawn', 'expired'))
-             OR (tm.ticket_id IS NULL AND COALESCE(asg.all_removed, false) AND t.consultant_id IS DISTINCT FROM _cid) AS ended_badly,
+           COALESCE(tm.started, false) OR t.consultant_id IS NOT DISTINCT FROM _cid OR (tm.ticket_id IS NULL AND asg.ticket_id IS NOT NULL) AS started,
+           COALESCE((COALESCE(tm.started, false) AND tm.status IN ('removed', 'replaced', 'withdrawn', 'expired'))
+             OR (tm.ticket_id IS NULL AND COALESCE(asg.all_removed, false) AND t.consultant_id IS DISTINCT FROM _cid), false) AS ended_badly,
            asg.updated_at AS a_updated,
            o.kind AS override,
            (t.status::TEXT = 'closed'

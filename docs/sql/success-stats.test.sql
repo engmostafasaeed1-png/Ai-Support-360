@@ -93,10 +93,10 @@ BEGIN
   PERFORM pg_temp.check(o ->> '15' = 'not_solved', 'old removal not solved');
   PERFORM pg_temp.check(o ->> '16' = 'not_solved', 'withdrawn after start not solved');
   SELECT * INTO r FROM public.consultant_success_stats x WHERE x.consultant_id = (SELECT cons FROM _ids);
-  -- solved 1, 2, 14; not solved 5, 15, 16; ticket 10 is still in progress.
-  PERFORM pg_temp.check(r.requests_total = 6 AND r.solved = 3 AND r.not_solved = 3, format('all-time counts %s/%s/%s', r.requests_total, r.solved, r.not_solved));
-  PERFORM pg_temp.check(r.requests_12m = 5 AND r.solved_12m = 3, '12-month counts');
-  PERFORM pg_temp.check(r.level = 'none' AND r.awaiting_confirmation = 1 AND r.open_count = 2, 'level none at 50 %, awaiting/open');
+  -- solved 1, 2, 10, 14; not solved 5, 15, 16 (15 ended more than 12 months ago).
+  PERFORM pg_temp.check(r.requests_total = 7 AND r.solved = 4 AND r.not_solved = 3, format('all-time counts %s/%s/%s', r.requests_total, r.solved, r.not_solved));
+  PERFORM pg_temp.check(r.requests_12m = 6 AND r.solved_12m = 4, '12-month counts');
+  PERFORM pg_temp.check(r.level = 'none' AND r.awaiting_confirmation = 1 AND r.open_count = 1, 'level none at 57 %, awaiting/open');
   PERFORM pg_temp.check((r.excluded ->> 'never_started')::int = 4 AND (r.excluded ->> 'voided')::int = 1 AND (r.excluded ->> 'merged')::int = 1 AND (r.excluded ->> 'test')::int = 1, 'excluded counts');
 END $$;
 
