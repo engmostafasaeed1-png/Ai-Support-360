@@ -355,10 +355,10 @@ export default function ConsultantsPage() {
           {filtered.map((c) => (
             <Card key={c.id} className="min-w-0 rounded-2xl border-border/50 hover:shadow-premium transition-all group">
               <CardContent className="p-5">
-                <div className="flex items-start gap-4">
+                <div className="flex flex-col items-start gap-3 sm:flex-row sm:gap-4">
                   <ConsultantRing consultantId={c.id} name={c.name} initials={c.avatar} avatarUrl={c.avatar_url} size="md" className="mb-2"
                     rating={c.rating} reviews={c.reviews} badge={c.ai_interview_badge} verified={c.verification_status === 'verified'} statusClass={STATE_META[c.status].dot} />
-                  <div className="flex-1 min-w-0">
+                  <div className="w-full flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold text-foreground">{c.name}</h3>
                       <FavouriteButton consultantId={c.id} name={c.name} />
