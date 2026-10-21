@@ -115,6 +115,8 @@ export const RING_STRINGS = {
   tier: ['Badge: {tier}', 'الشارة: {tier}'],
   new: ['New', 'جديد'],
   open: ['{name}: performance details', '{name}: تفاصيل الأداء'],
+  srRating: ['Client rating', 'تقييم العملاء'],
+  srResp: ['Responsiveness', 'سرعة الاستجابة'],
 } as const;
 
 export const TIER_LABEL: Record<RingTier, [string, string]> = {
@@ -141,9 +143,15 @@ export interface RingSummary {
   text: string;
   /** Lines of the popover. */
   lines: string[];
-  /** Compact centre-bottom label for large sizes, e.g. "4.8 ★ | Fast reply". */
+  /** Compact label, e.g. "4.8 ★ | Fast reply". */
   label: string;
+  /** Always-visible pills: "4.8 (23)" and "Fast reply - 18 min" (null while responsiveness is private). */
+  pills: { rating: RingPill; resp: RingPill | null };
+  /** Number for the tiny badge on xs/sm rings: "4.8" or "New". */
+  short: string;
 }
+
+export interface RingPill { text: string; tone: RingTone; sr: string; dotted?: boolean }
 
 export interface RingInput {
   rating: number | null | undefined;
@@ -180,41 +188,126 @@ export function ringSummary(i: RingInput): RingSummary {
   const right = resp.state === 'ok' && resp.level && resp.level !== 'new' ? pick(REPLY_LABEL[resp.level], lang)
     : resp.state === 'new' && rating.state !== 'none' ? newWord : null;
   const label = right ? `${left} | ${right}` : left;
-  return { rating, resp, tier, text: lines.join('; '), lines, label };
+  const ratingPill: RingPill = {
+    text: rating.state === 'none' ? newWord : `${fmtRating(rating.rating as number)} (${rating.reviews})`,
+    tone: rating.tone, sr: pick(RING_STRINGS.srRating, lang), dotted: rating.state === 'low',
+  };
+  const respPill: RingPill | null = resp.state === 'hidden' ? null : {
+    text: resp.state === 'ok' && resp.level && resp.level !== 'new'
+      ? `${pick(REPLY_LABEL[resp.level], lang)} - ${formatMinutes(resp.median, lang === 'ar')}` : newWord,
+    tone: resp.tone, sr: pick(RING_STRINGS.srResp, lang),
+  };
+  const short = rating.state === 'none' ? newWord : fmtRating(rating.rating as number);
+  return { rating, resp, tier, text: lines.join('; '), lines, label, pills: { rating: ratingPill, resp: respPill }, short };
 }
 
 // ---------------------------------------------------------------------------------------------------- geometry
 
-/** viewBox 0 0 100 100. Outer arc = rating, inner arc = responsiveness. */
-export const RING_GEOMETRY = { outerR: 45, innerR: 36, outerW: 6, innerW: 5, photoInset: 18 } as const;
+export type RingSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+
+/**
+ * Pixel spec per size: outer / inner stroke, gap between the arcs, gap between photo and inner arc.
+ * md is the reference (6 / 5 / 3 / 4 px); nothing is thinner than 3 px.
+ */
+export const RING_SIZES: Record<RingSize, { px: number; outerW: number; innerW: number; gap: number; photoGap: number; text: string; chip: boolean; short: boolean; glow: number }> = {
+  xs: { px: 36, outerW: 3, innerW: 3, gap: 1.5, photoGap: 2, text: 'text-[8px]', chip: false, short: true, glow: 4 },
+  sm: { px: 52, outerW: 4, innerW: 3.5, gap: 2, photoGap: 3, text: 'text-[10px]', chip: true, short: true, glow: 4 },
+  md: { px: 72, outerW: 6, innerW: 5, gap: 3, photoGap: 4, text: 'text-sm', chip: true, short: false, glow: 6 },
+  lg: { px: 96, outerW: 7, innerW: 6, gap: 3.5, photoGap: 4.5, text: 'text-lg', chip: true, short: false, glow: 7 },
+  xl: { px: 136, outerW: 8, innerW: 7, gap: 4, photoGap: 5, text: 'text-3xl sm:text-4xl', chip: true, short: false, glow: 8 },
+};
+
+/** Thin outline (card colour) under the arcs, so they stand out on photos and maps. */
+export const RING_OUTLINE = 1;
+
+export interface RingGeometry { px: number; c: number; outerR: number; innerR: number; outerW: number; innerW: number; photoR: number }
+
+export function ringGeometry(size: RingSize): RingGeometry {
+  const s = RING_SIZES[size];
+  const c = s.px / 2;
+  const outerR = c - RING_OUTLINE - s.outerW / 2;
+  const innerR = outerR - s.outerW / 2 - s.gap - s.innerW / 2;
+  const photoR = innerR - s.innerW / 2 - s.photoGap;
+  return { px: s.px, c, outerR, innerR, outerW: s.outerW, innerW: s.innerW, photoR };
+}
+
+const f3 = (n: number) => Math.round(n * 1000) / 1000;
+
+/** Point on the circle at `pct` % (0 = 12 o'clock, clockwise). */
+export function pointAt(pct: number, r: number, cx = 50, cy = 50): [number, number] {
+  const a = (Math.max(0, Math.min(100, pct)) / 100) * 2 * Math.PI;
+  return [f3(cx + r * Math.sin(a)), f3(cy - r * Math.cos(a))];
+}
+
+/** Arc from `from` % to `to` % (clockwise). */
+export function arcRange(from: number, to: number, r: number, cx = 50, cy = 50): string {
+  const a = Math.max(0, Math.min(100, from));
+  const b = Math.min(Math.max(a, to), a + 99.99, 100);
+  if (b - a <= 0) return '';
+  const [x1, y1] = pointAt(a, r, cx, cy);
+  const [x2, y2] = pointAt(Math.min(b, 99.99), r, cx, cy);
+  return `M ${x1} ${y1} A ${f3(r)} ${f3(r)} 0 ${b - a > 50 ? 1 : 0} 1 ${x2} ${y2}`;
+}
 
 /**
  * SVG path of an arc that starts at 12 o'clock and runs clockwise for `pct` % of the circle.
  * Drawn as a path (not a rotated circle), so it is the same in left-to-right and right-to-left pages.
  */
 export function arcPath(pct: number, r: number, cx = 50, cy = 50): string {
-  const p = Math.max(0, Math.min(100, pct));
-  if (p <= 0) return '';
-  const a = (Math.min(p, 99.99) / 100) * 2 * Math.PI;
-  const x = cx + r * Math.sin(a);
-  const y = cy - r * Math.cos(a);
-  const large = p > 50 ? 1 : 0;
-  const f = (n: number) => Math.round(n * 1000) / 1000;
-  return `M ${f(cx)} ${f(cy - r)} A ${f(r)} ${f(r)} 0 ${large} 1 ${f(x)} ${f(y)}`;
+  return pct > 0 ? arcRange(0, pct, r, cx, cy) : '';
 }
 
-/** Stroke pattern: dotted and lighter below the minimum reviews, dashed for low (red) values, solid otherwise. */
-export function arcPattern(tone: RingTone, lowSample: boolean): { dash: string | null; opacity: number } {
-  if (lowSample) return { dash: '1.5 3', opacity: 0.55 };
-  if (tone === 'red') return { dash: '5 2.5', opacity: 1 };
+/** Short pieces of the arc, each with its place (0-1) in the two-stop gradient, so the colour runs along the arc. */
+export function arcSegments(pct: number, r: number, cx = 50, cy = 50): Array<{ d: string; t: number }> {
+  const p = Math.max(0, Math.min(100, pct));
+  if (p <= 0) return [];
+  const n = Math.max(2, Math.min(16, Math.ceil(p / 6)));
+  const step = p / n;
+  return Array.from({ length: n }, (_, i) => ({
+    // A small overlap hides hairline seams between the pieces.
+    d: arcRange(i * step, Math.min(p, (i + 1) * step + (i < n - 1 ? 0.4 : 0)), r, cx, cy),
+    t: n === 1 ? 0 : (i + 0.5) / n,
+  }));
+}
+
+/**
+ * Stroke pattern, scaled to the stroke width: round dots and lighter below the minimum reviews,
+ * dashes for low (red) values, solid otherwise. Colour is never the only signal.
+ */
+export function arcPattern(tone: RingTone, lowSample: boolean, w = 6): { dash: string | null; opacity: number } {
+  if (lowSample) return { dash: `0.01 ${f3(w * 1.7)}`, opacity: 0.6 };
+  if (tone === 'red') return { dash: `${f3(w * 0.9)} ${f3(w * 2)}`, opacity: 1 };
   return { dash: null, opacity: 1 };
 }
 
-/** CSS colour of a tone through the design tokens (works in light and dark mode). */
-export const TONE_COLOR: Record<RingTone, string> = {
-  red: 'hsl(var(--destructive))',
-  amber: 'hsl(var(--warning))',
-  green: 'hsl(var(--success))',
-  gold: 'hsl(var(--badge-gold))',
-  none: 'hsl(var(--muted-foreground) / 0.35)',
+/** Two gradient stops per tone, as design tokens (index.css): red→crimson, amber→orange, green→teal, gold→yellow. */
+export const TONE_VARS: Record<RingTone, [string, string]> = {
+  red: ['--ring-red-a', '--ring-red-b'],
+  amber: ['--ring-amber-a', '--ring-amber-b'],
+  green: ['--ring-green-a', '--ring-green-b'],
+  gold: ['--ring-gold-a', '--ring-gold-b'],
+  none: ['--ring-none', '--ring-none'],
 };
+
+/** CSS colour of a tone (first stop), e.g. for dots and the glow. */
+export const TONE_COLOR: Record<RingTone, string> = {
+  red: 'hsl(var(--ring-red-a))', amber: 'hsl(var(--ring-amber-a))', green: 'hsl(var(--ring-green-a))', gold: 'hsl(var(--ring-gold-a))', none: 'hsl(var(--ring-none))',
+};
+
+/** Colour at place t (0-1) between the two stops. */
+export function toneMix(tone: RingTone, t: number): string {
+  const [a, b] = TONE_VARS[tone];
+  const pb = Math.round(Math.max(0, Math.min(1, t)) * 100);
+  return `color-mix(in oklab, hsl(var(${a})) ${100 - pb}%, hsl(var(${b})) ${pb}%)`;
+}
+
+/** Faint tinted track (the empty part), in the arc's own colour. */
+export function trackColor(tone: RingTone): string {
+  return tone === 'none' ? 'hsl(var(--ring-none) / 0.22)' : `hsl(var(${TONE_VARS[tone][0]}) / 0.16)`;
+}
+
+/** Gradient for dots and legend swatches. */
+export function toneGradient(tone: RingTone, angle = 135): string {
+  const [a, b] = TONE_VARS[tone];
+  return `linear-gradient(${angle}deg, hsl(var(${a})), hsl(var(${b})))`;
+}
