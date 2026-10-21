@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import TelegramAlertsCard from '@/components/consultant/TelegramAlertsCard';
 import PushAlertsCard from '@/components/consultant/PushAlertsCard';
 import NotificationPauseCard from '@/components/notifications/NotificationPauseCard';
+import NameFormatPicker from '@/components/consultant/NameFormatPicker';
 
 type PrefKey = 'new_case_alerts' | 'profile_visible' | 'show_availability';
 type Prefs = Record<PrefKey, boolean>;
@@ -100,6 +101,7 @@ export default function ConsultantSettingsPage() {
             <CardContent className="space-y-4">
               {row('profile_visible', 'Profile visible to clients', 'When off, clients who do not work with you yet do not find your profile in the consultants list or on the map. Clients you already work with still see it.')}
               {row('show_availability', 'Show availability status', 'When off, clients see you as Offline and do not see your weekly hours.')}
+              <NameFormatPicker consultantId={consultantId} />
             </CardContent>
           </Card>
           <NotificationPauseCard />
