@@ -581,7 +581,8 @@
     "send_request": "Send Request",
     "reinterview_requested": "Re-Interview Requested",
     "reinterview_body": "You have been requested for a {{type}} re-interview.",
-    "reinterview_sent": "Re-interview request sent"
+    "reinterview_sent": "Re-interview request sent",
+    "start_ai": "Start AI Interview"
   },
   "ai_interview": {
     "title": "AI Interview",

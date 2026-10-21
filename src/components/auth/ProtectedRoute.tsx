@@ -71,15 +71,11 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
         ? supabase.from('tenant_members').select('tenant_id').eq('user_id', session.user.id).limit(1)
         : Promise.resolve({ data: [{ tenant_id: 'dummy' }] }),
 
-      // Onboarding check
+      // Onboarding check (clients only). Consultants are never sent back to their profile: the setup guide, banners
+      // and the server-side bid/assignment gates handle an incomplete profile, so every page stays reachable.
       requiredRole === 'client'
         ? supabase.from('client_profiles')
             .select('onboarding_completed, company_name, company_size, industry, sap_modules, phone')
-            .eq('user_id', session.user.id)
-            .maybeSingle()
-        : requiredRole === 'consultant'
-        ? supabase.from('profiles')
-            .select('onboarding_completed')
             .eq('user_id', session.user.id)
             .maybeSingle()
         : Promise.resolve({ data: { onboarding_completed: true } }),
@@ -93,8 +89,6 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
     if (roleOk && hasTenant) {
       if (requiredRole === 'client') {
         needsOnboarding = !getClientOnboardingState(onboardingResult.data).completed;
-      } else if (requiredRole === 'consultant') {
-        needsOnboarding = !onboardingResult.data || !(onboardingResult.data as any).onboarding_completed;
       }
     }
 
@@ -134,15 +128,13 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
   }
 
   const isOnClientSetupPage = location.pathname === '/client/companies' || location.pathname === '/client/onboarding';
-  const isOnConsultantOnboardingPage = location.pathname === '/consultant/onboarding' || location.pathname === '/consultant/profile';
 
   if (requiredRole === 'client' && !state.hasTenant && !isOnClientSetupPage) {
     return <Navigate to="/client/companies" replace />;
   }
 
-  if (state.needsOnboarding && !isOnClientSetupPage && !isOnConsultantOnboardingPage) {
-    const onboardingPath = requiredRole === 'client' ? '/client/onboarding' : '/consultant/profile?section=setup';
-    return <Navigate to={onboardingPath} replace />;
+  if (requiredRole === 'client' && state.needsOnboarding && !isOnClientSetupPage) {
+    return <Navigate to="/client/onboarding" replace />;
   }
 
   return <TwoFactorGate>{children}</TwoFactorGate>;

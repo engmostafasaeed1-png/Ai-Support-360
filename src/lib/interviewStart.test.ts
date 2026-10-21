@@ -70,3 +70,29 @@ describe('single-flight creation', () => {
     expect(insert).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('H3: sessions stuck as "pending" by the old request dialog', () => {
+  it('the owner consultant resumes the newest of them; nothing is created or deleted', async () => {
+    // Same shape as production: self-requested, never started, the newest one more than 24 h old.
+    const rows = [
+      { id: 'p4', status: 'pending', created_at: '2026-10-20T06:45:21Z', interview_style: 'standard' },
+      { id: 'p3', status: 'pending', created_at: '2026-10-19T11:14:00Z', interview_style: 'standard' },
+      { id: 'p2', status: 'pending', created_at: '2026-10-19T11:05:43Z', interview_style: 'standard' },
+      { id: 'p1', status: 'pending', created_at: '2026-10-19T11:03:21Z', interview_style: 'standard' },
+    ];
+    const insert = vi.fn();
+    const del = vi.fn();
+    const db = { from: () => {
+      const chain: Record<string, unknown> = {};
+      for (const m of ['select', 'eq', 'in', 'order']) chain[m] = () => chain;
+      chain.limit = async () => ({ data: rows, error: null });
+      chain.insert = (p: unknown) => { insert(p); return chain; };
+      chain.delete = () => { del(); return chain; };
+      return chain;
+    } };
+    const res = await resolveAiInterviewSession('stuck-consultant', db, now + 24 * 3600_000);
+    expect(res).toEqual({ id: 'p4', resumed: 'stale_pending' });
+    expect(insert).not.toHaveBeenCalled();
+    expect(del).not.toHaveBeenCalled();
+  });
+});
