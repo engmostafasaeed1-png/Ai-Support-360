@@ -144,15 +144,21 @@ describe('ConsultantMap', () => {
     expect((pinsDrawn()[0].icon.html as HTMLElement).querySelector('[data-part="ring-short"]')?.textContent).toBe('4.8');
   });
 
-  it('shows the Success medal, band and counts in the popup when the success display is on', () => {
+  it('shows the Success level stars and counts in the popup (no band, no medal on the ring)', () => {
     successState.on = true;
     try {
       render(<ConsultantMap consultants={[person('a', { rating: 4.8, reviews: 12 })]} />);
       const popup = pinsDrawn()[0].popup as HTMLElement;
-      expect(popup.querySelector('[data-part="ring-pill-success"]')?.textContent).toContain('42 requests · 38 solved · 90 % (Gold)');
-      expect(popup.querySelector('[data-part="ring-medal"]')?.getAttribute('data-level')).toBe('gold');
-      expect(popup.querySelector('[data-kind="success"]')?.getAttribute('data-level')).toBe('gold');
-      expect(popup.querySelector('[data-part="ring"]')?.getAttribute('aria-label')).toContain('Success level: Gold - 38 of 42 requests solved (90 %) - last 12 months 90 %');
+      const grp = popup.querySelector('[data-part="success-level"]') as HTMLElement;
+      expect(grp.getAttribute('aria-label')).toBe('Success level Gold, 3 of 4 stars, 38 of 42 requests solved');
+      expect(grp.textContent).toContain('Success: Gold');
+      expect(grp.querySelectorAll('[data-part="success-stars"] svg[data-on="true"]').length).toBe(3);
+      expect(grp.querySelectorAll('[data-part="success-stars"] svg[data-on]').length).toBe(4);
+      expect(popup.querySelector('[data-part="ring-pill-success"]')?.textContent).toBe('42 requests · 38 solved · 90 %');
+      expect(popup.querySelector('[data-part="review-star"] polygon')?.getAttribute('fill')).toBe('none');
+      expect(popup.querySelector('[data-part="ring-medal"]')).toBeNull();
+      expect(popup.querySelector('[data-kind="success"]')).toBeNull();
+      expect(popup.querySelector('[data-part="ring"]')?.getAttribute('aria-label')).toContain('Success level: Gold (3 of 4 stars) - 38 of 42 requests solved (90 %) - last 12 months 90 %');
     } finally { successState.on = false; }
   });
 

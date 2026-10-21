@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  compareSuccessLevel, compareSuccessRate, meetsSuccessLevel, meetsSuccessRate, parseSuccessSettings, successCompactText, successLabel,
+  compareSuccessLevel, compareSuccessRate, meetsSuccessLevel, meetsSuccessRate, parseSuccessSettings, successCompactText, successLabel, successStars, successStarsAria, successStarsLabel,
   successLevelOf, successLines, successPct, successPillText, successProgress, successProgressText, successSettingsProblems, successView,
   SUCCESS_DEFAULTS, type SuccessCounts,
 } from './successLevel';
@@ -32,7 +32,9 @@ describe('minimum sample (default 5)', () => {
     expect(v.state).toBe('new');
     expect(v.level).toBeNull();
     expect(v.pct).toBeNull();
-    expect(successPillText(v)).toBe('4 requests · 4 solved · New');
+    expect(successPillText(v)).toBe('4 requests · 4 solved');
+    expect(successStarsLabel(v)).toBe('Success: New');
+    expect(successStars(v.level)).toBe(0);
     expect(successCompactText(v)).toBe('New');
   });
   it('follows the admin setting', () => {
@@ -45,6 +47,8 @@ describe('minimum sample (default 5)', () => {
     expect(v.state).toBe('none');
     expect(v.pct).toBeNull();
     expect(successPillText(v)).toBe('12 requests · 6 solved');
+    expect(successStarsLabel(v)).toBe('Success');
+    expect(successStarsAria(v)).toBe('No Success level, 6 of 12 requests solved');
     expect(successCompactText(v)).toBe('6/12');
   });
   it('shows nothing at all while switched off or unknown', () => {
@@ -66,22 +70,30 @@ describe('settings', () => {
 
 describe('texts (English and Arabic)', () => {
   const gold = successView(true, counts(42, 38, 20, 18));
-  it('pill: "42 requests · 38 solved · 90 % (Gold)"', () => {
-    expect(successPillText(gold)).toBe('42 requests · 38 solved · 90 % (Gold)');
-    expect(successPillText(gold, 'ar')).toBe('الطلبات: 42 · المحلولة: 38 · 90 ٪ (ذهبي)');
+  it('counts pill "42 requests · 38 solved · 90 %" with the label "Success: Gold" next to the stars', () => {
+    expect(successPillText(gold)).toBe('42 requests · 38 solved · 90 %');
+    expect(successPillText(gold, 'ar')).toBe('الطلبات: 42 · المحلولة: 38 · 90 ٪');
+    expect(successStarsLabel(gold)).toBe('Success: Gold');
+    expect(successStarsLabel(gold, 'ar')).toBe('النجاح: ذهبي');
     expect(successCompactText(gold)).toBe('90 %');
     expect(successCompactText(gold, 'ar')).toBe('90 ٪');
   });
   it('tooltip line with the last 12 months and the minimum-sample note', () => {
     expect(successLines(gold)).toEqual([
-      'Success level: Gold - 38 of 42 requests solved (90 %) - last 12 months 90 %',
+      'Success level: Gold (3 of 4 stars) - 38 of 42 requests solved (90 %) - last 12 months 90 %',
       'A Success level shows after 5 finished requests.',
     ]);
-    expect(successLines(gold, 'ar')[0]).toBe('مستوى النجاح: ذهبي - تم حل 38 من 42 طلبًا (90 ٪) - آخر 12 شهرًا 90 ٪');
+    expect(successLines(gold, 'ar')[0]).toBe('مستوى النجاح: ذهبي (3 من 4 نجوم) - تم حل 38 من 42 طلبًا (90 ٪) - آخر 12 شهرًا 90 ٪');
+  });
+  it('accessible name of the stars: "Success level Gold, 3 of 4 stars, 38 of 42 requests solved"', () => {
+    expect(successStarsAria(gold)).toBe('Success level Gold, 3 of 4 stars, 38 of 42 requests solved');
+    expect(successStarsAria(gold, 'ar')).toBe('مستوى النجاح ذهبي، 3 من 4 نجوم، تم حل 38 من 42 طلبًا');
+    expect(successStarsAria(successView(true, counts(4, 4)))).toBe('Success level New, no stars yet, 4 of 4 requests solved');
+    expect(successStarsAria(successView(false, counts(42, 38)))).toBeNull();
   });
   it('last 12 months below the minimum shows counts, not a percentage', () => {
     const v = successView(true, counts(42, 38, 3, 3));
-    expect(successLines(v)[0]).toBe('Success level: Gold - 38 of 42 requests solved (90 %) - last 12 months 3 of 3 solved');
+    expect(successLines(v)[0]).toBe('Success level: Gold (3 of 4 stars) - 38 of 42 requests solved (90 %) - last 12 months 3 of 3 solved');
   });
   it('never calls the level just "Gold"', () => {
     expect(successLabel('gold')).toBe('Success: Gold');
@@ -89,7 +101,19 @@ describe('texts (English and Arabic)', () => {
   });
   it('New with no finished requests', () => {
     expect(successLines(successView(true, counts(0, 0)))[0]).toBe('Success: New - no finished requests yet');
-    expect(successPillText(successView(true, counts(0, 0)))).toBe('New');
+    expect(successPillText(successView(true, counts(0, 0)))).toBe('');
+    expect(successStarsLabel(successView(true, counts(0, 0)))).toBe('Success: New');
+  });
+});
+
+describe('level stars (1 to 4 of 4 slots)', () => {
+  it.each([
+    [59, 0], [60, 1], [79, 1], [80, 2], [84, 2], [85, 3], [99, 3], [100, 4],
+  ] as const)('%i of 100 solved shows %i stars', (solved, stars) => {
+    expect(successStars(successView(true, counts(100, solved)).level)).toBe(stars);
+  });
+  it('no stars below the minimum sample, even at 100 %', () => {
+    expect(successStars(successView(true, counts(4, 4)).level)).toBe(0);
   });
 });
 

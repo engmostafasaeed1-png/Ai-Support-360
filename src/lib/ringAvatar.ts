@@ -7,7 +7,7 @@
 import type { RespLevel } from '../../supabase/functions/_shared/responsiveness';
 import { formatMinutes, LEVEL_LABEL } from '@/lib/responsivenessFormat';
 import {
-  successCompactText, successLabel, successLines, successPillText, successView, SUCCESS_DEFAULTS,
+  successCompactText, successLines, successPillText, successStars, successStarsAria, successStarsHint, successStarsLabel, successView, SUCCESS_DEFAULTS,
   type SuccessCounts, type SuccessLevel, type SuccessSettings, type SuccessView,
 } from '@/lib/successLevel';
 
@@ -160,8 +160,12 @@ export interface RingSummary {
 }
 
 export interface RingPill { text: string; tone: RingTone; sr: string; dotted?: boolean }
-/** "42 requests · 38 solved · 90 % (Gold)"; `compact` = medal text for small places ("90 %"); `label` = "Success: Gold". */
-export interface SuccessPill { text: string; compact: string; level: SuccessLevel | null; sr: string; label: string | null }
+/**
+ * Success as level stars (never on the ring): `stars` filled of 4, `label` = "Success: Gold", `text` = counts pill
+ * "42 requests · 38 solved · 90 %" ('' = nothing finished yet), `compact` = hover text of the stars-only form ("90 %"),
+ * `aria` = "Success level Gold, 3 of 4 stars, 38 of 42 requests solved".
+ */
+export interface SuccessPill { text: string; compact: string; level: SuccessLevel | null; stars: number; sr: string; label: string; aria: string }
 
 export interface RingInput {
   rating: number | null | undefined;
@@ -195,6 +199,7 @@ export function ringSummary(i: RingInput): RingSummary {
   }
   const success = successView(i.success?.publicOn ?? false, i.success?.counts, i.success?.settings ?? SUCCESS_DEFAULTS);
   lines.push(...successLines(success, lang, i.success?.settings ?? SUCCESS_DEFAULTS));
+  if (success.state !== 'hidden') lines.push(successStarsHint(lang));
   if (tier) lines.push(tier === 'verified' ? pick(RING_STRINGS.verified, lang) : fill(pick(RING_STRINGS.tier, lang), { tier: pick(TIER_LABEL[tier], lang) }));
 
   const newWord = pick(RING_STRINGS.new, lang);
@@ -214,8 +219,8 @@ export function ringSummary(i: RingInput): RingSummary {
   const short = rating.state === 'none' ? newWord : fmtRating(rating.rating as number);
   const successText = successPillText(success, lang);
   const successPill: SuccessPill | null = successText == null ? null : {
-    text: successText, compact: successCompactText(success, lang) ?? '', level: success.level, sr: pick(RING_STRINGS.srSuccess, lang),
-    label: success.level ? successLabel(success.level, lang) : null,
+    text: successText, compact: successCompactText(success, lang) ?? '', level: success.level, stars: successStars(success.level),
+    sr: pick(RING_STRINGS.srSuccess, lang), label: successStarsLabel(success, lang) ?? '', aria: successStarsAria(success, lang) ?? '',
   };
   return { rating, resp, tier, success, text: lines.join('; '), lines, label, pills: {
     rating: ratingPill, resp: respPill, success: successPill,
@@ -231,28 +236,27 @@ export type RingSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
  * Pixel spec per size: outer / inner stroke, gap between the arcs, gap between photo and inner arc.
  * md is the reference (6 / 5 / 3 / 4 px); nothing is thinner than 3 px.
  */
-export const RING_SIZES: Record<RingSize, { px: number; outerW: number; innerW: number; gap: number; photoGap: number; successW: number; successGap: number; text: string; chip: boolean; short: boolean; glow: number }> = {
-  xs: { px: 36, outerW: 3, innerW: 3, gap: 1.5, photoGap: 2, successW: 2, successGap: 1, text: 'text-[8px]', chip: false, short: true, glow: 4 },
-  sm: { px: 52, outerW: 4, innerW: 3.5, gap: 2, photoGap: 3, successW: 2.5, successGap: 1.5, text: 'text-[10px]', chip: true, short: true, glow: 4 },
-  md: { px: 72, outerW: 6, innerW: 5, gap: 3, photoGap: 4, successW: 3, successGap: 2, text: 'text-sm', chip: true, short: false, glow: 6 },
-  lg: { px: 96, outerW: 7, innerW: 6, gap: 3.5, photoGap: 4.5, successW: 3.5, successGap: 2, text: 'text-lg', chip: true, short: false, glow: 7 },
-  xl: { px: 136, outerW: 8, innerW: 7, gap: 4, photoGap: 5, successW: 4, successGap: 2.5, text: 'text-3xl sm:text-4xl', chip: true, short: false, glow: 8 },
+export const RING_SIZES: Record<RingSize, { px: number; outerW: number; innerW: number; gap: number; photoGap: number; text: string; chip: boolean; short: boolean; glow: number }> = {
+  xs: { px: 36, outerW: 3, innerW: 3, gap: 1.5, photoGap: 2, text: 'text-[8px]', chip: false, short: true, glow: 4 },
+  sm: { px: 52, outerW: 4, innerW: 3.5, gap: 2, photoGap: 3, text: 'text-[10px]', chip: true, short: true, glow: 4 },
+  md: { px: 72, outerW: 6, innerW: 5, gap: 3, photoGap: 4, text: 'text-sm', chip: true, short: false, glow: 6 },
+  lg: { px: 96, outerW: 7, innerW: 6, gap: 3.5, photoGap: 4.5, text: 'text-lg', chip: true, short: false, glow: 7 },
+  xl: { px: 136, outerW: 8, innerW: 7, gap: 4, photoGap: 5, text: 'text-3xl sm:text-4xl', chip: true, short: false, glow: 8 },
 };
 
 /** Thin outline (card colour) under the arcs, so they stand out on photos and maps. */
 export const RING_OUTLINE = 1;
 
-export interface RingGeometry { px: number; c: number; outerR: number; innerR: number; outerW: number; innerW: number; photoR: number; successR: number | null; successW: number }
+export interface RingGeometry { px: number; c: number; outerR: number; innerR: number; outerW: number; innerW: number; photoR: number }
 
-/** With `withSuccess` a thin third band sits outside the rating arc (same box size, slightly smaller photo). */
-export function ringGeometry(size: RingSize, withSuccess = false): RingGeometry {
+/** Two arcs only (outer rating, inner responsiveness); Success is shown as level stars beside the name, never on the ring. */
+export function ringGeometry(size: RingSize): RingGeometry {
   const s = RING_SIZES[size];
   const c = s.px / 2;
-  const successR = withSuccess ? c - RING_OUTLINE - s.successW / 2 : null;
-  const outerR = successR != null ? successR - s.successW / 2 - s.successGap - s.outerW / 2 : c - RING_OUTLINE - s.outerW / 2;
+  const outerR = c - RING_OUTLINE - s.outerW / 2;
   const innerR = outerR - s.outerW / 2 - s.gap - s.innerW / 2;
   const photoR = innerR - s.innerW / 2 - s.photoGap;
-  return { px: s.px, c, outerR, innerR, outerW: s.outerW, innerW: s.innerW, photoR, successR, successW: s.successW };
+  return { px: s.px, c, outerR, innerR, outerW: s.outerW, innerW: s.innerW, photoR };
 }
 
 const f3 = (n: number) => Math.round(n * 1000) / 1000;

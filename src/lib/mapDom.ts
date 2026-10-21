@@ -4,7 +4,7 @@
 import { STATE_META, type AvailabilityState } from './mapMarkers';
 import type { LinkState } from './consultantLinks';
 import { arcPath, arcPattern, arcSegments, pointAt, ringGeometry, RING_OUTLINE, RING_SIZES, toneGradient, toneMix, TONE_COLOR, TONE_VARS, trackColor, type RingPill, type RingSummary } from './ringAvatar';
-import { successColor, successGradient, successMix, SUCCESS_VARS } from './successLevel';
+import { successColor, SUCCESS_STAR_SLOTS, SUCCESS_VARS, type SuccessLevel } from './successLevel';
 
 export interface PinView {
   id: string;
@@ -250,6 +250,53 @@ function lightSurface(node: HTMLElement): void {
     '--success-gold-a': '44 95% 36%', '--success-gold-b': '50 92% 33%', '--success-platinum-a': '200 60% 44%', '--success-platinum-b': '215 55% 52%',
   };
   for (const [k, v] of Object.entries(light)) node.style.setProperty(k, v);
+  node.style.setProperty('--review-star', '42 96% 40%');
+  node.style.setProperty('--muted-foreground', '215 16% 40%');
+}
+
+const STAR = '12,1.8 15.1,8.4 22.2,9.2 16.9,14 18.4,21.1 12,17.5 5.6,21.1 7.1,14 1.8,9.2 8.9,8.4';
+function starSvg(fill: string, stroke: string, size: number, width = 1.6): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
+  svg.setAttribute('aria-hidden', 'true');
+  const p = document.createElementNS(SVG_NS, 'polygon');
+  p.setAttribute('points', STAR);
+  p.setAttribute('fill', fill);
+  p.setAttribute('stroke', stroke);
+  p.setAttribute('stroke-width', String(width));
+  p.setAttribute('stroke-linejoin', 'round');
+  svg.append(p);
+  return svg;
+}
+
+/** DOM twin of LevelStars: rosette + 4 slots, filled by level (faint for the rest). */
+export function levelStarsDom(level: SuccessLevel | null, stars: number): HTMLElement {
+  const g = make('span', { display: 'inline-flex', alignItems: 'center', gap: '1px', flexShrink: '0' });
+  g.dataset.part = 'success-stars';
+  g.dataset.level = level ?? 'none';
+  g.dataset.stars = String(stars);
+  g.setAttribute('aria-hidden', 'true');
+  // Rosette (same shape as the Award icon of the React version).
+  const ros = document.createElementNS(SVG_NS, 'svg');
+  for (const [k, v] of Object.entries({ viewBox: '0 0 24 24', width: '11', height: '11', fill: 'none', stroke: level ? successColor(level) : 'hsl(var(--muted-foreground))', 'stroke-width': '2.4', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' })) ros.setAttribute(k, v);
+  const c = document.createElementNS(SVG_NS, 'circle');
+  c.setAttribute('cx', '12'); c.setAttribute('cy', '8'); c.setAttribute('r', '6');
+  const rib = document.createElementNS(SVG_NS, 'path');
+  rib.setAttribute('d', 'M15.477 12.89 17 22l-5-3-5 3 1.523-9.11');
+  ros.append(c, rib);
+  ros.style.marginInlineEnd = '2px';
+  g.append(ros);
+  for (let i = 0; i < SUCCESS_STAR_SLOTS; i++) {
+    const on = i < stars && level;
+    const svg = on
+      ? starSvg(`hsl(var(${SUCCESS_VARS[level][1]}))`, `hsl(var(${SUCCESS_VARS[level][0]}))`, 11)
+      : starSvg('hsl(var(--muted-foreground) / 0.14)', 'hsl(var(--muted-foreground) / 0.4)', 11);
+    svg.dataset.on = on ? 'true' : 'false';
+    g.append(svg);
+  }
+  return g;
 }
 
 /** The two always-visible pills of the ring, as DOM (same text as the React pills). */
@@ -267,8 +314,11 @@ export function ringPills(ring: RingSummary): HTMLElement {
     el.dataset.tone = p.tone;
     const dot = make('span', { width: '7px', height: '7px', borderRadius: '9999px', background: toneGradient(p.tone), flexShrink: '0' });
     dot.setAttribute('aria-hidden', 'true');
-    const ic = make('span', { color: TONE_COLOR[p.tone] }, icon);
+    const ic = kind === 'rating'
+      ? starSvg('none', 'hsl(var(--review-star))', 12, 2.2) as unknown as HTMLElement
+      : make('span', { color: TONE_COLOR[p.tone] }, icon);
     ic.setAttribute('aria-hidden', 'true');
+    if (kind === 'rating') ic.dataset.part = 'review-star';
     el.append(dot, ic, make('span', {}, p.text));
     row.append(el);
   };
@@ -276,23 +326,29 @@ export function ringPills(ring: RingSummary): HTMLElement {
   if (ring.pills.resp) pill(ring.pills.resp, '⚡', 'responsiveness');
   const sp = ring.pills.success;
   if (sp) {
-    // Medal and the counts: "🏆 42 requests · 38 solved · 90 % (Gold)".
-    const el = make('span', {
+    // Level stars + "Success: Gold" and the counts pill "42 requests · 38 solved · 90 %".
+    const grp = make('span', { display: 'inline-flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' });
+    grp.dir = 'auto';
+    grp.dataset.part = 'success-level';
+    grp.dataset.level = sp.level ?? 'none';
+    grp.setAttribute('role', 'group');
+    grp.setAttribute('aria-label', sp.aria);
+    const lab = make('span', {
       display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '1px 7px', borderRadius: '9999px', fontSize: '11px', fontWeight: '600',
-      border: `1px solid ${sp.level ? successColor(sp.level) : 'hsl(var(--border))'}`, background: 'hsl(var(--card))', color: 'hsl(var(--foreground))', whiteSpace: 'nowrap',
+      border: `1px solid ${sp.level ? `hsl(var(${SUCCESS_VARS[sp.level][0]}) / 0.6)` : 'hsl(var(--border))'}`, background: 'hsl(var(--card))', whiteSpace: 'nowrap',
+      color: sp.level ? successColor(sp.level) : 'hsl(var(--muted-foreground))',
     });
-    el.dir = 'auto';
-    el.dataset.part = 'ring-pill-success';
-    el.dataset.level = sp.level ?? 'none';
-    if (sp.level) {
-      const dot = make('span', { width: '7px', height: '7px', borderRadius: '9999px', background: successGradient(sp.level), flexShrink: '0' });
-      dot.setAttribute('aria-hidden', 'true');
-      el.append(dot);
+    lab.append(levelStarsDom(sp.level, sp.stars), make('span', {}, sp.label));
+    grp.append(lab);
+    if (sp.text) {
+      const el = make('span', {
+        display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: '9999px', fontSize: '11px', fontWeight: '600',
+        border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', color: 'hsl(var(--foreground))', whiteSpace: 'nowrap',
+      }, sp.text);
+      el.dataset.part = 'ring-pill-success';
+      grp.append(el);
     }
-    const ic = make('span', { color: sp.level ? successColor(sp.level) : '#6b7280' }, '🏆');
-    ic.setAttribute('aria-hidden', 'true');
-    el.append(ic, make('span', {}, sp.text));
-    row.append(el);
+    row.append(grp);
   }
   return row;
 }
@@ -302,7 +358,7 @@ export function ringPills(ring: RingSummary): HTMLElement {
  * with the full text as accessible name and native tooltip.
  */
 export function ringWrap(avatar: HTMLElement, ring: RingSummary): HTMLElement {
-  const g = ringGeometry('md', ring.success.state !== 'hidden');
+  const g = ringGeometry('md');
   const glow = RING_SIZES.md.glow;
   const box = make('div', { position: 'relative', width: `${g.px}px`, height: `${g.px}px`, flexShrink: '0' });
   box.dataset.part = 'ring';
@@ -346,21 +402,6 @@ export function ringWrap(avatar: HTMLElement, ring: RingSummary): HTMLElement {
     grp.append(colour);
     svg.append(grp);
   };
-  const sv = ring.success;
-  if (g.successR != null) {
-    track(g.successR, g.successW, sv.level ? `hsl(var(${SUCCESS_VARS[sv.level][0]}) / 0.18)` : trackColor('none'));
-    const d = sv.state === 'ok' && sv.level && sv.pct != null ? arcPath(sv.pct, g.successR, g.c, g.c) : '';
-    if (d && sv.level) {
-      const grp = el('g', {});
-      grp.dataset.kind = 'success'; grp.dataset.level = sv.level;
-      grp.append(el('path', { d, fill: 'none', stroke: 'hsl(var(--card))', 'stroke-width': g.successW + RING_OUTLINE * 2, 'stroke-linecap': 'round' }));
-      for (const seg of arcSegments(sv.pct as number, g.successR, g.c, g.c)) grp.append(el('path', { d: seg.d, fill: 'none', stroke: successColor(sv.level), 'stroke-width': g.successW }, { stroke: successMix(sv.level, seg.t) }));
-      const [sx, sy] = pointAt(0, g.successR, g.c, g.c);
-      const [ex, ey] = pointAt(Math.min(sv.pct as number, 99.99), g.successR, g.c, g.c);
-      grp.append(el('circle', { cx: sx, cy: sy, r: g.successW / 2, fill: successColor(sv.level) }), el('circle', { cx: ex, cy: ey, r: g.successW / 2, fill: successColor(sv.level) }, { fill: successMix(sv.level, 1) }));
-      svg.append(grp);
-    }
-  }
   track(g.outerR, g.outerW, trackColor(ring.rating.tone));
   if (ring.resp.state !== 'hidden') track(g.innerR, g.innerW, trackColor(ring.resp.tone));
   if (ring.rating.state !== 'none') arc(ring.rating.pct, g.outerR, g.outerW, ring.rating.tone, ring.rating.state === 'low', 'rating');
@@ -368,15 +409,5 @@ export function ringWrap(avatar: HTMLElement, ring: RingSummary): HTMLElement {
   const inset = g.c - g.photoR;
   Object.assign(avatar.style, { position: 'absolute', inset: `${inset}px`, width: 'auto', height: 'auto', borderRadius: '50%', fontSize: '12px' });
   box.append(svg, avatar);
-  if (sv.state === 'ok' && sv.level) {
-    const medal = make('span', {
-      position: 'absolute', bottom: '-2px', insetInlineStart: '-2px', width: '18px', height: '18px', borderRadius: '9999px', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', fontSize: '10px', background: 'hsl(var(--card))', border: `1.5px solid ${successColor(sv.level)}`,
-    }, '🏆');
-    medal.dataset.part = 'ring-medal';
-    medal.dataset.level = sv.level;
-    medal.setAttribute('aria-hidden', 'true');
-    box.append(medal);
-  }
   return box;
 }

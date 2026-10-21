@@ -22,8 +22,8 @@ const ANY = '__any__';
 const RESP_OPTIONS = ['excellent', 'good', 'fair'] as const;
 const SUCCESS_OPTIONS = ['bronze', 'silver', 'gold', 'platinum'] as const;
 const SUCCESS_LABEL: Record<(typeof SUCCESS_OPTIONS)[number], [string, string]> = {
-  bronze: ['Success: Bronze or better', 'النجاح: برونزي أو أعلى'], silver: ['Success: Silver or better', 'النجاح: فضي أو أعلى'],
-  gold: ['Success: Gold or better', 'النجاح: ذهبي أو أعلى'], platinum: ['Success: Platinum', 'النجاح: بلاتيني'],
+  bronze: ['Success: Bronze (1 star) or better', 'النجاح: برونزي (نجمة واحدة) أو أعلى'], silver: ['Success: Silver (2 stars) or better', 'النجاح: فضي (نجمتان) أو أعلى'],
+  gold: ['Success: Gold (3 stars) or better', 'النجاح: ذهبي (3 نجوم) أو أعلى'], platinum: ['Success: Platinum (4 stars)', 'النجاح: بلاتيني (4 نجوم)'],
 };
 const SUCCESS_RATES = [60, 80, 90, 100];
 const RESP_LABEL: Record<(typeof RESP_OPTIONS)[number], string> = { excellent: 'Excellent', good: 'Good or better', fair: 'Fair or better' };
