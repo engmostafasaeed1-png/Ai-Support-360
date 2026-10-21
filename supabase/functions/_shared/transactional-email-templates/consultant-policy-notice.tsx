@@ -1,4 +1,5 @@
 import * as React from 'npm:react@18.3.1'
+import { renderToStaticMarkup } from 'npm:react-dom@18.3.1/server'
 import type { TemplateEntry } from './registry.ts'
 import { POLICY_NOTICE_STR, policyNoticeLang } from '../consultantPolicyCopy.ts'
 import { buildPolicyEmail, policyEmailText, type PolicyEmailProps } from '../consultantPolicyEmail.ts'
@@ -30,6 +31,8 @@ const preview = (lang: 'en' | 'ar'): PolicyEmailProps => ({
 export const template = {
   component: ConsultantPolicyNoticeEmail,
   subject,
+  // Rendered in one piece: the streaming renderer can split Arabic letters at chunk boundaries (shown as "��").
+  html: (d: Record<string, any>) => '<!DOCTYPE html>' + renderToStaticMarkup(buildPolicyEmail(React.createElement, d as PolicyEmailProps)),
   text: (d: Record<string, any>) => policyEmailText(d as PolicyEmailProps),
   displayName: 'Consultant Service Policy notice',
   previewData: preview('en'),

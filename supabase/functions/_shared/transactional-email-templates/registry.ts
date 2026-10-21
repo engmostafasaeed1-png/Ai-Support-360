@@ -7,6 +7,8 @@ export interface TemplateEntry {
   to?: string
   displayName?: string
   previewData?: Record<string, any>
+  /** Optional one-piece HTML renderer (avoids split multi-byte letters in long Arabic mails); otherwise renderAsync. */
+  html?: (data: Record<string, any>) => string
   /** Optional hand-written plain-text alternative; otherwise it is derived from the HTML. */
   text?: (data: Record<string, any>) => string
 }
