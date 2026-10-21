@@ -20,6 +20,12 @@ import type { SavedFilter } from '@/lib/savedFilters';
 
 const ANY = '__any__';
 const RESP_OPTIONS = ['excellent', 'good', 'fair'] as const;
+const SUCCESS_OPTIONS = ['bronze', 'silver', 'gold', 'platinum'] as const;
+const SUCCESS_LABEL: Record<(typeof SUCCESS_OPTIONS)[number], [string, string]> = {
+  bronze: ['Success: Bronze or better', 'النجاح: برونزي أو أعلى'], silver: ['Success: Silver or better', 'النجاح: فضي أو أعلى'],
+  gold: ['Success: Gold or better', 'النجاح: ذهبي أو أعلى'], platinum: ['Success: Platinum', 'النجاح: بلاتيني'],
+};
+const SUCCESS_RATES = [60, 80, 90, 100];
 const RESP_LABEL: Record<(typeof RESP_OPTIONS)[number], string> = { excellent: 'Excellent', good: 'Good or better', fair: 'Fair or better' };
 
 type Option = { value: string; label: string };
@@ -186,6 +192,17 @@ export default function DirectoryFilterPanel({ filters: f, consultants, ctx, onC
             <FacetSelect id="f-resp" label={t('directory.responsiveness', 'Responsiveness')} value={f.resp} anyLabel={anyLabel}
               options={RESP_OPTIONS.map((o) => ({ value: o, label: t(`directory.resp_${o}`, RESP_LABEL[o]) }))}
               counts={counts('resp', [...RESP_OPTIONS])} onChange={(v) => onChange({ resp: v as DirectoryFilters['resp'] })} />
+          )}
+          {ctx.success && (
+            <FacetSelect id="f-success" label={t('directory.success_level', 'Success level')} value={f.success} anyLabel={anyLabel}
+              options={SUCCESS_OPTIONS.map((o) => ({ value: o, label: ar ? SUCCESS_LABEL[o][1] : SUCCESS_LABEL[o][0] }))}
+              counts={counts('success', [...SUCCESS_OPTIONS])} onChange={(v) => onChange({ success: v as DirectoryFilters['success'] })} />
+          )}
+          {ctx.success && (
+            <FacetSelect id="f-success-rate" label={t('directory.success_rate', 'Success rate')} value={f.successRate ? String(f.successRate) : ''} anyLabel={anyLabel}
+              options={SUCCESS_RATES.map((p) => ({ value: String(p), label: ar ? `${p} ٪ أو أكثر` : `${p} % or more` }))}
+              counts={new Map(SUCCESS_RATES.map((p) => [String(p), counts('successRate', [p]).get(p as unknown as string) ?? 0]))}
+              onChange={(v) => onChange({ successRate: Number(v) || 0 })} />
           )}
         </div>
 

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePublicResponsiveness } from '@/hooks/useResponsiveness';
 import { useRatingMinReviews, useRingStats } from '@/hooks/useRingStats';
+import { useSuccessConfig, useSuccessStat } from '@/hooks/useSuccessStats';
 import { ringSummary, type RingSummary } from '@/lib/ringAvatar';
 import RingAvatar, { type RingAvatarProps, type RingSize } from './RingAvatar';
 import RingPills from './RingPills';
@@ -17,7 +18,7 @@ export interface RingSource {
 
 /**
  * The ring numbers for one consultant, the same everywhere: consultants.rating / total_reviews (client reviews only)
- * and responsiveness_public_summary (only while public).
+ * responsiveness_public_summary (only while public) and consultant_success_stats (only while `success_public` is on).
  */
 export function useConsultantRingSummary({ consultantId, rating, reviews, badge, verified }: RingSource): RingSummary {
   const { i18n } = useTranslation();
@@ -28,9 +29,13 @@ export function useConsultantRingSummary({ consultantId, rating, reviews, badge,
   const stats = useRingStats(consultantId, !known);
   const s = known ? { rating, reviews, badge, verified } : { rating: stats.data?.rating, reviews: stats.data?.reviews, badge: badge ?? stats.data?.badge, verified: verified ?? stats.data?.verified };
   const resp = consultantId ? byId.get(consultantId) ?? null : null;
+  const cfg = useSuccessConfig();
+  const succ = useSuccessStat(consultantId, cfg.publicOn);
+  const counts = cfg.publicOn ? succ.data : undefined;
   return useMemo(() => ringSummary({
     rating: s.rating, reviews: s.reviews, minReviews, publicOn, resp, badge: s.badge, verified: s.verified, lang,
-  }), [s.rating, s.reviews, s.badge, s.verified, minReviews, publicOn, resp, lang]);
+    success: { publicOn: cfg.publicOn, counts, settings: cfg.settings },
+  }), [s.rating, s.reviews, s.badge, s.verified, minReviews, publicOn, resp, lang, cfg.publicOn, cfg.settings, counts]);
 }
 
 export interface ConsultantRingProps extends Omit<RingAvatarProps, 'summary' | 'size'>, RingSource {
@@ -44,7 +49,7 @@ export default function ConsultantRing({ consultantId, rating, reviews, badge, v
 }
 
 /** The ring's two always-visible pills (rating, responsiveness), from the same numbers as the ring. */
-export function ConsultantRingPills({ size = 'sm', className, ...source }: RingSource & { size?: 'sm' | 'lg'; className?: string }) {
+export function ConsultantRingPills({ size = 'sm', className, ...source }: RingSource & { size?: 'xs' | 'sm' | 'lg'; className?: string }) {
   const summary = useConsultantRingSummary(source);
   return <RingPills summary={summary} size={size} className={className} />;
 }

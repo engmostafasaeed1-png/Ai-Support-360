@@ -6,6 +6,10 @@ vi.mock('@/hooks/useResponsiveness', () => ({
   usePublicResponsiveness: () => ({ publicOn: true, byId: new Map([['c1', { level: 'good', median_minutes: 60, response_rate: 90, stars: 4 }]]), levels: new Map() }),
 }));
 vi.mock('@/hooks/useRingStats', () => ({ useRatingMinReviews: () => 3, useRingStats: () => ({ data: undefined }) }));
+vi.mock('@/hooks/useSuccessStats', () => ({
+  useSuccessConfig: () => ({ available: false, publicOn: false, settings: { bronze: 60, silver: 80, gold: 85, platinum: 100, min_requests: 5 } }),
+  useSuccessStat: () => ({ data: undefined }),
+}));
 
 const props = { name: 'Mostafa Saeed', initials: 'MS', total: 62, statusClass: 'bg-success', consultantId: 'c1', rating: 4.8, reviews: 12 };
 describe('CredibilityAvatar', () => {

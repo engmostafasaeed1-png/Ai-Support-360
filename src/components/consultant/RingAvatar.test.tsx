@@ -78,7 +78,9 @@ describe('RingAvatar sizes, pills and legend', () => {
     const box = screen.getByTestId('ring-legend-content');
     expect(box).toHaveTextContent('Outer ring: client reviews');
     expect(box).toHaveTextContent('Inner ring: responsiveness');
-    expect(box).toHaveTextContent('Corner badge: AI interview level');
+    expect(box).toHaveTextContent('Shield chip (top corner): AI interview level, e.g. "AI Interview: Gold"');
+    expect(box).toHaveTextContent('Trophy chip (bottom corner): Success level, e.g. "Success: Platinum"');
+    expect(box).toHaveTextContent('Thin outer band: success rate');
     expect(box).toHaveTextContent('4.6 and up');
   });
 });

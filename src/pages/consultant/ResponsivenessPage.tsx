@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AssignmentPolicyNote from '@/components/consultant/AssignmentPolicyNote';
+import MySuccessCard from '@/components/consultant/MySuccessCard';
 import { useConsultantProfile } from '@/hooks/useConsultantProfile';
 import {
   addUnavailablePeriod, disputeNoResponse, MY_RESPONSIVENESS_KEY, removeUnavailablePeriod, setCapacity,
@@ -140,6 +141,7 @@ export default function ResponsivenessPage() {
           <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           {t('responsiveness.not_ready', 'Responsiveness statistics are not switched on yet. Nothing is counted until the platform turns them on.')}
         </CardContent></Card>
+        <MySuccessCard />
         <AssignmentPolicyNote />
       </div>
     );
@@ -162,6 +164,7 @@ export default function ResponsivenessPage() {
           <Gauge className="h-4 w-4" aria-hidden="true" />{L(LEVEL_LABEL[level])}
         </span>
       </header>
+      <MySuccessCard />
 
       <div className="rounded-xl border border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground" role="note">
         {d.publicOn

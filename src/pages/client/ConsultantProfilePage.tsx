@@ -38,6 +38,8 @@ import WeeklyAvailability from '@/components/client/WeeklyAvailability';
 import RatingStars from '@/components/client/RatingStars';
 import { ConsultantRingPills } from '@/components/consultant/ConsultantRing';
 import RingLegend from '@/components/consultant/RingLegend';
+import SuccessStatsCard from '@/components/consultant/SuccessStatsCard';
+import { useSuccessConfig } from '@/hooks/useSuccessStats';
 import CredibilityAvatar from '@/components/client/CredibilityAvatar';
 import { credibility } from '@/lib/consultantCredibility';
 import { bookableTimes, hasWindowOn, localDateKey, type WindowRow } from '@/lib/bookableTimes';
@@ -48,6 +50,7 @@ export default function ConsultantProfilePage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const successCfg = useSuccessConfig();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [reviewOpen, setReviewOpen] = useState(false);
   const [tab, setTab] = useState('about');
@@ -375,7 +378,7 @@ export default function ConsultantProfilePage() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">{consultant.name}</h1>
                 <span className="inline-flex items-center gap-1.5">
                   <ConsultantRingPills size="lg" consultantId={id} rating={consultant.rating} reviews={consultant.reviews} />
-                  <RingLegend />
+                  <RingLegend success={successCfg.publicOn} settings={successCfg.settings} />
                 </span>
                 <VerificationBadge status={verificationStatus} size="md" />
                 <FoundingBadge consultantId={id} numbered />
@@ -411,6 +414,7 @@ export default function ConsultantProfilePage() {
                   <Badge key={badge} variant="secondary" className="text-xs">{t(`consultants.${badge}`)}</Badge>
                 ))}
               </div>
+              <SuccessStatsCard consultantId={id} className="mt-4" />
               {!isGuest && <WeeklyAvailability hours={weeklyHours} className="mt-4" />}
             </div>
             <aside className="w-full shrink-0 space-y-3 md:w-72 md:pt-4">

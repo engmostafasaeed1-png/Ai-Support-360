@@ -4,6 +4,7 @@
 import { STATE_META, type AvailabilityState } from './mapMarkers';
 import type { LinkState } from './consultantLinks';
 import { arcPath, arcPattern, arcSegments, pointAt, ringGeometry, RING_OUTLINE, RING_SIZES, toneGradient, toneMix, TONE_COLOR, TONE_VARS, trackColor, type RingPill, type RingSummary } from './ringAvatar';
+import { successColor, successGradient, successMix, SUCCESS_VARS } from './successLevel';
 
 export interface PinView {
   id: string;
@@ -243,6 +244,12 @@ function lightSurface(node: HTMLElement): void {
   node.style.setProperty('--card', '0 0% 100%');
   node.style.setProperty('--foreground', '222 47% 11%');
   node.style.setProperty('--border', '214 32% 88%');
+  // Success colours: the light-mode stops (>= 3:1 on white), also when the page itself is dark.
+  const light: Record<string, string> = {
+    '--success-bronze-a': '24 70% 42%', '--success-bronze-b': '16 65% 45%', '--success-silver-a': '210 14% 46%', '--success-silver-b': '205 22% 52%',
+    '--success-gold-a': '44 95% 36%', '--success-gold-b': '50 92% 33%', '--success-platinum-a': '200 60% 44%', '--success-platinum-b': '215 55% 52%',
+  };
+  for (const [k, v] of Object.entries(light)) node.style.setProperty(k, v);
 }
 
 /** The two always-visible pills of the ring, as DOM (same text as the React pills). */
@@ -267,6 +274,26 @@ export function ringPills(ring: RingSummary): HTMLElement {
   };
   pill(ring.pills.rating, '★', 'rating');
   if (ring.pills.resp) pill(ring.pills.resp, '⚡', 'responsiveness');
+  const sp = ring.pills.success;
+  if (sp) {
+    // Medal and the counts: "🏆 42 requests · 38 solved · 90 % (Gold)".
+    const el = make('span', {
+      display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '1px 7px', borderRadius: '9999px', fontSize: '11px', fontWeight: '600',
+      border: `1px solid ${sp.level ? successColor(sp.level) : 'hsl(var(--border))'}`, background: 'hsl(var(--card))', color: 'hsl(var(--foreground))', whiteSpace: 'nowrap',
+    });
+    el.dir = 'auto';
+    el.dataset.part = 'ring-pill-success';
+    el.dataset.level = sp.level ?? 'none';
+    if (sp.level) {
+      const dot = make('span', { width: '7px', height: '7px', borderRadius: '9999px', background: successGradient(sp.level), flexShrink: '0' });
+      dot.setAttribute('aria-hidden', 'true');
+      el.append(dot);
+    }
+    const ic = make('span', { color: sp.level ? successColor(sp.level) : '#6b7280' }, '🏆');
+    ic.setAttribute('aria-hidden', 'true');
+    el.append(ic, make('span', {}, sp.text));
+    row.append(el);
+  }
   return row;
 }
 
@@ -275,7 +302,7 @@ export function ringPills(ring: RingSummary): HTMLElement {
  * with the full text as accessible name and native tooltip.
  */
 export function ringWrap(avatar: HTMLElement, ring: RingSummary): HTMLElement {
-  const g = ringGeometry('md');
+  const g = ringGeometry('md', ring.success.state !== 'hidden');
   const glow = RING_SIZES.md.glow;
   const box = make('div', { position: 'relative', width: `${g.px}px`, height: `${g.px}px`, flexShrink: '0' });
   box.dataset.part = 'ring';
@@ -319,6 +346,21 @@ export function ringWrap(avatar: HTMLElement, ring: RingSummary): HTMLElement {
     grp.append(colour);
     svg.append(grp);
   };
+  const sv = ring.success;
+  if (g.successR != null) {
+    track(g.successR, g.successW, sv.level ? `hsl(var(${SUCCESS_VARS[sv.level][0]}) / 0.18)` : trackColor('none'));
+    const d = sv.state === 'ok' && sv.level && sv.pct != null ? arcPath(sv.pct, g.successR, g.c, g.c) : '';
+    if (d && sv.level) {
+      const grp = el('g', {});
+      grp.dataset.kind = 'success'; grp.dataset.level = sv.level;
+      grp.append(el('path', { d, fill: 'none', stroke: 'hsl(var(--card))', 'stroke-width': g.successW + RING_OUTLINE * 2, 'stroke-linecap': 'round' }));
+      for (const seg of arcSegments(sv.pct as number, g.successR, g.c, g.c)) grp.append(el('path', { d: seg.d, fill: 'none', stroke: successColor(sv.level), 'stroke-width': g.successW }, { stroke: successMix(sv.level, seg.t) }));
+      const [sx, sy] = pointAt(0, g.successR, g.c, g.c);
+      const [ex, ey] = pointAt(Math.min(sv.pct as number, 99.99), g.successR, g.c, g.c);
+      grp.append(el('circle', { cx: sx, cy: sy, r: g.successW / 2, fill: successColor(sv.level) }), el('circle', { cx: ex, cy: ey, r: g.successW / 2, fill: successColor(sv.level) }, { fill: successMix(sv.level, 1) }));
+      svg.append(grp);
+    }
+  }
   track(g.outerR, g.outerW, trackColor(ring.rating.tone));
   if (ring.resp.state !== 'hidden') track(g.innerR, g.innerW, trackColor(ring.resp.tone));
   if (ring.rating.state !== 'none') arc(ring.rating.pct, g.outerR, g.outerW, ring.rating.tone, ring.rating.state === 'low', 'rating');
@@ -326,5 +368,15 @@ export function ringWrap(avatar: HTMLElement, ring: RingSummary): HTMLElement {
   const inset = g.c - g.photoR;
   Object.assign(avatar.style, { position: 'absolute', inset: `${inset}px`, width: 'auto', height: 'auto', borderRadius: '50%', fontSize: '12px' });
   box.append(svg, avatar);
+  if (sv.state === 'ok' && sv.level) {
+    const medal = make('span', {
+      position: 'absolute', bottom: '-2px', insetInlineStart: '-2px', width: '18px', height: '18px', borderRadius: '9999px', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', fontSize: '10px', background: 'hsl(var(--card))', border: `1.5px solid ${successColor(sv.level)}`,
+    }, '🏆');
+    medal.dataset.part = 'ring-medal';
+    medal.dataset.level = sv.level;
+    medal.setAttribute('aria-hidden', 'true');
+    box.append(medal);
+  }
   return box;
 }

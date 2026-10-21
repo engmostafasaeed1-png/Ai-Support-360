@@ -9,6 +9,7 @@ import type { Bounds } from '@/lib/directoryFilters';
 import { usePublicResponsiveness } from '@/hooks/useResponsiveness';
 import { useRatingMinReviews } from '@/hooks/useRingStats';
 import { ringSummary, type RingSummary } from '@/lib/ringAvatar';
+import { useSuccessConfig, useSuccessStatsMap } from '@/hooks/useSuccessStats';
 
 export interface MapConsultant {
   id: string;
@@ -88,7 +89,13 @@ export default function ConsultantMap({ consultants, selectedId, onSelectConsult
   const { publicOn, byId: respById } = usePublicResponsiveness();
   const minReviews = useRatingMinReviews();
   const ringLang = i18n?.language?.startsWith('ar') ? 'ar' : 'en';
-  const ringFor = (c: MapConsultant) => ringSummary({ rating: c.rating, reviews: c.reviews, minReviews, publicOn, resp: respById.get(c.id) ?? null, badge: c.ai_interview_badge, lang: ringLang });
+  const successCfg = useSuccessConfig();
+  const mapIds = useMemo(() => consultants.map((c) => c.id), [consultants]);
+  const successCounts = useSuccessStatsMap(mapIds, successCfg.publicOn);
+  const ringFor = (c: MapConsultant) => ringSummary({
+    rating: c.rating, reviews: c.reviews, minReviews, publicOn, resp: respById.get(c.id) ?? null, badge: c.ai_interview_badge, lang: ringLang,
+    success: { publicOn: successCfg.publicOn, counts: successCounts ? successCounts.get(c.id) ?? null : undefined, settings: successCfg.settings },
+  });
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRef = useRef<LayerGroup | null>(null);
   const fitted = useRef('');
@@ -218,7 +225,7 @@ export default function ConsultantMap({ consultants, selectedId, onSelectConsult
     }
     lastSelected.current = selectedId ?? null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [consultants, pins, selectedId, labelsKey, zoom, matches, favourite, publicOn, respById, minReviews, ringLang]);
+  }, [consultants, pins, selectedId, labelsKey, zoom, matches, favourite, publicOn, respById, minReviews, ringLang, successCfg, successCounts]);
 
   return (
     <div className="relative isolate rounded-2xl overflow-hidden border border-border/50 shadow-sm" style={{ height: '420px' }}>
