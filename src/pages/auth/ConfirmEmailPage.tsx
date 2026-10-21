@@ -20,8 +20,9 @@ export default function ConfirmEmailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { search, hash } = useLocation();
-  const params = readConfirmParams(search);
-  const linkError = readOAuthError(search, hash);
+  // Read once: the address bar is cleaned right after the first render.
+  const [params] = useState(() => readConfirmParams(search));
+  const [linkError] = useState(() => readOAuthError(search, hash));
   const [state, setState] = useState<'ready' | 'busy' | 'problem' | 'failed'>(
     linkError && isEmailLinkError(linkError) ? 'problem' : params.tokenHash ? 'ready' : 'problem',
   );
