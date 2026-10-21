@@ -1,4 +1,5 @@
 import { useFoundingSpots } from '@/hooks/useFoundingConsultants';
+import ReferralBanner from '@/components/referral/ReferralBanner';
 import { Award } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { observeReveal } from '@/lib/reveal';
@@ -137,6 +138,7 @@ export default function ForConsultantsPage() {
               ))}
             </div>
             {foundingSpots > 0 && <p className="mt-4 inline-flex max-w-full items-center justify-center gap-2 text-sm font-medium text-warning-foreground"><Award className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />{t('founding.offer', 'The first 100 verified consultants become Founding Consultants')}</p>}
+            <div><ReferralBanner variant="landing" /></div>
             <p className="mt-4 text-sm text-muted-foreground">{t('forConsultants.hero_note', 'Free to apply. Takes about 10 minutes.')}</p>
           </div>
         </section>

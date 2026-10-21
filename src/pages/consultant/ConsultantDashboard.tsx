@@ -23,6 +23,7 @@ import AIInsightsButton from '@/components/ai/AIInsightsButton';
 import AvailabilityToggle from '@/components/consultant/AvailabilityToggle';
 import CriticalDashboardNotice from '@/components/consultant/CriticalDashboardNotice';
 import PayoutDetailsNudge from '@/components/consultant/PayoutDetailsNudge';
+import ReferralBanner from '@/components/referral/ReferralBanner';
 import GettingStartedCard from '@/components/consultant/GettingStartedCard';
 import LocationBanner from '@/components/consultant/LocationBanner';
 import AvailabilityUrgentBanner from '@/components/consultant/AvailabilityUrgent';
@@ -219,6 +220,7 @@ export default function ConsultantDashboard() {
       <PolicyBanner />
       <PayoutDetailsNudge />
       <CriticalDashboardNotice />
+      <ReferralBanner variant="dashboard" />
       <WelcomeBanner />
       <EmailVerificationBanner />
       <OnboardingProgressCard role="consultant" />
