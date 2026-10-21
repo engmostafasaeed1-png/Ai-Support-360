@@ -2834,7 +2834,8 @@
       "payout": "Payout bank details",
       "interview": "AI interview",
       "policy": "Consultant Service Policy"
-    }
+    },
+    "all_done_kept": "All required items are complete"
   },
   "profile_save": {
     "boost_description_drafts": "Your changes are saved as a draft automatically, so nothing is lost. Submitting your profile for review needs every required item to be complete.",

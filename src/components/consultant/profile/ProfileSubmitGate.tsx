@@ -155,7 +155,9 @@ export default function ProfileSubmitGate() {
         <div className="min-w-0 flex-1 space-y-1">
           <h2 id="required-items-title" className="text-lg font-bold">
             {c?.complete
-              ? String(t('profileSubmit.all_done', { defaultValue: 'All required items are complete - you can submit' }))
+              ? gate.state === 'draft'
+                ? String(t('profileSubmit.all_done', { defaultValue: 'All required items are complete - you can submit' }))
+                : String(t('profileSubmit.all_done_kept', { defaultValue: 'All required items are complete' }))
               : String(t('profileSubmit.title', { defaultValue: 'Complete these required items to finish' }))}
           </h2>
           {c && <p className="text-sm text-muted-foreground" data-testid="required-counter">{fill(String(t('profileSubmit.left_of', { defaultValue: '{{left}} of {{total}} required items left' })), { left: c.left, total: c.total })}</p>}
