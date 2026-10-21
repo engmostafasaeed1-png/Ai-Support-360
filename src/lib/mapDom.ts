@@ -278,7 +278,16 @@ export function levelStarsDom(level: SuccessLevel | null, stars: number): HTMLEl
   g.dataset.level = level ?? 'none';
   g.dataset.stars = String(stars);
   g.setAttribute('aria-hidden', 'true');
-  g.append(make('span', { color: level ? successColor(level) : 'hsl(var(--muted-foreground))', fontSize: '11px', lineHeight: '1', marginInlineEnd: '2px' }, '🏵'));
+  // Rosette (same shape as the Award icon of the React version).
+  const ros = document.createElementNS(SVG_NS, 'svg');
+  for (const [k, v] of Object.entries({ viewBox: '0 0 24 24', width: '11', height: '11', fill: 'none', stroke: level ? successColor(level) : 'hsl(var(--muted-foreground))', 'stroke-width': '2.4', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' })) ros.setAttribute(k, v);
+  const c = document.createElementNS(SVG_NS, 'circle');
+  c.setAttribute('cx', '12'); c.setAttribute('cy', '8'); c.setAttribute('r', '6');
+  const rib = document.createElementNS(SVG_NS, 'path');
+  rib.setAttribute('d', 'M15.477 12.89 17 22l-5-3-5 3 1.523-9.11');
+  ros.append(c, rib);
+  ros.style.marginInlineEnd = '2px';
+  g.append(ros);
   for (let i = 0; i < SUCCESS_STAR_SLOTS; i++) {
     const on = i < stars && level;
     const svg = on
