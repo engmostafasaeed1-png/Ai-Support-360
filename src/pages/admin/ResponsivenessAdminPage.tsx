@@ -24,6 +24,7 @@ import { formatMinutes, LEVEL_LABEL, LEVEL_TONE } from '@/lib/responsivenessForm
 import { responsivenessCsv, sortResponsivenessRows, type RespSortKey } from '@/lib/responsivenessAdmin';
 import { RESP_DEFAULTS, respSettingsProblems, type RespLevel, type RespSettings } from '../../../supabase/functions/_shared/responsiveness';
 import { cn } from '@/lib/utils';
+import { SuccessAdminTab } from '@/components/admin/SuccessAdmin';
 
 const FIELDS: Array<[keyof RespSettings, string]> = [
   ['min_sample', 'Minimum counted requests before anything is public'],
@@ -214,6 +215,7 @@ export default function ResponsivenessAdminPage() {
           <TabsTrigger value="consultants">{t('admin.resp_tab_consultants', 'Consultants')}</TabsTrigger>
           <TabsTrigger value="disputes">{t('admin.resp_tab_disputes', 'Disputes')}</TabsTrigger>
           <TabsTrigger value="settings">{t('admin.resp_tab_settings', 'Settings')}</TabsTrigger>
+          <TabsTrigger value="success">{t('admin.resp_tab_success', 'Success levels')}</TabsTrigger>
         </TabsList>
         <TabsContent value="consultants" className="space-y-3">
           <div className="flex flex-wrap items-end gap-3">
@@ -257,6 +259,7 @@ export default function ResponsivenessAdminPage() {
         </TabsContent>
         <TabsContent value="disputes"><DisputesTab /></TabsContent>
         <TabsContent value="settings"><SettingsCard /></TabsContent>
+        <TabsContent value="success"><SuccessAdminTab /></TabsContent>
       </Tabs>
     </div>
   );
