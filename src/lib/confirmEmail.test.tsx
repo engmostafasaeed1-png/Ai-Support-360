@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const resend = vi.fn(async (_a?: unknown) => ({ error: null as any }));
 const verifyOtp = vi.fn(async (_a?: unknown) => ({ data: {}, error: null as any }));
@@ -46,7 +47,7 @@ describe('expired or used e-mail links', () => {
 
   it('/login shows the expired-link panel with the address prefilled, not a Google error', async () => {
     localStorage.setItem('verification_pending_email', 'new.consultant@example.com');
-    render(<MemoryRouter initialEntries={[`/login${EXPIRED_HASH}`]}><LoginPage /></MemoryRouter>);
+    render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={[`/login${EXPIRED_HASH}`]}><LoginPage /></MemoryRouter></QueryClientProvider>);
     expect(await screen.findByText('Your confirmation link has expired or was already used')).toBeInTheDocument();
     expect(screen.queryByText('Sign-in did not complete')).toBeNull();
     expect(screen.queryByText(friendlyOAuthMessage('access_denied'))).toBeNull();
@@ -58,7 +59,8 @@ describe('expired or used e-mail links', () => {
     render(<MemoryRouter><ConfirmLinkProblem initialEmail="someone@example.com" /></MemoryRouter>);
     fireEvent.click(screen.getByRole('button', { name: 'Send me a new confirmation e-mail' }));
     expect(await screen.findByText(/If this address is waiting for confirmation/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Send again in 60 s/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Send again in/ })).toBeDisabled();
+    expect(localStorage.getItem('verification_resend_available_at')).toContain('someone@example.com');
     expect(resend).toHaveBeenCalledTimes(1);
     expect((resend.mock.calls[0][0] as any).type).toBe('signup');
   });
