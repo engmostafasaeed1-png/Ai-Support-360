@@ -10,6 +10,9 @@ Until the owner applies the SQL, every success surface stays hidden (the public 
 - **Excluded**: never started (declined, expired invitations, withdrawn before ready, bids not chosen), admin-voided engagements (audited, with reason), merged duplicate tickets, and test accounts (admin tag `test` / `test data`).
 - Resolved/closed without any client confirmation stays "awaiting confirmation" (not counted) — no invented numbers.
 
+## Display
+The photo ring keeps two arcs (outer client reviews, inner responsiveness). Success is shown as level stars beside the name: rosette + 4 slots (Bronze 1 copper, Silver 2 steel, Gold 3 yellow with shine, Platinum 4 cool white-blue with shine; other slots faint), the label "Success: Gold" and a counts pill. Small places show only the stars, percentage on hover.
+
 ## Levels (admin setting `success_levels`, default `{bronze:60, silver:80, gold:85, platinum:100, min_requests:5}`)
 | Level | Rate |
 |---|---|
@@ -35,14 +38,17 @@ Existing consultants start with no stored numbers; the first recompute (run at t
 | Bronze / Silver / Gold / Platinum | برونزي / فضي / ذهبي / بلاتيني |
 | Success: {level} | النجاح: {level} |
 | AI Interview: {tier} | مقابلة الذكاء الاصطناعي: {tier} |
-| Success level: {level} - {solved} of {total} requests solved ({pct} %) - last 12 months {pct12} | مستوى النجاح: {level} - تم حل {solved} من {total} طلبًا ({pct} ٪) - آخر 12 شهرًا {pct12} |
+| Success level: {level} ({stars} of 4 stars) - {solved} of {total} requests solved ({pct} %) - last 12 months {pct12} | مستوى النجاح: {level} ({stars} من 4 نجوم) - تم حل {solved} من {total} طلبًا ({pct} ٪) - آخر 12 شهرًا {pct12} |
+| Success level {level}, {stars} of 4 stars, {solved} of {total} requests solved | مستوى النجاح {level}، {stars} من 4 نجوم، تم حل {solved} من {total} طلبًا |
+| One outlined star with a number = client reviews; rosette with 4 level stars = Success level | نجمة واحدة مفرغة مع رقم = تقييمات العملاء؛ وردة مع 4 نجوم مستوى = مستوى النجاح |
+| Success: New / Success | النجاح: جديد / النجاح |
 | {solved} of {total} solved | تم حل {solved} من {total} |
 | Success: New - {solved} of {total} requests solved | النجاح: جديد - تم حل {solved} من {total} طلبًا |
 | Success: New - no finished requests yet | النجاح: جديد - لا توجد طلبات منتهية بعد |
 | Success: {solved} of {total} requests solved | النجاح: تم حل {solved} من {total} طلبًا |
 | A Success level shows after {n} finished requests. | يظهر مستوى النجاح بعد {n} طلبات منتهية. |
 | A Success level shows from {pct} % solved. | يظهر مستوى النجاح ابتداءً من {pct} ٪ من الطلبات المحلولة. |
-| {total} requests · {solved} solved · {pct} % ({level}) | الطلبات: {total} · المحلولة: {solved} · {pct} ٪ ({level}) |
+| {total} requests · {solved} solved · {pct} % | الطلبات: {total} · المحلولة: {solved} · {pct} ٪ |
 | {total} requests · {solved} solved | الطلبات: {total} · المحلولة: {solved} |
 | New | جديد |
 | {n} more finished requests until a Success level shows | {n} طلبات منتهية أخرى حتى يظهر مستوى النجاح |
@@ -56,8 +62,9 @@ Existing consultants start with no stored numbers; the first recompute (run at t
 | Not actually solved? | لم يُحل الطلب فعليًا؟ |
 | Mark as not solved | سجّل: لم يُحل |
 | You marked this request as not solved | سجّلتَ أن هذا الطلب لم يُحل |
-| Thin outer band: success rate | الحلقة الرفيعة الخارجية: نسبة النجاح |
-| Trophy chip: Success level | شارة الكأس: مستوى النجاح |
+| Rosette with 4 level stars next to the name: Success level | وردة مع 4 نجوم مستوى بجانب الاسم: مستوى النجاح |
+| One outlined yellow star with a number: client reviews | نجمة صفراء واحدة مفرغة مع رقم: تقييمات العملاء |
+| Success: Gold (3 stars) or better | النجاح: ذهبي (3 نجوم) أو أعلى |
 | Shield chip: AI interview level | شارة الدرع: مستوى مقابلة الذكاء الاصطناعي |
 
 Admin screen strings (Success tab, breakdown, void/override dialogs) are inline in `src/components/admin/SuccessAdmin.tsx`.
