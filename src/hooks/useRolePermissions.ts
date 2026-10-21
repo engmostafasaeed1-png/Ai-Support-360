@@ -30,6 +30,22 @@ export function useRolePermissions() {
   const [rolePerms, setRolePerms] = useState<Record<string, string[]>>(DEFAULT_ROLE_PERMISSIONS);
   const [loading, setLoading] = useState(true);
 
+  // Loaded once when the page opens (no live channel: these settings change rarely and only here).
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', SETTING_KEY)
+        .maybeSingle();
+
+      if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
+        setRolePerms(parsePerms(data.value as Record<string, string[]>));
+      }
+      setLoading(false);
+    };
+    load();
+  }, []);
 
   const togglePermission = useCallback((role: string, perm: string) => {
     setRolePerms(prev => {

@@ -37,6 +37,22 @@ export function useFeatureFlags() {
   const [flags, setFlags] = useState<FeatureFlag[]>(DEFAULT_FLAGS);
   const [loading, setLoading] = useState(true);
 
+  // Loaded once when the page opens (no live channel: these settings change rarely and only here).
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', SETTING_KEY)
+        .maybeSingle();
+
+      if (data?.value) {
+        setFlags(applyFlagValues(data.value as Record<string, boolean>));
+      }
+      setLoading(false);
+    };
+    load();
+  }, []);
 
   const toggleFlag = useCallback(async (key: string) => {
     setFlags(prev => {

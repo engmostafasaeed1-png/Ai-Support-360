@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
@@ -16,7 +16,6 @@ export function useBiddingClock() {
 export function useTicketBids(ticketId: string | undefined, enabled = true) {
   const { isGuest } = useGuestMode();
   const qc = useQueryClient();
-  const subscriptionId = useId();
   // Bids refresh every 30 s (these tables are not published for realtime).
   return useQuery({
     queryKey: ['client-bids', ticketId], enabled: !!ticketId && enabled && !isGuest, refetchInterval: 30_000,

@@ -222,7 +222,6 @@ export default function ConsultantProfilePage() {
     enabled: !!id,
   });
 
-  // Realtime: refresh badge when an admin changes the verification status
   const queryClient = useQueryClient();
 
   // Weekly working hours the consultant set in their Session Calendar
