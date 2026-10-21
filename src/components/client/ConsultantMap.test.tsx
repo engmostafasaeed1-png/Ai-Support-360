@@ -153,7 +153,7 @@ describe('ConsultantMap', () => {
       expect(grp.getAttribute('aria-label')).toBe('Success level Gold, 3 of 4 stars, 38 of 42 requests solved');
       expect(grp.textContent).toContain('Success: Gold');
       expect(grp.querySelectorAll('[data-part="success-stars"] svg[data-on="true"]').length).toBe(3);
-      expect(grp.querySelectorAll('[data-part="success-stars"] svg').length).toBe(4);
+      expect(grp.querySelectorAll('[data-part="success-stars"] svg[data-on]').length).toBe(4);
       expect(popup.querySelector('[data-part="ring-pill-success"]')?.textContent).toBe('42 requests · 38 solved · 90 %');
       expect(popup.querySelector('[data-part="review-star"] polygon')?.getAttribute('fill')).toBe('none');
       expect(popup.querySelector('[data-part="ring-medal"]')).toBeNull();
