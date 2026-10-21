@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { startSocialSignIn, type SocialProvider } from '@/lib/socialSignin';
+import { startSocialSignIn, shouldRefuseNewSocialUser, clearSocialSignupIntent, NO_SOCIAL_ACCOUNT_MESSAGE, type SocialProvider } from '@/lib/socialSignin';
 import { useSocialSignin } from '@/hooks/useSocialSignin';
 import SocialSignInButtons from '@/components/auth/SocialSignInButtons';
 import { Button } from '@/components/ui/button';
@@ -106,6 +106,21 @@ export default function LoginPage() {
       toast.error(t('auth.role_choice_failed', 'Could not save your choice. Please try again.'));
       setChoosingRole(null);
     }
+  };
+
+  /**
+   * Safety net: a brand-new social account that did not come from an allowed social sign-up is signed out
+   * before anything is filled in or repaired, and the visitor is asked to sign up with e-mail.
+   */
+  const refuseNewSocialAccount = async (user: any) => {
+    if (!shouldRefuseNewSocialUser(user)) return false;
+    await supabase.auth.signOut();
+    storeOAuthRole(null);
+    sessionStorage.removeItem('oauth_next');
+    const message = t('auth.no_social_account', NO_SOCIAL_ACCOUNT_MESSAGE);
+    setOauthError({ error: 'no_account', description: message });
+    setChecking(false);
+    return true;
   };
 
   /** Returns true when a first-time social sign-in was handled (role step shown or applied). */
@@ -276,8 +291,10 @@ export default function LoginPage() {
       }
 
       try {
+        if (await refuseNewSocialAccount(session.user)) return;
         const role = await getRoleAndRepairAccount(session.user);
         if (await handleFirstTimeOAuth(session.user, role)) return;
+        clearSocialSignupIntent();
 
         const oauthNext = sessionStorage.getItem('oauth_next');
         sessionStorage.removeItem('oauth_next');
@@ -313,7 +330,7 @@ export default function LoginPage() {
 
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
 
-  const socialProviders = useSocialSignin();
+  const socialProviders = useSocialSignin('login');
 
   const handleOAuthLogin = async (provider: SocialProvider) => {
     if (oauthLoading) return;
@@ -343,8 +360,10 @@ export default function LoginPage() {
       // Tokens returned and session already set — route by role
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        if (await refuseNewSocialAccount(user)) return;
         const role = await getRoleAndRepairAccount(user);
         if (await handleFirstTimeOAuth(user, role)) return;
+        clearSocialSignupIntent();
         const next = sessionStorage.getItem('oauth_next');
         sessionStorage.removeItem('oauth_next');
         logAudit('login');
@@ -511,7 +530,7 @@ export default function LoginPage() {
               <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 space-y-2">
                 <p className="text-sm font-medium text-destructive">{t('auth.oauth_error_title', 'Sign-in did not complete')}</p>
                 <p className="text-xs text-muted-foreground">{oauthError.description}</p>
-                {socialProviders.includes('google') && (
+                {oauthError.error !== 'no_account' && socialProviders.includes('google') && (
                   <Button type="button" size="sm" variant="outline" onClick={() => handleOAuthLogin('google')} disabled={!!oauthLoading}>
                     {t('auth.oauth_try_again', 'Try again')}
                   </Button>
@@ -532,7 +551,7 @@ export default function LoginPage() {
               {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {lockRemaining ? `Locked (${lockRemaining})` : t('auth.login_btn')}
             </Button>
-            <SocialSignInButtons providers={socialProviders} loadingProvider={oauthLoading} disabled={loading} onSelect={handleOAuthLogin} />
+            <SocialSignInButtons providers={socialProviders} loadingProvider={oauthLoading} disabled={loading} onSelect={handleOAuthLogin} note={t('auth.social_returning_only', 'Returning users only. New accounts: please sign up with e-mail.')} />
             <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('auth.forgot_link')}
             </Link>

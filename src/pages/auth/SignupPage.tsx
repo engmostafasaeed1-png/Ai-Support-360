@@ -95,7 +95,7 @@ function SignupForm() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
 
-  const socialProviders = useSocialSignin();
+  const socialProviders = useSocialSignin('signup');
   const googleEnabled = socialProviders.includes('google');
 
   const handleGoogleSignup = async () => {
@@ -113,7 +113,7 @@ function SignupForm() {
     setGoogleError(null);
     setGoogleLoading(true);
     try {
-      const result = await startSocialSignIn('google', { redirect_uri: oauthRedirectUri(window.location.origin) });
+      const result = await startSocialSignIn('google', { redirect_uri: oauthRedirectUri(window.location.origin) }, 'signup');
       if (result.error) { setGoogleError(friendlyOAuthMessage(result.error.message || '')); return; }
       if (result.redirected) return;
       navigate('/login', { replace: true }); // popup flow: session set, /login applies the stored account type
