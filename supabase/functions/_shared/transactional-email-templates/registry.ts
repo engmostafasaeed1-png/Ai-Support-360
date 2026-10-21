@@ -35,6 +35,7 @@ import { template as assignmentInfo } from './assignment-info.tsx'
 import { template as feedbackReply } from './feedback-reply.tsx'
 import { template as availabilityUrgent } from './availability-urgent.tsx'
 import { template as holdEnded } from './hold-ended.tsx'
+import { template as meetingInvitation } from './meeting-invitation.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'admin-notification': adminNotification,
@@ -60,4 +61,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'feedback-reply': feedbackReply,
   'availability-urgent': availabilityUrgent,
   'hold-ended': holdEnded,
+  'meeting-invitation': meetingInvitation,
 }

@@ -61,6 +61,10 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = false
   [functions.availability-run]
     verify_jwt = false
+  [functions.meeting-ics]
+    verify_jwt = false
+  [functions.schedule-meeting]
+    verify_jwt = false
   [functions.notification-pause]
     verify_jwt = false
   [functions.bulk-messages-run]

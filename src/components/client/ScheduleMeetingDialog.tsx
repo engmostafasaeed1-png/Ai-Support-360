@@ -15,11 +15,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { format, addMinutes, setHours, setMinutes } from 'date-fns';
-import { sessionRoomUrl } from '@/lib/meetingRoom';
 import { validateMeetingUrl } from '@/lib/meetingUrlValidation';
+import { useTranslation } from 'react-i18next';
+import { addInvitees, inviteStatusText, MAX_EXTERNAL_INVITEES, meetingErrorText, type InviteResult } from '@/lib/meetingInvite';
+import { scheduleMeeting } from '@/lib/scheduleMeeting';
 import {
   CalendarDays, Clock, Video, MessageSquare, Monitor, Bell,
-  Loader2, CheckCircle2, X, UserPlus, Users, Mail, Search,
+  Loader2, CheckCircle2, X, UserPlus, Users, Mail, Search, AlertTriangle, Copy,
 } from 'lucide-react';
 
 interface Props {
@@ -88,6 +90,12 @@ const PROVIDER_OF_PLATFORM: Record<string, string> = { zoom: 'zoom', google_meet
 
 export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ticketTitle, clientId, consultantId, consultantName }: Props) {
   const queryClient = useQueryClient();
+  const { i18n } = useTranslation();
+  const lang: 'en' | 'ar' = i18n?.language?.startsWith('ar') ? 'ar' : 'en';
+  const [inputError, setInputError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [results, setResults] = useState<{ joinUrl: string; invitations: InviteResult[] } | null>(null);
+  useEffect(() => { if (open) { setServerError(null); setResults(null); setInputError(null); } }, [open]);
   const [date, setDate] = useState<Date | undefined>();
   const [time, setTime] = useState('10:00');
   const [sessionType, setSessionType] = useState('video');
@@ -162,20 +170,18 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
     );
   };
 
-  const addExternalEmail = () => {
-    const email = externalInput.trim();
-    if (!email) return;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      toast.error('Invalid email address');
-      return;
-    }
-    if (externalEmails.some(e => e.email === email)) {
-      toast.error('Email already added');
-      return;
-    }
-    setExternalEmails(prev => [...prev, { email }]);
-    setExternalInput('');
+  // Typed or pasted addresses become chips (comma, semicolon, space or new line separated); max 10 per meeting.
+  const addExternalEmail = (raw = externalInput) => {
+    if (!raw.trim()) return;
+    const r = addInvitees(externalEmails.map(e => e.email), raw);
+    setExternalEmails(r.list.map(email => ({ email })));
+    const problems = [
+      r.invalid.length ? (lang === 'ar' ? `عنوان غير صحيح: ${r.invalid.join('، ')}` : `Not a valid e-mail address: ${r.invalid.join(', ')}`) : null,
+      r.duplicates.length ? (lang === 'ar' ? `مضاف مسبقًا: ${r.duplicates.join('، ')}` : `Already added: ${r.duplicates.join(', ')}`) : null,
+      r.overLimit.length ? (lang === 'ar' ? `الحد الأقصى ${MAX_EXTERNAL_INVITEES} عناوين لكل اجتماع.` : `At most ${MAX_EXTERNAL_INVITEES} e-mail addresses per meeting.`) : null,
+    ].filter(Boolean) as string[];
+    setInputError(problems.length ? problems.join(' ') : null);
+    setExternalInput(r.invalid.join(' '));
   };
 
   const removeExternalEmail = (email: string) => {
@@ -202,57 +208,38 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
     }
 
     setSaving(true);
+    setServerError(null);
     const [h, m] = time.split(':').map(Number);
     const scheduledAt = setMinutes(setHours(date, h), m);
-    const sessionId = crypto.randomUUID();
-    const meetingUrl = pasteLink ? pastedUrl.trim() : sessionRoomUrl(sessionId);
-
-    // Create session for first selected consultant (primary)
-    const primaryConsultantId = selectedConsultantIds[0] || null;
-    const { error } = await supabase.from('sessions').insert({
-      id: sessionId,
+    const res = await scheduleMeeting({
       ticket_id: ticketId,
-      client_id: clientId,
-      consultant_id: primaryConsultantId,
-      session_type: sessionType as any,
-      video_platform: platform,
+      consultant_ids: selectedConsultantIds,
+      external_emails: externalEmails.map(e => e.email),
+      session_type: sessionType,
+      platform,
       scheduled_at: scheduledAt.toISOString(),
       duration_minutes: parseInt(duration),
-      meeting_url: meetingUrl,
-      status: 'scheduled' as any,
-      notes: notes || null,
       reminder_minutes: parseInt(reminder),
-    } as any);
-
-    if (error) {
-      toast.error('Failed to schedule meeting');
-      console.error(error);
-      setSaving(false);
+      notes: notes || undefined,
+      meeting_url: pasteLink ? pastedUrl.trim() : undefined,
+      lang,
+    });
+    setSaving(false);
+    if (!res.ok) {
+      const text = meetingErrorText(res.code, lang);
+      setServerError(text);
+      toast.error(text);
       return;
     }
-
-    // The session's own consultant is notified by the database; tell the other selected consultants
-    const otherInvitees = selectedConsultantIds.filter(id => id !== primaryConsultantId);
-    if (otherInvitees.length > 0) {
-      const { error: inviteError } = await supabase.rpc('invite_to_meeting', {
-        _session_id: sessionId,
-        _consultant_ids: otherInvitees,
-      });
-      if (inviteError) console.error(inviteError);
-    }
-
-    // Download .ics
-    downloadICS(scheduledAt, parseInt(duration), ticketTitle, meetingUrl, selectedConsultantNames, externalEmails.map(e => e.email));
-
-    const inviteeSummary = [
-      ...selectedConsultantNames,
-      ...externalEmails.map(e => e.email),
-    ];
-    toast.success(`Meeting scheduled with ${inviteeSummary.length} participant(s)! Calendar invite downloaded.`);
+    downloadICS(scheduledAt, parseInt(duration), ticketTitle, res.join_url, selectedConsultantNames, externalEmails.map(e => e.email));
     queryClient.invalidateQueries({ queryKey: ['ticket-sessions', ticketId] });
     setPastedUrl('');
-    onOpenChange(false);
-    setSaving(false);
+    const sent = res.invitations.filter(r => r.status === 'sent').length;
+    toast.success(lang === 'ar'
+      ? `تمت جدولة الاجتماع. ${res.invitations.length ? `أُرسلت ${sent} من ${res.invitations.length} دعوة.` : ''}`
+      : `Meeting scheduled.${res.invitations.length ? ` ${sent} of ${res.invitations.length} invitation(s) sent.` : ''} Calendar file downloaded.`);
+    if (res.invitations.length) setResults({ joinUrl: res.join_url, invitations: res.invitations });
+    else onOpenChange(false);
   };
 
   return (
@@ -274,7 +261,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
             <Label className="text-xs font-medium flex items-center gap-1">
               <Users className="w-3.5 h-3.5" /> Participants
             </Label>
-            <RadioGroup value={inviteeSource} onValueChange={(v) => { setInviteeSource(v as InviteeSource); setSelectedConsultantIds([]); setExternalEmails([]); }} className="flex gap-2">
+            <RadioGroup value={inviteeSource} onValueChange={(v) => setInviteeSource(v as InviteeSource)} className="flex gap-2">
               {[
                 { value: 'assigned', label: 'Assigned', icon: CheckCircle2 },
                 { value: 'external', label: 'External', icon: Mail },
@@ -344,27 +331,40 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
                   placeholder="Enter email address..."
                   value={externalInput}
                   onChange={e => setExternalInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addExternalEmail())}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ',' || e.key === ';') { e.preventDefault(); addExternalEmail(); } }}
+                  onPaste={e => { const text = e.clipboardData.getData('text'); if (/[\s,;]/.test(text.trim())) { e.preventDefault(); addExternalEmail(text); } }}
+                  onBlur={() => externalInput.trim() && addExternalEmail()}
                   className="h-8 text-xs flex-1"
-                  type="email"
+                  type="text"
+                  inputMode="email"
+                  autoComplete="off"
+                  aria-label={lang === 'ar' ? 'عناوين بريد المشاركين الخارجيين' : 'External participant e-mail addresses'}
+                  aria-invalid={!!inputError}
+                  aria-describedby="external-email-help"
+                  data-testid="external-email-input"
                 />
-                <Button size="sm" variant="outline" onClick={addExternalEmail} className="h-8 text-xs gap-1">
+                <Button size="sm" variant="outline" onClick={() => addExternalEmail()} className="h-8 text-xs gap-1" disabled={externalEmails.length >= MAX_EXTERNAL_INVITEES}>
                   <UserPlus className="w-3.5 h-3.5" /> Add
                 </Button>
               </div>
               {externalEmails.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {externalEmails.map(e => (
-                    <Badge key={e.email} variant="secondary" className="text-[10px] gap-1">
-                      <Mail className="w-3 h-3" />
-                      {e.email}
-                      <X className="w-3 h-3 cursor-pointer" onClick={() => removeExternalEmail(e.email)} />
+                    <Badge key={e.email} variant="secondary" className="text-[10px] gap-1" data-testid="external-email-chip">
+                      <Mail className="w-3 h-3" aria-hidden="true" />
+                      <bdi>{e.email}</bdi>
+                      <button type="button" aria-label={lang === 'ar' ? `إزالة ${e.email}` : `Remove ${e.email}`} onClick={() => removeExternalEmail(e.email)} className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        <X className="w-3 h-3" aria-hidden="true" />
+                      </button>
                     </Badge>
                   ))}
                 </div>
               )}
-              <p className="text-[10px] text-muted-foreground">
-                External participants will receive a calendar invitation via the downloaded .ics file
+              {inputError && <p role="alert" className="text-[11px] text-destructive" data-testid="external-email-error">{inputError}</p>}
+              <p id="external-email-help" className="text-[10px] text-muted-foreground">
+                {lang === 'ar'
+                  ? `تصل كل شخص رسالة دعوة فيها رابط الانضمام (بدون حساب) وملف التقويم. حتى ${MAX_EXTERNAL_INVITEES} عناوين (${externalEmails.length}/${MAX_EXTERNAL_INVITEES}).`
+                  : `Each person gets an invitation e-mail with the join link (no account needed) and a calendar file. Up to ${MAX_EXTERNAL_INVITEES} addresses (${externalEmails.length}/${MAX_EXTERNAL_INVITEES}).`}
               </p>
             </div>
           )}
@@ -524,12 +524,36 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
           )}
         </div>
 
+        {serverError && (
+          <div role="alert" className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-foreground" data-testid="schedule-meeting-error">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />{serverError}
+          </div>
+        )}
+        {results && (
+          <div className="space-y-2 rounded-xl border border-border/60 p-3" data-testid="invitation-results" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+            <p className="text-xs font-semibold">{lang === 'ar' ? 'حالة الدعوات' : 'Invitation status'}</p>
+            <ul className="space-y-1">
+              {results.invitations.map(r => (
+                <li key={r.email} className="flex flex-wrap items-start gap-2 text-[11px]" data-testid="invitation-status" data-status={r.status}>
+                  {r.status === 'sent' ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-success" aria-hidden="true" /> : <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-destructive" aria-hidden="true" />}
+                  <bdi className="font-medium">{r.email}</bdi>
+                  <span className="text-muted-foreground">{inviteStatusText(r.status, lang)}</span>
+                </li>
+              ))}
+            </ul>
+            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => { void navigator.clipboard?.writeText(results.joinUrl); toast.success(lang === 'ar' ? 'تم نسخ رابط الانضمام.' : 'Join link copied.'); }}>
+              <Copy className="h-3.5 w-3.5" aria-hidden="true" />{lang === 'ar' ? 'انسخ رابط الانضمام' : 'Copy join link'}
+            </Button>
+          </div>
+        )}
         <DialogFooter className="gap-2">
+          {results ? <Button onClick={() => onOpenChange(false)}>{lang === 'ar' ? 'تم' : 'Done'}</Button> : <>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button className="gradient-primary border-0 gap-2" onClick={handleSchedule} disabled={saving || !date || totalInvitees === 0}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
             Schedule Meeting
           </Button>
+          </>}
         </DialogFooter>
       </DialogContent>
     </Dialog>
