@@ -309,7 +309,7 @@ export default function ReferAndEarnPage() {
                   <span key={b.at} className={cn('inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium',
                     b.earned ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground')}>
                     {b.earned ? <Check className="w-3 h-3" aria-hidden /> : null}
-                    {t('refz.badge', '{{count}} verified referral', { count: b.at })}
+                    {t('refz.badge', 'Verified referrals: {{n}}', { n: b.at })}
                     <span className="sr-only">{b.earned ? t('refz.badge_earned', 'earned') : t('refz.badge_not_yet', 'not yet')}</span>
                   </span>
                 ))}

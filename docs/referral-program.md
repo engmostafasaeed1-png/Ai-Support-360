@@ -64,7 +64,7 @@ created for payouts that already exist.
 | refz.admin_title | الإحالات |
 | refz.available | متاح |
 | refz.available_hint | تُدفع مع دورة الدفعات التالية عندما تبلغ {{min}} |
-| refz.badge | {{count}} إحالة موثّقة |
+| refz.badge | إحالات موثّقة: {{n}} |
 | refz.badge_earned | تم الحصول عليها |
 | refz.badge_not_yet | ليس بعد |
 | refz.badges | شارات المُحيل |
