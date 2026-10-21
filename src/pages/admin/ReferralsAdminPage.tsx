@@ -18,6 +18,70 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { referralRpc, rpcMessage } from '@/hooks/useReferralProgram';
 import { formatRate, LINE_STATUS_LABEL, referralCsv, type LineStatus } from '@/lib/referrals';
 import { cn } from '@/lib/utils';
+import ReferralCalculations from '@/components/referral/ReferralCalculations';
+
+/** Same calculations page as the consultant sees, for any consultant, read-only. */
+function AdminCalculations() {
+  const [q, setQ] = useState('');
+  const [picked, setPicked] = useState<{ id: string; name: string; code: string } | null>(null);
+  const list = useRpc<Row[]>(['refadmin', 'pick', q], 'admin_referral_referrers', { _search: q || null, _limit: 30 });
+  return (
+    <div className="space-y-4">
+      <Card className="rounded-2xl"><CardContent className="p-4 space-y-2">
+        <Label htmlFor="calc-pick">Consultant (read-only view)</Label>
+        <Input id="calc-pick" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or referral code" className="max-w-sm rounded-xl" />
+        <div className="flex flex-wrap gap-2">
+          {(list.data ?? []).slice(0, 12).map((r) => (
+            <Button key={String(r.referrer_id)} size="sm" variant={picked?.id === String(r.referrer_id) ? 'default' : 'outline'} className="h-7 text-xs rounded-xl"
+              onClick={() => setPicked({ id: String(r.referrer_id), name: String(r.referrer_name ?? '-'), code: String(r.code) })}>
+              {String(r.referrer_name ?? '-')} · <span className="font-mono" dir="ltr">{String(r.code)}</span>
+            </Button>
+          ))}
+        </div>
+      </CardContent></Card>
+      {picked ? (
+        <div className="space-y-2">
+          <p className="text-sm font-medium">{picked.name} <Badge variant="outline" className="ms-2 text-[10px]">Read-only</Badge></p>
+          <ReferralCalculations consultantId={picked.id} code={picked.code} />
+        </div>
+      ) : <p className="text-sm text-muted-foreground">Choose a consultant to see their referral calculations exactly as they see them.</p>}
+    </div>
+  );
+}
+
+/** Reconciliation: sum of lines must match rewards, reversals and referral payouts; differences are flagged. */
+function ReconcileCard() {
+  const [all, setAll] = useState(false);
+  const rec = useRpc<Row[]>(['refadmin', 'reconcile', all], 'admin_referral_reconcile', { _consultant: null, _only_problems: !all });
+  const rows = rec.data ?? [];
+  return (
+    <Card className="rounded-2xl">
+      <CardHeader className="pb-2 flex-row items-center justify-between gap-2">
+        <CardTitle className="text-base">Reconciliation check</CardTitle>
+        <div className="flex items-center gap-2 text-xs"><Switch id="rec-all" checked={all} onCheckedChange={setAll} /><Label htmlFor="rec-all">Show passed checks too</Label></div>
+      </CardHeader>
+      <CardContent className="p-0 overflow-x-auto">
+        {rec.isLoading ? <div className="p-4"><Skeleton className="h-16 w-full" /></div> : rows.length === 0 ? (
+          <p className="p-6 text-sm text-success">All checks pass: every reward equals fee x rate, every reversal mirrors its reward, and referral payouts equal their lines.</p>
+        ) : (
+          <Table>
+            <TableHeader><TableRow><TableHead>Consultant</TableHead><TableHead>Check</TableHead><TableHead>Result</TableHead><TableHead className="text-end">Expected</TableHead><TableHead className="text-end">Actual</TableHead><TableHead>What it means</TableHead></TableRow></TableHeader>
+            <TableBody>{rows.map((r, i) => (
+              <TableRow key={i}>
+                <TableCell className="text-sm">{String(r.consultant_name ?? '-')}</TableCell>
+                <TableCell className="text-xs">{String(r.check_name).replace(/_/g, ' ')}</TableCell>
+                <TableCell>{r.ok ? <Badge variant="secondary" className="text-[10px]">OK</Badge> : <Badge variant="destructive" className="text-[10px]">Different</Badge>}</TableCell>
+                <TableCell className="text-end tabular-nums text-xs">{r.expected == null ? '-' : money(r.expected)}</TableCell>
+                <TableCell className="text-end tabular-nums text-xs">{r.actual == null ? '-' : money(r.actual)}</TableCell>
+                <TableCell className="text-xs text-muted-foreground max-w-[280px]">{String(r.detail ?? '')}</TableCell>
+              </TableRow>
+            ))}</TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 type Row = Record<string, unknown>;
 const money = (v: unknown, cur = 'USD') => {
@@ -271,6 +335,8 @@ export default function ReferralsAdminPage() {
           <TabsTrigger value="lines">Reward lines</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="audit">Audit trail</TabsTrigger>
+          <TabsTrigger value="calc">Calculations</TabsTrigger>
+          <TabsTrigger value="reconcile">Reconciliation</TabsTrigger>
         </TabsList>
 
         <div className="mt-3 flex flex-wrap gap-2">
@@ -395,6 +461,9 @@ export default function ReferralsAdminPage() {
         </TabsContent>
 
         <TabsContent value="settings">{overview.data ? <SettingsCard settings={(o.settings ?? {}) as Row} /> : <Skeleton className="h-40 w-full rounded-2xl" />}</TabsContent>
+
+        <TabsContent value="calc"><AdminCalculations /></TabsContent>
+        <TabsContent value="reconcile"><ReconcileCard /></TabsContent>
 
         <TabsContent value="audit">
           <Card className="rounded-2xl"><CardContent className="p-0 overflow-x-auto">

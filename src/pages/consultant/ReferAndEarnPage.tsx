@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ReferralCalculations from '@/components/referral/ReferralCalculations';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
@@ -220,6 +222,8 @@ export default function ReferAndEarnPage() {
   const invite = useMyReferralInvite(loaded);
   const invalidate = useInvalidateReferral();
   const nextText = useNextStepText();
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') === 'calculations' ? 'calculations' : 'overview';
 
   // Until the programme SQL is applied (or for demo visitors) the existing member referral page stays.
   if (isGuest || (overview.data && !overview.data.available)) return <ReferralsPage />;
@@ -259,6 +263,13 @@ export default function ReferAndEarnPage() {
         <Card className="rounded-2xl border-warning/40"><CardContent className="p-4 text-sm">{t('refz.paused', 'The referral programme is paused at the moment. Rewards already earned stay yours.')}</CardContent></Card>
       )}
 
+      <Tabs value={tab} onValueChange={(v) => { const n = new URLSearchParams(params); if (v === 'overview') n.delete('tab'); else n.set('tab', v); setParams(n, { replace: true }); }}>
+        <TabsList>
+          <TabsTrigger value="overview">{t('refz.tab_overview', 'Overview')}</TabsTrigger>
+          <TabsTrigger value="calculations">{t('refz.tab_calc', 'Referral calculations')}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="calculations" className="mt-4"><ReferralCalculations code={ov.code} /></TabsContent>
+        <TabsContent value="overview" className="mt-4 space-y-6">
       {invite.data && <InviteCard invite={invite.data} onDone={invalidate} />}
       {!active && <ReferrerActivationCard ov={ov} onDone={invalidate} />}
       {(
@@ -428,6 +439,8 @@ export default function ReferAndEarnPage() {
           </Card>
         </>
       )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
