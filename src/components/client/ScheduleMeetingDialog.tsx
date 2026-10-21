@@ -15,7 +15,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { format, addMinutes, setHours, setMinutes } from 'date-fns';
-import { sessionRoomUrl } from '@/lib/meetingRoom';
 import { validateMeetingUrl } from '@/lib/meetingUrlValidation';
 import { useTranslation } from 'react-i18next';
 import { addInvitees, inviteStatusText, MAX_EXTERNAL_INVITEES, meetingErrorText, type InviteResult } from '@/lib/meetingInvite';
