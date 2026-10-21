@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -17,6 +17,7 @@ import {
   OUTCOME_LABEL, REASON_LABEL, recomputeSuccess, reviewSuccessDispute, setSuccessOverride, useAdminSuccessBreakdown, useAdminSuccessDisputes,
   type SuccessEngagement,
 } from '@/hooks/useSuccessAdmin';
+import { LevelStars } from '@/components/consultant/SuccessStars';
 import { successLabel, successLevelOf, successPct, successSettingsProblems, SUCCESS_DEFAULTS, type SuccessSettings } from '@/lib/successLevel';
 import { cn } from '@/lib/utils';
 
@@ -51,10 +52,15 @@ export function SuccessBreakdown({ consultantId }: { consultantId: string }) {
       qc.invalidateQueries({ queryKey: ['success-stat', consultantId] });
     } catch (err) { toast.error((err as Error).message); } finally { setBusy(null); }
   };
-  const cells: Array<[string, string | number]> = [
+  const cells: Array<[string, ReactNode]> = [
     [ar ? 'الطلبات' : 'Requests', total], [ar ? 'المحلولة' : 'Solved', solved], [ar ? 'غير المحلولة' : 'Not solved', stats?.not_solved ?? 0],
     [ar ? 'نسبة النجاح' : 'Success rate', total ? `${successPct(total, solved)} %` : '–'],
-    [ar ? 'المستوى' : 'Level', lv === 'new' ? (ar ? 'جديد' : 'New') : lv === 'none' ? (ar ? 'بدون مستوى' : 'No level') : successLabel(lv, ar ? 'ar' : 'en')],
+    [ar ? 'المستوى' : 'Level', (
+      <span className="inline-flex flex-wrap items-center gap-1.5" data-testid="admin-success-level">
+        <LevelStars level={lv === 'new' || lv === 'none' ? null : lv} size={13} />
+        {lv === 'new' ? (ar ? 'جديد' : 'New') : lv === 'none' ? (ar ? 'بدون مستوى' : 'No level') : successLabel(lv, ar ? 'ar' : 'en')}
+      </span>
+    )],
     [ar ? 'آخر 12 شهرًا' : 'Last 12 months', `${stats?.solved_12m ?? 0} / ${stats?.requests_12m ?? 0}`],
     [ar ? 'قيد التنفيذ' : 'In progress', stats?.open_count ?? 0], [ar ? 'بانتظار التأكيد' : 'Awaiting confirmation', stats?.awaiting_confirmation ?? 0],
     [ar ? 'لم يبدأ' : 'Never started', ex.never_started ?? 0], [ar ? 'ملغاة' : 'Voided', ex.voided ?? 0],
