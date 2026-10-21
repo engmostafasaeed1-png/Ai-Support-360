@@ -20,6 +20,7 @@ interface SignupEmailProps {
   siteUrl: string
   recipient: string
   confirmationUrl: string
+  code?: string | null
 }
 
 export const SignupEmail = ({
@@ -27,6 +28,7 @@ export const SignupEmail = ({
   siteUrl,
   recipient,
   confirmationUrl,
+  code,
 }: SignupEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
@@ -53,10 +55,23 @@ export const SignupEmail = ({
             Verify my email
           </Button>
         </Section>
+        <Text style={note}>
+          The button opens our site, where you press "Confirm my e-mail". The link works once and only for a
+          limited time. If it has expired, sign in or sign up again and we will send you a new one.
+        </Text>
+        {code ? (
+          <Section style={codeBox}>
+            <Text style={codeLabel}>Or enter this code on the confirmation page:</Text>
+            <Text style={codeText}>{code}</Text>
+          </Section>
+        ) : null}
         <Text style={fallback}>
           Or copy and paste this link into your browser:
         </Text>
         <Text style={fallbackLink}>{confirmationUrl}</Text>
+        <Text style={arText} dir="rtl">
+          اضغط الزر لتأكيد بريدك الإلكتروني، ثم اضغط «تأكيد بريدي الإلكتروني» في موقعنا. الرابط يعمل مرة واحدة ولمدة محدودة.{code ? ` أو أدخل الرمز ${code}.` : ''}
+        </Text>
         <Text style={footer}>
           If you didn't create an account, you can safely ignore this email.
         </Text>
@@ -109,6 +124,11 @@ const button = {
   textDecoration: 'none',
   display: 'inline-block',
 }
+const note = { fontSize: '13px', color: '#475569', lineHeight: '1.5', margin: '0 0 16px' }
+const codeBox = { backgroundColor: '#F1F5F9', borderRadius: '12px', padding: '12px 16px', margin: '0 0 16px', textAlign: 'center' as const }
+const codeLabel = { fontSize: '12px', color: '#475569', margin: '0 0 4px' }
+const codeText = { fontSize: '26px', fontWeight: 'bold' as const, letterSpacing: '6px', color: '#1B2559', margin: 0, fontFamily: 'Consolas, Menlo, monospace' }
+const arText = { fontSize: '13px', color: '#475569', lineHeight: '1.6', margin: '16px 0 0', textAlign: 'right' as const }
 const fallback = { fontSize: '12px', color: '#94a3b8', margin: '20px 0 4px' }
 const fallbackLink = {
   fontSize: '12px',
