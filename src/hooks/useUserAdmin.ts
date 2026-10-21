@@ -135,7 +135,8 @@ export function useUserDetail(id: string | null, installed: boolean | undefined)
     queryKey: ['um', 'detail', id, installed],
     enabled: !!id && installed !== undefined,
     queryFn: async (): Promise<UserDetail> => {
-      if (installed) return await callRpc<UserDetail>('admin_user_detail', { _uid: id });
+      // The database detail names the account id `user_id`; the console and every action use `id`.
+      if (installed) return normalizeUserDetail(await callRpc<UserDetail>('admin_user_detail', { _uid: id }));
       const row = (await legacyList()).find((u) => u.id === id);
       return { user: row ?? null, legacy: true };
     },
