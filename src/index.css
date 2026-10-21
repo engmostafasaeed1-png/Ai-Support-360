@@ -98,9 +98,11 @@
     --radius-lg: 1rem;
     --radius-xl: 1.5rem;
 
-    /* Scrollbars */
-    --scrollbar-thumb: 214 30% 72%;
-    --scrollbar-thumb-hover: 226 60% 55%;
+    /* Scrollbars: brand navy at ~55 %, solid on hover, darker while dragging */
+    --scrollbar-thumb: hsl(214 94% 19% / 0.55);
+    --scrollbar-thumb-hover: hsl(214 94% 19%);
+    --scrollbar-thumb-active: hsl(214 94% 12%);
+    --scrollbar-track: hsl(220 33% 94%);
 
     /* Motion */
     --motion-fast: 150ms;
@@ -165,8 +167,11 @@
     --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.35), 0 4px 12px -6px hsl(0 0% 0% / 0.45);
     --shadow-elevated: 0 1px 2px hsl(0 0% 0% / 0.4), 0 8px 18px -6px hsl(0 0% 0% / 0.5), 0 20px 44px -12px hsl(0 0% 0% / 0.6);
 
-    --scrollbar-thumb: 218 22% 34%;
-    --scrollbar-thumb-hover: 226 70% 66%;
+    /* 70 % (not 55 %) keeps the resting thumb at 3:1 against the dark track */
+    --scrollbar-thumb: hsl(226 80% 68% / 0.7);
+    --scrollbar-thumb-hover: hsl(226 80% 68%);
+    --scrollbar-thumb-active: hsl(226 72% 58%);
+    --scrollbar-track: hsl(0 0% 100% / 0.06);
   }
 }
 
@@ -194,25 +199,61 @@
     text-wrap: balance;
   }
 
-  /* Scrolling: native behaviour, thin brand scrollbars, no layout shift when a scrollbar appears */
+  /* Scrolling: native behaviour, no layout shift when a scrollbar appears.
+     Page gutter is "stable" only: "both-edges" would offset the content from the fixed header. */
   html { scrollbar-gutter: stable; }
-  /* Browsers without the -webkit- scrollbar styling (Firefox) get the standard thin brand scrollbar */
-  @supports not selector(::-webkit-scrollbar) {
-    * {
-      scrollbar-width: thin;
-      scrollbar-color: hsl(var(--scrollbar-thumb)) transparent;
+
+  /* Large, easy-to-grab brand scrollbars on mouse/trackpad devices only; touch phones keep the native overlay.
+     The bar stays on the browser's natural side in RTL. Thumb/track contrast is at least 3:1 in both themes. */
+  @media (pointer: fine) {
+    /* Firefox only (Chrome 121+ would let these override the -webkit- styling); Firefox cannot go wider than auto */
+    @supports not selector(::-webkit-scrollbar) {
+      * {
+        scrollbar-width: auto;
+        scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+      }
     }
+
+    /* Inner scroll areas (modals, tables, chat panes, dropdowns): 12 px, thumb grows on hover */
+    ::-webkit-scrollbar { width: 12px; height: 12px; }
+    ::-webkit-scrollbar-track {
+      background-color: var(--scrollbar-track);
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background-clip: padding-box;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: var(--scrollbar-thumb);
+      border-radius: 999px;
+      border: 3px solid transparent;
+      background-clip: padding-box;
+      min-height: 40px;
+      min-width: 40px;
+    }
+    ::-webkit-scrollbar-track:hover { border-width: 0; }
+    ::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbar-thumb-hover); border-width: 2px; }
+    ::-webkit-scrollbar-thumb:active { background-color: var(--scrollbar-thumb-active); border-width: 2px; }
+    ::-webkit-scrollbar-corner { background: transparent; }
+
+    /* Page scrollbar: 16 px reserved so the page never shifts; looks 14 px at rest (4 px floating inset) and 16 px on hover/drag */
+    html::-webkit-scrollbar { width: 16px; height: 16px; }
+    html::-webkit-scrollbar-track { border-width: 1px; }
+    html::-webkit-scrollbar-thumb { border-width: 5px; min-height: 56px; min-width: 56px; }
+    html::-webkit-scrollbar-track:hover { border-width: 0; }
+    html::-webkit-scrollbar-thumb:hover,
+    html::-webkit-scrollbar-thumb:active { border-width: 4px; }
+
+    /* Scrolling dialogs keep their content centred */
+    :is([role="dialog"], [role="alertdialog"]):is(.overflow-y-auto, .overflow-auto) { scrollbar-gutter: stable both-edges; }
   }
-  ::-webkit-scrollbar { width: 10px; height: 10px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--scrollbar-thumb));
-    border-radius: 999px;
-    border: 3px solid transparent;
-    background-clip: content-box;
+
+  /* Navy portal sidebar: light thumb on a faint white track */
+  [data-sidebar="sidebar"] {
+    --scrollbar-thumb: hsl(var(--sidebar-foreground) / 0.55);
+    --scrollbar-thumb-hover: hsl(var(--sidebar-foreground));
+    --scrollbar-thumb-active: hsl(0 0% 100%);
+    --scrollbar-track: hsl(0 0% 100% / 0.06);
   }
-  ::-webkit-scrollbar-thumb:hover { background-color: hsl(var(--scrollbar-thumb-hover)); }
-  ::-webkit-scrollbar-corner { background: transparent; }
   /* Dialog scroll lock: the gutter already keeps the page still, so drop the lock's extra margin. */
   html body[data-scroll-locked] { margin-right: 0 !important; margin-left: 0 !important; }
 

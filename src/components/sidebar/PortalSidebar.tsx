@@ -152,7 +152,7 @@ export default function PortalSidebar({
         </SidebarHeader>
 
         <SidebarContent className="gap-0" data-tour={scope === 'consultant' ? 'nav' : undefined}>
-          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-color:hsl(var(--sidebar-border))_transparent] [scrollbar-width:thin] group-data-[collapsible=icon]:[scrollbar-width:none]">
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden group-data-[collapsible=icon]:[scrollbar-width:none]">
             <SidebarNav
               scope={scope}
               groups={shownGroups}
