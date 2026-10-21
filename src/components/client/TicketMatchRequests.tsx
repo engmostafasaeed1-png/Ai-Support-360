@@ -18,6 +18,7 @@ import ConsultantLocation from '@/components/consultant/ConsultantLocation';
 import { extendAssignmentRequest, useAssignmentPolicy } from '@/hooks/useAssignmentPolicy';
 import { clientRequestView, durationLabel, timeLeftLabel } from '../../../supabase/functions/_shared/assignmentPolicy';
 import ResponsivenessChip from '@/components/consultant/ResponsivenessChip';
+import ConsultantRing from '@/components/consultant/ConsultantRing';
 import AssignmentInfoCard from '@/components/client/AssignmentInfoCard';
 import { useAssignmentInfoReady, useDeclineHints, useInfoRequests } from '@/hooks/useAssignmentInfo';
 
@@ -44,7 +45,7 @@ type Row = {
   id: string; consultant_id: string; status: string; created_at: string;
   response_due_at?: string | null; extended_at?: string | null;
   info_paused_at?: string | null; viewed_at?: string | null;
-  consultant_name: string; city: string | null; country: string | null;
+  consultant_name: string; avatar_url?: string | null; city: string | null; country: string | null;
 };
 
 export default function TicketMatchRequests({ ticketId, clientId, ticketClosed = false, onInviteAnother, onOpenBids }: Props) {
@@ -79,15 +80,17 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
       const rows = (data ?? []) as Array<Record<string, any>>;
       const names = new Map<string, string>();
       const places = new Map<string, { city: string | null; country: string | null }>();
+      const photos = new Map<string, string | null>();
       const consultantIds = [...new Set(rows.map((r) => r.consultant_id as string))];
       if (consultantIds.length > 0) {
         const { data: consultants } = await supabase.from('consultants').select('id, user_id, city, country').in('id', consultantIds);
         (consultants ?? []).forEach((c: any) => places.set(c.id, { city: c.city ?? null, country: c.country ?? null }));
         const userIds = (consultants ?? []).map((c) => c.user_id);
         if (userIds.length > 0) {
-          const { data: profiles } = await supabase.from('profile_directory').select('user_id, display_name').in('user_id', userIds);
+          const { data: profiles } = await supabase.from('profile_directory').select('user_id, display_name, avatar_url').in('user_id', userIds);
           const byUser = new Map((profiles ?? []).map((p) => [p.user_id, p.display_name || 'Consultant']));
-          (consultants ?? []).forEach((c) => names.set(c.id, byUser.get(c.user_id) || 'Consultant'));
+          const photoByUser = new Map((profiles ?? []).map((p) => [p.user_id, (p as { avatar_url?: string | null }).avatar_url ?? null]));
+          (consultants ?? []).forEach((c) => { names.set(c.id, byUser.get(c.user_id) || 'Consultant'); photos.set(c.id, photoByUser.get(c.user_id) ?? null); });
         }
       }
       return rows.map((r) => ({
@@ -95,6 +98,7 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
         response_due_at: r.response_due_at ?? null, extended_at: r.extended_at ?? null,
         info_paused_at: r.info_paused_at ?? null, viewed_at: r.viewed_at ?? null,
         consultant_name: names.get(r.consultant_id) || 'Consultant',
+        avatar_url: photos.get(r.consultant_id) ?? null,
         city: places.get(r.consultant_id)?.city ?? null, country: places.get(r.consultant_id)?.country ?? null,
       }));
     },
@@ -195,6 +199,7 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
                 className={`rounded-xl border p-3 space-y-2 ${view.kind === 'no_response' ? 'border-orange-300/70 bg-orange-50/50 dark:bg-orange-950/20' : 'border-border/40'}`}
               >
                 <div className="flex items-center gap-3">
+                  <ConsultantRing consultantId={r.consultant_id} name={r.consultant_name} avatarUrl={r.avatar_url} size="md" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{r.consultant_name}</p>
                     <ConsultantLocation audience="client" city={r.city} country={r.country} className="text-[11px] text-muted-foreground" />

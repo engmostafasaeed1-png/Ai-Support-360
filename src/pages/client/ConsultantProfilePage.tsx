@@ -95,7 +95,7 @@ export default function ConsultantProfilePage() {
       if (!id) return null;
       const { data: c } = await supabase
         .from('consultants')
-        .select('id, user_id, bio, hourly_rate, currency, languages, industries, response_time_minutes, availability_status, rating, total_reviews, verification_status, ai_skills_score, city, country, latitude, longitude, linkedin_checked_at, credly_checked_at, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, working_week, language_levels')
+        .select('id, user_id, bio, hourly_rate, currency, languages, industries, response_time_minutes, availability_status, rating, total_reviews, verification_status, ai_interview_badge, ai_skills_score, city, country, latitude, longitude, linkedin_checked_at, credly_checked_at, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, working_week, language_levels')
         .eq('id', id)
         .maybeSingle();
       if (!c) return null;
@@ -126,6 +126,7 @@ export default function ConsultantProfilePage() {
           specialty: skills?.[0]?.sap_module || 'SAP',
           rating: Number(c.rating) || 0,
           reviews: c.total_reviews || 0,
+          aiBadge: (c as { ai_interview_badge?: string | null }).ai_interview_badge ?? null,
           rate: Number(c.hourly_rate) || 0,
           avatar: initials,
           avatarUrl: profile?.avatar_url ?? null,
@@ -363,7 +364,9 @@ export default function ConsultantProfilePage() {
           <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-6">
             <div className="relative -mt-14 shrink-0 self-start sm:-mt-16">
               <CredibilityAvatar name={consultant.name} initials={consultant.avatar} avatarUrl={consultant.avatarUrl}
-                total={credibilityResult.total} statusClass={statusColor} href="#credibility" />
+                total={credibilityResult.total} statusClass={statusColor} href="#credibility"
+                consultantId={id} rating={consultant.rating} reviews={consultant.reviews}
+                badge={(consultant as { aiBadge?: string | null }).aiBadge ?? null} verified={verificationStatus === 'verified'} />
             </div>
             <div className="min-w-0 flex-1 md:pt-4">
               <div className="flex flex-wrap items-center gap-2">

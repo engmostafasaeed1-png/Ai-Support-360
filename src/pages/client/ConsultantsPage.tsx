@@ -23,6 +23,8 @@ import CompletionBadge from '@/components/consultant/CompletionBadge';
 import ResponsivenessChip from '@/components/consultant/ResponsivenessChip';
 import { BlendedRatingStars } from '@/components/consultant/ResponsivenessRating';
 import { usePublicResponsiveness } from '@/hooks/useResponsiveness';
+import ConsultantRing from '@/components/consultant/ConsultantRing';
+import { responsivenessScore } from '@/lib/ringAvatar';
 import LinkStatus from '@/components/consultant/LinkStatus';
 import { STATE_META } from '@/lib/mapMarkers';
 import { compareRecommended, type ConsultantLive } from '@/lib/consultantDirectory';
@@ -71,7 +73,10 @@ export default function ConsultantsPage() {
   const { data: foundingAwards } = useFoundingConsultants();
   const { data: foundingMonths = 0 } = useFoundingBoost();
   const foundingSet = useMemo(() => new Set<string>(foundingAwards ? [...foundingAwards.keys()] : []), [foundingAwards]);
-  const ctx = useMemo<DirectoryContext>(() => ({ founding: foundingSet, viewerOffset: -new Date().getTimezoneOffset() / 60 }), [foundingSet]);
+  const { levels: respLevels, byId: respById, publicOn: respPublic } = usePublicResponsiveness();
+  const ctx = useMemo<DirectoryContext>(() => ({ founding: foundingSet, viewerOffset: -new Date().getTimezoneOffset() / 60, respLevels }), [foundingSet, respLevels]);
+  // Same score as the inner ring arc; only while responsiveness is public.
+  const respScores = useMemo(() => respPublic ? new Map([...respById].flatMap(([id, r]) => { const v = responsivenessScore(r); return v == null ? [] : [[id, v] as [string, number]]; })) : null, [respById, respPublic]);
 
   // Auto-scroll side list when a map marker is clicked
   useEffect(() => {
@@ -88,11 +93,10 @@ export default function ConsultantsPage() {
 
   // All filters except the map area (the map keeps every pin so the person can move around), then the area for the list.
   const withoutArea = useMemo(() => consultants.filter(c => passes(c, filters, ctx, 'bbox')), [consultants, filters, ctx]);
-  const { levels: respLevels } = usePublicResponsiveness();
   const matches = useMemo(() => directoryMatches(withoutArea, filters, foundingSet, respLevels), [withoutArea, filters, foundingSet, respLevels]);
   const filtered = useMemo(
-    () => sortDirectory(withoutArea.filter(c => !filters.bbox || (PREDICATES.bbox?.(c, filters, ctx) ?? true)), filters, matches, tieBreak),
-    [withoutArea, filters, ctx, matches, tieBreak],
+    () => sortDirectory(withoutArea.filter(c => !filters.bbox || (PREDICATES.bbox?.(c, filters, ctx) ?? true)), filters, matches, tieBreak, respScores),
+    [withoutArea, filters, ctx, matches, tieBreak, respScores],
   );
   const mapMatches = useMemo(() => {
     if (!matches) return null;
@@ -201,6 +205,7 @@ export default function ConsultantsPage() {
           <SelectContent>
             <SelectItem value="best_match">{t('consultants_page.sort_best_match', 'Best Match')}</SelectItem>
             <SelectItem value="rating">{t('consultants_page.sort_rating', 'Highest Rating')}</SelectItem>
+            {respPublic && <SelectItem value="responsiveness">{t('directory.sort_responsiveness', 'Most responsive')}</SelectItem>}
             <SelectItem value="rate_low">{t('consultants_page.sort_price_low', 'Price: Low → High')}</SelectItem>
             <SelectItem value="rate_high">{t('consultants_page.sort_price_high', 'Price: High → Low')}</SelectItem>
             <SelectItem value="experience">{t('directory.sort_experience', 'Most experience')}</SelectItem>
@@ -294,10 +299,8 @@ export default function ConsultantsPage() {
                   onClick={() => { setMapSelectedId(c.id); }}
                   className={`w-full text-start p-3 rounded-xl border transition-all flex items-center gap-3 ${mapSelectedId === c.id ? 'border-accent bg-accent/5 ring-2 ring-accent/20' : 'border-border/50 hover:border-accent/40 bg-card'}`}
                 >
-                  <div className="relative">
-                    <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">{c.avatar}</div>
-                    <span className={`absolute -top-0.5 -end-0.5 w-3 h-3 rounded-full border-2 border-card ${STATE_META[c.status].dot}`} />
-                  </div>
+                  <ConsultantRing consultantId={c.id} name={c.name} initials={c.avatar} avatarUrl={c.avatar_url} size="sm" interactive={false}
+                    rating={c.rating} reviews={c.reviews} badge={c.ai_interview_badge} verified={c.verification_status === 'verified'} statusClass={STATE_META[c.status].dot} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
                     <p className="text-[11px] text-muted-foreground truncate">{c.specialty}</p>
@@ -322,7 +325,8 @@ export default function ConsultantsPage() {
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" data-testid="no-location-list">
                 {noLocation.map(c => (
                   <div key={c.id} className="flex items-center gap-3 rounded-xl border border-border/50 bg-card p-3">
-                    <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-xs shrink-0">{c.avatar}</div>
+                    <ConsultantRing consultantId={c.id} name={c.name} initials={c.avatar} avatarUrl={c.avatar_url} size="sm"
+                      rating={c.rating} reviews={c.reviews} badge={c.ai_interview_badge} verified={c.verification_status === 'verified'} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-foreground">{c.name}</p>
                       <p className="truncate text-[11px] text-muted-foreground">{c.specialty} · ${c.rate}/hr</p>
@@ -352,12 +356,8 @@ export default function ConsultantsPage() {
             <Card key={c.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all group">
               <CardContent className="p-5">
                 <div className="flex items-start gap-4">
-                  <div className="relative">
-                    <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0">
-                      {c.avatar}
-                    </div>
-                    <span className={`absolute -top-1 -end-1 w-4 h-4 rounded-full border-2 border-card transition-colors ${STATE_META[c.status].dot}`} />
-                  </div>
+                  <ConsultantRing consultantId={c.id} name={c.name} initials={c.avatar} avatarUrl={c.avatar_url} size="lg" className="mb-2"
+                    rating={c.rating} reviews={c.reviews} badge={c.ai_interview_badge} verified={c.verification_status === 'verified'} statusClass={STATE_META[c.status].dot} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold text-foreground">{c.name}</h3>

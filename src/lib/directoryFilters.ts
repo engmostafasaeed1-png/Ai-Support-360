@@ -8,7 +8,9 @@ import {
   type Chip, type MatchConsultant, type MatchTicket,
 } from '../../supabase/functions/_shared/ticketMatch';
 
-export type SortKey = 'best_match' | 'rating' | 'rate_low' | 'rate_high' | 'experience' | 'availability' | 'credly_first';
+export type SortKey = 'best_match' | 'rating' | 'responsiveness' | 'rate_low' | 'rate_high' | 'experience' | 'availability' | 'credly_first';
+/** Minimum public responsiveness level (Feature W); ignored while responsiveness is private. */
+export type RespFilter = '' | 'excellent' | 'good' | 'fair';
 export type AvailFilter = 'any' | 'now' | 'week' | 'slot';
 export type StatusFilter = 'all' | 'online' | 'busy' | 'offline';
 export type TierFilter = '' | 'gold' | 'silver' | 'bronze' | 'verified';
@@ -47,6 +49,7 @@ export interface DirectoryFilters {
   /** Maximum response time in minutes (0 = any). */
   response: number;
   status: StatusFilter;
+  resp: RespFilter;
   sort: SortKey;
   view: 'list' | 'map';
   bbox: Bounds | null;
@@ -57,7 +60,7 @@ export const RATE_MAX = 500;
 export const DEFAULT_FILTERS: DirectoryFilters = {
   q: '', family: '', module: '', sub: '', role: '', skill: '', cert: '', years: 0, industry: '', segment: '', country: '', vertical: '',
   deployment: '', workMode: '', lang: '', rateMin: 0, rateMax: RATE_MAX, avail: 'any', slotDay: null, slotTime: '', tz: '', tier: '',
-  rating: 0, verified: false, founding: false, credly: false, completion: 0, response: 0, status: 'all', sort: 'best_match', view: 'list', bbox: null,
+  rating: 0, verified: false, founding: false, credly: false, completion: 0, response: 0, status: 'all', resp: '', sort: 'best_match', view: 'list', bbox: null,
 };
 
 /** URL names (short and stable; `industry` keeps working for older links). */
@@ -65,7 +68,7 @@ const PARAM: Record<keyof DirectoryFilters, string> = {
   q: 'q', family: 'area', module: 'module', sub: 'sub', role: 'role', skill: 'skill', cert: 'cert', years: 'years', industry: 'industry',
   segment: 'segment', country: 'country', vertical: 'vertical', deployment: 'deploy', workMode: 'mode', lang: 'lang', rateMin: 'rate_min',
   rateMax: 'rate_max', avail: 'avail', slotDay: 'day', slotTime: 'time', tz: 'tz', tier: 'tier', rating: 'rating', verified: 'verified',
-  founding: 'founding', credly: 'credly', completion: 'completion', response: 'response', status: 'status', sort: 'sort', view: 'view', bbox: 'bbox',
+  founding: 'founding', credly: 'credly', completion: 'completion', response: 'response', status: 'status', resp: 'resp', sort: 'sort', view: 'view', bbox: 'bbox',
 };
 
 const TEXT_MAX = 120;
@@ -96,7 +99,8 @@ export function parseFilters(params: URLSearchParams): DirectoryFilters {
     rating: num(g('rating'), 0, 5, 0), verified: g('verified') === '1', founding: g('founding') === '1', credly: g('credly') === '1',
     completion: num(g('completion'), 0, 100, 0), response: num(g('response'), 0, 10080, 0),
     status: oneOf(g('status'), ['all', 'online', 'busy', 'offline'] as const, 'all'),
-    sort: oneOf(g('sort'), ['best_match', 'rating', 'rate_low', 'rate_high', 'experience', 'availability', 'credly_first'] as const, 'best_match'),
+    resp: oneOf(g('resp'), ['', 'excellent', 'good', 'fair'] as const, ''),
+    sort: oneOf(g('sort'), ['best_match', 'rating', 'responsiveness', 'rate_low', 'rate_high', 'experience', 'availability', 'credly_first'] as const, 'best_match'),
     view: oneOf(g('view'), ['list', 'map'] as const, 'list'),
     bbox: validBox ? (bbox.map((n) => Math.round(n * 1000) / 1000) as Bounds) : null,
   };
@@ -130,7 +134,12 @@ export function countActive(f: DirectoryFilters): number {
 
 // ---------------------------------------------------------------- predicates
 
-export type DirectoryContext = { founding: ReadonlySet<string>; viewerOffset: number | null; now?: Date };
+export type DirectoryContext = {
+  founding: ReadonlySet<string>; viewerOffset: number | null; now?: Date;
+  /** Public responsiveness levels; null/absent while the owner keeps responsiveness private (the filter then does nothing). */
+  respLevels?: ReadonlyMap<string, RespLevel> | null;
+};
+const RESP_RANK: Record<string, number> = { excellent: 3, good: 2, fair: 1 };
 
 const lc = (s: string) => s.toLowerCase();
 const codesOf = (c: ConsultantLive) => new Set([...(c.skills ?? [c.specialty]), ...(c.technologies ?? [])].flatMap(modulesIn));
@@ -202,6 +211,7 @@ export const PREDICATES: Partial<Record<keyof DirectoryFilters, Pred>> = {
   credly: (c, f) => !f.credly || c.credlyVerified,
   completion: (c, f) => (c.completion_percent ?? 0) >= f.completion,
   response: (c, f) => !f.response || (c.response_time_minutes > 0 && c.response_time_minutes <= f.response),
+  resp: (c, f, x) => !f.resp || !x.respLevels || (RESP_RANK[x.respLevels.get(c.id) ?? ''] ?? 0) >= RESP_RANK[f.resp],
   status: (c, f) => f.status === 'all' || (f.status === 'online' ? c.status === 'available' : c.status === f.status),
   bbox: (c, f) => {
     if (!f.bbox) return true;
@@ -275,11 +285,13 @@ export function directoryMatches(list: ConsultantLive[], f: DirectoryFilters, fo
   return out;
 }
 
-export function sortDirectory(list: ConsultantLive[], f: DirectoryFilters, matches: Map<string, DirectoryMatch> | null, tieBreak: (a: ConsultantLive, b: ConsultantLive) => number): ConsultantLive[] {
+/** `respScores`: ring responsiveness score per consultant (lib/ringAvatar), only while responsiveness is public; New last. */
+export function sortDirectory(list: ConsultantLive[], f: DirectoryFilters, matches: Map<string, DirectoryMatch> | null, tieBreak: (a: ConsultantLive, b: ConsultantLive) => number, respScores?: ReadonlyMap<string, number> | null): ConsultantLive[] {
   const out = [...list];
   const byState = (a: ConsultantLive, b: ConsultantLive) => STATE_META[a.status].order - STATE_META[b.status].order;
   switch (f.sort) {
-    case 'rating': return out.sort((a, b) => b.rating - a.rating || b.reviews - a.reviews || tieBreak(a, b));
+    case 'rating': return out.sort((a, b) => (b.reviews > 0 ? b.rating : -1) - (a.reviews > 0 ? a.rating : -1) || b.reviews - a.reviews || tieBreak(a, b));
+    case 'responsiveness': return out.sort((a, b) => (respScores?.get(b.id) ?? -1) - (respScores?.get(a.id) ?? -1) || tieBreak(a, b));
     case 'rate_low': return out.sort((a, b) => a.rate - b.rate || tieBreak(a, b));
     case 'rate_high': return out.sort((a, b) => b.rate - a.rate || tieBreak(a, b));
     case 'experience': return out.sort((a, b) => (b.total_sap_years ?? 0) - (a.total_sap_years ?? 0) || tieBreak(a, b));

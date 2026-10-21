@@ -55,6 +55,10 @@ const fake = vi.hoisted(() => {
 });
 vi.mock('leaflet', () => ({ default: fake.L }));
 vi.mock('leaflet/dist/leaflet.css', () => ({}));
+vi.mock('@/hooks/useResponsiveness', () => ({
+  usePublicResponsiveness: () => ({ publicOn: true, byId: new Map([['a', { level: 'excellent', median_minutes: 20, response_rate: 95, stars: 5 }]]), levels: new Map() }),
+}));
+vi.mock('@/hooks/useRingStats', () => ({ useRatingMinReviews: () => 3, useRingStats: () => ({ data: undefined }) }));
 
 import ConsultantMap, { type MapConsultant } from './ConsultantMap';
 
@@ -120,6 +124,16 @@ describe('ConsultantMap', () => {
     const popup = pinsDrawn()[0].popup as HTMLElement;
     expect(popup.querySelector('img')).toBeNull();
     expect(popup.textContent).toContain('<img src=x onerror=alert(1)>');
+  });
+
+  it('puts the performance ring on the popup photo, with the same text as the cards', () => {
+    render(<ConsultantMap consultants={[person('a', { rating: 4.8, reviews: 12 })]} />);
+    const ring = (pinsDrawn()[0].popup as HTMLElement).querySelector('[data-part="ring"]') as HTMLElement;
+    expect(ring.getAttribute('role')).toBe('img');
+    expect(ring.getAttribute('aria-label')).toContain('Client rating 4.8 of 5 from 12 reviews');
+    expect(ring.querySelector('[data-kind="rating"]')?.getAttribute('data-tone')).toBe('gold');
+    expect(ring.querySelector('[data-kind="responsiveness"]')).not.toBeNull();
+    expect((pinsDrawn()[0].popup as HTMLElement).textContent).toContain('4.8 ★ | Fast reply');
   });
 
   it('tells the page which pin was clicked', () => {

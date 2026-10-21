@@ -6,6 +6,9 @@ import { OSM_ATTRIBUTION, OSM_TILES, spreadPins, type AvailabilityState } from '
 import { buildMarkerElement, buildPopupElement, type PinView } from '@/lib/mapDom';
 import { clusterPoints, CLUSTER_MAX_ZOOM } from '@/lib/mapCluster';
 import type { Bounds } from '@/lib/directoryFilters';
+import { usePublicResponsiveness } from '@/hooks/useResponsiveness';
+import { useRatingMinReviews } from '@/hooks/useRingStats';
+import { ringSummary, type RingSummary } from '@/lib/ringAvatar';
 
 export interface MapConsultant {
   id: string;
@@ -47,7 +50,7 @@ interface ConsultantMapProps {
   onBoundsChange?: (bounds: Bounds) => void;
 }
 
-const toView = (c: MapConsultant, m?: MapMatch | null): PinView => ({
+const toView = (c: MapConsultant, m?: MapMatch | null, ring?: RingSummary | null): PinView => ({
   id: c.id,
   name: c.name,
   avatar: c.avatar,
@@ -65,6 +68,7 @@ const toView = (c: MapConsultant, m?: MapMatch | null): PinView => ({
   avatarUrl: c.avatar_url ?? null,
   matchScore: m?.score ?? null,
   chips: m?.chips,
+  ring: ring ?? null,
 });
 
 function clusterElement(count: number, label: string): HTMLElement {
@@ -78,8 +82,13 @@ function clusterElement(count: number, label: string): HTMLElement {
 
 /** The consultants on a map: one pin for every consultant who chose a city, coloured by Online, Busy or Offline. The pins show the area of the city, never an address. */
 export default function ConsultantMap({ consultants, selectedId, onSelectConsultant, onViewProfile, onOpenRequest, onInvite, matches, onBoundsChange, favourite }: ConsultantMapProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const holder = useRef<HTMLDivElement>(null);
+  // Feature W: the popup photo carries the same performance ring as the cards.
+  const { publicOn, byId: respById } = usePublicResponsiveness();
+  const minReviews = useRatingMinReviews();
+  const ringLang = i18n?.language?.startsWith('ar') ? 'ar' : 'en';
+  const ringFor = (c: MapConsultant) => ringSummary({ rating: c.rating, reviews: c.reviews, minReviews, publicOn, resp: respById.get(c.id) ?? null, badge: c.ai_interview_badge, lang: ringLang });
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRef = useRef<LayerGroup | null>(null);
   const fitted = useRef('');
@@ -165,7 +174,7 @@ export default function ConsultantMap({ consultants, selectedId, onSelectConsult
       if (!single.has(pin.id)) continue;
       const c = byId.get(pin.id);
       if (!c) continue;
-      const view = toView(c, matches?.get(c.id));
+      const view = toView(c, matches?.get(c.id), ringFor(c));
       const isChosen = pin.id === selectedId;
       const marker = L.marker([pin.lat, pin.lng], {
         icon: L.divIcon({
@@ -209,7 +218,7 @@ export default function ConsultantMap({ consultants, selectedId, onSelectConsult
     }
     lastSelected.current = selectedId ?? null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [consultants, pins, selectedId, labelsKey, zoom, matches, favourite]);
+  }, [consultants, pins, selectedId, labelsKey, zoom, matches, favourite, publicOn, respById, minReviews, ringLang]);
 
   return (
     <div className="relative isolate rounded-2xl overflow-hidden border border-border/50 shadow-sm" style={{ height: '420px' }}>
