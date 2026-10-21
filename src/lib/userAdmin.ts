@@ -14,7 +14,7 @@ export type UserStatus = typeof USER_STATUSES[number];
 export const ADMIN_PERMISSIONS = [
   'users.read', 'users.edit', 'users.roles', 'users.suspend', 'users.delete', 'users.invite', 'users.export',
   'users.notes', 'users.message', 'users.sessions', 'consultants.verify', 'finance.view',
-  'finance.approve_payout', 'content.edit', 'settings.edit', 'audit.read',
+  'finance.approve_payout', 'content.edit', 'settings.edit', 'audit.read', 'messages.send',
 ] as const;
 /** Never grantable to admins; super admins always have them. */
 export const SUPER_ONLY_PERMISSIONS = ['admins.manage', 'users.merge', 'users.mfa_reset', 'users.anonymise', 'users.hard_delete'] as const;
@@ -42,7 +42,8 @@ export function hasPermission(subject: PermissionSubject, perm: AdminPermission)
   if (!subject.roles.includes('admin')) return false;
   if (!(ADMIN_PERMISSIONS as readonly string[]).includes(perm)) return false;
   const groups = subject.groupPermissions ?? [];
-  if (groups.length === 0) return true;
+  // Bulk messages are never implied: an admin needs a group that grants messages.send.
+  if (groups.length === 0) return perm !== 'messages.send';
   return groups.some((g) => g.includes(perm));
 }
 

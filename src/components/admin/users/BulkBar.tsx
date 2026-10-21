@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Ban, Bell, CheckCircle2, Download, Tag, X } from 'lucide-react';
+import { Ban, Bell, CheckCircle2, Download, Megaphone, Tag, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useBulkAccess } from '@/hooks/useBulkMessaging';
+import { SELECTED_KEY } from '@/lib/bulkMessaging';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +28,10 @@ export default function BulkBar({ ids, total, installed, perms, onClear, onSelec
   const [preview, setPreview] = useState<Preview | null>(null);
   const [busy, setBusy] = useState(false);
   const can = (p: string) => perms.includes(p);
+  const navigate = useNavigate();
+  const messaging = useBulkAccess();
+  // Feature R: hand the selection to Messages / Campaigns (this tab only); the database re-checks every person.
+  const messageSelected = () => { sessionStorage.setItem(SELECTED_KEY, JSON.stringify(ids)); navigate('/admin/messages?tab=compose'); };
   const over = ids.length > BULK_LIMIT;
 
   const payload = () => kind === 'remind' ? { kind: remind } : { tags: tags.split(',').map((s) => s.trim()).filter(Boolean) };
@@ -82,6 +89,7 @@ export default function BulkBar({ ids, total, installed, perms, onClear, onSelec
         {installed && can('users.message') && <Button size="sm" variant="outline" disabled={over} onClick={() => open('remind')}><Bell className="me-1 h-4 w-4" />{t('um.remind', 'Remind')}</Button>}
         {installed && can('users.suspend') && <Button size="sm" variant="outline" disabled={over} onClick={() => open('bulk_suspend')}><Ban className="me-1 h-4 w-4" />{t('um.suspend', 'Suspend')}</Button>}
         {installed && can('users.suspend') && <Button size="sm" variant="outline" disabled={over} onClick={() => open('bulk_reactivate')}><CheckCircle2 className="me-1 h-4 w-4" />{t('um.reactivate', 'Reactivate')}</Button>}
+        {messaging.state === 'ready' && <Button size="sm" variant="outline" onClick={messageSelected}><Megaphone className="me-1 h-4 w-4" />{t('bmsg.message_users', 'Message users')}</Button>}
         {can('users.export') && <Button size="sm" variant="outline" onClick={onExport}><Download className="me-1 h-4 w-4" />{t('um.export', 'Export')}</Button>}
         <Button size="sm" variant="ghost" onClick={onClear} aria-label={t('um.clear_selection', 'Clear selection')}><X className="h-4 w-4" /></Button>
       </div>

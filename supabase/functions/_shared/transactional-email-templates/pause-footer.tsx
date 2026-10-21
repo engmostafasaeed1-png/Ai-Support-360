@@ -4,11 +4,11 @@ import type { PauseLinks } from '../notificationPause.ts'
 
 /**
  * Feature Q footer for every non-essential notification e-mail. sendTemplateEmail fills `pauseLinks` with signed one-click
- * links (no sign-in needed); without them (essential e-mails, feature off) nothing is rendered.
+ * links (no sign-in needed). Unsubscribe comes from the managed footer the e-mail platform adds, never from here; without them (essential e-mails, feature off) nothing is rendered.
  */
 const STR = {
-  en: { lead: 'Too many e-mails? Pause for:', d3: '3 days', w1: '1 week', m1: '1 month', unsub: 'Unsubscribe' },
-  ar: { lead: 'رسائل كثيرة؟ أوقفها مؤقتاً لمدة:', d3: '3 أيام', w1: 'أسبوع', m1: 'شهر', unsub: 'إلغاء الاشتراك' },
+  en: { lead: 'Too many e-mails? Pause for:', d3: '3 days', w1: '1 week', m1: '1 month' },
+  ar: { lead: 'رسائل كثيرة؟ أوقفها مؤقتاً لمدة:', d3: '3 أيام', w1: 'أسبوع', m1: 'شهر' },
 } as const
 
 export function PauseFooter({ links, lang = 'en' }: { links?: PauseLinks | null; lang?: string }) {
@@ -22,8 +22,7 @@ export function PauseFooter({ links, lang = 'en' }: { links?: PauseLinks | null;
         {t.lead}{' '}
         <Link href={links.d3} style={link}>{t.d3}</Link>{sep}
         <Link href={links.w1} style={link}>{t.w1}</Link>{sep}
-        <Link href={links.m1} style={link}>{t.m1}</Link>{sep}
-        <Link href={links.unsubscribe} style={link}>{t.unsub}</Link>
+        <Link href={links.m1} style={link}>{t.m1}</Link>
       </Text>
     </Section>
   )

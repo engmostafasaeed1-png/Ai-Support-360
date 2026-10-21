@@ -61,12 +61,12 @@ describe('signed pause links', () => {
     expect(await verifyPauseToken(SECRET, token, NOW_S)).toEqual({ ok: false, reason: 'invalid' });
   });
 
-  it('builds four footer links valid for 30 days, each with its own nonce and no personal data', async () => {
+  it('builds three footer links (no own unsubscribe link) valid for 30 days, each with its own nonce and no personal data', async () => {
     const links = await buildPauseLinks(SECRET, USER, 'https://www.aisupport360.com', NOW_S, 'ar');
     const tokens = Object.values(links).map((l) => decodeURIComponent(new URL(l).searchParams.get('t') ?? ''));
     const checked = await Promise.all(tokens.map((t) => verifyPauseToken(SECRET, t, NOW_S)));
-    expect(checked.map((c) => c.ok && c.payload.d)).toEqual(['3d', '1w', '1m', 'unsub']);
-    expect(new Set(checked.map((c) => c.ok && c.payload.n)).size).toBe(4);
+    expect(checked.map((c) => c.ok && c.payload.d)).toEqual(['3d', '1w', '1m']);
+    expect(new Set(checked.map((c) => c.ok && c.payload.n)).size).toBe(3);
     expect(checked.every((c) => c.ok && c.payload.x === NOW_S + LINK_TTL_SECONDS)).toBe(true);
     expect(links.d3).toContain('&lang=ar');
     expect(links.d3).not.toContain('@');

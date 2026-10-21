@@ -1,24 +1,30 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
-import { Bell, Check, CheckCheck, Trash2, MessageSquare, Ticket, CreditCard, UserCheck, Info, X, AlertTriangle, RotateCw } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, MessageSquare, Ticket, CreditCard, UserCheck, Info, X, AlertTriangle, RotateCw, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import NotificationPauseCard from '@/components/notifications/NotificationPauseCard';
+import { BroadcastMessageDialog } from '@/components/messages/BroadcastMessages';
+import { BROADCAST_TYPES } from '@/lib/bulkMessaging';
+
+const isBroadcast = (type: string | null | undefined) => (BROADCAST_TYPES as readonly string[]).includes(String(type ?? ''));
 
 const typeIcons: Record<string, typeof Bell> = {
   message: MessageSquare,
   ticket: Ticket,
   payment: CreditCard,
   approval: UserCheck,
+  admin_message: Megaphone,
+  admin_marketing: Megaphone,
 };
 
 export default function NotificationsPage() {
@@ -40,6 +46,21 @@ export default function NotificationsPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  // Feature R: "Messages from AI Support 360" (admin bulk messages) open in their own window, and can be listed alone.
+  const [params, setParams] = useSearchParams();
+  const [onlyMessages, setOnlyMessages] = useState(false);
+  const [openMessage, setOpenMessage] = useState<string | null>(null);
+  const hasMessages = notifications.some((n) => isBroadcast(n.type));
+  const shown = onlyMessages ? notifications.filter((n) => isBroadcast(n.type)) : notifications;
+  const broadcastParam = params.get('broadcast');
+  useEffect(() => {
+    if (!broadcastParam) return;
+    const hit = notifications.find((n) => isBroadcast(n.type) && (n.link ?? '').includes(broadcastParam));
+    if (!hit) return;
+    setOpenMessage(hit.id);
+    if (!hit.is_read) markAsRead(hit.id);
+    const next = new URLSearchParams(params); next.delete('broadcast'); setParams(next, { replace: true });
+  }, [broadcastParam, notifications]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const unreadSelectableIds = useMemo(
     () => notifications.filter((n) => !n.is_read).map((n) => n.id),
@@ -230,7 +251,13 @@ export default function NotificationsPage() {
         )
       ) : (
         <div className="space-y-2">
-          {notifications.map((n) => {
+          {hasMessages && (
+            <div className="flex gap-2" role="group" aria-label={t('bmsg.r_filter', 'Show')}>
+              <Button size="sm" variant={onlyMessages ? 'outline' : 'default'} aria-pressed={!onlyMessages} onClick={() => setOnlyMessages(false)}>{t('bmsg.r_all', 'All')}</Button>
+              <Button size="sm" variant={onlyMessages ? 'default' : 'outline'} aria-pressed={onlyMessages} onClick={() => setOnlyMessages(true)}><Megaphone className="me-1 h-4 w-4" />{t('bmsg.r_messages', 'Messages from AI Support 360')}</Button>
+            </div>
+          )}
+          {shown.map((n) => {
             const Icon = (n.type && typeIcons[n.type]) || Info;
             const isSelected = selectedIds.has(n.id);
             const handleRowClick = () => {
@@ -239,6 +266,7 @@ export default function NotificationsPage() {
                 return;
               }
               if (!n.is_read) markAsRead(n.id);
+              if (isBroadcast(n.type)) { setOpenMessage(n.id); return; }
               if (n.link) navigate(n.link);
             };
             return (
@@ -350,6 +378,7 @@ export default function NotificationsPage() {
           })}
         </div>
       )}
+      <BroadcastMessageDialog notificationId={openMessage} onClose={() => setOpenMessage(null)} />
     </div>
   );
 }

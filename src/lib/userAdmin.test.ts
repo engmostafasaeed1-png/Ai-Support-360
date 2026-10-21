@@ -15,7 +15,8 @@ describe('permission matrix', () => {
     expect(p).toEqual([...ADMIN_PERMISSIONS, ...SUPER_ONLY_PERMISSIONS]);
   });
   it('admins outside any group keep every grantable permission but no super-only one', () => {
-    expect(effectivePermissions({ roles: ['admin'] })).toEqual([...ADMIN_PERMISSIONS]);
+    expect(effectivePermissions({ roles: ['admin'] })).toEqual(ADMIN_PERMISSIONS.filter((p) => p !== 'messages.send'));
+    expect(effectivePermissions({ roles: ['admin'], groupPermissions: [['users.read', 'messages.send']] })).toContain('messages.send');
     for (const p of SUPER_ONLY_PERMISSIONS) expect(hasPermission({ roles: ['admin'] }, p)).toBe(false);
   });
   it('an admin group limits the admin to its permissions', () => {

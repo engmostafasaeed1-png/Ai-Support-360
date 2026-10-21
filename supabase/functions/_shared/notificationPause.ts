@@ -5,7 +5,8 @@
 export type PauseDuration = '3d' | '1w' | '1m';
 export type PauseCategory = 'essential' | 'reminders' | 'digests' | 'activity';
 export type PauseChannel = 'email' | 'in_app' | 'push' | 'telegram';
-export type LinkAction = PauseDuration | 'unsub';
+/** Unsubscribe is handled by the managed footer the e-mail platform adds to every app e-mail, never by our own links. */
+export type LinkAction = PauseDuration;
 
 export const PAUSE_DAYS: Record<PauseDuration, number> = { '3d': 3, '1w': 7, '1m': 30 };
 export const PAUSE_DURATIONS: PauseDuration[] = ['3d', '1w', '1m'];
@@ -42,7 +43,7 @@ export function notificationCategory(type: string | null | undefined, title?: st
   if (ESSENTIAL_TYPES.has(t)) return 'essential';
   if (t.startsWith('admin_reminder_') || t === 'profile_reminder' || t === 'reminder') return 'reminders';
   if (REMINDER_TITLE.test(head)) return 'reminders';
-  if (t === 'digest' || t === 'admin') return 'digests';
+  if (t === 'digest' || t === 'admin' || t === 'admin_marketing') return 'digests';
   if (t === 'match_request') return CLOSED_TITLE.test(head) ? 'activity' : 'essential';
   if (!t && (head === 'Complete your profile' || head === 'أكمل ملفك الشخصي')) return 'reminders';
   return 'activity';
@@ -113,7 +114,7 @@ export type VerifyResult =
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NONCE = /^[0-9a-f]{16}$/;
-const ACTIONS: LinkAction[] = ['3d', '1w', '1m', 'unsub'];
+const ACTIONS: LinkAction[] = ['3d', '1w', '1m'];
 
 function b64url(bytes: Uint8Array): string {
   let s = '';
@@ -168,15 +169,15 @@ export async function verifyPauseToken(secret: string, token: unknown, nowSecond
   return { ok: true, payload: { u: p.u.toLowerCase(), d: p.d as LinkAction, x: p.x, n: p.n } };
 }
 
-export interface PauseLinks { d3: string; w1: string; m1: string; unsubscribe: string }
+export interface PauseLinks { d3: string; w1: string; m1: string }
 
-/** The four footer links of one e-mail; each has its own nonce so every click is idempotent on its own. */
+/** The three footer links of one e-mail; each has its own nonce so every click is idempotent on its own. */
 export async function buildPauseLinks(secret: string, userId: string, siteUrl: string, nowSeconds: number, lang: 'en' | 'ar' = 'en'): Promise<PauseLinks> {
   const x = nowSeconds + LINK_TTL_SECONDS;
   const link = async (d: LinkAction) => {
     const t = await signPauseToken(secret, { u: userId, d, x, n: newNonce() });
     return `${siteUrl}/notifications/pause?t=${encodeURIComponent(t)}${lang === 'ar' ? '&lang=ar' : ''}`;
   };
-  const [d3, w1, m1, unsubscribe] = await Promise.all([link('3d'), link('1w'), link('1m'), link('unsub')]);
-  return { d3, w1, m1, unsubscribe };
+  const [d3, w1, m1] = await Promise.all([link('3d'), link('1w'), link('1m')]);
+  return { d3, w1, m1 };
 }

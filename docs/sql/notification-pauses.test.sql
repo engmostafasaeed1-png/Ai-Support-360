@@ -28,6 +28,7 @@ DO $$ BEGIN
   IF notification_category('admin_reminder_policy', 'x') <> 'essential' THEN RAISE EXCEPTION 'admin policy reminder'; END IF;
   IF notification_category('admin_reminder_profile', 'x') <> 'reminders' THEN RAISE EXCEPTION 'admin reminder'; END IF;
   IF notification_category('admin', 'Assignment requests without reply') <> 'digests' THEN RAISE EXCEPTION 'digest'; END IF;
+  IF notification_category('admin_marketing', 'News') <> 'digests' OR notification_category('admin_message', 'Service notice') <> 'essential' THEN RAISE EXCEPTION 'admin messages'; END IF;
   IF notification_category('ticket', 'Ticket updated') <> 'activity' THEN RAISE EXCEPTION 'activity'; END IF;
 END $$;
 
