@@ -23,4 +23,4 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - Long ticket submits and expert-matching runs show the shared TaskProgressPanel driven by real step states (percent = finished steps, open steps pulse), and new tickets are saved through the ticketSubmission helpers (single-flight plus a tab-stored id); this keeps progress honest and prevents duplicate tickets on double click, retry or refresh.
 - Team engagement: on gated tickets only team activation writes active assignments and tickets.consultant_id, after all four gates, for client- and admin-added members (admin changes audited); team requests only invite and team rows only mirror existing tables, so access rules follow the gates.
 - Default head tags in index.html carry `data-rh="true"` so RouteSeo Helmet replaces, not duplicates, them.
-- Realtime uses `subscribeWhileVisible` with row filters (whole tables only on admin pages); portals and Arabic texts load lazily, to cut DB and bundle load.
+- Realtime uses `subscribeWhileVisible` with row filters (whole tables only on admin pages); portals and Arabic load lazily, cutting DB/bundle load.
