@@ -56,6 +56,18 @@ AS $$
 $$;
 
 -- 3) Formatter (mirror of supabase/functions/_shared/consultantName.ts) ----------
+-- A word without accents, Arabic diacritics and tatweel (letters are picked and counted on this).
+CREATE OR REPLACE FUNCTION public.consultant_name_clean(_w text)
+ RETURNS text
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $$
+  SELECT regexp_replace(normalize(regexp_replace(normalize(COALESCE(_w, ''), NFD), '[\u0300-\u036f]', '', 'g'), NFC),
+                        '[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]', '', 'g')
+$$;
+
+-- Words as written (edge punctuation removed), without titles ("Dr.", "Eng.", "م.", "د.") and suffixes.
 CREATE OR REPLACE FUNCTION public.consultant_name_words(_name text)
  RETURNS text[]
  LANGUAGE plpgsql
@@ -68,18 +80,14 @@ DECLARE
   _titles constant text[] := ARRAY['dr','eng','engr','prof','mr','mrs','ms','miss','sir','sheikh','sh',
     'م','د','أ','ا','مهندس','المهندس','دكتور','الدكتور','أستاذ','الأستاذ','استاذ','الاستاذ','الشيخ','شيخ'];
   _suffixes constant text[] := ARRAY['phd','mba','pmp','msc','bsc','jr','sr'];
-  _s text; _w text; _out text[] := ARRAY[]::text[];
+  _w text; _out text[] := ARRAY[]::text[];
 BEGIN
-  _s := normalize(COALESCE(_name, ''), NFD);
-  _s := regexp_replace(_s, '[\u0300-\u036f]', '', 'g');
-  _s := normalize(_s, NFC);
-  _s := regexp_replace(_s, '[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]', '', 'g');
-  FOREACH _w IN ARRAY regexp_split_to_array(btrim(_s), '[[:space:]\u200B-\u200F]+') LOOP
+  FOREACH _w IN ARRAY regexp_split_to_array(btrim(COALESCE(_name, '')), '[[:space:]\u200B-\u200F]+') LOOP
     _w := regexp_replace(_w, '^' || _edge || '+|' || _edge || '+$', '', 'g');
-    IF _w ~ _letter THEN _out := _out || _w; END IF;
+    IF public.consultant_name_clean(_w) ~ _letter THEN _out := _out || _w; END IF;
   END LOOP;
-  WHILE cardinality(_out) > 1 AND lower(replace(_out[1], '.', '')) = ANY (_titles) LOOP _out := _out[2:]; END LOOP;
-  WHILE cardinality(_out) > 1 AND lower(replace(_out[cardinality(_out)], '.', '')) = ANY (_suffixes) LOOP
+  WHILE cardinality(_out) > 1 AND lower(replace(public.consultant_name_clean(_out[1]), '.', '')) = ANY (_titles) LOOP _out := _out[2:]; END LOOP;
+  WHILE cardinality(_out) > 1 AND lower(replace(public.consultant_name_clean(_out[cardinality(_out)]), '.', '')) = ANY (_suffixes) LOOP
     _out := _out[1:cardinality(_out) - 1];
   END LOOP;
   RETURN _out;
@@ -100,17 +108,17 @@ BEGIN
   _n := cardinality(_w);
   IF _n = 0 THEN RETURN ''; END IF;
   _first := _w[1];
-  _f := upper(substring(_first FROM _letter));
+  _f := upper(substring(public.consultant_name_clean(_first) FROM _letter));
   IF _n = 1 THEN
     IF _format = 'initials' THEN RETURN _f || '.'; END IF;
     IF _format = 'initial_family' THEN RETURN _first; END IF;
-    RETURN _f || repeat('*', LEAST(5, GREATEST(3, (SELECT count(*)::int FROM regexp_matches(_first, _letter, 'g')) - 1)));
+    RETURN _f || repeat('*', LEAST(5, GREATEST(3, (SELECT count(*)::int FROM regexp_matches(public.consultant_name_clean(_first), _letter, 'g')) - 1)));
   END IF;
   _last := _w[_n];
-  _l := upper(substring(_last FROM _letter));
+  _l := upper(substring(public.consultant_name_clean(_last) FROM _letter));
   IF _format = 'initials' THEN RETURN _f || '.' || _l || '.'; END IF;
   IF _format = 'initial_family' THEN RETURN _f || '. ' || _last; END IF;
-  RETURN _f || '. ' || _l || repeat('*', LEAST(5, GREATEST(3, (SELECT count(*)::int FROM regexp_matches(_last, _letter, 'g')) - 1)));
+  RETURN _f || '. ' || _l || repeat('*', LEAST(5, GREATEST(3, (SELECT count(*)::int FROM regexp_matches(public.consultant_name_clean(_last), _letter, 'g')) - 1)));
 END $$;
 
 -- 4) Who may see the full name ---------------------------------------------------

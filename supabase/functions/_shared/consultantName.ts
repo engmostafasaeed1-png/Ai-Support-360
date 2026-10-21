@@ -25,19 +25,19 @@ const EDGE_PUNCT = /^[\s.,;:'"`()[\]{}\-_/\\|·•،؛]+|[\s.,;:'"`()[\]{}\-_/\\
 
 const plain = (w: string) => w.replace(/\./g, '').toLowerCase();
 
-/** Words of a name without titles, suffixes, diacritics, accents and edge punctuation. */
+/** A word without accents, Arabic diacritics and tatweel: used to pick and count letters and to spot titles. */
+export const cleanWord = (w: string) => w.normalize('NFD').replace(/[\u0300-\u036f]/g, '').normalize('NFC').replace(ARABIC_MARKS, '');
+
+/** Words of a name as written (edge punctuation removed), without titles and suffixes and without words that have no letter. */
 export function nameWords(name: string | null | undefined): string[] {
-  const cleaned = String(name ?? '')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').normalize('NFC')
-    .replace(ARABIC_MARKS, '');
-  let words = cleaned.split(/[\s\u200B-\u200F]+/u).map((w) => w.replace(EDGE_PUNCT, '')).filter((w) => LETTER.test(w));
-  while (words.length > 1 && NAME_TITLES.includes(plain(words[0]))) words = words.slice(1);
-  while (words.length > 1 && NAME_SUFFIXES.includes(plain(words[words.length - 1]))) words = words.slice(0, -1);
+  let words = String(name ?? '').split(/[\s\u200B-\u200F]+/u).map((w) => w.replace(EDGE_PUNCT, '')).filter((w) => LETTER.test(cleanWord(w)));
+  while (words.length > 1 && NAME_TITLES.includes(plain(cleanWord(words[0])))) words = words.slice(1);
+  while (words.length > 1 && NAME_SUFFIXES.includes(plain(cleanWord(words[words.length - 1])))) words = words.slice(0, -1);
   return words;
 }
 
-const firstLetter = (w: string) => (w.match(LETTER)?.[0] ?? '').toLocaleUpperCase('en');
-const letterCount = (w: string) => (w.match(LETTERS) ?? []).length;
+const firstLetter = (w: string) => (cleanWord(w).match(LETTER)?.[0] ?? '').toLocaleUpperCase('en');
+const letterCount = (w: string) => (cleanWord(w).match(LETTERS) ?? []).length;
 /** Stars for the hidden letters: as many as remain, at least 3 and at most 5. */
 export const starsFor = (w: string) => '*'.repeat(Math.min(5, Math.max(3, letterCount(w) - 1)));
 
