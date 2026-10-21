@@ -347,26 +347,36 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
 
   const startInterviewAfterDisclaimer = useCallback(async () => {
     setPhase('chat');
-    await supabase.from('interview_sessions').update({ interview_style: interviewStyle } as any).eq('id', interviewId);
-    // Check if there's a saved conversation to resume
-    const { data } = await supabase
-      .from('interview_sessions')
-      .select('skill_results, status')
-      .eq('id', interviewId)
-      .single();
-    const saved = data?.skill_results as unknown as ChatMessage[] | null;
-    if (saved && Array.isArray(saved) && saved.length > 0 && data?.status === 'in_progress') {
-      setMessages(saved);
-      setInterviewStarted(true);
-      messagesRef.current = saved;
-      const lastMsg = saved[saved.length - 1];
-      if (lastMsg?.role === 'user') {
-        sendToAI(saved);
+    setError('');
+    // Always the latest sender (voice, tone and language chosen just before pressing start), never a stale copy.
+    const send = (h: ChatMessage[]) => sendToAIRef.current?.(h);
+    try {
+      const { error: styleError } = await supabase.from('interview_sessions').update({ interview_style: interviewStyle } as any).eq('id', interviewId);
+      if (styleError) logStartErrorOnce(classifyStartError(styleError), styleError, 'interview-style');
+      // Check if there's a saved conversation to resume
+      const { data, error: readError } = await supabase
+        .from('interview_sessions')
+        .select('skill_results, status')
+        .eq('id', interviewId)
+        .single();
+      if (readError) throw readError;
+      const saved = data?.skill_results as unknown as ChatMessage[] | null;
+      if (saved && Array.isArray(saved) && saved.length > 0 && data?.status === 'in_progress') {
+        setMessages(saved);
+        setInterviewStarted(true);
+        messagesRef.current = saved;
+        const lastMsg = saved[saved.length - 1];
+        if (lastMsg?.role === 'user') void send(saved);
+      } else {
+        void send([]);
       }
-    } else {
-      sendToAI([]);
+    } catch (err) {
+      // Visible with a Retry button (shown while there is no answer yet) and logged once.
+      const code = classifyStartError(err);
+      setError(t(ERROR_TEXT[code].key, ERROR_TEXT[code].message));
+      logStartErrorOnce(code, err, 'interview-open');
     }
-  }, [interviewId, interviewStyle]);
+  }, [interviewId, interviewStyle, t]);
 
   const handleRejectDisclaimer = () => {
     onCancel();
