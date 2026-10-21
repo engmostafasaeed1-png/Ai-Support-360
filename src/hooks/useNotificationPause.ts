@@ -45,10 +45,11 @@ export function useNotificationPause() {
     enabled: signedIn && !isGuest,
     retry: false,
     staleTime: 60_000,
-    refetchInterval: 5 * 60_000,
-    queryFn: async (): Promise<PauseInfo> => {
+    // Before the prepared update is applied the lookup fails; that is remembered as "not installed" (no retry loop).
+    refetchInterval: (q) => (q.state.data ? 5 * 60_000 : false),
+    queryFn: async (): Promise<PauseInfo | null> => {
       const { data, error } = await rpc('my_notification_pause');
-      if (error) throw error;
+      if (error || !data) return null;
       return data as PauseInfo;
     },
   });
@@ -80,8 +81,8 @@ export function useNotificationPause() {
 
   return {
     loading: query.isLoading,
-    available: query.isSuccess && !!info?.enabled,
-    notInstalled: query.isError,
+    available: !!info?.enabled,
+    notInstalled: query.isSuccess && !info,
     info,
     pause,
     pauseNow: pauseMutation,
