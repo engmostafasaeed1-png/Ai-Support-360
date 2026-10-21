@@ -37,45 +37,6 @@ export function useFeatureFlags() {
   const [flags, setFlags] = useState<FeatureFlag[]>(DEFAULT_FLAGS);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from('platform_settings')
-        .select('value')
-        .eq('key', SETTING_KEY)
-        .maybeSingle();
-
-      if (data?.value) {
-        setFlags(applyFlagValues(data.value as Record<string, boolean>));
-      }
-      setLoading(false);
-    };
-    load();
-
-    // Subscribe to realtime changes
-    const channel = supabase
-      .channel('feature-flags-sync')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'platform_settings',
-          filter: `key=eq.${SETTING_KEY}`,
-        },
-        (payload) => {
-          const newRow = payload.new as { value?: Record<string, boolean> } | undefined;
-          if (newRow?.value) {
-            setFlags(applyFlagValues(newRow.value));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
 
   const toggleFlag = useCallback(async (key: string) => {
     setFlags(prev => {
