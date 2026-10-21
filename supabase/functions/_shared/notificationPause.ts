@@ -53,7 +53,9 @@ export function assignmentEmailCategory(step: string, recipient: 'consultant' | 
   if (critical) return 'essential';
   if (step === 'request') return 'essential';
   if (step === 'r1' || step === 'r2' || step === 'r3') return 'reminders';
-  return recipient === 'client' ? 'activity' : 'activity';
+  // Expiry notices ('No reply from the consultant', 'Request closed') are activity updates for both sides.
+  void recipient;
+  return 'activity';
 }
 
 // ------------------------------------------------------------------ pause state
