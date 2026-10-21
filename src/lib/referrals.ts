@@ -253,6 +253,7 @@ export function shareUrl(channel: ShareChannel, link: string, text: string, subj
 // ------------------------------------------------------------------ CSV
 
 const cell = (v: unknown) => {
+  if (typeof v === 'number') return Number.isFinite(v) ? String(v) : '';
   const s = v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v);
   const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
   return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
