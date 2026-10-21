@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Feature P inventory (read-only) of the Users page, roles, permissions and audit.
+- [x] Feature P phases A–G: new Users console (server-side search/filters/sort/paging, URL-shared views, saved views, column chooser, stats, audited CSV), user details (identity, roles, organisations, linked records, activity, sessions, sign-ins, flags, notes, tags, messages, personal-data export), safe audited actions (roles with self/last-super-admin rules, suspend with reason/end date, sign-out everywhere, password reset, resend verification, two-step reset, 30-day delete/restore/anonymise, merge/unmerge), bulk invite/tag/remind/suspend with dry run and undo, permission matrix, admin groups, view-as preview, access review with revoke, optional 4-eyes, security alerts, admin history; Arabic, RTL, phone layout, keyboard shortcuts; suspended/deleted consultants hidden from directory and matching. docs/sql/user-management.sql + test file prepared and checked on a scratch database; 1,856 unit tests; server functions deployed (basic mode until SQL applied).
+- [ ] Switch on Feature P fully: awaits owner applying docs/sql/user-management.sql (then run docs/sql/user-management.test.sql).
 - [x] Feature O: client favourites, groups, tags, private notes, "do not suggest", My consultants page, hearts on cards/profile/bids/map/recommendations, "From my groups" in requests, bids and the new request wizard, favourite boost/chip and block exclusion in matching, admin count; prepared SQL tested on a scratch database; 1,829 unit tests.
 - [x] Switch on Feature O: applied docs/sql/client-favourites.sql (migration 0074, byte-identical); signed-in save, group, private note and do-not-suggest verified in the preview, matching preferences checked, test entries removed.
 

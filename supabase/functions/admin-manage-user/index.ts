@@ -105,7 +105,7 @@ async function listUsers(admin: Admin, callerId: string) {
       created_at: u.created_at, last_sign_in_at: u.last_sign_in_at ?? null, last_active_at: u.last_sign_in_at ?? null,
       status: banned ? 'suspended' : u.email_confirmed_at ? 'active' : u.invited_at ? 'invited' : 'pending',
       // deno-lint-ignore no-explicit-any
-      providers: [...new Set((u.identities ?? []).map((i: any) => i.provider))],
+      providers: [...new Set([...(u.app_metadata?.providers ?? []), ...(u.identities ?? []).map((i: any) => i.provider)].map(String))],
       email_verified: !!u.email_confirmed_at,
       // deno-lint-ignore no-explicit-any
       mfa_enabled: (u.factors ?? []).some((f: any) => f.status === 'verified'),
