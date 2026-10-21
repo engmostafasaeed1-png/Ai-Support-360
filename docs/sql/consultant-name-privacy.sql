@@ -14,6 +14,9 @@
 --     so directory, map, cards, bids, invitations, reviews, favourites, sessions, timeline, profile page title and
 --     share text all follow one rule. Search in the browser can only match what it received (the masked text).
 --   * Notification texts and e-mails to clients about consultants use the name as the recipient may see it.
+--   * Administrators (admin, super_admin) ALWAYS get the full real name: every viewer-aware path unlocks for them, admin
+--     RPCs/exports/e-mails keep reading profiles directly, team-request copies use consultant_admin_name, and admin screens show
+--     "Visible to clients as: ..." from consultant_client_view_names (neutral viewer, administrators only).
 --
 -- Leak found and closed by this file
 --   profile_directory is a definer view: any signed-in user could read the full display_name of EVERY verified

@@ -10,6 +10,11 @@ Database part: `docs/sql/consultant-name-privacy.sql` (prepared, not applied). C
   put full consultant names in texts for clients.
 - The AI match suggestions read names with full rights and sent them to the AI and the client (fixed in the edge function now: masked).
 
+## Administrators
+Admins and super admins always see the full real name (Users page and drawer, consultant lists and profile, admin ticket team and bids,
+invoices and payouts, audit, feedback, bulk-message previews, CSV exports, admin e-mails and digests, error reports, admin search).
+Admin screens show a muted hint "Visible to clients as: M. S****" taken from the neutral-viewer name.
+
 ## Migration note
 Every existing consultant starts as `masked` ("M. S****") through the column default; nothing else changes until they choose
 another format in Settings > Privacy. Administrators can switch hiding off with `consultant_name_masking_enabled`.
