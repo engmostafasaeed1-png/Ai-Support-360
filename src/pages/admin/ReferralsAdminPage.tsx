@@ -128,6 +128,7 @@ function SettingsCard({ settings }: { settings: Row }) {
     setDraft({
       rate_percent: String(settings.rate_percent ?? 0.5), months: String(settings.months ?? 12), min_payout: String(settings.min_payout ?? 25),
       claim_days: String(settings.claim_days ?? 7),
+      pass_mark: String(settings.pass_mark ?? 50), activation_days: String(settings.activation_days ?? 90),
       max_per_referred: settings.max_per_referred == null ? '' : String(settings.max_per_referred),
       monthly_cap: settings.monthly_cap == null ? '' : String(settings.monthly_cap),
     });
@@ -137,6 +138,8 @@ function SettingsCard({ settings }: { settings: Row }) {
     ['months', 'Months from the first paid ticket', '1 to 60'],
     ['min_payout', 'Minimum available amount before a payout', 'e.g. 25'],
     ['claim_days', 'Days after sign-up a code can still be entered', '0 to 30'],
+    ['pass_mark', 'AI interview pass mark for activation (both consultants)', '0 to 100, default 50'],
+    ['activation_days', 'Days from sign-up to activate before the referral expires', '1 to 365, default 90'],
     ['max_per_referred', 'Maximum reward per referred consultant', 'empty = no maximum'],
     ['monthly_cap', 'Monthly cap per referrer', 'empty = no cap'],
   ];
@@ -186,7 +189,7 @@ async function exportCsv(kind: 'lines' | 'referrals') {
     ? [['created_at', 'Date'], ['kind', 'Type'], ['status', 'Status'], ['referrer_name', 'Referrer'], ['referred_name', 'Referred consultant'],
        ['fee_amount', 'Referred fee'], ['rate_percent', 'Rate %'], ['amount', 'Reward'], ['currency', 'Currency'], ['referral_payout_id', 'Referral payout'], ['note', 'Note'], ['id', 'Line id']]
     : [['attributed_at', 'Signed up'], ['referred_name', 'Referred consultant'], ['referrer_name', 'Referrer'], ['code', 'Code'], ['source', 'Source'], ['status', 'Status'],
-       ['flags', 'Flags'], ['first_paid_at', 'First paid ticket'], ['window_ends_at', 'Rewards until'], ['earned', 'Earned']];
+       ['flags', 'Flags'], ['activation_status', 'Activation'], ['activated_at', 'Active since'], ['referrer_passed', 'Referrer passed'], ['referred_passed', 'Referred passed'], ['referrer_acknowledged', 'Referrer acknowledged'], ['referred_acknowledged', 'Referred acknowledged'], ['first_paid_at', 'First paid ticket'], ['window_ends_at', 'Rewards until'], ['earned', 'Earned']];
   const blob = new Blob(['\ufeff' + referralCsv(rows, cols)], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -239,8 +242,8 @@ export default function ReferralsAdminPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        {([['Referrers', o.referrers], ['Referred', o.referred], ['Verified', o.verified], ['Paying', o.paying], ['Waiting for review', o.review]] as Array<[string, unknown]>).map(([label, v]) => (
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+        {([['Referrers', o.referrers], ['Referred', o.referred], ['Pending activation', o.pending_activation], ['Active', o.active_pairs], ['Expired', o.expired], ['Verified', o.verified], ['Paying', o.paying], ['Waiting for review', o.review]] as Array<[string, unknown]>).map(([label, v]) => (
           <Card key={label} className="rounded-2xl"><CardContent className="p-4">
             <p className="text-xs text-muted-foreground">{label}</p>
             {overview.isLoading ? <Skeleton className="mt-1 h-7 w-12" /> : <p className={cn('mt-1 text-2xl font-bold tabular-nums', label === 'Waiting for review' && Number(v) > 0 && 'text-warning')}>{Number(v) || 0}</p>}
@@ -280,6 +283,9 @@ export default function ReferralsAdminPage() {
               <SelectTrigger className="w-56 rounded-xl" aria-label="Filter"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All referrals</SelectItem>
+                <SelectItem value="pending_activation">Pending activation</SelectItem>
+                <SelectItem value="active_pairs">Active</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
                 <SelectItem value="flagged">Fraud signals / review</SelectItem>
                 <SelectItem value="held">Held or in review</SelectItem>
                 <SelectItem value="paying">With a paid ticket</SelectItem>
@@ -290,7 +296,7 @@ export default function ReferralsAdminPage() {
           <Card className="rounded-2xl"><CardContent className="p-0 overflow-x-auto">
             {referrals.isLoading ? <div className="p-4"><Skeleton className="h-20 w-full" /></div> : (referrals.data ?? []).length === 0 ? <p className="p-6 text-sm text-muted-foreground">No referrals yet.</p> : (
               <Table>
-                <TableHeader><TableRow><TableHead>Referred consultant</TableHead><TableHead>Referrer</TableHead><TableHead>Status</TableHead><TableHead>Signals</TableHead><TableHead>Dates</TableHead><TableHead className="text-end">Earned</TableHead><TableHead className="text-end">Actions</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Referred consultant</TableHead><TableHead>Referrer</TableHead><TableHead>Activation</TableHead><TableHead>Status</TableHead><TableHead>Signals</TableHead><TableHead>Dates</TableHead><TableHead className="text-end">Earned</TableHead><TableHead className="text-end">Actions</TableHead></TableRow></TableHeader>
                 <TableBody>{(referrals.data ?? []).map((r) => {
                   const signals = [...((r.flags as string[]) ?? []), ...((r.signals as string[]) ?? [])];
                   const id = String(r.referred_id);
@@ -298,11 +304,19 @@ export default function ReferralsAdminPage() {
                     <TableRow key={id}>
                       <TableCell className="text-sm"><div className="font-medium">{String(r.referred_name ?? '-')}</div><div className="text-xs text-muted-foreground">Visible to clients as: {String(r.referred_public ?? '-')}</div>{r.verified ? <Badge variant="outline" className="mt-1 text-[10px]">Verified</Badge> : null}</TableCell>
                       <TableCell className="text-sm"><div>{String(r.referrer_name ?? '-')}</div><div className="font-mono text-xs text-muted-foreground" dir="ltr">{String(r.code)}</div><div className="text-xs text-muted-foreground">{String(r.source)}</div></TableCell>
+                      <TableCell className="text-xs min-w-[200px]">
+                        <Badge variant={r.activation_status === 'active' ? 'secondary' : r.activation_status === 'expired' ? 'destructive' : 'outline'} className="text-[10px] capitalize">{String(r.activation_status)}</Badge>
+                        <div className="mt-1">Referrer: {r.referrer_passed ? 'passed' : `not passed${r.referrer_best_score != null ? ` (best ${Math.round(Number(r.referrer_best_score))})` : ''}`} · {r.referrer_acknowledged ? 'acknowledged' : 'not acknowledged'}</div>
+                        <div>Referred: {r.referred_passed ? 'passed' : `not passed${r.referred_best_score != null ? ` (best ${Math.round(Number(r.referred_best_score))})` : ''}`} · {r.referred_acknowledged ? 'acknowledged' : 'not acknowledged'}</div>
+                        <div className="text-muted-foreground">{r.activation_status === 'active' ? `Active since ${when(r.activated_at)}` : `Deadline ${when(r.activation_expires_at)}`}</div>
+                      </TableCell>
                       <TableCell><Badge variant={r.status === 'active' ? 'secondary' : r.status === 'removed' ? 'outline' : 'destructive'} className="text-[10px] capitalize">{String(r.status)}</Badge></TableCell>
                       <TableCell className="text-xs max-w-[220px]">{signals.length ? signals.map((s) => <div key={s} className="flex items-center gap-1 text-warning"><ShieldAlert className="w-3 h-3" />{FLAG_LABEL[s] ?? s}</div>) : '-'}</TableCell>
-                      <TableCell className="text-xs"><div>Signed up {when(r.attributed_at)}</div><div>First paid {when(r.first_paid_at)}</div><div>Until {when(r.window_ends_at)}</div></TableCell>
+                      <TableCell className="text-xs whitespace-nowrap"><div>Signed up {when(r.attributed_at)}</div><div>First paid {when(r.first_paid_at)}</div><div>Until {when(r.window_ends_at)}</div></TableCell>
                       <TableCell className="text-end text-sm tabular-nums">{perCurrency(r.earned)}</TableCell>
                       <TableCell className="text-end whitespace-nowrap space-x-1">
+                        {r.activation_status === 'pending' && r.status !== 'removed' && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAction({ action: 'resend', id, title: 'Resend reminders', description: 'Sends the acknowledgement request or the AI interview reminder to whichever side is missing it (once per 24 hours).' })}>Resend</Button>}
+                        {r.activation_status === 'expired' && r.status !== 'removed' && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAction({ action: 'revive', id, title: 'Revive this referral', description: 'It becomes pending again with a new activation period. Both still have to pass the AI interview and accept the terms.' })}>Revive</Button>}
                         {r.status !== 'active' && r.status !== 'removed' && <Button size="sm" className="h-7 text-xs" onClick={() => setAction({ action: 'approve_referral', id, title: 'Approve this referral', description: 'Held rewards for it are released.' })}>Approve</Button>}
                         {r.status === 'active' && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAction({ action: 'hold_referral', id, title: 'Hold this referral', description: 'Pending and available rewards are held; new rewards are held too.' })}>Hold</Button>}
                         {r.status !== 'removed' && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAction({ action: 'change_referrer', id, title: 'Change the referrer', description: 'New rewards go to the new referrer. Existing lines stay as they are.', needsReferrer: true })}>Change referrer</Button>}

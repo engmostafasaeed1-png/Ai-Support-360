@@ -8,13 +8,17 @@ export const SITE_URL = 'https://www.aisupport360.com';
 
 export interface ReferralSettings {
   enabled: boolean;
+  /** AI interview pass mark for activation (both consultants). */
+  pass_mark: number;
+  /** Days from sign-up for both to pass and acknowledge before the referral expires. */
+  activation_days: number;
   rate_percent: number;
   months: number;
   min_payout: number;
   terms_version: number;
 }
 
-export const REFERRAL_DEFAULTS: ReferralSettings = { enabled: true, rate_percent: 0.5, months: 12, min_payout: 25, terms_version: 1 };
+export const REFERRAL_DEFAULTS: ReferralSettings = { enabled: true, pass_mark: 50, activation_days: 90, rate_percent: 0.5, months: 12, min_payout: 25, terms_version: 1 };
 
 const num = (v: unknown, def: number, lo: number, hi: number) => {
   const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
@@ -25,6 +29,8 @@ export function parseReferralSettings(o: unknown): ReferralSettings {
   const r = (o && typeof o === 'object' ? o : {}) as Record<string, unknown>;
   return {
     enabled: r.enabled === true,
+    pass_mark: num(r.pass_mark, REFERRAL_DEFAULTS.pass_mark, 0, 100),
+    activation_days: Math.round(num(r.activation_days, REFERRAL_DEFAULTS.activation_days, 1, 365)),
     rate_percent: num(r.rate_percent, REFERRAL_DEFAULTS.rate_percent, 0, 10),
     months: Math.round(num(r.months, REFERRAL_DEFAULTS.months, 1, 60)),
     min_payout: num(r.min_payout, REFERRAL_DEFAULTS.min_payout, 0, 100000),
@@ -97,6 +103,8 @@ export function windowEnd(firstPaidAt: Date, months: number): Date {
 
 export interface RewardCheck {
   enabled: boolean;
+  activation: 'pending' | 'active' | 'expired';
+  activatedAt: Date | null;
   attributionStatus: 'active' | 'review' | 'held' | 'removed';
   referrerId: string;
   referredId: string;
@@ -113,6 +121,8 @@ export function rewardBlockReason(c: RewardCheck): string | null {
   if (!c.enabled) return 'programme_off';
   if (c.attributionStatus === 'removed') return 'removed';
   if (c.referrerId === c.referredId) return 'own_work';
+  if (c.activation !== 'active') return 'not_active';
+  if (!c.activatedAt || c.paidAt.getTime() < c.activatedAt.getTime()) return 'before_activation';
   if (!c.windowEndsAt || c.paidAt.getTime() >= c.windowEndsAt.getTime()) return 'outside_window';
   if (!c.referredVerified) return 'referred_not_verified';
   if (!c.referrerVerified) return 'referrer_not_verified';
@@ -264,3 +274,44 @@ export function referralCsv(rows: Array<Record<string, unknown>>, columns: Array
   const body = rows.map((r) => columns.map(([k]) => cell(r[k])).join(','));
   return [head, ...body].join('\r\n');
 }
+
+// ------------------------------------------------------------------ activation (mirrors only; decided in the database)
+
+/** Mirror of the pass check: a completed AI interview with overall score >= pass mark (49 fails, 50 passes by default). */
+export const interviewPasses = (score: number | null | undefined, passMark: number) =>
+  typeof score === 'number' && Number.isFinite(score) && score >= passMark;
+
+export type ActivationChip = 'waiting_you' | 'waiting_them' | 'active' | 'expired' | 'under_review';
+export type NextStep = 'pass_interview' | 'acknowledge' | 'wait_other' | 'none';
+
+export const CHIP_LABEL: Record<ActivationChip, string> = {
+  waiting_you: 'Pending: waiting for you',
+  waiting_them: 'Pending: waiting for them',
+  active: 'Active',
+  expired: 'Expired',
+  under_review: 'Under review',
+};
+
+/** Mirror of referral_next_step for one side. */
+export function nextStep(s: { activation: 'pending' | 'active' | 'expired'; removed?: boolean; passed: boolean; acknowledged: boolean }): NextStep {
+  if (s.activation !== 'pending' || s.removed) return 'none';
+  if (!s.passed) return 'pass_interview';
+  if (!s.acknowledged) return 'acknowledge';
+  return 'wait_other';
+}
+
+/** Mirror of referral_chip. */
+export function activationChip(s: { review: boolean; activation: 'pending' | 'active' | 'expired'; myNext: NextStep }): ActivationChip {
+  if (s.review) return 'under_review';
+  if (s.activation === 'active') return 'active';
+  if (s.activation === 'expired') return 'expired';
+  return s.myNext === 'pass_interview' || s.myNext === 'acknowledge' ? 'waiting_you' : 'waiting_them';
+}
+
+export const CHIP_TONE: Record<ActivationChip, string> = {
+  waiting_you: 'bg-warning/15 text-warning',
+  waiting_them: 'bg-muted text-muted-foreground',
+  active: 'bg-success/15 text-success',
+  expired: 'bg-destructive/10 text-destructive',
+  under_review: 'bg-warning/15 text-warning',
+};

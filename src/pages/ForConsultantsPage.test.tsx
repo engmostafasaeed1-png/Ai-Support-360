@@ -9,6 +9,8 @@ import ForConsultantsPage, { applyHref } from './ForConsultantsPage';
 import { CONSULTANT_SEO } from '@/lib/useHeadTags';
 const founding = vi.hoisted(() => ({ remaining: 0 }));
 vi.mock('@/hooks/useFoundingConsultants', () => ({ useFoundingSpots: () => ({ data: founding.remaining }) }));
+// The referral line stays hidden until the programme is live (tested in src/lib/referrals.test.ts).
+vi.mock('@/components/referral/ReferralBanner', () => ({ default: () => null }));
 
 function renderPage(url = '/for-consultants') {
   return render(

@@ -41,6 +41,8 @@ export interface ReferralOverview {
   funnel: { clicks: number; signups: number; verified: number; paying: number };
   earnings: EarningsRow[];
   eligibility: { verified: boolean; policy: boolean; suspended: boolean; payout_details: boolean };
+  /** Referrer checklist: AI interview passed -> terms acknowledged -> active (decided in the database). */
+  activation: { pass_mark: number; interview_passed: boolean; best_score: number | null; acknowledged: boolean; active: boolean };
 }
 
 const n = (v: unknown) => Number(v) || 0;
@@ -48,6 +50,7 @@ const n = (v: unknown) => Number(v) || 0;
 export function parseOverview(o: Record<string, unknown>): ReferralOverview {
   const f = (o.funnel ?? {}) as Record<string, unknown>;
   const el = (o.eligibility ?? {}) as Record<string, unknown>;
+  const ac = (o.activation ?? {}) as Record<string, unknown>;
   return {
     settings: parseReferralSettings(o.settings),
     code: String(o.code ?? ''),
@@ -60,6 +63,13 @@ export function parseOverview(o: Record<string, unknown>): ReferralOverview {
       const r = e as Record<string, unknown>;
       return { currency: String(r.currency ?? 'USD'), pending: n(r.pending), available: n(r.available), held: n(r.held), in_payout: n(r.in_payout), paid: n(r.paid), lifetime: n(r.lifetime) };
     }),
+    activation: {
+      pass_mark: ac.pass_mark == null ? 50 : n(ac.pass_mark),
+      interview_passed: ac.interview_passed === true,
+      best_score: ac.best_score == null ? null : n(ac.best_score),
+      acknowledged: ac.acknowledged === true,
+      active: ac.active === true,
+    },
     eligibility: { verified: el.verified === true, policy: el.policy !== false, suspended: el.suspended === true, payout_details: el.payout_details === true },
   };
 }
@@ -82,7 +92,56 @@ export function useReferralOverview(enabled = true) {
   });
 }
 
-export interface MyReferral { referred_name: string; status: string; attributed_at: string; verified: boolean; first_paid_at: string | null; window_ends_at: string | null; earned: Record<string, number> }
+export interface MyReferral {
+  referred_name: string; status: string; attributed_at: string; verified: boolean; first_paid_at: string | null; window_ends_at: string | null;
+  earned: Record<string, number>; activation_status: 'pending' | 'active' | 'expired'; chip: string; my_next: string; their_next: string;
+  activated_at: string | null; activation_expires_at: string | null; they_passed: boolean; they_acknowledged: boolean;
+}
+
+/** The referred consultant's own invitation (who invited them, masked; activation steps). null = not referred / SQL not applied. */
+export interface MyInvite {
+  referrer_name: string; activation_status: 'pending' | 'active' | 'expired'; chip: string; my_next: string; their_next: string;
+  attributed_at: string; activation_expires_at: string | null; activated_at: string | null; i_passed_at: string | null; they_passed: boolean;
+  i_acknowledged_at: string | null; they_acknowledged: boolean; pass_mark: number; rate_percent: number; months: number; terms_version: number;
+}
+
+export function useMyReferralInvite(enabled = true) {
+  return useQuery({
+    queryKey: ['referral-invite'],
+    enabled,
+    retry: false,
+    staleTime: 60_000,
+    queryFn: async (): Promise<MyInvite | null> => {
+      const { data, error } = await referralRpc('my_referral_invite');
+      if (error || !data || typeof data !== 'object') return null;
+      return data as MyInvite;
+    },
+  });
+}
+
+export interface TermsVersion { version: number; body_en: string; body_ar: string; is_draft: boolean }
+
+export function useReferralTerms(version: number | null | undefined) {
+  return useQuery({
+    queryKey: ['referral-terms', version],
+    enabled: !!version,
+    retry: false,
+    staleTime: 30 * 60_000,
+    queryFn: async (): Promise<TermsVersion | null> => {
+      const { data, error } = await (supabase as unknown as { from: (t: string) => { select: (c: string) => { eq: (k: string, v: unknown) => { maybeSingle: () => Promise<{ data: unknown; error: unknown }> } } } })
+        .from('referral_terms_versions').select('version, body_en, body_ar, is_draft').eq('version', version).maybeSingle();
+      if (error || !data) return null;
+      return data as TermsVersion;
+    },
+  });
+}
+
+/** Append-only acknowledgement (language, browser and hashed network are stored by the database). */
+export async function acceptReferralTerms(version: number, source: 'page' | 'share' | 'popup', lang: 'en' | 'ar') {
+  return referralRpc('referral_accept_terms', {
+    _version: version, _source: source, _language: lang, _user_agent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 300) : null,
+  });
+}
 export interface HistoryLine { created_at: string; kind: string; status: string; amount: number; currency: string; fee_amount: number | null; rate_percent: number | null; referred_name: string | null; note: string | null; available_at: string | null; paid_at: string | null }
 
 export function useMyReferralList(enabled: boolean) {
@@ -114,6 +173,6 @@ export function useMyReferralHistory(enabled: boolean) {
 export function useInvalidateReferral() {
   const qc = useQueryClient();
   return () => {
-    for (const k of ['referral-overview', 'referral-list', 'referral-history']) qc.invalidateQueries({ queryKey: [k] });
+    for (const k of ['referral-overview', 'referral-list', 'referral-history', 'referral-invite']) qc.invalidateQueries({ queryKey: [k] });
   };
 }

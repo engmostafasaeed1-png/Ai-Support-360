@@ -189,7 +189,7 @@ export const consultantNavGroups: NavGroup[] = [
       { key: 'interviews', icon: Video, path: '/consultant/interviews' },
       { key: 'remote_access', icon: MonitorSmartphone, path: '/consultant/remote-access' },
       { key: 'knowledge', icon: BookOpenCheck, path: '/consultant/knowledge' },
-      { key: 'referrals', icon: Gift, path: '/consultant/referrals' },
+      { key: 'referrals', icon: Gift, path: '/consultant/referrals', labelKey: 'sidebar.refer_earn', fallback: 'Refer & earn' },
     ],
   },
   {
@@ -231,6 +231,7 @@ export const adminNavGroups: NavGroup[] = [
       { key: 'client_approvals', icon: BadgeCheck, path: '/admin/client-approvals', fallback: 'Client approvals' },
       { key: 'client_ratings', icon: StarHalf, path: '/admin/client-reviews', fallback: 'Client ratings' },
       { key: 'responsiveness_admin', icon: Gauge, path: '/admin/responsiveness', fallback: 'Consultant responsiveness' },
+      { key: 'referrals_admin', icon: Gift, path: '/admin/referrals', fallback: 'Referrals' },
       { key: 'interview_training', icon: Brain, path: '/admin/interview-training' },
       { key: 'question_library', icon: BookMarked, path: '/admin/question-library', fallback: 'Question library' },
       { key: 'interview_templates', icon: LayoutTemplate, path: '/admin/interview-templates', fallback: 'Interview templates' },

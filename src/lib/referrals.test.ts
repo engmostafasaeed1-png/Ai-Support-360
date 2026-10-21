@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import {
-  captureReferral, isBlockedReferralWord, isReferralPayout, normalizeReferralCode, parseReferralSettings, parseStoredRef,
+  activationChip, interviewPasses, nextStep, captureReferral, isBlockedReferralWord, isReferralPayout, normalizeReferralCode, parseReferralSettings, parseStoredRef,
   referralCodeProblem, referralCsv, referralLink, referrerBadges, rewardBlockReason, rewardForFee, rewardPerManDay, shareMessage,
   shareUrl, storedReferral, windowEnd, type RewardCheck,
 } from './referrals';
@@ -20,7 +20,7 @@ describe('referral reward (owner rule: 0.5 % of the referred consultant fee)', (
 
 describe('12-month window', () => {
   const base: RewardCheck = {
-    enabled: true, attributionStatus: 'active', referrerId: 'a', referredId: 'b',
+    enabled: true, activation: 'active', activatedAt: new Date('2026-03-01T00:00:00Z'), attributionStatus: 'active', referrerId: 'a', referredId: 'b',
     windowEndsAt: windowEnd(new Date('2026-03-15T10:00:00Z'), 12), paidAt: new Date('2026-06-01T00:00:00Z'),
     referredVerified: true, referrerVerified: true, referrerSuspended: false, referrerPolicyOk: true,
   };
@@ -32,6 +32,11 @@ describe('12-month window', () => {
     const end = base.windowEndsAt as Date;
     expect(rewardBlockReason({ ...base, paidAt: new Date(end.getTime() - 1000) })).toBeNull();
     expect(rewardBlockReason({ ...base, paidAt: end })).toBe('outside_window');
+  });
+  it('earns only after activation (both passed + acknowledged), never on earlier work', () => {
+    expect(rewardBlockReason({ ...base, activation: 'pending' })).toBe('not_active');
+    expect(rewardBlockReason({ ...base, activation: 'expired' })).toBe('not_active');
+    expect(rewardBlockReason({ ...base, activatedAt: new Date('2026-06-02T00:00:00Z') })).toBe('before_activation');
   });
   it('needs both verified, referrer not suspended and with signed policy', () => {
     expect(rewardBlockReason({ ...base, referredVerified: false })).toBe('referred_not_verified');
@@ -101,5 +106,23 @@ describe('sharing and display', () => {
   it('CSV keeps negative amounts as numbers and neutralises formulas', () => {
     const csv = referralCsv([{ a: -5, b: '=HYPERLINK("x")' }], [['a', 'Amount'], ['b', 'Note']]);
     expect(csv.split('\r\n')[1]).toBe('-5,"\'=HYPERLINK(""x"")"');
+  });
+});
+
+describe('activation rule (both must pass the AI interview and acknowledge)', () => {
+  it('pass mark boundary 49 / 50', () => {
+    expect(interviewPasses(49, 50)).toBe(false);
+    expect(interviewPasses(50, 50)).toBe(true);
+    expect(interviewPasses(null, 50)).toBe(false);
+  });
+  it('next step and chip per side', () => {
+    expect(nextStep({ activation: 'pending', passed: false, acknowledged: true })).toBe('pass_interview');
+    expect(nextStep({ activation: 'pending', passed: true, acknowledged: false })).toBe('acknowledge');
+    expect(nextStep({ activation: 'pending', passed: true, acknowledged: true })).toBe('wait_other');
+    expect(nextStep({ activation: 'active', passed: true, acknowledged: true })).toBe('none');
+    expect(activationChip({ review: false, activation: 'pending', myNext: 'pass_interview' })).toBe('waiting_you');
+    expect(activationChip({ review: false, activation: 'pending', myNext: 'wait_other' })).toBe('waiting_them');
+    expect(activationChip({ review: true, activation: 'active', myNext: 'none' })).toBe('under_review');
+    expect(activationChip({ review: false, activation: 'expired', myNext: 'none' })).toBe('expired');
   });
 });

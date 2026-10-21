@@ -323,7 +323,9 @@
     "consultant_responsiveness": "Responsiveness",
     "my_consultants": "My consultants",
     "messages_admin": "Messages / Campaigns",
-    "feedback": "Feedback"
+    "feedback": "Feedback",
+    "refer_earn": "Refer & earn",
+    "referrals_admin": "Referrals"
   },
   "client_dashboard": {
     "title": "Welcome back",

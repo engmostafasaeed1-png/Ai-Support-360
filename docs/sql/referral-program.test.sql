@@ -39,13 +39,19 @@ GRANT SELECT ON _code TO anon, authenticated;
 
 -- 2. Attribution at sign-up (metadata, lower-case code), locked afterwards -----------------------------------------------
 INSERT INTO auth.users (id, email, raw_user_meta_data)
-SELECT d_user, 'dalia@corp-x.com', jsonb_build_object('role', 'consultant', 'referral_code', lower((SELECT code FROM _code))) FROM _ids;
+SELECT d_user, 'dalia@corp-x.com', jsonb_build_object('role', 'consultant', 'referral_code', lower((SELECT code FROM _code)), 'referral_ack_version', '1', 'referral_ack_lang', 'ar', 'referral_ack_ua', 'TestAgent') FROM _ids;
 INSERT INTO public.consultants (id, user_id) SELECT d, d_user FROM _ids;
 SELECT pg_temp.check((SELECT status = 'active' AND source = 'signup' AND referrer_consultant_id = (SELECT r FROM _ids)
                         FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT d FROM _ids)), 'attributed at sign-up');
-SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.notifications WHERE user_id = (SELECT r_user FROM _ids) AND title = 'Someone signed up with your referral code'
-                               AND body LIKE 'D. K****%' AND body NOT LIKE '%Dalia%'), 'referrer told with masked name');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.notifications WHERE user_id = (SELECT r_user FROM _ids) AND title = 'Someone registered with your referral code'
+                               AND body = 'D. K**** registered with your code. Your referral becomes active when you both pass the AI interview.'), 'referrer told with masked name');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.notifications WHERE user_id = (SELECT d_user FROM _ids)
+                               AND body = 'You were invited by R. S****. The referral programme becomes active after you and your referrer pass the AI interview.'), 'referred told at sign-up');
+SELECT pg_temp.check((SELECT activation_status FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT d FROM _ids)) = 'pending', 'pending activation at sign-up');
+SELECT pg_temp.check((SELECT source = 'signup' AND language = 'ar' AND user_agent = 'TestAgent' FROM public.referral_acknowledgements WHERE consultant_id = (SELECT d FROM _ids)),
+                     'acknowledged in the registration step');
 SELECT pg_temp.check((SELECT count(*) FROM public.referral_email_queue WHERE user_id = (SELECT r_user FROM _ids) AND kind = 'signup') = 1, 'sign-up e-mail queued');
+SELECT pg_temp.check((SELECT count(*) FROM public.referral_email_queue WHERE user_id = (SELECT d_user FROM _ids) AND kind = 'invited') = 1, 'invitation e-mail queued');
 SELECT pg_temp.check(public.referral_attribute((SELECT d FROM _ids), 'SAP-OTHER-111', 'claim', NULL, NULL) = 'already', 'attribution locked');
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.as_user((SELECT d_user FROM _ids));
@@ -88,9 +94,59 @@ SELECT pg_temp.check(public.referral_validate_code(lower((SELECT code FROM _code
 SELECT pg_temp.check(public.referral_validate_code('SAP-NOBODY-999') = '{"valid": false}'::jsonb, 'validate: invalid');
 RESET ROLE;
 
--- 6. Reward = 0.5 % of the referred consultant's fee (never VAT / fees / commission), one line per payout ------------------------
+-- 5b. Activation: both passed the AI interview (pass mark 50) and both acknowledged ---------------------------------------
 UPDATE public.consultants SET verification_status = 'verified' WHERE id = (SELECT d FROM _ids);
 SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.notifications WHERE user_id = (SELECT r_user FROM _ids) AND title = 'Your referral is verified'), 'verified notice');
+-- A paid ticket before activation earns nothing (it still starts the 12-month window).
+INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, status, reference) VALUES
+  ('00000000-0000-0000-0000-00000000bb00', (SELECT d FROM _ids), 1000, 1000, 'pending', 'payment:before');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.referral_events WHERE payout_id = '00000000-0000-0000-0000-00000000bb00' AND reason = 'not_active'), 'pending pair earns nothing');
+-- Referrer: 49 is not enough, 50 passes (boundary).
+INSERT INTO public.interview_sessions (consultant_id, status, overall_score, completed_at) SELECT r, 'completed', 49, now() FROM _ids;
+SELECT pg_temp.check(public.referral_passed_at((SELECT r FROM _ids)) IS NULL, '49 does not pass');
+SELECT pg_temp.check(public.referral_chip((SELECT d FROM _ids), (SELECT r FROM _ids)) = 'waiting_you', 'referrer chip: waiting for you');
+INSERT INTO public.interview_sessions (consultant_id, status, overall_score, completed_at) SELECT r, 'completed', 50, now() FROM _ids;
+SELECT pg_temp.check(public.referral_passed_at((SELECT r FROM _ids)) IS NOT NULL, '50 passes');
+SELECT pg_temp.check((SELECT count(*) FROM public.notifications WHERE user_id = (SELECT r_user FROM _ids) AND title = 'You passed the AI interview') = 1, 'pass notice once');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.notifications WHERE user_id = (SELECT d_user FROM _ids) AND title = 'Your referral partner passed the AI interview'
+                               AND body LIKE 'R. S**** passed the AI interview. Next for your referral: Pass the AI interview (score at least 50).'), 'other side told the next step');
+-- Referred consultant fails, stays pending, retakes and passes.
+INSERT INTO public.interview_sessions (consultant_id, status, overall_score, completed_at) SELECT d, 'completed', 40, now() FROM _ids;
+SELECT pg_temp.check((SELECT activation_status FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT d FROM _ids)) = 'pending', 'failed interview: still pending');
+INSERT INTO public.interview_sessions (consultant_id, status, overall_score) SELECT d, 'in_progress', NULL FROM _ids;
+UPDATE public.interview_sessions SET status = 'completed', overall_score = 70, completed_at = now() WHERE consultant_id = (SELECT d FROM _ids) AND status = 'in_progress';
+-- Both passed, the referrer has not acknowledged yet: still pending.
+SELECT pg_temp.check((SELECT activation_status FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT d FROM _ids)) = 'pending', 'no acknowledgement = no activation');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.as_user((SELECT r_user FROM _ids));
+SELECT pg_temp.check((public.my_referral_overview(NULL) -> 'activation' ->> 'active')::boolean = false, 'referrer locked before acknowledging');
+SELECT pg_temp.check((SELECT my_next FROM public.my_referrals() WHERE referred_name = 'D. K****') = 'acknowledge', 'referrer next step: acknowledge');
+DO $$ BEGIN
+  UPDATE public.consultant_referrals SET activation_status = 'active';
+  RAISE EXCEPTION 'FAILED: browser could set active';
+EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
+SELECT public.referral_accept_terms(1, 'page', 'en', 'TestAgent');
+SELECT pg_temp.check((public.my_referral_overview(NULL) -> 'activation' ->> 'active')::boolean, 'referrer active after acknowledging');
+RESET ROLE;
+SELECT pg_temp.as_user(NULL);
+SELECT pg_temp.check((SELECT activation_status = 'active' AND activated_at IS NOT NULL FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT d FROM _ids)), 'pair active');
+SELECT public.referral_check_activation((SELECT d FROM _ids));
+SELECT pg_temp.check((SELECT count(*) FROM public.notifications WHERE user_id = (SELECT d_user FROM _ids) AND title = 'Your referral is active') = 1, 'active notice once (referred)');
+SELECT pg_temp.check((SELECT count(*) FROM public.notifications WHERE user_id = (SELECT r_user FROM _ids) AND title = 'Your referral is active' AND body LIKE '%D. K****%') = 1, 'active notice once (referrer)');
+DO $$ BEGIN
+  UPDATE public.referral_acknowledgements SET language = 'xx';
+  RAISE EXCEPTION 'FAILED: acknowledgement changed';
+EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
+DO $$ BEGIN
+  DELETE FROM public.referral_acknowledgements;
+  RAISE EXCEPTION 'FAILED: acknowledgement deleted';
+EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
+-- Work invoiced before the activation moment earns nothing.
+INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, status, reference, created_at) VALUES
+  ('00000000-0000-0000-0000-00000000bb01', (SELECT d FROM _ids), 1000, 1000, 'pending', 'payment:early', now() - interval '1 minute');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.referral_events WHERE payout_id = '00000000-0000-0000-0000-00000000bb01' AND reason = 'before_activation'), 'lines before activation earn nothing');
+
+-- 6. Reward = 0.5 % of the referred consultant's fee (never VAT / fees / commission), one line per payout ------------------------
 CREATE TEMP TABLE _p (n int PRIMARY KEY, id uuid DEFAULT gen_random_uuid());
 INSERT INTO _p (n) SELECT generate_series(1, 12);
 INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, currency, status, reference)
@@ -146,6 +202,13 @@ SELECT id, (SELECT d FROM _ids), 100, 100, 'pending', 'payment:test8' FROM _p WH
 SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.referral_events WHERE payout_id = (SELECT id FROM _p WHERE n = 8) AND reason = 'referrer_suspended'), 'suspended referrer earns nothing');
 DELETE FROM public.user_admin_state WHERE user_id = (SELECT r_user FROM _ids);
 UPDATE public.consultants SET verification_status = 'verified' WHERE id = (SELECT f FROM _ids);
+INSERT INTO public.interview_sessions (consultant_id, status, overall_score, completed_at) SELECT f, 'completed', 80, now() FROM _ids;
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.as_user((SELECT f_user FROM _ids));
+SELECT public.referral_accept_terms(1, 'popup', 'en', NULL);
+RESET ROLE;
+SELECT pg_temp.as_user(NULL);
+SELECT pg_temp.check((SELECT activation_status FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT f FROM _ids)) = 'active', 'activation does not lift the review flag but activates');
 INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, status, reference)
 SELECT id, (SELECT f FROM _ids), 1000, 1000, 'completed', 'payment:test9' FROM _p WHERE n = 9;
 SELECT pg_temp.check((SELECT status = 'held' AND hold_reason = 'review' FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 9)), 'flagged referral -> held');
@@ -217,6 +280,25 @@ RESET ROLE;
 SELECT pg_temp.as_user(NULL);
 SELECT pg_temp.check((SELECT status FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 9)) = 'available', 'approval releases held line');
 SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.audit_logs WHERE action = 'referral.approve_referral'), 'admin action audited');
+
+-- 12b. Reminders after 14 days (once) and expiry after the activation period; only an administrator revives -----------
+UPDATE public.consultant_referrals SET attributed_at = now() - interval '15 days' WHERE referred_consultant_id = (SELECT e FROM _ids);
+SELECT public.referral_activation_sweep();
+SELECT public.referral_activation_sweep();
+SELECT pg_temp.check((SELECT count(*) FROM public.notifications WHERE user_id = (SELECT e_user FROM _ids) AND title = 'Your referral is still pending') = 1, '14-day reminder once');
+UPDATE public.consultant_referrals SET activation_expires_at = now() - interval '1 second' WHERE referred_consultant_id = (SELECT e FROM _ids);
+SELECT public.referral_activation_sweep();
+SELECT public.referral_activation_sweep();
+SELECT pg_temp.check((SELECT activation_status FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT e FROM _ids)) = 'expired', 'expired after the activation period');
+SELECT pg_temp.check((SELECT count(*) FROM public.notifications WHERE user_id = (SELECT e_user FROM _ids) AND title = 'Your referral has expired') = 1, 'expiry notice once');
+INSERT INTO public.interview_sessions (consultant_id, status, overall_score, completed_at) SELECT e, 'completed', 90, now() FROM _ids;
+SELECT pg_temp.check((SELECT activation_status FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT e FROM _ids)) = 'expired', 'passing later does not revive');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.as_user((SELECT admin FROM _ids));
+SELECT public.admin_referral_action('revive', (SELECT e FROM _ids), 'Interview delayed by our outage');
+RESET ROLE;
+SELECT pg_temp.as_user(NULL);
+SELECT pg_temp.check((SELECT activation_status = 'pending' AND activation_expires_at > now() FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT e FROM _ids)), 'admin revived');
 
 -- 13. Old member credit is never paid on top for consultant referrals; jobs are plain database calls --------------------------------
 SELECT public.grant_referral_rewards((SELECT d_user FROM _ids));

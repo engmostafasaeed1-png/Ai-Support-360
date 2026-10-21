@@ -10,6 +10,10 @@
 --   * a reward line is created at the same trigger point as the consultant payout (payouts insert), only while the
 --     referred consultant is verified and the referrer is verified, not suspended and has signed the Service Policy.
 --     It is "pending" until that payout is completed, then "available". Refunds add a negative line, disputes hold it.
+--   * ACTIVATION: a pair (referrer + referred) is "pending" until BOTH passed the AI interview (completed AI session with
+--     overall_score >= referral_min_interview_score, default 50) and BOTH accepted the current referral terms (versioned,
+--     append-only acknowledgements). Only payouts created after the activation moment earn. Pending pairs expire after
+--     referral_activation_days (90) from sign-up; only an administrator can revive them. Fraud holds still apply.
 --   * available rewards >= referral_min_payout ($25) per currency are grouped nightly into a normal payouts row
 --     (reference 'referral:<id>', labelled "Referral reward"), paid with the normal payout run and bank details.
 --
@@ -28,7 +32,9 @@ INSERT INTO public.platform_settings (key, value) VALUES
   ('referral_max_reward_per_referred', 'null'::jsonb),
   ('referral_monthly_cap_per_referrer', 'null'::jsonb),
   ('referral_claim_days', '7'::jsonb),
-  ('referral_terms_version', '1'::jsonb)
+  ('referral_terms_version', '1'::jsonb),
+  ('referral_min_interview_score', '50'::jsonb),
+  ('referral_activation_days', '90'::jsonb)
 ON CONFLICT (key) DO NOTHING;
 
 CREATE OR REPLACE FUNCTION public.referral_setting_num(_key text, _def numeric, _lo numeric, _hi numeric)
@@ -70,7 +76,9 @@ AS $$
     'max_per_referred', public.referral_setting_cap('referral_max_reward_per_referred'),
     'monthly_cap', public.referral_setting_cap('referral_monthly_cap_per_referrer'),
     'claim_days', public.referral_setting_num('referral_claim_days', 7, 0, 30)::int,
-    'terms_version', public.referral_setting_num('referral_terms_version', 1, 1, 1000)::int)
+    'terms_version', public.referral_setting_num('referral_terms_version', 1, 1, 1000)::int,
+    'pass_mark', public.referral_setting_num('referral_min_interview_score', 50, 0, 100),
+    'activation_days', public.referral_setting_num('referral_activation_days', 90, 1, 365)::int)
 $$;
 REVOKE ALL ON FUNCTION public.referral_settings() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.referral_settings() TO service_role;
@@ -83,7 +91,8 @@ CREATE OR REPLACE FUNCTION public.referral_public_settings()
  SET search_path TO 'public'
 AS $$
   SELECT jsonb_build_object('enabled', s->'enabled', 'rate_percent', s->'rate_percent', 'months', s->'months',
-                            'min_payout', s->'min_payout', 'terms_version', s->'terms_version')
+                            'min_payout', s->'min_payout', 'terms_version', s->'terms_version', 'pass_mark', s->'pass_mark',
+                            'activation_days', s->'activation_days')
     FROM (SELECT public.referral_settings() AS s) x
 $$;
 REVOKE ALL ON FUNCTION public.referral_public_settings() FROM PUBLIC;
@@ -169,6 +178,16 @@ CREATE TABLE IF NOT EXISTS public.consultant_referrals (
   approved_by uuid,
   verified_notified_at timestamptz,
   first_reward_notified_at timestamptz,
+  -- Activation (both passed the AI interview + both accepted the terms). Written only by referral_check_activation.
+  activation_status text NOT NULL DEFAULT 'pending' CHECK (activation_status IN ('pending', 'active', 'expired')),
+  activated_at timestamptz,
+  activation_expires_at timestamptz,
+  expired_at timestamptz,
+  referrer_passed_notified_at timestamptz,
+  referred_passed_notified_at timestamptz,
+  reminder_14_at timestamptz,
+  reminder_45_at timestamptz,
+  admin_resend_at timestamptz,
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT consultant_referrals_not_self CHECK (referred_consultant_id <> referrer_consultant_id)
 );
@@ -246,20 +265,58 @@ CREATE POLICY "Admins read referral reward lines" ON public.referral_reward_line
   FOR SELECT TO authenticated
   USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'super_admin'));
 
--- Programme terms acknowledgement (required the first time the Refer & earn page opens).
-CREATE TABLE IF NOT EXISTS public.referral_terms_acks (
-  consultant_id uuid PRIMARY KEY REFERENCES public.consultants(id) ON DELETE CASCADE,
-  version int NOT NULL,
-  accepted_at timestamptz NOT NULL DEFAULT now()
+-- Versioned referral terms (like the Consultant Service Policy) and append-only acknowledgements by both sides.
+CREATE TABLE IF NOT EXISTS public.referral_terms_versions (
+  version int PRIMARY KEY,
+  body_en text NOT NULL,
+  body_ar text NOT NULL,
+  is_draft boolean NOT NULL DEFAULT true,
+  published_at timestamptz NOT NULL DEFAULT now()
 );
-GRANT SELECT ON public.referral_terms_acks TO authenticated;
-GRANT ALL ON public.referral_terms_acks TO service_role;
-ALTER TABLE public.referral_terms_acks ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Own referral terms or admin" ON public.referral_terms_acks;
-CREATE POLICY "Own referral terms or admin" ON public.referral_terms_acks
+GRANT SELECT ON public.referral_terms_versions TO anon, authenticated;
+GRANT ALL ON public.referral_terms_versions TO service_role;
+ALTER TABLE public.referral_terms_versions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Referral terms are public" ON public.referral_terms_versions;
+CREATE POLICY "Referral terms are public" ON public.referral_terms_versions FOR SELECT TO anon, authenticated USING (true);
+INSERT INTO public.referral_terms_versions (version, body_en, body_ar) VALUES (1,
+'DRAFT for legal review. (1) The referral becomes active only when BOTH consultants have passed the AI interview with at least the pass mark and BOTH have accepted these terms; the interview must be taken honestly, without outside help. (2) The referrer earns the published rate of the referred consultant''s fee for the published number of months from the referred consultant''s first paid ticket, only on work invoiced after activation. (3) AI Support 360 pays the reward from its own fee; it is never deducted from the referred consultant or added to the client''s price. (4) AI Support 360 may review, hold, reverse or forfeit rewards in case of fraud, self-referral, shared accounts or dishonest interviews. (5) Rewards are a referral incentive, not wages or salary, and may be taxable; you are responsible for declaring them.',
+'مسودة للمراجعة القانونية. (1) تصبح الإحالة نشطة فقط عندما يجتاز المستشاران كلاهما المقابلة الذكية بدرجة النجاح على الأقل ويوافق كلاهما على هذه الشروط، ويجب إجراء المقابلة بأمانة ودون مساعدة خارجية. (2) يحصل المُحيل على النسبة المعلنة من أتعاب المستشار المُحال للمدة المعلنة من أول تذكرة مدفوعة له، وفقط عن الأعمال المفوترة بعد التفعيل. (3) تدفع AI Support 360 المكافأة من رسومها الخاصة، ولا تُخصم أبدًا من المستشار المُحال ولا تُضاف إلى سعر العميل. (4) يحق لـ AI Support 360 مراجعة المكافآت أو تعليقها أو عكسها أو إسقاطها في حالات الاحتيال أو إحالة النفس أو الحسابات المشتركة أو المقابلات غير الأمينة. (5) المكافآت حافز إحالة وليست أجرًا أو راتبًا، وقد تخضع للضريبة، وأنت مسؤول عن الإقرار بها.')
+ON CONFLICT (version) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS public.referral_acknowledgements (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  consultant_id uuid NOT NULL REFERENCES public.consultants(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL,
+  version int NOT NULL,
+  role text NOT NULL CHECK (role IN ('referrer', 'referred', 'both')),
+  source text NOT NULL DEFAULT 'page' CHECK (source IN ('page', 'share', 'signup', 'popup')),
+  accepted_at timestamptz NOT NULL DEFAULT now(),
+  language text NOT NULL DEFAULT 'en',
+  user_agent text,
+  ip_hash text
+);
+CREATE INDEX IF NOT EXISTS referral_acknowledgements_consultant_idx ON public.referral_acknowledgements (consultant_id, version, accepted_at DESC);
+GRANT SELECT ON public.referral_acknowledgements TO authenticated;
+GRANT ALL ON public.referral_acknowledgements TO service_role;
+ALTER TABLE public.referral_acknowledgements ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Own referral acknowledgements or admin" ON public.referral_acknowledgements;
+CREATE POLICY "Own referral acknowledgements or admin" ON public.referral_acknowledgements
   FOR SELECT TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = consultant_id AND c.user_id = auth.uid())
-         OR public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'super_admin'));
+  USING (user_id = auth.uid() OR public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'super_admin'));
+
+-- Append-only, for everyone (also definer functions and administrators).
+CREATE OR REPLACE FUNCTION public.referral_ack_append_only()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $$
+BEGIN
+  RAISE EXCEPTION 'Referral acknowledgements can not be changed or deleted' USING ERRCODE = '42501';
+END
+$$;
+DROP TRIGGER IF EXISTS trg_referral_ack_append_only ON public.referral_acknowledgements;
+CREATE TRIGGER trg_referral_ack_append_only
+  BEFORE UPDATE OR DELETE ON public.referral_acknowledgements
+  FOR EACH ROW EXECUTE FUNCTION public.referral_ack_append_only();
 
 -- Audit trail of every change (also mirrored into audit_logs for administrator actions).
 CREATE TABLE IF NOT EXISTS public.referral_events (
@@ -288,8 +345,10 @@ CREATE POLICY "Admins read referral events" ON public.referral_events
 CREATE TABLE IF NOT EXISTS public.referral_email_queue (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
-  kind text NOT NULL CHECK (kind IN ('signup', 'verified', 'first_reward')),
+  kind text NOT NULL CHECK (kind IN ('signup', 'invited', 'passed_self', 'passed_other', 'active', 'reminder', 'expired', 'verified', 'first_reward', 'ack_request')),
   referred_name text,
+  next_step text,
+  days int,
   amount numeric(14,2),
   currency text,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -546,6 +605,96 @@ END
 $$;
 REVOKE ALL ON FUNCTION public.referral_policy_ok(uuid) FROM PUBLIC, anon, authenticated;
 
+-- Passed = a completed AI interview with overall_score >= referral_min_interview_score (read from interview data only).
+CREATE OR REPLACE FUNCTION public.referral_passed_at(_cid uuid)
+ RETURNS timestamptz
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+  SELECT min(COALESCE(s.completed_at, s.updated_at, s.created_at))
+    FROM public.interview_sessions s
+   WHERE s.consultant_id = _cid AND s.interview_type::text = 'ai' AND s.status::text IN ('completed', 'reviewed')
+     AND s.overall_score IS NOT NULL AND s.overall_score >= (public.referral_settings() ->> 'pass_mark')::numeric
+$$;
+REVOKE ALL ON FUNCTION public.referral_passed_at(uuid) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.referral_best_score(_cid uuid)
+ RETURNS numeric
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+  SELECT max(s.overall_score) FROM public.interview_sessions s
+   WHERE s.consultant_id = _cid AND s.interview_type::text = 'ai' AND s.status::text IN ('completed', 'reviewed')
+$$;
+REVOKE ALL ON FUNCTION public.referral_best_score(uuid) FROM PUBLIC, anon, authenticated;
+
+-- Accepted the CURRENT terms version.
+CREATE OR REPLACE FUNCTION public.referral_acked_at(_cid uuid)
+ RETURNS timestamptz
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+  SELECT min(a.accepted_at) FROM public.referral_acknowledgements a
+   WHERE a.consultant_id = _cid AND a.version = (public.referral_settings() ->> 'terms_version')::int
+$$;
+REVOKE ALL ON FUNCTION public.referral_acked_at(uuid) FROM PUBLIC, anon, authenticated;
+
+-- Next step for one side of a pair: pass_interview | acknowledge | wait_other | none.
+CREATE OR REPLACE FUNCTION public.referral_next_step(_referred uuid, _for uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  r record;
+BEGIN
+  SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = _referred;
+  IF NOT FOUND OR r.activation_status <> 'pending' OR r.status = 'removed' THEN RETURN 'none'; END IF;
+  IF public.referral_passed_at(_for) IS NULL THEN RETURN 'pass_interview'; END IF;
+  IF public.referral_acked_at(_for) IS NULL THEN RETURN 'acknowledge'; END IF;
+  RETURN 'wait_other';
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_next_step(uuid, uuid) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.referral_next_text(_step text, _other text)
+ RETURNS text
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+  SELECT CASE _step
+    WHEN 'pass_interview' THEN format('Pass the AI interview (score at least %s).', (public.referral_settings() ->> 'pass_mark'))
+    WHEN 'acknowledge' THEN 'Accept the referral terms on the Refer & earn page.'
+    WHEN 'wait_other' THEN format('Waiting for %s to pass the AI interview and accept the terms.', COALESCE(_other, 'the other consultant'))
+    ELSE 'Nothing to do.' END
+$$;
+REVOKE ALL ON FUNCTION public.referral_next_text(text, text) FROM PUBLIC, anon, authenticated;
+
+-- Chip from one side: active | expired | under_review | waiting_you | waiting_them.
+CREATE OR REPLACE FUNCTION public.referral_chip(_referred uuid, _for uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  r record;
+BEGIN
+  SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = _referred;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  IF r.status IN ('review', 'held') THEN RETURN 'under_review'; END IF;
+  IF r.activation_status = 'active' THEN RETURN 'active'; END IF;
+  IF r.activation_status = 'expired' THEN RETURN 'expired'; END IF;
+  RETURN CASE WHEN public.referral_next_step(_referred, _for) IN ('pass_interview', 'acknowledge') THEN 'waiting_you' ELSE 'waiting_them' END;
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_chip(uuid, uuid) FROM PUBLIC, anon, authenticated;
+
 CREATE OR REPLACE FUNCTION public.referral_log(_actor uuid, _action text, _referrer uuid, _referred uuid, _line uuid, _payout uuid,
                                                _before jsonb, _after jsonb, _reason text)
  RETURNS void
@@ -597,7 +746,9 @@ CREATE TRIGGER trg_referral_queue_wake
   AFTER INSERT ON public.referral_email_queue
   FOR EACH STATEMENT EXECUTE FUNCTION public.referral_queue_wake_trigger();
 
-CREATE OR REPLACE FUNCTION public.referral_notify(_referrer uuid, _kind text, _referred uuid, _amount numeric, _currency text)
+-- One notice to one consultant (_to) about the other side (_other, masked name): in-app (also shown as a pop-up at the
+-- next sign-in) + one e-mail through the queue. Callers make sure each event is sent once.
+CREATE OR REPLACE FUNCTION public.referral_notify(_to uuid, _kind text, _other uuid, _amount numeric, _currency text, _next text DEFAULT NULL)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -605,35 +756,57 @@ CREATE OR REPLACE FUNCTION public.referral_notify(_referrer uuid, _kind text, _r
 AS $$
 DECLARE
   _user uuid;
-  _name text := public.referral_masked_name(_referred);
+  _name text := public.referral_masked_name(_other);
   s jsonb := public.referral_settings();
   _title text;
   _body text;
+  _step text := COALESCE(_next, 'none');
 BEGIN
-  SELECT c.user_id INTO _user FROM public.consultants c WHERE c.id = _referrer;
+  SELECT c.user_id INTO _user FROM public.consultants c WHERE c.id = _to;
   IF _user IS NULL THEN RETURN; END IF;
   IF _kind = 'signup' THEN
-    _title := 'Someone signed up with your referral code';
-    _body := format('%s signed up with your code. You earn %s %% of their fees for %s months after their first paid ticket, paid by AI Support 360.',
-                    _name, (s->>'rate_percent'), (s->>'months'));
+    _title := 'Someone registered with your referral code';
+    _body := format('%s registered with your code. Your referral becomes active when you both pass the AI interview.', _name);
+  ELSIF _kind = 'invited' THEN
+    _title := 'You were invited to AI Support 360';
+    _body := format('You were invited by %s. The referral programme becomes active after you and your referrer pass the AI interview.', _name);
+  ELSIF _kind = 'passed_self' THEN
+    _title := 'You passed the AI interview';
+    _body := 'You passed the AI interview. Next for your referral: ' || public.referral_next_text(_step, _name);
+  ELSIF _kind = 'passed_other' THEN
+    _title := 'Your referral partner passed the AI interview';
+    _body := format('%s passed the AI interview. Next for your referral: ', _name) || public.referral_next_text(_step, _name);
+  ELSIF _kind = 'active' THEN
+    _title := 'Your referral is active';
+    _body := format('Your referral with %s is now active. Rewards count for work invoiced from today.', _name);
+  ELSIF _kind = 'reminder' THEN
+    _title := 'Your referral is still pending';
+    _body := format('Your referral with %s is still pending. Next step: ', _name) || public.referral_next_text(_step, _name);
+  ELSIF _kind = 'expired' THEN
+    _title := 'Your referral has expired';
+    _body := format('Your referral with %s has expired: both of you had to pass the AI interview and accept the terms within %s days. An administrator can revive it.',
+                    _name, (s->>'activation_days'));
+  ELSIF _kind = 'ack_request' THEN
+    _title := 'Please accept the referral terms';
+    _body := format('Please accept the referral terms so your referral with %s can become active.', _name);
   ELSIF _kind = 'verified' THEN
     _title := 'Your referral is verified';
-    _body := format('%s is now a verified consultant. Your reward starts with their first paid ticket.', _name);
+    _body := format('%s is now a verified consultant. Your reward starts with their first paid ticket after your referral is active.', _name);
   ELSE
     _title := 'You earned your first referral reward';
     _body := format('You earned %s %s from the work of %s. It becomes available when their payout is completed.',
                     to_char(_amount, 'FM999999990.00'), COALESCE(_currency, 'USD'), _name);
   END IF;
   PERFORM public.safe_insert_notification(_user, _title, _body, 'referral', '/consultant/referrals');
-  INSERT INTO public.referral_email_queue (user_id, kind, referred_name, amount, currency)
-  VALUES (_user, _kind, _name, _amount, _currency);
+  INSERT INTO public.referral_email_queue (user_id, kind, referred_name, amount, currency, next_step, days)
+  VALUES (_user, _kind, _name, _amount, _currency, _step, (s->>'activation_days')::int);
 END
 $$;
-REVOKE ALL ON FUNCTION public.referral_notify(uuid, text, uuid, numeric, text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.referral_notify(uuid, text, uuid, numeric, text, text) FROM PUBLIC, anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.referral_email_claim(_limit int DEFAULT 100)
  RETURNS TABLE (id uuid, user_id uuid, kind text, lang text, display_name text, referred_name text, amount numeric, currency text,
-                rate_percent numeric, months int)
+                rate_percent numeric, months int, next_step text, days int, pass_mark numeric)
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
@@ -655,12 +828,13 @@ BEGIN
   ), upd AS (
     UPDATE public.referral_email_queue q SET claimed_at = now(), attempts = q.attempts + 1
       FROM picked WHERE q.id = picked.id
-    RETURNING q.id, q.user_id, q.kind, q.referred_name, q.amount, q.currency
+    RETURNING q.id, q.user_id, q.kind, q.referred_name, q.amount, q.currency, q.next_step, q.days
   )
   SELECT u.id, u.user_id, u.kind,
          (SELECT CASE WHEN p.preferred_language = 'ar' THEN 'ar' ELSE 'en' END FROM public.profiles p WHERE p.user_id = u.user_id),
          (SELECT p.display_name FROM public.profiles p WHERE p.user_id = u.user_id),
-         u.referred_name, u.amount, u.currency, (s->>'rate_percent')::numeric, (s->>'months')::int
+         u.referred_name, u.amount, u.currency, (s->>'rate_percent')::numeric, (s->>'months')::int, u.next_step, u.days,
+         (s->>'pass_mark')::numeric
     FROM upd u;
 END
 $$;
@@ -729,9 +903,11 @@ BEGIN
     _flags := array_append(_flags, 'same_ip');
   END IF;
   IF public.referral_same_bank(_referrer, _referred) THEN _flags := array_append(_flags, 'same_bank'); END IF;
-  INSERT INTO public.consultant_referrals (referred_consultant_id, referrer_consultant_id, code, source, flags, device_hash, ip_hash, status)
+  INSERT INTO public.consultant_referrals (referred_consultant_id, referrer_consultant_id, code, source, flags, device_hash, ip_hash, status,
+                                          activation_expires_at)
   VALUES (_referred, _referrer, _c, CASE WHEN _source IN ('signup', 'claim', 'admin') THEN _source ELSE 'signup' END, _flags, _dh, _ih,
-          CASE WHEN cardinality(_flags) > 0 THEN 'review' ELSE 'active' END)
+          CASE WHEN cardinality(_flags) > 0 THEN 'review' ELSE 'active' END,
+          now() + make_interval(days => (public.referral_settings() ->> 'activation_days')::int))
   ON CONFLICT (referred_consultant_id) DO NOTHING;
   GET DIAGNOSTICS _n = ROW_COUNT;
   IF _n = 0 THEN RETURN 'already'; END IF;
@@ -739,6 +915,7 @@ BEGIN
   PERFORM public.referral_log(NULL, 'attributed', _referrer, _referred, NULL, NULL, NULL,
                               jsonb_build_object('code', _c, 'source', _source, 'flags', _flags), NULL);
   PERFORM public.referral_notify(_referrer, 'signup', _referred, NULL, NULL);
+  PERFORM public.referral_notify(_referred, 'invited', _referrer, NULL, NULL);
   RETURN 'ok';
 END
 $$;
@@ -759,6 +936,14 @@ BEGIN
     SELECT u.raw_user_meta_data INTO _meta FROM auth.users u WHERE u.id = NEW.user_id;
     IF NULLIF(_meta ->> 'referral_code', '') IS NOT NULL THEN
       PERFORM public.referral_attribute(NEW.id, _meta ->> 'referral_code', 'signup', _meta ->> 'referral_device', NULL);
+      -- Acknowledgement ticked in the registration referral step (current version only).
+      IF (_meta ->> 'referral_ack_version') ~ '^\d{1,4}$'
+         AND (_meta ->> 'referral_ack_version')::int = (public.referral_settings() ->> 'terms_version')::int
+         AND EXISTS (SELECT 1 FROM public.consultant_referrals WHERE referred_consultant_id = NEW.id) THEN
+        INSERT INTO public.referral_acknowledgements (consultant_id, user_id, version, role, source, language, user_agent)
+        VALUES (NEW.id, NEW.user_id, (_meta ->> 'referral_ack_version')::int, 'referred', 'signup',
+                CASE WHEN _meta ->> 'referral_ack_lang' = 'ar' THEN 'ar' ELSE 'en' END, left(_meta ->> 'referral_ack_ua', 300));
+      END IF;
     END IF;
   EXCEPTION WHEN OTHERS THEN
     RAISE WARNING 'referral sign-up handling skipped: %', SQLERRM;
@@ -802,9 +987,165 @@ CREATE TRIGGER trg_referral_on_consultant_verified
   AFTER UPDATE OF verification_status ON public.consultants
   FOR EACH ROW EXECUTE FUNCTION public.referral_on_consultant_verified();
 
+-- 5b. Activation: both passed the AI interview + both accepted the current terms, before the activation period ends ---------
+-- The only writer of activation_status (the browser has no write access). Each notice is sent once (timestamps).
+CREATE OR REPLACE FUNCTION public.referral_check_activation(_referred uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  r record;
+  _rp timestamptz;
+  _dp timestamptz;
+  _ok boolean;
+BEGIN
+  SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = _referred FOR UPDATE;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  IF r.status = 'removed' OR r.activation_status <> 'pending' THEN RETURN r.activation_status; END IF;
+  _rp := public.referral_passed_at(r.referrer_consultant_id);
+  _dp := public.referral_passed_at(r.referred_consultant_id);
+  _ok := _rp IS NOT NULL AND _dp IS NOT NULL
+         AND public.referral_acked_at(r.referrer_consultant_id) IS NOT NULL AND public.referral_acked_at(r.referred_consultant_id) IS NOT NULL;
+  IF r.activation_expires_at IS NOT NULL AND now() >= r.activation_expires_at THEN
+    UPDATE public.consultant_referrals SET activation_status = 'expired', expired_at = now(), updated_at = now() WHERE referred_consultant_id = _referred;
+    PERFORM public.referral_log(NULL, 'activation_expired', r.referrer_consultant_id, _referred, NULL, NULL, NULL, NULL, NULL);
+    PERFORM public.referral_notify(r.referrer_consultant_id, 'expired', _referred, NULL, NULL);
+    PERFORM public.referral_notify(_referred, 'expired', r.referrer_consultant_id, NULL, NULL);
+    RETURN 'expired';
+  END IF;
+  IF _ok THEN
+    UPDATE public.consultant_referrals
+       SET activation_status = 'active', activated_at = now(), updated_at = now(),
+           referrer_passed_notified_at = COALESCE(referrer_passed_notified_at, now()),
+           referred_passed_notified_at = COALESCE(referred_passed_notified_at, now())
+     WHERE referred_consultant_id = _referred;
+    PERFORM public.referral_log(NULL, 'activated', r.referrer_consultant_id, _referred, NULL, NULL, NULL, jsonb_build_object('activated_at', now()), NULL);
+    PERFORM public.referral_notify(r.referrer_consultant_id, 'active', _referred, NULL, NULL);
+    PERFORM public.referral_notify(_referred, 'active', r.referrer_consultant_id, NULL, NULL);
+    RETURN 'active';
+  END IF;
+  IF _rp IS NOT NULL AND r.referrer_passed_notified_at IS NULL THEN
+    UPDATE public.consultant_referrals SET referrer_passed_notified_at = now(), updated_at = now() WHERE referred_consultant_id = _referred;
+    PERFORM public.referral_log(NULL, 'referrer_passed', r.referrer_consultant_id, _referred, NULL, NULL, NULL, NULL, NULL);
+    -- "You passed" goes once per consultant, however many referrals they have.
+    IF NOT EXISTS (SELECT 1 FROM public.referral_email_queue q JOIN public.consultants c ON c.user_id = q.user_id
+                    WHERE c.id = r.referrer_consultant_id AND q.kind = 'passed_self') THEN
+      PERFORM public.referral_notify(r.referrer_consultant_id, 'passed_self', _referred, NULL, NULL, public.referral_next_step(_referred, r.referrer_consultant_id));
+    END IF;
+    PERFORM public.referral_notify(_referred, 'passed_other', r.referrer_consultant_id, NULL, NULL, public.referral_next_step(_referred, _referred));
+  END IF;
+  IF _dp IS NOT NULL AND r.referred_passed_notified_at IS NULL THEN
+    UPDATE public.consultant_referrals SET referred_passed_notified_at = now(), updated_at = now() WHERE referred_consultant_id = _referred;
+    PERFORM public.referral_log(NULL, 'referred_passed', r.referrer_consultant_id, _referred, NULL, NULL, NULL, NULL, NULL);
+    IF NOT EXISTS (SELECT 1 FROM public.referral_email_queue q JOIN public.consultants c ON c.user_id = q.user_id
+                    WHERE c.id = _referred AND q.kind = 'passed_self') THEN
+      PERFORM public.referral_notify(_referred, 'passed_self', r.referrer_consultant_id, NULL, NULL, public.referral_next_step(_referred, _referred));
+    END IF;
+    PERFORM public.referral_notify(r.referrer_consultant_id, 'passed_other', _referred, NULL, NULL, public.referral_next_step(_referred, r.referrer_consultant_id));
+  END IF;
+  RETURN 'pending';
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_check_activation(uuid) FROM PUBLIC, anon, authenticated;
+
+-- Re-check every pending pair of a consultant (as referrer or referred).
+CREATE OR REPLACE FUNCTION public.referral_check_consultant(_cid uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  x record;
+BEGIN
+  FOR x IN SELECT referred_consultant_id FROM public.consultant_referrals
+            WHERE (referred_consultant_id = _cid OR referrer_consultant_id = _cid) AND activation_status = 'pending' AND status <> 'removed'
+  LOOP
+    PERFORM public.referral_check_activation(x.referred_consultant_id);
+  END LOOP;
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_check_consultant(uuid) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.referral_on_interview_change()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+BEGIN
+  IF NEW.interview_type::text = 'ai' AND NEW.status::text IN ('completed', 'reviewed') THEN
+    BEGIN
+      PERFORM public.referral_check_consultant(NEW.consultant_id);
+    EXCEPTION WHEN OTHERS THEN
+      RAISE WARNING 'referral activation check skipped: %', SQLERRM;
+    END;
+  END IF;
+  RETURN NULL;
+END
+$$;
+DROP TRIGGER IF EXISTS trg_referral_on_interview_change ON public.interview_sessions;
+CREATE TRIGGER trg_referral_on_interview_change
+  AFTER INSERT OR UPDATE OF status, overall_score ON public.interview_sessions
+  FOR EACH ROW EXECUTE FUNCTION public.referral_on_interview_change();
+
+CREATE OR REPLACE FUNCTION public.referral_on_ack()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+BEGIN
+  PERFORM public.referral_check_consultant(NEW.consultant_id);
+  RETURN NULL;
+END
+$$;
+DROP TRIGGER IF EXISTS trg_referral_on_ack ON public.referral_acknowledgements;
+CREATE TRIGGER trg_referral_on_ack
+  AFTER INSERT ON public.referral_acknowledgements
+  FOR EACH ROW EXECUTE FUNCTION public.referral_on_ack();
+
+-- Reminders after 14 and 45 days (each once, to both sides with their own next step) and expiry. Called nightly.
+CREATE OR REPLACE FUNCTION public.referral_activation_sweep()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  x record;
+  _st text;
+  _rem int := 0;
+  _exp int := 0;
+BEGIN
+  FOR x IN SELECT * FROM public.consultant_referrals WHERE activation_status = 'pending' AND status <> 'removed' ORDER BY attributed_at LIMIT 2000 LOOP
+    _st := public.referral_check_activation(x.referred_consultant_id);
+    IF _st = 'expired' THEN _exp := _exp + 1; CONTINUE; END IF;
+    IF _st <> 'pending' THEN CONTINUE; END IF;
+    IF x.attributed_at <= now() - interval '45 days' AND x.reminder_45_at IS NULL THEN
+      UPDATE public.consultant_referrals SET reminder_45_at = now(), reminder_14_at = COALESCE(reminder_14_at, now()) WHERE referred_consultant_id = x.referred_consultant_id;
+    ELSIF x.attributed_at <= now() - interval '14 days' AND x.reminder_14_at IS NULL THEN
+      UPDATE public.consultant_referrals SET reminder_14_at = now() WHERE referred_consultant_id = x.referred_consultant_id;
+    ELSE
+      CONTINUE;
+    END IF;
+    PERFORM public.referral_notify(x.referrer_consultant_id, 'reminder', x.referred_consultant_id, NULL, NULL,
+                                   public.referral_next_step(x.referred_consultant_id, x.referrer_consultant_id));
+    PERFORM public.referral_notify(x.referred_consultant_id, 'reminder', x.referrer_consultant_id, NULL, NULL,
+                                   public.referral_next_step(x.referred_consultant_id, x.referred_consultant_id));
+    _rem := _rem + 1;
+  END LOOP;
+  RETURN jsonb_build_object('reminded', _rem, 'expired', _exp);
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_activation_sweep() FROM PUBLIC, anon, authenticated;
+
 -- 6. Rewards ----------------------------------------------------------------------------------------------------------------
 -- NULL = may earn; otherwise the reason. Mirrored by src/lib/referrals.ts (rewardBlockReason).
-CREATE OR REPLACE FUNCTION public.referral_reward_block_reason(_referrer uuid, _referred uuid, _status text, _window_ends timestamptz, _at timestamptz)
+CREATE OR REPLACE FUNCTION public.referral_reward_block_reason(_referrer uuid, _referred uuid, _status text, _window_ends timestamptz, _at timestamptz,
+                                                              _activation text, _activated_at timestamptz)
  RETURNS text
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
@@ -814,6 +1155,8 @@ BEGIN
   IF NOT COALESCE((public.referral_settings() ->> 'enabled')::boolean, false) THEN RETURN 'programme_off'; END IF;
   IF _status = 'removed' THEN RETURN 'removed'; END IF;
   IF _referrer = _referred THEN RETURN 'own_work'; END IF;
+  IF _activation IS DISTINCT FROM 'active' THEN RETURN 'not_active'; END IF;
+  IF _activated_at IS NULL OR _at < _activated_at THEN RETURN 'before_activation'; END IF;
   IF _window_ends IS NULL OR _at >= _window_ends THEN RETURN 'outside_window'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = _referred AND c.verification_status::text = 'verified') THEN RETURN 'referred_not_verified'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = _referrer AND c.verification_status::text = 'verified') THEN RETURN 'referrer_not_verified'; END IF;
@@ -822,7 +1165,7 @@ BEGIN
   RETURN NULL;
 END
 $$;
-REVOKE ALL ON FUNCTION public.referral_reward_block_reason(uuid, uuid, text, timestamptz, timestamptz) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.referral_reward_block_reason(uuid, uuid, text, timestamptz, timestamptz, text, timestamptz) FROM PUBLIC, anon, authenticated;
 
 -- Same trigger point as the consultant payout: a payouts row for the referred consultant (= the client has paid).
 CREATE OR REPLACE FUNCTION public.referral_on_payout_insert()
@@ -847,8 +1190,9 @@ DECLARE
   _flags text[];
 BEGIN
   IF COALESCE(NEW.reference, '') LIKE 'referral:%' THEN RETURN NULL; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.consultant_referrals WHERE referred_consultant_id = NEW.consultant_id) THEN RETURN NULL; END IF;
+  PERFORM public.referral_check_activation(NEW.consultant_id);
   SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = NEW.consultant_id FOR UPDATE;
-  IF NOT FOUND THEN RETURN NULL; END IF;
   -- The window starts with the first paid ticket, even if that payout itself earns nothing.
   IF r.first_paid_at IS NULL THEN
     UPDATE public.consultant_referrals
@@ -865,7 +1209,8 @@ BEGIN
      WHERE referred_consultant_id = NEW.consultant_id;
   END IF;
   SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = NEW.consultant_id;
-  _why := public.referral_reward_block_reason(r.referrer_consultant_id, r.referred_consultant_id, r.status, r.window_ends_at, NEW.created_at);
+  _why := public.referral_reward_block_reason(r.referrer_consultant_id, r.referred_consultant_id, r.status, r.window_ends_at, NEW.created_at,
+                                              r.activation_status, r.activated_at);
   _fee := round(COALESCE(NEW.gross_amount, NEW.amount, 0), 2);
   IF _why IS NULL AND _fee <= 0 THEN _why := 'no_fee'; END IF;
   _amt := round(_fee * _rate / 100, 2);
@@ -1123,11 +1468,13 @@ CREATE OR REPLACE FUNCTION public.referral_nightly()
 AS $$
 DECLARE
   _n int;
+  _sw jsonb;
 BEGIN
+  _sw := public.referral_activation_sweep();
   _n := public.referral_bundle_payouts(NULL);
   DELETE FROM public.referral_devices WHERE last_seen_at < now() - interval '180 days';
   PERFORM public.referral_wake();
-  RETURN jsonb_build_object('referral_payouts', _n);
+  RETURN jsonb_build_object('referral_payouts', _n) || _sw;
 END
 $$;
 REVOKE ALL ON FUNCTION public.referral_nightly() FROM PUBLIC, anon, authenticated;
@@ -1240,12 +1587,21 @@ BEGIN
   SELECT * INTO x FROM public.consultant_referral_codes WHERE consultant_id = _cid;
   RETURN jsonb_build_object(
     'settings', jsonb_build_object('enabled', s->'enabled', 'rate_percent', s->'rate_percent', 'months', s->'months',
-                                   'min_payout', s->'min_payout', 'terms_version', s->'terms_version'),
+                                   'min_payout', s->'min_payout', 'terms_version', s->'terms_version', 'pass_mark', s->'pass_mark',
+                                   'activation_days', s->'activation_days'),
+    -- Referrer activation checklist: interview passed -> terms acknowledged -> active (sharing unlocked).
+    'activation', jsonb_build_object(
+      'pass_mark', s->'pass_mark',
+      'interview_passed', public.referral_passed_at(_cid) IS NOT NULL,
+      'interview_passed_at', public.referral_passed_at(_cid),
+      'best_score', public.referral_best_score(_cid),
+      'acknowledged', public.referral_acked_at(_cid) IS NOT NULL,
+      'active', public.referral_passed_at(_cid) IS NOT NULL AND public.referral_acked_at(_cid) IS NOT NULL),
     'code', _code,
     'previous_code', x.previous_code,
     'edits_left', greatest(0, 1 - COALESCE(x.edits_used, 0)),
     'disabled', x.disabled_at IS NOT NULL,
-    'terms_accepted_version', (SELECT a.version FROM public.referral_terms_acks a WHERE a.consultant_id = _cid),
+    'terms_accepted_version', (SELECT max(a.version) FROM public.referral_acknowledgements a WHERE a.consultant_id = _cid),
     'funnel', jsonb_build_object(
       'clicks', (SELECT COALESCE(sum(c.clicks), 0) FROM public.referral_clicks c WHERE c.consultant_id = _cid),
       'signups', (SELECT count(*) FROM public.consultant_referrals r WHERE r.referrer_consultant_id = _cid AND r.status <> 'removed'),
@@ -1272,10 +1628,12 @@ $$;
 REVOKE ALL ON FUNCTION public.my_referral_overview(text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.my_referral_overview(text) TO authenticated;
 
--- Referred consultants: masked name, status and dates only.
+-- Referred consultants: masked name, status, activation step and dates only.
+DROP FUNCTION IF EXISTS public.my_referrals();
 CREATE OR REPLACE FUNCTION public.my_referrals()
  RETURNS TABLE (referred_name text, status text, attributed_at timestamptz, verified boolean, first_paid_at timestamptz,
-                window_ends_at timestamptz, earned jsonb)
+                window_ends_at timestamptz, earned jsonb, activation_status text, chip text, my_next text, their_next text,
+                activated_at timestamptz, activation_expires_at timestamptz, they_passed boolean, they_acknowledged boolean)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
@@ -1295,7 +1653,11 @@ BEGIN
          COALESCE((SELECT jsonb_object_agg(e.currency, e.total) FROM (
                      SELECT l.currency, sum(l.amount) total FROM public.referral_reward_lines l
                       WHERE l.referrer_consultant_id = _cid AND l.referred_consultant_id = r.referred_consultant_id AND l.status <> 'reversed'
-                      GROUP BY l.currency) e), '{}'::jsonb)
+                      GROUP BY l.currency) e), '{}'::jsonb),
+         r.activation_status, public.referral_chip(r.referred_consultant_id, _cid),
+         public.referral_next_step(r.referred_consultant_id, _cid), public.referral_next_step(r.referred_consultant_id, r.referred_consultant_id),
+         r.activated_at, r.activation_expires_at,
+         public.referral_passed_at(r.referred_consultant_id) IS NOT NULL, public.referral_acked_at(r.referred_consultant_id) IS NOT NULL
     FROM public.consultant_referrals r
     JOIN public.consultants c ON c.id = r.referred_consultant_id
    WHERE r.referrer_consultant_id = _cid AND r.status <> 'removed'
@@ -1305,6 +1667,40 @@ END
 $$;
 REVOKE ALL ON FUNCTION public.my_referrals() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.my_referrals() TO authenticated;
+
+-- The referred consultant's own invitation: who invited them (masked), activation timeline and next step.
+CREATE OR REPLACE FUNCTION public.my_referral_invite()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  _cid uuid := public.referral_my_consultant();
+  r record;
+  s jsonb := public.referral_settings();
+BEGIN
+  IF _cid IS NULL THEN RETURN NULL; END IF;
+  SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = _cid AND status <> 'removed';
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  RETURN jsonb_build_object(
+    'referrer_name', public.referral_masked_name(r.referrer_consultant_id),
+    'activation_status', r.activation_status,
+    'chip', public.referral_chip(_cid, _cid),
+    'my_next', public.referral_next_step(_cid, _cid),
+    'their_next', public.referral_next_step(_cid, r.referrer_consultant_id),
+    'attributed_at', r.attributed_at,
+    'activation_expires_at', r.activation_expires_at,
+    'activated_at', r.activated_at,
+    'i_passed_at', public.referral_passed_at(_cid),
+    'they_passed', public.referral_passed_at(r.referrer_consultant_id) IS NOT NULL,
+    'i_acknowledged_at', public.referral_acked_at(_cid),
+    'they_acknowledged', public.referral_acked_at(r.referrer_consultant_id) IS NOT NULL,
+    'pass_mark', s->'pass_mark', 'rate_percent', s->'rate_percent', 'months', s->'months', 'terms_version', s->'terms_version');
+END
+$$;
+REVOKE ALL ON FUNCTION public.my_referral_invite() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.my_referral_invite() TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.my_referral_history(_limit int DEFAULT 200)
  RETURNS TABLE (created_at timestamptz, kind text, status text, amount numeric, currency text, fee_amount numeric, rate_percent numeric,
@@ -1329,7 +1725,8 @@ $$;
 REVOKE ALL ON FUNCTION public.my_referral_history(int) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.my_referral_history(int) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.referral_accept_terms(_version int)
+-- Append-only acknowledgement of the current terms version (time, language, user agent, hashed IP).
+CREATE OR REPLACE FUNCTION public.referral_accept_terms(_version int, _source text DEFAULT 'page', _language text DEFAULT 'en', _user_agent text DEFAULT NULL)
  RETURNS void
  LANGUAGE plpgsql
  VOLATILE SECURITY DEFINER
@@ -1338,16 +1735,27 @@ AS $$
 DECLARE
   _cid uuid := public.referral_my_consultant();
   _v int := (public.referral_settings() ->> 'terms_version')::int;
+  _is_referred boolean;
+  _is_referrer boolean;
 BEGIN
   IF _cid IS NULL THEN RAISE EXCEPTION 'Only consultants can accept the referral terms' USING ERRCODE = '42501'; END IF;
   IF _version IS DISTINCT FROM _v THEN RAISE EXCEPTION 'The terms changed. Please reload the page.' USING ERRCODE = '22023'; END IF;
-  INSERT INTO public.referral_terms_acks (consultant_id, version) VALUES (_cid, _v)
-  ON CONFLICT (consultant_id) DO UPDATE SET version = EXCLUDED.version, accepted_at = now();
-  PERFORM public.referral_log(auth.uid(), 'terms_accepted', _cid, NULL, NULL, NULL, NULL, jsonb_build_object('version', _v), NULL);
+  IF NOT public.check_rate_limit('refack:' || auth.uid()::text, 10, 3600) THEN
+    RAISE EXCEPTION 'Too many attempts. Please try again later.' USING ERRCODE = 'P0001';
+  END IF;
+  IF public.referral_acked_at(_cid) IS NOT NULL THEN RETURN; END IF;
+  _is_referred := EXISTS (SELECT 1 FROM public.consultant_referrals WHERE referred_consultant_id = _cid);
+  _is_referrer := _source IN ('page', 'share') OR EXISTS (SELECT 1 FROM public.consultant_referrals WHERE referrer_consultant_id = _cid);
+  INSERT INTO public.referral_acknowledgements (consultant_id, user_id, version, role, source, language, user_agent, ip_hash)
+  VALUES (_cid, auth.uid(), _v,
+          CASE WHEN _is_referred AND _is_referrer THEN 'both' WHEN _is_referred THEN 'referred' ELSE 'referrer' END,
+          CASE WHEN _source IN ('page', 'share', 'signup', 'popup') THEN _source ELSE 'page' END,
+          CASE WHEN _language = 'ar' THEN 'ar' ELSE 'en' END, left(_user_agent, 300), public.referral_hash(public.referral_request_ip()));
+  PERFORM public.referral_log(auth.uid(), 'terms_accepted', _cid, NULL, NULL, NULL, NULL, jsonb_build_object('version', _v, 'source', _source), NULL);
 END
 $$;
-REVOKE ALL ON FUNCTION public.referral_accept_terms(int) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.referral_accept_terms(int) TO authenticated;
+REVOKE ALL ON FUNCTION public.referral_accept_terms(int, text, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.referral_accept_terms(int, text, text, text) TO authenticated;
 
 -- The consultant may change the code once (the old code keeps working for links already shared).
 CREATE OR REPLACE FUNCTION public.referral_update_code(_code text)
@@ -1400,6 +1808,9 @@ BEGIN
                   WHERE r.status <> 'removed' AND c.verification_status::text = 'verified'),
     'paying', (SELECT count(*) FROM public.consultant_referrals WHERE status <> 'removed' AND first_paid_at IS NOT NULL),
     'review', (SELECT count(*) FROM public.consultant_referrals WHERE status IN ('review', 'held')),
+    'pending_activation', (SELECT count(*) FROM public.consultant_referrals WHERE status <> 'removed' AND activation_status = 'pending'),
+    'active_pairs', (SELECT count(*) FROM public.consultant_referrals WHERE status <> 'removed' AND activation_status = 'active'),
+    'expired', (SELECT count(*) FROM public.consultant_referrals WHERE status <> 'removed' AND activation_status = 'expired'),
     'money', COALESCE((SELECT jsonb_agg(jsonb_build_object('currency', currency, 'pending', p, 'available', a, 'held', h, 'in_payout', i,
                                                            'paid', d, 'this_month', m) ORDER BY currency)
                          FROM (SELECT l.currency,
@@ -1417,10 +1828,13 @@ REVOKE ALL ON FUNCTION public.admin_referral_overview() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.admin_referral_overview() TO authenticated;
 
 -- By referred consultant (full names for administrators), with fraud flags and signals.
+DROP FUNCTION IF EXISTS public.admin_referral_referrals(text, text, int, int);
 CREATE OR REPLACE FUNCTION public.admin_referral_referrals(_search text DEFAULT NULL, _filter text DEFAULT 'all', _limit int DEFAULT 200, _offset int DEFAULT 0)
  RETURNS TABLE (referred_id uuid, referred_name text, referred_public text, referrer_id uuid, referrer_name text, code text, source text,
                 attributed_at timestamptz, status text, flags text[], signals text[], verified boolean, first_paid_at timestamptz,
-                window_ends_at timestamptz, earned jsonb, approved_at timestamptz)
+                window_ends_at timestamptz, earned jsonb, approved_at timestamptz, activation_status text, activated_at timestamptz,
+                activation_expires_at timestamptz, referrer_passed boolean, referred_passed boolean, referrer_acknowledged boolean,
+                referred_acknowledged boolean, referrer_best_score numeric, referred_best_score numeric)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
@@ -1451,14 +1865,20 @@ BEGIN
          COALESCE((SELECT jsonb_object_agg(e.currency, e.total) FROM (
                      SELECT l.currency, sum(l.amount) total FROM public.referral_reward_lines l
                       WHERE l.referred_consultant_id = b.referred_consultant_id AND l.status <> 'reversed' GROUP BY l.currency) e), '{}'::jsonb),
-         b.approved_at
+         b.approved_at, b.activation_status, b.activated_at, b.activation_expires_at,
+         public.referral_passed_at(b.referrer_consultant_id) IS NOT NULL, public.referral_passed_at(b.referred_consultant_id) IS NOT NULL,
+         public.referral_acked_at(b.referrer_consultant_id) IS NOT NULL, public.referral_acked_at(b.referred_consultant_id) IS NOT NULL,
+         public.referral_best_score(b.referrer_consultant_id), public.referral_best_score(b.referred_consultant_id)
     FROM base b
    WHERE (_q IS NULL OR lower(COALESCE(b.dname, '')) LIKE '%' || _q || '%' OR lower(COALESCE(b.rname, '')) LIKE '%' || _q || '%' OR lower(b.code) LIKE '%' || _q || '%')
      AND (COALESCE(_filter, 'all') = 'all'
           OR (_filter = 'flagged' AND (cardinality(b.flags) > 0 OR b.status = 'review'))
           OR (_filter = 'held' AND b.status IN ('held', 'review'))
           OR (_filter = 'paying' AND b.first_paid_at IS NOT NULL)
-          OR (_filter = 'removed' AND b.status = 'removed'))
+          OR (_filter = 'removed' AND b.status = 'removed')
+          OR (_filter = 'pending_activation' AND b.activation_status = 'pending' AND b.status <> 'removed')
+          OR (_filter = 'active_pairs' AND b.activation_status = 'active' AND b.status <> 'removed')
+          OR (_filter = 'expired' AND b.activation_status = 'expired'))
    ORDER BY b.attributed_at DESC
    LIMIT greatest(1, least(COALESCE(_limit, 200), 1000)) OFFSET greatest(0, COALESCE(_offset, 0));
 END
@@ -1615,6 +2035,36 @@ BEGIN
     RETURN jsonb_build_object('line', _new);
   END IF;
 
+  -- Resend the pending reminders / acknowledgement requests (once per pair per 24 hours), or revive an expired pair.
+  IF _action IN ('resend', 'revive') THEN
+    SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = _id FOR UPDATE;
+    IF NOT FOUND THEN RAISE EXCEPTION 'Referral not found' USING ERRCODE = '42704'; END IF;
+    IF _action = 'revive' THEN
+      IF r.activation_status <> 'expired' THEN RAISE EXCEPTION 'Only expired referrals can be revived' USING ERRCODE = '22023'; END IF;
+      UPDATE public.consultant_referrals
+         SET activation_status = 'pending', expired_at = NULL, reminder_14_at = NULL, reminder_45_at = NULL, attributed_at = attributed_at,
+             activation_expires_at = now() + make_interval(days => (public.referral_settings() ->> 'activation_days')::int), updated_at = now()
+       WHERE referred_consultant_id = _id;
+      PERFORM public.referral_log(_actor, 'revive', r.referrer_consultant_id, _id, NULL, NULL, jsonb_build_object('activation', 'expired'), jsonb_build_object('activation', 'pending'), _why);
+      PERFORM public.referral_check_activation(_id);
+      RETURN jsonb_build_object('ok', true);
+    END IF;
+    IF r.activation_status <> 'pending' THEN RAISE EXCEPTION 'Only pending referrals get reminders' USING ERRCODE = '22023'; END IF;
+    IF r.admin_resend_at IS NOT NULL AND r.admin_resend_at > now() - interval '24 hours' THEN
+      RAISE EXCEPTION 'A reminder was already sent in the last 24 hours' USING ERRCODE = 'P0001';
+    END IF;
+    UPDATE public.consultant_referrals SET admin_resend_at = now(), updated_at = now() WHERE referred_consultant_id = _id;
+    _n := 0;
+    IF public.referral_acked_at(r.referrer_consultant_id) IS NULL THEN PERFORM public.referral_notify(r.referrer_consultant_id, 'ack_request', _id, NULL, NULL); _n := _n + 1;
+    ELSIF public.referral_passed_at(r.referrer_consultant_id) IS NULL THEN
+      PERFORM public.referral_notify(r.referrer_consultant_id, 'reminder', _id, NULL, NULL, 'pass_interview'); _n := _n + 1; END IF;
+    IF public.referral_acked_at(_id) IS NULL THEN PERFORM public.referral_notify(_id, 'ack_request', r.referrer_consultant_id, NULL, NULL); _n := _n + 1;
+    ELSIF public.referral_passed_at(_id) IS NULL THEN
+      PERFORM public.referral_notify(_id, 'reminder', r.referrer_consultant_id, NULL, NULL, 'pass_interview'); _n := _n + 1; END IF;
+    PERFORM public.referral_log(_actor, 'resend', r.referrer_consultant_id, _id, NULL, NULL, NULL, jsonb_build_object('notices', _n), _why);
+    RETURN jsonb_build_object('sent', _n);
+  END IF;
+
   IF _action IN ('approve_referral', 'hold_referral', 'remove_referral', 'change_referrer') THEN
     SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = _id FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'Referral not found' USING ERRCODE = '42704'; END IF;
@@ -1684,6 +2134,15 @@ BEGIN
     IF _k = 'enabled' THEN
       IF jsonb_typeof(_v) <> 'boolean' THEN RAISE EXCEPTION 'enabled must be true or false' USING ERRCODE = '22023'; END IF;
       INSERT INTO public.platform_settings (key, value) VALUES ('referral_enabled', _v) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
+    ELSIF _k IN ('pass_mark', 'activation_days') THEN
+      IF jsonb_typeof(_v) <> 'number' OR (_v #>> '{}')::numeric <> trunc((_v #>> '{}')::numeric)
+         OR (_k = 'pass_mark' AND ((_v #>> '{}')::numeric < 0 OR (_v #>> '{}')::numeric > 100))
+         OR (_k = 'activation_days' AND ((_v #>> '{}')::numeric < 1 OR (_v #>> '{}')::numeric > 365)) THEN
+        RAISE EXCEPTION 'Value out of range for %', _k USING ERRCODE = '22023';
+      END IF;
+      INSERT INTO public.platform_settings (key, value)
+      VALUES (CASE WHEN _k = 'pass_mark' THEN 'referral_min_interview_score' ELSE 'referral_activation_days' END, _v)
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
     ELSIF _k IN ('rate_percent', 'months', 'min_payout', 'claim_days') THEN
       IF jsonb_typeof(_v) <> 'number'
          OR (_k = 'rate_percent' AND ((_v #>> '{}')::numeric < 0 OR (_v #>> '{}')::numeric > 10))
