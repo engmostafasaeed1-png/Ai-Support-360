@@ -1,27 +1,35 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import CredibilityAvatar from './CredibilityAvatar';
 
-const props = { name: 'Mostafa Saeed', initials: 'MS', total: 62, statusClass: 'bg-success' };
+vi.mock('@/hooks/useResponsiveness', () => ({
+  usePublicResponsiveness: () => ({ publicOn: true, byId: new Map([['c1', { level: 'good', median_minutes: 60, response_rate: 90, stars: 4 }]]), levels: new Map() }),
+}));
+vi.mock('@/hooks/useRingStats', () => ({ useRatingMinReviews: () => 3, useRingStats: () => ({ data: undefined }) }));
+
+const props = { name: 'Mostafa Saeed', initials: 'MS', total: 62, statusClass: 'bg-success', consultantId: 'c1', rating: 4.8, reviews: 12 };
 describe('CredibilityAvatar', () => {
-  it('links the ring and separate pill texts to the details', () => {
+  it('keeps the credibility pill linked to the details', () => {
     render(<CredibilityAvatar {...props} />);
-    expect(screen.getByRole('link')).toHaveAttribute('href', '#credibility');
-    expect(screen.getByRole('link')).toHaveAccessibleName('Credibility score 62 percent. Open the credibility details.');
+    const pill = screen.getByTestId('credibility-pill');
+    expect(pill).toHaveAttribute('href', '#credibility');
+    expect(pill).toHaveAccessibleName('Credibility score 62 percent. Open the credibility details.');
     expect(screen.getByText('62%').tagName).toBe('SPAN');
-    expect(screen.getByText('credible').tagName).toBe('SPAN');
-    expect(screen.getByText('MS')).toBeInTheDocument();
-    const dash = screen.getByTestId('credibility-arc').getAttribute('stroke-dasharray')?.split(' ').map(Number) ?? [];
-    expect(dash[0] / dash[1]).toBeCloseTo(0.62);
   });
   it.each([[95, 'high', 'text-success'], [62, 'good', 'text-info'], [45, 'fair', 'text-warning'], [5, 'low', 'text-muted-foreground']])('uses the tone for %s', (total, tone, cls) => {
     render(<CredibilityAvatar {...props} total={Number(total)} />);
-    expect(screen.getByTestId('credibility-arc')).toHaveAttribute('data-tone', tone);
-    expect(screen.getByTestId('credibility-arc')).toHaveClass(String(cls));
+    expect(screen.getByTestId('credibility-pill')).toHaveAttribute('data-tone', tone);
+    expect(screen.getByTestId('credibility-pill')).toHaveClass(String(cls));
   });
-  it('shows the photo and falls back to initials on failure', () => {
-    render(<CredibilityAvatar {...props} avatarUrl="/photo.jpg" />);
-    const photo = screen.getByRole('img', { name: props.name });
+  it('puts the performance ring around the photo with the centre label', () => {
+    render(<CredibilityAvatar {...props} />);
+    expect(screen.getByTestId('ring-avatar')).toHaveAttribute('data-size', 'xl');
+    expect(screen.getByTestId('ring-arc-rating')).toHaveAttribute('data-tone', 'gold');
+    expect(screen.getByTestId('ring-label')).toHaveTextContent('4.8 ★ | Good reply');
+  });
+  it('falls back to initials when the photo fails', () => {
+    const { container } = render(<CredibilityAvatar {...props} avatarUrl="/photo.jpg" />);
+    const photo = container.querySelector('img') as HTMLImageElement;
     expect(photo).toHaveAttribute('src', '/photo.jpg');
     expect(screen.queryByText('MS')).not.toBeInTheDocument();
     fireEvent.error(photo);
