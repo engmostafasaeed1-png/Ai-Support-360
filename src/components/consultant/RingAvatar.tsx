@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { Medal, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -20,7 +20,7 @@ const TIER_CLASS: Record<RingTier, string> = {
 };
 
 /** True once the element is near the screen (always true where IntersectionObserver is missing). */
-function useInView<T extends Element>(): [React.RefObject<T>, boolean] {
+function useInView<T extends Element>(): [RefObject<T>, boolean] {
   const ref = useRef<T>(null);
   const [seen, setSeen] = useState(() => typeof IntersectionObserver === 'undefined');
   useEffect(() => {
@@ -41,7 +41,7 @@ function Arc({ pct, r, w, tone, low, drawn, testId, kind }: {
   if (!d) return null;
   const { dash, opacity } = arcPattern(tone, low);
   // Solid arcs draw in (stroke offset); patterned arcs fade in. Both are instant with reduced motion.
-  const style: React.CSSProperties = dash
+  const style: CSSProperties = dash
     ? { opacity: drawn ? opacity : 0 }
     : { strokeDasharray: 100, strokeDashoffset: drawn ? 0 : 100, opacity };
   return (
