@@ -61,3 +61,5 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = false
   [functions.notification-pause]
     verify_jwt = false
+  [functions.bulk-messages-run]
+    verify_jwt = false
