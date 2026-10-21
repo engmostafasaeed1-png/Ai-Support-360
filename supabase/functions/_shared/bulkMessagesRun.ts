@@ -68,7 +68,7 @@ export async function runBulkBatch(deps: WorkerDeps, budgetMs = 45_000): Promise
       const created = await deps.insertNotifications(inApp.map((r) => {
         const m = rendered.get(key(r))!;
         const preview = m.plain.length > LIMITS.notificationBody ? `${m.plain.slice(0, LIMITS.notificationBody - 1)}…` : m.plain;
-        return { user_id: r.user_id, title: m.subject, body: preview, type: notificationType(r.category), link: `/notifications?message=${r.campaign_id}` };
+        return { user_id: r.user_id, title: m.subject, body: preview, type: notificationType(r.category), link: `/notifications?broadcast=${r.campaign_id}` };
       }));
       const byUser = new Map<string, string[]>();
       for (const c of created) byUser.set(c.user_id, [...(byUser.get(c.user_id) ?? []), c.id]);
