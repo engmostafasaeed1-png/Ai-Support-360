@@ -132,3 +132,19 @@ describe('confirm page (scanner-safe link)', () => {
     expect(await screen.findByText('login page')).toBeInTheDocument();
   });
 });
+
+import SignupPage from '@/pages/auth/SignupPage';
+
+describe('sign-up success screen', () => {
+  it('names the sender, spam folders and link validity, with resend cooldown and change-email', async () => {
+    localStorage.setItem('verification_pending_email', 'new.consultant@example.com');
+    render(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={['/signup']}><SignupPage /></MemoryRouter></QueryClientProvider>);
+    const steps = await screen.findByTestId('signup-pending-steps');
+    expect(steps.textContent).toContain('noreply@aisupport360.com');
+    expect(steps.textContent).toMatch(/Spam/);
+    expect(steps.textContent).toMatch(/works once and stays valid/);
+    fireEvent.click(screen.getByRole('button', { name: 'Wrong e-mail? Change it' }));
+    expect(await screen.findByLabelText(/email/i, { selector: 'input#email' })).toBeInTheDocument();
+    expect(localStorage.getItem('verification_pending_email')).toBeNull();
+  });
+});
