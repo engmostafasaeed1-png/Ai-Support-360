@@ -75,7 +75,7 @@ BEGIN
   SELECT count(*) INTO n FROM public.message_campaign_recipients WHERE campaign_id = cid AND channel = 'whatsapp_manual' AND status = 'manual_pending';
   IF n <> 1 THEN RAISE EXCEPTION 'manual %', n; END IF;
   SELECT count(*) INTO n FROM public.message_campaign_recipients WHERE campaign_id = cid AND status = 'skipped' AND reason IN ('suspended', 'unsubscribed');
-  IF n <> 8 THEN RAISE EXCEPTION 'skipped rows %', n; END IF;
+  IF n <> 6 THEN RAISE EXCEPTION 'skipped rows %', n; END IF; -- 2 excluded people x 3 channels
   IF NOT EXISTS (SELECT 1 FROM public.message_campaign_events WHERE campaign_id = cid AND action = 'created' AND (detail ->> 'count')::INT = 3) THEN
     RAISE EXCEPTION 'audit'; END IF;
 
@@ -132,7 +132,6 @@ BEGIN
   EXCEPTION WHEN SQLSTATE 'P0429' THEN NULL; END;
 
   -- 10. recipients read only their own message; phone numbers only for senders
-  SELECT notification_id INTO cid FROM public.message_campaign_recipients WHERE status = 'sent' AND user_id = cl LIMIT 1;
   PERFORM set_config('request.jwt.claims', json_build_object('sub', co)::TEXT, true);
   BEGIN PERFORM public.bm_manual_contacts(gen_random_uuid()); RAISE EXCEPTION 'phones leaked';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
