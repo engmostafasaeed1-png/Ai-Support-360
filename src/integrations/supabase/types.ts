@@ -1121,6 +1121,208 @@ export type Database = {
         }
         Relationships: []
       }
+      client_consultant_blocks: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          created_by: string
+          id: string
+          owner_user_id: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          owner_user_id?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          owner_user_id?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_consultant_blocks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_consultant_favourites: {
+        Row: {
+          added_by: string
+          consultant_id: string
+          created_at: string
+          id: string
+          owner_user_id: string | null
+          tags: string[]
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          added_by?: string
+          consultant_id: string
+          created_at?: string
+          id?: string
+          owner_user_id?: string | null
+          tags?: string[]
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string
+          consultant_id?: string
+          created_at?: string
+          id?: string
+          owner_user_id?: string | null
+          tags?: string[]
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_consultant_favourites_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_consultant_group_members: {
+        Row: {
+          added_by: string
+          consultant_id: string
+          created_at: string
+          group_id: string
+        }
+        Insert: {
+          added_by?: string
+          consultant_id: string
+          created_at?: string
+          group_id: string
+        }
+        Update: {
+          added_by?: string
+          consultant_id?: string
+          created_at?: string
+          group_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_consultant_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "client_consultant_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_consultant_groups: {
+        Row: {
+          archived_at: string | null
+          colour: string
+          created_at: string
+          created_by: string
+          description: string | null
+          icon: string
+          id: string
+          name: string
+          owner_user_id: string | null
+          position: number
+          preferred_areas: string[]
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          colour?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          name: string
+          owner_user_id?: string | null
+          position?: number
+          preferred_areas?: string[]
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          colour?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          name?: string
+          owner_user_id?: string | null
+          position?: number
+          preferred_areas?: string[]
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_consultant_groups_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_consultant_notes: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          id: string
+          note: string
+          owner_user_id: string | null
+          tenant_id: string | null
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          id?: string
+          note: string
+          owner_user_id?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          updated_by?: string
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          owner_user_id?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_consultant_notes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_plan_subscriptions: {
         Row: {
           base_monthly_price: number
@@ -9417,6 +9619,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_consultant_favourite_count: {
+        Args: { _consultant_id: string }
+        Returns: number
+      }
       admin_consultant_full_profile: { Args: { _cid: string }; Returns: Json }
       admin_create_invoice: {
         Args: {
@@ -9734,9 +9940,26 @@ export type Database = {
         Args: { _request_id: string }
         Returns: string
       }
+      client_group_invite_limit: { Args: never; Returns: number }
       client_info_ready: {
         Args: { _company_name: string; _sap_modules: string[] }
         Returns: boolean
+      }
+      client_list_can_edit: {
+        Args: { _owner_user_id: string; _tenant_id: string }
+        Returns: boolean
+      }
+      client_list_can_read: {
+        Args: { _owner_user_id: string; _tenant_id: string }
+        Returns: boolean
+      }
+      client_list_scope_lock: {
+        Args: { _owner_user_id: string; _tenant_id: string }
+        Returns: undefined
+      }
+      client_match_preferences: {
+        Args: { _tenant_id?: string; _ticket_id?: string }
+        Returns: Json
       }
       client_rating_summaries: {
         Args: { _client_ids: string[] }

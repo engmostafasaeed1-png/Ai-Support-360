@@ -1,7 +1,7 @@
 # Roadmap
 
 - [x] Feature O: client favourites, groups, tags, private notes, "do not suggest", My consultants page, hearts on cards/profile/bids/map/recommendations, "From my groups" in requests, bids and the new request wizard, favourite boost/chip and block exclusion in matching, admin count; prepared SQL tested on a scratch database; 1,829 unit tests.
-- [ ] Switch on Feature O: awaits user-applied docs/sql/client-favourites.sql (screens stay hidden and matching unchanged until then).
+- [x] Switch on Feature O: applied docs/sql/client-favourites.sql (migration 0074, byte-identical); signed-in save, group, private note and do-not-suggest verified in the preview, matching preferences checked, test entries removed.
 
 - [x] Connect the profile dialog to the existing AI assessment; resume pending sessions, surface failures, confirm server-awarded badge readback and refresh profile/history. Signed-in start/greeting verified; 27 targeted tests passed.
 - [ ] Verify a completed real assessment and first-completion credits through the UI: awaits consultant's own interview answers; do not invent answers or alter their credibility for QA.
