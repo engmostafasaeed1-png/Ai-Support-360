@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next';
 import { KeyRound } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -18,12 +17,8 @@ interface Props {
 /** Main social sign-in switch (default off) plus per-provider switches that only apply when it is on. */
 export default function SocialSigninSettingsCard({ settings, loading, updateSetting }: Props) {
   const { t } = useTranslation();
-  const qc = useQueryClient();
   const mainOn = settings[SOCIAL_MAIN_KEY] === true;
-  const save = async (key: string, val: boolean) => {
-    await updateSetting(key, val);
-    qc.invalidateQueries({ queryKey: ['social-signin-providers'] });
-  };
+  const save = (key: string, val: boolean) => updateSetting(key, val);
 
   return (
     <Card>
