@@ -127,7 +127,7 @@ export async function sendTemplateEmail(
   }
   const element = React.createElement(template.component, templateData)
   const html = await renderAsync(element)
-  const text = await renderAsync(element, { plainText: true })
+  const text = template.text ? template.text(templateData) : await renderAsync(element, { plainText: true })
   const subject =
     typeof template.subject === 'function'
       ? template.subject(templateData)
