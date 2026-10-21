@@ -31,7 +31,7 @@ import AdminLayout from "./components/admin/AdminLayout.tsx";
 import SuperAdminLayout from "./components/superadmin/SuperAdminLayout.tsx";
 import ProtectedRoute from "./components/auth/ProtectedRoute.tsx";
 import PublicLayout from "./components/layout/PublicLayout.tsx";
-import { DemoWizardProvider } from "./components/landing/DemoRequestWizard";
+import { DemoWizardProvider } from "./components/landing/DemoWizardContext";
 import ApprovalGate from "./components/client/ApprovalGate.tsx";
 
 // Admin console sections (eagerly loaded since they're small)
