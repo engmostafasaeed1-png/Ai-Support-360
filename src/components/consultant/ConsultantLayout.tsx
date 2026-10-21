@@ -5,6 +5,7 @@ import PageErrorBoundary from '@/components/PageErrorBoundary';
 import MatchRequestPopup from '@/components/consultant/MatchRequestPopup';
 import ResponsivenessNoticePopup from '@/components/consultant/ResponsivenessNoticePopup';
 import LocationGate from '@/components/consultant/LocationGate';
+import { AvailabilityGate } from '@/components/consultant/AvailabilityUrgent';
 import PolicyGate from '@/components/consultant/policy/PolicyGate';
 import CriticalAlarm from '@/components/consultant/CriticalAlarm';
 import QuickGuideSheet from '@/components/consultant/QuickGuideSheet';
@@ -124,6 +125,7 @@ export default function ConsultantLayout() {
         <MatchRequestPopup />
         <ResponsivenessNoticePopup />
         <LocationGate />
+        <AvailabilityGate />
         <PolicyGate />
         <CriticalAlarm />
       </div>

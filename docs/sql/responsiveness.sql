@@ -1186,6 +1186,14 @@ BEGIN
     EXECUTE 'SELECT public.consultant_policy_blocked_ids()' INTO _more;
     _skip := _skip || COALESCE(_more, ARRAY[]::uuid[]);
   END IF;
+  IF to_regprocedure('public.consultant_availability_blocked_ids()') IS NOT NULL THEN
+    EXECUTE 'SELECT public.consultant_availability_blocked_ids()' INTO _more;
+    _skip := _skip || COALESCE(_more, ARRAY[]::uuid[]);
+  END IF;
+  IF to_regprocedure('public.consultant_on_hold_ids()') IS NOT NULL THEN
+    EXECUTE 'SELECT public.consultant_on_hold_ids()' INTO _more;
+    _skip := _skip || COALESCE(_more, ARRAY[]::uuid[]);
+  END IF;
   RETURN QUERY
   WITH elig AS (
     SELECT c.id AS cid, c.user_id AS uid, c.sap_technologies AS techs

@@ -60,8 +60,8 @@ vi.mock('./steps/ProfileStep', () => ({
 vi.mock('./steps/CertificationsStep', () => ({ default: () => null }));
 vi.mock('./steps/EducationStep', () => ({ default: () => null }));
 vi.mock('./steps/ProjectsStep', () => ({ default: () => null }));
-vi.mock('@/components/consultant/ProfileAvailability', () => ({ default: () => null }));
-vi.mock('@/components/consultant/SetAvailabilityDialog', () => ({ default: () => null }));
+vi.mock('@/components/consultant/WeeklyAvailabilityEditor', () => ({ default: () => null }));
+vi.mock('@/components/consultant/HoldPanel', () => ({ default: () => null }));
 
 const mounts = { skills: 0, experience: 0 };
 let cvChanged: (() => void) | undefined;
