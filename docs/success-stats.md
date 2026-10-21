@@ -34,7 +34,7 @@ Existing consultants start with no stored numbers; the first recompute (run at t
 |---|---|
 | Bronze / Silver / Gold / Platinum | برونزي / فضي / ذهبي / بلاتيني |
 | Success: {level} | النجاح: {level} |
-| AI Interview: {tier} | المقابلة الذكية: {tier} |
+| AI Interview: {tier} | مقابلة الذكاء الاصطناعي: {tier} |
 | Success level: {level} - {solved} of {total} requests solved ({pct} %) - last 12 months {pct12} | مستوى النجاح: {level} - تم حل {solved} من {total} طلبًا ({pct} ٪) - آخر 12 شهرًا {pct12} |
 | {solved} of {total} solved | تم حل {solved} من {total} |
 | Success: New - {solved} of {total} requests solved | النجاح: جديد - تم حل {solved} من {total} طلبًا |
@@ -58,6 +58,6 @@ Existing consultants start with no stored numbers; the first recompute (run at t
 | You marked this request as not solved | سجّلتَ أن هذا الطلب لم يُحل |
 | Thin outer band: success rate | الحلقة الرفيعة الخارجية: نسبة النجاح |
 | Trophy chip: Success level | شارة الكأس: مستوى النجاح |
-| Shield chip: AI interview level | شارة الدرع: مستوى المقابلة الذكية |
+| Shield chip: AI interview level | شارة الدرع: مستوى مقابلة الذكاء الاصطناعي |
 
 Admin screen strings (Success tab, breakdown, void/override dialogs) are inline in `src/components/admin/SuccessAdmin.tsx`.
