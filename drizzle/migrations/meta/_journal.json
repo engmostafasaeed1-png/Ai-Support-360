@@ -533,6 +533,13 @@
       "when": 1792576591110,
       "tag": "0075_bulk_messaging",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1792597175998,
+      "tag": "0076_consultant_policy_read",
+      "breakpoints": true
     }
   ]
 }
