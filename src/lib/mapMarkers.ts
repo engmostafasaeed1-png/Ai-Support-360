@@ -1,17 +1,19 @@
 // Pure helpers for the consultants map: the three availability states and the place of every pin.
 
-export type AvailabilityState = 'available' | 'busy' | 'offline';
+export type AvailabilityState = 'available' | 'busy' | 'offline' | 'on_hold';
 
 /** How a state is called and drawn. `color` is for the map, `dot` is the Tailwind class of the small round dot in the lists. */
 export const STATE_META: Record<AvailabilityState, { label: string; color: string; dot: string; order: number }> = {
   available: { label: 'Online', color: '#22c55e', dot: 'bg-green-500', order: 0 },
   busy: { label: 'Busy', color: '#f59e0b', dot: 'bg-amber-500', order: 1 },
   offline: { label: 'Offline', color: '#9ca3af', dot: 'bg-muted-foreground/40', order: 2 },
+  // Feature Y: shown with "On hold until ..." and not selectable for new assignments.
+  on_hold: { label: 'On hold', color: '#6366f1', dot: 'bg-primary', order: 3 },
 };
 
-/** The state in the database ("available", "busy" or "offline"); anything else counts as offline. */
+/** The state in the database ("available", "busy", "offline" or "on_hold"); anything else counts as offline. */
 export function availabilityState(value: string | null | undefined): AvailabilityState {
-  return value === 'available' || value === 'busy' ? value : 'offline';
+  return value === 'available' || value === 'busy' || value === 'on_hold' ? value : 'offline';
 }
 
 export const OSM_TILES = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
