@@ -385,6 +385,7 @@ export function normalizeUserDetail<T extends { user?: Record<string, unknown> |
 /** Request body for the admin-manage-user server function; refuses to build one without a valid account id. */
 export function userActionBody(action: string, userId: unknown, payload: Record<string, unknown> = {}, reason?: string | null): Record<string, unknown> {
   if (!isUuid(userId)) throw new UnknownAccountError();
-  const { user_id: _a, userId: _b, id: _c, ...rest } = payload; // payload can never redirect the action to another account
+  const rest: Record<string, unknown> = { ...payload };
+  delete rest.user_id; delete rest.userId; delete rest.id; // a payload can never redirect the action to another account
   return { ...rest, action, user_id: userId.trim(), ...(reason ? { reason } : {}) };
 }
