@@ -7,7 +7,7 @@ import { MagicLinkEmail } from '../_shared/email-templates/magic-link.tsx'
 import { RecoveryEmail } from '../_shared/email-templates/recovery.tsx'
 import { EmailChangeEmail } from '../_shared/email-templates/email-change.tsx'
 import { ReauthenticationEmail } from '../_shared/email-templates/reauthentication.tsx'
-import { confirmCode, confirmPageUrl } from '../_shared/authConfirmLink.ts'
+import { confirmCode, confirmationLink, createConfirmPageProbe } from '../_shared/authConfirmLink.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -124,6 +124,10 @@ async function handlePreview(req: Request): Promise<Response> {
 
 // The SDK handler owns verification, dispatch, and retry semantics; this file
 // owns only the email decisions: subjects, templates, and per-type props.
+// Checked before each e-mail (cached for minutes): is /auth/confirm live on the published site?
+const confirmPageReady = createConfirmPageProbe(SITE_URL)
+let confirmPageLive = false
+
 const handler = createAuthEmailHandler({
   apiKey: Deno.env.get('LOVABLE_API_KEY')!,
   from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
@@ -138,7 +142,8 @@ const handler = createAuthEmailHandler({
           siteUrl: SITE_URL,
           recipient: data.email,
           // Our confirm page (one click) instead of the raw link, so mail scanners cannot use it up.
-          confirmationUrl: confirmPageUrl(data.url, SITE_URL, data.email),
+          // Falls back to the original link while the published site has no /auth/confirm page.
+          confirmationUrl: confirmationLink(data.url, SITE_URL, data.email, confirmPageLive),
           code: confirmCode(data.token),
         }),
     },
@@ -199,5 +204,6 @@ Deno.serve(async (req) => {
     return handlePreview(req)
   }
 
+  confirmPageLive = await confirmPageReady()
   return handler(req)
 })
