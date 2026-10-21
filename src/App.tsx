@@ -198,6 +198,7 @@ const ProfileFieldsSection = lazyWithRetry(() => import("./components/admin/cons
 const ConsultantPolicySection = lazyWithRetry(() => import("./components/admin/console/sections/ConsultantPolicySection.tsx"), 'ConsultantPolicySection');
 const ConsultantPolicyPage = lazyWithRetry(() => import("./pages/ConsultantPolicyPage.tsx"), 'ConsultantPolicyPage');
 const MissingLocationSection = lazyWithRetry(() => import("./components/admin/console/sections/MissingLocationSection.tsx"), 'MissingLocationSection');
+const AvailabilityAdminSection = lazyWithRetry(() => import("./components/admin/console/sections/AvailabilityAdminSection.tsx"), 'AvailabilityAdminSection');
 const VMwarePricingSection = lazyWithRetry(() => import("./components/admin/console/sections/VMwarePricingSection.tsx"), 'VMwarePricingSection');
 const AdminClientApprovalsPage = lazyWithRetry(() => import("./pages/admin/ClientApprovalsPage.tsx"), 'AdminClientApprovalsPage');
 const AdminClientReviewsPage = lazyWithRetry(() => import("./pages/admin/ClientReviewsPage.tsx"), 'AdminClientReviewsPage');
@@ -454,6 +455,7 @@ const App = () => (
                 <Route path="approvals" element={<ConsultantApprovalsSection />} />
                 <Route path="profile-fields" element={<ProfileFieldsSection />} />
                 <Route path="missing-location" element={<MissingLocationSection />} />
+                <Route path="availability" element={<AvailabilityAdminSection />} />
                 <Route path="consultant-policy" element={<ConsultantPolicySection />} />
                 <Route path="nda" element={<NDAManagementSection />} />
                 <Route path="match-requests" element={<MatchRequestsSection />} />
