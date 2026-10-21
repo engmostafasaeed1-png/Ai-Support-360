@@ -61,7 +61,7 @@ export function renderVariables(text: string, vars: Vars, lang: 'en' | 'ar' = 'e
 export function pickText(lang: string | null | undefined, en: string, ar?: string | null): { lang: 'en' | 'ar'; text: string } {
   const wantsAr = typeof lang === 'string' && lang.toLowerCase().startsWith('ar');
   if (wantsAr && ar && ar.trim()) return { lang: 'ar', text: ar };
-  return { lang: wantsAr && !(ar && ar.trim()) ? 'en' : wantsAr ? 'ar' : 'en', text: en };
+  return { lang: 'en', text: en };
 }
 
 export const firstName = (displayName: string | null | undefined) => (displayName ?? '').trim().split(/\s+/)[0] ?? '';
