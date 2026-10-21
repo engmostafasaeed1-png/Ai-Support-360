@@ -28,17 +28,41 @@ export function oauthRedirectUri(origin: string): string {
   return origin + OAUTH_RETURN_PATH;
 }
 
-/** Reads `error` / `error_description` from the query string or the hash. */
-export function readOAuthError(search: string, hash: string): { error: string; description: string } | null {
+/** Reads `error` / `error_code` / `error_description` from the query string or the hash. */
+export function readOAuthError(search: string, hash: string): { error: string; description: string; code?: string } | null {
   const q = new URLSearchParams(search);
   const h = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
   const error = q.get('error') || h.get('error');
   const description = q.get('error_description') || h.get('error_description');
+  const code = q.get('error_code') || h.get('error_code') || undefined;
   if (!error && !description) return null;
   return {
     error: error || 'sign_in_failed',
     description: (description || error || '').replace(/\+/g, ' '),
+    ...(code ? { code } : {}),
   };
+}
+
+/**
+ * True when the error came back from an e-mail link (confirmation, invitation, magic link) that expired
+ * or was already used — for example by a mail scanner or a second click. This is never a Google error.
+ */
+export function isEmailLinkError(e: { error: string; description: string; code?: string } | null): boolean {
+  if (!e) return false;
+  if (e.code === 'otp_expired') return true;
+  return /email link is invalid or has expired|otp_expired|token has expired or is invalid/i.test(`${e.error} ${e.description}`);
+}
+
+/**
+ * Base address put into e-mail links. On the live site (any of its addresses) this is always the
+ * canonical www address, so the confirmation lands where the sign-in state is kept; previews keep their own.
+ */
+export function emailRedirectBase(origin: string): string {
+  try {
+    const host = new URL(origin).hostname;
+    if (host === 'www.aisupport360.com' || NON_CANONICAL_HOSTS.test(host)) return CANONICAL_ORIGIN;
+  } catch { /* fall through */ }
+  return origin;
 }
 
 export const STATE_FAILED_MESSAGE =
