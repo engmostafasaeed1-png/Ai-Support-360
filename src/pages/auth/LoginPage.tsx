@@ -196,11 +196,14 @@ export default function LoginPage() {
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email,
-      options: { emailRedirectTo: `${window.location.origin}/login` },
+      options: { emailRedirectTo: `${emailRedirectBase(window.location.origin)}/login` },
     });
     setResending(false);
     if (error) {
-      toast.error(error.message || 'Could not resend confirmation email.');
+      const limited = (error as any).status === 429 || /rate_limit|security purposes/i.test(`${(error as any).code ?? ''} ${error.message}`);
+      toast.error(limited
+        ? t('auth.link.rate_limited', 'Too many requests for this address. Please wait a minute and try again.')
+        : t('auth.link.resend_failed', 'Could not send a new confirmation e-mail. Please try again.'));
       return;
     }
     const now = new Date();
@@ -327,6 +330,7 @@ export default function LoginPage() {
         const role = await getRoleAndRepairAccount(session.user);
         if (await handleFirstTimeOAuth(session.user, role)) return;
         clearSocialSignupIntent();
+        if (justConfirmed) toast.success(t('auth.link.confirmed_ok', 'Your e-mail is confirmed. Welcome to AI Support 360.'));
 
         const oauthNext = sessionStorage.getItem('oauth_next');
         sessionStorage.removeItem('oauth_next');
