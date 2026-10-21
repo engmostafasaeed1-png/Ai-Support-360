@@ -80,6 +80,7 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
       const rows = (data ?? []) as Array<Record<string, any>>;
       const names = new Map<string, string>();
       const places = new Map<string, { city: string | null; country: string | null }>();
+      const photos = new Map<string, string | null>();
       const consultantIds = [...new Set(rows.map((r) => r.consultant_id as string))];
       if (consultantIds.length > 0) {
         const { data: consultants } = await supabase.from('consultants').select('id, user_id, city, country').in('id', consultantIds);
