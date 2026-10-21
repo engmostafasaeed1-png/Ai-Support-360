@@ -185,6 +185,8 @@ const ChatSessionPage = lazyWithRetry(() => import("./pages/chat/ChatSessionPage
 const LiveInterviewPage = lazyWithRetry(() => import("./pages/interview/LiveInterviewPage.tsx"), 'LiveInterviewPage');
 const InterviewRespondPage = lazyWithRetry(() => import("./pages/interview/InterviewRespondPage.tsx"), 'InterviewRespondPage');
 const NotificationsPage = lazyWithRetry(() => import("./pages/notifications/NotificationsPage.tsx"), 'NotificationsPage');
+const NotificationsRedirect = lazyWithRetry(() => import("./pages/NotificationsRedirect.tsx"), 'NotificationsRedirect');
+const MessagesPage = lazyWithRetry(() => import("./pages/admin/MessagesPage.tsx"), 'MessagesPage');
 const ReferralsPage = lazyWithRetry(() => import("./pages/ReferralsPage.tsx"), 'ReferralsPage');
 const InvoiceDocumentPage = lazyWithRetry(() => import("./pages/InvoiceDocumentPage.tsx"), 'InvoiceDocumentPage');
 const MatchRequestPopup = lazyWithRetry(() => import("./components/consultant/MatchRequestPopup.tsx"), 'MatchRequestPopup');
@@ -307,6 +309,7 @@ const App = () => (
               <Route path="/demo/confirmation/:token" element={<DemoRequestConfirmationPage />} />
               <Route path="/interview/respond/:token" element={<InterviewRespondPage />} />
             </Route>
+            <Route path="/notifications" element={<NotificationsRedirect />} />
             <Route path="/.lovable/oauth/consent" element={<OAuthConsentPage />} />
             {import.meta.env.MODE !== 'production' && (
               <Route path="/dev/verification-timeline" element={<VerificationTimelineHarness />} />
@@ -430,6 +433,7 @@ const App = () => (
                 <Route path="*" element={<Navigate to="/admin/console" replace />} />
               </Route>
               <Route path="users" element={<UsersPage />} />
+              <Route path="messages" element={<MessagesPage />} />
               <Route path="tickets" element={<TicketKanbanPage />} />
               <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
               <Route path="approvals" element={<ConsultantApprovalsPage />} />

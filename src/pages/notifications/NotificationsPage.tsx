@@ -378,6 +378,7 @@ export default function NotificationsPage() {
           })}
         </div>
       )}
+      <BroadcastMessageDialog notificationId={openMessage} onClose={() => setOpenMessage(null)} />
     </div>
   );
 }
