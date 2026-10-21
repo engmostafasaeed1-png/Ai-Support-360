@@ -864,3 +864,157 @@ BEGIN
    ORDER BY x.event_at DESC, (x.title <> 'Timesheet submitted') DESC;
 END;
 $function$;
+
+-- 8) Administrators always see the full real name ----------------------------------------------
+-- consultant_name_unlocked already returns true for admin and super_admin, so every viewer-aware path above
+-- (profile_directory, consultant_public_name, team panel, team thread, team requests, timeline) gives them the full name.
+-- Admin RPCs (admin_*, um_*, bm_*, feedback, audit, invoices, payouts, exports) and admin e-mails read profiles directly and
+-- are unchanged. The only admin texts built from the public format were the team-request copies; they use this now:
+CREATE OR REPLACE FUNCTION public.consultant_admin_name(_consultant_id uuid)
+ RETURNS text
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+  SELECT COALESCE((SELECT NULLIF(public.format_consultant_name(p.display_name, 'full'), '')
+                     FROM public.consultants c JOIN public.profiles p ON p.user_id = c.user_id WHERE c.id = _consultant_id), 'A consultant')
+$$;
+REVOKE ALL ON FUNCTION public.consultant_admin_name(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.consultant_admin_name(uuid) TO service_role;
+
+-- "Visible to clients as: M. S****" in admin screens: the name a neutral viewer (no relationship) receives.
+-- Administrators only; ids may be consultant ids or user ids (at most 500).
+CREATE OR REPLACE FUNCTION public.consultant_client_view_names(_ids uuid[])
+ RETURNS TABLE(consultant_id uuid, user_id uuid, client_view text)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF NOT (public.has_role(auth.uid(), 'admin'::app_role) OR public.has_role(auth.uid(), 'super_admin'::app_role)) THEN
+    RETURN;
+  END IF;
+  RETURN QUERY
+  SELECT c.id, c.user_id, public.consultant_name_for(c.id, NULL)
+    FROM public.consultants c
+   WHERE c.id = ANY (_ids[1:500]) OR c.user_id = ANY (_ids[1:500]);
+END $function$;
+REVOKE ALL ON FUNCTION public.consultant_client_view_names(uuid[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.consultant_client_view_names(uuid[]) TO authenticated, service_role;
+
+-- team_request_additional (admin copy uses the full name) and team_requests (names per viewer)
+
+-- team_request_additional
+CREATE OR REPLACE FUNCTION public.team_request_additional(_ticket_id uuid, _reason text, _needed_skill text DEFAULT NULL::text, _suggested_consultant_id uuid DEFAULT NULL::uuid, _estimated_hours numeric DEFAULT NULL::numeric)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  cfg jsonb := public.team_settings(); t record; m public.ticket_team_members; _me uuid; _id uuid; _name text;
+  _r text := NULLIF(btrim(COALESCE(_reason, '')), ''); _skill text := NULLIF(btrim(COALESCE(_needed_skill, '')), '');
+  _max int := GREATEST(COALESCE((cfg ->> 'max_team_size')::int, 5), 1);
+  _pending int := GREATEST(COALESCE((cfg ->> 'team_request_max_pending')::int, 3), 1);
+  _cool int := GREATEST(COALESCE((cfg ->> 'team_request_cooldown_hours')::int, 24), 0);
+  _redecline int := GREATEST(COALESCE((cfg ->> 'team_request_redecline_days')::int, 7), 0);
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not signed in' USING ERRCODE = '28000'; END IF;
+  IF NOT COALESCE((cfg ->> 'enabled')::boolean, true) THEN RAISE EXCEPTION 'Team engagement is switched off' USING ERRCODE = '42501'; END IF;
+  SELECT c.id INTO _me FROM public.consultants c WHERE c.user_id = auth.uid();
+  IF _me IS NULL THEN RAISE EXCEPTION 'Ticket not found' USING ERRCODE = '42501'; END IF;
+  PERFORM pg_advisory_xact_lock(hashtext('team-request:' || _me::text));
+
+  SELECT tk.id, tk.client_id, tk.title, tk.status::text AS st, tk.sap_modules INTO t FROM public.tickets tk WHERE tk.id = _ticket_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Ticket not found' USING ERRCODE = '42501'; END IF;
+  SELECT * INTO m FROM public.ticket_team_members tm
+   WHERE tm.ticket_id = _ticket_id AND tm.consultant_id = _me AND public.team_can_request_status(tm.status) LIMIT 1;
+  IF m.id IS NULL THEN
+    RAISE EXCEPTION 'Only a consultant who accepted this request can ask for an additional consultant' USING ERRCODE = '42501';
+  END IF;
+  IF t.st IN ('resolved', 'closed') THEN RAISE EXCEPTION 'This ticket is already finished' USING ERRCODE = '22023'; END IF;
+
+  IF _r IS NULL OR char_length(_r) < 3 OR char_length(_r) > 300 THEN
+    RAISE EXCEPTION 'Please give a short reason (3 to 300 characters)' USING ERRCODE = '22023';
+  END IF;
+  PERFORM public.team_assert_clean_text(_r);
+  _skill := COALESCE(_skill, NULLIF(array_to_string(t.sap_modules, ', '), ''));
+  IF _skill IS NOT NULL THEN
+    _skill := left(_skill, 120);
+    PERFORM public.team_assert_clean_text(_skill);
+  END IF;
+  IF _estimated_hours IS NOT NULL AND (_estimated_hours <= 0 OR _estimated_hours > 1000) THEN
+    RAISE EXCEPTION 'Estimated extra hours must be between 0 and 1000' USING ERRCODE = '22023';
+  END IF;
+
+  IF _suggested_consultant_id IS NOT NULL THEN
+    IF _suggested_consultant_id = _me THEN RAISE EXCEPTION 'You cannot suggest yourself' USING ERRCODE = '22023'; END IF;
+    IF NOT EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = _suggested_consultant_id AND c.verification_status = 'verified') THEN
+      RAISE EXCEPTION 'Please choose a verified consultant from the portal' USING ERRCODE = '22023';
+    END IF;
+    IF EXISTS (SELECT 1 FROM public.ticket_team_members tm WHERE tm.ticket_id = _ticket_id AND tm.consultant_id = _suggested_consultant_id AND public.team_live(tm.status)) THEN
+      RAISE EXCEPTION 'This consultant is already on the team' USING ERRCODE = '22023';
+    END IF;
+    IF EXISTS (SELECT 1 FROM public.ticket_team_requests q WHERE q.ticket_id = _ticket_id AND q.status = 'pending'
+                AND _suggested_consultant_id IN (q.suggested_consultant_id, q.chosen_consultant_id)) THEN
+      RAISE EXCEPTION 'This consultant is already suggested in an open request' USING ERRCODE = '22023';
+    END IF;
+    IF EXISTS (SELECT 1 FROM public.ticket_team_requests q WHERE q.ticket_id = _ticket_id AND q.status = 'declined'
+                AND q.suggested_consultant_id = _suggested_consultant_id
+                AND q.decided_at > now() - make_interval(days => _redecline)) THEN
+      RAISE EXCEPTION 'The client declined this consultant recently; you can suggest them again after % days', _redecline USING ERRCODE = '54000';
+    END IF;
+  END IF;
+
+  IF (SELECT count(*) FROM public.ticket_team_members tm WHERE tm.ticket_id = _ticket_id AND public.team_live(tm.status)) >= _max THEN
+    RAISE EXCEPTION 'The team is already full (% consultants)', _max USING ERRCODE = '22023';
+  END IF;
+  IF (SELECT count(*) FROM public.ticket_team_requests q WHERE q.ticket_id = _ticket_id AND q.requester_consultant_id = _me AND q.status = 'pending') >= _pending THEN
+    RAISE EXCEPTION 'You already have % open team requests on this ticket', _pending USING ERRCODE = '54000';
+  END IF;
+  IF _cool > 0 AND EXISTS (SELECT 1 FROM public.ticket_team_requests q WHERE q.requester_consultant_id = _me
+                            AND q.created_at > now() - make_interval(hours => _cool)) THEN
+    RAISE EXCEPTION 'You can send one team request every % hours', _cool USING ERRCODE = '54000';
+  END IF;
+
+  INSERT INTO public.ticket_team_requests (ticket_id, requester_member_id, requester_consultant_id, reason, needed_skill, suggested_consultant_id, estimated_hours)
+  VALUES (_ticket_id, m.id, _me, _r, _skill, _suggested_consultant_id, _estimated_hours)
+  RETURNING id INTO _id;
+  PERFORM public.team_audit('team_request.created', 'ticket_team_request', _id,
+    jsonb_build_object('ticket_id', _ticket_id, 'requester_consultant_id', _me, 'suggested_consultant_id', _suggested_consultant_id));
+
+  _name := public.team_consultant_name(_me);
+  PERFORM public.team_notify(t.client_id, 'Team request',
+    _name || ' asks to add a consultant to "' || left(COALESCE(t.title, 'your request'), 80) || '": ' || left(_r, 200),
+    '/client/tickets/' || _ticket_id || '?tab=work');
+  PERFORM public.team_notify_admins('Team request (copy)',
+    public.consultant_admin_name(_me) || ' asks to add a consultant to "' || left(COALESCE(t.title, 'a request'), 80) || '".',
+    '/admin/tickets/' || _ticket_id);
+  RETURN _id;
+END $function$;
+
+-- team_requests
+CREATE OR REPLACE FUNCTION public.team_requests(_ticket_id uuid)
+ RETURNS TABLE(request_id uuid, status text, reason text, needed_skill text, estimated_hours numeric, payer text, requester_consultant_id uuid, requester_name text, suggested_consultant_id uuid, suggested_name text, chosen_consultant_id uuid, chosen_name text, created_member_id uuid, decision_note text, decided_role text, decided_at timestamp with time zone, created_at timestamp with time zone, mine boolean)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE _all boolean; _me uuid;
+BEGIN
+  IF auth.uid() IS NULL THEN RETURN; END IF;
+  _all := EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = _ticket_id AND t.client_id = auth.uid())
+          OR public.ticket_in_my_company(_ticket_id) OR public.team_is_admin();
+  SELECT c.id INTO _me FROM public.consultants c WHERE c.user_id = auth.uid();
+  RETURN QUERY
+  SELECT q.id, q.status, q.reason, q.needed_skill, q.estimated_hours, q.payer,
+         q.requester_consultant_id, COALESCE(public.consultant_name_for(q.requester_consultant_id, auth.uid()), 'A consultant'),
+         q.suggested_consultant_id, CASE WHEN q.suggested_consultant_id IS NOT NULL THEN COALESCE(public.consultant_name_for(q.suggested_consultant_id, auth.uid()), 'A consultant') END,
+         q.chosen_consultant_id, CASE WHEN q.chosen_consultant_id IS NOT NULL THEN COALESCE(public.consultant_name_for(q.chosen_consultant_id, auth.uid()), 'A consultant') END,
+         q.created_member_id, q.decision_note, q.decided_role, q.decided_at, q.created_at,
+         (_me IS NOT NULL AND q.requester_consultant_id = _me)
+    FROM public.ticket_team_requests q
+   WHERE q.ticket_id = _ticket_id AND (_all OR (_me IS NOT NULL AND q.requester_consultant_id = _me))
+   ORDER BY q.created_at DESC
+   LIMIT 100;
+END $function$;
