@@ -199,7 +199,7 @@ export function ringSummary(i: RingInput): RingSummary {
   }
   const success = successView(i.success?.publicOn ?? false, i.success?.counts, i.success?.settings ?? SUCCESS_DEFAULTS);
   lines.push(...successLines(success, lang, i.success?.settings ?? SUCCESS_DEFAULTS));
-  if (success.state !== 'hidden' && rating.state !== 'none') lines.push(successStarsHint(lang));
+  if (success.state !== 'hidden') lines.push(successStarsHint(lang));
   if (tier) lines.push(tier === 'verified' ? pick(RING_STRINGS.verified, lang) : fill(pick(RING_STRINGS.tier, lang), { tier: pick(TIER_LABEL[tier], lang) }));
 
   const newWord = pick(RING_STRINGS.new, lang);
