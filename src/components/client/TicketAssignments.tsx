@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ConsultantRing from '@/components/consultant/ConsultantRing';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -201,12 +202,7 @@ export default function TicketAssignments({ ticketId, isReadOnly }: TicketAssign
               <Card key={a.id} className="rounded-xl border-border/30">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9 shrink-0">
-                      <AvatarImage src={a.avatar_url || undefined} />
-                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                        {a.consultant_name.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <ConsultantRing consultantId={a.consultant_id} name={a.consultant_name} avatarUrl={a.avatar_url} size="sm" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{a.consultant_name}</p>
                       <ConsultantLocation audience="client" city={a.city} country={a.country} className="text-[11px] text-muted-foreground" />
