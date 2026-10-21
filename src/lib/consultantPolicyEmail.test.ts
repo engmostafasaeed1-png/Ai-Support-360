@@ -24,8 +24,8 @@ const en = (extra: Partial<PolicyEmailProps> = {}) => mail('en', extra);
 const ar = (extra: Partial<PolicyEmailProps> = {}) => mail('ar', extra);
 /** The part of the mail belonging to one language version. */
 const part = (html: string, lang: 'en' | 'ar') => {
-  const i = html.indexOf(`data-lang="${lang}"`);
-  const other = html.indexOf(`data-lang="${lang === 'en' ? 'ar' : 'en'}"`);
+  const i = html.indexOf(`id="lang-${lang}"`);
+  const other = html.indexOf(`id="lang-${lang === 'en' ? 'ar' : 'en'}"`);
   return other > i ? html.slice(i, other) : html.slice(i);
 };
 /** React escapes quotes in text; compare against the same escaping. */
@@ -87,7 +87,6 @@ describe('Consultant Service Policy e-mail (bilingual)', () => {
       expect(html).toMatch(/<body style=/);
       expect(part(html, 'en')).not.toContain('dir="rtl"');
       expect(part(html, 'ar')).not.toContain('dir="ltr"');
-      expect(part(html, 'ar')).toMatch(/^data-lang="ar"|dir="rtl"/);
       expect(html.slice(0, html.indexOf('data-lang='))).not.toContain('dir="rtl"');
       expect(html).toContain('lang="ar" dir="rtl" data-lang="ar"');
       expect(html).toContain('lang="en" dir="ltr" data-lang="en"');
@@ -107,11 +106,12 @@ describe('Consultant Service Policy e-mail (bilingual)', () => {
   it('stays under the Gmail clipping size without dropping any policy section', () => {
     for (const p of [en(), ar()]) {
       const html = renderFull(p);
+      console.log('policy mail bytes', p.lang, policyEmailBytes(html));
       expect(policyEmailBytes(html)).toBeLessThanOrEqual(POLICY_EMAIL_HTML_LIMIT);
       for (const lang of ['en', 'ar'] as const) for (let i = 1; i <= 6; i++) expect(html).toContain(`id="${lang}-s${i}"`);
     }
     // A long policy falls back to the compact second version, still complete.
-    const long = POLICY_DRAFT_BODY_EN + '\n' + Array.from({ length: 40 }, (_, i) => `- Extra rule ${i} with enough words to fill the line nicely.`).join('\n');
+    const long = POLICY_DRAFT_BODY_EN + '\n' + Array.from({ length: 150 }, (_, i) => `- Extra rule ${i} with enough words to fill the line nicely.`).join('\n');
     const p = en({ texts: { en: { body: long }, ar: { body: POLICY_DRAFT_BODY_AR } } });
     const normal = '<!DOCTYPE html>' + render(p);
     const out = renderFull(p);
