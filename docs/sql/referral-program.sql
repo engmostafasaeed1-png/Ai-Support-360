@@ -1801,6 +1801,9 @@ BEGIN
                   WHERE r.status <> 'removed' AND c.verification_status::text = 'verified'),
     'paying', (SELECT count(*) FROM public.consultant_referrals WHERE status <> 'removed' AND first_paid_at IS NOT NULL),
     'review', (SELECT count(*) FROM public.consultant_referrals WHERE status IN ('review', 'held')),
+    'pending_activation', (SELECT count(*) FROM public.consultant_referrals WHERE status <> 'removed' AND activation_status = 'pending'),
+    'active_pairs', (SELECT count(*) FROM public.consultant_referrals WHERE status <> 'removed' AND activation_status = 'active'),
+    'expired', (SELECT count(*) FROM public.consultant_referrals WHERE status <> 'removed' AND activation_status = 'expired'),
     'money', COALESCE((SELECT jsonb_agg(jsonb_build_object('currency', currency, 'pending', p, 'available', a, 'held', h, 'in_payout', i,
                                                            'paid', d, 'this_month', m) ORDER BY currency)
                          FROM (SELECT l.currency,
@@ -1818,10 +1821,13 @@ REVOKE ALL ON FUNCTION public.admin_referral_overview() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.admin_referral_overview() TO authenticated;
 
 -- By referred consultant (full names for administrators), with fraud flags and signals.
+DROP FUNCTION IF EXISTS public.admin_referral_referrals(text, text, int, int);
 CREATE OR REPLACE FUNCTION public.admin_referral_referrals(_search text DEFAULT NULL, _filter text DEFAULT 'all', _limit int DEFAULT 200, _offset int DEFAULT 0)
  RETURNS TABLE (referred_id uuid, referred_name text, referred_public text, referrer_id uuid, referrer_name text, code text, source text,
                 attributed_at timestamptz, status text, flags text[], signals text[], verified boolean, first_paid_at timestamptz,
-                window_ends_at timestamptz, earned jsonb, approved_at timestamptz)
+                window_ends_at timestamptz, earned jsonb, approved_at timestamptz, activation_status text, activated_at timestamptz,
+                activation_expires_at timestamptz, referrer_passed boolean, referred_passed boolean, referrer_acknowledged boolean,
+                referred_acknowledged boolean, referrer_best_score numeric, referred_best_score numeric)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
@@ -1852,14 +1858,20 @@ BEGIN
          COALESCE((SELECT jsonb_object_agg(e.currency, e.total) FROM (
                      SELECT l.currency, sum(l.amount) total FROM public.referral_reward_lines l
                       WHERE l.referred_consultant_id = b.referred_consultant_id AND l.status <> 'reversed' GROUP BY l.currency) e), '{}'::jsonb),
-         b.approved_at
+         b.approved_at, b.activation_status, b.activated_at, b.activation_expires_at,
+         public.referral_passed_at(b.referrer_consultant_id) IS NOT NULL, public.referral_passed_at(b.referred_consultant_id) IS NOT NULL,
+         public.referral_acked_at(b.referrer_consultant_id) IS NOT NULL, public.referral_acked_at(b.referred_consultant_id) IS NOT NULL,
+         public.referral_best_score(b.referrer_consultant_id), public.referral_best_score(b.referred_consultant_id)
     FROM base b
    WHERE (_q IS NULL OR lower(COALESCE(b.dname, '')) LIKE '%' || _q || '%' OR lower(COALESCE(b.rname, '')) LIKE '%' || _q || '%' OR lower(b.code) LIKE '%' || _q || '%')
      AND (COALESCE(_filter, 'all') = 'all'
           OR (_filter = 'flagged' AND (cardinality(b.flags) > 0 OR b.status = 'review'))
           OR (_filter = 'held' AND b.status IN ('held', 'review'))
           OR (_filter = 'paying' AND b.first_paid_at IS NOT NULL)
-          OR (_filter = 'removed' AND b.status = 'removed'))
+          OR (_filter = 'removed' AND b.status = 'removed')
+          OR (_filter = 'pending_activation' AND b.activation_status = 'pending' AND b.status <> 'removed')
+          OR (_filter = 'active_pairs' AND b.activation_status = 'active' AND b.status <> 'removed')
+          OR (_filter = 'expired' AND b.activation_status = 'expired'))
    ORDER BY b.attributed_at DESC
    LIMIT greatest(1, least(COALESCE(_limit, 200), 1000)) OFFSET greatest(0, COALESCE(_offset, 0));
 END
@@ -2016,6 +2028,36 @@ BEGIN
     RETURN jsonb_build_object('line', _new);
   END IF;
 
+  -- Resend the pending reminders / acknowledgement requests (once per pair per 24 hours), or revive an expired pair.
+  IF _action IN ('resend', 'revive') THEN
+    SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = _id FOR UPDATE;
+    IF NOT FOUND THEN RAISE EXCEPTION 'Referral not found' USING ERRCODE = '42704'; END IF;
+    IF _action = 'revive' THEN
+      IF r.activation_status <> 'expired' THEN RAISE EXCEPTION 'Only expired referrals can be revived' USING ERRCODE = '22023'; END IF;
+      UPDATE public.consultant_referrals
+         SET activation_status = 'pending', expired_at = NULL, reminder_14_at = NULL, reminder_45_at = NULL, attributed_at = attributed_at,
+             activation_expires_at = now() + make_interval(days => (public.referral_settings() ->> 'activation_days')::int), updated_at = now()
+       WHERE referred_consultant_id = _id;
+      PERFORM public.referral_log(_actor, 'revive', r.referrer_consultant_id, _id, NULL, NULL, jsonb_build_object('activation', 'expired'), jsonb_build_object('activation', 'pending'), _why);
+      PERFORM public.referral_check_activation(_id);
+      RETURN jsonb_build_object('ok', true);
+    END IF;
+    IF r.activation_status <> 'pending' THEN RAISE EXCEPTION 'Only pending referrals get reminders' USING ERRCODE = '22023'; END IF;
+    IF r.admin_resend_at IS NOT NULL AND r.admin_resend_at > now() - interval '24 hours' THEN
+      RAISE EXCEPTION 'A reminder was already sent in the last 24 hours' USING ERRCODE = 'P0001';
+    END IF;
+    UPDATE public.consultant_referrals SET admin_resend_at = now(), updated_at = now() WHERE referred_consultant_id = _id;
+    _n := 0;
+    IF public.referral_acked_at(r.referrer_consultant_id) IS NULL THEN PERFORM public.referral_notify(r.referrer_consultant_id, 'ack_request', _id, NULL, NULL); _n := _n + 1;
+    ELSIF public.referral_passed_at(r.referrer_consultant_id) IS NULL THEN
+      PERFORM public.referral_notify(r.referrer_consultant_id, 'reminder', _id, NULL, NULL, 'pass_interview'); _n := _n + 1; END IF;
+    IF public.referral_acked_at(_id) IS NULL THEN PERFORM public.referral_notify(_id, 'ack_request', r.referrer_consultant_id, NULL, NULL); _n := _n + 1;
+    ELSIF public.referral_passed_at(_id) IS NULL THEN
+      PERFORM public.referral_notify(_id, 'reminder', r.referrer_consultant_id, NULL, NULL, 'pass_interview'); _n := _n + 1; END IF;
+    PERFORM public.referral_log(_actor, 'resend', r.referrer_consultant_id, _id, NULL, NULL, NULL, jsonb_build_object('notices', _n), _why);
+    RETURN jsonb_build_object('sent', _n);
+  END IF;
+
   IF _action IN ('approve_referral', 'hold_referral', 'remove_referral', 'change_referrer') THEN
     SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = _id FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'Referral not found' USING ERRCODE = '42704'; END IF;
@@ -2085,6 +2127,15 @@ BEGIN
     IF _k = 'enabled' THEN
       IF jsonb_typeof(_v) <> 'boolean' THEN RAISE EXCEPTION 'enabled must be true or false' USING ERRCODE = '22023'; END IF;
       INSERT INTO public.platform_settings (key, value) VALUES ('referral_enabled', _v) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
+    ELSIF _k IN ('pass_mark', 'activation_days') THEN
+      IF jsonb_typeof(_v) <> 'number' OR (_v #>> '{}')::numeric <> trunc((_v #>> '{}')::numeric)
+         OR (_k = 'pass_mark' AND ((_v #>> '{}')::numeric < 0 OR (_v #>> '{}')::numeric > 100))
+         OR (_k = 'activation_days' AND ((_v #>> '{}')::numeric < 1 OR (_v #>> '{}')::numeric > 365)) THEN
+        RAISE EXCEPTION 'Value out of range for %', _k USING ERRCODE = '22023';
+      END IF;
+      INSERT INTO public.platform_settings (key, value)
+      VALUES (CASE WHEN _k = 'pass_mark' THEN 'referral_min_interview_score' ELSE 'referral_activation_days' END, _v)
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
     ELSIF _k IN ('rate_percent', 'months', 'min_payout', 'claim_days') THEN
       IF jsonb_typeof(_v) <> 'number'
          OR (_k = 'rate_percent' AND ((_v #>> '{}')::numeric < 0 OR (_v #>> '{}')::numeric > 10))
