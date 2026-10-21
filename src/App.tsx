@@ -55,6 +55,7 @@ const LegalPage = lazyWithRetry(() => import("./pages/LegalPage.tsx"), 'LegalPag
 const ServiceModulePage = lazyWithRetry(() => import("./pages/ServiceModulePage.tsx"), 'ServiceModulePage');
 const DemoRequestConfirmationPage = lazyWithRetry(() => import("./pages/DemoRequestConfirmationPage.tsx"), 'DemoRequestConfirmationPage');
 const UnsubscribePage = lazyWithRetry(() => import("./pages/UnsubscribePage.tsx"), 'UnsubscribePage');
+const NotificationPausePage = lazyWithRetry(() => import("./pages/NotificationPausePage.tsx"), 'NotificationPausePage');
 const LoginPage = lazyWithRetry(() => import("./pages/auth/LoginPage.tsx"), 'LoginPage');
 const OAuthConsentPage = lazyWithRetry(() => import("./pages/auth/OAuthConsentPage.tsx"), 'OAuthConsentPage');
 const SignupPage = lazyWithRetry(() => import("./pages/auth/SignupPage.tsx"), 'SignupPage');
@@ -302,6 +303,7 @@ const App = () => (
             </Route>
             <Route element={<PublicLayout />}>
               <Route path="/unsubscribe" element={<UnsubscribePage />} />
+              <Route path="/notifications/pause" element={<NotificationPausePage />} />
               <Route path="/demo/confirmation/:token" element={<DemoRequestConfirmationPage />} />
               <Route path="/interview/respond/:token" element={<InterviewRespondPage />} />
             </Route>
