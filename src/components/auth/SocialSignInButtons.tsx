@@ -33,10 +33,12 @@ interface Props {
   loadingProvider: string | null;
   disabled?: boolean;
   onSelect: (provider: SocialProvider) => void;
+  /** Short line shown directly under the buttons. */
+  note?: string;
 }
 
 /** Divider + provider buttons; renders nothing (not even the "or" divider) when no provider is enabled. */
-export default function SocialSignInButtons({ providers, loadingProvider, disabled, onSelect }: Props) {
+export default function SocialSignInButtons({ providers, loadingProvider, disabled, onSelect, note }: Props) {
   const { t } = useTranslation();
   if (providers.length === 0) return null;
   return (
@@ -61,6 +63,7 @@ export default function SocialSignInButtons({ providers, loadingProvider, disabl
           </Button>
         ))}
       </div>
+      {note && <p className="text-xs text-muted-foreground text-center" data-testid="social-note">{note}</p>}
       {providers.includes('google') && (
         <p className="text-xs text-muted-foreground text-center">
           {t('auth.oauth_help', 'If Google sign-in fails, use a normal browser window (not a private window or an in-app browser) or sign up with your e-mail.')}

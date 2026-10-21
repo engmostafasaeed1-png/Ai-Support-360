@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchSocialProviders, type SocialProvider } from '@/lib/socialSignin';
+import { fetchSocialConfig, type SocialProvider, type SocialPurpose } from '@/lib/socialSignin';
 
-/** Providers offered on sign-in screens; empty while loading or when social sign-in is off. */
-export function useSocialSignin(): SocialProvider[] {
-  const { data } = useQuery({ queryKey: ['social-signin-providers'], queryFn: fetchSocialProviders, staleTime: 60_000 });
-  return data ?? [];
+/** Providers offered for returning-user sign-in or new-account sign-up; empty while loading. */
+export function useSocialSignin(purpose: SocialPurpose): SocialProvider[] {
+  const { data } = useQuery({ queryKey: ['social-signin-config'], queryFn: fetchSocialConfig, staleTime: 60_000 });
+  return data?.[purpose] ?? [];
 }
