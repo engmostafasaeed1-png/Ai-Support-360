@@ -254,7 +254,7 @@ export default function NotificationsPage() {
           {hasMessages && (
             <div className="flex gap-2" role="group" aria-label={t('bmsg.r_filter', 'Show')}>
               <Button size="sm" variant={onlyMessages ? 'outline' : 'default'} aria-pressed={!onlyMessages} onClick={() => setOnlyMessages(false)}>{t('bmsg.r_all', 'All')}</Button>
-              <Button size="sm" variant={onlyMessages ? 'default' : 'outline'} aria-pressed={onlyMessages} onClick={() => setOnlyMessages(true)}><Megaphone className="me-1 h-4 w-4" />{t('bmsg.r_title', 'Messages from AI Support 360')}</Button>
+              <Button size="sm" variant={onlyMessages ? 'default' : 'outline'} aria-pressed={onlyMessages} onClick={() => setOnlyMessages(true)}><Megaphone className="me-1 h-4 w-4" />{t('bmsg.r_messages', 'Messages from AI Support 360')}</Button>
             </div>
           )}
           {shown.map((n) => {
