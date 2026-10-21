@@ -21,9 +21,10 @@ export function useNotificationPauseOverview(enabled = true) {
     queryKey: ADMIN_PAUSE_KEY,
     enabled,
     retry: false,
-    queryFn: async (): Promise<Overview> => {
+    // null until the prepared update is applied (a failed lookup is not retried in a loop).
+    queryFn: async (): Promise<Overview | null> => {
       const { data, error } = await rpc('admin_notification_pause_overview');
-      if (error) throw error;
+      if (error || !data) return null;
       return data as Overview;
     },
   });
@@ -51,9 +52,9 @@ export default function NotificationPauseAdminCard() {
         <CardTitle className="text-base">{t('npause.admin_title', 'Pause notifications')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {overview.isLoading ? <Skeleton className="h-16 w-full" /> : overview.isError ? (
+        {overview.isLoading ? <Skeleton className="h-16 w-full" /> : !o ? (
           <p className="text-sm text-muted-foreground">{t('npause.admin_not_ready', 'Available after the prepared database update for pausing notifications is applied.')}</p>
-        ) : o && (
+        ) : (
           <>
             <div className="flex items-start justify-between gap-4">
               <div>
