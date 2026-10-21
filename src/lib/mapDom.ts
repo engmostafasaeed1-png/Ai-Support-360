@@ -3,6 +3,7 @@
 
 import { STATE_META, type AvailabilityState } from './mapMarkers';
 import type { LinkState } from './consultantLinks';
+import { arcPath, arcPattern, RING_GEOMETRY, TONE_COLOR, type RingSummary } from './ringAvatar';
 
 export interface PinView {
   id: string;
@@ -26,6 +27,8 @@ export interface PinView {
   /** Match % and why-chips for the current filters, when there are any. */
   matchScore?: number | null;
   chips?: string[];
+  /** Feature W performance ring (client rating + responsiveness), when known. */
+  ring?: RingSummary | null;
 }
 
 export interface PopupLabels {
@@ -140,7 +143,8 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
     make('div', { fontSize: '10px', color: '#9ca3af' }, view.place || labels.noPlace),
   );
   if (view.approximate) who.append(make('div', { fontSize: '10px', color: '#9ca3af', fontStyle: 'italic' }, labels.approximate || DEFAULT_LABELS.approximate || ''));
-  head.append(avatar, who);
+  if (view.ring) who.append(make('div', { fontSize: '11px', fontWeight: '600', marginTop: '2px' }, view.ring.label));
+  head.append(view.ring ? ringWrap(avatar, view.ring) : avatar, who);
 
   const rating = make('div', { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' });
   rating.append(
@@ -219,4 +223,48 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
   root.append(actions);
 
   return root;
+}
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/**
+ * Popup version of the performance ring: the same arcs as the React ring (12 o'clock, clockwise in every direction),
+ * with the full text as accessible name and native tooltip.
+ */
+export function ringWrap(avatar: HTMLElement, ring: RingSummary): HTMLElement {
+  const box = make('div', { position: 'relative', width: '56px', height: '56px', flexShrink: '0' });
+  box.dataset.part = 'ring';
+  box.setAttribute('role', 'img');
+  box.setAttribute('aria-label', ring.text);
+  box.title = ring.text;
+  box.dir = 'ltr';
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.setAttribute('aria-hidden', 'true');
+  Object.assign(svg.style, { position: 'absolute', inset: '0', width: '100%', height: '100%' });
+  const G = RING_GEOMETRY;
+  const track = (r: number, w: number) => {
+    const c = document.createElementNS(SVG_NS, 'circle');
+    c.setAttribute('cx', '50'); c.setAttribute('cy', '50'); c.setAttribute('r', String(r));
+    c.setAttribute('fill', 'none'); c.setAttribute('stroke', 'hsl(var(--muted))'); c.setAttribute('stroke-width', String(w));
+    svg.append(c);
+  };
+  const arc = (pct: number, r: number, w: number, tone: keyof typeof TONE_COLOR, low: boolean, kind: string) => {
+    const d = arcPath(pct, r);
+    if (!d) return;
+    const { dash, opacity } = arcPattern(tone, low);
+    const el = document.createElementNS(SVG_NS, 'path');
+    el.setAttribute('d', d); el.setAttribute('fill', 'none'); el.setAttribute('stroke', TONE_COLOR[tone]);
+    el.setAttribute('stroke-width', String(w)); el.setAttribute('stroke-linecap', dash ? 'butt' : 'round'); el.setAttribute('opacity', String(opacity));
+    if (dash) el.setAttribute('stroke-dasharray', dash);
+    el.dataset.kind = kind; el.dataset.tone = tone;
+    svg.append(el);
+  };
+  track(G.outerR, G.outerW);
+  if (ring.resp.state !== 'hidden') track(G.innerR, G.innerW);
+  if (ring.rating.state !== 'none') arc(ring.rating.pct, G.outerR, G.outerW, ring.rating.tone, ring.rating.state === 'low', 'rating');
+  if (ring.resp.state === 'ok') arc(ring.resp.pct, G.innerR, G.innerW, ring.resp.tone, false, 'responsiveness');
+  Object.assign(avatar.style, { position: 'absolute', inset: `${G.photoInset}%`, width: 'auto', height: 'auto', borderRadius: '50%', fontSize: '11px' });
+  box.append(svg, avatar);
+  return box;
 }
