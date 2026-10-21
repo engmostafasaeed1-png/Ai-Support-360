@@ -67,7 +67,7 @@ describe('Consultant Service Policy e-mail (bilingual)', () => {
     for (const html of [a, e]) {
       const bar = html.indexOf('data-switch="ar"');
       expect(bar).toBeGreaterThan(-1);
-      expect(bar).toBeLessThan(html.indexOf('data-lang='));
+      expect(bar).toBeLessThan(html.indexOf('id="lang-'));
       expect(html.indexOf('data-switch="ar"')).toBeLessThan(html.indexOf('data-switch="en"'));
       expect(html).toContain('>العربية</a>');
       expect(html).toContain('>English</a>');
@@ -87,7 +87,7 @@ describe('Consultant Service Policy e-mail (bilingual)', () => {
       expect(html).toMatch(/<body style=/);
       expect(part(html, 'en')).not.toContain('dir="rtl"');
       expect(part(html, 'ar')).not.toContain('dir="ltr"');
-      expect(html.slice(0, html.indexOf('data-lang='))).not.toContain('dir="rtl"');
+      expect(html.slice(0, html.indexOf('id="lang-'))).not.toContain('dir="rtl"');
       expect(html).toContain('lang="ar" dir="rtl" data-lang="ar"');
       expect(html).toContain('lang="en" dir="ltr" data-lang="en"');
     }
@@ -106,7 +106,6 @@ describe('Consultant Service Policy e-mail (bilingual)', () => {
   it('stays under the Gmail clipping size without dropping any policy section', () => {
     for (const p of [en(), ar()]) {
       const html = renderFull(p);
-      console.log('policy mail bytes', p.lang, policyEmailBytes(html));
       expect(policyEmailBytes(html)).toBeLessThanOrEqual(POLICY_EMAIL_HTML_LIMIT);
       for (const lang of ['en', 'ar'] as const) for (let i = 1; i <= 6; i++) expect(html).toContain(`id="${lang}-s${i}"`);
     }
