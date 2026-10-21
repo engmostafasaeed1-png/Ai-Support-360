@@ -9,6 +9,7 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - Invoice details use shared billing controls and the admin confirmation hook, matching backend permissions.
 - Keep timesheet PDF and CSV row models in the shared timesheet document helpers, using existing screen amounts and approval metadata; this prevents export totals and statuses from diverging.
 - Consultant credibility scores and star fills come only from the shared credibility library, so profile and directory agree.
+- Consultant photo performance rings come only from the shared ring library through ConsultantRing/RingAvatar (map popups via its DOM twin); the outer arc is pure client rating and the inner arc only public responsiveness, so every surface shows the same honest numbers.
 - Brand artwork uses shared CDN logo pointers.
 - Use the consultant Profile page as the single consolidated editor, reusing existing field controls without a duplicate setup tab; legacy onboarding links must land there.
 - Rank consultants only with the shared deterministic matcher (`supabase/functions/_shared/ticketMatch.ts`: hard filters, admin-tunable weights, why-chips) everywhere, incl. directory sort; client blocks are exclusions, favourites an optional capped criterion; displays derive from its weights; AI writes text only, so rankings stay reproducible.
