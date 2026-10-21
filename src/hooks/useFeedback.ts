@@ -120,7 +120,7 @@ export function useFeedbackAssignees(enabled: boolean) {
     staleTime: 10 * 60 * 1000,
     queryFn: async (): Promise<Array<{ id: string; name: string }>> => {
       const { data: roles } = await from('user_roles').select('user_id, role').in('role', ['admin', 'super_admin']);
-      const ids = Array.from(new Set((roles ?? []).map((r: any) => r.user_id as string)));
+      const ids: string[] = Array.from(new Set<string>((roles ?? []).map((r: any) => String(r.user_id))));
       if (!ids.length) return [];
       const { data: profiles } = await from('profiles').select('user_id, display_name').in('user_id', ids);
       const names = new Map((profiles ?? []).map((p: any) => [p.user_id, p.display_name]));
