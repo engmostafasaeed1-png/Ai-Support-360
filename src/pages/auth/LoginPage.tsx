@@ -464,7 +464,7 @@ export default function LoginPage() {
       const msg = (error.message || '').toLowerCase();
       const code = (error as any).code as string | undefined;
       if (code === 'email_not_confirmed' || msg.includes('not confirmed') || msg.includes('email not confirmed')) {
-        toast.error('Your email is not verified yet. Please check your inbox.');
+        toast.error(t('auth.link.not_confirmed', 'Your e-mail is not confirmed yet. We are sending you a new confirmation e-mail - check Inbox and Spam.'));
         // Auto-trigger resend if not in cooldown so the user has a fresh link
         if (!resendCooldown && !resending) {
           await handleResendConfirmation();
@@ -499,6 +499,8 @@ export default function LoginPage() {
     setFailedAttempts(0);
     setLockoutUntil(null);
     logAudit('login');
+    // Signed in with e-mail and password, so the address is confirmed: say so after an "expired link" page.
+    if (linkProblem || justConfirmed) toast.success(t('auth.link.confirmed_ok', 'Your e-mail is confirmed. Welcome to AI Support 360.'));
 
     try {
       const role = await getRoleAndRepairAccount(data.session.user);
@@ -561,6 +563,17 @@ export default function LoginPage() {
           <h1 className="font-semibold leading-none tracking-tight text-2xl">{t('auth.login_title')}</h1>
           <CardDescription>{t('auth.login_desc')}</CardDescription>
         </CardHeader>
+        {linkProblem && (
+          <div className="px-6 pb-4">
+            <ConfirmLinkProblem compact initialEmail={email}
+              onSignIn={() => { setLinkProblem(false); setTimeout(() => document.getElementById(email ? 'password' : 'email')?.focus(), 0); }} />
+          </div>
+        )}
+        {justConfirmed && !linkProblem && (
+          <p role="status" className="mx-6 mb-4 rounded-xl border border-success/30 bg-success/10 p-3 text-sm text-foreground">
+            {t('auth.link.confirmed_signin', 'Your e-mail is confirmed. Sign in to continue where you stopped.')}
+          </p>
+        )}
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
             {oauthError && (
