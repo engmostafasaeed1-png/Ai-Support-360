@@ -2600,6 +2600,7 @@ export type Database = {
           new_case_alerts: boolean
           onsite_countries: string[]
           personal_website: string | null
+          profile_submitted_at: string | null
           profile_video_url: string | null
           profile_visible: boolean
           project_scale: string | null
@@ -2659,6 +2660,7 @@ export type Database = {
           new_case_alerts?: boolean
           onsite_countries?: string[]
           personal_website?: string | null
+          profile_submitted_at?: string | null
           profile_video_url?: string | null
           profile_visible?: boolean
           project_scale?: string | null
@@ -2718,6 +2720,7 @@ export type Database = {
           new_case_alerts?: boolean
           onsite_countries?: string[]
           personal_website?: string | null
+          profile_submitted_at?: string | null
           profile_video_url?: string | null
           profile_visible?: boolean
           project_scale?: string | null
@@ -11593,6 +11596,10 @@ export type Database = {
         Args: { _resolution?: string; _status: string; _ticket_id: string }
         Returns: undefined
       }
+      consultant_submission_missing: {
+        Args: { _cid: string }
+        Returns: string[]
+      }
       consultants_solved_similar: {
         Args: {
           _areas: string[]
@@ -11852,6 +11859,7 @@ export type Database = {
       }
       my_notification_pause: { Args: never; Returns: Json }
       my_profile_completion: { Args: never; Returns: Json }
+      my_profile_submission: { Args: never; Returns: Json }
       my_responsiveness: { Args: never; Returns: Json }
       new_bid_blocked_by_profile: {
         Args: { _cid: string; _ticket: string }
@@ -12258,6 +12266,7 @@ export type Database = {
         Returns: boolean
       }
       share_in_validity_period: { Args: { _config: Json }; Returns: boolean }
+      submit_consultant_profile: { Args: never; Returns: Json }
       submit_demo_request: {
         Args: {
           _company: string
