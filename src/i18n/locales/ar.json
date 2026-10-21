@@ -578,7 +578,8 @@
     "send_request": "إرسال الطلب",
     "reinterview_requested": "تم طلب إعادة المقابلة",
     "reinterview_body": "تم طلب إعادة مقابلة {{type}} لك.",
-    "reinterview_sent": "تم إرسال طلب إعادة المقابلة"
+    "reinterview_sent": "تم إرسال طلب إعادة المقابلة",
+    "start_ai": "ابدأ المقابلة بالذكاء الاصطناعي"
   },
   "ai_interview": {
     "title": "مقابلة الذكاء الاصطناعي",
