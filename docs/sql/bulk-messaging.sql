@@ -1,3 +1,4 @@
+-- lovable-cron-fallback-reviewed: sender is woken on enqueue, runs each minute only while a campaign is sending, removed after drain
 -- Feature R: admin bulk messages ("Message users" on Admin > Users and the Admin > Messages / Campaigns page).
 -- PREPARED ONLY: the owner applies this file. Safe to run twice (IF NOT EXISTS / CREATE OR REPLACE / ON CONFLICT DO NOTHING).
 -- Uses live objects: auth.users, profiles, user_roles, has_role, check_rate_limit, platform_settings, platform_flag,
@@ -472,6 +473,7 @@ BEGIN
   INSERT INTO public.message_campaign_events (campaign_id, actor, action, detail)
   VALUES (_id, _me, 'created', jsonb_build_object('count', _count, 'excluded', _excluded, 'channels', _channels, 'category', _category,
     'audience', _aud_stored ->> 'kind', 'subject', left(_subject_en, 150), 'scheduled_at', _when, 'time_zone', _tz));
+  PERFORM public.bm_arm_worker(); -- wake the sender now (or at the scheduled minute)
   RETURN jsonb_build_object('id', _id, 'recipient_count', _count, 'excluded_count', _excluded, 'scheduled_at', _when);
 END $$;
 REVOKE ALL ON FUNCTION public.bm_create_campaign(JSONB) FROM PUBLIC, anon;
@@ -506,6 +508,7 @@ BEGIN
    WHERE campaign_id = _id AND status IN ('queued', 'claimed', 'manual_pending');
   GET DIAGNOSTICS _n = ROW_COUNT;
   INSERT INTO public.message_campaign_events (campaign_id, actor, action, detail) VALUES (_id, _me, 'cancelled', jsonb_build_object('stopped', _n));
+  PERFORM public.bm_arm_worker();
   RETURN jsonb_build_object('stopped', _n);
 END $$;
 REVOKE ALL ON FUNCTION public.bm_cancel_campaign(UUID) FROM PUBLIC, anon;
@@ -695,6 +698,7 @@ BEGIN
     END IF;
   END LOOP;
   INSERT INTO public.message_campaign_events (actor, action, detail) VALUES (_me, 'settings_changed', COALESCE(_payload, '{}'::jsonb));
+  PERFORM public.bm_arm_worker();
   RETURN public.bm_settings();
 END $$;
 REVOKE ALL ON FUNCTION public.bm_set_settings(JSONB) FROM PUBLIC, anon;
@@ -721,12 +725,16 @@ BEGIN
    WHERE c.status = 'sending'
      AND NOT EXISTS (SELECT 1 FROM public.message_campaign_recipients r WHERE r.campaign_id = c.id AND r.status IN ('queued', 'claimed'));
 
-  IF NOT public.platform_flag('bulk_messaging_enabled', true) THEN RETURN; END IF; -- kill switch: nothing new goes out
+  IF NOT public.platform_flag('bulk_messaging_enabled', true) THEN -- kill switch: nothing new goes out
+    PERFORM public.bm_arm_worker();
+    RETURN;
+  END IF;
 
   WITH started AS (
     UPDATE public.message_campaigns c SET status = 'sending', started_at = now()
      WHERE c.status = 'scheduled' AND c.scheduled_at <= now() RETURNING c.id)
   INSERT INTO public.message_campaign_events (campaign_id, action) SELECT id, 'started' FROM started;
+  PERFORM public.bm_arm_worker(); -- keep waking every minute while sending, or stop after the queue drained
 
   _in := LEAST(_cap, GREATEST(0, public.bm_setting_int('bulk_inapp_per_minute', 100, 1, 1000)
     - (SELECT count(*) FROM public.message_campaign_recipients r WHERE r.channel = 'in_app' AND r.claimed_at > now() - interval '1 minute')));
@@ -814,18 +822,44 @@ $$;
 REVOKE ALL ON FUNCTION public.my_broadcast_popups() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.my_broadcast_popups() TO authenticated;
 
--- ================================================================ 13. schedule: every minute, credential-free
--- The function only calls the service-only bm_claim / bm_finish (throttled, capped at 300 per run) and answers counts only.
-SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname = 'bulk-messages-run';
-SELECT cron.schedule(
-  'bulk-messages-run',
-  '* * * * *',
-  $$
+-- ================================================================ 13. schedule: woken on demand, credential-free
+-- The worker runs only while there is work. Creating, cancelling or re-enabling arms it; every worker run re-checks:
+--   * a campaign is sending or due within a minute -> every minute (throttled, capped at 300 per run)
+--   * only later campaigns -> one wake-up at the minute the next one is due (UTC, like pg_cron)
+--   * nothing left, or the kill switch is off -> the schedule is removed (no idle runs)
+-- The function only calls the service-only bm_claim / bm_finish and answers counts only.
+CREATE OR REPLACE FUNCTION public.bm_arm_worker()
+RETURNS TEXT LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE _next TIMESTAMPTZ; _expr TEXT;
+BEGIN
+  IF public.platform_flag('bulk_messaging_enabled', true) THEN
+    IF EXISTS (SELECT 1 FROM public.message_campaigns WHERE status = 'sending')
+       OR EXISTS (SELECT 1 FROM public.message_campaigns WHERE status = 'scheduled' AND scheduled_at <= now() + interval '1 minute') THEN
+      _expr := '* * * * *';
+    ELSE
+      SELECT min(scheduled_at) INTO _next FROM public.message_campaigns WHERE status = 'scheduled';
+      IF _next IS NOT NULL THEN
+        _expr := to_char(_next AT TIME ZONE 'UTC', 'FMMI FMHH24 FMDD FMMM') || ' *';
+      END IF;
+    END IF;
+  END IF;
+  IF _expr IS NULL THEN
+    PERFORM cron.unschedule(jobid) FROM cron.job WHERE jobname = 'bulk-messages-run';
+    RETURN 'off';
+  END IF;
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'bulk-messages-run' AND schedule = _expr) THEN RETURN _expr; END IF;
+  PERFORM cron.unschedule(jobid) FROM cron.job WHERE jobname = 'bulk-messages-run';
+  PERFORM cron.schedule('bulk-messages-run', _expr, $job$
   SELECT net.http_post(
     url := 'https://ozzgsfsnlejfuexikwrm.supabase.co/functions/v1/bulk-messages-run',
     headers := jsonb_build_object('Content-Type', 'application/json'),
     body := '{}'::jsonb,
     timeout_milliseconds := 5000
   );
-  $$
-);
+  $job$);
+  RETURN _expr;
+END $$;
+REVOKE ALL ON FUNCTION public.bm_arm_worker() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.bm_arm_worker() TO service_role;
+
+SELECT public.bm_arm_worker();
