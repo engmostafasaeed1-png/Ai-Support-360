@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import TicketOutcomeControl from '@/components/client/TicketOutcomeControl';
 import { useTranslation } from 'react-i18next';
 import ClientRatingChip from '@/components/consultant/ClientRatingChip';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -431,6 +432,7 @@ export default function TicketDetailPage() {
                     </Button>
                   )}
                 </div>
+                {!isColleague && <TicketOutcomeControl ticketId={ticket.id} outcome={(ticket as { close_outcome?: string | null }).close_outcome ?? null} />}
                 {resolutionEditing ? (
                   <div className="space-y-2">
                     <textarea
