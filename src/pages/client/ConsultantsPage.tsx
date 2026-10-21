@@ -351,12 +351,12 @@ export default function ConsultantsPage() {
           </CardContent>
         </Card>
       ) : view !== 'map' ? (
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((c) => (
-            <Card key={c.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all group">
+            <Card key={c.id} className="min-w-0 rounded-2xl border-border/50 hover:shadow-premium transition-all group">
               <CardContent className="p-5">
                 <div className="flex items-start gap-4">
-                  <ConsultantRing consultantId={c.id} name={c.name} initials={c.avatar} avatarUrl={c.avatar_url} size="lg" className="mb-2"
+                  <ConsultantRing consultantId={c.id} name={c.name} initials={c.avatar} avatarUrl={c.avatar_url} size="md" className="mb-2"
                     rating={c.rating} reviews={c.reviews} badge={c.ai_interview_badge} verified={c.verification_status === 'verified'} statusClass={STATE_META[c.status].dot} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
