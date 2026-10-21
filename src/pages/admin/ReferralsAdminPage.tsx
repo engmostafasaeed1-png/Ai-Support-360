@@ -312,7 +312,7 @@ export default function ReferralsAdminPage() {
                       </TableCell>
                       <TableCell><Badge variant={r.status === 'active' ? 'secondary' : r.status === 'removed' ? 'outline' : 'destructive'} className="text-[10px] capitalize">{String(r.status)}</Badge></TableCell>
                       <TableCell className="text-xs max-w-[220px]">{signals.length ? signals.map((s) => <div key={s} className="flex items-center gap-1 text-warning"><ShieldAlert className="w-3 h-3" />{FLAG_LABEL[s] ?? s}</div>) : '-'}</TableCell>
-                      <TableCell className="text-xs"><div>Signed up {when(r.attributed_at)}</div><div>First paid {when(r.first_paid_at)}</div><div>Until {when(r.window_ends_at)}</div></TableCell>
+                      <TableCell className="text-xs whitespace-nowrap"><div>Signed up {when(r.attributed_at)}</div><div>First paid {when(r.first_paid_at)}</div><div>Until {when(r.window_ends_at)}</div></TableCell>
                       <TableCell className="text-end text-sm tabular-nums">{perCurrency(r.earned)}</TableCell>
                       <TableCell className="text-end whitespace-nowrap space-x-1">
                         {r.activation_status === 'pending' && r.status !== 'removed' && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAction({ action: 'resend', id, title: 'Resend reminders', description: 'Sends the acknowledgement request or the AI interview reminder to whichever side is missing it (once per 24 hours).' })}>Resend</Button>}
