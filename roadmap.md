@@ -89,3 +89,4 @@
 - [x] Feature Z activation rule: pair active only after both pass the AI interview (referral_min_interview_score 50) and both acknowledge versioned terms; pending/active/expired (referral_activation_days 90), reminders at 14/45 days, notifications both sides, admin filters/resend, tests
 - [ ] Switch on Feature Z: awaits owner applying docs/sql/referral-program.sql (then run docs/sql/referral-program.test.sql)
 - [x] Feature Z addition: "Referral calculations" tab (summary strip, per-referral table + totals, invoice-line drill-down with formula, monthly chart + honest forecast, filters, CSV/PDF, monthly statements + notice, illustration calculator, live RPCs + last updated, admin read-only view with consultant picker + reconciliation check, tests, Arabic strings)
+- [ ] Home page (/) redesign: ON HOLD by owner — make no home page changes until a new go-ahead
