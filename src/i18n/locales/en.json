@@ -1026,7 +1026,9 @@
       "left_h": "{{h}}h {{m}}m {{s}}s left",
       "left_m": "{{m}}m {{s}}s left",
       "left_s": "{{s}}s left"
-    }
+    },
+    "social_returning_only": "Returning users only. New accounts: please sign up with e-mail.",
+    "no_social_account": "No account found for this Google profile. Please sign up with e-mail first."
   },
   "explore": {
     "badge": "Explore Our Services",
@@ -1210,10 +1212,10 @@
     "assignment_info_waiting": "Questions waiting for the client",
     "assignment_decline_reasons": "Decline reasons, last 30 days (administrators only)",
     "social_title": "Social sign-in (Google / Apple / Microsoft)",
-    "social_main": "Social sign-in (Google / Apple / Microsoft)",
-    "social_note": "Keep OFF until Google credentials are configured and tested",
-    "social_providers": "Providers",
-    "social_providers_hint": "Each provider is shown on the sign-in pages only when the main switch is on."
+    "social_signup": "Sign-up with social providers",
+    "social_signup_note": "Keep sign-up with social providers OFF until Google credentials are configured and tested",
+    "social_login": "Sign-in for returning users",
+    "social_login_hint": "Shown on the sign-in page only. Turn on Apple or Microsoft only after they are configured."
   },
   "maintenance": {
     "banner": "The platform is currently undergoing scheduled maintenance. Some features may be temporarily unavailable."

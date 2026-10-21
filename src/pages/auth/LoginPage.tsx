@@ -99,6 +99,7 @@ export default function LoginPage() {
         finalRole = data === 'consultant' ? 'consultant' : 'client';
       }
       storeOAuthRole(null);
+      clearSocialSignupIntent();
       sessionStorage.removeItem('oauth_next');
       navigate(newUserDestination(finalRole), { replace: true });
     } catch (err) {

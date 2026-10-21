@@ -1,10 +1,16 @@
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyRound } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SOCIAL_MAIN_KEY, SOCIAL_PROVIDERS, socialProviderKey } from '@/lib/socialSignin';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import {
+  DEFAULT_LOGIN_PROVIDERS, SOCIAL_LOGIN_PROVIDERS_KEY, SOCIAL_PROVIDERS, SOCIAL_SIGNUP_KEY,
+  socialConfigFromRows, type SocialProvider,
+} from '@/lib/socialSignin';
 
 const NAMES = { google: 'Google', apple: 'Apple', microsoft: 'Microsoft' } as const;
 
@@ -14,11 +20,25 @@ interface Props {
   updateSetting: (key: string, value: boolean) => Promise<void> | void;
 }
 
-/** Main social sign-in switch (default off) plus per-provider switches that only apply when it is on. */
+/** Social sign-up switch (default off) and the providers offered to returning users on /login (default Google). */
 export default function SocialSigninSettingsCard({ settings, loading, updateSetting }: Props) {
   const { t } = useTranslation();
-  const mainOn = settings[SOCIAL_MAIN_KEY] === true;
-  const save = (key: string, val: boolean) => updateSetting(key, val);
+  const { toast } = useToast();
+  const [login, setLogin] = useState<SocialProvider[] | null>(null);
+
+  useEffect(() => {
+    supabase.from('platform_settings').select('value').eq('key', SOCIAL_LOGIN_PROVIDERS_KEY).maybeSingle()
+      .then(({ data }) => setLogin(socialConfigFromRows(data ? [{ key: SOCIAL_LOGIN_PROVIDERS_KEY, value: data.value }] : []).login))
+      .then(undefined, () => setLogin(DEFAULT_LOGIN_PROVIDERS));
+  }, []);
+
+  const toggleLogin = async (p: SocialProvider, on: boolean) => {
+    const prev = login ?? DEFAULT_LOGIN_PROVIDERS;
+    const next = SOCIAL_PROVIDERS.filter((x) => (x === p ? on : prev.includes(x)));
+    setLogin(next);
+    const { error } = await supabase.from('platform_settings').upsert({ key: SOCIAL_LOGIN_PROVIDERS_KEY, value: next as any }, { onConflict: 'key' });
+    if (error) { setLogin(prev); toast({ title: 'Error saving setting', description: error.message, variant: 'destructive' }); }
+  };
 
   return (
     <Card>
@@ -29,25 +49,25 @@ export default function SocialSigninSettingsCard({ settings, loading, updateSett
       <CardContent className="space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <Label htmlFor={SOCIAL_MAIN_KEY}>{t('admin.social_main', 'Social sign-in (Google / Apple / Microsoft)')}</Label>
-            <p className="mt-0.5 text-xs text-muted-foreground">{t('admin.social_note', 'Keep OFF until Google credentials are configured and tested')}</p>
+            <Label htmlFor={SOCIAL_SIGNUP_KEY}>{t('admin.social_signup', 'Sign-up with social providers')}</Label>
+            <p className="mt-0.5 text-xs text-muted-foreground">{t('admin.social_signup_note', 'Keep sign-up with social providers OFF until Google credentials are configured and tested')}</p>
           </div>
           {loading ? <Skeleton className="h-5 w-9 shrink-0 rounded-full" /> : (
-            <Switch id={SOCIAL_MAIN_KEY} className="shrink-0" checked={mainOn} onCheckedChange={(v) => void save(SOCIAL_MAIN_KEY, v)} />
+            <Switch id={SOCIAL_SIGNUP_KEY} className="shrink-0" checked={settings[SOCIAL_SIGNUP_KEY] === true} onCheckedChange={(v) => void updateSetting(SOCIAL_SIGNUP_KEY, v)} />
           )}
         </div>
-        <fieldset className="space-y-3 border-t border-border pt-3" aria-describedby="social-providers-hint">
-          <legend className="sr-only">{t('admin.social_providers', 'Providers')}</legend>
-          <p id="social-providers-hint" className="text-xs text-muted-foreground">
-            {t('admin.social_providers_hint', 'Each provider is shown on the sign-in pages only when the main switch is on.')}
+        <fieldset className="space-y-3 border-t border-border pt-3" aria-describedby="social-login-hint">
+          <legend className="text-sm font-medium">{t('admin.social_login', 'Sign-in for returning users')}</legend>
+          <p id="social-login-hint" className="text-xs text-muted-foreground">
+            {t('admin.social_login_hint', 'Shown on the sign-in page only. Turn on Apple or Microsoft only after they are configured.')}
           </p>
           {SOCIAL_PROVIDERS.map((p) => {
-            const key = socialProviderKey(p);
+            const id = `social_login_${p}`;
             return (
               <div key={p} className="flex items-center justify-between gap-4">
-                <Label htmlFor={key} className={mainOn ? '' : 'text-muted-foreground'}>{NAMES[p]}</Label>
-                {loading ? <Skeleton className="h-5 w-9 shrink-0 rounded-full" /> : (
-                  <Switch id={key} className="shrink-0" checked={settings[key] === true} onCheckedChange={(v) => void save(key, v)} />
+                <Label htmlFor={id}>{NAMES[p]}</Label>
+                {login === null ? <Skeleton className="h-5 w-9 shrink-0 rounded-full" /> : (
+                  <Switch id={id} className="shrink-0" checked={login.includes(p)} onCheckedChange={(v) => void toggleLogin(p, v)} />
                 )}
               </div>
             );
