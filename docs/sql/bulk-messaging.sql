@@ -1,7 +1,7 @@
 -- Feature R: admin bulk messages ("Message users" on Admin > Users and the Admin > Messages / Campaigns page).
 -- PREPARED ONLY: the owner applies this file. Safe to run twice (IF NOT EXISTS / CREATE OR REPLACE / ON CONFLICT DO NOTHING).
 -- Uses live objects: auth.users, profiles, user_roles, has_role, check_rate_limit, platform_settings, platform_flag,
--- consultants, consultant_completion, client_profiles, client_consultant_group_members, telegram_links, suppressed_emails,
+-- consultants, consultant_completion, client_profiles, client_consultant_groups / _group_members, telegram_links, suppressed_emails,
 -- notifications, pg_cron, pg_net. Optional helpers are probed (to_regclass / to_regprocedure), so this file works before or
 -- after Feature P (admin groups, user_admin_state), Feature Q (notifications_paused) and Feature N (service policy):
 --   * messages.send = super admins, or admins in a Feature P admin group that explicitly grants 'messages.send'.
@@ -366,6 +366,24 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.bm_preview(JSONB, TEXT, UUID[]) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.bm_preview(JSONB, TEXT, UUID[]) TO authenticated;
+
+-- Client consultant groups (Feature O) an admin may address: name, client company and member count only.
+CREATE OR REPLACE FUNCTION public.bm_client_groups()
+RETURNS TABLE (id UUID, name TEXT, company TEXT, members INT)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NOT public.bm_can_send(auth.uid()) THEN RAISE EXCEPTION 'You do not have permission to send messages' USING ERRCODE = '42501'; END IF;
+  RETURN QUERY
+    SELECT g.id, g.name, cp.company_name,
+           (SELECT count(*)::INT FROM public.client_consultant_group_members m WHERE m.group_id = g.id)
+      FROM public.client_consultant_groups g
+      LEFT JOIN public.client_profiles cp ON cp.user_id = COALESCE(g.owner_user_id, g.created_by)
+     WHERE g.archived_at IS NULL
+     ORDER BY cp.company_name NULLS LAST, g.name
+     LIMIT 500;
+END $$;
+REVOKE ALL ON FUNCTION public.bm_client_groups() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.bm_client_groups() TO authenticated;
 
 -- ================================================================ 7. create / test / cancel
 CREATE OR REPLACE FUNCTION public.bm_create_campaign(_payload JSONB)

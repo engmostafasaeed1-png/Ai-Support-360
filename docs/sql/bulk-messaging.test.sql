@@ -50,6 +50,13 @@ BEGIN
   r := public.bm_preview(jsonb_build_object('kind', 'users', 'user_ids', to_jsonb(ids)), 'service', ARRAY[cl]);
   IF (r -> 'excluded' ->> 'excluded_by_admin')::INT <> 1 THEN RAISE EXCEPTION 'manual exclusion %', r; END IF;
 
+  -- group audience (Feature O) and the group list for senders
+  INSERT INTO public.client_consultant_groups (id, name, owner_user_id) VALUES ('00000000-0000-4000-8000-0000000000aa', 'Finance team', cl);
+  INSERT INTO public.client_consultant_group_members (group_id, consultant_id) SELECT '00000000-0000-4000-8000-0000000000aa', c.id FROM public.consultants c WHERE c.user_id = co;
+  r := public.bm_preview('{"kind":"group","group_id":"00000000-0000-4000-8000-0000000000aa"}'::jsonb, 'service');
+  IF (r ->> 'eligible')::INT <> 1 THEN RAISE EXCEPTION 'group %', r; END IF;
+  IF (SELECT members FROM public.bm_client_groups() WHERE name = 'Finance team') <> 1 THEN RAISE EXCEPTION 'group list'; END IF;
+
   -- 3. secrets are refused; the category must be confirmed
   BEGIN
     PERFORM public.bm_create_campaign(jsonb_build_object('category', 'service', 'category_confirmed', true, 'channels', '["in_app"]'::jsonb,
