@@ -14,6 +14,7 @@ import ClientNDAUpload from '@/components/client/ClientNDAUpload';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useClientProfileData, useUpdateClientProfile } from '@/hooks/useClientProfile';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import NotificationPauseCard from '@/components/notifications/NotificationPauseCard';
 
 const guestProfile = {
   displayName: 'Guest User',
@@ -224,6 +225,9 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Feature Q: pause notifications */}
+      {!isGuest && <NotificationPauseCard className="rounded-2xl shadow-sm" />}
 
       {/* Custom NDA */}
       <ClientNDAUpload />
