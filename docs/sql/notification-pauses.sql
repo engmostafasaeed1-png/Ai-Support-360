@@ -113,7 +113,7 @@ RETURNS TEXT LANGUAGE sql IMMUTABLE AS $$
       'consultant_policy', 'account', 'responsiveness', 'notifications_resumed') THEN 'essential'
     WHEN COALESCE(btrim(_type), '') LIKE 'admin\_reminder\_%' OR btrim(_type) IN ('profile_reminder', 'reminder') THEN 'reminders'
     WHEN btrim(COALESCE(_title, '')) ~* '^(reminder|تذكير)' THEN 'reminders'
-    WHEN btrim(_type) IN ('digest', 'admin') THEN 'digests'
+    WHEN btrim(_type) IN ('digest', 'admin', 'admin_marketing') THEN 'digests'
     WHEN btrim(_type) = 'match_request' THEN
       CASE WHEN btrim(COALESCE(_title, '')) ~* '^(no reply|request closed|لا يوجد رد|انتهى وقت)' THEN 'activity' ELSE 'essential' END
     WHEN COALESCE(btrim(_type), '') = '' AND btrim(COALESCE(_title, '')) IN ('Complete your profile', 'أكمل ملفك الشخصي') THEN 'reminders'

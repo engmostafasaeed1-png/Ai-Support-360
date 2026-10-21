@@ -43,7 +43,7 @@ export function notificationCategory(type: string | null | undefined, title?: st
   if (ESSENTIAL_TYPES.has(t)) return 'essential';
   if (t.startsWith('admin_reminder_') || t === 'profile_reminder' || t === 'reminder') return 'reminders';
   if (REMINDER_TITLE.test(head)) return 'reminders';
-  if (t === 'digest' || t === 'admin') return 'digests';
+  if (t === 'digest' || t === 'admin' || t === 'admin_marketing') return 'digests';
   if (t === 'match_request') return CLOSED_TITLE.test(head) ? 'activity' : 'essential';
   if (!t && (head === 'Complete your profile' || head === 'أكمل ملفك الشخصي')) return 'reminders';
   return 'activity';

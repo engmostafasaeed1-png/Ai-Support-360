@@ -137,7 +137,7 @@ CREATE OR REPLACE FUNCTION public.admin_permission_catalog()
 RETURNS text[] LANGUAGE sql IMMUTABLE SET search_path = public AS $$
   SELECT ARRAY['users.read', 'users.edit', 'users.roles', 'users.suspend', 'users.delete', 'users.invite', 'users.export',
                'users.notes', 'users.message', 'users.sessions', 'consultants.verify', 'finance.view',
-               'finance.approve_payout', 'content.edit', 'settings.edit', 'audit.read']::text[]
+               'finance.approve_payout', 'content.edit', 'settings.edit', 'audit.read', 'messages.send']::text[]
 $$;
 
 CREATE OR REPLACE FUNCTION public.admin_can(_uid uuid, _perm text)
@@ -147,7 +147,8 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS
     WHEN public.has_role(_uid, 'super_admin') THEN true
     WHEN NOT public.has_role(_uid, 'admin') THEN false
     WHEN NOT (_perm = ANY (public.admin_permission_catalog())) THEN false
-    WHEN NOT EXISTS (SELECT 1 FROM public.admin_group_members m WHERE m.user_id = _uid) THEN true
+    -- messages.send (Feature R bulk messages) is never implied: super admins, or admins in a group that grants it.
+    WHEN NOT EXISTS (SELECT 1 FROM public.admin_group_members m WHERE m.user_id = _uid) THEN _perm <> 'messages.send'
     ELSE EXISTS (SELECT 1 FROM public.admin_group_members m JOIN public.admin_permission_groups g ON g.id = m.group_id
                   WHERE m.user_id = _uid AND _perm = ANY (g.permissions))
   END
