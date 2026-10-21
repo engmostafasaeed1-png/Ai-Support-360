@@ -50,7 +50,7 @@ function DashboardReferral({ text, passMark }: { text: string; passMark: number 
         <div key={`${r.referred_name}-${i}`} className="flex flex-wrap items-center gap-2 text-xs">
           <ChipBadge chip={r.chip} />
           <span className="text-muted-foreground" dir="auto">{r.referred_name}
-            {r.activation_status === 'pending' && <> - {r.chip === 'waiting_you' ? next(r.my_next, r.referred_name, passMark) : next(r.their_next, r.referred_name, passMark)}</>}</span>
+            {r.activation_status === 'pending' && <> - {r.chip === 'waiting_you' ? <>{t('refz.your_next', 'Your next step:')} {next(r.my_next, r.referred_name, passMark)}</> : <>{t('refz.their_next', 'Their next step:')} {next(r.their_next, r.referred_name, passMark)}</>}</>}</span>
         </div>
       ))}
     </div>
