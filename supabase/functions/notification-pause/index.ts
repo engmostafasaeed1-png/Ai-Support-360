@@ -1,13 +1,10 @@
-// Feature Q: one-click "Pause for 3 days | 1 week | 1 month | Unsubscribe" links from notification e-mails.
+// Feature Q: one-click "Pause for 3 days | 1 week | 1 month" links (unsubscribe is the managed e-mail footer) from notification e-mails.
 // verify_jwt=false: the link carries its own proof. Strict checks, in this order:
 //   1. per-IP rate limit, 2. HMAC-SHA256 signature with NOTIFICATION_PAUSE_SECRET (read from the function environment),
 //   3. expiry and payload shape, 4. per-recipient rate limit, 5. service-only database action (idempotent per link nonce).
 // POST only (link scanners that prefetch GET never change anything). Responses never contain names, addresses or ids.
 import { adminClient, clientIp, jsonResponse, preflight, withinRateLimit } from '../_shared/security.ts';
 import { verifyPauseToken } from '../_shared/notificationPause.ts';
-import { setEmailUnsubscribe } from 'npm:@lovable.dev/email-js@0.1.0';
-
-const SENDER_DOMAIN = 'notify.aisupport360.com';
 const ACTIONS = new Set(['apply', 'resume', 'status', 'unavailable']);
 
 async function shortHash(value: string): Promise<string> {
@@ -42,21 +39,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (duration === 'unsub' && action === 'apply') {
-      const { data: link } = await admin.rpc('notification_pause_link_action', { _user_id: userId, _nonce: nonce, _action: 'unsubscribe', _duration: null });
-      if (link?.state !== 'unsubscribed_before') {
-        const { data: u } = await admin.auth.admin.getUserById(userId);
-        const email = u?.user?.email?.toLowerCase();
-        const apiKey = Deno.env.get('LOVABLE_API_KEY');
-        if (!email || !apiKey) return jsonResponse(req, { ok: false, error: 'unavailable' }, 503);
-        await setEmailUnsubscribe({ recipient: email, domain: SENDER_DOMAIN, subscribed: false }, { apiKey });
-        await admin.from('suppressed_emails').upsert({ email, reason: 'unsubscribe' }, { onConflict: 'email' });
-      }
-      return jsonResponse(req, { ok: true, state: 'unsubscribed' });
-    }
     const dbAction = action === 'apply' ? 'pause' : action;
     const { data, error } = await admin.rpc('notification_pause_link_action', {
-      _user_id: userId, _nonce: nonce, _action: dbAction, _duration: duration === 'unsub' ? null : duration,
+      _user_id: userId, _nonce: nonce, _action: dbAction, _duration: duration,
     });
     if (error) return jsonResponse(req, { ok: false, error: 'unavailable' }, 503);
     const r = (data ?? {}) as Record<string, unknown>;
