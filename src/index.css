@@ -235,13 +235,13 @@
     ::-webkit-scrollbar-thumb:active { background-color: var(--scrollbar-thumb-active); border-width: 2px; }
     ::-webkit-scrollbar-corner { background: transparent; }
 
-    /* Page scrollbar: 16 px reserved so the page never shifts; looks 14 px at rest (4 px floating inset) and 16 px on hover/drag */
-    html::-webkit-scrollbar { width: 16px; height: 16px; }
-    html::-webkit-scrollbar-track { border-width: 1px; }
-    html::-webkit-scrollbar-thumb { border-width: 5px; min-height: 56px; min-width: 56px; }
-    html::-webkit-scrollbar-track:hover { border-width: 0; }
-    html::-webkit-scrollbar-thumb:hover,
-    html::-webkit-scrollbar-thumb:active { border-width: 4px; }
+    /* Page scrollbar (Chrome reads the viewport bar from body): 16 px reserved so the page never shifts; looks 14 px at rest (4 px floating inset) and 16 px on hover/drag */
+    html::-webkit-scrollbar, body::-webkit-scrollbar { width: 16px; height: 16px; }
+    html::-webkit-scrollbar-track, body::-webkit-scrollbar-track { border-width: 1px; }
+    html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb { border-width: 5px; min-height: 56px; min-width: 56px; }
+    html::-webkit-scrollbar-track:hover, body::-webkit-scrollbar-track:hover { border-width: 0; }
+    html::-webkit-scrollbar-thumb:hover, body::-webkit-scrollbar-thumb:hover,
+    html::-webkit-scrollbar-thumb:active, body::-webkit-scrollbar-thumb:active { border-width: 4px; }
 
     /* Scrolling dialogs keep their content centred */
     :is([role="dialog"], [role="alertdialog"]):is(.overflow-y-auto, .overflow-auto) { scrollbar-gutter: stable both-edges; }
