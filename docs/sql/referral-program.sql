@@ -987,6 +987,154 @@ CREATE TRIGGER trg_referral_on_consultant_verified
   AFTER UPDATE OF verification_status ON public.consultants
   FOR EACH ROW EXECUTE FUNCTION public.referral_on_consultant_verified();
 
+-- 5b. Activation: both passed the AI interview + both accepted the current terms, before the activation period ends ---------
+-- The only writer of activation_status (the browser has no write access). Each notice is sent once (timestamps).
+CREATE OR REPLACE FUNCTION public.referral_check_activation(_referred uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  r record;
+  _rp timestamptz;
+  _dp timestamptz;
+  _ok boolean;
+BEGIN
+  SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = _referred FOR UPDATE;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  IF r.status = 'removed' OR r.activation_status <> 'pending' THEN RETURN r.activation_status; END IF;
+  _rp := public.referral_passed_at(r.referrer_consultant_id);
+  _dp := public.referral_passed_at(r.referred_consultant_id);
+  _ok := _rp IS NOT NULL AND _dp IS NOT NULL
+         AND public.referral_acked_at(r.referrer_consultant_id) IS NOT NULL AND public.referral_acked_at(r.referred_consultant_id) IS NOT NULL;
+  IF r.activation_expires_at IS NOT NULL AND now() >= r.activation_expires_at THEN
+    UPDATE public.consultant_referrals SET activation_status = 'expired', expired_at = now(), updated_at = now() WHERE referred_consultant_id = _referred;
+    PERFORM public.referral_log(NULL, 'activation_expired', r.referrer_consultant_id, _referred, NULL, NULL, NULL, NULL, NULL);
+    PERFORM public.referral_notify(r.referrer_consultant_id, 'expired', _referred, NULL, NULL);
+    PERFORM public.referral_notify(_referred, 'expired', r.referrer_consultant_id, NULL, NULL);
+    RETURN 'expired';
+  END IF;
+  IF _ok THEN
+    UPDATE public.consultant_referrals
+       SET activation_status = 'active', activated_at = now(), updated_at = now(),
+           referrer_passed_notified_at = COALESCE(referrer_passed_notified_at, now()),
+           referred_passed_notified_at = COALESCE(referred_passed_notified_at, now())
+     WHERE referred_consultant_id = _referred;
+    PERFORM public.referral_log(NULL, 'activated', r.referrer_consultant_id, _referred, NULL, NULL, NULL, jsonb_build_object('activated_at', now()), NULL);
+    PERFORM public.referral_notify(r.referrer_consultant_id, 'active', _referred, NULL, NULL);
+    PERFORM public.referral_notify(_referred, 'active', r.referrer_consultant_id, NULL, NULL);
+    RETURN 'active';
+  END IF;
+  IF _rp IS NOT NULL AND r.referrer_passed_notified_at IS NULL THEN
+    UPDATE public.consultant_referrals SET referrer_passed_notified_at = now(), updated_at = now() WHERE referred_consultant_id = _referred;
+    PERFORM public.referral_log(NULL, 'referrer_passed', r.referrer_consultant_id, _referred, NULL, NULL, NULL, NULL, NULL);
+    PERFORM public.referral_notify(r.referrer_consultant_id, 'passed_self', _referred, NULL, NULL, public.referral_next_step(_referred, r.referrer_consultant_id));
+    PERFORM public.referral_notify(_referred, 'passed_other', r.referrer_consultant_id, NULL, NULL, public.referral_next_step(_referred, _referred));
+  END IF;
+  IF _dp IS NOT NULL AND r.referred_passed_notified_at IS NULL THEN
+    UPDATE public.consultant_referrals SET referred_passed_notified_at = now(), updated_at = now() WHERE referred_consultant_id = _referred;
+    PERFORM public.referral_log(NULL, 'referred_passed', r.referrer_consultant_id, _referred, NULL, NULL, NULL, NULL, NULL);
+    PERFORM public.referral_notify(_referred, 'passed_self', r.referrer_consultant_id, NULL, NULL, public.referral_next_step(_referred, _referred));
+    PERFORM public.referral_notify(r.referrer_consultant_id, 'passed_other', _referred, NULL, NULL, public.referral_next_step(_referred, r.referrer_consultant_id));
+  END IF;
+  RETURN 'pending';
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_check_activation(uuid) FROM PUBLIC, anon, authenticated;
+
+-- Re-check every pending pair of a consultant (as referrer or referred).
+CREATE OR REPLACE FUNCTION public.referral_check_consultant(_cid uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  x record;
+BEGIN
+  FOR x IN SELECT referred_consultant_id FROM public.consultant_referrals
+            WHERE (referred_consultant_id = _cid OR referrer_consultant_id = _cid) AND activation_status = 'pending' AND status <> 'removed'
+  LOOP
+    PERFORM public.referral_check_activation(x.referred_consultant_id);
+  END LOOP;
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_check_consultant(uuid) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.referral_on_interview_change()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+BEGIN
+  IF NEW.interview_type::text = 'ai' AND NEW.status::text IN ('completed', 'reviewed') THEN
+    BEGIN
+      PERFORM public.referral_check_consultant(NEW.consultant_id);
+    EXCEPTION WHEN OTHERS THEN
+      RAISE WARNING 'referral activation check skipped: %', SQLERRM;
+    END;
+  END IF;
+  RETURN NULL;
+END
+$$;
+DROP TRIGGER IF EXISTS trg_referral_on_interview_change ON public.interview_sessions;
+CREATE TRIGGER trg_referral_on_interview_change
+  AFTER INSERT OR UPDATE OF status, overall_score ON public.interview_sessions
+  FOR EACH ROW EXECUTE FUNCTION public.referral_on_interview_change();
+
+CREATE OR REPLACE FUNCTION public.referral_on_ack()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+BEGIN
+  PERFORM public.referral_check_consultant(NEW.consultant_id);
+  RETURN NULL;
+END
+$$;
+DROP TRIGGER IF EXISTS trg_referral_on_ack ON public.referral_acknowledgements;
+CREATE TRIGGER trg_referral_on_ack
+  AFTER INSERT ON public.referral_acknowledgements
+  FOR EACH ROW EXECUTE FUNCTION public.referral_on_ack();
+
+-- Reminders after 14 and 45 days (each once, to both sides with their own next step) and expiry. Called nightly.
+CREATE OR REPLACE FUNCTION public.referral_activation_sweep()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  x record;
+  _st text;
+  _rem int := 0;
+  _exp int := 0;
+BEGIN
+  FOR x IN SELECT * FROM public.consultant_referrals WHERE activation_status = 'pending' AND status <> 'removed' ORDER BY attributed_at LIMIT 2000 LOOP
+    _st := public.referral_check_activation(x.referred_consultant_id);
+    IF _st = 'expired' THEN _exp := _exp + 1; CONTINUE; END IF;
+    IF _st <> 'pending' THEN CONTINUE; END IF;
+    IF x.attributed_at <= now() - interval '45 days' AND x.reminder_45_at IS NULL THEN
+      UPDATE public.consultant_referrals SET reminder_45_at = now(), reminder_14_at = COALESCE(reminder_14_at, now()) WHERE referred_consultant_id = x.referred_consultant_id;
+    ELSIF x.attributed_at <= now() - interval '14 days' AND x.reminder_14_at IS NULL THEN
+      UPDATE public.consultant_referrals SET reminder_14_at = now() WHERE referred_consultant_id = x.referred_consultant_id;
+    ELSE
+      CONTINUE;
+    END IF;
+    PERFORM public.referral_notify(x.referrer_consultant_id, 'reminder', x.referred_consultant_id, NULL, NULL,
+                                   public.referral_next_step(x.referred_consultant_id, x.referrer_consultant_id));
+    PERFORM public.referral_notify(x.referred_consultant_id, 'reminder', x.referrer_consultant_id, NULL, NULL,
+                                   public.referral_next_step(x.referred_consultant_id, x.referred_consultant_id));
+    _rem := _rem + 1;
+  END LOOP;
+  RETURN jsonb_build_object('reminded', _rem, 'expired', _exp);
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_activation_sweep() FROM PUBLIC, anon, authenticated;
+
 -- 6. Rewards ----------------------------------------------------------------------------------------------------------------
 -- NULL = may earn; otherwise the reason. Mirrored by src/lib/referrals.ts (rewardBlockReason).
 CREATE OR REPLACE FUNCTION public.referral_reward_block_reason(_referrer uuid, _referred uuid, _status text, _window_ends timestamptz, _at timestamptz,
@@ -1035,8 +1183,9 @@ DECLARE
   _flags text[];
 BEGIN
   IF COALESCE(NEW.reference, '') LIKE 'referral:%' THEN RETURN NULL; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.consultant_referrals WHERE referred_consultant_id = NEW.consultant_id) THEN RETURN NULL; END IF;
+  PERFORM public.referral_check_activation(NEW.consultant_id);
   SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = NEW.consultant_id FOR UPDATE;
-  IF NOT FOUND THEN RETURN NULL; END IF;
   -- The window starts with the first paid ticket, even if that payout itself earns nothing.
   IF r.first_paid_at IS NULL THEN
     UPDATE public.consultant_referrals
@@ -1312,11 +1461,13 @@ CREATE OR REPLACE FUNCTION public.referral_nightly()
 AS $$
 DECLARE
   _n int;
+  _sw jsonb;
 BEGIN
+  _sw := public.referral_activation_sweep();
   _n := public.referral_bundle_payouts(NULL);
   DELETE FROM public.referral_devices WHERE last_seen_at < now() - interval '180 days';
   PERFORM public.referral_wake();
-  RETURN jsonb_build_object('referral_payouts', _n);
+  RETURN jsonb_build_object('referral_payouts', _n) || _sw;
 END
 $$;
 REVOKE ALL ON FUNCTION public.referral_nightly() FROM PUBLIC, anon, authenticated;
