@@ -126,3 +126,38 @@ describe('activation rule (both must pass the AI interview and acknowledge)', ()
     expect(activationChip({ review: false, activation: 'expired', myNext: 'none' })).toBe('expired');
   });
 });
+
+import { formulaText, manDays, netReward, referralEstimate, statementCsv, thresholdProgress } from './referrals';
+
+describe('referral calculations arithmetic', () => {
+  const usd = (v: number) => `$${v.toFixed(2)}`;
+  it('man-days = approved hours / 8', () => {
+    expect(manDays(50)).toBe(6.25);
+    expect(manDays(7)).toBe(0.88);
+    expect(manDays(null)).toBeNull();
+  });
+  it('shows the formula in plain words', () => {
+    expect(formulaText(400, 0.5, 2, usd)).toBe('Fee $400.00 x 0.5 % = $2.00');
+  });
+  it('rounds every reward to 2 decimals and nets reversals', () => {
+    expect(rewardForFee(333.33, 0.5)).toBe(1.67);
+    expect(rewardForFee(101, 0.5)).toBe(0.51);
+    expect(netReward(5, -5)).toBe(0);
+    expect(netReward(7.67, -1.67)).toBe(6);
+  });
+  it('threshold progress "$18.40 of $25.00"', () => {
+    expect(thresholdProgress(18.4, 25)).toEqual({ percent: 74, reached: false, missing: 6.6 });
+    expect(thresholdProgress(25, 25).reached).toBe(true);
+    expect(thresholdProgress(-3, 25).percent).toBe(0);
+  });
+  it('estimate is an illustration with the real rate and window', () => {
+    // 3 consultants x 10 man-days x 8 h x $50 = $12,000 per month -> 0.5 % = $60, over 12 months $720
+    expect(referralEstimate({ referred: 3, manDaysPerMonth: 10, hourlyRate: 50, ratePercent: 0.5, months: 12 })).toEqual({ perMonth: 60, overWindow: 720 });
+    expect(referralEstimate({ referred: -2, manDaysPerMonth: 10, hourlyRate: 50, ratePercent: 0.5, months: 12 }).perMonth).toBe(0);
+  });
+  it('statement CSV keeps the numbers', () => {
+    const csv = statementCsv([{ created_at: '2026-10-01', ref_key: 'k', referred_name: 'D. K****', kind: 'reward', status: 'paid', ticket_ref: 'T-1', approved_hours: 50, man_days: 6.25,
+      hourly_rate: 8, fee_amount: 400, rate_percent: 0.5, amount: 2, currency: 'USD', payment_status: 'completed', client_paid_at: null, payout_status: 'completed', payout_released_at: null, referral_payout_due: null, note: null }]);
+    expect(csv.split('\r\n')[1]).toBe('2026-10-01,D. K****,reward,T-1,50,6.25,8,400,0.5,2,USD,paid,completed,');
+  });
+});

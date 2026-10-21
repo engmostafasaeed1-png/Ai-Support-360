@@ -303,7 +303,56 @@ SELECT pg_temp.check((SELECT activation_status = 'pending' AND activation_expire
 -- 13. Old member credit is never paid on top for consultant referrals; jobs are plain database calls --------------------------------
 SELECT public.grant_referral_rewards((SELECT d_user FROM _ids));
 SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.referral_rewards), 'no double reward');
-SELECT pg_temp.check((SELECT count(*) FROM cron.job WHERE jobname LIKE 'referral-%' AND command NOT ILIKE '%http%') = 2, 'credential-free jobs');
+SELECT pg_temp.check((SELECT count(*) FROM cron.job WHERE jobname LIKE 'referral-%' AND command NOT ILIKE '%http%') = 3, 'credential-free jobs');
+
+-- 14. Referral calculations: arithmetic, drill-down, forecast, statements, own-data-only, reconciliation -------------------
+INSERT INTO public.ticket_timesheet_submissions (id, ticket_id, submitted_by, status, billable_hours, hourly_rate, signed_at) VALUES
+  ('00000000-0000-0000-0000-00000000ca01', '00000000-0000-0000-0000-00000000ab01', (SELECT d_user FROM _ids), 'signed', 50, 8, now()),
+  ('00000000-0000-0000-0000-00000000ca02', '00000000-0000-0000-0000-00000000ab02', (SELECT d_user FROM _ids), 'signed', 16, 50, now());
+INSERT INTO public.payments (id, client_id, consultant_id, amount, status, ticket_id, timesheet_id, paid_at) VALUES
+  ('00000000-0000-0000-0000-00000000aa03', (SELECT client FROM _ids), (SELECT d FROM _ids), 460, 'completed', '00000000-0000-0000-0000-00000000ab01', '00000000-0000-0000-0000-00000000ca01', now());
+INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, status, reference, payment_id) VALUES
+  ('00000000-0000-0000-0000-00000000bb10', (SELECT d FROM _ids), 400, 400, 'pending', 'payment:aa03', '00000000-0000-0000-0000-00000000aa03');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.as_user((SELECT r_user FROM _ids));
+SELECT pg_temp.check((SELECT approved_hours = 50 AND man_days = 6.25 AND hourly_rate = 8 AND fee_amount = 400 AND amount = 2.00 AND ticket_ref = 'T-00000000'
+                        AND payment_status = 'completed' AND referred_name = 'D. K****'
+                        FROM public.referral_calc_lines(NULL, NULL, NULL, NULL, NULL) WHERE fee_amount = 400 AND kind = 'reward'), 'drill-down: 50 h = 6.25 man-days, $400 x 0.5 % = $2.00');
+SELECT pg_temp.check((SELECT bool_and(net = reward_earned + reversed) AND bool_and(man_days = round(approved_hours / 8, 2))
+                        FROM public.referral_calc_referrals(NULL, NULL, NULL, NULL)), 'net = earned + reversed; man-days = hours / 8');
+SELECT pg_temp.check((SELECT reversed = -10.00 FROM public.referral_calc_referrals(NULL, NULL, NULL, NULL) WHERE referred_name = 'D. K****'), 'reversals per referral');
+SELECT pg_temp.check((SELECT expected_fee = 800 AND expected_reward = 4.00 AND timesheets = 1 FROM public.referral_calc_forecast(NULL)), 'forecast only from approved unpaid timesheets');
+SELECT pg_temp.check((public.referral_calc_summary(NULL) -> 'referred' ->> 'total')::int = 3, 'summary counts');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.referral_calc_monthly(NULL, 12) WHERE earned <> 0), 'monthly series');
+SELECT pg_temp.check((SELECT count(*) FROM public.referral_calc_lines(NULL, NULL, NULL, NULL, 'paid')) = (SELECT count(*) FROM public.referral_calc_lines(NULL, NULL, NULL, NULL, NULL) WHERE status = 'paid'), 'status filter');
+SELECT pg_temp.check((SELECT count(*) FROM public.referral_calc_lines(NULL, NULL, (now() + interval '2 days')::date, NULL, NULL)) = 0, 'period filter');
+SELECT pg_temp.as_user((SELECT d_user FROM _ids));
+DO $$ BEGIN
+  PERFORM public.referral_calc_summary((SELECT r FROM _ids));
+  RAISE EXCEPTION 'FAILED: consultant read another consultant''s calculations';
+EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
+SELECT pg_temp.check((SELECT count(*) FROM public.referral_statements) = 0, 'statements own rows only');
+RESET ROLE;
+SET LOCAL ROLE anon;
+DO $$ BEGIN
+  PERFORM public.referral_calc_summary(NULL);
+  RAISE EXCEPTION 'FAILED: visitor read calculations';
+EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
+RESET ROLE;
+SELECT pg_temp.as_user(NULL);
+SELECT pg_temp.check(public.referral_generate_statements(now()::date) >= 1, 'monthly statement generated');
+SELECT pg_temp.check(public.referral_generate_statements(now()::date) = 0, 'statement not generated twice');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.notifications WHERE user_id = (SELECT r_user FROM _ids) AND title = 'Your referral statement is ready'), 'statement notice');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.as_user((SELECT admin FROM _ids));
+SELECT pg_temp.check((public.referral_calc_summary((SELECT r FROM _ids)) -> 'referred' ->> 'total')::int = 3, 'admin reads any consultant');
+SELECT pg_temp.check((SELECT count(*) FROM public.admin_referral_reconcile((SELECT r FROM _ids), true)) = 0, 'reconciliation clean');
+RESET ROLE;
+UPDATE public.referral_reward_lines SET amount = amount + 0.01 WHERE source_payout_id = '00000000-0000-0000-0000-00000000bb10';
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.admin_referral_reconcile((SELECT r FROM _ids), true) WHERE check_name = 'reward_formula' AND NOT ok), 'reconciliation flags a difference');
+RESET ROLE;
+SELECT pg_temp.as_user(NULL);
 
 SELECT 'referral-program checks passed' AS result;
 ROLLBACK;
