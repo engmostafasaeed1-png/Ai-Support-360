@@ -1165,7 +1165,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                 <div role="alert" className="flex flex-wrap items-center gap-2 text-xs text-red-400 mb-2">
                   <AlertTriangle className="w-3.5 h-3.5" /> {error}
                   {!isStreaming && (messages.length === 0 || messages[messages.length - 1]?.role === 'user') && (
-                    <button type="button" onClick={() => { setError(''); void sendToAI(messagesRef.current); }}
+                    <button type="button" onClick={() => { setError(''); if (messagesRef.current.length === 0) void startInterviewAfterDisclaimer(); else void sendToAI(messagesRef.current); }}
                       className="ms-auto rounded-md border border-red-400/40 px-2 py-0.5 font-medium text-red-300 hover:bg-red-500/10">
                       {t('common.retry', 'Retry')}
                     </button>
