@@ -30,6 +30,8 @@ export interface PinView {
   chips?: string[];
   /** Feature W performance ring (client rating + responsiveness), when known. */
   ring?: RingSummary | null;
+  /** Feature Y: "On hold until 15 Nov 2026"; the request button is then disabled. */
+  holdLabel?: string | null;
 }
 
 export interface PopupLabels {
@@ -61,7 +63,7 @@ export interface PopupHandlers {
   favourite?: { on: boolean; toggle: (id: string) => Promise<boolean>; addLabel: string; removeLabel: string };
 }
 
-const STATE_TEXT: Record<AvailabilityState, string> = { available: '#16a34a', busy: '#d97706', offline: '#6b7280' };
+const STATE_TEXT: Record<AvailabilityState, string> = { available: '#16a34a', busy: '#d97706', offline: '#6b7280', on_hold: '#4f46e5' };
 
 function make<K extends keyof HTMLElementTagNameMap>(tag: K, style: Partial<CSSStyleDeclaration> = {}, text?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -170,7 +172,7 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
   price.append(make('span', { fontSize: '16px', fontWeight: '700' }, `$${view.rate}`), make('span', { fontSize: '10px', color: '#9ca3af' }, '/hr'));
   const state = make('span', { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: '500', color: STATE_TEXT[view.status] });
   state.dataset.part = 'state';
-  state.append(make('span', { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: meta.color, display: 'inline-block' }), document.createTextNode(meta.label));
+  state.append(make('span', { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: meta.color, display: 'inline-block' }), document.createTextNode(view.holdLabel || meta.label));
   priceRow.append(price, state);
 
   root.append(head, rating, priceRow);
@@ -209,6 +211,12 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
   const request = make('button', { flex: '1', fontSize: '10px', fontWeight: '500', padding: '6px 12px', borderRadius: '8px', backgroundColor: '#1B2559', color: 'white', border: 'none', cursor: 'pointer' }, handlers.onInvite ? (labels.invite ?? 'Invite') : labels.openRequest);
   request.type = 'button';
   request.addEventListener('click', () => (handlers.onInvite ? handlers.onInvite(view.id) : handlers.onOpenRequest?.()));
+  if (view.holdLabel) {
+    request.disabled = true;
+    request.setAttribute('aria-disabled', 'true');
+    request.title = view.holdLabel;
+    Object.assign(request.style, { opacity: '0.5', cursor: 'not-allowed' });
+  }
   actions.append(request, open);
   const fav = handlers.favourite;
   if (fav) {

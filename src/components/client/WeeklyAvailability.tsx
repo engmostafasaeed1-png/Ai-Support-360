@@ -8,10 +8,13 @@ import { CalendarDays } from 'lucide-react';
  */
 export default function WeeklyAvailability({
   hours,
+  summary,
   className = '',
   testId = 'weekly-availability',
 }: {
   hours?: string[];
+  /** Feature Y: "Sun-Thu, 09:00-17:00 Riyadh time, 40 h/week". */
+  summary?: string | null;
   className?: string;
   testId?: string;
 }) {
@@ -27,6 +30,7 @@ export default function WeeklyAvailability({
         <CalendarDays className="h-3 w-3" aria-hidden="true" />
         {t('consultant_profile.weekly_availability')}
       </p>
+      {summary && <p className="mb-1 text-xs font-semibold text-foreground" data-testid="weekly-availability-summary">{summary}</p>}
       {list.length > 0 ? (
         <ul className="space-y-0.5">
           {list.map((h) => (

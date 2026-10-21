@@ -158,7 +158,7 @@ export const DEFAULT_MY_FILTERS: MyFilters = {
   q: '', area: '', module: '', group: '', tag: '', country: '', badge: '', availability: 'all', minRating: 0, level: 'all', pastWork: false, sort: 'recent',
 };
 
-const STATUS_ORDER = { available: 0, busy: 1, offline: 2 } as const;
+const STATUS_ORDER = { available: 0, busy: 1, offline: 2, on_hold: 3 } as const;
 
 export function filterMyConsultants(rows: readonly MyRow[], f: MyFilters): MyRow[] {
   const q = f.q.trim().toLowerCase();

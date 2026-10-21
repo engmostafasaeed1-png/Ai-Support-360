@@ -419,11 +419,13 @@ const LANG_NAMES: Record<string, string> = { english: 'en', arabic: 'ar', 'ال�
 /** Language codes and names compare as codes ("English" = "en"). */
 export const langCode = (l: string | null | undefined): string => { const v = String(l ?? '').trim().toLowerCase(); return LANG_NAMES[v] ?? v; };
 
-export type ExclusionReason = 'not_verified' | 'inactive' | 'excluded' | 'no_area_overlap' | 'language' | 'cannot_respond';
+export type ExclusionReason = 'not_verified' | 'inactive' | 'on_hold' | 'excluded' | 'no_area_overlap' | 'language' | 'cannot_respond';
 
 export function hardFilter(c: MatchConsultant, t: MatchTicket, s: TicketSignals, excluded: ReadonlySet<string> = new Set(), cm = consultantModules(c)): ExclusionReason | null {
   if (c.verification_status !== 'verified') return 'not_verified';
   if (c.active === false) return 'inactive';
+  // Feature Y: a consultant on hold gets no new requests (the database also refuses the invitation).
+  if (c.availability_status === 'on_hold') return 'on_hold';
   if (excluded.has(c.id)) return 'excluded';
   const needed = s.modules.filter((x) => MODULE_BY_CODE.get(x)?.kind === 'module');
   const wanted = needed.length > 0 ? needed : s.modules;

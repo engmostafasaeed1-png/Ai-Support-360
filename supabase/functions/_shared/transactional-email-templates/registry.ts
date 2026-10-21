@@ -33,6 +33,8 @@ import { template as responsivenessNotice } from './responsiveness-notice.tsx'
 import { arabicPreviewTemplate as consultantPolicyNoticeAr, template as consultantPolicyNotice } from './consultant-policy-notice.tsx'
 import { template as assignmentInfo } from './assignment-info.tsx'
 import { template as feedbackReply } from './feedback-reply.tsx'
+import { template as availabilityUrgent } from './availability-urgent.tsx'
+import { template as holdEnded } from './hold-ended.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'admin-notification': adminNotification,
@@ -56,4 +58,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'consultant-policy-notice': consultantPolicyNotice,
   'consultant-policy-notice-ar-preview': consultantPolicyNoticeAr,
   'feedback-reply': feedbackReply,
+  'availability-urgent': availabilityUrgent,
+  'hold-ended': holdEnded,
 }

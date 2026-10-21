@@ -118,10 +118,11 @@ DECLARE
   _more uuid[];
 BEGIN
   IF auth.uid() IS NULL THEN RETURN ARRAY[]::uuid[]; END IF;
+  -- Missing weekly availability has its own grace rule (consultant_availability_blocked_ids), so it never hides on its own here.
   SELECT COALESCE(array_agg(c.id), ARRAY[]::uuid[]) INTO _ids
     FROM public.consultants c
    WHERE COALESCE((SELECT enforce FROM public.profile_rules_config WHERE id), false)
-     AND cardinality(public.consultant_missing_fields(c.id)) > 0;
+     AND cardinality(array_remove(public.consultant_missing_fields(c.id), 'availability')) > 0;
   IF to_regprocedure('public.consultant_location_blocked(uuid)') IS NOT NULL THEN
     EXECUTE 'SELECT COALESCE(array_agg(c.id), ARRAY[]::uuid[]) FROM public.consultants c WHERE public.consultant_location_blocked(c.id)' INTO _more;
     _ids := _ids || COALESCE(_more, ARRAY[]::uuid[]);
@@ -132,6 +133,14 @@ BEGIN
   END IF;
   IF to_regprocedure('public.um_suspended_consultant_ids()') IS NOT NULL THEN
     EXECUTE 'SELECT public.um_suspended_consultant_ids()' INTO _more;
+    _ids := _ids || COALESCE(_more, ARRAY[]::uuid[]);
+  END IF;
+  IF to_regprocedure('public.consultant_availability_blocked_ids()') IS NOT NULL THEN
+    EXECUTE 'SELECT public.consultant_availability_blocked_ids()' INTO _more;
+    _ids := _ids || COALESCE(_more, ARRAY[]::uuid[]);
+  END IF;
+  IF to_regprocedure('public.consultant_hold_hidden_ids()') IS NOT NULL THEN
+    EXECUTE 'SELECT public.consultant_hold_hidden_ids()' INTO _more;
     _ids := _ids || COALESCE(_more, ARRAY[]::uuid[]);
   END IF;
   RETURN ARRAY(SELECT DISTINCT x FROM unnest(_ids) AS x);

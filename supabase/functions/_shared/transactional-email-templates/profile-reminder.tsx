@@ -19,6 +19,9 @@ interface Props {
   lang?: 'en' | 'ar'
   profileUrl?: string
   interviewUrl?: string
+  /** Feature Y: highlighted "Urgent" block while weekly availability is missing (every 2 days, then weekly). */
+  availabilityUrgent?: boolean
+  availabilityUrl?: string
 }
 
 const STR = {
@@ -42,6 +45,10 @@ const STR = {
     i4: 'Verified consultants are shown first and invited to bids.',
     earned: (tier: string) => `You earned ${tier} — keep your profile complete.`,
     footer: 'You receive this reminder because your profile is not complete yet. It stops automatically once your profile is complete and the AI interview is done.',
+    urgentTag: 'Urgent',
+    urgentTitle: 'Add your weekly availability',
+    urgentBody: 'Clients and matching rely on it. Requests outside your availability are not counted against you. Without it you are not offered new requests or critical alerts after the grace period.',
+    urgentBtn: 'Add my availability',
   },
   ar: {
     preview: (p: number) => `ملفك في AI Support 360 مكتمل بنسبة ${p}٪`,
@@ -63,6 +70,10 @@ const STR = {
     i4: 'الاستشاريون الموثقون يظهرون أولاً ويُدعون للعروض.',
     earned: (tier: string) => `حصلت على شارة ${tier} — حافظ على اكتمال ملفك.`,
     footer: 'تصلك هذه التذكرة لأن ملفك غير مكتمل بعد. تتوقف تلقائياً عند اكتمال الملف وإتمام مقابلة الذكاء الاصطناعي.',
+    urgentTag: 'عاجل',
+    urgentTitle: 'أضف توفرك الأسبوعي',
+    urgentBody: 'يعتمد عليه العملاء والمطابقة. الطلبات خارج أوقات توفرك لا تُحتسب ضدك. وبدونه لن تُعرض عليك طلبات جديدة أو تنبيهات عاجلة بعد انتهاء المهلة.',
+    urgentBtn: 'أضف توفري',
   },
 } as const
 
@@ -83,6 +94,8 @@ const ProfileReminderEmail = ({
   lang = 'en',
   profileUrl = 'https://www.aisupport360.com/consultant/profile?section=setup',
   interviewUrl = 'https://www.aisupport360.com/consultant/interviews?start=1',
+  availabilityUrgent = false,
+  availabilityUrl = 'https://www.aisupport360.com/consultant/profile#availability',
   pauseLinks,
 }: Props) => {
   const t = STR[lang === 'ar' ? 'ar' : 'en']
@@ -93,6 +106,14 @@ const ProfileReminderEmail = ({
       <Preview>{t.preview(p)}</Preview>
       <Body style={main}>
         <Container style={container}>
+          {availabilityUrgent && (
+            <Section style={urgentCard}>
+              <Text style={urgentTag}>{t.urgentTag}</Text>
+              <Text style={urgentTitle}>{t.urgentTitle}</Text>
+              <Text style={itemText}>{t.urgentBody}</Text>
+              <Button href={availabilityUrl} style={urgentButton}>{t.urgentBtn}</Button>
+            </Section>
+          )}
           <Heading style={h1}>{t.heading}</Heading>
           <Text style={text}>{t.hello(name)} {t.intro(p)}</Text>
           <Section style={barWrap}>
@@ -148,7 +169,9 @@ const ProfileReminderEmail = ({
 export const template = {
   component: ProfileReminderEmail,
   subject: (d: Record<string, any>) =>
-    d.lang === 'ar'
+    d.availabilityUrgent
+      ? (d.lang === 'ar' ? 'عاجل: أضف توفرك الأسبوعي - مطلوب لاستقبال الطلبات' : 'Urgent: add your weekly availability - needed for requests')
+      : d.lang === 'ar'
       ? `ملفك في AI Support 360 مكتمل بنسبة ${Math.round(d.percent ?? 0)}٪`
       : `Your AI Support 360 profile is ${Math.round(d.percent ?? 0)} % complete`,
   displayName: 'Consultant profile reminder',
@@ -174,3 +197,7 @@ const button = { backgroundColor: '#1B2559', color: '#ffffff', borderRadius: '12
 const buttonGradient = { background: 'linear-gradient(135deg, #1B2559, #3B82F6)', backgroundColor: '#1B2559', color: '#ffffff', borderRadius: '12px', padding: '13px 24px', fontSize: '15px', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block', margin: '4px 0 0' }
 const hr = { borderColor: '#e2e8f0', margin: '24px 0' }
 const small = { fontSize: '12px', color: '#64748b', margin: '24px 0 0', lineHeight: '1.5' }
+const urgentCard = { backgroundColor: '#fffbeb', border: '2px solid #f59e0b', borderRadius: '14px', padding: '16px 18px', margin: '0 0 22px' }
+const urgentTag = { display: 'inline-block', backgroundColor: '#f59e0b', color: '#ffffff', borderRadius: '999px', padding: '2px 10px', fontSize: '12px', fontWeight: 'bold', margin: '0 0 8px' }
+const urgentTitle = { fontSize: '16px', fontWeight: 'bold', color: '#78350f', margin: '0 0 6px' }
+const urgentButton = { backgroundColor: '#b45309', color: '#ffffff', borderRadius: '12px', padding: '12px 22px', fontSize: '15px', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block', margin: '8px 0 0' }

@@ -9,6 +9,7 @@ import type { Bounds } from '@/lib/directoryFilters';
 import { usePublicResponsiveness } from '@/hooks/useResponsiveness';
 import { useRatingMinReviews } from '@/hooks/useRingStats';
 import { ringSummary, type RingSummary } from '@/lib/ringAvatar';
+import { holdLabel } from '@/lib/availabilityRules';
 import { useSuccessConfig, useSuccessStatsMap } from '@/hooks/useSuccessStats';
 
 export interface MapConsultant {
@@ -30,6 +31,8 @@ export interface MapConsultant {
   approximate?: boolean;
   ai_interview_badge?: string | null;
   avatar_url?: string | null;
+  /** Feature Y: end of the current hold. */
+  holdUntil?: string | null;
 }
 
 export type MapMatch = { score: number; chips: string[] };
@@ -70,6 +73,7 @@ const toView = (c: MapConsultant, m?: MapMatch | null, ring?: RingSummary | null
   matchScore: m?.score ?? null,
   chips: m?.chips,
   ring: ring ?? null,
+  holdLabel: c.holdUntil ? holdLabel(c.holdUntil, document.documentElement.lang?.startsWith('ar') ? 'ar' : 'en') : null,
 });
 
 function clusterElement(count: number, label: string): HTMLElement {

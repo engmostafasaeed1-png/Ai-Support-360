@@ -99,6 +99,12 @@ describe('policy text', () => {
     expect(fn(read('responsiveness.sql'), critical)).toBe(fn(read('consultant-policy.sql'), critical));
     expect(fn(read('consultant-policy.sql'), hidden)).toContain('consultant_policy_blocked_ids');
     expect(fn(read('consultant-policy.sql'), critical)).toContain('consultant_policy_blocked_ids');
+    // Feature Y: availability grace + holds join the same combined bodies.
+    expect(fn(read('availability-hold.sql'), hidden)).toBe(fn(read('consultant-policy.sql'), hidden));
+    expect(fn(read('availability-hold.sql'), critical)).toBe(fn(read('consultant-policy.sql'), critical));
+    expect(fn(read('availability-hold.sql'), hidden)).toContain('consultant_availability_blocked_ids');
+    expect(fn(read('availability-hold.sql'), hidden)).toContain('consultant_hold_hidden_ids');
+    expect(fn(read('availability-hold.sql'), critical)).toContain('consultant_on_hold_ids');
   });
 });
 

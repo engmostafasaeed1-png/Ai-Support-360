@@ -14,8 +14,8 @@ import ProfileExperienceCard from '@/components/consultant/ProfileExperienceCard
 import { useMyPayoutDetails } from '@/hooks/useBilling';
 import { payoutReady } from '@/lib/payoutDisclaimer';
 import ExperienceCvCard from '@/components/consultant/ExperienceCvCard';
-import SetAvailabilityDialog from '@/components/consultant/SetAvailabilityDialog';
-import ProfileAvailability from '@/components/consultant/ProfileAvailability';
+import WeeklyAvailabilityEditor from '@/components/consultant/WeeklyAvailabilityEditor';
+import HoldPanel from '@/components/consultant/HoldPanel';
 import { cn } from '@/lib/utils';
 import ImportStep from './steps/ImportStep';
 import ProfileStep from './steps/ProfileStep';
@@ -670,9 +670,9 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">{t('onboarding.availability')}<FieldHint field="availability" /></h2>
           <SectionRequiredStatus sectionId="availability" />
-          <SetAvailabilityDialog onSaved={() => setLoadedRevision(r => r + 1)} trigger={<Button variant="outline">{t('onboarding.step_availability')}</Button>} />
         </div>
-        {consultantId && <ProfileAvailability consultantId={consultantId} />}
+        {consultantId && <WeeklyAvailabilityEditor onSaved={() => setLoadedRevision(r => r + 1)} />}
+        {consultantId && <HoldPanel />}
       </section></FieldGate>
     </div>
   );

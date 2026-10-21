@@ -29,6 +29,7 @@ export const adminSections: AdminSection[] = [
   { id: 'approvals', label: 'Consultant Approvals', icon: UserCheck, group: 'Operations' },
   { id: 'profile-fields', label: 'Profile fields', icon: ListChecks, group: 'Operations' },
   { id: 'missing-location', label: 'Who is missing location', icon: MapPinOff, group: 'Operations' },
+  { id: 'availability', label: 'Availability', icon: CalendarClock, group: 'Operations' },
   { id: 'consultant-policy', label: 'Consultant policy', icon: FileCheck2, group: 'Operations' },
   { id: 'nda', label: 'NDA Management', icon: FileText, group: 'Operations' },
   { id: 'interview-training', label: 'Interview Training', icon: GraduationCap, group: 'Operations' },

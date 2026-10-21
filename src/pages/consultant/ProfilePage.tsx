@@ -10,6 +10,7 @@ import PayoutDetailsCard from '@/components/consultant/PayoutDetailsCard';
 import InterviewTranscript from '@/components/consultant/InterviewTranscript';
 import InterviewStartCard from '@/components/consultant/InterviewStartCard';
 import LocationBanner from '@/components/consultant/LocationBanner';
+import AvailabilityUrgentBanner from '@/components/consultant/AvailabilityUrgent';
 import PolicyBanner from '@/components/consultant/policy/PolicyBanner';
 import PolicyRegistrationStep from '@/components/consultant/policy/PolicyRegistrationStep';
 import ConsultantLocation from '@/components/consultant/ConsultantLocation';
@@ -49,6 +50,7 @@ export default function ProfilePage() {
       <div className="flex items-center gap-4"><AvatarUpload /><div className="space-y-1"><h2 className="text-lg font-semibold">{profile?.display_name}</h2><ConsultantLocation audience="owner" city={profile?.city} country={profile?.country} className="text-sm text-muted-foreground" /><FoundingBadge consultantId={profile?.id} numbered /></div></div>
       <ProfileRequiredSummary />
       <LocationBanner compact />
+      <AvailabilityUrgentBanner compact />
       <PolicyBanner inlineAnchor />
       <ConsultantOnboarding embedded />
       <section id="payout-details" className="scroll-mt-20">

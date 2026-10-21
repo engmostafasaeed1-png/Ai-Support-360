@@ -19,6 +19,8 @@ interface DueRow {
   earned_badge: string | null;
   payout_ready: boolean | null;
   lang: string | null;
+  /** Feature Y (docs/sql/availability-hold.sql): the "Urgent: weekly availability" block is due; absent before it is applied. */
+  availability_urgent?: boolean | null;
 }
 
 // deno-lint-ignore no-explicit-any
@@ -47,6 +49,8 @@ async function sendOne(admin: any, row: DueRow): Promise<void> {
       lang,
       profileUrl: `${SITE_URL}/consultant/profile?section=setup`,
       interviewUrl: `${SITE_URL}/consultant/interviews?start=1`,
+      availabilityUrgent: row.availability_urgent === true,
+      availabilityUrl: `${SITE_URL}/consultant/profile#availability`,
     },
     idempotencyKey: `profile-reminder-${row.consultant_id}-${new Date().toISOString().slice(0, 10)}`,
     // Feature Q: held while the consultant has paused reminder e-mails; the in-app notice below is kept quietly.
@@ -61,7 +65,15 @@ async function sendOne(admin: any, row: DueRow): Promise<void> {
     : (lang === 'ar'
         ? `ملفك مكتمل بنسبة ${pct}٪ — أكمله وابدأ مقابلة الذكاء الاصطناعي لتكسب شارتك ويظهر ملفك أولاً.`
         : `Your profile is ${pct} % complete — finish it and take the AI interview to earn your badge and be shown first.`);
-  await admin.from('notifications').insert({
+  const urgent = row.availability_urgent === true;
+  await admin.from('notifications').insert(urgent ? {
+    user_id: row.user_id,
+    title: lang === 'ar' ? 'عاجل: أضف توفرك الأسبوعي' : 'Urgent: add your weekly availability',
+    body: lang === 'ar' ? 'يعتمد العملاء والمطابقة على توفرك الأسبوعي. يستغرق ذلك دقيقة واحدة.' : 'Clients and matching rely on your weekly availability. It takes a minute.',
+    link: '/consultant/profile#availability',
+    type: 'availability_urgent',
+    pause_category: 'reminders',
+  } : {
     user_id: row.user_id,
     title: lang === 'ar' ? 'أكمل ملفك الشخصي' : 'Complete your profile',
     body,
