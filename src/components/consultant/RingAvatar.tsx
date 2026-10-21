@@ -114,7 +114,7 @@ export default function RingAvatar({ name, initials, avatarUrl, size = 'md', sum
   const inset = g.c - g.photoR;
 
   const visual = (
-    <span ref={ref} className="relative block motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out motion-safe:group-hover/ring:scale-[1.03]"
+    <span ref={ref} className="relative block motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out motion-safe:group-hover/ring:scale-[1.03] motion-safe:group-focus-visible/ring:scale-[1.03]"
       style={{ width: g.px, height: g.px }} dir="ltr">
       <svg viewBox={`0 0 ${g.px} ${g.px}`} aria-hidden="true" focusable="false" className="absolute inset-0 h-full w-full overflow-visible" data-testid="ring-svg">
         <circle cx={g.c} cy={g.c} r={g.outerR} fill="none" stroke={trackColor(rating.tone)} strokeWidth={g.outerW} data-testid="ring-track-outer" />
