@@ -1,5 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { demoFunnel } from '@/lib/analytics';
+// The provider and hook live in DemoWizardContext so the dialog (calendar, date library) loads only when opened.
+export { useDemoWizard, DemoWizardProvider } from './DemoWizardContext';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +29,7 @@ import { isSlotPast, nowInZone } from '@/lib/demoSlots';
 /*  Demo type catalogue                                                        */
 /* -------------------------------------------------------------------------- */
 
-type DemoType = {
+export type DemoType = {
   id: 'live' | 'ai-triage' | 'pricing-roi' | 'module-deep-dive';
   title: string;
   description: string;
@@ -136,66 +138,13 @@ function detectTimezone(): string {
 /*  Context — lets any CTA open the wizard with one hook                       */
 /* -------------------------------------------------------------------------- */
 
-type OpenOptions = { source?: string };
-
-type Ctx = {
-  open: (initial?: DemoType['id'], opts?: OpenOptions) => void;
-};
-
-const DemoWizardContext = createContext<Ctx | null>(null);
-
-export function useDemoWizard(): Ctx {
-  const ctx = useContext(DemoWizardContext);
-  // Safe fallback so missing provider never crashes the page; logs in dev.
-  if (!ctx) {
-    return {
-      open: () => {
-        if (import.meta.env.DEV) {
-           
-          console.warn('useDemoWizard called outside <DemoWizardProvider>');
-        }
-      },
-    };
-  }
-  return ctx;
-}
-
-export function DemoWizardProvider({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const [initialType, setInitialType] = useState<DemoType['id'] | undefined>(undefined);
-  const [source, setSource] = useState<string>('unknown');
-
-  const value = useMemo<Ctx>(
-    () => ({
-      open: (initial, opts) => {
-        const src = opts?.source ?? 'unknown';
-        setInitialType(initial);
-        setSource(src);
-        setOpen(true);
-        // Fire the open event immediately so we capture intent even if
-        // the user closes the dialog before any step renders.
-        demoFunnel.ctaClick(src, initial);
-        demoFunnel.wizardOpen(src, initial);
-      },
-    }),
-    [],
-  );
-
-  return (
-    <DemoWizardContext.Provider value={value}>
-      {children}
-      <DemoRequestWizard open={open} onOpenChange={setOpen} initialType={initialType} source={source} />
-    </DemoWizardContext.Provider>
-  );
-}
-
 /* -------------------------------------------------------------------------- */
 /*  Wizard                                                                     */
 /* -------------------------------------------------------------------------- */
 
 const STEPS = ['Demo type', 'Schedule', 'Your details'] as const;
 
-function DemoRequestWizard({
+export default function DemoRequestWizard({
   open, onOpenChange, initialType, source,
 }: {
   open: boolean;

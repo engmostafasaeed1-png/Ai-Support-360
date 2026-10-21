@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import logo from '@/assets/brand/horizontal.webp.asset.json';
 import { cn } from '@/lib/utils';
 import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_HREF } from '@/lib/contact';
-import { useDemoWizard } from './DemoRequestWizard';
+import { useDemoWizard } from './DemoWizardContext';
 
 type FooterLink = { label: string; href: string; onClick?: () => void; dir?: 'ltr' | 'rtl' };
 

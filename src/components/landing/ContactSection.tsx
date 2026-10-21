@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
 import { Send, CheckCircle2, CalendarPlus, Mail } from 'lucide-react';
 import SectionHeader from './SectionHeader';
-import { useDemoWizard } from './DemoRequestWizard';
+import { useDemoWizard } from './DemoWizardContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_HREF } from '@/lib/contact';

@@ -9,16 +9,6 @@ export function useConsultantSessions() {
   const { isGuest } = useGuestMode();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (isGuest) return;
-    const channel = supabase
-      .channel('consultant-sessions-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['consultant-sessions'] });
-      })
-      .subscribe();
-    return () => { channel.unsubscribe(); };
-  }, [isGuest, queryClient]);
 
   const signedIn = useSessionReady().signedIn;
   return useQuery({

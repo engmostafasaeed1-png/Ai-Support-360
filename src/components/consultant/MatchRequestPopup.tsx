@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { consultantIdFor, subscribeWhileVisible } from '@/lib/realtimeVisibility';
 import { useRespondToMatch } from '@/hooks/useMatchRequests';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { useSessionReady } from '@/hooks/useSessionReady';
@@ -110,15 +111,23 @@ export default function MatchRequestPopup() {
   const enabled = signedIn && !isGuest;
   const { data: pending = [] } = useQuery({ queryKey: QUERY_KEY, queryFn: loadPending, enabled, refetchInterval: 60_000, retry: false });
 
+  // The one live channel for this consultant's own requests (also refreshes the Requests page); only while the tab is visible.
   useEffect(() => {
     if (!enabled) return;
-    const channel = supabase
-      .channel('assignment-popup')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ticket_match_requests' }, () => {
-        queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    let cancelled = false;
+    let cleanup: (() => void) | null = null;
+    const refresh = () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['consultant-match-requests'] });
+    };
+    supabase.auth.getUser().then(async ({ data }) => {
+      const consultantId = data.user ? await consultantIdFor(data.user.id) : null;
+      if (cancelled || !consultantId) return;
+      cleanup = subscribeWhileVisible(() => supabase
+        .channel(`assignment-popup-${consultantId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ticket_match_requests', filter: `consultant_id=eq.${consultantId}` }, refresh), refresh);
+    }).catch(() => { /* the 60 s refresh still runs */ });
+    return () => { cancelled = true; cleanup?.(); };
   }, [enabled, queryClient]);
 
   // Feature Q: while in-app alerts are paused, a request pops up for its first notice only (reminder re-pops wait); Critical always shows.

@@ -30,6 +30,7 @@ export function useRolePermissions() {
   const [rolePerms, setRolePerms] = useState<Record<string, string[]>>(DEFAULT_ROLE_PERMISSIONS);
   const [loading, setLoading] = useState(true);
 
+  // Loaded once when the page opens (no live channel: these settings change rarely and only here).
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase
@@ -44,30 +45,6 @@ export function useRolePermissions() {
       setLoading(false);
     };
     load();
-
-    // Subscribe to realtime changes
-    const channel = supabase
-      .channel('role-permissions-sync')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'platform_settings',
-          filter: `key=eq.${SETTING_KEY}`,
-        },
-        (payload) => {
-          const newRow = payload.new as { value?: Record<string, string[]> } | undefined;
-          if (newRow?.value && typeof newRow.value === 'object') {
-            setRolePerms(parsePerms(newRow.value));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   const togglePermission = useCallback((role: string, perm: string) => {

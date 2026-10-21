@@ -20,16 +20,7 @@ export function useActivityFeed() {
   const { tenant, loading: tenantLoading } = useTenant();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (isGuest) return;
-    const channel = supabase
-      .channel('activity-feed-realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['activity-feed'] });
-      })
-      .subscribe();
-    return () => { channel.unsubscribe(); };
-  }, [isGuest, queryClient]);
+  // New notifications refresh this feed through the bell's channel (useNotifications).
 
   return useQuery({
     queryKey: ['activity-feed', tenant?.id ?? null],

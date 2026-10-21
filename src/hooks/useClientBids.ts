@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
@@ -16,18 +16,7 @@ export function useBiddingClock() {
 export function useTicketBids(ticketId: string | undefined, enabled = true) {
   const { isGuest } = useGuestMode();
   const qc = useQueryClient();
-  const subscriptionId = useId();
-  useEffect(() => {
-    if (!ticketId || !enabled || isGuest) return;
-    const channel = db.channel(`client-bids-${ticketId}-${subscriptionId}`);
-    for (const table of ['proposals', 'proposal_counters', 'ticket_questions']) channel.on('postgres_changes', { event: '*', schema: 'public', table, filter: `ticket_id=eq.${ticketId}` }, () => {
-      void qc.invalidateQueries({ queryKey: ['client-bids', ticketId] });
-      void qc.invalidateQueries({ queryKey: ['client-bid-questions', ticketId] });
-      void qc.invalidateQueries({ queryKey: ['client-bid-summary'] });
-    });
-    channel.subscribe();
-    return () => { void db.removeChannel(channel); };
-  }, [ticketId, enabled, isGuest, qc, subscriptionId]);
+  // Bids refresh every 30 s (these tables are not published for realtime).
   return useQuery({
     queryKey: ['client-bids', ticketId], enabled: !!ticketId && enabled && !isGuest, refetchInterval: 30_000,
     queryFn: async () => {

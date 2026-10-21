@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { PricingFormula, PricingSteps, usePick } from '@/components/pricing/PayPerHourPricing';
 import { usePricingTerms } from '@/hooks/usePricingTerms';
 import SectionHeader from './SectionHeader';
-import { useDemoWizard } from './DemoRequestWizard';
+import { useDemoWizard } from './DemoWizardContext';
 
 /** The pricing block of the home page: the same model as the pricing page, without the calculator. */
 export default function PricingSection() {

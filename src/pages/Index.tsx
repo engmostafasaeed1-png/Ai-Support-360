@@ -10,7 +10,7 @@ import PricingSection from '@/components/landing/PricingSection';
 import FAQSection from '@/components/landing/FAQSection';
 import ContactSection from '@/components/landing/ContactSection';
 import ScrollFadeIn from '@/components/landing/ScrollFadeIn';
-import { DemoWizardProvider } from '@/components/landing/DemoRequestWizard';
+import { DemoWizardProvider } from '@/components/landing/DemoWizardContext';
 
 const Index = () => {
   return (

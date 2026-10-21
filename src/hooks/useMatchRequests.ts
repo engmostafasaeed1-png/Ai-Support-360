@@ -9,16 +9,7 @@ export function useConsultantMatchRequests() {
   const { isGuest } = useGuestMode();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (isGuest) return;
-    const channel = supabase
-      .channel('match-requests-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ticket_match_requests' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['consultant-match-requests'] });
-      })
-      .subscribe();
-    return () => { channel.unsubscribe(); };
-  }, [isGuest, queryClient]);
+  // Live changes arrive through the assignment popup's channel (MatchRequestPopup), always mounted for consultants.
 
   const signedIn = useSessionReady().signedIn;
   return useQuery({

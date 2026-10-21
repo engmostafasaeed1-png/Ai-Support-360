@@ -20,16 +20,7 @@ export function useClientTickets() {
   const { tenant } = useTenant();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (isGuest) return;
-    const channel = supabase
-      .channel('client-tickets-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['client-tickets', tenant?.id] });
-      })
-      .subscribe();
-    return () => { channel.unsubscribe(); };
-  }, [isGuest, queryClient, tenant?.id]);
+  // Live changes to my tickets arrive through the app-wide channel (useRealtimeStatusSync).
 
   return useQuery({
     queryKey: ['client-tickets', tenant?.id],

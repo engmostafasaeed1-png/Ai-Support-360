@@ -10,7 +10,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { GuestModeProvider } from "./contexts/GuestModeContext.tsx";
 import { CurrencyProvider } from "./contexts/CurrencyContext.tsx";
 import { TenantProvider } from "./contexts/TenantContext.tsx";
-import AIChatbot from "./components/chatbot/AIChatbot.tsx";
 import MaintenanceBanner from "./components/MaintenanceBanner.tsx";
 import MaintenanceGate from "./components/MaintenanceGate.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
@@ -19,31 +18,60 @@ import UiTranslator from "./components/UiTranslator";
 import { HelmetProvider } from "react-helmet-async";
 import Watermark from "./components/Watermark.tsx";
 import WhatsAppButton from "./components/WhatsAppButton.tsx";
-import GlobalSearch from "./components/GlobalSearch.tsx";
+const GlobalSearch = lazyWithRetry(() => import("./components/GlobalSearch.tsx"), 'GlobalSearch');
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
 import { Loader2 } from 'lucide-react';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
-// Eager layout imports
-import ConsultantLayout from "./components/consultant/ConsultantLayout.tsx";
-import ClientLayout from "./components/client/ClientLayout.tsx";
-import AdminLayout from "./components/admin/AdminLayout.tsx";
-import SuperAdminLayout from "./components/superadmin/SuperAdminLayout.tsx";
 import ProtectedRoute from "./components/auth/ProtectedRoute.tsx";
 import PublicLayout from "./components/layout/PublicLayout.tsx";
-import { DemoWizardProvider } from "./components/landing/DemoRequestWizard";
-import ApprovalGate from "./components/client/ApprovalGate.tsx";
+import { DemoWizardProvider } from "./components/landing/DemoWizardContext";
 
-// Admin console sections (eagerly loaded since they're small)
-import OverviewSection from "./components/admin/console/sections/OverviewSection.tsx";
-import UserManagementSection from "./components/admin/console/sections/UserManagementSection.tsx";
-import RolesPermissionsSection from "./components/admin/console/sections/RolesPermissionsSection.tsx";
-import SubscriptionsSection from "./components/admin/console/sections/SubscriptionsSection.tsx";
-import InvoiceNumberingSection from "./components/admin/console/sections/InvoiceNumberingSection.tsx";
-import { SecuritySettingsSection, AuthenticationSection, DataAccessSection, AuditLogSection } from "./components/admin/console/sections/SecuritySections.tsx";
-import { TicketManagementSection, ConsultantApprovalsSection, NDAManagementSection, MatchRequestsSection, ProjectsMilestonesSection } from "./components/admin/console/sections/OperationsSections.tsx";
-import { NotificationsSection, LocalizationSection, AppearanceSection, StorageSection, EmailSection, IntegrationsSection as AdminIntSection, EnvironmentsSection, LandingEditorSection, PlatformSettingsSection, MaintenanceSection } from "./components/admin/console/sections/SystemSections.tsx";
-import { AnalyticsConsoleSection, VMwareSettingsConsoleSection, EnvironmentLogsConsoleSection, MeetingEventsConsoleSection, InterviewTrainingConsoleSection, OnCallScheduleConsoleSection } from "./components/admin/console/sections/AdditionalSections.tsx";
+// Portal layouts are separate downloads: a visitor on the public site never fetches the consultant, client or admin code.
+const ConsultantLayout = lazyWithRetry(() => import("./components/consultant/ConsultantLayout.tsx"), 'ConsultantLayout');
+const ClientLayout = lazyWithRetry(() => import("./components/client/ClientLayout.tsx"), 'ClientLayout');
+const AdminLayout = lazyWithRetry(() => import("./components/admin/AdminLayout.tsx"), 'AdminLayout');
+const SuperAdminLayout = lazyWithRetry(() => import("./components/superadmin/SuperAdminLayout.tsx"), 'SuperAdminLayout');
+const ApprovalGate = lazyWithRetry(() => import("./components/client/ApprovalGate.tsx"), 'ApprovalGate');
+const AIChatbot = lazyWithRetry(() => import("./components/chatbot/AIChatbot.tsx"), 'AIChatbot');
+
+// Admin console sections (one download per section file, only for administrators)
+const named = <K extends string>(load: () => Promise<Record<K, React.ComponentType<any>>>, key: K) =>
+  lazyWithRetry(() => load().then((m) => ({ default: m[key] })), key);
+const OverviewSection = lazyWithRetry(() => import("./components/admin/console/sections/OverviewSection.tsx"), 'OverviewSection');
+const UserManagementSection = lazyWithRetry(() => import("./components/admin/console/sections/UserManagementSection.tsx"), 'UserManagementSection');
+const RolesPermissionsSection = lazyWithRetry(() => import("./components/admin/console/sections/RolesPermissionsSection.tsx"), 'RolesPermissionsSection');
+const SubscriptionsSection = lazyWithRetry(() => import("./components/admin/console/sections/SubscriptionsSection.tsx"), 'SubscriptionsSection');
+const InvoiceNumberingSection = lazyWithRetry(() => import("./components/admin/console/sections/InvoiceNumberingSection.tsx"), 'InvoiceNumberingSection');
+const securitySections = () => import("./components/admin/console/sections/SecuritySections.tsx");
+const SecuritySettingsSection = named(securitySections, 'SecuritySettingsSection');
+const AuthenticationSection = named(securitySections, 'AuthenticationSection');
+const DataAccessSection = named(securitySections, 'DataAccessSection');
+const AuditLogSection = named(securitySections, 'AuditLogSection');
+const operationsSections = () => import("./components/admin/console/sections/OperationsSections.tsx");
+const TicketManagementSection = named(operationsSections, 'TicketManagementSection');
+const ConsultantApprovalsSection = named(operationsSections, 'ConsultantApprovalsSection');
+const NDAManagementSection = named(operationsSections, 'NDAManagementSection');
+const MatchRequestsSection = named(operationsSections, 'MatchRequestsSection');
+const ProjectsMilestonesSection = named(operationsSections, 'ProjectsMilestonesSection');
+const systemSections = () => import("./components/admin/console/sections/SystemSections.tsx");
+const NotificationsSection = named(systemSections, 'NotificationsSection');
+const LocalizationSection = named(systemSections, 'LocalizationSection');
+const AppearanceSection = named(systemSections, 'AppearanceSection');
+const StorageSection = named(systemSections, 'StorageSection');
+const EmailSection = named(systemSections, 'EmailSection');
+const AdminIntSection = named(systemSections, 'IntegrationsSection');
+const EnvironmentsSection = named(systemSections, 'EnvironmentsSection');
+const LandingEditorSection = named(systemSections, 'LandingEditorSection');
+const PlatformSettingsSection = named(systemSections, 'PlatformSettingsSection');
+const MaintenanceSection = named(systemSections, 'MaintenanceSection');
+const additionalSections = () => import("./components/admin/console/sections/AdditionalSections.tsx");
+const AnalyticsConsoleSection = named(additionalSections, 'AnalyticsConsoleSection');
+const VMwareSettingsConsoleSection = named(additionalSections, 'VMwareSettingsConsoleSection');
+const EnvironmentLogsConsoleSection = named(additionalSections, 'EnvironmentLogsConsoleSection');
+const MeetingEventsConsoleSection = named(additionalSections, 'MeetingEventsConsoleSection');
+const InterviewTrainingConsoleSection = named(additionalSections, 'InterviewTrainingConsoleSection');
+const OnCallScheduleConsoleSection = named(additionalSections, 'OnCallScheduleConsoleSection');
 
 // Lazy page imports
 const Index = lazyWithRetry(() => import("./pages/Index.tsx"), 'Index');
@@ -245,6 +273,18 @@ const ConsultantSessionRedirect = () => {
   return <Navigate to={sessionId ? `/consultant/chat/${sessionId}` : '/consultant/calendar'} replace />;
 };
 
+// Mounts its children once the browser is idle after the first paint, so optional helpers do not delay the page.
+const IdleMount = ({ children }: { children: React.ReactNode }) => {
+  const [ready, setReady] = React.useState(false);
+  useEffect(() => {
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    if (w.requestIdleCallback) { const id = w.requestIdleCallback(() => setReady(true), { timeout: 3000 }); return () => w.cancelIdleCallback?.(id); }
+    const t = window.setTimeout(() => setReady(true), 1500);
+    return () => window.clearTimeout(t);
+  }, []);
+  return ready ? <>{children}</> : null;
+};
+
 // Mounted inside QueryClientProvider so the hook can access the client.
 import { useRealtimeStatusSync } from '@/hooks/useRealtimeStatusSync';
 const RealtimeStatusSync = () => {
@@ -274,10 +314,10 @@ const App = () => (
           <ScrollToTop />
           <RouteSeo />
           <Watermark />
-          <GlobalSearch />
+          <IdleMount><Suspense fallback={null}><GlobalSearch /></Suspense></IdleMount>
           <MaintenanceBanner />
           
-          <AIChatbot />
+          <IdleMount><Suspense fallback={null}><AIChatbot /></Suspense></IdleMount>
           <WhatsAppButton />
           <ErrorBoundary>
 <MaintenanceGate>

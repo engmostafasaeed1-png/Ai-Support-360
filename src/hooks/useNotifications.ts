@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 import { isHeldNow } from '@/lib/notificationPause';
+import { subscribeWhileVisible } from '@/lib/realtimeVisibility';
 
 type Notification = Tables<'notifications'>;
 
@@ -19,6 +21,7 @@ export function useNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const queryClient = useQueryClient();
 
   const fetchNotifications = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -102,35 +105,40 @@ export function useNotifications() {
   useEffect(() => {
     fetchNotifications();
 
-    const channelName = `notifications-realtime-${uniqueSuffix()}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications' },
-        (payload) => {
-          const newNotif = payload.new as Notification;
-          // Check if it's for the current user by checking against existing state
-          supabase.auth.getUser().then(({ data: { user } }) => {
-            if (user && newNotif.user_id === user.id) {
-              const extra = newNotif as Notification & { silent?: boolean; held_until?: string | null };
-              if (isHeldNow(extra, Date.now())) return;
-              setNotifications(prev => [newNotif, ...prev]);
-              setUnreadCount(prev => prev + 1);
-              // Paused in-app alerts arrive silently: kept in the bell, no pop-up.
-              if (!extra.silent) {
-                toast(newNotif.title, {
-                  description: newNotif.body || undefined,
-                });
-              }
+    // Only this person's rows (user_id filter), only while the tab is visible; on return the list is reloaded.
+    let cancelled = false;
+    let cleanup: (() => void) | null = null;
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (cancelled || !user) return;
+      cleanup = subscribeWhileVisible(() => supabase
+        .channel(`notifications-realtime-${uniqueSuffix()}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+          (payload) => {
+            const newNotif = payload.new as Notification;
+            if (newNotif.user_id !== user.id) return;
+            // The dashboard activity feed is built from notifications: refresh it here instead of a second channel.
+            queryClient.invalidateQueries({ queryKey: ['activity-feed'] });
+            const extra = newNotif as Notification & { silent?: boolean; held_until?: string | null };
+            if (isHeldNow(extra, Date.now())) return;
+            setNotifications(prev => [newNotif, ...prev]);
+            setUnreadCount(prev => prev + 1);
+            // Paused in-app alerts arrive silently: kept in the bell, no pop-up.
+            if (!extra.silent) {
+              toast(newNotif.title, {
+                description: newNotif.body || undefined,
+              });
             }
-          });
-        }
-      )
-      .subscribe();
+          },
+        ), () => {
+        void fetchNotifications();
+        queryClient.invalidateQueries({ queryKey: ['activity-feed'] });
+      });
+    }).catch(() => { /* the list still loads; live updates are optional */ });
 
-    return () => { supabase.removeChannel(channel); };
-  }, [fetchNotifications]);
+    return () => { cancelled = true; cleanup?.(); };
+  }, [fetchNotifications, queryClient]);
 
   return { notifications, unreadCount, loading, loadError, markAsRead, markAllAsRead, markManyAsRead, deleteNotification, refetch: fetchNotifications };
 }
