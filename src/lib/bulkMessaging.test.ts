@@ -249,3 +249,24 @@ describe('e-mail stays out of bulk messages', () => {
     expect(readFileSync('supabase/functions/bulk-messages-run/index.ts', 'utf8')).not.toContain('sendTemplateEmail');
   });
 });
+
+describe('sender schedule', () => {
+  const body = (fn: string) => {
+    const start = sql.indexOf(`CREATE OR REPLACE FUNCTION public.${fn}(`);
+    return sql.slice(start, sql.indexOf('END $$;', start));
+  };
+  it('creating, cancelling and re-enabling wake the sender', () => {
+    for (const fn of ['bm_create_campaign', 'bm_cancel_campaign', 'bm_set_settings', 'bm_claim']) {
+      expect(body(fn)).toContain('PERFORM public.bm_arm_worker()');
+    }
+  });
+  it('runs every minute only while sending or due, and is removed when nothing is left or switched off', () => {
+    const arm = body('bm_arm_worker');
+    expect(arm).toContain("status = 'sending'");
+    expect(arm).toContain("scheduled_at <= now() + interval '1 minute'");
+    expect(arm).toContain("platform_flag('bulk_messaging_enabled', true)");
+    expect(arm).toContain("cron.unschedule(jobid) FROM cron.job WHERE jobname = 'bulk-messages-run'");
+    expect(sql.match(/cron\.schedule\(/g)).toHaveLength(1);
+    expect(sql).not.toMatch(/SELECT cron\.schedule\(/);
+  });
+});
