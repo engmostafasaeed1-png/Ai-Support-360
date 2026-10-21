@@ -308,7 +308,7 @@ export function AdminAuditPanel({ me, onOpenUser }: { me: MyAdminPermissions; on
                   {r.target && <> → {r.target_id ? <button type="button" className="underline-offset-2 hover:underline" onClick={() => onOpenUser(r.target_id!)}>{r.target}</button> : r.target}</>}
                   {r.reason && ` · ${t('um.reason', 'Reason')}: ${r.reason}`}
                 </p>
-                {(r.before || r.after) && <p className="mt-1 break-all font-mono text-[11px] text-muted-foreground" dir="ltr">{JSON.stringify(r.before ?? null)} → {JSON.stringify(r.after ?? null)}</p>}
+                {(r.before != null || r.after != null) && <p className="mt-1 break-all font-mono text-[11px] text-muted-foreground" dir="ltr">{JSON.stringify(r.before ?? null)} → {JSON.stringify(r.after ?? null)}</p>}
               </li>
             ))}
             {!q.data?.rows.length && <p className="text-sm text-muted-foreground">{t('um.no_history', 'Nothing recorded for these filters.')}</p>}
