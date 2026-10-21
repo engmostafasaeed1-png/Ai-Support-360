@@ -51,6 +51,21 @@ export interface PolicyEmailProps {
   confirmUrl?: string;
   policyUrl?: string;
   privacyUrl?: string;
+  /**
+   * Per-language published text. Every mail carries BOTH languages: `lang` (the reader's preference) first, the other
+   * second. Without an entry, the preferred language falls back to the flat fields above.
+   */
+  texts?: Partial<Record<PolicyEmailLang, PolicyLangText>>;
+}
+
+export interface PolicyLangText {
+  title?: string;
+  summary?: string;
+  body?: string;
+  /** Already formatted in this language. */
+  effectiveDate?: string;
+  /** Already formatted in this language. */
+  deadline?: string;
 }
 
 export const POLICY_EMAIL_SITE = 'https://www.aisupport360.com';
@@ -137,6 +152,7 @@ export interface PolicyWhyCard { icon: string; title: string; text: string }
 export const POLICY_EMAIL_STR = {
   en: {
     brand: 'AI Support 360',
+    versionLabel: 'English version',
     title: (v: number) => `Our Consultant Service Policy - version ${v}`,
     effective: (d: string) => `Effective ${d}`,
     confirmBy: (d: string) => `Please confirm by ${d}`,
@@ -195,6 +211,7 @@ export const POLICY_EMAIL_STR = {
   },
   ar: {
     brand: 'AI Support 360',
+    versionLabel: 'النسخة العربية',
     title: (v: number) => `سياسة خدمة المستشار لدينا - الإصدار ${v}`,
     effective: (d: string) => `سارية من ${d}`,
     confirmBy: (d: string) => `يُرجى التأكيد قبل ${d}`,
@@ -259,25 +276,50 @@ function safeUrl(u: string | undefined, fallback: string): string {
   return typeof u === 'string' && /^https:\/\/[^\s"'<>]+$/.test(u) ? u : fallback;
 }
 
-export function policyEmailModel(p: PolicyEmailProps) {
-  const lang: PolicyEmailLang = p.lang === 'ar' ? 'ar' : 'en';
+/** Both languages, the reader's preference first. */
+export function policyEmailOrder(lang?: string): [PolicyEmailLang, PolicyEmailLang] {
+  return lang === 'ar' ? ['ar', 'en'] : ['en', 'ar'];
+}
+
+/** Gmail clips messages above about 102 KB of HTML; above this the second language's full policy is laid out compactly. */
+export const POLICY_EMAIL_HTML_LIMIT = 100_000;
+
+export const policyEmailBytes = (html: string) => new TextEncoder().encode(html).length;
+
+/** Bilingual subject: "Consultant Service Policy / سياسة خدمة المستشار - version X" (reminders say so in both languages). */
+export function policyEmailSubject(p: Pick<PolicyEmailProps, 'version' | 'kind'>): string {
+  const v = Math.max(1, Math.floor(Number(p.version) || 1));
+  const base = `Consultant Service Policy / سياسة خدمة المستشار - version ${v}`;
+  return p.kind === 'notice' || p.kind === undefined ? base : `Reminder / تذكير: ${base}`;
+}
+
+function textFor(p: PolicyEmailProps, lang: PolicyEmailLang): PolicyLangText {
+  const own = p.texts?.[lang];
+  if (own) return own;
+  const pref: PolicyEmailLang = p.lang === 'ar' ? 'ar' : 'en';
+  return lang === pref ? { title: p.title, summary: p.summary, body: p.body, effectiveDate: p.effectiveDate, deadline: p.deadline } : {};
+}
+
+export function policyEmailModel(p: PolicyEmailProps, forLang?: PolicyEmailLang) {
+  const lang: PolicyEmailLang = forLang ?? (p.lang === 'ar' ? 'ar' : 'en');
+  const x = textFor(p, lang);
   const t = POLICY_EMAIL_STR[lang];
   const n: PolicyEmailNumbers = { ...POLICY_EMAIL_NUMBER_DEFAULTS, ...(p.numbers ?? {}) };
   const v = Math.max(1, Math.floor(Number(p.version) || 1));
   const d = (m: number) => formatPolicyDuration(m, lang);
-  const deadlineLine = p.deadline
-    ? (p.deadlinePassed ? t.confirmEnded(p.deadline) : t.confirmBy(p.deadline))
+  const deadlineLine = x.deadline
+    ? (p.deadlinePassed ? t.confirmEnded(x.deadline) : t.confirmBy(x.deadline))
     : t.confirmWindow(days(n.graceDays, lang));
   return {
     lang, t, n, v, dir: lang === 'ar' ? 'rtl' : 'ltr',
     title: t.title(v),
-    policyTitle: p.title,
-    effective: p.effectiveDate ? t.effective(p.effectiveDate) : null,
+    policyTitle: x.title,
+    effective: x.effectiveDate ? t.effective(x.effectiveDate) : null,
     deadlineLine,
     hello: t.hello(p.name),
     intro: p.kind === 'notice' ? t.introNotice(v) : t.introReminder(v),
-    summary: p.summary?.trim() || null,
-    body: parsePolicyEmailBody(p.body),
+    summary: x.summary?.trim() || null,
+    body: parsePolicyEmailBody(x.body),
     cards: t.cards(n),
     numbers: [
       { value: n.expire % 60 === 0 && n.expire <= 2880 ? formatPolicyHours(n.expire, lang) : d(n.expire), label: t.num.reply },
@@ -314,6 +356,7 @@ const C = {
 };
 const SECTION_COLORS = ['#3B82F6', '#1B2559', '#0EA5E9', '#10B981', '#F59E0B', '#64748B'];
 const TIMELINE_COLORS = ['#3B82F6', '#60A5FA', '#F59E0B', '#F97316', '#DC2626'];
+const FONT = { en: 'Arial, Helvetica, sans-serif', ar: 'Tahoma, Arial, Helvetica, sans-serif' };
 
 /** Splits **bold** segments into strong elements (text stays escaped). */
 function rich(h: CreateElement, text: string) {
@@ -323,22 +366,31 @@ function rich(h: CreateElement, text: string) {
     : s));
 }
 
-export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
-  const m = policyEmailModel(props);
+/** Anchor id of one language version ("lang-ar" / "lang-en"). */
+export const policyLangAnchor = (lang: PolicyEmailLang) => `lang-${lang}`;
+
+/**
+ * One complete, self-contained language version (header, intro, buttons, why cards, numbers, full policy with
+ * contents, timeline, checklist, footer). Only the Arabic version carries dir="rtl"; section anchors are prefixed by
+ * language ("ar-s1", "en-s1") so both contents lists resolve inside the same mail.
+ */
+function buildPolicyVersion(h: CreateElement, props: PolicyEmailProps, lang: PolicyEmailLang, opts: { second: boolean; compact: boolean }) {
+  const m = policyEmailModel(props, lang);
   const rtl = m.lang === 'ar';
   const start = rtl ? 'right' : 'left';
-  const font = rtl ? 'Tahoma, Arial, Helvetica, sans-serif' : 'Arial, Helvetica, sans-serif';
+  const font = FONT[m.lang];
+  const side = rtl ? 'borderRight' : 'borderLeft';
   const table = (style: Record<string, unknown> = {}, ...rows: unknown[]) =>
-    h('table', { role: 'presentation', width: '100%', cellPadding: 0, cellSpacing: 0, border: 0, dir: m.dir, style: { borderCollapse: 'separate', ...style } }, h('tbody', null, ...rows));
+    h('table', { role: 'presentation', width: '100%', cellPadding: 0, cellSpacing: 0, border: 0, style: { borderCollapse: 'separate', ...style } }, h('tbody', null, ...rows));
   const row = (...cells: unknown[]) => h('tr', null, ...cells);
   const cell = (style: Record<string, unknown>, ...children: unknown[]) => h('td', { style: { textAlign: start, fontFamily: font, ...style }, align: start }, ...children);
-  const p = (style: Record<string, unknown>, ...children: unknown[]) => h('p', { style: { margin: '0', fontFamily: font, textAlign: start, ...style } }, ...children);
-  const space = (px: number) => row(h('td', { style: { height: `${px}px`, lineHeight: `${px}px`, fontSize: '1px' } }, '\u00a0'));
+  const p = (style: Record<string, unknown>, ...children: unknown[]) => h('p', { style: { margin: '0', fontFamily: font, ...style } }, ...children);
+  const anchor = (id: string) => `${m.lang}-${id}`;
 
   const button = (testId: string) => table({}, row(h('td', { align: 'center', style: { padding: '0' } },
     h('table', { role: 'presentation', cellPadding: 0, cellSpacing: 0, border: 0, style: { margin: '0 auto' } }, h('tbody', null, row(
       h('td', { bgcolor: C.navy, style: { backgroundColor: C.navy, borderRadius: '12px', textAlign: 'center' } },
-        h('a', { href: m.confirmUrl, 'data-cta': testId, target: '_blank', style: { display: 'inline-block', padding: '14px 30px', fontFamily: font, fontSize: '16px', fontWeight: 'bold', color: C.white, textDecoration: 'none', borderRadius: '12px' } }, m.t.button),
+        h('a', { href: m.confirmUrl, 'data-cta': `${m.lang}-${testId}`, target: '_blank', style: { display: 'inline-block', padding: '14px 30px', fontFamily: font, fontSize: '16px', fontWeight: 'bold', color: C.white, textDecoration: 'none', borderRadius: '12px' } }, m.t.button),
       ),
     ))),
   )));
@@ -412,14 +464,14 @@ export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
     let list: PolicyEmailBlock[] = [];
     const flush = () => {
       if (!list.length) return;
-      out.push(h('ul', { style: { margin: '0 0 8px', padding: rtl ? '0 20px 0 0' : '0 0 0 20px', fontFamily: font, textAlign: start } },
+      out.push(h('ul', { style: { margin: '0 0 8px', padding: rtl ? '0 20px 0 0' : '0 0 0 20px', fontFamily: font } },
         ...list.map(b => h('li', { style: { fontSize: '14px', lineHeight: '1.65', color: C.text, margin: '0 0 6px' } }, ...rich(h, b.text)))));
       list = [];
     };
     for (const b of blocks) {
       if (b.kind === 'li') { list.push(b); continue; }
       flush();
-      if (b.kind === 'note') out.push(table({ margin: '4px 0 10px', backgroundColor: C.amberSoft, borderRadius: '10px', [rtl ? 'borderRight' : 'borderLeft']: `4px solid ${C.amberLine}` },
+      if (b.kind === 'note') out.push(table({ margin: '4px 0 10px', backgroundColor: C.amberSoft, borderRadius: '10px', [side]: `4px solid ${C.amberLine}` },
         row(cell({ padding: '10px 12px', fontSize: '13px', lineHeight: '1.55', color: '#78350f', fontWeight: 'bold' }, ...rich(h, b.text)))));
       else out.push(p({ fontSize: '14px', lineHeight: '1.65', color: C.text, margin: '0 0 8px' }, ...rich(h, b.text)));
     }
@@ -429,9 +481,19 @@ export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
 
   const sections = m.body.sections.map((s, i) => {
     const color = SECTION_COLORS[i % SECTION_COLORS.length];
-    return h('div', { key: s.anchor, 'data-section': s.anchor },
-      h('a', { id: s.anchor, name: s.anchor }),
-      table({ margin: '0 0 12px', backgroundColor: C.soft, border: `1px solid ${C.line}`, [rtl ? 'borderRight' : 'borderLeft']: `5px solid ${color}`, borderRadius: '12px' },
+    const id = anchor(s.anchor);
+    // Compact layout (second language only, when the mail would otherwise be clipped): same full text, lighter markup.
+    if (opts.compact) {
+      return h('div', { key: id, 'data-section': id, style: { [side]: `4px solid ${color}`, padding: rtl ? '0 12px 0 0' : '0 0 0 12px', margin: '0 0 16px' } },
+        h('a', { id, name: id }),
+        h('h3', { style: { margin: '0 0 8px', fontFamily: font, fontSize: '16px', lineHeight: '1.4', color: C.ink } }, `${s.number}. ${s.heading}`),
+        ...blocksOf(s.blocks),
+        s.number === '1' ? timeline : null,
+      );
+    }
+    return h('div', { key: id, 'data-section': id },
+      h('a', { id, name: id }),
+      table({ margin: '0 0 12px', backgroundColor: C.soft, border: `1px solid ${C.line}`, [side]: `5px solid ${color}`, borderRadius: '12px' },
         row(cell({ padding: '14px 16px 6px' },
           table({}, row(
             h('td', { width: 34, valign: 'top', style: { width: '34px', verticalAlign: 'top' } },
@@ -450,7 +512,7 @@ export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
   const full = row(cell({ padding: '22px 28px 4px' },
     sectionTitle(m.t.fullTitle),
     m.policyTitle ? p({ fontSize: '14px', color: C.muted, margin: '0 0 12px' }, m.policyTitle, m.effective ? ` · ${m.effective}` : '') : null,
-    ...m.body.notes.map(n => table({ margin: '0 0 12px', backgroundColor: C.amberSoft, borderRadius: '10px', [rtl ? 'borderRight' : 'borderLeft']: `4px solid ${C.amberLine}` },
+    ...m.body.notes.map(n => table({ margin: '0 0 12px', backgroundColor: C.amberSoft, borderRadius: '10px', [side]: `4px solid ${C.amberLine}` },
       row(cell({ padding: '10px 12px', fontSize: '14px', fontWeight: 'bold', color: '#78350f' }, '⚠️ ', n)))),
     m.summary ? table({ margin: '0 0 12px', backgroundColor: C.blueSoft, border: `1px solid ${C.blueLine}`, borderRadius: '12px' },
       row(cell({ padding: '12px 14px' },
@@ -460,7 +522,7 @@ export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
     m.body.sections.length ? table({ margin: '0 0 14px', border: `1px solid ${C.line}`, borderRadius: '12px' }, row(cell({ padding: '12px 14px' },
       p({ fontSize: '13px', fontWeight: 'bold', color: C.muted, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: rtl ? '0' : '0.5px' }, m.t.toc),
       ...m.body.sections.map(s => p({ fontSize: '14px', lineHeight: '1.8' },
-        h('a', { href: `#${s.anchor}`, style: { color: C.accent, textDecoration: 'none' } }, `${s.number}. ${s.heading}`))),
+        h('a', { href: `#${anchor(s.anchor)}`, style: { color: C.accent, textDecoration: 'none' } }, `${s.number}. ${s.heading}`))),
     ))) : null,
     ...sections,
   ));
@@ -490,30 +552,60 @@ export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps) {
       h('a', { href: m.privacyUrl, style: { color: C.navy, textDecoration: 'underline' } }, m.t.privacy)),
   ));
 
-  return h('html', { lang: m.lang, dir: m.dir },
+  const id = policyLangAnchor(m.lang);
+  return h('div', { key: id, id, lang: m.lang, dir: m.dir, 'data-lang': m.lang, style: { maxWidth: '640px', margin: '0 auto', textAlign: start } },
+    h('a', { name: id }),
+    // Clear divider before the second language.
+    opts.second ? table({ margin: '28px 0 18px' }, row(cell({ borderTop: `3px solid ${C.navy}`, padding: '14px 0 0', textAlign: 'center' },
+      p({ fontSize: '18px', fontWeight: 'bold', color: C.navy, textAlign: 'center' }, '🌐 ', m.t.versionLabel)))) : null,
+    h('table', { role: 'presentation', width: '100%', cellPadding: 0, cellSpacing: 0, border: 0, dir: m.dir, style: { maxWidth: '640px', width: '100%', margin: '0 auto', backgroundColor: C.white, border: `1px solid ${C.line}`, borderRadius: '18px', borderCollapse: 'separate' } },
+      h('tbody', null, header, intro, why, means, full, need, bottom, footer)),
+  );
+}
+
+/** The whole bilingual mail: language switch bar, preferred language, divider, other language. */
+export function buildPolicyEmail(h: CreateElement, props: PolicyEmailProps, opts: { compactSecond?: boolean } = {}) {
+  const [first, second] = policyEmailOrder(props.lang);
+  const subject = policyEmailSubject(props);
+  const pre = policyEmailModel(props, first);
+  const link = (lang: PolicyEmailLang, label: string) =>
+    h('a', { href: `#${policyLangAnchor(lang)}`, lang, 'data-switch': lang, style: { color: C.navy, fontFamily: FONT[lang], fontSize: '14px', fontWeight: 'bold', textDecoration: 'none', padding: '0 8px' } }, label);
+  const switchBar = h('table', { role: 'presentation', width: '100%', cellPadding: 0, cellSpacing: 0, border: 0, style: { maxWidth: '640px', width: '100%', margin: '0 auto 12px' } },
+    h('tbody', null, h('tr', null, h('td', { align: 'center', style: { textAlign: 'center', padding: '8px 0', backgroundColor: C.soft, border: `1px solid ${C.line}`, borderRadius: '12px', fontFamily: FONT.en } },
+      link('ar', 'العربية'), h('span', { style: { color: '#94a3b8' } }, '|'), link('en', 'English')))));
+
+  return h('html', { lang: first },
     h('head', null,
       h('meta', { httpEquiv: 'Content-Type', content: 'text/html; charset=UTF-8' }),
       h('meta', { name: 'viewport', content: 'width=device-width, initial-scale=1' }),
       h('meta', { name: 'color-scheme', content: 'light dark' }),
       h('meta', { name: 'supported-color-schemes', content: 'light dark' }),
-      h('title', null, m.title),
+      h('title', null, subject),
     ),
-    h('body', { dir: m.dir, style: { margin: '0', padding: '0', backgroundColor: '#ffffff', fontFamily: font } },
-      h('div', { style: { display: 'none', overflow: 'hidden', lineHeight: '1px', opacity: 0, maxHeight: 0, maxWidth: 0 } }, `${m.title} - ${m.deadlineLine}`),
-      h('table', { role: 'presentation', width: '100%', cellPadding: 0, cellSpacing: 0, border: 0, bgcolor: '#ffffff', dir: m.dir, style: { backgroundColor: '#ffffff' } }, h('tbody', null, row(
+    h('body', { style: { margin: '0', padding: '0', backgroundColor: '#ffffff', fontFamily: FONT.en } },
+      h('div', { style: { display: 'none', overflow: 'hidden', lineHeight: '1px', opacity: 0, maxHeight: 0, maxWidth: 0 } }, `${pre.title} - ${pre.deadlineLine}`),
+      h('table', { role: 'presentation', width: '100%', cellPadding: 0, cellSpacing: 0, border: 0, bgcolor: '#ffffff', style: { backgroundColor: '#ffffff' } }, h('tbody', null, h('tr', null,
         h('td', { align: 'center', style: { padding: '16px 8px' } },
-          h('table', { role: 'presentation', width: '100%', cellPadding: 0, cellSpacing: 0, border: 0, dir: m.dir, style: { maxWidth: '640px', width: '100%', margin: '0 auto', backgroundColor: C.white, border: `1px solid ${C.line}`, borderRadius: '18px', borderCollapse: 'separate' } },
-            h('tbody', null, header, intro, why, means, full, need, bottom, footer)),
+          switchBar,
+          buildPolicyVersion(h, props, first, { second: false, compact: false }),
+          buildPolicyVersion(h, props, second, { second: true, compact: opts.compactSecond === true }),
         ),
       ))),
     ),
   );
 }
 
+/** Renders the mail in one piece; lays the second language's full policy out compactly when it would exceed the limit. */
+export function renderPolicyEmailHtml(h: CreateElement, render: (el: unknown) => string, props: PolicyEmailProps): string {
+  const html = '<!DOCTYPE html>' + render(buildPolicyEmail(h, props));
+  if (policyEmailBytes(html) <= POLICY_EMAIL_HTML_LIMIT) return html;
+  return '<!DOCTYPE html>' + render(buildPolicyEmail(h, props, { compactSecond: true }));
+}
+
 // ---------------------------------------------------------------- plain-text alternative
 
-export function policyEmailText(props: PolicyEmailProps): string {
-  const m = policyEmailModel(props);
+function policyVersionText(props: PolicyEmailProps, lang: PolicyEmailLang): string[] {
+  const m = policyEmailModel(props, lang);
   const L: string[] = [];
   const rule = '----------------------------------------';
   L.push(m.t.brand.toUpperCase(), '', m.title);
@@ -542,5 +634,16 @@ export function policyEmailText(props: PolicyEmailProps): string {
   L.push('', rule, m.t.needTitle.toUpperCase(), rule);
   m.t.need.forEach(x => L.push(`[ ] ${x}`));
   L.push('', `${m.t.button}: ${m.confirmUrl}`, '', rule, m.t.sender, m.t.why, m.t.essential, `${m.t.printable}: ${m.policyUrl}`, `${m.t.privacy}: ${m.privacyUrl}`);
-  return L.join('\n');
+  return L;
+}
+
+/** Plain text with both languages, the preferred one first. */
+export function policyEmailText(props: PolicyEmailProps): string {
+  const [first, second] = policyEmailOrder(props.lang);
+  const big = '========================================';
+  return [
+    ...policyVersionText(props, first),
+    '', '', big, POLICY_EMAIL_STR[second].versionLabel, big, '',
+    ...policyVersionText(props, second),
+  ].join('\n');
 }
