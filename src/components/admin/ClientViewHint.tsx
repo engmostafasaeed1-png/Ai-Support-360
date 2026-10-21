@@ -1,5 +1,6 @@
+import { useContext } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useLocation } from 'react-router-dom';
+import { UNSAFE_LocationContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -47,7 +48,8 @@ export const isAdminPath = (path: string) => path.startsWith('/admin') || path.s
  * for non-consultants, or before the prepared name privacy SQL is installed.
  */
 export default function ClientViewHint({ id, className }: { id: string | null | undefined; className?: string }) {
-  const { pathname } = useLocation();
+  // Works inside and outside a router (some admin sheets render in isolation).
+  const pathname = useContext(UNSAFE_LocationContext)?.location?.pathname ?? (typeof window !== 'undefined' ? window.location.pathname : '');
   const { i18n } = useTranslation();
   const ar = !!i18n?.language?.startsWith('ar');
   const enabled = !!id && isAdminPath(pathname);
