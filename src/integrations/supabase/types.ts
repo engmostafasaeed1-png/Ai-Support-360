@@ -4192,6 +4192,233 @@ export type Database = {
         }
         Relationships: []
       }
+      message_campaign_events: {
+        Row: {
+          action: string
+          actor: string | null
+          campaign_id: string | null
+          created_at: string
+          detail: Json
+          id: number
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: number
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: number
+        }
+        Relationships: []
+      }
+      message_campaign_recipients: {
+        Row: {
+          attempts: number
+          campaign_id: string
+          channel: string
+          claimed_at: string | null
+          lang: string
+          manual_by: string | null
+          notification_id: string | null
+          reason: string | null
+          rendered_body: string | null
+          rendered_subject: string | null
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          campaign_id: string
+          channel: string
+          claimed_at?: string | null
+          lang?: string
+          manual_by?: string | null
+          notification_id?: string | null
+          reason?: string | null
+          rendered_body?: string | null
+          rendered_subject?: string | null
+          sent_at?: string | null
+          status: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          campaign_id?: string
+          channel?: string
+          claimed_at?: string | null
+          lang?: string
+          manual_by?: string | null
+          notification_id?: string | null
+          reason?: string | null
+          rendered_body?: string | null
+          rendered_subject?: string | null
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_campaign_recipients_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "message_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_campaigns: {
+        Row: {
+          audience: Json
+          body_ar: string | null
+          body_en: string
+          cancelled_at: string | null
+          cancelled_by: string | null
+          category: string
+          channels: string[]
+          created_at: string
+          created_by: string
+          excluded_count: number
+          finished_at: string | null
+          id: string
+          link_url: string | null
+          recipient_count: number
+          scheduled_at: string
+          started_at: string | null
+          status: string
+          subject_ar: string | null
+          subject_en: string
+          template_id: string | null
+          time_zone: string
+        }
+        Insert: {
+          audience: Json
+          body_ar?: string | null
+          body_en: string
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          category: string
+          channels: string[]
+          created_at?: string
+          created_by: string
+          excluded_count?: number
+          finished_at?: string | null
+          id?: string
+          link_url?: string | null
+          recipient_count: number
+          scheduled_at?: string
+          started_at?: string | null
+          status?: string
+          subject_ar?: string | null
+          subject_en: string
+          template_id?: string | null
+          time_zone?: string
+        }
+        Update: {
+          audience?: Json
+          body_ar?: string | null
+          body_en?: string
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          category?: string
+          channels?: string[]
+          created_at?: string
+          created_by?: string
+          excluded_count?: number
+          finished_at?: string | null
+          id?: string
+          link_url?: string | null
+          recipient_count?: number
+          scheduled_at?: string
+          started_at?: string | null
+          status?: string
+          subject_ar?: string | null
+          subject_en?: string
+          template_id?: string | null
+          time_zone?: string
+        }
+        Relationships: []
+      }
+      message_saved_audiences: {
+        Row: {
+          admin_id: string
+          audience: Json
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          admin_id: string
+          audience: Json
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          admin_id?: string
+          audience?: Json
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      message_templates: {
+        Row: {
+          archived_at: string | null
+          body_ar: string | null
+          body_en: string
+          category: string
+          created_at: string
+          created_by: string
+          id: string
+          link_url: string | null
+          name: string
+          subject_ar: string | null
+          subject_en: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          body_ar?: string | null
+          body_en: string
+          category: string
+          created_at?: string
+          created_by: string
+          id?: string
+          link_url?: string | null
+          name: string
+          subject_ar?: string | null
+          subject_en: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          body_ar?: string | null
+          body_en?: string
+          category?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          link_url?: string | null
+          name?: string
+          subject_ar?: string | null
+          subject_en?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string | null
@@ -9835,6 +10062,105 @@ export type Database = {
         }
         Returns: Json
       }
+      bm_archive_template: { Args: { _id: string }; Returns: undefined }
+      bm_arm_worker: { Args: never; Returns: string }
+      bm_audience_ids: {
+        Args: { _aud: Json; _depth?: number }
+        Returns: {
+          user_id: string
+        }[]
+      }
+      bm_campaign_report: { Args: { _id: string }; Returns: Json }
+      bm_can_send: { Args: { _uid: string }; Returns: boolean }
+      bm_cancel_campaign: { Args: { _id: string }; Returns: Json }
+      bm_claim: {
+        Args: { _max?: number }
+        Returns: {
+          attempts: number
+          body_ar: string
+          body_en: string
+          campaign_id: string
+          category: string
+          channel: string
+          chat_id: number
+          company: string
+          first_name: string
+          lang: string
+          link_url: string
+          popup: boolean
+          profile_completion: number
+          subject_ar: string
+          subject_en: string
+          user_id: string
+        }[]
+      }
+      bm_client_groups: {
+        Args: never
+        Returns: {
+          company: string
+          id: string
+          members: number
+          name: string
+        }[]
+      }
+      bm_create_campaign: { Args: { _payload: Json }; Returns: Json }
+      bm_delete_audience: { Args: { _id: string }; Returns: undefined }
+      bm_finish: { Args: { _results: Json }; Returns: number }
+      bm_guard: { Args: { _bucket: string; _limit: number }; Returns: string }
+      bm_has_secret: { Args: { _text: string }; Returns: boolean }
+      bm_log_phone_export: {
+        Args: { _count: number; _id: string }
+        Returns: undefined
+      }
+      bm_manual_contacts: {
+        Args: { _id: string }
+        Returns: {
+          channel: string
+          company: string
+          display_name: string
+          first_name: string
+          lang: string
+          phone: string
+          status: string
+          user_id: string
+        }[]
+      }
+      bm_mark_manual: {
+        Args: { _channel: string; _id: string; _sent: boolean; _user: string }
+        Returns: Json
+      }
+      bm_preview: {
+        Args: { _audience: Json; _category: string; _exclude?: string[] }
+        Returns: Json
+      }
+      bm_resolve: {
+        Args: { _aud: Json; _category: string; _exclude?: string[] }
+        Returns: {
+          country: string
+          display_name: string
+          excluded: string
+          has_phone: boolean
+          lang: string
+          role: string
+          telegram: boolean
+          user_id: string
+        }[]
+      }
+      bm_save_audience: {
+        Args: { _audience: Json; _name: string }
+        Returns: string
+      }
+      bm_save_template: { Args: { _payload: Json }; Returns: string }
+      bm_send_test: {
+        Args: { _body: string; _category: string; _subject: string }
+        Returns: Json
+      }
+      bm_set_settings: { Args: { _payload: Json }; Returns: Json }
+      bm_setting_int: {
+        Args: { _default: number; _key: string; _max: number; _min: number }
+        Returns: number
+      }
+      bm_settings: { Args: never; Returns: Json }
       bp_matches_ticket_client: {
         Args: { _bp_id: string; _ticket_id: string }
         Returns: boolean
@@ -10288,6 +10614,11 @@ export type Database = {
         Returns: undefined
       }
       mask_contact_details: { Args: { _text: string }; Returns: string }
+      my_broadcast_message: {
+        Args: { _notification_id: string }
+        Returns: Json
+      }
+      my_broadcast_popups: { Args: never; Returns: Json }
       my_client_approval: { Args: never; Returns: Json }
       my_company_invitations: {
         Args: never
