@@ -18,7 +18,7 @@ describe('confirmation e-mail falls back when /auth/confirm is not published', (
 
   it('probe: live marker = ready (cached), missing page or network error = not ready', async () => {
     let t = 0;
-    const live = vi.fn(async () => resp(true, '{"route":"/auth/confirm","ready":true}'));
+    const live = vi.fn(async (_url: string) => resp(true, '{"route":"/auth/confirm","ready":true}'));
     const probe = createConfirmPageProbe(SITE, live, () => t);
     expect(await probe()).toBe(true);
     expect(await probe()).toBe(true);
