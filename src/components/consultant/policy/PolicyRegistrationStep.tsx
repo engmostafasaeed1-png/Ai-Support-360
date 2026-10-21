@@ -42,7 +42,7 @@ export default function PolicyRegistrationStep({ verificationStatus }: { verific
     <section id="service-policy" aria-labelledby="service-policy-title" className="scroll-mt-20 space-y-3 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6">
       <h2 id="service-policy-title" className="flex items-center gap-2 text-lg font-bold text-foreground">
         <ShieldCheck className="h-5 w-5 text-primary" aria-hidden="true" />
-        {pending && isNew && inReview ? t('consultantPolicy.stepTitle', 'Final step: Consultant Service Policy') : t('consultantPolicy.sectionTitle', 'Consultant Service Policy')}
+        {pending && isNew && inReview ? t('consultantPolicy.stepTitleRequired', 'Required step: Consultant Service Policy') : t('consultantPolicy.sectionTitle', 'Consultant Service Policy')}
       </h2>
       {!my.ready || !policyQ.data.ready ? (
         <>
