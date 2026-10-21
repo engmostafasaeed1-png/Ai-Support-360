@@ -303,7 +303,7 @@ SELECT pg_temp.check((SELECT activation_status = 'pending' AND activation_expire
 -- 13. Old member credit is never paid on top for consultant referrals; jobs are plain database calls --------------------------------
 SELECT public.grant_referral_rewards((SELECT d_user FROM _ids));
 SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.referral_rewards), 'no double reward');
-SELECT pg_temp.check((SELECT count(*) FROM cron.job WHERE jobname LIKE 'referral-%' AND command NOT ILIKE '%http%') = 2, 'credential-free jobs');
+SELECT pg_temp.check((SELECT count(*) FROM cron.job WHERE jobname LIKE 'referral-%' AND command NOT ILIKE '%http%') = 3, 'credential-free jobs');
 
 -- 14. Referral calculations: arithmetic, drill-down, forecast, statements, own-data-only, reconciliation -------------------
 INSERT INTO public.ticket_timesheet_submissions (id, ticket_id, submitted_by, status, billable_hours, hourly_rate, signed_at) VALUES
