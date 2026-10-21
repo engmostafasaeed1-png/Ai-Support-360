@@ -117,6 +117,23 @@ async function listUsers(admin: Admin, callerId: string) {
   });
 }
 
+/**
+ * The sign-in service limits how often e-mails (verification, password reset) can be sent to one address.
+ * That is an expected wait, not a server failure, so it becomes a 429 with a plain message.
+ */
+function authRateLimitMessage(e: unknown): string | null {
+  // deno-lint-ignore no-explicit-any
+  const err = e as any;
+  const msg = String(err?.message ?? '');
+  const code = String(err?.code ?? '');
+  const limited = err?.status === 429 || /rate_limit/.test(code) || /for security purposes|rate limit/i.test(msg);
+  if (!limited) return null;
+  const secs = msg.match(/after (\d+) seconds?/i)?.[1];
+  return secs
+    ? `An e-mail was sent to this person moments ago. Please wait ${secs} seconds before sending another.`
+    : 'Too many e-mails were sent to this person recently. Please wait a minute and try again.';
+}
+
 Deno.serve(async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
@@ -318,6 +335,8 @@ Deno.serve(async (req) => {
     return jsonResponse(req, { ok: true });
   } catch (e) {
     if (e instanceof HttpError) return jsonResponse(req, { error: e.message }, e.status);
+    const wait = authRateLimitMessage(e);
+    if (wait) return jsonResponse(req, { error: wait }, 429);
     console.error('admin-manage-user failed', action, e instanceof Error ? e.message : String(e));
     return jsonResponse(req, { error: 'The action could not be completed. Please try again.' }, 500);
   }
