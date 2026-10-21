@@ -7,7 +7,11 @@ import {
 } from './bulkMessaging';
 import { notificationType } from '../../supabase/functions/_shared/bulkMessaging';
 import { notificationCategory } from '../../supabase/functions/_shared/notificationPause';
-import { runBulkBatch, type ClaimRow } from '../../supabase/functions/_shared/bulkMessagesRun';
+import { runBulkBatch, type ClaimRow, type FinishRow } from '../../supabase/functions/_shared/bulkMessagesRun';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const firstArg = <T,>(m: { mock: { calls: any[] } }): T => m.mock.calls[0][0] as T;
+type Inserted = Array<{ user_id: string; title: string; body: string; type: string; link: string }>;
 import { effectivePermissions, hasPermission } from './userAdmin';
 
 const sql = readFileSync('docs/sql/bulk-messaging.sql', 'utf8');
@@ -198,10 +202,10 @@ describe('send worker', () => {
     const d = deps([row({}), row({ user_id: 'u2', lang: 'ar', first_name: 'ليلى' })]);
     const r = await runBulkBatch(d);
     expect(r).toEqual({ claimed: 2, sent: 2, failed: 0 });
-    const inserted = d.insertNotifications.mock.calls[0][0];
+    const inserted = firstArg<Inserted>(d.insertNotifications);
     expect(inserted[0]).toMatchObject({ title: 'News for Sara', body: expect.stringContaining('Hello Sara'), type: 'admin_marketing', link: '/notifications?broadcast=c1' });
     expect(inserted[1].body).toContain('مرحباً ليلى');
-    const finished = d.finish.mock.calls[0][0];
+    const finished = firstArg<FinishRow[]>(d.finish);
     expect(finished[0]).toMatchObject({ ok: true, notification_id: 'n0' });
     expect(finished[0].body).toContain('/privacy-policy');
   });
@@ -219,7 +223,7 @@ describe('send worker', () => {
       now: () => (t += 20_000),
     });
     await runBulkBatch(d, 45_000);
-    const f = d.finish.mock.calls[0][0];
+    const f = firstArg<FinishRow[]>(d.finish);
     expect(f[0]).toMatchObject({ user_id: 'a', ok: false, retry: false, error: 'bot_blocked' });
     expect(d.pauseTelegramLink).toHaveBeenCalledWith('a', 'bot_blocked');
     expect(f[1]).toMatchObject({ user_id: 'b', ok: false, retry: true });
