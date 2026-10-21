@@ -14,20 +14,22 @@ interface Props {
   onSignIn?: () => void;
   /** Shown as a stand-alone section (confirm page) or inside the sign-in card. */
   compact?: boolean;
+  /** 'code': opened on purpose to type the code (not because a link failed). */
+  mode?: 'expired' | 'code';
 }
 
 /**
  * Shown when an e-mail confirmation link expired or was already used (often by a mail scanner).
  * Offers a new e-mail (60 s cooldown, neutral answer), the 6-digit code and "already confirmed - sign in".
  */
-export default function ConfirmLinkProblem({ initialEmail = '', onSignIn, compact }: Props) {
+export default function ConfirmLinkProblem({ initialEmail = '', onSignIn, compact, mode = 'expired' }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [email, setEmail] = useState(initialEmail);
   const [sending, setSending] = useState(false);
   const [cooldown, setCooldown] = useState(() => (initialEmail ? getResendCooldownRemaining(initialEmail) : 0));
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
-  const [showCode, setShowCode] = useState(false);
+  const [showCode, setShowCode] = useState(mode === 'code');
   const [code, setCode] = useState('');
   const [checking, setChecking] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
@@ -75,16 +77,20 @@ export default function ConfirmLinkProblem({ initialEmail = '', onSignIn, compac
   const signIn = onSignIn ?? (() => navigate('/login', { state: { confirmed: true } }));
 
   return (
-    <section role="alert" aria-labelledby="link-problem-title"
+    <section role={mode === 'code' ? undefined : 'alert'} aria-labelledby="link-problem-title"
       className={compact ? 'rounded-xl border border-warning/40 bg-warning/10 p-3 space-y-3' : 'space-y-4'}>
       <div className="flex items-start gap-2">
         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
         <div className="space-y-1">
           <h2 id="link-problem-title" className="text-sm font-semibold text-foreground">
-            {t('auth.link.title', 'Your confirmation link has expired or was already used')}
+            {mode === 'code'
+              ? t('auth.link.code_title', 'Enter your confirmation code')
+              : t('auth.link.title', 'Your confirmation link has expired or was already used')}
           </h2>
           <p className="text-xs text-muted-foreground">
-            {t('auth.link.why', 'Each link works once and only for a limited time. Some e-mail security filters open links automatically, which can use them up. Ask for a new e-mail below, or sign in if you already confirmed.')}
+            {mode === 'code'
+              ? t('auth.link.code_why', 'Type the e-mail address you signed up with and the 6-digit code from our confirmation e-mail. No code? Ask for a new e-mail.')
+              : t('auth.link.why', 'Each link works once and only for a limited time. Some e-mail security filters open links automatically, which can use them up. Ask for a new e-mail below, or sign in if you already confirmed.')}
           </p>
         </div>
       </div>

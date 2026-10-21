@@ -23,6 +23,8 @@ export default function ConfirmEmailPage() {
   // Read once: the address bar is cleaned right after the first render.
   const [params] = useState(() => readConfirmParams(search));
   const [linkError] = useState(() => readOAuthError(search, hash));
+  // No link and no error: the person came to type the 6-digit code.
+  const codeOnly = !params.tokenHash && !linkError;
   const [state, setState] = useState<'ready' | 'busy' | 'problem' | 'failed'>(
     linkError && isEmailLinkError(linkError) ? 'problem' : params.tokenHash ? 'ready' : 'problem',
   );
@@ -62,7 +64,7 @@ export default function ConfirmEmailPage() {
               <CardDescription>{t('auth.confirm.desc', 'One click and your account is ready. You will be signed in and can continue where you stopped.')}</CardDescription>
             </>
           ) : (
-            <h1 className="text-2xl font-semibold leading-none tracking-tight">{t('auth.confirm.problem_title', 'Confirm your e-mail')}</h1>
+            <h1 className="sr-only">{t('auth.confirm.title', 'Confirm your e-mail')}</h1>
           )}
         </CardHeader>
         <CardContent className="space-y-4">
@@ -82,7 +84,7 @@ export default function ConfirmEmailPage() {
             <p role="alert" className="text-sm text-destructive">{t('auth.confirm.failed', 'We could not reach the server. Check your connection and try again.')}
               {' '}<button type="button" className="underline" onClick={() => setState('ready')}>{t('auth.confirm.retry', 'Try again')}</button></p>
           )}
-          {state === 'problem' && <ConfirmLinkProblem initialEmail={email} />}
+          {state === 'problem' && <ConfirmLinkProblem initialEmail={email} mode={codeOnly ? 'code' : 'expired'} />}
         </CardContent>
       </Card>
     </div>
