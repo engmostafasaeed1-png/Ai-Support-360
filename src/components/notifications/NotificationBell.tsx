@@ -5,6 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useNotificationPause } from '@/hooks/useNotificationPause';
 import { allowedDurations, formatPauseEnd, type PauseDuration } from '@/lib/notificationPause';
 import PauseNotificationsDialog, { DURATION_LABEL } from './PauseNotificationsDialog';
+import { BroadcastPopup } from '@/components/messages/BroadcastMessages';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -30,6 +31,9 @@ export default function NotificationBell({ basePath }: NotificationBellProps) {
   const [pauseFor, setPauseFor] = useState<PauseDuration>('1w');
 
   return (
+    <>
+    {/* Feature R: admin messages sent with the pop-up option show once, here in every portal. */}
+    <BroadcastPopup />
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative"

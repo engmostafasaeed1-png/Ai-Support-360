@@ -226,6 +226,7 @@ export const adminNavGroups: NavGroup[] = [
     defaultOpen: true,
     items: [
       { key: 'users', icon: Users, path: '/admin/users' },
+      { key: 'messages_admin', icon: Megaphone, path: '/admin/messages', fallback: 'Messages / Campaigns' },
       { key: 'approvals', icon: UserCheck, path: '/admin/approvals' },
       { key: 'client_approvals', icon: BadgeCheck, path: '/admin/client-approvals', fallback: 'Client approvals' },
       { key: 'client_ratings', icon: StarHalf, path: '/admin/client-reviews', fallback: 'Client ratings' },
