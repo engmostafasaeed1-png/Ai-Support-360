@@ -1,4 +1,4 @@
-import { Star, Trophy, Zap } from 'lucide-react';
+import { Shield, Star, Trophy, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toneGradient, TONE_COLOR, type RingPill, type RingSummary, type SuccessPill } from '@/lib/ringAvatar';
 import { successColor, successGradient, SUCCESS_VARS } from '@/lib/successLevel';
@@ -18,9 +18,18 @@ export default function RingPills({ summary, size = 'sm', className }: { summary
       <Pill pill={rating} size={size} kind="rating" />
       {resp && <Pill pill={resp} size={size} kind="responsiveness" />}
       {success && <SuccessChip pill={success} large={size === 'lg'} />}
+      {size === 'lg' && summary.pills.ai && (
+        <span data-testid="ring-pill-ai" data-tier={summary.pills.ai.tier} dir="auto"
+          className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card px-3 py-1 text-sm font-semibold text-foreground shadow-sm">
+          <Shield aria-hidden="true" className={cn('h-4 w-4', AI_CLASS[summary.pills.ai.tier])} style={{ fill: 'currentColor', fillOpacity: 0.2 }} />
+          {summary.pills.ai.text}
+        </span>
+      )}
     </div>
   );
 }
+
+const AI_CLASS: Record<string, string> = { gold: 'text-badge-gold', silver: 'text-badge-silver', bronze: 'text-badge-bronze', verified: 'text-success' };
 
 function Pill({ pill, size, kind }: { pill: RingPill; size: 'sm' | 'lg'; kind: 'rating' | 'responsiveness' }) {
   const Icon = kind === 'rating' ? Star : Zap;

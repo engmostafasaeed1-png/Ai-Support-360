@@ -154,7 +154,7 @@ export interface RingSummary {
   /** Compact label, e.g. "4.8 ★ | Fast reply". */
   label: string;
   /** Always-visible pills: "4.8 (23)" and "Fast reply - 18 min" (null while responsiveness is private). */
-  pills: { rating: RingPill; resp: RingPill | null; success: SuccessPill | null };
+  pills: { rating: RingPill; resp: RingPill | null; success: SuccessPill | null; ai: { text: string; tier: RingTier } | null };
   /** Number for the tiny badge on xs/sm rings: "4.8" or "New". */
   short: string;
 }
@@ -217,7 +217,10 @@ export function ringSummary(i: RingInput): RingSummary {
     text: successText, compact: successCompactText(success, lang) ?? '', level: success.level, sr: pick(RING_STRINGS.srSuccess, lang),
     label: success.level ? successLabel(success.level, lang) : null,
   };
-  return { rating, resp, tier, success, text: lines.join('; '), lines, label, pills: { rating: ratingPill, resp: respPill, success: successPill }, short };
+  return { rating, resp, tier, success, text: lines.join('; '), lines, label, pills: {
+    rating: ratingPill, resp: respPill, success: successPill,
+    ai: tier && tier !== 'verified' ? { text: fill(pick(RING_STRINGS.tier, lang), { tier: pick(TIER_LABEL[tier], lang) }), tier } : null,
+  }, short };
 }
 
 // ---------------------------------------------------------------------------------------------------- geometry
