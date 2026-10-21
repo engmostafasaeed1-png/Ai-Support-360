@@ -633,3 +633,11 @@ textarea:focus-visible {
     min-width: 0;
   }
 }
+
+/* Radix ScrollArea bars follow the same brand scrollbar tokens */
+@layer components {
+  .scroll-area-bar { background-color: var(--scrollbar-track); }
+  .scroll-area-thumb { background-color: var(--scrollbar-thumb); min-height: 40px; }
+  .scroll-area-thumb:hover { background-color: var(--scrollbar-thumb-hover); }
+  .scroll-area-thumb:active { background-color: var(--scrollbar-thumb-active); }
+}
