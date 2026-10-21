@@ -94,6 +94,8 @@ describe('policy text', () => {
     const hidden = 'CREATE OR REPLACE FUNCTION public.hidden_consultant_ids()';
     const critical = 'CREATE OR REPLACE FUNCTION public.critical_alert_targets(_ticket_id uuid)';
     expect(fn(read('consultant-location.sql'), hidden)).toBe(fn(read('consultant-policy.sql'), hidden));
+    expect(fn(read('user-management.sql'), hidden)).toBe(fn(read('consultant-policy.sql'), hidden));
+    expect(fn(read('consultant-policy.sql'), hidden)).toContain('um_suspended_consultant_ids');
     expect(fn(read('responsiveness.sql'), critical)).toBe(fn(read('consultant-policy.sql'), critical));
     expect(fn(read('consultant-policy.sql'), hidden)).toContain('consultant_policy_blocked_ids');
     expect(fn(read('consultant-policy.sql'), critical)).toContain('consultant_policy_blocked_ids');

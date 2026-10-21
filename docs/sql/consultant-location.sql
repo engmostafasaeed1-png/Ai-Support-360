@@ -106,6 +106,7 @@ REVOKE ALL ON FUNCTION public.consultant_location_blocked(uuid) FROM PUBLIC, ano
 GRANT EXECUTE ON FUNCTION public.consultant_location_blocked(uuid) TO authenticated, service_role;
 
 -- 3a. Hidden from directory, map and matching (existing rule kept; location rule added, independent of "enforce").
+-- Combined rule, kept identical in consultant-location.sql, consultant-policy.sql and user-management.sql (any may be applied last).
 CREATE OR REPLACE FUNCTION public.hidden_consultant_ids()
  RETURNS uuid[]
  LANGUAGE plpgsql
@@ -127,6 +128,10 @@ BEGIN
   END IF;
   IF to_regprocedure('public.consultant_policy_blocked_ids()') IS NOT NULL THEN
     EXECUTE 'SELECT public.consultant_policy_blocked_ids()' INTO _more;
+    _ids := _ids || COALESCE(_more, ARRAY[]::uuid[]);
+  END IF;
+  IF to_regprocedure('public.um_suspended_consultant_ids()') IS NOT NULL THEN
+    EXECUTE 'SELECT public.um_suspended_consultant_ids()' INTO _more;
     _ids := _ids || COALESCE(_more, ARRAY[]::uuid[]);
   END IF;
   RETURN ARRAY(SELECT DISTINCT x FROM unnest(_ids) AS x);
