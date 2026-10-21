@@ -66,7 +66,7 @@ export default function ProfileImportance({ children }: { children: ReactNode })
         <DialogHeader className="shrink-0 bg-[image:var(--gradient-profile-header)] px-5 pb-5 pt-6 text-start sm:px-6">
           <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-accent/20 bg-background/70 text-accent"><Sparkles aria-hidden="true" className="h-5 w-5" /></span>
           <DialogTitle className="pe-6 text-xl leading-snug tracking-normal">{t('profile_save.boost_title', 'Boost your profile before you save')}</DialogTitle>
-          <DialogDescription>{t('profile_save.boost_description', 'Let clients see a clearer picture of your expertise. You can save now and finish later.')}</DialogDescription>
+          <DialogDescription>{t('profile_save.boost_description_drafts', 'Your changes are saved as a draft automatically, so nothing is lost. Submitting your profile for review needs every required item to be complete.')}</DialogDescription>
         </DialogHeader>
         <div className="min-h-0 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
           <div className="grid grid-cols-2 gap-3">
