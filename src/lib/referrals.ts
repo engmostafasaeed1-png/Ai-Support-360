@@ -315,3 +315,56 @@ export const CHIP_TONE: Record<ActivationChip, string> = {
   expired: 'bg-destructive/10 text-destructive',
   under_review: 'bg-warning/15 text-warning',
 };
+
+// ------------------------------------------------------------------ referral calculations (display mirrors)
+
+/** Man-days = approved hours / 8, 2 decimals. */
+export const manDays = (hours: number | null | undefined) => (hours == null || !Number.isFinite(hours) ? null : round2(hours / MAN_DAY_HOURS));
+
+/** "Fee $400.00 x 0.5 % = $2.00" - the plain formula shown next to every reward line. */
+export function formulaText(fee: number, ratePercent: number, reward: number, money: (v: number) => string): string {
+  return `Fee ${money(fee)} x ${formatRate(ratePercent)} % = ${money(reward)}`;
+}
+
+/** Progress to the payout minimum: "$18.40 of $25.00 available". */
+export function thresholdProgress(available: number, minPayout: number): { percent: number; reached: boolean; missing: number } {
+  const a = Math.max(0, round2(available));
+  const m = Math.max(0, minPayout);
+  if (m === 0) return { percent: 100, reached: true, missing: 0 };
+  return { percent: Math.min(100, Math.round((a / m) * 100)), reached: a >= m, missing: round2(Math.max(0, m - a)) };
+}
+
+/** Net per referral = reward earned + reversed (reversed is negative). */
+export const netReward = (earned: number, reversed: number) => round2(earned + reversed);
+
+export interface EstimateInput { referred: number; manDaysPerMonth: number; hourlyRate: number; ratePercent: number; months: number }
+
+/**
+ * ILLUSTRATION only (no promise): n consultants x man-days per month x 8 h x hourly rate x rate %, per month and over
+ * the reward window. Uses the real rate and window from the settings.
+ */
+export function referralEstimate(i: EstimateInput): { perMonth: number; overWindow: number } {
+  const n = Math.max(0, Math.min(1000, Math.floor(i.referred || 0)));
+  const d = Math.max(0, Math.min(31, i.manDaysPerMonth || 0));
+  const h = Math.max(0, Math.min(10000, i.hourlyRate || 0));
+  const perConsultant = rewardForFee(d * MAN_DAY_HOURS * h, i.ratePercent);
+  const perMonth = round2(perConsultant * n);
+  return { perMonth, overWindow: round2(perMonth * Math.max(0, Math.round(i.months || 0))) };
+}
+
+export interface CalcLine {
+  created_at: string; ref_key: string | null; referred_name: string | null; kind: string; status: string; ticket_ref: string | null;
+  approved_hours: number | null; man_days: number | null; hourly_rate: number | null; fee_amount: number | null; rate_percent: number | null;
+  amount: number; currency: string; payment_status: string | null; client_paid_at: string | null; payout_status: string | null;
+  payout_released_at: string | null; referral_payout_due: string | null; note: string | null;
+}
+
+export const STATEMENT_COLUMNS: Array<[keyof CalcLine, string]> = [
+  ['created_at', 'Date'], ['referred_name', 'Referred consultant'], ['kind', 'Type'], ['ticket_ref', 'Ticket'], ['approved_hours', 'Approved hours'],
+  ['man_days', 'Man-days'], ['hourly_rate', 'Hourly rate'], ['fee_amount', 'Fee'], ['rate_percent', 'Rate %'], ['amount', 'Reward'],
+  ['currency', 'Currency'], ['status', 'State'], ['payment_status', 'Client invoice'], ['payout_released_at', 'Payout released'],
+];
+
+export function statementCsv(lines: CalcLine[]): string {
+  return referralCsv(lines as unknown as Array<Record<string, unknown>>, STATEMENT_COLUMNS as Array<[string, string]>);
+}
