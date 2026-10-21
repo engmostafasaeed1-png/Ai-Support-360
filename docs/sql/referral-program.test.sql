@@ -183,8 +183,8 @@ SELECT pg_temp.check((SELECT count(*) FROM public.referral_reward_lines) = 0, 'r
 SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.my_referrals() WHERE referred_name ILIKE '%dalia%' OR referred_name ILIKE '%kamal%'), 'no full names');
 SELECT pg_temp.check((SELECT status FROM public.my_referrals() WHERE referred_name = 'D. K****') = 'paying', 'status paying');
 SELECT pg_temp.check((SELECT (public.my_referral_overview(NULL) -> 'funnel' ->> 'signups')::int) = 3, 'funnel sign-ups');
-SELECT pg_temp.check((SELECT (e ->> 'pending')::numeric FROM jsonb_array_elements(public.my_referral_overview(NULL) -> 'earnings') e WHERE e ->> 'currency' = 'USD') = 11.67,
-                     'pending = 1.67 + 5.00 + 5.00');
+SELECT pg_temp.check((SELECT (e ->> 'pending')::numeric FROM jsonb_array_elements(public.my_referral_overview(NULL) -> 'earnings') e WHERE e ->> 'currency' = 'USD') = 7.67,
+                     'pending = 1.67 + 5.00 + 1.00');
 DO $$ BEGIN
   PERFORM public.admin_referral_overview();
   RAISE EXCEPTION 'FAILED: consultant reached an admin RPC';
