@@ -72,26 +72,6 @@ export default function ConsultantVerificationAuditLog({ consultantId, className
     enabled: !!consultantId,
   });
 
-  // Realtime: refresh when a new audit row is appended for this consultant
-  useEffect(() => {
-    if (!consultantId) return;
-    const channel = supabase
-      .channel(`verification-audit-${consultantId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'consultant_verification_audit',
-          filter: `consultant_id=eq.${consultantId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['consultant-verification-audit', consultantId] });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [consultantId, queryClient]);
 
   return (
     <div className={className}>

@@ -9,16 +9,7 @@ export function useConsultantCases() {
   const { isGuest } = useGuestMode();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (isGuest) return;
-    const channel = supabase
-      .channel('consultant-cases-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['consultant-cases'] });
-      })
-      .subscribe();
-    return () => { channel.unsubscribe(); };
-  }, [isGuest, queryClient]);
+  // Live changes to my cases arrive through the app-wide channel (useRealtimeStatusSync).
 
   const signedIn = useSessionReady().signedIn;
   return useQuery({

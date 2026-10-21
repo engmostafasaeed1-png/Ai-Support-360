@@ -224,31 +224,6 @@ export default function ConsultantProfilePage() {
 
   // Realtime: refresh badge when an admin changes the verification status
   const queryClient = useQueryClient();
-  useEffect(() => {
-    if (!id) return;
-    const channel = supabase
-      .channel(`consultant-verification-${id}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'consultants', filter: `id=eq.${id}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['consultant-verification', id] });
-          // The status that the consultant sets (Online, Busy, Offline), the place and the links are shown on this page too: show a change at once.
-          queryClient.invalidateQueries({ queryKey: ['consultant-profile-detail', id] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'availability_slots', filter: `consultant_id=eq.${id}` },
-        () => {
-          // The consultant edits their hours in the Session Calendar: show them at once.
-          queryClient.invalidateQueries({ queryKey: ['consultant-weekly-hours', id] });
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [id, queryClient]);
 
   // Weekly working hours the consultant set in their Session Calendar
   const { data: weeklyHours } = useQuery({

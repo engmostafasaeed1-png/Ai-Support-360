@@ -10,16 +10,6 @@ export function useClientSessions() {
   const { tenant, loading: tenantLoading } = useTenant();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (isGuest) return;
-    const channel = supabase
-      .channel('client-sessions-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['client-sessions'] });
-      })
-      .subscribe();
-    return () => { channel.unsubscribe(); };
-  }, [isGuest, queryClient]);
 
   return useQuery({
     queryKey: ['client-sessions', tenant?.id ?? null],

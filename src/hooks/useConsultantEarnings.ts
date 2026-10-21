@@ -9,19 +9,6 @@ export function useConsultantEarnings() {
   const { isGuest } = useGuestMode();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (isGuest) return;
-    const channel = supabase
-      .channel('consultant-earnings-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['consultant-earnings'] });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'payouts' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['consultant-earnings'] });
-      })
-      .subscribe();
-    return () => { channel.unsubscribe(); };
-  }, [isGuest, queryClient]);
 
   const signedIn = useSessionReady().signedIn;
   return useQuery({

@@ -13,20 +13,6 @@ export function useRealtimeConsultants() {
   const { isGuest } = useGuestMode();
   const queryClient = useQueryClient();
 
-  // Subscribe to real-time changes
-  useEffect(() => {
-    if (isGuest) return;
-    const channel = supabase
-      .channel('consultants-availability')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'consultants' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['realtime-consultants'] });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'availability_slots' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['realtime-consultants'] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [isGuest, queryClient]);
 
   const hiddenIds = useHiddenConsultantIds(!isGuest);
   const { data: allConsultants = [], isLoading } = useQuery({

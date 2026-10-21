@@ -29,16 +29,7 @@ export function useProjectManagementTickets() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Realtime subscription
-  useEffect(() => {
-    const channel = supabase
-      .channel('pm-tickets-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['pm-tickets'] });
-      })
-      .subscribe();
-    return () => { channel.unsubscribe(); };
-  }, [queryClient]);
+  // Live changes arrive through the app-wide channel (useRealtimeStatusSync).
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ['pm-tickets', tenant?.id],
