@@ -324,8 +324,8 @@ export default function FeedbackDialog({ open, onOpenChange, signedIn }: Props) 
   if (isMobile) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="max-h-[92dvh] overflow-y-auto rounded-t-2xl pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <SheetHeader className="mb-3 text-start">
+        <SheetContent side="bottom" className="z-[80] max-h-[92dvh] overflow-y-auto rounded-t-2xl pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <SheetHeader className="mb-3 pr-8 text-start">
             <SheetTitle>{heading}</SheetTitle>
             <SheetDescription>{sub}</SheetDescription>
           </SheetHeader>
@@ -337,7 +337,7 @@ export default function FeedbackDialog({ open, onOpenChange, signedIn }: Props) 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto rounded-2xl">
-        <DialogHeader className="text-start">
+        <DialogHeader className="pr-8 text-start">
           <DialogTitle>{heading}</DialogTitle>
           <DialogDescription>{sub}</DialogDescription>
         </DialogHeader>
