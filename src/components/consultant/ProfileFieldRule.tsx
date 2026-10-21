@@ -6,7 +6,8 @@ import { useProfileFieldRules } from '@/hooks/useProfileFieldRules';
 export function FieldGate({ field, children }: { field: string | string[]; children: ReactNode }) {
   const { isVisible } = useProfileFieldRules();
   const keys = Array.isArray(field) ? field : [field];
-  return keys.some(isVisible) ? <>{children}</> : null;
+  // display:contents keeps the layout; the attribute lets the required-items list find and focus the field.
+  return keys.some(isVisible) ? <div className="contents" data-profile-field={keys.join(' ')}>{children}</div> : null;
 }
 
 /** A red star and the helper text "Required" when the administrator made the field required. */

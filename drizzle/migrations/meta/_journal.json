@@ -540,6 +540,13 @@
       "when": 1792597175998,
       "tag": "0076_consultant_policy_read",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1792608625538,
+      "tag": "0077_profile_submit_gate",
+      "breakpoints": true
     }
   ]
 }

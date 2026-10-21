@@ -74,11 +74,11 @@ describe('policy pop-up', () => {
 });
 
 describe('registration step', () => {
-  it('is the final step before review: summary, required checkbox, "Accept and submit for review"', async () => {
+  it('is a required step of the registration (the profile is submitted separately): summary, required checkbox, "Accept the policy"', async () => {
     wrap(<PolicyRegistrationStep verificationStatus="pending" />, '/consultant/profile');
-    expect(screen.getByRole('heading', { name: 'Final step: Consultant Service Policy' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Required step: Consultant Service Policy' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Full policy text' })).toHaveTextContent('Summary');
-    const submit = screen.getByRole('button', { name: 'Accept and submit for review' });
+    const submit = screen.getByRole('button', { name: 'Accept the policy' });
     expect(submit).toBeDisabled();
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(submit);

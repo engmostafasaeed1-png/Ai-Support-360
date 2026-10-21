@@ -42,7 +42,7 @@ export default function PolicyRegistrationStep({ verificationStatus }: { verific
     <section id="service-policy" aria-labelledby="service-policy-title" className="scroll-mt-20 space-y-3 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6">
       <h2 id="service-policy-title" className="flex items-center gap-2 text-lg font-bold text-foreground">
         <ShieldCheck className="h-5 w-5 text-primary" aria-hidden="true" />
-        {pending && isNew && inReview ? t('consultantPolicy.stepTitle', 'Final step: Consultant Service Policy') : t('consultantPolicy.sectionTitle', 'Consultant Service Policy')}
+        {pending && isNew && inReview ? t('consultantPolicy.stepTitleRequired', 'Required step: Consultant Service Policy') : t('consultantPolicy.sectionTitle', 'Consultant Service Policy')}
       </h2>
       {!my.ready || !policyQ.data.ready ? (
         <>
@@ -59,7 +59,7 @@ export default function PolicyRegistrationStep({ verificationStatus }: { verific
         <>
           <p className="text-sm text-muted-foreground">
             {isNew && inReview
-              ? t('consultantPolicy.stepIntro', 'Read the summary and the policy, then accept it. This is the last step before our team reviews your profile.')
+              ? t('consultantPolicy.stepIntroRequired', 'Read the summary and the policy, then accept it. It is one of the required items before you can submit your profile for review.')
               : t('consultantPolicy.updatedIntro', 'We have updated our service policy. Please read the summary and confirm it.')}
             {' '}{statusText}
           </p>
@@ -70,11 +70,11 @@ export default function PolicyRegistrationStep({ verificationStatus }: { verific
           {readLink}
           <PolicyAcceptForm
             version={version}
-            submitLabel={isNew && inReview ? t('consultantPolicy.submitReview', 'Accept and submit for review') : t('consultantPolicy.confirm', 'Confirm')}
+            submitLabel={isNew && inReview ? t('consultantPolicy.acceptRequired', 'Accept the policy') : t('consultantPolicy.confirm', 'Confirm')}
             onAccept={async v => {
               await my.accept.mutateAsync({ version: v, lang, source: isNew ? 'registration' : 'banner' });
               toast.success(isNew && inReview
-                ? t('consultantPolicy.submitted', 'Policy accepted. Our team reviews your profile next.')
+                ? t('consultantPolicy.acceptedRequired', 'Policy accepted. Submit your profile below when every required item is complete.')
                 : t('consultantPolicy.thanks', 'Thank you - the policy is confirmed.'));
             }}
           />

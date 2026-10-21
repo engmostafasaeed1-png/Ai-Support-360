@@ -20,6 +20,7 @@ import { useConsultantProfile } from '@/hooks/useConsultantProfile';
 import ConsultantOnboarding from '@/components/consultant/onboarding/ConsultantOnboarding';
 import { EmbeddedGuideProvider, EmbeddedGuideSwitch, EmbeddedGuideCard } from '@/components/consultant/onboarding/EmbeddedGuides';
 import { FieldHint } from '@/components/consultant/onboarding/OnboardingGuidePanel';
+import ProfileSubmitGate, { ProfileRequiredSummary, ProfileSubmissionProvider, SectionRequiredStatus } from '@/components/consultant/profile/ProfileSubmitGate';
 
 export default function ProfilePage() {
   const { t } = useTranslation();
@@ -34,7 +35,7 @@ export default function ProfilePage() {
   }, [isLoading, hash]);
   if (isLoading) return <Skeleton className="h-80 w-full" />;
   return (
-    <EmbeddedGuideProvider setup={new URLSearchParams(search).get('section') === 'setup'}><ProfileImportance><div className="space-y-6">
+    <EmbeddedGuideProvider setup={new URLSearchParams(search).get('section') === 'setup'}><ProfileSubmissionProvider><ProfileImportance><div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-foreground">{t('consultant_profile_hub.title')}</h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -46,12 +47,14 @@ export default function ProfilePage() {
         </div>
       </div>
       <div className="flex items-center gap-4"><AvatarUpload /><div className="space-y-1"><h2 className="text-lg font-semibold">{profile?.display_name}</h2><ConsultantLocation audience="owner" city={profile?.city} country={profile?.country} className="text-sm text-muted-foreground" /><FoundingBadge consultantId={profile?.id} numbered /></div></div>
+      <ProfileRequiredSummary />
       <LocationBanner compact />
       <PolicyBanner inlineAnchor />
       <ConsultantOnboarding embedded />
       <section id="payout-details" className="scroll-mt-20">
         <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
           <Landmark className="w-5 h-5 text-primary" /> Payout bank details
+          <SectionRequiredStatus sectionId="payout-details" />
         </h2>
         <PayoutDetailsCard />
       </section>
@@ -60,14 +63,17 @@ export default function ProfilePage() {
         <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
           <Brain className="w-5 h-5 text-primary" /> {t('interview.history', 'Interview History & Results')}
           <FieldHint field="interview" />
+          <SectionRequiredStatus sectionId="interview-history" />
         </h2>
         <InterviewStartCard />
         <InterviewTranscript consultantId={profile?.id || ''} viewMode="consultant" />
       </section>
+      <div className="flex justify-end"><SectionRequiredStatus sectionId="service-policy" /></div>
       <PolicyRegistrationStep verificationStatus={profile?.verification_status} />
+      <ProfileSubmitGate />
       <p className="text-xs text-muted-foreground"><a href="/consultant-policy" target="_blank" rel="noopener" className="text-primary underline">{t('footer.consultantPolicy', 'Consultant Service Policy')}</a></p>
       <ReinterviewDialog open={reinterviewOpen} onOpenChange={setReinterviewOpen}
         consultantId={profile?.id || ''} consultantName={profile?.display_name || ''} selfService />
-    </div></ProfileImportance></EmbeddedGuideProvider>
+    </div></ProfileImportance></ProfileSubmissionProvider></EmbeddedGuideProvider>
   );
 }
