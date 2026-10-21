@@ -9,7 +9,7 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - Keep invoice details in a three-zone dialog with shared billing controls and the existing admin confirmation hook; this keeps visible actions consistent with backend permissions.
 - Keep timesheet PDF and CSV row models in the shared timesheet document helpers, using existing screen amounts and approval metadata; this prevents export totals and statuses from diverging.
 - Keep consultant credibility calculations and star fills in the shared consultant credibility library, reused by profile and directory displays, so scores and ratings stay consistent.
-- Use shared CDN logo pointers for brand artwork and local derived browser icons so all logo placements stay consistent.
+- Use shared CDN logo pointers for brand artwork and local derived browser icons so logos stay consistent.
 - Use the consultant Profile page as the single consolidated editor, reusing existing field controls without a duplicate setup tab; legacy onboarding links must land there.
 - Rank consultants only with the shared deterministic matcher (`supabase/functions/_shared/ticketMatch.ts`: hard filters, admin-tunable weights, why-chips) everywhere, incl. directory sort; client blocks are exclusions, favourites an optional capped criterion; displays derive from its weights; AI writes text only, so rankings stay reproducible.
 - Ticket payment terms and consultant invoices are written only via SECURITY DEFINER RPCs; a client-approved invoice becomes a pending payments row so existing billing handles collection.
@@ -22,6 +22,6 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - AI interviews start only through the shared interviewStart resolver (resume in-progress, else reuse newest pending, single-flight insert) behind a visible blocker/preflight; completion counts the interview as its own weighted item from the shared helper, and evaluation confirms trigger-awarded badges, so no surface creates duplicates or a different percent.
 - Long ticket submits and expert-matching runs show the shared TaskProgressPanel driven by real step states (percent = finished steps, open steps pulse), and new tickets are saved through the ticketSubmission helpers (single-flight plus a tab-stored id); this keeps progress honest and prevents duplicate tickets on double click, retry or refresh.
 - Team engagement: on gated tickets only team activation writes active assignments and tickets.consultant_id, after all four gates, for client- and admin-added members (admin changes audited); team requests only invite and team rows only mirror existing tables, so access rules follow the gates.
-- Head tags in index.html carry `data-rh="true"` so Helmet replaces them.
+- index.html head tags carry `data-rh="true"` so Helmet replaces them.
 - Social sign-in starts only via startSocialSignIn (re-reads switches, fails closed).
 - Realtime uses `subscribeWhileVisible` with row filters (whole tables only on admin pages); portals and Arabic load lazily, cutting DB/bundle load.
