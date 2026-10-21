@@ -25,6 +25,8 @@ import { BlendedRatingStars } from '@/components/consultant/ResponsivenessRating
 import { usePublicResponsiveness } from '@/hooks/useResponsiveness';
 import ConsultantRing, { ConsultantRingPills } from '@/components/consultant/ConsultantRing';
 import { responsivenessScore } from '@/lib/ringAvatar';
+import { useSuccessConfig, useSuccessStatsMap } from '@/hooks/useSuccessStats';
+import { successView, type SuccessView } from '@/lib/successLevel';
 import LinkStatus from '@/components/consultant/LinkStatus';
 import { STATE_META } from '@/lib/mapMarkers';
 import { compareRecommended, type ConsultantLive } from '@/lib/consultantDirectory';
@@ -74,7 +76,14 @@ export default function ConsultantsPage() {
   const { data: foundingMonths = 0 } = useFoundingBoost();
   const foundingSet = useMemo(() => new Set<string>(foundingAwards ? [...foundingAwards.keys()] : []), [foundingAwards]);
   const { levels: respLevels, byId: respById, publicOn: respPublic } = usePublicResponsiveness();
-  const ctx = useMemo<DirectoryContext>(() => ({ founding: foundingSet, viewerOffset: -new Date().getTimezoneOffset() / 60, respLevels }), [foundingSet, respLevels]);
+  // Feature W success statistics: one request for the whole list (counts only); null while the display is off.
+  const successCfg = useSuccessConfig();
+  const consultantIds = useMemo(() => consultants.map((c) => c.id), [consultants]);
+  const successCounts = useSuccessStatsMap(consultantIds, successCfg.publicOn);
+  const successViews = useMemo<Map<string, SuccessView> | null>(() => successCfg.publicOn && successCounts
+    ? new Map(consultantIds.map((id) => [id, successView(true, successCounts.get(id) ?? null, successCfg.settings)] as [string, SuccessView]))
+    : null, [successCfg.publicOn, successCfg.settings, successCounts, consultantIds]);
+  const ctx = useMemo<DirectoryContext>(() => ({ founding: foundingSet, viewerOffset: -new Date().getTimezoneOffset() / 60, respLevels, success: successViews }), [foundingSet, respLevels, successViews]);
   // Same score as the inner ring arc; only while responsiveness is public.
   const respScores = useMemo(() => respPublic ? new Map([...respById].flatMap(([id, r]) => { const v = responsivenessScore(r); return v == null ? [] : [[id, v] as [string, number]]; })) : null, [respById, respPublic]);
 
@@ -95,8 +104,8 @@ export default function ConsultantsPage() {
   const withoutArea = useMemo(() => consultants.filter(c => passes(c, filters, ctx, 'bbox')), [consultants, filters, ctx]);
   const matches = useMemo(() => directoryMatches(withoutArea, filters, foundingSet, respLevels), [withoutArea, filters, foundingSet, respLevels]);
   const filtered = useMemo(
-    () => sortDirectory(withoutArea.filter(c => !filters.bbox || (PREDICATES.bbox?.(c, filters, ctx) ?? true)), filters, matches, tieBreak, respScores),
-    [withoutArea, filters, ctx, matches, tieBreak, respScores],
+    () => sortDirectory(withoutArea.filter(c => !filters.bbox || (PREDICATES.bbox?.(c, filters, ctx) ?? true)), filters, matches, tieBreak, respScores, successViews),
+    [withoutArea, filters, ctx, matches, tieBreak, respScores, successViews],
   );
   const mapMatches = useMemo(() => {
     if (!matches) return null;
@@ -206,6 +215,8 @@ export default function ConsultantsPage() {
             <SelectItem value="best_match">{t('consultants_page.sort_best_match', 'Best Match')}</SelectItem>
             <SelectItem value="rating">{t('consultants_page.sort_rating', 'Highest Rating')}</SelectItem>
             {respPublic && <SelectItem value="responsiveness">{t('directory.sort_responsiveness', 'Most responsive')}</SelectItem>}
+            {successViews && <SelectItem value="success_level">{t('directory.sort_success_level', 'Highest Success level')}</SelectItem>}
+            {successViews && <SelectItem value="success_rate">{t('directory.sort_success_rate', 'Highest success rate')}</SelectItem>}
             <SelectItem value="rate_low">{t('consultants_page.sort_price_low', 'Price: Low → High')}</SelectItem>
             <SelectItem value="rate_high">{t('consultants_page.sort_price_high', 'Price: High → Low')}</SelectItem>
             <SelectItem value="experience">{t('directory.sort_experience', 'Most experience')}</SelectItem>
@@ -308,6 +319,7 @@ export default function ConsultantsPage() {
                     <FoundingBadge consultantId={c.id} /><TrustBadge badge={c.ai_interview_badge} credits={c.credibility_credits} className="mt-1" />
                     <CompletionBadge percent={c.completion_percent ?? 0} tier={c.ai_interview_badge} className="mt-1" />
                     <ResponsivenessChip consultantId={c.id} className="mt-1" />
+                    <ConsultantRingPills size="xs" consultantId={c.id} rating={c.rating} reviews={c.reviews} className="mt-1" />
                     <FavouriteChip consultantId={c.id} className="mt-1" />
                     {matches && <MatchWhyChips why={matches.get(c.id)?.chips} score={matches.get(c.id)?.score} />}
                   </div>
