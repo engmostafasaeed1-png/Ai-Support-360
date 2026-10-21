@@ -113,7 +113,7 @@ export default function NotificationPausePage() {
             {state === 'error' && result.error !== 'invalid_link' && result.error !== 'expired_link' && result.error !== 'disabled' && (
               <Button variant="outline" onClick={() => call('apply')} disabled={busy}>{t('common.retry', 'Try again')}</Button>
             )}
-            <Button variant="ghost" asChild><Link to="/auth">{t('npause.page_settings', 'Sign in to change your settings')}</Link></Button>
+            <Button variant="ghost" asChild><Link to="/login">{t('npause.page_settings', 'Sign in to change your settings')}</Link></Button>
           </div>
         </CardContent>
       </Card>
