@@ -641,3 +641,10 @@ textarea:focus-visible {
   .scroll-area-thumb:hover { background-color: var(--scrollbar-thumb-hover); }
   .scroll-area-thumb:active { background-color: var(--scrollbar-thumb-active); }
 }
+
+/* Feature V: the field a "Complete these required items" row jumps to. */
+[data-required-highlight="true"] {
+  outline: 2px solid hsl(var(--destructive));
+  outline-offset: 3px;
+  border-radius: 0.5rem;
+}

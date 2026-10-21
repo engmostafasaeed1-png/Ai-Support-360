@@ -42,6 +42,9 @@ import { certificateKey, jobKey, onlyNew, projectKey, skillKey, slotKey, studyKe
 import { EmbeddedGuideCard, EmbeddedSetupMessages, useEmbeddedGuides } from './EmbeddedGuides';
 import { FieldHint } from './OnboardingGuidePanel';
 import { useConsultantProfile } from '@/hooks/useConsultantProfile';
+import { fill } from '@/lib/i18nFill';
+import { SectionRequiredStatus } from '@/components/consultant/profile/ProfileSubmitGate';
+import { requiredFieldsCleared } from '@/lib/profileSubmission';
 
 export interface WorkHistoryEntry {
   companyName: string;
@@ -525,14 +528,14 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
   };
 
   const sectionValues = (keys: (keyof OnboardingData)[]) => Object.fromEntries(keys.map(key => [key, data[key]]));
-  const validateSection = (keys: (keyof OnboardingData)[]) => (_patch: Record<string, unknown>) => {
-    const fields: Partial<Record<keyof OnboardingData, string>> = { displayName: 'display_name', bio: 'bio', hourlyRate: 'hourly_rate', nationality: 'nationality', city: 'city', country: 'country', timezone: 'timezone', languages: 'languages', linkedinUrl: 'linkedin_url', credlyUsername: 'credly_username', githubUrl: 'github_url', personalWebsite: 'personal_website', certifications: 'certifications', education: 'education', projects: 'projects' };
-    // Country and city are always required (independent of the enforcement switch); autosave skips this section and keeps the draft.
-    if ((keys.includes('country') || keys.includes('city')) && locationError(data.country, data.city)) return t('location.required', LOCATION_REQUIRED_MESSAGE);
-    for (const key of keys) {
-      const field = fields[key]; const value = data[key];
-      if (field && fieldRules.isRequired(field) && (value === null || value === '' || (typeof value === 'string' && !value.trim()) || (Array.isArray(value) && !value.length) || (key === 'hourlyRate' && Number(value) <= 0))) return t('profile_save.required', 'Complete the required fields in this section before saving.');
-    }
+  const validateSection = (keys: (keyof OnboardingData)[]) => (patch: Record<string, unknown>) => {
+    const fields: Record<string, string> = { displayName: 'display_name', bio: 'bio', hourlyRate: 'hourly_rate', nationality: 'nationality', city: 'city', country: 'country', timezone: 'timezone', languages: 'languages', linkedinUrl: 'linkedin_url', credlyUsername: 'credly_username', githubUrl: 'github_url', personalWebsite: 'personal_website', certifications: 'certifications', education: 'education', projects: 'projects' };
+    // Drafts always save. Only a location being changed must stay complete (country and city together), and a required
+    // field that already had a value may not be emptied - the draft stays on screen with the named fields.
+    if (('country' in patch || 'city' in patch) && locationError(data.country, data.city)) return t('location.required', LOCATION_REQUIRED_MESSAGE);
+    const cleared = requiredFieldsCleared(patch, fields, fieldRules.isRequired);
+    if (cleared.length) return fill(t('profile_save.required_named', 'Fill in {{fields}} before saving - your other changes stay here as a draft.'), { fields: cleared.map(f => fieldRules.labels.get(f) ?? f).join(', ') });
+    void keys;
     if (keys.includes('linkedinUrl') && data.linkedinUrl.trim() && !normalizeLinkedinUrl(data.linkedinUrl)) return LINKEDIN_HINT;
     if (keys.includes('credlyUsername') && data.credlyUsername.trim() && !normalizeCredlyUsername(data.credlyUsername)) return CREDLY_HINT;
     if (keys.includes('hourlyRate') && (!Number.isFinite(data.hourlyRate) || data.hourlyRate < 0)) return t('profile_save.rate_invalid', 'Enter a valid hourly rate.');
@@ -650,21 +653,23 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
         <EmbeddedGuideCard section="profile-details" stepKey="profile" />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">{t('consultant_profile_hub.details')}</h2>
+          <SectionRequiredStatus sectionId="profile-details" />
 
         </div>
         <ProfileStep data={data} onChange={updateData} renderSection={section} />
       </section>
-      <FieldGate field={['skills', 'sap_role', 'seniority_level', 'total_sap_years', 'sap_roles', 'sap_technologies']}><section id="expertise"><EmbeddedGuideCard section="expertise" stepKey="skills" /><SapExpertiseCard key={`skills-${importRevision}`} onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section></FieldGate>
-      <section id="profile-experience"><EmbeddedGuideCard section="profile-experience" stepKey="projects" /><ProfileExperienceCard sourceRevision={loadedRevision} key={`experience-${importRevision}`} payoutReady={payoutReady(payoutQ.data?.details)} onCompletenessChange={embeddedGuides.setCompleteness} /></section>
-      <FieldGate field={['work_history', 'cv']}><section id="experience"><EmbeddedGuideCard section="experience" stepKey="work" /><ExperienceCvCard onProfileChanged={() => setLoadedRevision(r => r + 1)} onImported={() => { setImportRevision(r => r + 1); setLoadedRevision(r => r + 1); }} /></section></FieldGate>
-      <FieldGate field="certifications"><section id="certifications"><EmbeddedGuideCard section="certifications" stepKey="certifications" />{section(['certifications'], <><p className="text-xs text-muted-foreground">{t('profile_save.cert_manual', 'Certificate changes require another verification check. Save them manually.')}</p><CertificationsStep data={data} onChange={updateData} /></>, true)}</section></FieldGate>
-      <FieldGate field="education"><section id="education"><EmbeddedGuideCard section="education" stepKey="education" />{section(['education'], <EducationStep data={data} onChange={updateData} />)}</section></FieldGate>
-      <FieldGate field="projects"><section id="projects"><EmbeddedGuideCard section="projects" stepKey="projects" />{section(['projects'], <ProjectsStep data={data} onChange={updateData} />)}</section></FieldGate>
+      <FieldGate field={['skills', 'sap_role', 'seniority_level', 'total_sap_years', 'sap_roles', 'sap_technologies']}><section id="expertise"><SectionRequiredStatus sectionId="expertise" className="mb-2" /><EmbeddedGuideCard section="expertise" stepKey="skills" /><SapExpertiseCard key={`skills-${importRevision}`} onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section></FieldGate>
+      <section id="profile-experience"><SectionRequiredStatus sectionId="profile-experience" className="mb-2" /><EmbeddedGuideCard section="profile-experience" stepKey="projects" /><ProfileExperienceCard sourceRevision={loadedRevision} key={`experience-${importRevision}`} payoutReady={payoutReady(payoutQ.data?.details)} onCompletenessChange={embeddedGuides.setCompleteness} /></section>
+      <FieldGate field={['work_history', 'cv']}><section id="experience"><SectionRequiredStatus sectionId="experience" className="mb-2" /><EmbeddedGuideCard section="experience" stepKey="work" /><ExperienceCvCard onProfileChanged={() => setLoadedRevision(r => r + 1)} onImported={() => { setImportRevision(r => r + 1); setLoadedRevision(r => r + 1); }} /></section></FieldGate>
+      <FieldGate field="certifications"><section id="certifications"><SectionRequiredStatus sectionId="certifications" className="mb-2" /><EmbeddedGuideCard section="certifications" stepKey="certifications" />{section(['certifications'], <><p className="text-xs text-muted-foreground">{t('profile_save.cert_manual', 'Certificate changes require another verification check. Save them manually.')}</p><CertificationsStep data={data} onChange={updateData} /></>, true)}</section></FieldGate>
+      <FieldGate field="education"><section id="education"><SectionRequiredStatus sectionId="education" className="mb-2" /><EmbeddedGuideCard section="education" stepKey="education" />{section(['education'], <EducationStep data={data} onChange={updateData} />)}</section></FieldGate>
+      <FieldGate field="projects"><section id="projects"><SectionRequiredStatus sectionId="projects" className="mb-2" /><EmbeddedGuideCard section="projects" stepKey="projects" />{section(['projects'], <ProjectsStep data={data} onChange={updateData} />)}</section></FieldGate>
 
       <FieldGate field="availability"><section id="availability" className="space-y-4">
         <EmbeddedGuideCard section="availability" stepKey="availability" />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">{t('onboarding.availability')}<FieldHint field="availability" /></h2>
+          <SectionRequiredStatus sectionId="availability" />
           <SetAvailabilityDialog onSaved={() => setLoadedRevision(r => r + 1)} trigger={<Button variant="outline">{t('onboarding.step_availability')}</Button>} />
         </div>
         {consultantId && <ProfileAvailability consultantId={consultantId} />}
