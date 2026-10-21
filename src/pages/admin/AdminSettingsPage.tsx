@@ -3,6 +3,7 @@ import MatchWeightsCard from '@/components/admin/MatchWeightsCard';
 import ProfileRemindersCard from '@/components/admin/ProfileRemindersCard';
 import AssignmentRemindersCard from '@/components/admin/AssignmentRemindersCard';
 import NotificationPauseAdminCard from '@/components/admin/NotificationPauseAdminCard';
+import SocialSigninSettingsCard from '@/components/admin/SocialSigninSettingsCard';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe, Layout, Mail } from 'lucide-react';
@@ -116,6 +117,8 @@ export default function AdminSettingsPage() {
             ))}
           </CardContent>
         </Card>
+
+        <SocialSigninSettingsCard settings={settings} loading={loading} updateSetting={updateSetting} />
 
         {/* Portal Layout Card */}
         <Card>

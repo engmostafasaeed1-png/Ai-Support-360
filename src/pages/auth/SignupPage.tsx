@@ -13,7 +13,8 @@ import PasswordInput from '@/components/auth/PasswordInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 import { cn } from '@/lib/utils';
 import { storeOAuthRole, canonicalOAuthUrl, oauthRedirectUri, friendlyOAuthMessage } from '@/lib/oauthReturn';
-import { lovable } from '@/integrations/lovable/index';
+import { startSocialSignIn } from '@/lib/socialSignin';
+import { useSocialSignin } from '@/hooks/useSocialSignin';
 import { MIN_PASSWORD_LENGTH } from '@/lib/passwordPolicy';
 import VideoBackground from '@/components/VideoBackground';
 import authBgAsset from '@/assets/videos/auth-bg.mp4.asset.json';
@@ -94,8 +95,12 @@ function SignupForm() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
 
+  const socialProviders = useSocialSignin();
+  const googleEnabled = socialProviders.includes('google');
+
   const handleGoogleSignup = async () => {
-    if (!agreed || googleLoading) return;
+    // Social sign-in switched off: never start the provider redirect.
+    if (!googleEnabled || !agreed || googleLoading) return;
     const canonical = canonicalOAuthUrl(window.location.href);
     if (canonical) { window.location.assign(canonical + window.location.search); return; }
     // Consultants choose country and city first; it is saved on their first sign-in.
@@ -108,7 +113,7 @@ function SignupForm() {
     setGoogleError(null);
     setGoogleLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth('google', { redirect_uri: oauthRedirectUri(window.location.origin) });
+      const result = await startSocialSignIn('google', { redirect_uri: oauthRedirectUri(window.location.origin) });
       if (result.error) { setGoogleError(friendlyOAuthMessage(result.error.message || '')); return; }
       if (result.redirected) return;
       navigate('/login', { replace: true }); // popup flow: session set, /login applies the stored account type
@@ -418,12 +423,14 @@ function SignupForm() {
               {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {t('auth.signup_btn')}
             </Button>
+            {googleEnabled && <>
             <Button type="button" variant="outline" className="w-full h-11 rounded-xl" onClick={handleGoogleSignup} disabled={loading || googleLoading || !agreed} aria-describedby={!agreed ? 'google-terms-hint' : undefined}>
               {googleLoading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {t('auth.signup_google', 'Sign up with Google')}
             </Button>
             {!agreed && <p id="google-terms-hint" className="text-[11px] text-muted-foreground">{t('auth.signup_google_terms', 'Tick the Terms box first to sign up with Google.')}</p>}
             {googleError && <p role="alert" className="text-xs text-destructive">{googleError}</p>}
+            </>}
             <p className="text-sm text-muted-foreground">
               {t('auth.have_account')}{' '}
               <Link to={role === 'consultant' ? '/login?role=consultant' : '/login'} onClick={() => storeOAuthRole(role)} className="text-primary font-medium hover:underline">{t('auth.login_link')}</Link>
