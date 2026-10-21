@@ -322,7 +322,8 @@
     "client_approvals": "Client approvals",
     "consultant_responsiveness": "Responsiveness",
     "my_consultants": "My consultants",
-    "messages_admin": "Messages / Campaigns"
+    "messages_admin": "Messages / Campaigns",
+    "feedback": "Feedback"
   },
   "client_dashboard": {
     "title": "Welcome back",
@@ -2667,5 +2668,93 @@
     "pin_country": "This city is not in our list, so your map pin is the centre of {{country}}.",
     "search_country": "Search country",
     "select_country": "Select country"
+  },
+  "feedback": {
+    "button": "Feedback",
+    "button_aria": "Send feedback or report a problem",
+    "report_problem": "Report a problem",
+    "title": "Send feedback",
+    "subtitle": "Report a problem, suggest an improvement or ask a question. The team reads every report.",
+    "type_label": "What is it about?",
+    "severity_label": "How bad is it?",
+    "type": {
+      "bug": "Bug",
+      "idea": "Improvement idea",
+      "question": "Question",
+      "compliment": "Compliment"
+    },
+    "severity": {
+      "blocks": "Blocks me",
+      "annoying": "Annoying",
+      "minor": "Minor"
+    },
+    "status": {
+      "new": "New",
+      "triaged": "Seen",
+      "in_progress": "In progress",
+      "fixed": "Fixed",
+      "wont_fix": "Won't fix",
+      "duplicate": "Duplicate"
+    },
+    "title_label": "Short title",
+    "desc_label": "Description",
+    "desc_help": "What happened? What did you expect? Steps to reproduce",
+    "warning": "Do not include passwords, bank details or confidential client data. Long codes and card numbers are hidden automatically.",
+    "files": {
+      "label": "Screenshots (optional, up to 3)",
+      "add": "Add image",
+      "capture": "Capture this screen",
+      "list": "Attached images",
+      "remove": "Remove {{name}}",
+      "count": "You can attach up to 3 images.",
+      "size": "Each image must be 5 MB or smaller.",
+      "type": "Only PNG, JPG or WebP images.",
+      "help": "PNG, JPG or WebP, 5 MB each. Location and camera details are removed before sending."
+    },
+    "consent": "You may contact me about this",
+    "email_label": "Contact e-mail (optional)",
+    "ctx": {
+      "title": "What we attach",
+      "page": "Page",
+      "version": "App version",
+      "language": "Language / theme",
+      "screen": "Screen size",
+      "browser": "Browser",
+      "role": "Signed in as",
+      "errors": "Recent errors on this device",
+      "note": "Also the time, and for signed-in users your account and organisation (kept on our side, not shown here). Never passwords."
+    },
+    "privacy": "Privacy policy",
+    "send": "Send",
+    "error": {
+      "type_required": "Choose what it is about.",
+      "type_invalid": "Choose one of the options.",
+      "title_required": "This is required.",
+      "title_too_short": "At least 3 characters.",
+      "title_too_long": "This is too long.",
+      "description_required": "This is required.",
+      "description_too_short": "At least 10 characters.",
+      "description_too_long": "This is too long.",
+      "contactEmail_invalid": "Enter a valid e-mail address or leave it empty."
+    },
+    "server": {
+      "rate_limited": "You have sent several reports in the last hour. Please try again a little later.",
+      "disabled": "Feedback is switched off at the moment.",
+      "too_fast": "Please take a moment to check your report, then send it again.",
+      "invalid": "Please check the highlighted fields and images.",
+      "generic": "Your report could not be sent. Please try again."
+    },
+    "done": {
+      "title": "Thank you — we received it",
+      "signed_in": "You can follow the status and our replies under My feedback.",
+      "visitor": "If you left an e-mail address and allowed contact, we may reply there.",
+      "screens_failed": "Some images could not be saved, but your report was sent.",
+      "another": "Send another"
+    },
+    "my": "My feedback",
+    "my_sub": "Reports you sent, their status and our replies.",
+    "my_empty": "You have not sent any feedback yet.",
+    "not_ready": "Feedback is not available yet.",
+    "team_reply": "AI Support 360 team"
   }
 }

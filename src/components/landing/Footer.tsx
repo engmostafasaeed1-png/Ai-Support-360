@@ -3,6 +3,7 @@ import logo from '@/assets/brand/horizontal.webp.asset.json';
 import { cn } from '@/lib/utils';
 import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_HREF } from '@/lib/contact';
 import { useDemoWizard } from './DemoWizardContext';
+import { openFeedback } from '@/lib/feedbackEvents';
 
 type FooterLink = { label: string; href: string; onClick?: () => void; dir?: 'ltr' | 'rtl' };
 
@@ -32,6 +33,7 @@ export default function Footer({ compact = false }: { compact?: boolean }) {
       { label: 'Request a demo', href: '#', onClick: () => demoWizard.open(undefined, { source: 'footer' }) },
       { label: t('footer.help'), href: '/#how-it-works' },
       { label: t('footer.contact'), href: '/#contact' },
+      { label: t('feedback.report_problem', 'Report a problem'), href: '#', onClick: () => openFeedback() },
       { label: `Call ${CONTACT_PHONE_DISPLAY}`, href: CONTACT_PHONE_HREF, dir: 'ltr' },
     ],
     legal: [

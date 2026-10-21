@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronsUpDown, Globe, LogOut, Repeat, SlidersHorizontal, User } from 'lucide-react';
+import { ChevronsUpDown, Globe, Inbox, LogOut, MessageSquareWarning, Repeat, SlidersHorizontal, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,6 +15,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { useLogout } from '@/hooks/useLogout';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { cn } from '@/lib/utils';
+import { openFeedback } from '@/lib/feedbackEvents';
 
 interface SidebarAccountMenuProps {
   collapsed: boolean;
@@ -149,6 +150,19 @@ export default function SidebarAccountMenu({ collapsed, onEditProfile, onCustomi
           <Globe aria-hidden="true" className="me-2 h-4 w-4" />
           {currentLang === 'en' ? 'العربية' : 'English'}
         </DropdownMenuItem>
+        {!isGuest && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={openDialog(openFeedback)}>
+              <MessageSquareWarning aria-hidden="true" className="me-2 h-4 w-4" />
+              {String(t('feedback.report_problem', { defaultValue: 'Report a problem' }))}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate('/my-feedback')}>
+              <Inbox aria-hidden="true" className="me-2 h-4 w-4" />
+              {String(t('feedback.my', { defaultValue: 'My feedback' }))}
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={() => void logout()}

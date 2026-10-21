@@ -36,6 +36,9 @@ const MaintenanceBanner = lazyWithRetry(() => import("./components/MaintenanceBa
 const Watermark = lazyWithRetry(() => import("./components/Watermark.tsx"), 'Watermark');
 const WhatsAppButton = lazyWithRetry(() => import("./components/WhatsAppButton.tsx"), 'WhatsAppButton');
 const BackToTop = lazyWithRetry(() => import("./components/common/BackToTop.tsx"), 'BackToTop');
+const FeedbackHost = lazyWithRetry(() => import("./components/feedback/FeedbackHost.tsx"), 'FeedbackHost');
+const MyFeedbackPage = lazyWithRetry(() => import("./pages/MyFeedbackPage.tsx"), 'MyFeedbackPage');
+const FeedbackAdminPage = lazyWithRetry(() => import("./pages/admin/FeedbackAdminPage.tsx"), 'FeedbackAdminPage');
 
 // Admin console sections (one download per section file, only for administrators)
 const named = <K extends string>(load: () => Promise<Record<K, React.ComponentType<any>>>, key: K) =>
@@ -322,7 +325,7 @@ const App = () => (
           
           <IdleMount><Suspense fallback={null}><AIChatbot /></Suspense></IdleMount>
           {/* Floating buttons load after the first paint so they stay out of the start-up download. */}
-          <IdleMount><Suspense fallback={null}><WhatsAppButton /><BackToTop /></Suspense></IdleMount>
+          <IdleMount><Suspense fallback={null}><WhatsAppButton /><BackToTop /><FeedbackHost /></Suspense></IdleMount>
           <ErrorBoundary>
 <MaintenanceGate>
           <Suspense fallback={<PageLoader />}>
@@ -349,6 +352,7 @@ const App = () => (
               <Route path="/auth/confirm" element={<ConfirmEmailPage />} />
             </Route>
             <Route element={<PublicLayout />}>
+              <Route path="/my-feedback" element={<ProtectedRoute><MyFeedbackPage /></ProtectedRoute>} />
               <Route path="/unsubscribe" element={<UnsubscribePage />} />
               <Route path="/notifications/pause" element={<NotificationPausePage />} />
               <Route path="/demo/confirmation/:token" element={<DemoRequestConfirmationPage />} />
@@ -498,6 +502,7 @@ const App = () => (
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="oncall" element={<OnCallSchedulePage />} />
               <Route path="errors" element={<AdminErrorsPage />} />
+              <Route path="feedback" element={<FeedbackAdminPage />} />
               <Route path="payments" element={<AdminPaymentsPage />} />
               <Route path="responsiveness" element={<ResponsivenessAdminPage />} />
               <Route path="knowledge-review" element={<AdminKnowledgeReviewPage />} />
