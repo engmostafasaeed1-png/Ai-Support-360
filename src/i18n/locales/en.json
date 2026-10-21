@@ -1028,7 +1028,50 @@
       "left_s": "{{s}}s left"
     },
     "social_returning_only": "Returning users only. New accounts: please sign up with e-mail.",
-    "no_social_account": "No account found for this Google profile. Please sign up with e-mail first."
+    "no_social_account": "No account found for this Google profile. Please sign up with e-mail first.",
+    "link": {
+      "title": "Your confirmation link has expired or was already used",
+      "why": "Each link works once and only for a limited time. Some e-mail security filters open links automatically, which can use them up. Ask for a new e-mail below, or sign in if you already confirmed.",
+      "code_title": "Enter your confirmation code",
+      "code_why": "Type the e-mail address you signed up with and the 6-digit code from our confirmation e-mail. No code? Ask for a new e-mail.",
+      "invalid_email": "Please enter the e-mail address you signed up with.",
+      "rate_limited": "Too many requests for this address. Please wait a minute and try again.",
+      "sent": "If this address is waiting for confirmation, a new e-mail from {{sender}} is on its way. Check Inbox and Spam. If you already confirmed it, just sign in.",
+      "resend": "Send me a new confirmation e-mail",
+      "resend_wait": "Send again in {{s}} s",
+      "resend_failed": "Could not send a new confirmation e-mail. Please try again.",
+      "already": "I already confirmed - sign in",
+      "have_code": "Have the 6-digit code from the e-mail? Enter it instead",
+      "code_form": "Confirm with a code",
+      "code_label": "Code from the e-mail",
+      "code_btn": "Confirm",
+      "code_shape": "Enter the 6-digit code from the e-mail.",
+      "code_wrong": "That code did not work. It may have expired: ask for a new e-mail above.",
+      "signup_again": "Used a different address? Sign up again",
+      "confirmed_ok": "Your e-mail is confirmed. Welcome to AI Support 360.",
+      "confirmed_signin": "Your e-mail is confirmed. Sign in to continue where you stopped.",
+      "not_confirmed": "Your e-mail is not confirmed yet. We are sending you a new confirmation e-mail - check Inbox and Spam."
+    },
+    "confirm": {
+      "title": "Confirm your e-mail",
+      "desc": "One click and your account is ready. You will be signed in and can continue where you stopped.",
+      "button": "Confirm my e-mail",
+      "why_button": "We ask for this click so that e-mail security filters, which open links automatically, cannot use up your link.",
+      "failed": "We could not reach the server. Check your connection and try again.",
+      "retry": "Try again"
+    },
+    "pending": {
+      "title": "Check your inbox",
+      "sent_to": "We sent a confirmation e-mail to",
+      "open": "Open the e-mail from",
+      "open_2": "(AI Support 360, subject \"Confirm your email\") and press \"Verify my email\", then \"Confirm my e-mail\".",
+      "spam": "Not there after a few minutes? Check Spam, Junk or Promotions and mark it as \"Not spam\".",
+      "validity": "The link works once and stays valid for {{h}} hours. The e-mail also has a 6-digit code you can enter instead.",
+      "resend": "Resend confirmation e-mail",
+      "enter_code": "Enter the 6-digit code",
+      "already": "I already confirmed - sign in",
+      "wrong_email": "Wrong e-mail? Change it"
+    }
   },
   "explore": {
     "badge": "Explore Our Services",
@@ -2288,7 +2331,14 @@
     "showing": "Showing {{a}}–{{b}} of {{n}}",
     "per_page": "Per page",
     "shortcuts": "Shortcuts: / search · j / k move · Enter open · x select",
-    "perm_messages_send": "Send bulk messages (Messages / Campaigns)"
+    "perm_messages_send": "Send bulk messages (Messages / Campaigns)",
+    "unconfirmed_note": "E-mail not confirmed yet: this person cannot sign in until they confirm.",
+    "resend_confirmation": "Resend confirmation e-mail",
+    "confirm_email": "Mark e-mail as confirmed",
+    "confirm_title": "Mark the e-mail of {{n}} as confirmed?",
+    "confirm_desc": "Only do this after you made sure the address belongs to this person (for example they wrote to you from it). They can then sign in with their password. This is recorded with your reason.",
+    "confirm_ok": "E-mail marked as confirmed",
+    "a_confirm_email": "E-mail marked as confirmed by a super admin"
   },
   "npause": {
     "paused_toast": "Notifications paused until {{date}}",
