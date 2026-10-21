@@ -1029,13 +1029,20 @@ BEGIN
   IF _rp IS NOT NULL AND r.referrer_passed_notified_at IS NULL THEN
     UPDATE public.consultant_referrals SET referrer_passed_notified_at = now(), updated_at = now() WHERE referred_consultant_id = _referred;
     PERFORM public.referral_log(NULL, 'referrer_passed', r.referrer_consultant_id, _referred, NULL, NULL, NULL, NULL, NULL);
-    PERFORM public.referral_notify(r.referrer_consultant_id, 'passed_self', _referred, NULL, NULL, public.referral_next_step(_referred, r.referrer_consultant_id));
+    -- "You passed" goes once per consultant, however many referrals they have.
+    IF NOT EXISTS (SELECT 1 FROM public.referral_email_queue q JOIN public.consultants c ON c.user_id = q.user_id
+                    WHERE c.id = r.referrer_consultant_id AND q.kind = 'passed_self') THEN
+      PERFORM public.referral_notify(r.referrer_consultant_id, 'passed_self', _referred, NULL, NULL, public.referral_next_step(_referred, r.referrer_consultant_id));
+    END IF;
     PERFORM public.referral_notify(_referred, 'passed_other', r.referrer_consultant_id, NULL, NULL, public.referral_next_step(_referred, _referred));
   END IF;
   IF _dp IS NOT NULL AND r.referred_passed_notified_at IS NULL THEN
     UPDATE public.consultant_referrals SET referred_passed_notified_at = now(), updated_at = now() WHERE referred_consultant_id = _referred;
     PERFORM public.referral_log(NULL, 'referred_passed', r.referrer_consultant_id, _referred, NULL, NULL, NULL, NULL, NULL);
-    PERFORM public.referral_notify(_referred, 'passed_self', r.referrer_consultant_id, NULL, NULL, public.referral_next_step(_referred, _referred));
+    IF NOT EXISTS (SELECT 1 FROM public.referral_email_queue q JOIN public.consultants c ON c.user_id = q.user_id
+                    WHERE c.id = _referred AND q.kind = 'passed_self') THEN
+      PERFORM public.referral_notify(_referred, 'passed_self', r.referrer_consultant_id, NULL, NULL, public.referral_next_step(_referred, _referred));
+    END IF;
     PERFORM public.referral_notify(r.referrer_consultant_id, 'passed_other', _referred, NULL, NULL, public.referral_next_step(_referred, r.referrer_consultant_id));
   END IF;
   RETURN 'pending';
