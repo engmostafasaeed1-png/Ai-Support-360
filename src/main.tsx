@@ -4,7 +4,7 @@ assertSingleReact();
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "./components/ErrorBoundary";
 import App from "./App.tsx";
-import "./i18n/config";
+import { i18nReady } from "./i18n/config";
 import "./index.css";
 import { installCspViolationLogger } from "./lib/diagnostics";
 import { initSentry } from "./lib/sentry";
@@ -16,9 +16,12 @@ installCspViolationLogger();
 installGlobalErrorReporting();
 installStaleChunkReload();
 
-createRoot(document.getElementById("root")!).render(
-  <ErrorBoundary>
-    <App />
-  </ErrorBoundary>
-);
+// Arabic visitors wait for the Arabic texts (one small download) so the first paint is already in Arabic.
+void i18nReady.then(() => {
+  createRoot(document.getElementById("root")!).render(
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
+});
 
