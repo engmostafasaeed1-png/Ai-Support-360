@@ -8,6 +8,8 @@ import { contactDetailsInText } from './assignmentInfo.ts';
 
 export type Lang = 'en' | 'ar';
 const pick = (lang: Lang | undefined, en: string, ar: string) => (lang === 'ar' ? ar : en);
+/** Left-to-right isolate: keeps "09:00-17:00" and "2026-11-15" in order inside Arabic text (no reversed numbers). */
+export const ltr = (text: string) => `\u2066${text}\u2069`;
 
 // ---------------------------------------------------------------------------------------------------- weekly slots
 
@@ -24,8 +26,8 @@ export const DAY_LONG: Record<Lang, string[]> = {
 };
 
 export const AVAILABILITY_PRESETS = {
-  sun_thu: { days: [0, 1, 2, 3, 4], start: '09:00', end: '17:00', label: ['Sun-Thu 9-17', 'الأحد-الخميس 9-17'] },
-  mon_fri: { days: [1, 2, 3, 4, 5], start: '09:00', end: '17:00', label: ['Mon-Fri 9-17', 'الاثنين-الجمعة 9-17'] },
+  sun_thu: { days: [0, 1, 2, 3, 4], start: '09:00', end: '17:00', label: ['Sun-Thu 9-17', 'الأحد-الخميس \u20669-17\u2069'] },
+  mon_fri: { days: [1, 2, 3, 4, 5], start: '09:00', end: '17:00', label: ['Mon-Fri 9-17', 'الاثنين-الجمعة \u20669-17\u2069'] },
 } as const;
 export type PresetKey = keyof typeof AVAILABILITY_PRESETS;
 
@@ -123,10 +125,10 @@ export function summarizeWeekly(list: WeeklyInterval[], tz: string | null | unde
   if (groups.length === 1) {
     const g = groups[0];
     return lang === 'ar'
-      ? `${daysLabel(g.days, 'ar')}، ${g.times} بتوقيت ${city}، ${hours} ساعة/أسبوع`
+      ? `${daysLabel(g.days, 'ar')}، ${ltr(g.times)} بتوقيت ${city}، ${hours} ساعة/أسبوع`
       : `${daysLabel(g.days, 'en')}, ${g.times} ${city} time, ${hours} h/week`;
   }
-  const parts = groups.map((g) => `${daysLabel(g.days, lang)} ${g.times}`).join(' · ');
+  const parts = groups.map((g) => `${daysLabel(g.days, lang)} ${lang === 'ar' ? ltr(g.times) : g.times}`).join(' · ');
   return lang === 'ar' ? `${parts}، بتوقيت ${city}، ${hours} ساعة/أسبوع` : `${parts}, ${city} time, ${hours} h/week`;
 }
 
@@ -138,7 +140,7 @@ export function shortAvailability(list: WeeklyInterval[], lang: Lang = 'en'): st
   const text = groups.slice(0, 2).map((g) => {
     const day = sortIntervals(list.filter((s) => s.day === g.days[0]));
     const times = day.map((s) => `${shortTime(s.start)}-${shortTime(s.end)}`).join(', ');
-    return `${daysLabel(g.days, lang)} ${times}`;
+    return `${daysLabel(g.days, lang)} ${lang === 'ar' ? ltr(times) : times}`;
   }).join(', ') + (groups.length > 2 ? ' …' : '');
   return lang === 'ar' ? `متاح ${text}` : `Available ${text}`;
 }
@@ -278,8 +280,7 @@ const TZ = 'Asia/Riyadh';
 export function holdDate(iso: string, lang: Lang = 'en'): string {
   const d = new Date(iso);
   if (lang === 'ar') {
-    const p = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
-    return p;
+    return ltr(new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d));
   }
   return new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'short', year: 'numeric' }).format(d).replace('Sept', 'Sep');
 }

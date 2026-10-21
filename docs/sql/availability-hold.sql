@@ -263,8 +263,8 @@ CREATE OR REPLACE FUNCTION public.hold_client_notice_text(_starts timestamptz, _
  SET search_path TO 'public'
 AS $$
   SELECT CASE WHEN _lang LIKE 'ar%'
-    THEN 'مستشارك متوقف مؤقتًا من ' || to_char(_starts AT TIME ZONE 'Asia/Riyadh', 'YYYY-MM-DD') || ' إلى '
-         || to_char(_ends AT TIME ZONE 'Asia/Riyadh', 'YYYY-MM-DD') || '، ويستمر العمل الحالي كما هو متفق عليه.'
+    THEN 'مستشارك متوقف مؤقتًا من ' || chr(8294) || to_char(_starts AT TIME ZONE 'Asia/Riyadh', 'YYYY-MM-DD') || chr(8297) || ' إلى '
+         || chr(8294) || to_char(_ends AT TIME ZONE 'Asia/Riyadh', 'YYYY-MM-DD') || chr(8297) || '، ويستمر العمل الحالي كما هو متفق عليه.'
     ELSE 'Your consultant is on hold from ' || to_char(_starts AT TIME ZONE 'Asia/Riyadh', 'FMDD Mon YYYY') || ' to '
          || to_char(_ends AT TIME ZONE 'Asia/Riyadh', 'FMDD Mon YYYY') || ', current work continues as agreed.' END
 $$;
@@ -446,7 +446,7 @@ BEGIN
   INSERT INTO public.notifications (user_id, title, body, type, link)
   VALUES (_uid,
           CASE WHEN _lang = 'ar' THEN 'بدأ التوقف المؤقت' ELSE 'Your hold has started' END,
-          CASE WHEN _lang = 'ar' THEN 'لن تصلك طلبات أو دعوات أو تنبيهات عاجلة جديدة حتى ' || to_char(h.ends_at AT TIME ZONE 'Asia/Riyadh', 'YYYY-MM-DD HH24:MI') || ' (بتوقيت الرياض). يستمر عملك الحالي كما هو.'
+          CASE WHEN _lang = 'ar' THEN 'لن تصلك طلبات أو دعوات أو تنبيهات عاجلة جديدة حتى ' || chr(8294) || to_char(h.ends_at AT TIME ZONE 'Asia/Riyadh', 'YYYY-MM-DD HH24:MI') || chr(8297) || ' (بتوقيت الرياض). يستمر عملك الحالي كما هو.'
                ELSE 'No new requests, invitations or critical alerts until ' || to_char(h.ends_at AT TIME ZONE 'Asia/Riyadh', 'FMDD Mon YYYY HH24:MI') || ' (Riyadh time). Your current work continues as agreed.' END,
           'hold_started', '/consultant/profile#availability');
   IF h.client_notice_at IS NULL THEN PERFORM public.hold_notify_clients(_id); END IF;
@@ -990,7 +990,7 @@ BEGIN
     VALUES (r.user_id,
             CASE WHEN _lang = 'ar' THEN 'يرجى إضافة توفرك الأسبوعي - مطلوب لاستقبال الطلبات' ELSE 'Please add your weekly availability - needed for requests' END,
             CASE WHEN _lang = 'ar'
-              THEN 'يعتمد العملاء والمطابقة على توفرك الأسبوعي. الطلبات التي تصل خارج أوقاتك لا تُحتسب ضدك. أضفه قبل ' || to_char(_deadline AT TIME ZONE 'Asia/Riyadh', 'YYYY-MM-DD') || ' لتستمر في تلقي الطلبات الجديدة والتنبيهات العاجلة.'
+              THEN 'يعتمد العملاء والمطابقة على توفرك الأسبوعي. الطلبات التي تصل خارج أوقاتك لا تُحتسب ضدك. أضفه قبل ' || chr(8294) || to_char(_deadline AT TIME ZONE 'Asia/Riyadh', 'YYYY-MM-DD') || chr(8297) || ' لتستمر في تلقي الطلبات الجديدة والتنبيهات العاجلة.'
               ELSE 'Clients and matching rely on your weekly availability. Requests outside your hours are not counted against you. Add it by ' || to_char(_deadline AT TIME ZONE 'Asia/Riyadh', 'FMDD Mon YYYY') || ' to keep receiving new requests and critical alerts.' END,
             'availability_urgent', '/consultant/profile#availability');
     INSERT INTO public.availability_email_queue (consultant_id, user_id, kind) VALUES (r.id, r.user_id, 'first');
@@ -1261,7 +1261,7 @@ BEGIN
   INSERT INTO public.notifications (user_id, title, body, type, link)
   VALUES (_uid,
           CASE WHEN public.hold_user_lang(_uid) = 'ar' THEN 'حدد المسؤول حالة التوقف المؤقت' ELSE 'An administrator set you on hold' END,
-          CASE WHEN public.hold_user_lang(_uid) = 'ar' THEN 'من ' || to_char(COALESCE(_starts_at, now()) AT TIME ZONE 'Asia/Riyadh', 'YYYY-MM-DD') || ' إلى ' || to_char(_ends_at AT TIME ZONE 'Asia/Riyadh', 'YYYY-MM-DD') || '. يمكنك الاستئناف في أي وقت.'
+          CASE WHEN public.hold_user_lang(_uid) = 'ar' THEN 'من ' || chr(8294) || to_char(COALESCE(_starts_at, now()) AT TIME ZONE 'Asia/Riyadh', 'YYYY-MM-DD') || chr(8297) || ' إلى ' || chr(8294) || to_char(_ends_at AT TIME ZONE 'Asia/Riyadh', 'YYYY-MM-DD') || chr(8297) || '. يمكنك الاستئناف في أي وقت.'
                ELSE 'From ' || to_char(COALESCE(_starts_at, now()) AT TIME ZONE 'Asia/Riyadh', 'FMDD Mon YYYY') || ' to ' || to_char(_ends_at AT TIME ZONE 'Asia/Riyadh', 'FMDD Mon YYYY') || '. You can resume at any time.' END,
           'hold_admin', '/consultant/profile#availability');
   INSERT INTO public.audit_logs (user_id, action, entity_type, entity_id, metadata)
