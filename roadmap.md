@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Feature T: modern scrolling + polish (scrollbars, smooth anchors, reading progress, back to top, restoration, overscroll/gutter, sticky/scroll tables, snap rows, chat jump chip, reveal; tokens/shadows/toasts/404/skeleton fallback; Lighthouse before/after; tests)
+- [x] Feature T: modern scrolling + polish (scrollbars, smooth anchors, reading progress, back to top, restoration, overscroll/gutter, sticky/scroll tables, snap rows, chat jump chip, reveal; tokens/shadows/toasts/404/skeleton fallback; Lighthouse before/after; tests) — done Oct 21; not done: sticky mobile action bars, list-wide skeleton swap, sticky headers beyond Users
 
 - [x] Feature Q: pause notifications (3 days / 1 week / 1 month) from settings, bell and signed e-mail links; one server-side pause check; essential notices never paused; consultant availability choice; admin switch/max length/count/audit; docs/sql/notification-pauses.sql + test file checked twice on a scratch database; 1,879 unit tests; functions deployed, signing secret generated (Oct 21)
 - [ ] Switch on Feature Q: awaits owner applying docs/sql/notification-pauses.sql (then run docs/sql/notification-pauses.test.sql).
