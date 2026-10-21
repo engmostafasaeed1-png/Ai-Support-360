@@ -83,7 +83,7 @@ export default function PauseNotificationsDialog({ open, onOpenChange, initialDu
                   <Label key={d} htmlFor={`npause-${d}`}
                     className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border p-3 text-sm ${duration === d ? 'border-primary bg-primary/5' : 'border-border'} ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}>
                     <RadioGroupItem id={`npause-${d}`} value={d} disabled={disabled} />
-                    {t(...DURATION_LABEL[d])}
+                    {t(DURATION_LABEL[d][0], DURATION_LABEL[d][1])}
                   </Label>
                 );
               })}
@@ -136,7 +136,7 @@ export default function PauseNotificationsDialog({ open, onOpenChange, initialDu
           <Button variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel', 'Cancel')}</Button>
           <Button className="gradient-primary border-0" onClick={submit} disabled={invalid || pauseNow.isPending}>
             {pauseNow.isPending && <Loader2 className="me-1 h-4 w-4 animate-spin" />}
-            {t('npause.confirm', 'Pause for {{d}}', { d: t(...DURATION_LABEL[duration]) })}
+            {t('npause.confirm', 'Pause for {{d}}', { d: t(DURATION_LABEL[duration][0], DURATION_LABEL[duration][1]) })}
           </Button>
         </DialogFooter>
       </DialogContent>

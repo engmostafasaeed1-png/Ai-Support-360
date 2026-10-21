@@ -50,7 +50,7 @@ export default function NotificationPauseCard({ className }: { className?: strin
             <p className="text-xs text-muted-foreground">{t('npause.card_hint', 'Too many reminders? Pause e-mails and pop-ups for a while. Important messages such as security, payments and Critical alarms always arrive.')}</p>
             <div className="flex flex-wrap gap-2" role="group" aria-label={t('npause.pause_for', 'Pause for…')}>
               {allowedDurations(info?.max_days).map((d) => (
-                <Button key={d} size="sm" variant="outline" onClick={() => openWith(d)}>{t(...DURATION_LABEL[d])}</Button>
+                <Button key={d} size="sm" variant="outline" onClick={() => openWith(d)}>{t(DURATION_LABEL[d][0], DURATION_LABEL[d][1])}</Button>
               ))}
             </div>
           </div>
