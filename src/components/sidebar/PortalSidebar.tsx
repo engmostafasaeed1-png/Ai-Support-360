@@ -168,7 +168,8 @@ export default function PortalSidebar({
         </SidebarContent>
 
         <SidebarFooter className="border-t border-sidebar-border/60 p-2">
-          {isAdmin && (
+          {/* Admin pages are admin-only, so show the console link at once there instead of after the role check (no menu jump). */}
+          {(isAdmin || /^\/(admin|super-admin)(\/|$)/.test(location.pathname)) && (
             <SidebarMenuButton
               asChild
               tooltip={adminConsoleLabel}

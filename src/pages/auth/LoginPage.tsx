@@ -515,7 +515,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative">
+    // Phones: top-aligned so the card does not move when the web font arrives (centred cards shift with their height).
+    <div className="min-h-screen flex items-start sm:items-center justify-center px-4 pt-4 sm:pt-0 relative">
       <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
       <Card className="w-full max-w-md relative z-10 shadow-2xl border-border/30 backdrop-blur-sm bg-card/95 animate-fade-in">
         <CardHeader className="text-center">

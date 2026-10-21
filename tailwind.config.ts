@@ -81,6 +81,16 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      fontSize: {
+        display: ["clamp(2rem, 1.5rem + 2vw, 3rem)", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        headline: ["clamp(1.5rem, 1.25rem + 1vw, 1.875rem)", { lineHeight: "1.2", letterSpacing: "-0.015em" }],
+        title: ["clamp(1.125rem, 1.05rem + 0.35vw, 1.3125rem)", { lineHeight: "1.3" }],
+      },
+      transitionDuration: {
+        fast: "150ms",
+        base: "200ms",
+        slow: "250ms",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

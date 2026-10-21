@@ -10,14 +10,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { GuestModeProvider } from "./contexts/GuestModeContext.tsx";
 import { CurrencyProvider } from "./contexts/CurrencyContext.tsx";
 import { TenantProvider } from "./contexts/TenantContext.tsx";
-import MaintenanceBanner from "./components/MaintenanceBanner.tsx";
 import MaintenanceGate from "./components/MaintenanceGate.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
 import RouteSeo from "./components/RouteSeo";
 import UiTranslator from "./components/UiTranslator";
 import { HelmetProvider } from "react-helmet-async";
-import Watermark from "./components/Watermark.tsx";
-import WhatsAppButton from "./components/WhatsAppButton.tsx";
 const GlobalSearch = lazyWithRetry(() => import("./components/GlobalSearch.tsx"), 'GlobalSearch');
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
 import { Loader2 } from 'lucide-react';
@@ -34,6 +31,11 @@ const AdminLayout = lazyWithRetry(() => import("./components/admin/AdminLayout.t
 const SuperAdminLayout = lazyWithRetry(() => import("./components/superadmin/SuperAdminLayout.tsx"), 'SuperAdminLayout');
 const ApprovalGate = lazyWithRetry(() => import("./components/client/ApprovalGate.tsx"), 'ApprovalGate');
 const AIChatbot = lazyWithRetry(() => import("./components/chatbot/AIChatbot.tsx"), 'AIChatbot');
+// Both render nothing until their own check finishes, so loading them separately changes nothing on screen.
+const MaintenanceBanner = lazyWithRetry(() => import("./components/MaintenanceBanner.tsx"), 'MaintenanceBanner');
+const Watermark = lazyWithRetry(() => import("./components/Watermark.tsx"), 'Watermark');
+const WhatsAppButton = lazyWithRetry(() => import("./components/WhatsAppButton.tsx"), 'WhatsAppButton');
+const BackToTop = lazyWithRetry(() => import("./components/common/BackToTop.tsx"), 'BackToTop');
 
 // Admin console sections (one download per section file, only for administrators)
 const named = <K extends string>(load: () => Promise<Record<K, React.ComponentType<any>>>, key: K) =>
@@ -313,12 +315,13 @@ const App = () => (
           <a href="#main-content" className="skip-to-main">Skip to main content</a>
           <ScrollToTop />
           <RouteSeo />
-          <Watermark />
+          <Suspense fallback={null}><Watermark /></Suspense>
           <IdleMount><Suspense fallback={null}><GlobalSearch /></Suspense></IdleMount>
-          <MaintenanceBanner />
+          <Suspense fallback={null}><MaintenanceBanner /></Suspense>
           
           <IdleMount><Suspense fallback={null}><AIChatbot /></Suspense></IdleMount>
-          <WhatsAppButton />
+          {/* Floating buttons load after the first paint so they stay out of the start-up download. */}
+          <IdleMount><Suspense fallback={null}><WhatsAppButton /><BackToTop /></Suspense></IdleMount>
           <ErrorBoundary>
 <MaintenanceGate>
           <Suspense fallback={<PageLoader />}>

@@ -197,7 +197,7 @@ export default function SidebarNav({
   }
 
   return (
-    <nav ref={navRef} aria-label={navLabel} aria-busy={loading} className="px-2 pb-3">
+    <nav ref={navRef} aria-label={navLabel} aria-busy={loading} className="flow-root px-2 pb-3">
       {loading ? (
         <div className="space-y-4 pt-2" aria-hidden="true">
           {[5, 4].map((rows, gi) => (
