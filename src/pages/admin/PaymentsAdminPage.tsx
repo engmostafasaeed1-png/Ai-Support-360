@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { isReferralPayout } from '@/lib/referrals';
 import ClientViewHint from '@/components/admin/ClientViewHint';
 import { Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
@@ -357,6 +358,7 @@ export default function PaymentsAdminPage() {
                       <TableRow key={p.id}>
                         <TableCell className="text-sm">
                           <div className="font-medium">{p.consultant_name}</div>
+                          {isReferralPayout(p) && <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">Referral reward (paid by the platform)</Badge>}
                           <ClientViewHint id={p.consultant_id} />
                           <PayoutReadinessBadge ready={p.has_details === true} />
                           <div className="text-xs text-muted-foreground">{when(p.created_at)}</div>

@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { isReferralPayout } from '@/lib/referrals';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -325,6 +326,7 @@ export default function ConsultantEarningsPage() {
                         <TableCell className="text-muted-foreground text-sm">
                           {format(new Date(p.created_at), 'MMM d, yyyy')}
                           {p.paid_at && <div className="text-xs">paid {format(new Date(p.paid_at), 'MMM d, yyyy')}</div>}
+                          {isReferralPayout(p) && <div className="mt-0.5 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{t('refz.payout_label', 'Referral reward')}</div>}
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm font-mono">
                           {p.bank_reference || '—'}
