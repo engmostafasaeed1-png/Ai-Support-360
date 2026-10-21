@@ -60,7 +60,7 @@ function reportLinkErrorOnce(detail: string) {
   if (linkErrorReported) return;
   linkErrorReported = true;
   reportError({
-    level: 'info',
+    level: 'warn',
     source: 'auth_email_link',
     message: `Confirmation link expired or already used: ${detail.slice(0, 160)}`,
     context: { origin: window.location.origin },
