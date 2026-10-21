@@ -1,5 +1,6 @@
 import MatchScoreBreakdown, { type MatchCriterion } from '@/components/client/MatchScoreBreakdown';
 import FavouriteButton, { FavouriteChip } from '@/components/favourites/FavouriteButton';
+import ConsultantRing from '@/components/consultant/ConsultantRing';
 import GroupInvitePanel from '@/components/favourites/GroupInvitePanel';
 import { useClientFavourites } from '@/hooks/useClientFavourites';
 import MatchWhyChips from '@/components/match/MatchWhyChips';
@@ -1426,9 +1427,7 @@ export default function NewRequestPage() {
                     <p className="text-xs font-medium text-muted-foreground">Experts you will ask to take this ticket ({picked.length} of {MAX_INVITED_EXPERTS})</p>
                     {picked.map(expert => (
                       <div key={expert.id} className="p-3 rounded-xl bg-accent/10 border border-accent/30 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
-                          {expert.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                        </div>
+                        <ConsultantRing consultantId={expert.id} name={expert.name} size="sm" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-foreground">{expert.name}</p>
                           <p className="text-xs text-muted-foreground">{expert.subtitle}</p>
@@ -1566,9 +1565,7 @@ export default function NewRequestPage() {
                           }}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
-                              {c.avatar}
-                            </div>
+                            <ConsultantRing consultantId={c.id} name={c.name} initials={c.avatar} size="sm" interactive={false} />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <h4 className="text-sm font-semibold text-foreground">{c.name}</h4>
@@ -1678,16 +1675,9 @@ function RecommendationCard({ rec, rank, navigate, picked, pickDisabled, onToggl
     <div className="p-4 rounded-xl bg-background border border-border/50 hover:border-accent/30 hover:shadow-sm transition-all">
       <div className="flex items-start gap-3">
         {/* Avatar */}
-        <div className="relative shrink-0">
-          {rec.avatar_url ? (
-            <img src={rec.avatar_url} alt={rec.name} className="w-12 h-12 rounded-xl object-cover" />
-          ) : (
-            <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-              {initials}
-            </div>
-          )}
-          <span className={`absolute -top-1 -end-1 w-3.5 h-3.5 rounded-full border-2 border-background ${rec.availability === 'available' ? 'bg-green-500' : rec.availability === 'busy' ? 'bg-yellow-500' : 'bg-muted-foreground/40'}`} />
-        </div>
+        <ConsultantRing consultantId={rec.consultant_id} name={rec.name} initials={initials} avatarUrl={rec.avatar_url} size="md"
+          rating={rec.rating} reviews={rec.total_reviews} badge={rec.ai_interview_badge} verified={rec.verification_status === 'verified'}
+          statusClass={rec.availability === 'available' ? 'bg-success' : rec.availability === 'busy' ? 'bg-warning' : 'bg-muted-foreground/40'} />
 
         {/* Info */}
         <div className="flex-1 min-w-0">
