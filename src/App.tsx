@@ -12,6 +12,7 @@ import { CurrencyProvider } from "./contexts/CurrencyContext.tsx";
 import { TenantProvider } from "./contexts/TenantContext.tsx";
 import MaintenanceGate from "./components/MaintenanceGate.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
+import { ReferralCapture, ReferralJoinRedirect } from "./components/referral/ReferralCapture.tsx";
 import RouteSeo from "./components/RouteSeo";
 import UiTranslator from "./components/UiTranslator";
 import { HelmetProvider } from "react-helmet-async";
@@ -107,6 +108,9 @@ const CaseDetailPage = lazyWithRetry(() => import("./pages/consultant/CaseDetail
 const RequestsPage = lazyWithRetry(() => import("./pages/consultant/RequestsPage.tsx"), 'RequestsPage');
 const ResponsivenessPage = lazyWithRetry(() => import("./pages/consultant/ResponsivenessPage.tsx"), 'ResponsivenessPage');
 const ResponsivenessAdminPage = lazyWithRetry(() => import("./pages/admin/ResponsivenessAdminPage.tsx"), 'ResponsivenessAdminPage');
+const ReferralsAdminPage = lazyWithRetry(() => import("./pages/admin/ReferralsAdminPage.tsx"), 'ReferralsAdminPage');
+const ReferAndEarnPage = lazyWithRetry(() => import("./pages/consultant/ReferAndEarnPage.tsx"), 'ReferAndEarnPage');
+const ReferralTermsPage = lazyWithRetry(() => import("./pages/ReferralTermsPage.tsx"), 'ReferralTermsPage');
 const ProposalsPage = lazyWithRetry(() => import("./pages/consultant/ProposalsPage.tsx"), 'ProposalsPage');
 const OpenTicketsPage = lazyWithRetry(() => import("./pages/consultant/OpenTicketsPage.tsx"), 'OpenTicketsPage');
 const WorkDiaryPage = lazyWithRetry(() => import("./pages/consultant/WorkDiaryPage.tsx"), 'WorkDiaryPage');
@@ -319,6 +323,7 @@ const App = () => (
           <RealtimeStatusSync />
           <a href="#main-content" className="skip-to-main">Skip to main content</a>
           <ScrollToTop />
+          <ReferralCapture />
           <RouteSeo />
           <Suspense fallback={null}><Watermark /></Suspense>
           <IdleMount><Suspense fallback={null}><GlobalSearch /></Suspense></IdleMount>
@@ -332,6 +337,7 @@ const App = () => (
           <Suspense fallback={<PageLoader />}>
 <DemoWizardProvider>
           <Routes>
+            <Route path="/join" element={<ReferralJoinRedirect />} />
             <Route path="/join/:sessionId" element={<MeetingHandoffPage />} />
             <Route path="/index" element={<Navigate to="/" replace />} />
             <Route element={<PublicLayout variant="content" />}>
@@ -339,6 +345,7 @@ const App = () => (
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/for-consultants" element={<ForConsultantsPage />} />
               <Route path="/consultant-policy" element={<ConsultantPolicyPage />} />
+              <Route path="/referral-terms" element={<ReferralTermsPage />} />
               {['privacy-policy', 'terms-and-conditions', 'refund-policy', 'subscription-and-cancellation', 'service-delivery', 'cookie-policy', 'acceptable-use'].map((slug) => (
                 <Route key={slug} path={`/${slug}`} element={<LegalPage slug={slug} />} />
               ))}
@@ -390,7 +397,8 @@ const App = () => (
               <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
               <Route path="work-diary" element={<WorkDiaryPage />} />
               <Route path="reports" element={<ConsultantReportsPage />} />
-              <Route path="referrals" element={<ReferralsPage />} />
+              <Route path="referrals" element={<ReferAndEarnPage />} />
+              <Route path="refer" element={<ReferAndEarnPage />} />
               <Route path="business-processes" element={<ConsultantBusinessProcessesPage />} />
               <Route path="satisfaction" element={<SatisfactionPage />} />
             </Route>
@@ -507,6 +515,7 @@ const App = () => (
               <Route path="feedback" element={<FeedbackAdminPage />} />
               <Route path="payments" element={<AdminPaymentsPage />} />
               <Route path="responsiveness" element={<ResponsivenessAdminPage />} />
+              <Route path="referrals" element={<ReferralsAdminPage />} />
               <Route path="knowledge-review" element={<AdminKnowledgeReviewPage />} />
               <Route path="client-approvals" element={<AdminClientApprovalsPage />} />
               <Route path="client-reviews" element={<AdminClientReviewsPage />} />
