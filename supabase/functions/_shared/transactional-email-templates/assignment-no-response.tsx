@@ -1,9 +1,13 @@
 import * as React from 'npm:react@18.3.1'
 import { Body, Button, Container, Head, Heading, Html, Preview, Section, Text } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
+import { PauseFooter } from './pause-footer.tsx'
+import type { PauseLinks } from '../notificationPause.ts'
 
 /** Sent to the client when a consultant did not answer an assignment request in time. */
 interface Props {
+  /** Feature Q signed pause links, filled in by sendTemplateEmail for non-essential sends. */
+  pauseLinks?: PauseLinks
   lang?: 'en' | 'ar'
   consultantName?: string
   ticketTitle?: string
@@ -40,7 +44,7 @@ const STR = {
 
 const AssignmentNoResponseEmail = ({
   lang = 'en', consultantName, ticketTitle, canExtend = true,
-  inviteUrl = 'https://www.aisupport360.com/client/tickets', bidsUrl = 'https://www.aisupport360.com/client/tickets', waitUrl = 'https://www.aisupport360.com/client/tickets',
+  inviteUrl = 'https://www.aisupport360.com/client/tickets', bidsUrl = 'https://www.aisupport360.com/client/tickets', waitUrl = 'https://www.aisupport360.com/client/tickets', pauseLinks,
 }: Props) => {
   const l = lang === 'ar' ? 'ar' : 'en'
   const t = STR[l]
@@ -66,6 +70,7 @@ const AssignmentNoResponseEmail = ({
             </Section>
           )}
           <Text style={small}>{t.note}</Text>
+          <PauseFooter links={pauseLinks} lang={lang} />
         </Container>
       </Body>
     </Html>
