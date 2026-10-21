@@ -56,7 +56,7 @@ type SortOption = DirectoryFilters['sort'];
 
 export default function ConsultantsPage() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   // Every filter, the sort and the view live in the URL, so a search can be shared or bookmarked.
   const filters = useMemo(() => parseFilters(searchParams), [searchParams]);
