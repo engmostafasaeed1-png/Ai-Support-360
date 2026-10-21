@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { filterLocally, isNotInstalled, toRpcParams, type UserFilters, type UserRow } from '@/lib/userAdmin';
+import { filterLocally, isNotInstalled, normalizeUserDetail, toRpcParams, type UserFilters, type UserRow } from '@/lib/userAdmin';
 
 // The new database functions are not in the generated types until the prepared file is applied.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -135,7 +135,8 @@ export function useUserDetail(id: string | null, installed: boolean | undefined)
     queryKey: ['um', 'detail', id, installed],
     enabled: !!id && installed !== undefined,
     queryFn: async (): Promise<UserDetail> => {
-      if (installed) return await callRpc<UserDetail>('admin_user_detail', { _uid: id });
+      // The database detail names the account id `user_id`; the console and every action use `id`.
+      if (installed) return normalizeUserDetail(await callRpc<UserDetail>('admin_user_detail', { _uid: id }));
       const row = (await legacyList()).find((u) => u.id === id);
       return { user: row ?? null, legacy: true };
     },

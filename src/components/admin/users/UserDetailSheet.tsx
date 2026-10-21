@@ -13,7 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { AlertTriangle, Ban, CheckCircle2, Copy, MailCheck, Download, KeyRound, LogOut, Mail, MoreHorizontal, Pencil, RotateCcw, Send, Shield, ShieldOff, Trash2, UserX, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { callRpc, useUserDetail } from '@/hooks/useUserAdmin';
-import { restoreDaysLeft, type UserRow } from '@/lib/userAdmin';
+import { isUuid, restoreDaysLeft, type UserRow } from '@/lib/userAdmin';
 import { EditProfileDialog, MergeDialog, MessageDialog, ReasonDialog, RolesDialog } from './UserDialogs';
 import { useUserActions } from './useUserActions';
 import { STATUS_VARIANT, fmtDate, roleLabel, statusLabel, verificationLabel } from './labels';
@@ -60,6 +60,8 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
 
   const u = data.user as UserRow & { invited_at?: string; banned_until?: string };
   const legacy = !!data.legacy;
+  // Actions need the auth user id; until it is known the e-mail buttons stay disabled (bug H4).
+  const idReady = isUuid(u.id);
   const self = u.id === me.id;
   const targetSuper = u.roles.includes('super_admin');
   const isSuperMe = me.roles.includes('super_admin');
@@ -125,8 +127,8 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
           <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 p-2 text-xs text-foreground" data-testid="um-unconfirmed">
             <Mail className="h-4 w-4 shrink-0 text-warning" aria-hidden />
             <span className="flex-1">{t('um.unconfirmed_note', 'E-mail not confirmed yet: this person cannot sign in until they confirm.')}</span>
-            {can('users.edit') && <Button size="sm" variant="outline" onClick={() => setDialog('resend_verification')}>{t('um.resend_confirmation', 'Resend confirmation e-mail')}</Button>}
-            {isSuperMe && !self && <Button size="sm" variant="outline" onClick={() => setDialog('confirm_email')}><MailCheck className="me-1 h-4 w-4" aria-hidden />{t('um.confirm_email', 'Mark e-mail as confirmed')}</Button>}
+            {can('users.edit') && <Button size="sm" variant="outline" disabled={!idReady || busy} onClick={() => setDialog('resend_verification')}>{t('um.resend_confirmation', 'Resend confirmation e-mail')}</Button>}
+            {isSuperMe && !self && <Button size="sm" variant="outline" disabled={!idReady || busy} onClick={() => setDialog('confirm_email')}><MailCheck className="me-1 h-4 w-4" aria-hidden />{t('um.confirm_email', 'Mark e-mail as confirmed')}</Button>}
           </div>
         )}
         {/* Actions */}
@@ -141,8 +143,8 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
             <DropdownMenuTrigger asChild><Button size="sm" variant="ghost" aria-label={t('um.more_actions', 'More actions')}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(u.email); toast.success(t('um.email_copied', 'E-mail copied')); }}><Copy className="me-2 h-4 w-4" />{t('um.copy_email', 'Copy e-mail')}</DropdownMenuItem>
-              {can('users.edit') && !lockedBySuper && <DropdownMenuItem onClick={() => setDialog('password_reset')}><KeyRound className="me-2 h-4 w-4" />{t('um.password_reset', 'Send password reset')}</DropdownMenuItem>}
-              {can('users.edit') && !u.email_verified && <DropdownMenuItem onClick={() => setDialog('resend_verification')}><Mail className="me-2 h-4 w-4" />{t('um.resend_verification', 'Resend verification e-mail')}</DropdownMenuItem>}
+              {can('users.edit') && !lockedBySuper && <DropdownMenuItem disabled={!idReady} onClick={() => setDialog('password_reset')}><KeyRound className="me-2 h-4 w-4" />{t('um.password_reset', 'Send password reset')}</DropdownMenuItem>}
+              {can('users.edit') && !u.email_verified && <DropdownMenuItem disabled={!idReady} onClick={() => setDialog('resend_verification')}><Mail className="me-2 h-4 w-4" />{t('um.resend_verification', 'Resend verification e-mail')}</DropdownMenuItem>}
               {can('users.sessions') && !self && !lockedBySuper && <DropdownMenuItem onClick={() => setDialog('force_sign_out')}><LogOut className="me-2 h-4 w-4" />{t('um.force_sign_out', 'Sign out everywhere')}</DropdownMenuItem>}
               {can('users.mfa_reset') && !self && u.mfa_enabled && <DropdownMenuItem onClick={() => setDialog('mfa_reset')}><ShieldOff className="me-2 h-4 w-4" />{t('um.mfa_reset', 'Reset two-step sign-in')}</DropdownMenuItem>}
               {can('users.export') && installed && <DropdownMenuItem onClick={exportData}><Download className="me-2 h-4 w-4" />{t('um.export_data', 'Export personal data')}</DropdownMenuItem>}

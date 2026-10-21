@@ -350,3 +350,42 @@ export function restoreDaysLeft(anonymiseAfter: string | null | undefined, now =
 export function isNotInstalled(e: { code?: string; message?: string } | null | undefined): boolean {
   return !!e && (e.code === 'PGRST202' || e.code === '42883' || e.code === 'PGRST205' || /Could not find the function|schema cache/i.test(e.message ?? ''));
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Which account an action targets (bug H4). Every server action needs the AUTH USER id as `user_id`.
+// Users-console rows carry it as `id`; the database detail and consultant rows carry it as `user_id`
+// (a consultant row's own `id` is the consultant id and must never be sent).
+
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const isUuid = (v: unknown): v is string => typeof v === 'string' && UUID_RE.test(v.trim());
+
+/** Shown instead of sending a request that the server would refuse. */
+export const UNKNOWN_ACCOUNT_MESSAGE = 'This account could not be identified yet. Close the account panel, open it again and retry.';
+
+export class UnknownAccountError extends Error {
+  constructor() { super(UNKNOWN_ACCOUNT_MESSAGE); }
+}
+
+/** The auth user id of a Users-console row/detail (`source: 'user'`) or a consultant row (`source: 'consultant'`). */
+export function authUserIdOf(target: { id?: unknown; user_id?: unknown } | null | undefined, source: 'user' | 'consultant' = 'user'): string | null {
+  if (!target) return null;
+  if (isUuid(target.user_id)) return target.user_id.trim();
+  if (source === 'user' && isUuid(target.id)) return target.id.trim();
+  return null;
+}
+
+/** Gives the detail's `user` an `id` (the database detail returns it as `user_id`). */
+export function normalizeUserDetail<T extends { user?: Record<string, unknown> | null }>(detail: T): T {
+  const u = detail?.user;
+  if (!u) return detail;
+  const id = authUserIdOf(u as { id?: unknown; user_id?: unknown }, 'user');
+  return id && u.id !== id ? { ...detail, user: { ...u, id } } : detail;
+}
+
+/** Request body for the admin-manage-user server function; refuses to build one without a valid account id. */
+export function userActionBody(action: string, userId: unknown, payload: Record<string, unknown> = {}, reason?: string | null): Record<string, unknown> {
+  if (!isUuid(userId)) throw new UnknownAccountError();
+  const rest: Record<string, unknown> = { ...payload };
+  delete rest.user_id; delete rest.userId; delete rest.id; // a payload can never redirect the action to another account
+  return { ...rest, action, user_id: userId.trim(), ...(reason ? { reason } : {}) };
+}

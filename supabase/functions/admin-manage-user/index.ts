@@ -5,10 +5,10 @@
 // Every action checks the caller's permission, is rate limited per admin and is recorded with actor, target,
 // before, after and reason (um_record_state in docs/sql/user-management.sql; a plain audit row when that file is not applied yet).
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { BAD_USER_MESSAGE, targetUserId, UUID_RE } from './target.ts';
 import { ADMIN_ROLES, adminClient, authenticateUser, getUserRoles, hasAnyRole, jsonResponse, preflight, SITE_URL, withinRateLimit } from '../_shared/security.ts';
 
 const ROLES = ['client', 'consultant', 'admin', 'super_admin'];
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FOREVER = '876000h';
 const SUPER_ONLY = new Set(['admins.manage', 'users.merge', 'users.mfa_reset', 'users.anonymise', 'users.hard_delete']);
 const ACTION_PERMISSION: Record<string, string> = {
@@ -173,8 +173,8 @@ Deno.serve(async (req) => {
     if (SUPER_ADMIN_ACTIONS.has(action) && !isSuper) throw new HttpError(403, 'Only a super admin can do this');
     if (REASON_REQUIRED.has(action) && reason.length < 5) throw new HttpError(400, 'Please give a reason (at least 5 characters)');
 
-    const userId = String(body.user_id || '');
-    if (!UUID_RE.test(userId)) return jsonResponse(req, { error: 'Valid user is required' }, 400);
+    const userId = targetUserId(body);
+    if (!userId) return jsonResponse(req, { error: BAD_USER_MESSAGE }, 400);
     const targetRoles = await getUserRoles(admin, userId);
     const self = userId === caller.id;
     if (targetRoles.includes('super_admin') && !isSuper) throw new HttpError(403, 'Only a super admin can change a super admin');
