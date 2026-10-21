@@ -261,6 +261,15 @@ function SignupForm() {
   };
 
   if (pendingEmail) {
+    const changeEmail = () => {
+      clearVerificationSentAt(pendingEmail);
+      clearResendCooldown(pendingEmail);
+      try { localStorage.removeItem(PENDING_EMAIL_KEY); } catch { /* ignore */ }
+      setPendingEmail(null);
+      setLastResentAt(null);
+      setResendCooldown(0);
+      setTimeout(() => document.getElementById('email')?.focus(), 0);
+    };
     return (
       <div className="min-h-screen flex items-center justify-center px-4 relative py-8">
         <VideoBackground src={authBgAsset.url} overlay="light" overlayOpacity={0.88} />
@@ -269,22 +278,26 @@ function SignupForm() {
             <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
               <MailCheck className="w-7 h-7 text-primary" />
             </div>
-            <h1 className="font-semibold leading-none tracking-tight text-2xl">Verify your email</h1>
+            <h1 className="font-semibold leading-none tracking-tight text-2xl">{t('auth.pending.title', 'Check your inbox')}</h1>
             <CardDescription>
-              We sent a verification link to <span className="font-medium text-foreground">{pendingEmail}</span>.
+              {t('auth.pending.sent_to', 'We sent a confirmation e-mail to')} <span className="font-medium text-foreground" dir="ltr">{pendingEmail}</span>.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-xl bg-muted/40 border border-border/50 p-4 space-y-2 text-sm">
-              <div className="flex items-start gap-2">
-                <Inbox className="w-4 h-4 mt-0.5 text-primary shrink-0" />
-                <span>Open your inbox and click the verification link.</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <ShieldAlert className="w-4 h-4 mt-0.5 text-orange-500 shrink-0" />
-                <span>Didn't see it? Check your <strong>Spam</strong> or <strong>Promotions</strong> folder.</span>
-              </div>
-            </div>
+            <ul className="rounded-xl bg-muted/40 border border-border/50 p-4 space-y-2 text-sm" data-testid="signup-pending-steps">
+              <li className="flex items-start gap-2">
+                <Inbox className="w-4 h-4 mt-0.5 text-primary shrink-0" aria-hidden="true" />
+                <span>{t('auth.pending.open', 'Open the e-mail from')} <strong dir="ltr">{CONFIRM_SENDER}</strong> {t('auth.pending.open_2', '(AI Support 360, subject "Confirm your email") and press "Verify my email", then "Confirm my e-mail".')}</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <ShieldAlert className="w-4 h-4 mt-0.5 text-warning shrink-0" aria-hidden="true" />
+                <span>{t('auth.pending.spam', 'Not there after a few minutes? Check Spam, Junk or Promotions and mark it as "Not spam".')}</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Clock className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" aria-hidden="true" />
+                <span>{t('auth.pending.validity', 'The link works once and stays valid for {{h}} hours. The e-mail also has a 6-digit code you can enter instead.', { h: Math.max(1, Math.round(expiryMinutes / 60)) })}</span>
+              </li>
+            </ul>
             {lastResentAt && (
               <VerificationTimeline
                 sentAt={lastResentAt}
@@ -301,26 +314,16 @@ function SignupForm() {
               className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all"
             >
               {resending && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
-              {resendCooldown > 0 ? `Resend available in ${resendCooldown}s` : 'Resend verification email'}
+              {resendCooldown > 0 ? t('auth.link.resend_wait', 'Send again in {{s}} s', { s: resendCooldown }) : t('auth.pending.resend', 'Resend confirmation e-mail')}
             </Button>
-            <Button variant="outline" onClick={() => navigate('/login')} className="w-full h-11 rounded-xl">
-              Go to login
+            <Button variant="outline" onClick={() => navigate(`/auth/confirm?email=${encodeURIComponent(pendingEmail)}`)} className="w-full h-11 rounded-xl">
+              {t('auth.pending.enter_code', 'Enter the 6-digit code')}
             </Button>
-            <button
-              type="button"
-              onClick={() => {
-                if (pendingEmail) {
-                  clearVerificationSentAt(pendingEmail);
-                  clearResendCooldown(pendingEmail);
-                }
-                try { localStorage.removeItem(PENDING_EMAIL_KEY); } catch { /* ignore */ }
-                setPendingEmail(null);
-                setLastResentAt(null);
-                setResendCooldown(0);
-              }}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Use a different email
+            <Button variant="ghost" onClick={() => navigate('/login')} className="w-full h-10 rounded-xl">
+              {t('auth.pending.already', 'I already confirmed - sign in')}
+            </Button>
+            <button type="button" onClick={changeEmail} className="text-sm font-medium text-primary underline">
+              {t('auth.pending.wrong_email', 'Wrong e-mail? Change it')}
             </button>
           </CardFooter>
         </Card>
