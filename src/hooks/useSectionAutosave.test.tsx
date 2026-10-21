@@ -26,6 +26,15 @@ describe('profile section saving safety', () => {
     view.rerender({ name: '' }); await act(() => vi.advanceTimersByTimeAsync(4000));
     expect(persist).not.toHaveBeenCalled(); expect(view.result.current.dirty).toBe(true); expect(view.result.current.error).toBe('Required');
   });
+  it('Feature V: a partial draft still autosaves only the changed field while other required fields are empty', async () => {
+    const { requiredFieldsCleared } = await import('@/lib/profileSubmission');
+    const fields = { name: 'display_name', bio: 'bio' };
+    const persist = vi.fn().mockResolvedValue(undefined);
+    const validate = (patch: Record<string, unknown>) => (requiredFieldsCleared(patch, fields, () => true).length ? 'Required' : null);
+    const view = renderHook(({ name }) => useSectionAutosave({ values: { name, bio: '' }, ready: true, persist, validate }), { initialProps: { name: '' } });
+    view.rerender({ name: 'Mona' }); await act(() => vi.advanceTimersByTimeAsync(4000));
+    expect(persist).toHaveBeenCalledExactlyOnceWith({ name: 'Mona' });
+  });
   it('queues one follow-up and does not acknowledge edits made during a save', async () => {
     let finish: (() => void) | undefined;
     const persist = vi.fn().mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve; })).mockResolvedValue(undefined);
