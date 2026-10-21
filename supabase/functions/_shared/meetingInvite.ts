@@ -12,7 +12,7 @@ const LABEL_RE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/;
 
 /** Trims, drops "mailto:" and angle brackets, lower-cases the domain (the local part is kept as typed). */
 export function normalizeEmail(raw: string): string {
-  let s = String(raw ?? '').trim().replace(/^mailto:/i, '').replace(/^<|>$/g, '').trim();
+  let s = String(raw ?? '').trim().replace(/^<|>$/g, '').trim().replace(/^mailto:/i, '').trim();
   const at = s.lastIndexOf('@');
   if (at > 0) s = s.slice(0, at) + '@' + s.slice(at + 1).toLowerCase();
   return s;
