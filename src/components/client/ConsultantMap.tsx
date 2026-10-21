@@ -218,7 +218,7 @@ export default function ConsultantMap({ consultants, selectedId, onSelectConsult
     }
     lastSelected.current = selectedId ?? null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [consultants, pins, selectedId, labelsKey, zoom, matches, favourite]);
+  }, [consultants, pins, selectedId, labelsKey, zoom, matches, favourite, publicOn, respById, minReviews, ringLang]);
 
   return (
     <div className="relative isolate rounded-2xl overflow-hidden border border-border/50 shadow-sm" style={{ height: '420px' }}>
