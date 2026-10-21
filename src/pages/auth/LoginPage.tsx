@@ -27,6 +27,8 @@ import {
 } from '@/lib/verificationStorage';
 import {
   readOAuthError,
+  isEmailLinkError,
+  emailRedirectBase,
   isFirstTimeOAuthUser,
   newUserDestination,
   readStoredOAuthRole,
@@ -38,6 +40,8 @@ import {
   type FirstRole,
 } from '@/lib/oauthReturn';
 import { reportError } from '@/lib/errorReporter';
+import { getPendingEmail } from '@/lib/verificationStorage';
+import ConfirmLinkProblem from '@/components/auth/ConfirmLinkProblem';
 
 let oauthErrorReported = false;
 function reportOAuthErrorOnce(provider: string, detail: string) {
@@ -51,6 +55,18 @@ function reportOAuthErrorOnce(provider: string, detail: string) {
   });
 }
 
+let linkErrorReported = false;
+function reportLinkErrorOnce(detail: string) {
+  if (linkErrorReported) return;
+  linkErrorReported = true;
+  reportError({
+    level: 'info',
+    source: 'auth_email_link',
+    message: `Confirmation link expired or already used: ${detail.slice(0, 160)}`,
+    context: { origin: window.location.origin },
+  });
+}
+
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
 
@@ -61,7 +77,14 @@ export default function LoginPage() {
   const nextParam = new URLSearchParams(location.search).get('next');
   const safeNext = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : null;
   const from = safeNext || (location.state as any)?.from || null;
-  const [email, setEmail] = useState('');
+  const justConfirmed = !!(location.state as any)?.confirmed;
+  const [linkProblem, setLinkProblem] = useState(() => {
+    const e = readOAuthError(location.search, location.hash);
+    if (!e || !isEmailLinkError(e)) return false;
+    reportLinkErrorOnce(`${e.code ?? e.error} ${e.description}`);
+    return true;
+  });
+  const [email, setEmail] = useState(() => (linkProblem ? getPendingEmail() : ''));
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -77,10 +100,18 @@ export default function LoginPage() {
   const [resendSuccessEmail, setResendSuccessEmail] = useState<string | null>(null);
   const [oauthError, setOauthError] = useState<{ error: string; description: string } | null>(() => {
     const e = readOAuthError(location.search, location.hash);
-    if (!e) return null;
+    // An expired or used e-mail link is not a Google error: it gets its own panel (linkProblem).
+    if (!e || isEmailLinkError(e)) return null;
     reportOAuthErrorOnce('google', `${e.error} ${e.description}`);
     return { ...e, description: friendlyOAuthMessage(e) };
   });
+
+  // Remove the error from the address bar so a refresh does not show it again.
+  useEffect(() => {
+    if (linkProblem && (location.hash || location.search.includes('error'))) {
+      window.history.replaceState(null, '', '/login');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [roleChoice, setRoleChoice] = useState(false);
   const [choosingRole, setChoosingRole] = useState<FirstRole | null>(null);
 
