@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { referralRpc } from '@/hooks/useReferralProgram';
+import { useGuestMode } from '@/contexts/GuestModeContext';
 import { captureReferral, clearStoredReferral, deviceId, normalizeReferralCode, storedReferral } from '@/lib/referrals';
 
 /** Keeps ?ref=CODE from /join, /signup and /for-consultants for 30 days and counts one anonymous link visit. */
@@ -36,9 +37,10 @@ export function ReferralJoinRedirect() {
  */
 export function ReferralClaimer() {
   const { t } = useTranslation();
+  const { isGuest } = useGuestMode();
   const done = useRef(false);
   useEffect(() => {
-    if (done.current) return;
+    if (done.current || isGuest) return;
     done.current = true;
     const code = storedReferral();
     if (!code) return;
@@ -52,6 +54,6 @@ export function ReferralClaimer() {
       clearStoredReferral();
       if (o.result === 'ok') toast.success(t('refz.claimed', 'Your referral code is linked. You were referred by {{name}}.', { name: o.name ?? '' }));
     })();
-  }, [t]);
+  }, [t, isGuest]);
   return null;
 }
