@@ -68,8 +68,8 @@ export function bundleVersion(): string {
   return m ? m[1].slice(0, 60) : import.meta.env.MODE;
 }
 
-export function buildFeedbackContext(role: string, lang: string): FeedbackContext {
-  const path = cleanPath(window.location.pathname);
+export function buildFeedbackContext(role: string, lang: string, currentPath: string = window.location.pathname): FeedbackContext {
+  const path = cleanPath(currentPath);
   return {
     path,
     route: routeName(path),

@@ -107,13 +107,13 @@ export default function FeedbackDialog({ open, onOpenChange, signedIn }: Props) 
   useEffect(() => { setConsent(signedIn); }, [signedIn]);
 
   const role = roleFromPath(pathname, signedIn);
-  const context = useMemo(() => (open ? buildFeedbackContext(role, i18n.language) : null), [open, role, i18n.language, pathname]);
+  const context = useMemo(() => (open ? buildFeedbackContext(role, i18n.language, pathname) : null), [open, role, i18n.language, pathname]);
   const errors = validateFeedback({ type, severity, title, description, contactEmail: email });
   const msg = (field: keyof typeof errors) => {
     const e = errors[field];
     if (!touched || !e) return undefined;
     const map: Record<string, string> = {
-      required: 'This is required.',
+      required: field === 'type' ? 'Choose what it is about.' : 'This is required.',
       too_short: field === 'title' ? `At least ${FEEDBACK_LIMITS.titleMin} characters.` : `At least ${FEEDBACK_LIMITS.descMin} characters.`,
       too_long: 'This is too long.',
       invalid: field === 'contactEmail' ? 'Enter a valid e-mail address or leave it empty.' : 'Choose one of the options.',
