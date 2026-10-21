@@ -29,7 +29,7 @@ export interface PauseInput {
 export const PAUSE_QUERY_KEY = ['notification-pause'];
 
 // Called on the client object itself: a detached rpc method loses its binding.
-// deno-lint-ignore no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const rpc = (name: string, args?: Record<string, unknown>) => (supabase as any).rpc(name, args);
 
 /**
