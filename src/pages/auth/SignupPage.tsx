@@ -7,12 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Users, Briefcase, MailCheck, Inbox, ShieldAlert, Lock } from 'lucide-react';
+import { Loader2, Users, Briefcase, MailCheck, Inbox, ShieldAlert, Lock, Clock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import PasswordInput from '@/components/auth/PasswordInput';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 import { cn } from '@/lib/utils';
-import { storeOAuthRole, canonicalOAuthUrl, oauthRedirectUri, friendlyOAuthMessage } from '@/lib/oauthReturn';
+import { storeOAuthRole, canonicalOAuthUrl, oauthRedirectUri, friendlyOAuthMessage, emailRedirectBase } from '@/lib/oauthReturn';
+import { CONFIRM_SENDER } from '@/lib/confirmEmail';
+import { useAuthEmailExpiry } from '@/hooks/useAuthEmailExpiry';
 import { startSocialSignIn } from '@/lib/socialSignin';
 import { useSocialSignin } from '@/hooks/useSocialSignin';
 import { MIN_PASSWORD_LENGTH } from '@/lib/passwordPolicy';
@@ -32,7 +34,7 @@ import {
   clearResendCooldown,
 } from '@/lib/verificationStorage';
 
-const PENDING_EMAIL_KEY = 'verification_pending_email';
+import { PENDING_EMAIL_KEY } from '@/lib/verificationStorage';
 
 type Role = 'client' | 'consultant';
 
@@ -130,6 +132,7 @@ function SignupForm() {
   const [pendingEmail, setPendingEmail] = useState<string | null>(() => {
     try { return localStorage.getItem(PENDING_EMAIL_KEY); } catch { return null; }
   });
+  const expiryMinutes = useAuthEmailExpiry();
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState<number>(() => {
     try {
@@ -156,7 +159,7 @@ function SignupForm() {
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: pendingEmail,
-      options: { emailRedirectTo: `${window.location.origin}/login` },
+      options: { emailRedirectTo: `${emailRedirectBase(window.location.origin)}/login` },
     });
     setResending(false);
     if (error) {
@@ -221,7 +224,7 @@ function SignupForm() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/login`,
+        emailRedirectTo: `${emailRedirectBase(window.location.origin)}/login`,
         data: { display_name: name, role, ...(role === 'consultant' ? { country: place.country.trim(), city: place.city.trim() } : {}), ...(referralCode ? { referral_code: referralCode } : {}) },
       },
     });
