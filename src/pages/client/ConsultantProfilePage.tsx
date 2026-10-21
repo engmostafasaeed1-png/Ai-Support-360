@@ -42,13 +42,16 @@ import SuccessStatsCard from '@/components/consultant/SuccessStatsCard';
 import { useSuccessConfig } from '@/hooks/useSuccessStats';
 import CredibilityAvatar from '@/components/client/CredibilityAvatar';
 import { credibility } from '@/lib/consultantCredibility';
+import { useHoldsPublic } from '@/hooks/useAvailabilityHold';
+import { holdLabel, summarizeWeekly, weeklyFromSlots } from '@/lib/availabilityRules';
 import { bookableTimes, hasWindowOn, localDateKey, type WindowRow } from '@/lib/bookableTimes';
 
 
 
 export default function ConsultantProfilePage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n?.language?.startsWith('ar') ? 'ar' : 'en';
   const navigate = useNavigate();
   const successCfg = useSuccessConfig();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -100,7 +103,7 @@ export default function ConsultantProfilePage() {
       if (!id) return null;
       const { data: c } = await supabase
         .from('consultants')
-        .select('id, user_id, bio, hourly_rate, currency, languages, industries, response_time_minutes, availability_status, rating, total_reviews, verification_status, ai_interview_badge, ai_skills_score, city, country, latitude, longitude, linkedin_checked_at, credly_checked_at, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, working_week, language_levels')
+        .select('id, user_id, bio, hourly_rate, currency, languages, industries, response_time_minutes, availability_status, rating, total_reviews, verification_status, ai_interview_badge, ai_skills_score, city, country, latitude, longitude, linkedin_checked_at, credly_checked_at, customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types, deployment_experience, project_scale, work_modes, working_week, language_levels, timezone')
         .eq('id', id)
         .maybeSingle();
       if (!c) return null;
@@ -137,6 +140,7 @@ export default function ConsultantProfilePage() {
           avatarUrl: profile?.avatar_url ?? null,
           available: c.availability_status === 'available',
           status: availabilityState(c.availability_status),
+          timezone: (c as any).timezone ?? null,
           badges: c.verification_status === 'verified' ? ['verified'] : [],
           city: placeLabel(c.city, c.country),
           lat: consultantPoint(c)?.lat ?? null,
@@ -246,6 +250,7 @@ export default function ConsultantProfilePage() {
     enabled: !isGuest && !!id,
   });
 
+  const holdEnds = useHoldsPublic(useMemo(() => (id ? [id] : []), [id]));
   // Every window the consultant set (weekly hours and single dates). The Availability tab shows the free times of a chosen day with the same rule as the booking dialog.
   // The key starts with the key of the weekly hours, so the change notice of the database refreshes it too.
   const { data: availabilityRows } = useQuery({
@@ -326,7 +331,9 @@ export default function ConsultantProfilePage() {
     );
   }
 
-  const status = (consultant.status ?? (consultant.available ? 'available' : 'offline')) as 'available' | 'busy' | 'offline';
+  const status = (consultant.status ?? (consultant.available ? 'available' : 'offline')) as 'available' | 'busy' | 'offline' | 'on_hold';
+  const onHoldLabel = id && holdEnds.get(id) ? holdLabel(holdEnds.get(id)!, lang) : null;
+  const weeklySummary = (() => { const w = weeklyFromSlots(availabilityRows ?? []); return w.length ? summarizeWeekly(w, (consultant as { timezone?: string | null }).timezone, lang) : null; })();
   const statusColor = STATE_META[status].dot;
   const credibilityResult = credibility({ certifications: detail.certifications, skills: detail.skills, rating: consultant.rating, aiScore: detail.aiScore });
 
@@ -405,8 +412,8 @@ export default function ConsultantProfilePage() {
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium" data-testid="consultant-status">
-                  <span className={`h-2 w-2 rounded-full ${statusColor}`} />
-                  {STATE_META[status].label}
+                  <span className={`h-2 w-2 rounded-full ${onHoldLabel ? STATE_META.on_hold.dot : statusColor}`} />
+                  {onHoldLabel ?? STATE_META[status].label}
                 </span>
                 {consultant.linkedinVerified && <LinkStatus state={consultant.linkedin_state} label="LinkedIn" />}
                 {consultant.credlyVerified && <LinkStatus state={consultant.credly_state} label="Credly" />}
@@ -415,7 +422,7 @@ export default function ConsultantProfilePage() {
                 ))}
               </div>
               <SuccessStatsCard consultantId={id} className="mt-4" />
-              {!isGuest && <WeeklyAvailability hours={weeklyHours} className="mt-4" />}
+              {!isGuest && <WeeklyAvailability hours={weeklyHours} summary={weeklySummary} className="mt-4" />}
             </div>
             <aside className="w-full shrink-0 space-y-3 md:w-72 md:pt-4">
               <div className="grid grid-cols-2 gap-3">
@@ -616,7 +623,7 @@ export default function ConsultantProfilePage() {
 
         {/* Availability Tab */}
         <TabsContent value="availability" className="space-y-6">
-          {!isGuest && <WeeklyAvailability hours={weeklyHours} className="w-full" />}
+          {!isGuest && <WeeklyAvailability hours={weeklyHours} summary={weeklySummary} className="w-full" />}
           {!isGuest && oneDateWindows.length > 0 && (
             <Card className="rounded-2xl border-border/50" data-testid="one-date-windows">
               <CardHeader className="pb-2">
