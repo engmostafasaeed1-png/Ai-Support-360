@@ -50,6 +50,7 @@ export default function ConsultantProfilePage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const successCfg = useSuccessConfig();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [reviewOpen, setReviewOpen] = useState(false);
   const [tab, setTab] = useState('about');
