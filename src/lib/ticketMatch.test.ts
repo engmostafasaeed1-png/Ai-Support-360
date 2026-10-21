@@ -34,6 +34,10 @@ describe('hard filters', () => {
     const critical = FIXTURE_TICKETS.find(t => t.urgency === 'critical')!;
     expect(hardFilter(byId('c07'), critical, extractTicketSignals(critical))).toBe('cannot_respond');
   });
+  it('a consultant on hold is never offered new requests (Feature Y)', () => {
+    expect(hardFilter({ ...byId('c01'), availability_status: 'on_hold' }, fi, s)).toBe('on_hold');
+    expect(hardFilter(byId('c01'), fi, s)).toBeNull();
+  });
 });
 
 describe('field changes move the ranking', () => {
