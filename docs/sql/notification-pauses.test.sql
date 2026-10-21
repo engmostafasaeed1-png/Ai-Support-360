@@ -46,12 +46,6 @@ END $$;
 -- Own row only.
 SELECT pg_temp.as_user((SELECT u3 FROM _ids));
 DO $$ BEGIN IF (SELECT count(*) FROM user_notification_pauses) <> 0 THEN RAISE EXCEPTION 'outsider reads pause'; END IF; END $$;
--- Too long for the platform maximum.
-DO $$ BEGIN
-  UPDATE platform_settings SET value = '7'::jsonb WHERE key = 'notification_pause_max_days';
-  RAISE EXCEPTION 'non-admin changed settings';
-EXCEPTION WHEN insufficient_privilege OR raise_exception THEN NULL;
-END $$;
 RESET ROLE;
 
 -- 2. The gate: essential never paused; reminders / activity paused per channel.
