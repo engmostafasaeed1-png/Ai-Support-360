@@ -695,19 +695,12 @@ textarea:focus-visible {
   .dark .ring-glow { filter: none; }
   .ring-draw { transition: stroke-dashoffset 900ms cubic-bezier(0.22, 1, 0.36, 1); }
   .ring-dot { transition: opacity 200ms ease-out 700ms; }
-  /* Platinum Success medal: a soft light sweep (no motion when reduced motion is asked for). */
-  .ring-medal-shine {
-    background-image: linear-gradient(110deg, transparent 35%, hsl(0 0% 100% / 0.6) 50%, transparent 65%);
-    background-size: 250% 100%;
-    animation: ring-medal-shine 3.4s ease-in-out infinite;
-  }
-  @keyframes ring-medal-shine { 0% { background-position: 120% 0; } 60%, 100% { background-position: -120% 0; } }
   /* Gold / Platinum Success level stars: soft glow plus a gentle shimmer (static with reduced motion; no glow in dark mode). */
   .success-star-shine { filter: drop-shadow(0 0 2px var(--star-glow, transparent)); animation: success-star-shine 3.2s ease-in-out infinite; }
   .dark .success-star-shine { filter: none; }
   @keyframes success-star-shine { 0%, 70%, 100% { opacity: 1; } 82% { opacity: 0.72; } }
   @media (prefers-reduced-motion: reduce) {
     .ring-draw, .ring-dot { transition: none; }
-    .ring-medal-shine, .success-star-shine { animation: none; }
+    .success-star-shine { animation: none; }
   }
 }
