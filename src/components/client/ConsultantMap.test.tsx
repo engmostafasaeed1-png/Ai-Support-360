@@ -59,6 +59,11 @@ vi.mock('@/hooks/useResponsiveness', () => ({
   usePublicResponsiveness: () => ({ publicOn: true, byId: new Map([['a', { level: 'excellent', median_minutes: 20, response_rate: 95, stars: 5 }]]), levels: new Map() }),
 }));
 vi.mock('@/hooks/useRingStats', () => ({ useRatingMinReviews: () => 3, useRingStats: () => ({ data: undefined }) }));
+const successState = vi.hoisted(() => ({ on: false }));
+vi.mock('@/hooks/useSuccessStats', () => ({
+  useSuccessConfig: () => ({ available: successState.on, publicOn: successState.on, settings: { bronze: 60, silver: 80, gold: 85, platinum: 100, min_requests: 5 } }),
+  useSuccessStatsMap: () => (successState.on ? new Map([['a', { requests_total: 42, solved: 38, not_solved: 4, requests_12m: 20, solved_12m: 18 }]]) : null),
+}));
 
 import ConsultantMap, { type MapConsultant } from './ConsultantMap';
 
@@ -137,6 +142,18 @@ describe('ConsultantMap', () => {
     expect(popup.querySelector('[data-part="ring-pill-rating"]')?.textContent).toContain('4.8 (12)');
     expect(popup.querySelector('[data-part="ring-pill-responsiveness"]')?.textContent).toContain('Fast reply - 20 min');
     expect((pinsDrawn()[0].icon.html as HTMLElement).querySelector('[data-part="ring-short"]')?.textContent).toBe('4.8');
+  });
+
+  it('shows the Success medal, band and counts in the popup when the success display is on', () => {
+    successState.on = true;
+    try {
+      render(<ConsultantMap consultants={[person('a', { rating: 4.8, reviews: 12 })]} />);
+      const popup = pinsDrawn()[0].popup as HTMLElement;
+      expect(popup.querySelector('[data-part="ring-pill-success"]')?.textContent).toContain('42 requests · 38 solved · 90 % (Gold)');
+      expect(popup.querySelector('[data-part="ring-medal"]')?.getAttribute('data-level')).toBe('gold');
+      expect(popup.querySelector('[data-kind="success"]')?.getAttribute('data-level')).toBe('gold');
+      expect(popup.querySelector('[data-part="ring"]')?.getAttribute('aria-label')).toContain('Success level: Gold - 38 of 42 requests solved (90 %) - last 12 months 90 %');
+    } finally { successState.on = false; }
   });
 
   it('tells the page which pin was clicked', () => {
