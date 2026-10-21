@@ -25,6 +25,9 @@ import VerificationTimeline from '@/components/auth/VerificationTimeline';
 import LocationPicker, { type PickedLocation } from '@/components/consultant/LocationPicker';
 import { locationError } from '@/lib/consultantLocation';
 import { storeSignupLocation } from '@/lib/signupLocation';
+import ReferralCodeField from '@/components/referral/ReferralCodeField';
+import { usePublicReferralSettings } from '@/hooks/useReferralProgram';
+import { deviceId, normalizeReferralCode, storedReferral } from '@/lib/referrals';
 import {
   getVerificationSentAt,
   setVerificationSentAt,
@@ -88,9 +91,13 @@ function SignupForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialRole = searchParams.get('role') === 'consultant' ? 'consultant' : 'client';
-  const referralCode = searchParams.get('ref') || '';
+  // Referral code from the link (?ref=) or kept from an earlier visit (30 days); consultants can type or change it.
+  const [referralInput, setReferralInput] = useState(() => normalizeReferralCode(searchParams.get('ref') || storedReferral() || ''));
+  const referralProgram = usePublicReferralSettings();
+  const referralCode = normalizeReferralCode(referralInput);
 
   const [role, setRole] = useState<Role>(initialRole);
+  const showReferralField = role === 'consultant' && referralProgram.available && referralProgram.settings.enabled;
   const [agreed, setAgreed] = useState(false);
   const [place, setPlace] = useState<PickedLocation>({ country: '', city: '' });
   const [placeError, setPlaceError] = useState<string | null>(null);
@@ -225,7 +232,7 @@ function SignupForm() {
       password,
       options: {
         emailRedirectTo: `${emailRedirectBase(window.location.origin)}/login`,
-        data: { display_name: name, role, ...(role === 'consultant' ? { country: place.country.trim(), city: place.city.trim() } : {}), ...(referralCode ? { referral_code: referralCode } : {}) },
+        data: { display_name: name, role, ...(role === 'consultant' ? { country: place.country.trim(), city: place.city.trim() } : {}), ...(referralCode ? { referral_code: referralCode, referral_device: deviceId() } : {}) },
       },
     });
     setLoading(false);
@@ -379,6 +386,7 @@ function SignupForm() {
             {role === 'consultant' && (
               <LocationPicker idPrefix="signup-location" value={place} onChange={v => { setPlace(v); setPlaceError(null); }} error={placeError} />
             )}
+            {showReferralField && <ReferralCodeField value={referralInput} onChange={setReferralInput} />}
             <div className="space-y-1.5">
               <Label htmlFor="email">{t('auth.email')}</Label>
               <Input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" className="h-11 rounded-xl" />

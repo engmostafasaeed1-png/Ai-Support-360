@@ -1,0 +1,227 @@
+-- Feature Z referral programme: post-apply checks. One transaction, rolled back at the end (no data is kept).
+-- Run in a scratch database after docs/sql/referral-program.sql. Raises an exception on the first failed check.
+BEGIN;
+SET LOCAL client_min_messages = warning;
+CREATE TEMP TABLE _ids AS SELECT
+  '00000000-0000-0000-0000-0000000000a1'::uuid AS admin,
+  '00000000-0000-0000-0000-0000000000b1'::uuid AS client,
+  '00000000-0000-0000-0000-0000000000e1'::uuid AS r_user, '00000000-0000-0000-0000-00000000ee01'::uuid AS r,
+  '00000000-0000-0000-0000-0000000000e2'::uuid AS d_user, '00000000-0000-0000-0000-00000000ee02'::uuid AS d,
+  '00000000-0000-0000-0000-0000000000e3'::uuid AS s_user, '00000000-0000-0000-0000-00000000ee03'::uuid AS s,
+  '00000000-0000-0000-0000-0000000000e4'::uuid AS e_user, '00000000-0000-0000-0000-00000000ee04'::uuid AS e,
+  '00000000-0000-0000-0000-0000000000e5'::uuid AS f_user, '00000000-0000-0000-0000-00000000ee05'::uuid AS f;
+GRANT SELECT ON _ids TO anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION pg_temp.as_user(_u uuid) RETURNS void LANGUAGE sql AS $$
+  SELECT set_config('request.jwt.claims', CASE WHEN _u IS NULL THEN '' ELSE json_build_object('sub', _u, 'role', 'authenticated')::text END, true);
+$$;
+CREATE OR REPLACE FUNCTION pg_temp.check(_ok boolean, _what text) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN IF NOT COALESCE(_ok, false) THEN RAISE EXCEPTION 'FAILED: %', _what; END IF; END $$;
+
+-- Fixtures ---------------------------------------------------------------------------------------------------------------
+INSERT INTO auth.users (id, email, raw_user_meta_data) SELECT admin, 'admin@example.com', '{}' FROM _ids;
+INSERT INTO auth.users (id, email, raw_user_meta_data) SELECT r_user, 'rami.saleh@example.com', '{}' FROM _ids;
+INSERT INTO public.user_roles (user_id, role) SELECT admin, 'admin' FROM _ids;
+INSERT INTO public.profiles (user_id, display_name) SELECT r_user, 'Rami Saleh' FROM _ids;
+INSERT INTO public.profiles (user_id, display_name) SELECT d_user, 'Dalia Kamal' FROM _ids;
+INSERT INTO public.profiles (user_id, display_name) SELECT s_user, 'Rami Second' FROM _ids;
+INSERT INTO public.profiles (user_id, display_name) SELECT e_user, 'Omar Nabil' FROM _ids;
+INSERT INTO public.profiles (user_id, display_name) SELECT f_user, 'Fadi Hamed' FROM _ids;
+INSERT INTO public.consultants (id, user_id, verification_status) SELECT r, r_user, 'verified' FROM _ids;
+INSERT INTO public.consultant_policy_acknowledgements (consultant_id, version) SELECT r, 1 FROM _ids;
+
+-- 1. Codes: readable, generated, case-insensitive, no profanity ----------------------------------------------------------
+SELECT pg_temp.check((SELECT code FROM public.consultant_referral_codes WHERE consultant_id = (SELECT r FROM _ids)) ~ '^SAP-RAMI-[A-HJ-NP-Z2-9]{3}$', 'code like SAP-RAMI-7K2');
+SELECT pg_temp.check(public.referral_code_blocked_word('SAP-SEX-123'), 'profanity segment blocked');
+SELECT pg_temp.check(NOT public.referral_code_blocked_word('SAP-HASSAN-7K2'), 'names containing short words allowed');
+CREATE TEMP TABLE _code AS SELECT code FROM public.consultant_referral_codes WHERE consultant_id = (SELECT r FROM _ids);
+GRANT SELECT ON _code TO anon, authenticated;
+
+-- 2. Attribution at sign-up (metadata, lower-case code), locked afterwards -----------------------------------------------
+INSERT INTO auth.users (id, email, raw_user_meta_data)
+SELECT d_user, 'dalia@corp-x.com', jsonb_build_object('role', 'consultant', 'referral_code', lower((SELECT code FROM _code))) FROM _ids;
+INSERT INTO public.consultants (id, user_id) SELECT d, d_user FROM _ids;
+SELECT pg_temp.check((SELECT status = 'active' AND source = 'signup' AND referrer_consultant_id = (SELECT r FROM _ids)
+                        FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT d FROM _ids)), 'attributed at sign-up');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.notifications WHERE user_id = (SELECT r_user FROM _ids) AND title = 'Someone signed up with your referral code'
+                               AND body LIKE 'D. K****%' AND body NOT LIKE '%Dalia%'), 'referrer told with masked name');
+SELECT pg_temp.check((SELECT count(*) FROM public.referral_email_queue WHERE user_id = (SELECT r_user FROM _ids) AND kind = 'signup') = 1, 'sign-up e-mail queued');
+SELECT pg_temp.check(public.referral_attribute((SELECT d FROM _ids), 'SAP-OTHER-111', 'claim', NULL, NULL) = 'already', 'attribution locked');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.as_user((SELECT d_user FROM _ids));
+DO $$ BEGIN
+  UPDATE public.consultant_referrals SET referrer_consultant_id = referred_consultant_id;
+  RAISE EXCEPTION 'FAILED: non-admin could write the attribution';
+EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
+RESET ROLE;
+SELECT pg_temp.as_user(NULL);
+
+-- 3. Self-referral and loops are refused -----------------------------------------------------------------------------------
+INSERT INTO auth.users (id, email) SELECT s_user, 'Rami.Saleh+second@example.com' FROM _ids;
+INSERT INTO public.consultants (id, user_id) SELECT s, s_user FROM _ids;
+SELECT pg_temp.check(public.referral_attribute((SELECT s FROM _ids), (SELECT code FROM _code), 'claim', NULL, NULL) = 'self', 'same e-mail = self-referral');
+SELECT pg_temp.check(public.referral_attribute((SELECT r FROM _ids), (SELECT code FROM _code), 'claim', NULL, NULL) = 'self', 'own code = self-referral');
+SELECT pg_temp.check(public.referral_attribute((SELECT r FROM _ids),
+                       (SELECT code FROM public.consultant_referral_codes WHERE consultant_id = (SELECT d FROM _ids)), 'claim', NULL, NULL) = 'loop', 'loop refused');
+SELECT pg_temp.check(public.referral_attribute((SELECT s FROM _ids), 'NOPE-123', 'claim', NULL, NULL) = 'invalid', 'unknown code');
+
+-- 4. Late claim (Google / typed later) and same-device flag -> review --------------------------------------------------------
+INSERT INTO auth.users (id, email) SELECT e_user, 'omar@example.org' FROM _ids;
+INSERT INTO public.consultants (id, user_id) SELECT e, e_user FROM _ids;
+INSERT INTO auth.users (id, email) SELECT f_user, 'fadi@example.net' FROM _ids;
+INSERT INTO public.consultants (id, user_id) SELECT f, f_user FROM _ids;
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.as_user((SELECT r_user FROM _ids));
+SELECT public.my_referral_overview('device-of-rami');
+SELECT pg_temp.as_user((SELECT e_user FROM _ids));
+SELECT pg_temp.check((SELECT public.referral_claim((SELECT code FROM _code), 'device-of-omar')) = '{"result": "ok", "name": "R. S****"}'::jsonb, 'claim returns masked name');
+SELECT pg_temp.as_user((SELECT f_user FROM _ids));
+SELECT pg_temp.check((SELECT public.referral_claim((SELECT code FROM _code), 'device-of-rami')) ->> 'result' = 'ok', 'flagged claim still recorded');
+RESET ROLE;
+SELECT pg_temp.as_user(NULL);
+SELECT pg_temp.check((SELECT status = 'review' AND 'same_device' = ANY (flags) FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT f FROM _ids)), 'same device flagged for review');
+
+-- 5. Live validation: only valid/invalid + masked name, rate limited ----------------------------------------------------------
+SET LOCAL ROLE anon;
+SELECT set_config('request.headers', '{"x-forwarded-for": "203.0.113.9"}', true);
+SELECT pg_temp.check(public.referral_validate_code(lower((SELECT code FROM _code))) = '{"valid": true, "name": "R. S****"}'::jsonb, 'validate: valid + masked name only');
+SELECT pg_temp.check(public.referral_validate_code('SAP-NOBODY-999') = '{"valid": false}'::jsonb, 'validate: invalid');
+RESET ROLE;
+
+-- 6. Reward = 0.5 % of the referred consultant's fee (never VAT / fees / commission), one line per payout ------------------------
+UPDATE public.consultants SET verification_status = 'verified' WHERE id = (SELECT d FROM _ids);
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.notifications WHERE user_id = (SELECT r_user FROM _ids) AND title = 'Your referral is verified'), 'verified notice');
+CREATE TEMP TABLE _p (n int PRIMARY KEY, id uuid DEFAULT gen_random_uuid());
+INSERT INTO _p (n) SELECT generate_series(1, 12);
+INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, currency, status, reference)
+SELECT id, (SELECT d FROM _ids), 1000, 1000, 'USD', 'pending', 'payment:test1' FROM _p WHERE n = 1;
+SELECT pg_temp.check((SELECT amount = 5.00 AND fee_amount = 1000 AND rate_percent = 0.5 AND status = 'pending' FROM public.referral_reward_lines
+                        WHERE source_payout_id = (SELECT id FROM _p WHERE n = 1)), '0.5 % of 1000 = 5.00, pending');
+SELECT pg_temp.check((SELECT window_ends_at = first_paid_at + interval '12 months' FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT d FROM _ids)),
+                     '12 months from the first paid ticket');
+SELECT pg_temp.check((SELECT count(*) FROM public.referral_email_queue WHERE kind = 'first_reward') = 1, 'first reward e-mail queued once');
+INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, currency, status, reference)
+SELECT id, (SELECT d FROM _ids), 333.33, 333.33, 'USD', 'pending', 'payment:test2' FROM _p WHERE n = 2;
+SELECT pg_temp.check((SELECT amount FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 2)) = 1.67, 'rounded to 2 decimals');
+-- Legacy commission payout: fee before commission is the base, not the transferred amount.
+INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, commission_percent, commission_amount, currency, status, reference)
+SELECT id, (SELECT d FROM _ids), 850, 1000, 15, 150, 'USD', 'pending', 'payment:test3' FROM _p WHERE n = 3;
+SELECT pg_temp.check((SELECT amount FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 3)) = 5.00, 'on the fee, not on commission');
+UPDATE public.payouts SET status = 'completed' WHERE id = (SELECT id FROM _p WHERE n = 1);
+UPDATE public.payouts SET note = 'touch' WHERE id = (SELECT id FROM _p WHERE n = 1);
+SELECT pg_temp.check((SELECT count(*) = 1 AND bool_and(status = 'available') FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 1)),
+                     'payout completed -> available, still one line');
+
+-- 7. 12-month window boundaries --------------------------------------------------------------------------------------------
+INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, status, reference, created_at)
+SELECT id, (SELECT d FROM _ids), 200, 200, 'pending', 'payment:test4',
+       (SELECT window_ends_at FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT d FROM _ids)) - interval '1 second' FROM _p WHERE n = 4;
+INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, status, reference, created_at)
+SELECT id, (SELECT d FROM _ids), 200, 200, 'pending', 'payment:test5',
+       (SELECT window_ends_at FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT d FROM _ids)) FROM _p WHERE n = 5;
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 4)), 'last second of the window earns');
+SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 5)), 'end of the window earns nothing');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.referral_events WHERE payout_id = (SELECT id FROM _p WHERE n = 5) AND reason = 'outside_window'), 'skip reason logged');
+
+-- 8. Refund reverses, dispute holds and releases ------------------------------------------------------------------------------
+INSERT INTO public.payments (id, client_id, consultant_id, amount, status) VALUES
+  ('00000000-0000-0000-0000-00000000aa01', (SELECT client FROM _ids), (SELECT d FROM _ids), 1150, 'completed'),
+  ('00000000-0000-0000-0000-00000000aa02', (SELECT client FROM _ids), (SELECT d FROM _ids), 1150, 'completed');
+INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, status, reference, payment_id)
+SELECT id, (SELECT d FROM _ids), 1000, 1000, 'pending', 'payment:aa01', '00000000-0000-0000-0000-00000000aa01' FROM _p WHERE n = 6;
+INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, status, reference, payment_id)
+SELECT id, (SELECT d FROM _ids), 1000, 1000, 'completed', 'payment:aa02', '00000000-0000-0000-0000-00000000aa02' FROM _p WHERE n = 7;
+UPDATE public.payments SET status = 'refunded' WHERE id = '00000000-0000-0000-0000-00000000aa01';
+SELECT pg_temp.check((SELECT status FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 6) AND kind = 'reward') = 'reversed', 'refund reverses the reward');
+SELECT pg_temp.check((SELECT amount FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 6) AND kind = 'reversal') = -5.00, 'negative reversal line');
+UPDATE public.payments SET status = 'disputed' WHERE id = '00000000-0000-0000-0000-00000000aa02';
+SELECT pg_temp.check((SELECT status = 'held' AND hold_reason = 'dispute' FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 7)), 'dispute holds');
+UPDATE public.payments SET status = 'completed' WHERE id = '00000000-0000-0000-0000-00000000aa02';
+SELECT pg_temp.check((SELECT status FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 7)) = 'available', 'dispute settled releases');
+
+-- 9. Eligibility: suspended referrer and flagged referrals ---------------------------------------------------------------------
+INSERT INTO public.user_admin_state (user_id, suspended_at) SELECT r_user, now() FROM _ids;
+INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, status, reference)
+SELECT id, (SELECT d FROM _ids), 100, 100, 'pending', 'payment:test8' FROM _p WHERE n = 8;
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.referral_events WHERE payout_id = (SELECT id FROM _p WHERE n = 8) AND reason = 'referrer_suspended'), 'suspended referrer earns nothing');
+DELETE FROM public.user_admin_state WHERE user_id = (SELECT r_user FROM _ids);
+UPDATE public.consultants SET verification_status = 'verified' WHERE id = (SELECT f FROM _ids);
+INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, status, reference)
+SELECT id, (SELECT f FROM _ids), 1000, 1000, 'completed', 'payment:test9' FROM _p WHERE n = 9;
+SELECT pg_temp.check((SELECT status = 'held' AND hold_reason = 'review' FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 9)), 'flagged referral -> held');
+
+-- 10. Threshold and referral payout ---------------------------------------------------------------------------------------------
+-- Available now: payout 1 (5.00) + payout 7 (5.00) = 10.00 (< 25) and no bank details yet.
+SELECT pg_temp.check(public.referral_bundle_payouts(NULL) = 0, 'below threshold: no payout');
+INSERT INTO public.consultant_payout_details (consultant_id, account_holder, bank_name, iban) SELECT r, 'Rami Saleh', 'Bank', 'SA00 0000 1111' FROM _ids;
+SELECT pg_temp.check(public.referral_bundle_payouts(NULL) = 0, 'still below threshold');
+SELECT pg_temp.as_user((SELECT admin FROM _ids));
+DO $$ BEGIN
+  PERFORM public.admin_referral_action('adjust', (SELECT r FROM _ids), '', 15, 'USD');
+  RAISE EXCEPTION 'FAILED: adjustment without reason';
+EXCEPTION WHEN invalid_parameter_value THEN NULL; END $$;
+SELECT public.admin_referral_action('adjust', (SELECT r FROM _ids), 'Goodwill for the test', 15, 'USD');
+SELECT pg_temp.check((public.admin_referral_action('run_payouts', NULL, 'Monthly run test')) ->> 'created' = '1', 'threshold reached: one referral payout');
+SELECT pg_temp.as_user(NULL);
+CREATE TEMP TABLE _rp AS SELECT id, amount FROM public.payouts WHERE consultant_id = (SELECT r FROM _ids) AND reference LIKE 'referral:%';
+SELECT pg_temp.check((SELECT count(*) = 1 AND min(amount) = 25.00 FROM _rp), 'referral payout = 25.00');
+SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _rp)), 'no reward on the referrer''s own payout');
+UPDATE public.payouts SET status = 'completed' WHERE id = (SELECT id FROM _rp);
+SELECT pg_temp.check((SELECT count(*) FROM public.referral_reward_lines WHERE referral_payout_id = (SELECT id FROM _rp) AND status = 'paid') = 3, 'lines paid');
+-- A refund after payment: negative available line, deducted next time.
+SELECT pg_temp.as_user((SELECT admin FROM _ids));
+SELECT public.admin_referral_action('reverse_line', (SELECT id FROM public.referral_reward_lines WHERE kind = 'reward' AND source_payout_id = (SELECT id FROM _p WHERE n = 1)), 'Chargeback test');
+SELECT pg_temp.as_user(NULL);
+SELECT pg_temp.check((SELECT amount = -5.00 AND status = 'available' FROM public.referral_reward_lines WHERE kind = 'reversal'
+                        AND reverses_line_id = (SELECT id FROM public.referral_reward_lines WHERE kind = 'reward' AND source_payout_id = (SELECT id FROM _p WHERE n = 1))), 'paid line reversed by negative line');
+
+-- 11. Referrer views: masked names only, no direct table reads, no admin RPCs --------------------------------------------------------
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.as_user((SELECT r_user FROM _ids));
+SELECT pg_temp.check((SELECT count(*) FROM public.consultant_referrals) = 0, 'referrer cannot read attributions directly');
+SELECT pg_temp.check((SELECT count(*) FROM public.referral_reward_lines) = 0, 'referrer cannot read lines directly');
+SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.my_referrals() WHERE referred_name ILIKE '%dalia%' OR referred_name ILIKE '%kamal%'), 'no full names');
+SELECT pg_temp.check((SELECT status FROM public.my_referrals() WHERE referred_name = 'D. K****') = 'paying', 'status paying');
+SELECT pg_temp.check((SELECT (public.my_referral_overview(NULL) -> 'funnel' ->> 'signups')::int) = 3, 'funnel sign-ups');
+SELECT pg_temp.check((SELECT (e ->> 'pending')::numeric FROM jsonb_array_elements(public.my_referral_overview(NULL) -> 'earnings') e WHERE e ->> 'currency' = 'USD') = 7.67,
+                     'pending = 1.67 + 5.00 + 1.00');
+DO $$ BEGIN
+  PERFORM public.admin_referral_overview();
+  RAISE EXCEPTION 'FAILED: consultant reached an admin RPC';
+EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
+-- Code: change once, old code keeps working, profanity refused.
+DO $$ BEGIN
+  PERFORM public.referral_update_code('SAP-FUCK');
+  RAISE EXCEPTION 'FAILED: profane code accepted';
+EXCEPTION WHEN invalid_parameter_value THEN NULL; END $$;
+SELECT pg_temp.check(public.referral_update_code('sap-rami-ok') = 'SAP-RAMI-OK', 'code changed once');
+DO $$ BEGIN
+  PERFORM public.referral_update_code('SAP-RAMI-TWO');
+  RAISE EXCEPTION 'FAILED: second change accepted';
+EXCEPTION WHEN insufficient_privilege THEN NULL; END $$;
+RESET ROLE;
+SELECT pg_temp.as_user(NULL);
+SELECT pg_temp.check(public.referral_find_code((SELECT code FROM _code)) = (SELECT r FROM _ids), 'old code still works');
+
+-- 12. Administrators see full names; reasons and loops enforced -----------------------------------------------------------------
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.as_user((SELECT admin FROM _ids));
+SELECT pg_temp.check((SELECT referred_name FROM public.admin_referral_referrals(NULL, 'all', 50, 0) WHERE referred_id = (SELECT d FROM _ids)) = 'Dalia Kamal', 'admin sees full name');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.admin_referral_referrals(NULL, 'flagged', 50, 0) WHERE referred_id = (SELECT f FROM _ids)), 'flagged filter');
+DO $$ BEGIN
+  PERFORM public.admin_referral_action('change_referrer', (SELECT d FROM _ids), 'Wrong referrer', NULL, NULL, (SELECT d FROM _ids));
+  RAISE EXCEPTION 'FAILED: self as referrer';
+EXCEPTION WHEN invalid_parameter_value THEN NULL; END $$;
+SELECT public.admin_referral_action('approve_referral', (SELECT f FROM _ids), 'Checked: different people');
+RESET ROLE;
+SELECT pg_temp.as_user(NULL);
+SELECT pg_temp.check((SELECT status FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 9)) = 'available', 'approval releases held line');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.audit_logs WHERE action = 'referral.approve_referral'), 'admin action audited');
+
+-- 13. Old member credit is never paid on top for consultant referrals; jobs are plain database calls --------------------------------
+SELECT public.grant_referral_rewards((SELECT d_user FROM _ids));
+SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.referral_rewards), 'no double reward');
+SELECT pg_temp.check((SELECT count(*) FROM cron.job WHERE jobname LIKE 'referral-%' AND command NOT ILIKE '%http%') = 2, 'credential-free jobs');
+
+SELECT 'referral-program checks passed' AS result;
+ROLLBACK;
