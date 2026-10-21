@@ -10,14 +10,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import QRCodeDisplay from '@/components/referral/QRCodeDisplay';
 import ReferralsPage from '@/pages/ReferralsPage';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import {
-  referralRpc, rpcMessage, useInvalidateReferral, useMyReferralHistory, useMyReferralList, useReferralOverview,
+  referralRpc, rpcMessage, useInvalidateReferral, useMyReferralHistory, useMyReferralInvite, useMyReferralList, useReferralOverview,
   type EarningsRow, type ReferralOverview,
 } from '@/hooks/useReferralProgram';
 import {
@@ -25,6 +24,7 @@ import {
   rewardPerManDay, shareMessage, shareUrl, type LineStatus, type ReferralStatus, type ShareChannel,
 } from '@/lib/referrals';
 import { cn } from '@/lib/utils';
+import { ChipBadge, InviteCard, ReferrerActivationCard, useNextStepText } from '@/components/referral/ReferralActivation';
 
 const STATUS_TONE: Record<string, string> = {
   signed_up: 'bg-muted text-muted-foreground',
@@ -57,43 +57,7 @@ function useFormat() {
   }, [lang]);
 }
 
-function TermsGate({ version, onDone }: { version: number; onDone: () => void }) {
-  const { t } = useTranslation();
-  const [agreed, setAgreed] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const accept = async () => {
-    setBusy(true);
-    const { error } = await referralRpc('referral_accept_terms', { _version: version });
-    setBusy(false);
-    if (error) { toast.error(rpcMessage(error, t('refz.terms_failed', 'Your acceptance could not be saved. Please try again.'))); return; }
-    onDone();
-  };
-  return (
-    <Card className="rounded-2xl border-primary/30">
-      <CardHeader className="pb-2"><CardTitle className="text-lg">{t('refz.terms_title', 'Before you start: referral programme terms')}</CardTitle></CardHeader>
-      <CardContent className="space-y-4 text-sm">
-        <ul className="list-disc ps-5 space-y-1 text-muted-foreground">
-          <li>{t('refz.terms_1', 'Rewards are paid by AI Support 360 out of its own fee. They are never deducted from the consultant you bring or added to the client\'s price.')}</li>
-          <li>{t('refz.terms_2', 'You earn only while both of you are verified, your account is in good standing and you have accepted the Consultant Service Policy.')}</li>
-          <li>{t('refz.terms_3', 'Self-referrals, fake accounts and shared bank accounts are not allowed; suspicious referrals are held for review.')}</li>
-          <li>{t('refz.terms_4', 'Refunded or disputed payments reverse or hold the related reward.')}</li>
-        </ul>
-        <div className="flex items-start gap-2">
-          <Checkbox id="refz-terms" checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} />
-          <Label htmlFor="refz-terms" className="leading-snug font-normal">
-            {t('refz.terms_accept', 'I have read and accept the')}{' '}
-            <Link to="/referral-terms" target="_blank" rel="noopener" className="text-primary underline">{t('refz.terms_link', 'referral programme terms')}</Link>.
-          </Label>
-        </div>
-        <Button onClick={accept} disabled={!agreed || busy} className="rounded-xl">
-          {busy && <Loader2 className="w-4 h-4 me-2 animate-spin" />}{t('refz.terms_continue', 'Accept and continue')}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-function CodeCard({ ov }: { ov: ReferralOverview }) {
+function CodeCard({ ov, locked }: { ov: ReferralOverview; locked: boolean }) {
   const { t } = useTranslation();
   const f = useFormat();
   const invalidate = useInvalidateReferral();
@@ -165,8 +129,12 @@ function CodeCard({ ov }: { ov: ReferralOverview }) {
             </p>
           </div>
         )}
+        {locked && (
+          <p className="rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">{t('refz.share_locked', 'Sharing unlocks when you pass the AI interview and accept the referral terms (see the steps above).')}</p>
+        )}
         {ov.previous_code && <p className="text-xs text-muted-foreground">{t('refz.prev_code', 'Your previous code {{code}} still works.', { code: ov.previous_code })}</p>}
 
+        {!locked && <>
         <div className="space-y-1.5">
           <Label>{t('refz.share_link', 'Share link')}</Label>
           <div className="flex flex-wrap gap-2">
@@ -205,6 +173,7 @@ function CodeCard({ ov }: { ov: ReferralOverview }) {
           </div>
           {showQR && <QRCodeDisplay url={link} />}
         </div>
+        </>}
       </CardContent>
     </Card>
   );
@@ -244,10 +213,13 @@ export default function ReferAndEarnPage() {
   const { isGuest } = useGuestMode();
   const overview = useReferralOverview(!isGuest);
   const ov = overview.data?.data ?? null;
-  const ready = !!ov && ov.terms_accepted_version === ov.settings.terms_version;
-  const list = useMyReferralList(ready);
-  const history = useMyReferralHistory(ready);
+  const loaded = !!ov;
+  const active = !!ov && ov.activation.active;
+  const list = useMyReferralList(loaded);
+  const history = useMyReferralHistory(loaded);
+  const invite = useMyReferralInvite(loaded);
   const invalidate = useInvalidateReferral();
+  const nextText = useNextStepText();
 
   // Until the programme SQL is applied (or for demo visitors) the existing member referral page stays.
   if (isGuest || (overview.data && !overview.data.available)) return <ReferralsPage />;
@@ -287,9 +259,9 @@ export default function ReferAndEarnPage() {
         <Card className="rounded-2xl border-warning/40"><CardContent className="p-4 text-sm">{t('refz.paused', 'The referral programme is paused at the moment. Rewards already earned stay yours.')}</CardContent></Card>
       )}
 
-      {!ready ? (
-        <TermsGate version={s.terms_version} onDone={invalidate} />
-      ) : (
+      {invite.data && <InviteCard invite={invite.data} onDone={invalidate} />}
+      {!active && <ReferrerActivationCard ov={ov} onDone={invalidate} />}
+      {(
         <>
           {missing.length > 0 && (
             <Card className="rounded-2xl border-warning/40">
@@ -303,7 +275,7 @@ export default function ReferAndEarnPage() {
             </Card>
           )}
 
-          <CodeCard ov={ov} />
+          <CodeCard ov={ov} locked={!active} />
 
           <section aria-labelledby="refz-earn-h" className="space-y-3">
             <h2 id="refz-earn-h" className="text-base font-semibold flex items-center gap-2"><Wallet className="w-4 h-4 text-primary" />{t('refz.earnings', 'Your earnings')}</h2>
@@ -355,6 +327,7 @@ export default function ReferAndEarnPage() {
                     <Table>
                       <TableHeader><TableRow>
                         <TableHead>{t('refz.c_name', 'Consultant')}</TableHead>
+                        <TableHead>{t('refz.c_activation', 'Activation')}</TableHead>
                         <TableHead>{t('refz.c_status', 'Status')}</TableHead>
                         <TableHead>{t('refz.c_joined', 'Signed up')}</TableHead>
                         <TableHead>{t('refz.c_first', 'First paid ticket')}</TableHead>
@@ -365,6 +338,20 @@ export default function ReferAndEarnPage() {
                         {(list.data ?? []).map((r, i) => (
                           <TableRow key={`${r.referred_name}-${r.attributed_at}-${i}`}>
                             <TableCell className="font-medium" dir="auto">{r.referred_name}</TableCell>
+                            <TableCell className="text-xs min-w-[220px]">
+                              <ChipBadge chip={r.chip} />
+                              {r.activation_status === 'pending' && (
+                                <div className="mt-1 space-y-0.5 text-muted-foreground">
+                                  <div>{r.they_passed ? '✓' : '○'} {t('refz.t_they_passed', 'They passed the AI interview')}</div>
+                                  <div>{r.they_acknowledged ? '✓' : '○'} {t('refz.t_they_acked', 'They accepted the terms')}</div>
+                                  <div className="text-foreground">{r.chip === 'waiting_you'
+                                    ? <>{t('refz.your_next', 'Your next step:')} {nextText(r.my_next, r.referred_name, ov.activation.pass_mark)}</>
+                                    : <>{t('refz.their_next', 'Their next step:')} {nextText(r.their_next, r.referred_name, ov.activation.pass_mark)}</>}</div>
+                                  {r.activation_expires_at && <div>{t('refz.deadline', 'Deadline: {{date}}', { date: f.date(r.activation_expires_at) })}</div>}
+                                </div>
+                              )}
+                              {r.activation_status === 'active' && r.activated_at && <div className="mt-1 text-muted-foreground">{t('refz.active_since', 'Active since {{date}}', { date: f.date(r.activated_at) })}</div>}
+                            </TableCell>
                             <TableCell><span className={cn('rounded-full px-2 py-0.5 text-xs', STATUS_TONE[r.status])}>{t(`refz.st_${r.status}`, REFERRAL_STATUS_LABEL[r.status as ReferralStatus] ?? r.status)}</span></TableCell>
                             <TableCell className="text-sm">{f.date(r.attributed_at)}</TableCell>
                             <TableCell className="text-sm">{f.date(r.first_paid_at)}</TableCell>
@@ -424,7 +411,8 @@ export default function ReferAndEarnPage() {
               <ol className="list-decimal ps-5 space-y-1 text-muted-foreground">
                 <li>{t('refz.how_1', 'Share your link or code with SAP consultants you know.')}</li>
                 <li>{t('refz.how_2', 'They sign up with it and get verified.')}</li>
-                <li>{t('refz.how_3', 'For {{months}} months from their first paid ticket you earn {{rate}} % of their fee for every approved hour. AI Support 360 pays it from its own fee.', { months: s.months, rate })}</li>
+                <li>{t('refz.how_2b', 'The referral becomes active when you both pass the AI interview (score at least {{pass}}) and both accept the terms, within {{days}} days of their sign-up.', { pass: ov.activation.pass_mark, days: s.activation_days })}</li>
+                <li>{t('refz.how_3', 'For {{months}} months from their first paid ticket you earn {{rate}} % of their fee for every approved hour invoiced after activation. AI Support 360 pays it from its own fee.', { months: s.months, rate })}</li>
                 <li>{t('refz.how_4', 'A reward is pending until their payout is completed, then available. From {{min}} it is paid with the normal payout run to your bank details.', { min: f.money(s.min_payout) })}</li>
               </ol>
               <p className="rounded-xl bg-muted/40 p-3">
