@@ -46,7 +46,7 @@ describe('editor rules', () => {
   });
   it('live summary: "Sun-Thu, 09:00-17:00 Riyadh time, 40 h/week"', () => {
     expect(summarizeWeekly(presetIntervals('sun_thu'), 'Asia/Riyadh')).toBe('Sun-Thu, 09:00-17:00 Riyadh time, 40 h/week');
-    expect(summarizeWeekly(presetIntervals('sun_thu'), 'Asia/Riyadh', 'ar')).toBe('الأحد-الخميس، 09:00-17:00 بتوقيت الرياض، 40 ساعة/أسبوع');
+    expect(summarizeWeekly(presetIntervals('sun_thu'), 'Asia/Riyadh', 'ar')).toBe('الأحد-الخميس، \u206609:00-17:00\u2069 بتوقيت الرياض، 40 ساعة/أسبوع');
     const mixed = [...presetIntervals('sun_thu').slice(0, 4), { day: 4, start: '09:00', end: '13:00' }];
     expect(summarizeWeekly(mixed, 'Africa/Cairo')).toBe('Sun-Wed 09:00-17:00 · Thu 09:00-13:00, Cairo time, 36 h/week');
     expect(weeklyHoursText([{ day: 1, start: '09:00', end: '11:30' }])).toBe('2.5');
@@ -54,7 +54,7 @@ describe('editor rules', () => {
   });
   it('card line: "Available Sun-Thu 09-17"', () => {
     expect(shortAvailability(presetIntervals('sun_thu'))).toBe('Available Sun-Thu 09-17');
-    expect(shortAvailability(presetIntervals('mon_fri'), 'ar')).toBe('متاح الاثنين-الجمعة 09-17');
+    expect(shortAvailability(presetIntervals('mon_fri'), 'ar')).toBe('متاح الاثنين-الجمعة \u206609-17\u2069');
     expect(shortAvailability([{ day: 6, start: '09:30', end: '12:00' }])).toBe('Available Sat 09:30-12');
     expect(shortAvailability([])).toBeNull();
     expect(dayGroups([{ day: 0, start: '09:00', end: '17:00' }, { day: 2, start: '09:00', end: '17:00' }])).toHaveLength(2);
@@ -155,14 +155,18 @@ describe('directory label and client notice', () => {
   const end = '2026-11-15T08:00:00Z';
   it('"On hold until 15 Nov 2026", not selectable; hidden in hide mode', () => {
     expect(holdLabel(end)).toBe('On hold until 15 Nov 2026');
-    expect(holdLabel(end, 'ar')).toBe('متوقف مؤقتًا حتى 2026-11-15');
+    expect(holdLabel(end, 'ar')).toBe('متوقف مؤقتًا حتى \u20662026-11-15\u2069');
     expect(holdDirectoryView(end, 'label')).toEqual({ hidden: false, label: 'On hold until 15 Nov 2026', selectable: false });
     expect(holdDirectoryView(end, 'hide')).toEqual({ hidden: true, label: null, selectable: false });
     expect(holdDirectoryView(null, 'hide')).toEqual({ hidden: false, label: null, selectable: true });
   });
   it('client notice text (same as the database)', () => {
     expect(clientHoldNotice('2026-11-01T08:00:00Z', end)).toBe('Your consultant is on hold from 1 Nov 2026 to 15 Nov 2026, current work continues as agreed.');
-    expect(clientHoldNotice('2026-11-01T08:00:00Z', end, 'ar')).toBe('مستشارك متوقف مؤقتًا من 2026-11-01 إلى 2026-11-15، ويستمر العمل الحالي كما هو متفق عليه.');
+    expect(clientHoldNotice('2026-11-01T08:00:00Z', end, 'ar')).toBe('مستشارك متوقف مؤقتًا من \u20662026-11-01\u2069 إلى \u20662026-11-15\u2069، ويستمر العمل الحالي كما هو متفق عليه.');
+  });
+  it('Arabic keeps numbers left-to-right (no reversed times or dates)', () => {
+    expect(summarizeWeekly(presetIntervals('sun_thu'), 'Asia/Riyadh', 'ar')).toContain('\u206609:00-17:00\u2069');
+    expect(holdLabel(end, 'ar').endsWith('\u2069')).toBe(true);
   });
   it('Riyadh date: late UTC evening already counts as the next day', () => {
     expect(holdLabel('2026-11-14T22:30:00Z')).toBe('On hold until 15 Nov 2026');
