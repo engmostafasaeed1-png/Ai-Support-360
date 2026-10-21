@@ -1208,7 +1208,12 @@
     "assignment_field_info_wait": "Client answer time for questions (hours)",
     "assignment_info_30d": "Information requests in the last 30 days",
     "assignment_info_waiting": "Questions waiting for the client",
-    "assignment_decline_reasons": "Decline reasons, last 30 days (administrators only)"
+    "assignment_decline_reasons": "Decline reasons, last 30 days (administrators only)",
+    "social_title": "Social sign-in (Google / Apple / Microsoft)",
+    "social_main": "Social sign-in (Google / Apple / Microsoft)",
+    "social_note": "Keep OFF until Google credentials are configured and tested",
+    "social_providers": "Providers",
+    "social_providers_hint": "Each provider is shown on the sign-in pages only when the main switch is on."
   },
   "maintenance": {
     "banner": "The platform is currently undergoing scheduled maintenance. Some features may be temporarily unavailable."

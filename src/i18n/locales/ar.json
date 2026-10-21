@@ -1205,7 +1205,12 @@
     "assignment_field_info_wait": "مهلة إجابة العميل عن الأسئلة (ساعات)",
     "assignment_info_30d": "طلبات المعلومات في آخر 30 يوماً",
     "assignment_info_waiting": "أسئلة بانتظار العميل",
-    "assignment_decline_reasons": "أسباب الرفض، آخر 30 يوماً (للمسؤولين فقط)"
+    "assignment_decline_reasons": "أسباب الرفض، آخر 30 يوماً (للمسؤولين فقط)",
+    "social_title": "تسجيل الدخول عبر الحسابات الاجتماعية (Google / Apple / Microsoft)",
+    "social_main": "تسجيل الدخول عبر الحسابات الاجتماعية (Google / Apple / Microsoft)",
+    "social_note": "أبقِه مغلقًا حتى يتم إعداد بيانات اعتماد Google واختبارها",
+    "social_providers": "مزودو الخدمة",
+    "social_providers_hint": "يظهر كل مزود في صفحات تسجيل الدخول فقط عندما يكون المفتاح الرئيسي مفعّلًا."
   },
   "maintenance": {
     "banner": "المنصة تخضع حالياً لصيانة مجدولة. قد تكون بعض الميزات غير متاحة مؤقتاً."
