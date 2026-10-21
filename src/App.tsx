@@ -18,7 +18,7 @@ import UiTranslator from "./components/UiTranslator";
 import { HelmetProvider } from "react-helmet-async";
 import Watermark from "./components/Watermark.tsx";
 import WhatsAppButton from "./components/WhatsAppButton.tsx";
-import GlobalSearch from "./components/GlobalSearch.tsx";
+const GlobalSearch = lazyWithRetry(() => import("./components/GlobalSearch.tsx"), 'GlobalSearch');
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
 import { Loader2 } from 'lucide-react';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
@@ -314,7 +314,7 @@ const App = () => (
           <ScrollToTop />
           <RouteSeo />
           <Watermark />
-          <GlobalSearch />
+          <IdleMount><Suspense fallback={null}><GlobalSearch /></Suspense></IdleMount>
           <MaintenanceBanner />
           
           <IdleMount><Suspense fallback={null}><AIChatbot /></Suspense></IdleMount>
