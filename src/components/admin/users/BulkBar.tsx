@@ -28,15 +28,16 @@ export default function BulkBar({ ids, total, installed, perms, onClear, onSelec
   const over = ids.length > BULK_LIMIT;
 
   const payload = () => kind === 'remind' ? { kind: remind } : { tags: tags.split(',').map((s) => s.trim()).filter(Boolean) };
-  const isEdge = kind === 'bulk_suspend' || kind === 'bulk_reactivate';
+  const edgeKind = (k: Kind | null) => k === 'bulk_suspend' || k === 'bulk_reactivate';
+  const isEdge = edgeKind(kind);
 
-  const dryRun = async () => {
-    if (!kind) return;
+  const dryRun = async (k: Kind | null = kind) => {
+    if (!k) return;
     setBusy(true);
     try {
-      const r = isEdge
-        ? await callEdge<Preview>('admin-manage-user', { action: kind, user_ids: ids, dry_run: true })
-        : await callRpc<Preview>('admin_users_bulk', { _action: kind, _ids: ids, _payload: payload(), _dry_run: true });
+      const r = edgeKind(k)
+        ? await callEdge<Preview>('admin-manage-user', { action: k, user_ids: ids, dry_run: true })
+        : await callRpc<Preview>('admin_users_bulk', { _action: k, _ids: ids, _payload: payload(), _dry_run: true });
       setPreview(r);
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
@@ -64,7 +65,7 @@ export default function BulkBar({ ids, total, installed, perms, onClear, onSelec
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
-  const open = (k: Kind) => { setKind(k); setPreview(null); };
+  const open = (k: Kind) => { setKind(k); setPreview(null); if (edgeKind(k)) dryRun(k); };
   const title = kind ? ({
     tag_add: t('um.bulk_tag_add', 'Add tags'), tag_remove: t('um.bulk_tag_remove', 'Remove tags'), remind: t('um.bulk_remind', 'Send reminder'),
     bulk_suspend: t('um.bulk_suspend', 'Suspend selected'), bulk_reactivate: t('um.bulk_reactivate', 'Reactivate selected'),
@@ -85,7 +86,7 @@ export default function BulkBar({ ids, total, installed, perms, onClear, onSelec
         <Button size="sm" variant="ghost" onClick={onClear} aria-label={t('um.clear_selection', 'Clear selection')}><X className="h-4 w-4" /></Button>
       </div>
 
-      <Dialog open={!!kind && kind !== 'bulk_suspend' && !preview} onOpenChange={(o) => !o && setKind(null)}>
+      <Dialog open={!!kind && !isEdge && !preview} onOpenChange={(o) => !o && setKind(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{t('um.bulk_preview_first', 'You will see who is included before anything changes.')}</DialogDescription></DialogHeader>
           {(kind === 'tag_add' || kind === 'tag_remove') && (
@@ -104,13 +105,9 @@ export default function BulkBar({ ids, total, installed, perms, onClear, onSelec
             </div>
           )}
           <DialogFooter><Button variant="outline" onClick={() => setKind(null)}>{t('common.cancel', 'Cancel')}</Button>
-            <Button disabled={busy || ((kind === 'tag_add' || kind === 'tag_remove') && !tags.trim())} onClick={dryRun}>{t('um.preview', 'Preview')}</Button></DialogFooter>
+            <Button disabled={busy || ((kind === 'tag_add' || kind === 'tag_remove') && !tags.trim())} onClick={() => dryRun()}>{t('um.preview', 'Preview')}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <ReasonDialog open={kind === 'bulk_suspend' && !preview} busy={busy} needsReason={false} onClose={() => setKind(null)}
-        title={title} description={t('um.bulk_preview_first', 'You will see who is included before anything changes.')} confirmLabel={t('um.preview', 'Preview')}
-        onConfirm={() => dryRun()} />
 
       <BulkConfirm open={!!preview} preview={preview} title={title} needsReason={kind === 'bulk_suspend'} busy={busy}
         onClose={() => { setPreview(null); setKind(null); }} onConfirm={(reason) => runIt(reason)} />
