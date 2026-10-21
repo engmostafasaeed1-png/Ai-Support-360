@@ -48,9 +48,11 @@ describe('Success on the ring', () => {
     expect(screen.getByTestId('ring-pill-ai')).toHaveTextContent('AI Interview: Gold');
   });
   it('small sizes show only the medal and the percentage', () => {
-    render(<RingPills summary={sum(42, 38)} size="sm" />);
-    expect(screen.getByTestId('ring-pill-success')).toHaveTextContent('90 %');
-    expect(screen.getByTestId('ring-pill-success')).not.toHaveTextContent('requests');
+    render(<RingPills summary={sum(42, 38)} size="xs" />);
+    const chip = screen.getByTestId('ring-pill-success');
+    const visible = [...chip.querySelectorAll('span:not(.sr-only):not([aria-hidden])')].map((n) => n.textContent).join('');
+    expect(visible).toBe('90 %');
+    expect(chip).toHaveTextContent('(Success: Gold)');
   });
   it('right-to-left: Arabic texts, the ring geometry stays left-to-right so arcs do not mirror', () => {
     const { container } = render(<div dir="rtl"><RingAvatar name="سارة علي" summary={sum(42, 38, 'ar')} /><RingPills summary={sum(42, 38, 'ar')} size="lg" /></div>);
