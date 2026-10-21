@@ -80,6 +80,8 @@
     --success-gold-b: 50 92% 33%;
     --success-platinum-a: 200 60% 44%;
     --success-platinum-b: 215 55% 52%;
+    /* Client-review star (single outlined yellow star, >= 3:1 on the card). */
+    --review-star: 42 96% 40%;
     --gradient-profile-header: linear-gradient(120deg, hsl(var(--accent) / 0.12), hsl(var(--success) / 0.06));
 
     --info: 226 68% 50%;
@@ -184,6 +186,7 @@
     --success-gold-b: 52 95% 58%;
     --success-platinum-a: 200 80% 82%;
     --success-platinum-b: 215 70% 72%;
+    --review-star: 46 96% 56%;
 
     --info: 226 80% 68%;
     --info-foreground: 218 50% 8%;
@@ -699,8 +702,12 @@ textarea:focus-visible {
     animation: ring-medal-shine 3.4s ease-in-out infinite;
   }
   @keyframes ring-medal-shine { 0% { background-position: 120% 0; } 60%, 100% { background-position: -120% 0; } }
+  /* Gold / Platinum Success level stars: soft glow plus a gentle shimmer (static with reduced motion; no glow in dark mode). */
+  .success-star-shine { filter: drop-shadow(0 0 2px var(--star-glow, transparent)); animation: success-star-shine 3.2s ease-in-out infinite; }
+  .dark .success-star-shine { filter: none; }
+  @keyframes success-star-shine { 0%, 70%, 100% { opacity: 1; } 82% { opacity: 0.72; } }
   @media (prefers-reduced-motion: reduce) {
     .ring-draw, .ring-dot { transition: none; }
-    .ring-medal-shine { animation: none; }
+    .ring-medal-shine, .success-star-shine { animation: none; }
   }
 }

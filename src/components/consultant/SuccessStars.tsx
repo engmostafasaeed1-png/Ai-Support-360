@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, type CSSProperties } from 'react';
 import { Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SuccessPill } from '@/lib/ringAvatar';
@@ -26,7 +26,7 @@ export function LevelStars({ level, size = 12, className }: { level: SuccessLeve
         return (
           <svg key={i} viewBox="0 0 24 24" width={size} height={size} focusable="false" data-on={on ? 'true' : 'false'}
             className={cn('shrink-0', on && shine && 'success-star-shine')}
-            style={on ? ({ '--star-glow': `hsl(var(${a}) / 0.55)` } as React.CSSProperties) : undefined}>
+            style={on ? ({ '--star-glow': `hsl(var(${a}) / 0.55)` } as CSSProperties) : undefined}>
             {on && (
               <defs>
                 <linearGradient id={`${uid}g${i}`} x1="0" y1="0" x2="1" y2="1">
