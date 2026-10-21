@@ -1,0 +1,4 @@
+# Users console rules
+
+- The Users console (Admin › Users and Super admin › User management) reads through the admin user-management database functions and writes database-side changes through `admin_user_action` / `admin_users_bulk`; sign-in changes (suspend, sign-out, MFA, delete, merge, e-mails) go only through the `admin-manage-user` server function. Granular admin permissions (`admin_can`) apply to this console only, with `src/lib/userAdmin.ts` mirroring the rules for display and tests, so the database stays the single gate.
+- Until the prepared user-management SQL is applied the console runs in basic mode on the older list action and hides features that need it, so the page never breaks on a missing function.
