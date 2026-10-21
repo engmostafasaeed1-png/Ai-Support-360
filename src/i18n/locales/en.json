@@ -1913,6 +1913,7 @@
     "copy_email": "Copy e-mail",
     "password_reset": "Send password reset",
     "resend_verification": "Resend verification e-mail",
+    "unknown_account": "This account could not be identified yet. Close the account panel, open it again and retry.",
     "force_sign_out": "Sign out everywhere",
     "mfa_reset": "Reset two-step sign-in",
     "export_data": "Export personal data",
