@@ -2,7 +2,10 @@ import { useSessionReady } from '@/hooks/useSessionReady';
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Power, Loader2, Coffee } from 'lucide-react';
+import { Power, Loader2, Coffee, PauseCircle, PlayCircle } from 'lucide-react';
+import HoldDialog from './HoldDialog';
+import { currentHolds, useAvailabilityActions, useMyAvailability } from '@/hooks/useAvailabilityHold';
+import { holdDate } from '@/lib/availabilityRules';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
@@ -14,7 +17,8 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 
-type Status = 'available' | 'busy' | 'offline';
+type Status = 'available' | 'busy' | 'offline' | 'on_hold';
+type Settable = Exclude<Status, 'on_hold'>;
 
 const META: Record<Status, { label: string; dot: string; ring: string; text: string; bg: string }> = {
   available: {
@@ -37,6 +41,14 @@ const META: Record<Status, { label: string; dot: string; ring: string; text: str
     ring: 'ring-slate-300/40',
     text: 'text-slate-600 dark:text-slate-300',
     bg: 'bg-slate-100 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700',
+  },
+  // Feature Y: set only through a hold with dates (the database refuses it otherwise).
+  on_hold: {
+    label: 'On hold',
+    dot: 'bg-primary',
+    ring: 'ring-primary/30',
+    text: 'text-primary',
+    bg: 'bg-primary/5 border-primary/30',
   },
 };
 
@@ -71,11 +83,25 @@ export default function AvailabilityToggle({ variant = 'switch', className }: Pr
 
   const [status, setStatus] = useState<Status>('offline');
   useEffect(() => {
-    if (consultant?.availability_status) setStatus(consultant.availability_status as Status);
+    const v = consultant?.availability_status as string | undefined;
+    if (v) setStatus((v in META ? v : 'offline') as Status);
   }, [consultant?.availability_status]);
+  const mine = useMyAvailability();
+  const holdActions = useAvailabilityActions();
+  const holdReady = !!mine.data?.status && mine.data.holds !== null;
+  const activeHold = currentHolds(mine.data?.holds).active;
+  const [holdOpen, setHoldOpen] = useState(false);
+  const label = status === 'on_hold' && activeHold ? `On hold until ${holdDate(activeHold.ends_at)}` : META[status].label;
+  const resume = async () => {
+    setSaving(true);
+    try { await holdActions.resumeHold(); toast.success('Welcome back. You can receive new requests again.'); await refetch(); }
+    catch (e) { toast.error((e as Error).message); }
+    finally { setSaving(false); }
+  };
 
-  const update = async (next: Status) => {
+  const update = async (next: Settable) => {
     if (saving || next === status) return;
+    if (status === 'on_hold' && activeHold) { toast.error('You are on hold. Press "Resume now" first.'); return; }
     if (!consultant?.id) {
       const { data: fresh } = await refetch();
       if (!fresh?.id) {
@@ -87,7 +113,7 @@ export default function AvailabilityToggle({ variant = 'switch', className }: Pr
     return updateWith(consultant.id, next);
   };
 
-  const updateWith = async (consultantId: string, next: Status) => {
+  const updateWith = async (consultantId: string, next: Settable) => {
     setSaving(true);
     const prev = status;
     setStatus(next);
@@ -120,10 +146,11 @@ export default function AvailabilityToggle({ variant = 'switch', className }: Pr
             )}
           >
             <span className={cn('w-2 h-2 rounded-full', meta.dot, isOn && 'animate-pulse')} />
-            {meta.label}
+            {label}
           </button>
         </DropdownMenuTrigger>
-        <StatusMenu status={status} onSelect={update} />
+        <StatusMenu status={status} onSelect={update} hold={holdReady ? { onHold: status === 'on_hold' && !!activeHold, open: () => setHoldOpen(true), resume } : null} />
+        {holdReady && <HoldDialog open={holdOpen} onOpenChange={setHoldOpen} maxDays={mine.data?.status?.hold_max_days} />}
       </DropdownMenu>
     );
   }
@@ -163,18 +190,19 @@ export default function AvailabilityToggle({ variant = 'switch', className }: Pr
               You're
             </span>
             <span className={cn('text-sm font-extrabold', meta.text)}>
-              {meta.label}
+              {label}
             </span>
           </span>
         </button>
       </DropdownMenuTrigger>
-      <StatusMenu status={status} onSelect={update} />
+      <StatusMenu status={status} onSelect={update} hold={holdReady ? { onHold: status === 'on_hold' && !!activeHold, open: () => setHoldOpen(true), resume } : null} />
+      {holdReady && <HoldDialog open={holdOpen} onOpenChange={setHoldOpen} maxDays={mine.data?.status?.hold_max_days} />}
     </DropdownMenu>
   );
 }
 
-function StatusMenu({ status, onSelect }: { status: Status; onSelect: (s: Status) => void }) {
-  const Item = ({ s, icon, hint }: { s: Status; icon: React.ReactNode; hint: string }) => (
+function StatusMenu({ status, onSelect, hold }: { status: Status; onSelect: (s: Settable) => void; hold: { onHold: boolean; open: () => void; resume: () => void } | null }) {
+  const Item = ({ s, icon, hint }: { s: Settable; icon: React.ReactNode; hint: string }) => (
     <DropdownMenuItem
       onClick={() => onSelect(s)}
       className={cn('flex items-start gap-3 py-2.5 cursor-pointer', status === s && 'bg-accent/40')}
@@ -198,6 +226,18 @@ function StatusMenu({ status, onSelect }: { status: Status; onSelect: (s: Status
       <Item s="available" icon={<Power className="w-4 h-4 text-white" strokeWidth={2.75} />} hint="Go online — receive new requests (stays until you change it)" />
       <Item s="busy" icon={<Coffee className="w-4 h-4 text-white" strokeWidth={2.5} />} hint="On a session — clients see you as busy" />
       <Item s="offline" icon={<Power className="w-4 h-4 text-white" strokeWidth={2.75} />} hint="Stop receiving requests" />
+      {hold && <DropdownMenuSeparator />}
+      {hold && (hold.onHold ? (
+        <DropdownMenuItem onClick={hold.resume} className="flex items-start gap-3 py-2.5 cursor-pointer" data-testid="status-resume">
+          <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-primary"><PlayCircle className="w-4 h-4 text-primary-foreground" /></span>
+          <span className="flex flex-col"><span className="text-sm font-semibold">Resume now</span><span className="text-xs text-muted-foreground">End your hold early and get new requests again</span></span>
+        </DropdownMenuItem>
+      ) : (
+        <DropdownMenuItem onClick={hold.open} className="flex items-start gap-3 py-2.5 cursor-pointer" data-testid="status-hold">
+          <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-primary"><PauseCircle className="w-4 h-4 text-primary-foreground" /></span>
+          <span className="flex flex-col"><span className="text-sm font-semibold">On hold…</span><span className="text-xs text-muted-foreground">Away for a while: start and end dates, no new requests</span></span>
+        </DropdownMenuItem>
+      ))}
     </DropdownMenuContent>
   );
 }
