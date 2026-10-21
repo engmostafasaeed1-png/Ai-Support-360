@@ -1,29 +1,38 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { adminStats, adminUsers, kanbanTickets } from '@/data/adminMockData';
+import { subscribeWhileVisible } from '@/lib/realtimeVisibility';
+
+// Administrators see every ticket, so this is the one whole-table ticket channel; shared by the admin hooks on a page
+// (one channel however many use it) and open only while the tab is visible. Payments/consultants are not published.
+let adminChannelUsers = 0;
+let adminChannelCleanup: (() => void) | null = null;
+function useAdminTicketsChannel(enabled: boolean, queryClient: QueryClient) {
+  useEffect(() => {
+    if (!enabled) return;
+    const refresh = () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-tickets-kanban'] });
+    };
+    adminChannelUsers += 1;
+    if (!adminChannelCleanup) {
+      adminChannelCleanup = subscribeWhileVisible(() => supabase
+        .channel('admin-tickets-live')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, refresh), refresh);
+    }
+    return () => {
+      adminChannelUsers -= 1;
+      if (adminChannelUsers <= 0) { adminChannelCleanup?.(); adminChannelCleanup = null; adminChannelUsers = 0; }
+    };
+  }, [enabled, queryClient]);
+}
 
 export function useAdminStats() {
   const { isGuest } = useGuestMode();
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (isGuest) return;
-    const channel = supabase
-      .channel('admin-stats-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'consultants' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
-      })
-      .subscribe();
-    return () => { channel.unsubscribe(); };
-  }, [isGuest, queryClient]);
+  useAdminTicketsChannel(!isGuest, queryClient);
 
   return useQuery({
     queryKey: ['admin-stats'],
