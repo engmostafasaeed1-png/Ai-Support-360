@@ -2,6 +2,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { adminClient } from '../_shared/security.ts';
 import { UUID, rememberNotification, deliverAdminNotification, type AdminMailClaim } from '../_shared/admin-notification-email.ts';
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
+import { BROADCAST_TYPES } from '../_shared/bulkMessaging.ts';
 
 const seen = new Map<string, number>();
 const accepted = () => new Response(null, { status: 202, headers: corsHeaders });
@@ -24,6 +25,9 @@ Deno.serve(async (req) => {
         return data as AdminMailClaim | null;
       },
       send: async (row) => {
+        // Feature R: admin bulk messages (and their tests) stay in-app; app e-mails are never sent to a list.
+        const { data: kind } = await admin.from('notifications').select('type').eq('id', row.id).maybeSingle();
+        if ((BROADCAST_TYPES as readonly string[]).includes(String(kind?.type ?? ''))) return { sent: false, reason: 'bulk_message_in_app_only' };
         const { data, error } = await admin.auth.admin.getUserById(row.user_id);
         if (error || !data.user?.email) throw new Error('Recipient unavailable');
         // Feature Q: category stored by the notifications insert trigger; essential (payments, security, Critical) when unknown.
