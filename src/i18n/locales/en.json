@@ -2847,5 +2847,12 @@
     "acceptedRequired": "Policy accepted. Submit your profile below when every required item is complete.",
     "stepIntroRequired": "Read the summary and the policy, then accept it. It is one of the required items before you can submit your profile for review.",
     "stepTitleRequired": "Required step: Consultant Service Policy"
+  },
+  "directory": {
+    "responsiveness": "Responsiveness",
+    "sort_responsiveness": "Most responsive",
+    "resp_excellent": "Excellent",
+    "resp_good": "Good or better",
+    "resp_fair": "Fair or better"
   }
 }
