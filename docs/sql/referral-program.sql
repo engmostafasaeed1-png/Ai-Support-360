@@ -605,6 +605,96 @@ END
 $$;
 REVOKE ALL ON FUNCTION public.referral_policy_ok(uuid) FROM PUBLIC, anon, authenticated;
 
+-- Passed = a completed AI interview with overall_score >= referral_min_interview_score (read from interview data only).
+CREATE OR REPLACE FUNCTION public.referral_passed_at(_cid uuid)
+ RETURNS timestamptz
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+  SELECT min(COALESCE(s.completed_at, s.updated_at, s.created_at))
+    FROM public.interview_sessions s
+   WHERE s.consultant_id = _cid AND s.interview_type::text = 'ai' AND s.status::text IN ('completed', 'reviewed')
+     AND s.overall_score IS NOT NULL AND s.overall_score >= (public.referral_settings() ->> 'pass_mark')::numeric
+$$;
+REVOKE ALL ON FUNCTION public.referral_passed_at(uuid) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.referral_best_score(_cid uuid)
+ RETURNS numeric
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+  SELECT max(s.overall_score) FROM public.interview_sessions s
+   WHERE s.consultant_id = _cid AND s.interview_type::text = 'ai' AND s.status::text IN ('completed', 'reviewed')
+$$;
+REVOKE ALL ON FUNCTION public.referral_best_score(uuid) FROM PUBLIC, anon, authenticated;
+
+-- Accepted the CURRENT terms version.
+CREATE OR REPLACE FUNCTION public.referral_acked_at(_cid uuid)
+ RETURNS timestamptz
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+  SELECT min(a.accepted_at) FROM public.referral_acknowledgements a
+   WHERE a.consultant_id = _cid AND a.version = (public.referral_settings() ->> 'terms_version')::int
+$$;
+REVOKE ALL ON FUNCTION public.referral_acked_at(uuid) FROM PUBLIC, anon, authenticated;
+
+-- Next step for one side of a pair: pass_interview | acknowledge | wait_other | none.
+CREATE OR REPLACE FUNCTION public.referral_next_step(_referred uuid, _for uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  r record;
+BEGIN
+  SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = _referred;
+  IF NOT FOUND OR r.activation_status <> 'pending' OR r.status = 'removed' THEN RETURN 'none'; END IF;
+  IF public.referral_passed_at(_for) IS NULL THEN RETURN 'pass_interview'; END IF;
+  IF public.referral_acked_at(_for) IS NULL THEN RETURN 'acknowledge'; END IF;
+  RETURN 'wait_other';
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_next_step(uuid, uuid) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.referral_next_text(_step text, _other text)
+ RETURNS text
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+  SELECT CASE _step
+    WHEN 'pass_interview' THEN format('Pass the AI interview (score at least %s).', (public.referral_settings() ->> 'pass_mark'))
+    WHEN 'acknowledge' THEN 'Accept the referral terms on the Refer & earn page.'
+    WHEN 'wait_other' THEN format('Waiting for %s to pass the AI interview and accept the terms.', COALESCE(_other, 'the other consultant'))
+    ELSE 'Nothing to do.' END
+$$;
+REVOKE ALL ON FUNCTION public.referral_next_text(text, text) FROM PUBLIC, anon, authenticated;
+
+-- Chip from one side: active | expired | under_review | waiting_you | waiting_them.
+CREATE OR REPLACE FUNCTION public.referral_chip(_referred uuid, _for uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  r record;
+BEGIN
+  SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = _referred;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  IF r.status IN ('review', 'held') THEN RETURN 'under_review'; END IF;
+  IF r.activation_status = 'active' THEN RETURN 'active'; END IF;
+  IF r.activation_status = 'expired' THEN RETURN 'expired'; END IF;
+  RETURN CASE WHEN public.referral_next_step(_referred, _for) IN ('pass_interview', 'acknowledge') THEN 'waiting_you' ELSE 'waiting_them' END;
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_chip(uuid, uuid) FROM PUBLIC, anon, authenticated;
+
 CREATE OR REPLACE FUNCTION public.referral_log(_actor uuid, _action text, _referrer uuid, _referred uuid, _line uuid, _payout uuid,
                                                _before jsonb, _after jsonb, _reason text)
  RETURNS void
@@ -656,7 +746,9 @@ CREATE TRIGGER trg_referral_queue_wake
   AFTER INSERT ON public.referral_email_queue
   FOR EACH STATEMENT EXECUTE FUNCTION public.referral_queue_wake_trigger();
 
-CREATE OR REPLACE FUNCTION public.referral_notify(_referrer uuid, _kind text, _referred uuid, _amount numeric, _currency text)
+-- One notice to one consultant (_to) about the other side (_other, masked name): in-app (also shown as a pop-up at the
+-- next sign-in) + one e-mail through the queue. Callers make sure each event is sent once.
+CREATE OR REPLACE FUNCTION public.referral_notify(_to uuid, _kind text, _other uuid, _amount numeric, _currency text, _next text DEFAULT NULL)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -664,35 +756,57 @@ CREATE OR REPLACE FUNCTION public.referral_notify(_referrer uuid, _kind text, _r
 AS $$
 DECLARE
   _user uuid;
-  _name text := public.referral_masked_name(_referred);
+  _name text := public.referral_masked_name(_other);
   s jsonb := public.referral_settings();
   _title text;
   _body text;
+  _step text := COALESCE(_next, 'none');
 BEGIN
-  SELECT c.user_id INTO _user FROM public.consultants c WHERE c.id = _referrer;
+  SELECT c.user_id INTO _user FROM public.consultants c WHERE c.id = _to;
   IF _user IS NULL THEN RETURN; END IF;
   IF _kind = 'signup' THEN
-    _title := 'Someone signed up with your referral code';
-    _body := format('%s signed up with your code. You earn %s %% of their fees for %s months after their first paid ticket, paid by AI Support 360.',
-                    _name, (s->>'rate_percent'), (s->>'months'));
+    _title := 'Someone registered with your referral code';
+    _body := format('%s registered with your code. Your referral becomes active when you both pass the AI interview.', _name);
+  ELSIF _kind = 'invited' THEN
+    _title := 'You were invited to AI Support 360';
+    _body := format('You were invited by %s. The referral programme becomes active after you and your referrer pass the AI interview.', _name);
+  ELSIF _kind = 'passed_self' THEN
+    _title := 'You passed the AI interview';
+    _body := 'You passed the AI interview. Next for your referral: ' || public.referral_next_text(_step, _name);
+  ELSIF _kind = 'passed_other' THEN
+    _title := 'Your referral partner passed the AI interview';
+    _body := format('%s passed the AI interview. Next for your referral: ', _name) || public.referral_next_text(_step, _name);
+  ELSIF _kind = 'active' THEN
+    _title := 'Your referral is active';
+    _body := format('Your referral with %s is now active. Rewards count for work invoiced from today.', _name);
+  ELSIF _kind = 'reminder' THEN
+    _title := 'Your referral is still pending';
+    _body := format('Your referral with %s is still pending. Next step: ', _name) || public.referral_next_text(_step, _name);
+  ELSIF _kind = 'expired' THEN
+    _title := 'Your referral has expired';
+    _body := format('Your referral with %s has expired: both of you had to pass the AI interview and accept the terms within %s days. An administrator can revive it.',
+                    _name, (s->>'activation_days'));
+  ELSIF _kind = 'ack_request' THEN
+    _title := 'Please accept the referral terms';
+    _body := format('Please accept the referral terms so your referral with %s can become active.', _name);
   ELSIF _kind = 'verified' THEN
     _title := 'Your referral is verified';
-    _body := format('%s is now a verified consultant. Your reward starts with their first paid ticket.', _name);
+    _body := format('%s is now a verified consultant. Your reward starts with their first paid ticket after your referral is active.', _name);
   ELSE
     _title := 'You earned your first referral reward';
     _body := format('You earned %s %s from the work of %s. It becomes available when their payout is completed.',
                     to_char(_amount, 'FM999999990.00'), COALESCE(_currency, 'USD'), _name);
   END IF;
   PERFORM public.safe_insert_notification(_user, _title, _body, 'referral', '/consultant/referrals');
-  INSERT INTO public.referral_email_queue (user_id, kind, referred_name, amount, currency)
-  VALUES (_user, _kind, _name, _amount, _currency);
+  INSERT INTO public.referral_email_queue (user_id, kind, referred_name, amount, currency, next_step, days)
+  VALUES (_user, _kind, _name, _amount, _currency, _step, (s->>'activation_days')::int);
 END
 $$;
-REVOKE ALL ON FUNCTION public.referral_notify(uuid, text, uuid, numeric, text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.referral_notify(uuid, text, uuid, numeric, text, text) FROM PUBLIC, anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.referral_email_claim(_limit int DEFAULT 100)
  RETURNS TABLE (id uuid, user_id uuid, kind text, lang text, display_name text, referred_name text, amount numeric, currency text,
-                rate_percent numeric, months int)
+                rate_percent numeric, months int, next_step text, days int, pass_mark numeric)
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public'
@@ -714,12 +828,13 @@ BEGIN
   ), upd AS (
     UPDATE public.referral_email_queue q SET claimed_at = now(), attempts = q.attempts + 1
       FROM picked WHERE q.id = picked.id
-    RETURNING q.id, q.user_id, q.kind, q.referred_name, q.amount, q.currency
+    RETURNING q.id, q.user_id, q.kind, q.referred_name, q.amount, q.currency, q.next_step, q.days
   )
   SELECT u.id, u.user_id, u.kind,
          (SELECT CASE WHEN p.preferred_language = 'ar' THEN 'ar' ELSE 'en' END FROM public.profiles p WHERE p.user_id = u.user_id),
          (SELECT p.display_name FROM public.profiles p WHERE p.user_id = u.user_id),
-         u.referred_name, u.amount, u.currency, (s->>'rate_percent')::numeric, (s->>'months')::int
+         u.referred_name, u.amount, u.currency, (s->>'rate_percent')::numeric, (s->>'months')::int, u.next_step, u.days,
+         (s->>'pass_mark')::numeric
     FROM upd u;
 END
 $$;
@@ -788,9 +903,11 @@ BEGIN
     _flags := array_append(_flags, 'same_ip');
   END IF;
   IF public.referral_same_bank(_referrer, _referred) THEN _flags := array_append(_flags, 'same_bank'); END IF;
-  INSERT INTO public.consultant_referrals (referred_consultant_id, referrer_consultant_id, code, source, flags, device_hash, ip_hash, status)
+  INSERT INTO public.consultant_referrals (referred_consultant_id, referrer_consultant_id, code, source, flags, device_hash, ip_hash, status,
+                                          activation_expires_at)
   VALUES (_referred, _referrer, _c, CASE WHEN _source IN ('signup', 'claim', 'admin') THEN _source ELSE 'signup' END, _flags, _dh, _ih,
-          CASE WHEN cardinality(_flags) > 0 THEN 'review' ELSE 'active' END)
+          CASE WHEN cardinality(_flags) > 0 THEN 'review' ELSE 'active' END,
+          now() + make_interval(days => (public.referral_settings() ->> 'activation_days')::int))
   ON CONFLICT (referred_consultant_id) DO NOTHING;
   GET DIAGNOSTICS _n = ROW_COUNT;
   IF _n = 0 THEN RETURN 'already'; END IF;
@@ -798,6 +915,7 @@ BEGIN
   PERFORM public.referral_log(NULL, 'attributed', _referrer, _referred, NULL, NULL, NULL,
                               jsonb_build_object('code', _c, 'source', _source, 'flags', _flags), NULL);
   PERFORM public.referral_notify(_referrer, 'signup', _referred, NULL, NULL);
+  PERFORM public.referral_notify(_referred, 'invited', _referrer, NULL, NULL);
   RETURN 'ok';
 END
 $$;
@@ -818,6 +936,14 @@ BEGIN
     SELECT u.raw_user_meta_data INTO _meta FROM auth.users u WHERE u.id = NEW.user_id;
     IF NULLIF(_meta ->> 'referral_code', '') IS NOT NULL THEN
       PERFORM public.referral_attribute(NEW.id, _meta ->> 'referral_code', 'signup', _meta ->> 'referral_device', NULL);
+      -- Acknowledgement ticked in the registration referral step (current version only).
+      IF (_meta ->> 'referral_ack_version') ~ '^\d{1,4}$'
+         AND (_meta ->> 'referral_ack_version')::int = (public.referral_settings() ->> 'terms_version')::int
+         AND EXISTS (SELECT 1 FROM public.consultant_referrals WHERE referred_consultant_id = NEW.id) THEN
+        INSERT INTO public.referral_acknowledgements (consultant_id, user_id, version, role, source, language, user_agent)
+        VALUES (NEW.id, NEW.user_id, (_meta ->> 'referral_ack_version')::int, 'referred', 'signup',
+                CASE WHEN _meta ->> 'referral_ack_lang' = 'ar' THEN 'ar' ELSE 'en' END, left(_meta ->> 'referral_ack_ua', 300));
+      END IF;
     END IF;
   EXCEPTION WHEN OTHERS THEN
     RAISE WARNING 'referral sign-up handling skipped: %', SQLERRM;
@@ -863,7 +989,8 @@ CREATE TRIGGER trg_referral_on_consultant_verified
 
 -- 6. Rewards ----------------------------------------------------------------------------------------------------------------
 -- NULL = may earn; otherwise the reason. Mirrored by src/lib/referrals.ts (rewardBlockReason).
-CREATE OR REPLACE FUNCTION public.referral_reward_block_reason(_referrer uuid, _referred uuid, _status text, _window_ends timestamptz, _at timestamptz)
+CREATE OR REPLACE FUNCTION public.referral_reward_block_reason(_referrer uuid, _referred uuid, _status text, _window_ends timestamptz, _at timestamptz,
+                                                              _activation text, _activated_at timestamptz)
  RETURNS text
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
@@ -873,6 +1000,8 @@ BEGIN
   IF NOT COALESCE((public.referral_settings() ->> 'enabled')::boolean, false) THEN RETURN 'programme_off'; END IF;
   IF _status = 'removed' THEN RETURN 'removed'; END IF;
   IF _referrer = _referred THEN RETURN 'own_work'; END IF;
+  IF _activation IS DISTINCT FROM 'active' THEN RETURN 'not_active'; END IF;
+  IF _activated_at IS NULL OR _at < _activated_at THEN RETURN 'before_activation'; END IF;
   IF _window_ends IS NULL OR _at >= _window_ends THEN RETURN 'outside_window'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = _referred AND c.verification_status::text = 'verified') THEN RETURN 'referred_not_verified'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = _referrer AND c.verification_status::text = 'verified') THEN RETURN 'referrer_not_verified'; END IF;
@@ -881,7 +1010,7 @@ BEGIN
   RETURN NULL;
 END
 $$;
-REVOKE ALL ON FUNCTION public.referral_reward_block_reason(uuid, uuid, text, timestamptz, timestamptz) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.referral_reward_block_reason(uuid, uuid, text, timestamptz, timestamptz, text, timestamptz) FROM PUBLIC, anon, authenticated;
 
 -- Same trigger point as the consultant payout: a payouts row for the referred consultant (= the client has paid).
 CREATE OR REPLACE FUNCTION public.referral_on_payout_insert()
@@ -924,7 +1053,8 @@ BEGIN
      WHERE referred_consultant_id = NEW.consultant_id;
   END IF;
   SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = NEW.consultant_id;
-  _why := public.referral_reward_block_reason(r.referrer_consultant_id, r.referred_consultant_id, r.status, r.window_ends_at, NEW.created_at);
+  _why := public.referral_reward_block_reason(r.referrer_consultant_id, r.referred_consultant_id, r.status, r.window_ends_at, NEW.created_at,
+                                              r.activation_status, r.activated_at);
   _fee := round(COALESCE(NEW.gross_amount, NEW.amount, 0), 2);
   IF _why IS NULL AND _fee <= 0 THEN _why := 'no_fee'; END IF;
   _amt := round(_fee * _rate / 100, 2);
