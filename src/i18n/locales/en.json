@@ -2658,5 +2658,14 @@
     "backToTop": "Back to top",
     "readingProgress": "Reading progress",
     "newMessages": "Jump to new messages"
+  },
+  "location": {
+    "city": "City",
+    "country": "Country",
+    "no_country": "No country found.",
+    "pin_city": "Your map pin is the centre of {{city}}. Clients see the city, never an address.",
+    "pin_country": "This city is not in our list, so your map pin is the centre of {{country}}.",
+    "search_country": "Search country",
+    "select_country": "Select country"
   }
 }
