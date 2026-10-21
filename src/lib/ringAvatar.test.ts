@@ -20,7 +20,7 @@ describe('outer arc: pure client rating', () => {
   it('marks fewer than 3 reviews (default minimum) as a low sample with a dotted lighter arc', () => {
     expect(ratingArc(5, 2).state).toBe('low');
     expect(ratingArc(5, 3).state).toBe('ok');
-    expect(arcPattern('gold', true)).toEqual({ dash: '1.5 3', opacity: 0.55 });
+    expect(arcPattern('gold', true, 6)).toEqual({ dash: '0.01 10.2', opacity: 0.6 });
     expect(ringSummary({ rating: 5, reviews: 1, publicOn: false }).text).toBe('Client rating 5.0 of 5, based on 1 review');
   });
   it('follows an owner-set minimum', () => {

@@ -133,7 +133,10 @@ describe('ConsultantMap', () => {
     expect(ring.getAttribute('aria-label')).toContain('Client rating 4.8 of 5 from 12 reviews');
     expect(ring.querySelector('[data-kind="rating"]')?.getAttribute('data-tone')).toBe('gold');
     expect(ring.querySelector('[data-kind="responsiveness"]')).not.toBeNull();
-    expect((pinsDrawn()[0].popup as HTMLElement).textContent).toContain('4.8 ★ | Fast reply');
+    const popup = pinsDrawn()[0].popup as HTMLElement;
+    expect(popup.querySelector('[data-part="ring-pill-rating"]')?.textContent).toContain('4.8 (12)');
+    expect(popup.querySelector('[data-part="ring-pill-responsiveness"]')?.textContent).toContain('Fast reply - 20 min');
+    expect((pinsDrawn()[0].icon.html as HTMLElement).querySelector('[data-part="ring-short"]')?.textContent).toBe('4.8');
   });
 
   it('tells the page which pin was clicked', () => {

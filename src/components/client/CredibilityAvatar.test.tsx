@@ -21,11 +21,11 @@ describe('CredibilityAvatar', () => {
     expect(screen.getByTestId('credibility-pill')).toHaveAttribute('data-tone', tone);
     expect(screen.getByTestId('credibility-pill')).toHaveClass(String(cls));
   });
-  it('puts the performance ring around the photo with the centre label', () => {
+  it('puts the large performance ring around the photo', () => {
     render(<CredibilityAvatar {...props} />);
     expect(screen.getByTestId('ring-avatar')).toHaveAttribute('data-size', 'xl');
     expect(screen.getByTestId('ring-arc-rating')).toHaveAttribute('data-tone', 'gold');
-    expect(screen.getByTestId('ring-label')).toHaveTextContent('4.8 ★ | Good reply');
+    expect(screen.getByTestId('ring-arc-resp')).toHaveAttribute('data-tone', 'green');
   });
   it('falls back to initials when the photo fails', () => {
     const { container } = render(<CredibilityAvatar {...props} avatarUrl="/photo.jpg" />);

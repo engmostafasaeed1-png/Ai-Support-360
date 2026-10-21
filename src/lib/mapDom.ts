@@ -238,8 +238,6 @@ export function buildPopupElement(view: PinView, handlers: PopupHandlers = {}, l
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-let ringSeq = 0;
-
 /** The two always-visible pills of the ring, as DOM (same text as the React pills). */
 export function ringPills(ring: RingSummary): HTMLElement {
   const row = make('div', { display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' });
@@ -312,8 +310,6 @@ export function ringWrap(avatar: HTMLElement, ring: RingSummary): HTMLElement {
     grp.append(colour);
     svg.append(grp);
   };
-  ringSeq += 1;
-  svg.dataset.seq = String(ringSeq);
   track(g.outerR, g.outerW, trackColor(ring.rating.tone));
   if (ring.resp.state !== 'hidden') track(g.innerR, g.innerW, trackColor(ring.resp.tone));
   if (ring.rating.state !== 'none') arc(ring.rating.pct, g.outerR, g.outerW, ring.rating.tone, ring.rating.state === 'low', 'rating');
