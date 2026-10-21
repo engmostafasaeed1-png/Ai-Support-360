@@ -526,6 +526,13 @@
       "when": 1792540733822,
       "tag": "0074_client_favourites",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1792576591110,
+      "tag": "0075_bulk_messaging",
+      "breakpoints": true
     }
   ]
 }
