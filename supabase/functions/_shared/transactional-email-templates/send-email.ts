@@ -17,7 +17,7 @@ const SENDER_DOMAIN = "notify.aisupport360.com"
 const FROM_DOMAIN = "aisupport360.com"
 
 export type SendTemplateEmailResult =
-  | { sent: true }
+  | { sent: true; messageId?: string }
   | { sent: false; reason: 'recipient_suppressed' | 'notifications_disabled' | 'notifications_paused' }
 
 /** Sends a person starts on purpose; they go out even when automatic email notifications are off. */
