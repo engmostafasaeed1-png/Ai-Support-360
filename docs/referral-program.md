@@ -42,6 +42,19 @@ the sign-up form shows no referral field, and the admin page says the programme 
   audit trail, audited CSV, actions approve / hold / reverse / adjust / change referrer / disable code / resend / revive /
   run payouts. Weekly digest line on Mondays.
 
+## Referral calculations (Refer & earn > Referral calculations)
+- All numbers come from `referral_calc_summary`, `referral_calc_referrals`, `referral_calc_lines`, `referral_calc_monthly`,
+  `referral_calc_forecast` and `referral_calc_statements`, computed on every read from the reward lines, payouts, payments and
+  approved timesheets, so they change as soon as an invoice is paid, released or reversed ("Last change" time shown).
+- Man-days = approved hours / 8. Each reward line shows "Fee $400.00 x 0.5 % = $2.00". Net = reward earned + reversed.
+- Forecast only from timesheets the client already approved (signed) but has not paid, after activation and inside the
+  window; labelled "Expected, not guaranteed".
+- Monthly statements are saved on the 1st (job `referral-monthly-statements`) with an in-app notice; CSV/PDF export of the
+  consultant's own lines (Arabic statements print through the browser so the letters stay joined).
+- The estimate box is an illustration with the real rate and window (assumed hourly rate typed by the consultant).
+- Administrators: Referrals > Calculations (any consultant, read-only) and Reconciliation (reward = fee x rate, reversal =
+  minus reward, referral payout = its lines, paid lines = completed referral payouts, one reward per payout).
+
 ## Not done / notes
 - No announcement e-mail to all consultants: app e-mails must be one-recipient and event-triggered (promotional bulk e-mail
   is not allowed). Announce through Admin > Messages (in-app / Telegram) instead; the dashboard banner and the pop-up cover it.
@@ -209,3 +222,70 @@ created for payouts that already exist.
 | refz.ls_in_payout | ضمن دفعة |
 | refz.ls_paid | مدفوع |
 | refz.ls_reversed | معكوس |
+| refz.calc_all_referred | كل المستشارين المُحالين |
+| refz.calc_all_states | كل الحالات |
+| refz.calc_auto | تُحسب تلقائيًا من الفواتير المدفوعة - لا يُكتب أي رقم يدويًا. |
+| refz.calc_chart | الأرباح الشهرية |
+| refz.calc_chart_aria | رسم بياني بالأعمدة لمكافآت الإحالة المكتسبة والمدفوعة شهريًا |
+| refz.calc_details | التفاصيل |
+| refz.calc_earned | المكافأة المكتسبة |
+| refz.calc_estimated | تقديري |
+| refz.calc_failed | تعذّر تحميل الحسابات. |
+| refz.calc_fee | أساس الأتعاب |
+| refz.calc_forecast_note | * متوقع وغير مضمون: من سجلات ساعات اعتمدها العملاء ولم يدفعوها بعد ({{n}} سجل). لا تُحتسب إلا بعد دفع العميل. |
+| refz.calc_formula | طريقة الحساب |
+| refz.calc_hourly | السعر بالساعة |
+| refz.calc_hours | الساعات المعتمدة |
+| refz.calc_invoice | فاتورة العميل |
+| refz.calc_mandays | أيام العمل |
+| refz.calc_months | {{n}} شهرًا |
+| refz.calc_net | الصافي |
+| refz.calc_next | الدفعة التالية |
+| refz.calc_next_none | عندما تبلغ مكافآتك المتاحة {{min}} |
+| refz.calc_no_forecast | لا يوجد توقع: لا توجد حاليًا سجلات ساعات معتمدة وغير مدفوعة. |
+| refz.calc_no_lines | لا توجد بنود فواتير لهذا المستشار في الفترة المختارة. |
+| refz.calc_period | الفترة |
+| refz.calc_rate | النسبة |
+| refz.calc_referred | المستشارون المُحالون |
+| refz.calc_referred_hint | الإجمالي / الموثّقون / الذين يربحون |
+| refz.calc_release | صرف الدفعة |
+| refz.calc_reversed | المعكوس |
+| refz.calc_rule | قاعدة مكافأتك |
+| refz.calc_rule_hint | من أتعاب المستشار المُحال، من أول تذكرة مدفوعة له |
+| refz.calc_series_earned | المكتسب |
+| refz.calc_series_expected | متوقع وغير مضمون |
+| refz.calc_series_paid | المدفوع |
+| refz.calc_show_lines | عرض بنود الفواتير لـ {{name}} |
+| refz.calc_state | الحالة |
+| refz.calc_statement | كشف الإحالة |
+| refz.calc_statement_meta | {{n}} بند · أُنشئ في {{date}} |
+| refz.calc_statements | الكشوف الشهرية |
+| refz.calc_statements_empty | يُنشأ كشفك الأول تلقائيًا في اليوم الأول من الشهر القادم، وستصلك إشعار بذلك. |
+| refz.calc_table | الحساب لكل مستشار مُحال |
+| refz.calc_threshold | {{have}} من {{min}} متاح |
+| refz.calc_threshold_aria | التقدم نحو الحد الأدنى للدفع |
+| refz.calc_ticket | التذكرة |
+| refz.calc_total | الإجمالي |
+| refz.calc_updated | آخر تغيير: {{date}} |
+| refz.calc_window | نهاية المدة |
+| refz.est_days | أيام العمل شهريًا لكل مستشار |
+| refz.est_hourly | السعر المفترض بالساعة ($) |
+| refz.est_month | حوالي {{v}} شهريًا |
+| refz.est_n | عدد المستشارين المُحالين |
+| refz.est_note | توضيح فقط وليس وعدًا بدخل. يستخدم النسبة الفعلية ({{rate}} %) والمدة ({{m}} شهرًا)؛ المكافآت الحقيقية تعتمد على الساعات المعتمدة التي يدفعها العملاء فعلًا. |
+| refz.est_title | تقدير (للتوضيح فقط) |
+| refz.est_window | حوالي {{v}} خلال {{m}} شهرًا |
+| refz.refresh | تحديث |
+| refz.tab_calc | حسابات الإحالة |
+| refz.tab_overview | نظرة عامة |
+| refz.period_all | كل الفترات |
+| refz.period_month | هذا الشهر |
+| refz.period_3m | آخر 3 أشهر |
+| refz.period_year | هذه السنة |
+| refz.act_pending | قيد الانتظار |
+| refz.act_active | نشطة |
+| refz.act_expired | منتهية |
+| refz.pay_completed | مدفوعة |
+| refz.pay_pending | قيد الانتظار |
+| refz.pay_refunded | مستردة |
+| refz.pay_disputed | محل نزاع |
