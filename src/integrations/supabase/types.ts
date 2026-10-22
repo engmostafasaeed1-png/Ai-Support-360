@@ -12624,6 +12624,7 @@ export type Database = {
         Returns: Json
       }
       admin_referral_anomalies: { Args: never; Returns: Json }
+      admin_referral_dashboard: { Args: { _months?: number }; Returns: Json }
       admin_referral_decide_adjustment: {
         Args: { _approve: boolean; _note: string; _request: string }
         Returns: Json

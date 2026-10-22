@@ -21,6 +21,7 @@ import TierLadder from '@/components/referral/TierLadder';
 import { cn } from '@/lib/utils';
 import ReferralCalculations from '@/components/referral/ReferralCalculations';
 import ReferralEmailPreview from '@/components/admin/referral/ReferralEmailPreview';
+import ReferralDashboard from '@/components/admin/referral/ReferralDashboard';
 import ReferralInviteSettingsCard from '@/components/admin/referral/ReferralInviteSettingsCard';
 import { useInviteSettings } from '@/hooks/useReferralInvitations';
 
@@ -636,8 +637,9 @@ export default function ReferralsAdminPage() {
         </CardContent></Card>
       )}
 
-      <Tabs defaultValue="referred">
+      <Tabs defaultValue="dashboard">
         <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="referred">By referred consultant</TabsTrigger>
           <TabsTrigger value="referrers">By referrer</TabsTrigger>
           <TabsTrigger value="lines">Reward lines</TabsTrigger>
@@ -654,6 +656,7 @@ export default function ReferralsAdminPage() {
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name or code" className="max-w-xs rounded-xl" aria-label="Search name or code" />
         </div>
 
+        <TabsContent value="dashboard"><ReferralDashboard /></TabsContent>
         <TabsContent value="referred">
           <div className="mb-2 flex flex-wrap gap-2">
             <Select value={filter} onValueChange={setFilter}>

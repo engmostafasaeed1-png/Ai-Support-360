@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Admin referral Dashboard (Oct 22): invitations sent, rewards issued, payout due dates, waiting-for-payout, 6-month forecast (already earned / trend estimate / approved unpaid work); admin-only read RPC applied (0089); EN/AR; tests
+
 - [x] Refer & earn notices + invitation (Oct 22): (A) in-app referral cards per type, shared bilingual referral e-mail layout + per-type blocks (HTML + text), admin e-mail preview (EN/AR, light/dark) + "Send test to me"; (B) Users console "Send Refer & earn invitation" (selected / all eligible) with confirmation, server-side eligibility, dedupe per version, resend rules, caps, kill switch OFF, per-recipient report + CSV, "Invited on" in rows; docs/sql/referral-invitations.sql + test file passed on a scratch database (NOT applied, nothing sent); functions deployed
 - [x] Applied docs/sql/referral-invitations.sql (migrations 0086-0087, Oct 22); test invitation sent to the admin's own bell only; live preview: 31 eligible.
 - [ ] First real Refer & earn invitation: awaits owner approval and a super admin turning the invitation switch on (Admin › Referrals › E-mails & invitation).
