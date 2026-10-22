@@ -16,7 +16,7 @@ export function cleanNoticeText(text: string | null | undefined, opts: { firstNa
   s = s.replace(/\{\{\s*[a-z_]+\s*\}\}/gi, '');
   s = s.replace(/[ \t\u00a0]+([,،;:!?؟.])/g, '$1');          // "Hello ," -> "Hello,"   "مرحبًا ،" -> "مرحبًا،"
   s = s.replace(/[ \t\u00a0]{2,}/g, ' ');
-  s = s.split('\n').map((l) => l.trim().replace(/[;,،]+$/, '')).join('\n');
+  s = s.split('\n').map((l) => l.trim().replace(/;+$/, '')).join('\n');
   s = s.replace(/\n{3,}/g, '\n\n').trim();
   return s.replace(/[\s;,،:]+$/, '');
 }
