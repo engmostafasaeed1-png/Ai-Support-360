@@ -74,8 +74,8 @@ function splitAuthorTag(content: string): { author: string | null; speaker: { na
   const sp = content.match(/\[\[speaker:\s*([^\]|]{1,60})\|?([^\]]{0,60})\]\]/i);
   // Hide half-streamed tags at the end ("[[by: Ahm", "[[speak") until they complete.
   const text = content
-    .replace(/\[\[(by|speaker):\s*[^\]]{0,140}\]\]\s*/gi, '')
-    .replace(/\[\[[a-z:|\s\-—.,'A-Z\u0600-\u06FF]*$/i, '');
+    .replace(/\[\[(by|speaker|q):\s*[^\]]{0,140}\]\]\s*/gi, '')
+    .replace(/\[\[[a-z0-9:|\s\-—.,'A-Z\u0600-\u06FF]*$/i, '');
   return {
     author: m ? m[1].trim() : null,
     speaker: sp ? { name: sp[1].trim(), role: (sp[2] || '').trim() } : null,
