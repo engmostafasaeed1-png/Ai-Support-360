@@ -5,7 +5,7 @@
  */
 export type NoticeBlock = { type: 'p'; text: string } | { type: 'ul'; items: string[] };
 
-const GREETING = /^(hello|hi|dear|good (morning|afternoon|evening)|مرحب[ًاٌ]*|أهلاً|اهلا|عزيزي)(?=[\s,،!.]|$)/i;
+const GREETING = /^(hello|hi|dear|good (morning|afternoon|evening)|مرحب\S*|أهلاً|اهلا|عزيزي)(?=[\s,،!.]|$)/i;
 const URL_LINE = /^(?:[^\n:]{0,60}:\s*)?https?:\/\/\S+$/i;
 const BULLET = /^\s*(?:[-•*·]|\d+[.)])\s+/;
 
@@ -16,7 +16,7 @@ export function cleanNoticeText(text: string | null | undefined, opts: { firstNa
   s = s.replace(/\{\{\s*[a-z_]+\s*\}\}/gi, '');
   s = s.replace(/[ \t\u00a0]+([,،;:!?؟.])/g, '$1');          // "Hello ," -> "Hello,"   "مرحبًا ،" -> "مرحبًا،"
   s = s.replace(/[ \t\u00a0]{2,}/g, ' ');
-  s = s.split('\n').map((l) => l.trim().replace(/[;,،]+$/, '')).join('\n');
+  s = s.split('\n').map((l) => l.trim().replace(/;+$/, '')).join('\n');
   s = s.replace(/\n{3,}/g, '\n\n').trim();
   return s.replace(/[\s;,،:]+$/, '');
 }

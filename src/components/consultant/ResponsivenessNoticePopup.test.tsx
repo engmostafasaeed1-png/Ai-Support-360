@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@/i18n/config';
+import { __resetNoticeGuard } from '@/lib/noticeGuard';
 import { noticeCopy } from '../../../supabase/functions/_shared/responsivenessCopy';
 
 const h = vi.hoisted(() => ({
@@ -22,11 +23,11 @@ import ResponsivenessNoticePopup from './ResponsivenessNoticePopup';
 const n = (id: string, kind: string) => ({ id, kind, event_id: `e-${id}`, count_30d: 1, warnings_total: 2, created_at: '2026-10-20T10:00:00Z' });
 const mount = () => render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><ResponsivenessNoticePopup /></MemoryRouter></QueryClientProvider>);
 
-beforeEach(() => { sessionStorage.clear(); localStorage.clear(); h.ack.mockReset(); h.ack.mockImplementation(async () => {}); });
+beforeEach(() => { sessionStorage.clear(); localStorage.clear(); __resetNoticeGuard(); h.ack.mockReset(); h.ack.mockImplementation(async () => {}); });
 afterEach(() => cleanup());
 
 describe('responsiveness popup', () => {
-  it('one notice at a time with "1 of 2"; Understood waits for the save, then the next', async () => {
+  it('one notice at a time with "1 of 2"; Understood closes at once, then the next', async () => {
     h.notices = [n('n1', 'warning_1'), n('n2', 'warning_2')];
     mount();
     expect(screen.getByRole('dialog')).toHaveTextContent('Friendly notice 1 of 2: a request was not answered in time');
@@ -37,17 +38,21 @@ describe('responsiveness popup', () => {
     expect(screen.getByText('2 of 2')).toBeInTheDocument();
   });
 
-  it('stays visible with a retry when the save fails', async () => {
-    h.notices = [n('n1', 'counted')];
-    h.ack.mockRejectedValueOnce(new Error('network'));
-    mount();
-    fireEvent.click(screen.getByRole('button', { name: 'Understood' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('This could not be saved. Please try again.');
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(h.ack).toHaveBeenCalledTimes(2);
-    expect(h.ack).toHaveBeenLastCalledWith('n1');
+  it('closes immediately even when the save fails, retries silently and never re-opens', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      h.notices = [n('n1', 'counted')];
+      h.ack.mockRejectedValueOnce(new Error('network'));
+      const first = mount();
+      fireEvent.click(screen.getByRole('button', { name: 'Understood' }));
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(screen.queryByRole('alert')).toBeNull();
+      await act(async () => { await vi.advanceTimersByTimeAsync(2_500); });
+      expect(h.ack).toHaveBeenCalledTimes(2);
+      first.unmount();
+      mount(); // reload / navigation with the server row still unread
+      expect(screen.queryByRole('dialog')).toBeNull();
+    } finally { vi.useRealTimers(); }
   });
 
   it('the close button also acknowledges (with the notice id, not the event id)', async () => {
@@ -91,8 +96,8 @@ describe('responsiveness popup', () => {
     mount();
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     act(() => {
-      localStorage.setItem('aisupport360.resp-notices.acked', JSON.stringify(['n1']));
-      window.dispatchEvent(new StorageEvent('storage', { key: 'aisupport360.resp-notices.acked' }));
+      localStorage.setItem('aisupport360.notice-guard.v1', JSON.stringify({ 'responsiveness:n1': { s: 1, d: 1 } }));
+      window.dispatchEvent(new StorageEvent('storage', { key: 'aisupport360.notice-guard.v1' }));
     });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
