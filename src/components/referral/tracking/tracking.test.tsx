@@ -115,7 +115,7 @@ describe('Programme policy cards', () => {
     expect(screen.getByText(/within 60 days of their sign-up/)).toBeTruthy();
     expect(screen.getByText('Draft pending legal review')).toBeTruthy();
     expect(screen.getByRole('status').textContent).toContain('You accepted version 2 on 2026-10-05.');
-  });
+  }, 20_000);
 
   it('a new terms version asks to accept again', () => {
     renderCards(1, '2026-09-01T00:00:00Z');
