@@ -89,7 +89,7 @@
 - [x] Feature Z activation rule: pair active only after both pass the AI interview (referral_min_interview_score 50) and both acknowledge versioned terms; pending/active/expired (referral_activation_days 90), reminders at 14/45 days, notifications both sides, admin filters/resend, tests
 - [ ] Switch on Feature Z: awaits owner applying docs/sql/referral-program.sql (then run docs/sql/referral-program.test.sql)
 - [x] Feature Z addition: "Referral calculations" tab (summary strip, per-referral table + totals, invoice-line drill-down with formula, monthly chart + honest forecast, filters, CSV/PDF, monthly statements + notice, illustration calculator, live RPCs + last updated, admin read-only view with consultant picker + reconciliation check, tests, Arabic strings)
-- [ ] Home page (/) redesign: ON HOLD by owner — make no home page changes until a new go-ahead
+- [ ] Home page (/) redesign: ON HOLD by owner — full brief received again 01:05 UTC (new AI Support 360 design, honesty guardrails); waiting for an explicit "hold lifted" before any home page change
 - [x] Feature Z addition: "Refer & earn" step in consultant onboarding guide + first-sign-in tour, dashboard card, welcome e-mail line, tests, Arabic strings
 - [x] Feature Z addition: existing consultants — backfill codes (dry-run count), one-time intro pop-up, bell entry, admin set-referrer, claim window referral_claim_until (launch + 14 d), admin "Send announcement" (in-app; e-mail refused as bulk marketing), tests, Arabic strings
 - [x] Feature Z change: tiered rates (referral_tiers 0.5/0.6/0.7/0.8/1.0 by verified referrals 0-10/11+/21+/31+/41+), applied rate + tier stored per line, all displays, tier card/ladder, admin editor + distribution + audit, tests, Arabic
