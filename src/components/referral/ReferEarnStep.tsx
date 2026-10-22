@@ -14,7 +14,7 @@ import {
   referralRpc, rpcMessage, useInvalidateReferral, useMyReferralInvite, useReferralOverview,
 } from '@/hooks/useReferralProgram';
 import {
-  deviceId, formatRate, normalizeReferralCode, referralLink, referStepExample, shareMessage, shareUrl, type ShareChannel,
+  deviceId, normalizeReferralCode, rateRangeText, referralLink, referStepExample, settingsTiers, shareMessage, shareUrl, type ShareChannel,
 } from '@/lib/referrals';
 
 type Pending = { channel: ShareChannel | 'qr' } | null;
@@ -37,9 +37,10 @@ export default function ReferEarnStep({ onDone, onLater }: { onDone?: () => void
 
   if (!overview.data?.available || !ov || !ov.settings.enabled) return null;
   const s = ov.settings;
-  const rate = formatRate(s.rate_percent);
+  const tiers = settingsTiers(s);
+  const rate = rateRangeText(tiers);
   const usd = (v: number) => new Intl.NumberFormat(lang === 'ar' ? 'ar-EG' : 'en-US', { style: 'currency', currency: 'USD' }).format(v);
-  const ex = referStepExample(s.rate_percent);
+  const ex = referStepExample(tiers);
   const link = referralLink(ov.code);
   const msg = shareMessage(lang, { code: ov.code, link, rate: s.rate_percent, months: s.months });
 
@@ -73,7 +74,7 @@ export default function ReferEarnStep({ onDone, onLater }: { onDone?: () => void
           {([
             [Share2, t('refz.step_how_1', 'Share your personal code or link')],
             [UserCheck, t('refz.step_how_2', 'Your colleague registers with it and gets verified')],
-            [Coins, t('refz.step_how_3', 'You earn {{rate}} % of their fee for every man-day they work for {{months}} months - paid by AI Support 360, never deducted from them', { rate, months: s.months })],
+            [Coins, t('refz.step_how_3', 'You earn {{rate}} % of their fee for every man-day they work for {{months}} months - the rate rises with the number of verified consultants you referred; paid by AI Support 360, never deducted from them', { rate, months: s.months })],
           ] as Array<[typeof Share2, string]>).map(([Icon, text], i) => (
             <li key={i} className="rounded-xl border border-border/60 bg-muted/30 p-4">
               <span className="flex items-center gap-2 text-xs font-semibold text-primary">
@@ -137,7 +138,7 @@ export default function ReferEarnStep({ onDone, onLater }: { onDone?: () => void
           )}
           {pending && ov.activation.interview_passed && !ov.activation.acknowledged && (
             <div className="rounded-xl border border-primary/30 p-3">
-              <ReferralAckPanel version={s.terms_version} rate={s.rate_percent} months={s.months} passMark={ov.activation.pass_mark} source="share"
+              <ReferralAckPanel version={s.terms_version} rateText={rate} months={s.months} passMark={ov.activation.pass_mark} source="share"
                 onDone={() => { const c = pending.channel; setPending(null); invalidate(); doShare(c); }} />
             </div>
           )}

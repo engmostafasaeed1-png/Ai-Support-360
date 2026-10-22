@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { deviceId, parseReferralSettings, REFERRAL_DEFAULTS, type ReferralSettings } from '@/lib/referrals';
+import { deviceId, parseReferralSettings, parseTiers, REFERRAL_DEFAULTS, type ReferralSettings, type Tier } from '@/lib/referrals';
 
 type RpcResult = { data: unknown; error: { message: string; code?: string } | null };
 export const referralRpc = (fn: string, args?: Record<string, unknown>): Promise<RpcResult> =>
@@ -45,6 +45,8 @@ export interface ReferralOverview {
   activation: { pass_mark: number; interview_passed: boolean; best_score: number | null; acknowledged: boolean; active: boolean };
   /** "Who invited you?" is open (new accounts: first days; existing consultants: until the launch window ends). */
   claim: { can_claim: boolean; until: string | null };
+  /** Verified, non-suspended referred consultants counted for the tier (from the database). */
+  tier_count: number;
 }
 
 const n = (v: unknown) => Number(v) || 0;
@@ -66,6 +68,7 @@ export function parseOverview(o: Record<string, unknown>): ReferralOverview {
       const r = e as Record<string, unknown>;
       return { currency: String(r.currency ?? 'USD'), pending: n(r.pending), available: n(r.available), held: n(r.held), in_payout: n(r.in_payout), paid: n(r.paid), lifetime: n(r.lifetime) };
     }),
+    tier_count: n(((o.tier ?? {}) as Record<string, unknown>).count ?? f.verified),
     claim: { can_claim: cl.can_claim === true, until: cl.until ? String(cl.until) : null },
     activation: {
       pass_mark: ac.pass_mark == null ? 50 : n(ac.pass_mark),
@@ -106,7 +109,7 @@ export interface MyReferral {
 export interface MyInvite {
   referrer_name: string; activation_status: 'pending' | 'active' | 'expired'; chip: string; my_next: string; their_next: string;
   attributed_at: string; activation_expires_at: string | null; activated_at: string | null; i_passed_at: string | null; they_passed: boolean;
-  i_acknowledged_at: string | null; they_acknowledged: boolean; pass_mark: number; rate_percent: number; months: number; terms_version: number;
+  i_acknowledged_at: string | null; they_acknowledged: boolean; pass_mark: number; rate_percent: number; tiers?: Tier[]; months: number; terms_version: number;
 }
 
 export function useMyReferralInvite(enabled = true) {
@@ -118,7 +121,8 @@ export function useMyReferralInvite(enabled = true) {
     queryFn: async (): Promise<MyInvite | null> => {
       const { data, error } = await referralRpc('my_referral_invite');
       if (error || !data || typeof data !== 'object') return null;
-      return data as MyInvite;
+      const inv = data as MyInvite;
+      return { ...inv, tiers: Array.isArray(inv.tiers) ? parseTiers(inv.tiers) : undefined };
     },
   });
 }
@@ -146,7 +150,7 @@ export async function acceptReferralTerms(version: number, source: 'page' | 'sha
     _version: version, _source: source, _language: lang, _user_agent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 300) : null,
   });
 }
-export interface HistoryLine { created_at: string; kind: string; status: string; amount: number; currency: string; fee_amount: number | null; rate_percent: number | null; referred_name: string | null; note: string | null; available_at: string | null; paid_at: string | null }
+export interface HistoryLine { created_at: string; kind: string; status: string; amount: number; currency: string; fee_amount: number | null; rate_percent: number | null; tier_name?: string | null; referred_name: string | null; note: string | null; available_at: string | null; paid_at: string | null }
 
 export function useMyReferralList(enabled: boolean) {
   return useQuery({
