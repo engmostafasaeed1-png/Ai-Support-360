@@ -408,7 +408,7 @@ async function exportCsv(kind: 'lines' | 'referrals') {
   const rows = (data ?? []) as Row[];
   const cols: Array<[string, string]> = kind === 'lines'
     ? [['created_at', 'Date'], ['kind', 'Type'], ['status', 'Status'], ['referrer_name', 'Referrer'], ['referred_name', 'Referred consultant'],
-       ['fee_amount', 'Referred fee'], ['rate_percent', 'Rate %'], ['amount', 'Reward'], ['currency', 'Currency'], ['referral_payout_id', 'Referral payout'], ['note', 'Note'], ['id', 'Line id']]
+       ['fee_amount', 'Referred fee'], ['rate_percent', 'Rate %'], ['tier_name', 'Tier'], ['tier_count', 'Verified at the time'], ['amount', 'Reward'], ['currency', 'Currency'], ['referral_payout_id', 'Referral payout'], ['note', 'Note'], ['id', 'Line id']]
     : [['attributed_at', 'Signed up'], ['referred_name', 'Referred consultant'], ['referrer_name', 'Referrer'], ['code', 'Code'], ['source', 'Source'], ['status', 'Status'],
        ['flags', 'Flags'], ['activation_status', 'Activation'], ['activated_at', 'Active since'], ['referrer_passed', 'Referrer passed'], ['referred_passed', 'Referred passed'], ['referrer_acknowledged', 'Referrer acknowledged'], ['referred_acknowledged', 'Referred acknowledged'], ['first_paid_at', 'First paid ticket'], ['window_ends_at', 'Rewards until'], ['earned', 'Earned']];
   const blob = new Blob(['\ufeff' + referralCsv(rows, cols)], { type: 'text/csv;charset=utf-8' });
