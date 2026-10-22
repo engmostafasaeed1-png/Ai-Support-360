@@ -14,15 +14,26 @@
 
 export type ReferralEmailLang = 'en' | 'ar';
 export type ReferralEmailKind =
+  | 'programme_invitation'
   | 'signup' | 'invited' | 'passed_self' | 'passed_other' | 'active' | 'reminder' | 'expired' | 'ack_request' | 'verified'
   | 'first_reward' | 'reward_earned' | 'reward_available' | 'reward_held' | 'reward_paid' | 'reward_reversed'
   | 'referral_rejected' | 'payout_details_changed' | 'monthly_statement' | 'weekly_digest_admin';
 
 export const REFERRAL_EMAIL_KINDS: readonly ReferralEmailKind[] = [
+  'programme_invitation',
   'signup', 'invited', 'passed_self', 'passed_other', 'active', 'verified', 'reminder', 'ack_request', 'expired',
   'first_reward', 'reward_earned', 'reward_held', 'reward_available', 'reward_paid', 'reward_reversed', 'referral_rejected',
   'payout_details_changed', 'monthly_statement', 'weekly_digest_admin',
 ] as const;
+
+/**
+ * Designs that the platform's own app-email sender never sends (same message to many people = campaign mail).
+ * They can be previewed and test-sent to the signed-in admin only; real delivery needs a dedicated marketing e-mail
+ * service with consent and unsubscribe records, approved by the owner.
+ */
+export const NOT_APP_EMAIL_KINDS: readonly ReferralEmailKind[] = ['programme_invitation'] as const;
+
+export interface ReferralTierSetting { min: number; rate: number; name?: string | null }
 
 export type ReferralTone = 'invite' | 'earned' | 'pending' | 'negative';
 export type ReferralTab = 'programme' | 'referrals' | 'earnings' | 'calculations';
@@ -31,12 +42,25 @@ export type ReferralNextStep = 'pass_interview' | 'acknowledge' | 'wait_other' |
 export interface ReferralEmailSettings {
   minRate: number; maxRate: number; months: number; holdDays: number; passMark: number; activationDays: number;
   payoutChangeDays: number; exampleFee: number; currency: string; termsDraft: boolean;
+  /** Reward levels (platform_settings referral_tiers), ascending by min. Empty = the levels table is not shown. */
+  tiers?: ReferralTierSetting[];
 }
 
 export const DEFAULT_REFERRAL_EMAIL_SETTINGS: ReferralEmailSettings = {
   minRate: 0.5, maxRate: 1, months: 12, holdDays: 14, passMark: 50, activationDays: 90, payoutChangeDays: 7,
   exampleFee: 1000, currency: 'USD', termsDraft: true,
+  tiers: [{ min: 0, rate: 0.5, name: 'Tier 1' }, { min: 11, rate: 0.6, name: 'Tier 2' }, { min: 21, rate: 0.7, name: 'Tier 3' }, { min: 31, rate: 0.8, name: 'Tier 4' }, { min: 41, rate: 1, name: 'Tier 5' }],
 };
+
+/** Valid, ascending, at most 5 levels; anything malformed is dropped. */
+export function cleanTiers(v: unknown): ReferralTierSetting[] {
+  if (!Array.isArray(v)) return [];
+  const out = v.map((x) => ({ min: Number((x as { min?: unknown })?.min), rate: Number((x as { rate?: unknown })?.rate), name: (x as { name?: unknown })?.name }))
+    .filter((x) => Number.isInteger(x.min) && x.min >= 0 && Number.isFinite(x.rate) && x.rate > 0 && x.rate <= 10)
+    .map((x) => ({ min: x.min, rate: x.rate, name: typeof x.name === 'string' ? x.name.slice(0, 30) : null }))
+    .sort((a, b) => a.min - b.min);
+  return out.filter((x, i) => i === 0 || x.min > out[i - 1].min).slice(0, 5);
+}
 
 export interface ReferralEmailInput {
   kind: ReferralEmailKind | string;
@@ -108,7 +132,7 @@ export function toneFor(kind: ReferralEmailKind): ReferralTone {
 export function tabFor(kind: ReferralEmailKind): ReferralTab {
   if (kind === 'monthly_statement') return 'calculations';
   if (kind.startsWith('reward_') || kind === 'first_reward' || kind === 'payout_details_changed') return 'earnings';
-  if (kind === 'signup' || kind === 'invited') return 'programme';
+  if (kind === 'signup' || kind === 'invited' || kind === 'programme_invitation') return 'programme';
   return 'referrals';
 }
 
@@ -151,6 +175,7 @@ function cleanSettings(s?: Partial<ReferralEmailSettings> | null): ReferralEmail
     exampleFee: num(s?.exampleFee, d.exampleFee, 1, 1_000_000),
     currency: /^[A-Z]{3}$/.test(String(s?.currency ?? '')) ? String(s!.currency) : d.currency,
     termsDraft: s?.termsDraft == null ? d.termsDraft : !!s.termsDraft,
+    tiers: s?.tiers == null ? d.tiers : cleanTiers(s.tiers),
   };
 }
 
@@ -167,6 +192,8 @@ export function exampleCalc(s: ReferralEmailSettings): { fee: number; rate: numb
 
 interface Block {
   subject: string; headline: string; intro: string; amountLabel?: string; next?: boolean; steps?: boolean; example?: boolean; benefits?: boolean; cta: string;
+  /** Full programme overview: five steps, reward levels, what counts / what does not. */
+  programme?: boolean;
 }
 
 type Ctx = { o: string; s: ReferralEmailSettings; lang: ReferralEmailLang };
@@ -219,6 +246,7 @@ const COPY: Record<ReferralEmailLang, {
     bannerAlt: 'Gift box with sparkles - Refer & earn',
     amountNote: { first_reward: 'Your reward', reward_earned: 'Reward recorded', reward_available: 'Now available', reward_held: 'On hold', reward_paid: 'Paid to you', reward_reversed: 'Reversed' },
     k: {
+      programme_invitation: ({ s, lang }) => ({ subject: 'Refer & earn: how the programme works', headline: 'Earn with every consultant you refer', intro: `Refer & earn is open to consultants on AI Support 360. Invite SAP consultants you know and receive ${rateRange(s, lang)} of their approved fee for ${fmtInt(s.months, lang)} months - paid by AI Support 360, never deducted from them. Here is the whole programme in one place.`, benefits: true, example: true, programme: true, cta: 'Open Refer & earn' }),
       signup: ({ o }) => ({ subject: 'Someone registered with your referral code', headline: 'A colleague joined with your code', intro: `${o} registered with your referral code. Your referral becomes active when you both pass the AI interview and accept the referral terms.`, steps: true, example: true, cta: 'Open Refer & earn' }),
       invited: ({ o }) => ({ subject: 'You were invited to AI Support 360', headline: 'Welcome - you were invited', intro: `You were invited by ${o}. The referral becomes active after you and your referrer pass the AI interview and accept the terms. It never reduces your own earnings.`, benefits: true, steps: true, cta: 'Open Refer & earn' }),
       passed_self: () => ({ subject: 'You passed the AI interview', headline: 'You passed the AI interview', intro: 'Well done - you passed the AI interview. Here is what is next for your referral.', next: true, cta: 'View my referrals' }),
@@ -281,6 +309,7 @@ const COPY: Record<ReferralEmailLang, {
     bannerAlt: 'صندوق هدية مع لمعان - أحِل واربح',
     amountNote: { first_reward: 'مكافأتك', reward_earned: 'مكافأة مسجّلة', reward_available: 'متاحة الآن', reward_held: 'قيد المراجعة', reward_paid: 'دُفعت لك', reward_reversed: 'مستردّة' },
     k: {
+      programme_invitation: ({ s, lang }) => ({ subject: 'أحِل واربح: كيف يعمل البرنامج', headline: 'اربح مع كل مستشار تحيله', intro: `برنامج أحِل واربح متاح للمستشارين على AI Support 360. ادعُ مستشاري SAP الذين تعرفهم واحصل على ${rateRange(s, lang)} من أتعابهم المعتمدة لمدة ${fmtInt(s.months, lang)} شهرًا - تدفعها AI Support 360 ولا تُخصم منهم أبدًا. إليك البرنامج كاملًا في مكان واحد.`, benefits: true, example: true, programme: true, cta: 'افتح أحِل واربح' }),
       signup: ({ o }) => ({ subject: 'سجّل شخص باستخدام رمز الإحالة الخاص بك', headline: 'انضم زميل برمزك', intro: `سجّل ${o} باستخدام رمز الإحالة الخاص بك. تصبح الإحالة نشطة عندما تجتازان كلاكما المقابلة الذكية وتوافقان على الشروط.`, steps: true, example: true, cta: 'افتح أحِل واربح' }),
       invited: ({ o }) => ({ subject: 'تمت دعوتك إلى AI Support 360', headline: 'أهلًا بك - تمت دعوتك', intro: `دعاك ${o}. تصبح الإحالة نشطة بعد أن تجتاز أنت ومن دعاك المقابلة الذكية وتوافقا على الشروط. ولا تُنقص من أرباحك أبدًا.`, benefits: true, steps: true, cta: 'افتح أحِل واربح' }),
       passed_self: () => ({ subject: 'لقد اجتزت المقابلة الذكية', headline: 'لقد اجتزت المقابلة الذكية', intro: 'أحسنت - لقد اجتزت المقابلة الذكية. هذه الخطوة التالية لإحالتك.', next: true, cta: 'عرض إحالاتي' }),
@@ -310,15 +339,17 @@ const FONT_AR = "Tahoma, 'Segoe UI', 'Geeza Pro', Arial, sans-serif";
 // Brand hero: violet to teal on every Refer & earn e-mail; the status shows in the chip and the amount colour.
 const BRAND = { from: '#6D28D9', to: '#0F766E', solid: '#5B21B6', button: '#5B21B6', ink: '#4C1D95', soft: '#F5F3FF', track: '#E9E5F5' };
 
-export type ReferralChip = 'earned' | 'held' | 'available' | 'paid' | 'reversed' | 'active' | 'pending' | 'rejected' | 'expired' | 'statement' | 'digest' | 'security';
+export type ReferralChip = 'earned' | 'held' | 'available' | 'paid' | 'reversed' | 'active' | 'pending' | 'rejected' | 'expired' | 'statement' | 'digest' | 'security' | 'invite';
 /** Status chip colours (all with dark text on a light fill, readable in light and inverted dark mode). */
 export const CHIP_COLORS: Record<ReferralChip, { bg: string; fg: string }> = {
   earned: { bg: '#DCFCE7', fg: '#166534' }, held: { bg: '#FEF3C7', fg: '#92400E' }, available: { bg: '#CCFBF1', fg: '#115E59' },
   paid: { bg: '#DBEAFE', fg: '#1E40AF' }, reversed: { bg: '#FEE2E2', fg: '#991B1B' }, active: { bg: '#DCFCE7', fg: '#166534' },
   pending: { bg: '#EDE9FE', fg: '#5B21B6' }, rejected: { bg: '#FEE2E2', fg: '#991B1B' }, expired: { bg: '#F1F5F9', fg: '#475569' },
   statement: { bg: '#EDE9FE', fg: '#5B21B6' }, digest: { bg: '#EDE9FE', fg: '#5B21B6' }, security: { bg: '#FEE2E2', fg: '#991B1B' },
+  invite: { bg: '#CCFBF1', fg: '#115E59' },
 };
 const KIND_CHIP: Record<ReferralEmailKind, ReferralChip> = {
+  programme_invitation: 'invite',
   signup: 'pending', invited: 'pending', passed_self: 'active', passed_other: 'active', active: 'active', verified: 'active', reminder: 'pending',
   ack_request: 'pending', expired: 'expired', first_reward: 'earned', reward_earned: 'earned', reward_held: 'held', reward_available: 'available',
   reward_paid: 'paid', reward_reversed: 'reversed', referral_rejected: 'rejected', payout_details_changed: 'security',
@@ -337,7 +368,15 @@ export function lineChip(status: unknown, kind?: unknown): ReferralChip {
 
 const UI = {
   en: {
-    chip: { earned: 'Earned', held: 'Held', available: 'Available', paid: 'Paid', reversed: 'Reversed', active: 'Active', pending: 'In progress', rejected: 'Not accepted', expired: 'Expired', statement: 'Statement', digest: 'Weekly summary', security: 'Security' } as Record<ReferralChip, string>,
+    chip: { earned: 'Earned', held: 'Held', available: 'Available', paid: 'Paid', reversed: 'Reversed', active: 'Active', pending: 'In progress', rejected: 'Not accepted', expired: 'Expired', statement: 'Statement', digest: 'Weekly summary', security: 'Security', invite: 'Invitation' } as Record<ReferralChip, string>,
+    levelsTitle: 'Reward levels',
+    levelsNote: 'Your level depends on how many of the consultants you referred are verified. A higher level applies only to work recorded after you reach it.',
+    levelRange: (min: number, max: number | null, lang: ReferralEmailLang) => (max == null ? `${fmtInt(min, lang)}+ verified referrals` : `${fmtInt(min, lang)}–${fmtInt(max, lang)} verified referrals`),
+    levelName: (i: number) => `Level ${i + 1}`,
+    countsTitle: 'What counts',
+    counts: (c: Ctx) => ['Approved, paid client work of the consultant you referred', `Work invoiced during ${fmtInt(c.s.months, c.lang)} months from their first paid ticket`, `Rewards become available ${fmtInt(c.s.holdDays, c.lang)} days after their payout`],
+    notTitle: 'What does not count',
+    nots: () => ['Referring yourself or a second account', 'Work done before the referral is active', 'Payments that are refunded or disputed (taken off at the original rate)'],
     amountWord: { first_reward: 'earned', reward_earned: 'earned', reward_held: 'on hold', reward_available: 'available', reward_paid: 'paid', reward_reversed: 'reversed' } as Record<string, string>,
     strip: (c: Ctx) => [
       ['Share your code', 'Send your personal code to an SAP consultant you know.'],
@@ -358,7 +397,15 @@ const UI = {
     adminWhy: 'You receive this summary because you are an administrator of AI Support 360.',
   },
   ar: {
-    chip: { earned: 'مكتسبة', held: 'معلّقة', available: 'متاحة', paid: 'مدفوعة', reversed: 'مستردّة', active: 'نشطة', pending: 'قيد التقدّم', rejected: 'غير مقبولة', expired: 'منتهية', statement: 'كشف', digest: 'ملخص أسبوعي', security: 'أمان' } as Record<ReferralChip, string>,
+    chip: { earned: 'مكتسبة', held: 'معلّقة', available: 'متاحة', paid: 'مدفوعة', reversed: 'مستردّة', active: 'نشطة', pending: 'قيد التقدّم', rejected: 'غير مقبولة', expired: 'منتهية', statement: 'كشف', digest: 'ملخص أسبوعي', security: 'أمان', invite: 'دعوة' } as Record<ReferralChip, string>,
+    levelsTitle: 'مستويات المكافأة',
+    levelsNote: 'يعتمد مستواك على عدد المستشارين الموثّقين الذين أحلتهم. ينطبق المستوى الأعلى فقط على الأعمال المسجّلة بعد وصولك إليه.',
+    levelRange: (min: number, max: number | null, lang: ReferralEmailLang) => (max == null ? `${fmtInt(min, lang)}+ إحالات موثّقة` : `${fmtInt(min, lang)}–${fmtInt(max, lang)} إحالات موثّقة`),
+    levelName: (i: number) => `المستوى ${i + 1}`,
+    countsTitle: 'ما يُحتسب',
+    counts: (c: Ctx) => ['أعمال العملاء المعتمدة والمدفوعة للمستشار الذي أحلته', `الأعمال المفوترة خلال ${fmtInt(c.s.months, c.lang)} شهرًا من أول تذكرة مدفوعة له`, `تصبح المكافآت متاحة بعد ${fmtInt(c.s.holdDays, c.lang)} يومًا من دفعته`],
+    notTitle: 'ما لا يُحتسب',
+    nots: () => ['إحالة نفسك أو حساب ثانٍ لك', 'الأعمال المنجزة قبل تفعيل الإحالة', 'الدفعات المستردّة أو المتنازع عليها (تُخصم بالنسبة الأصلية)'],
     amountWord: { first_reward: 'مكتسبة', reward_earned: 'مكتسبة', reward_held: 'معلّقة', reward_available: 'متاحة', reward_paid: 'مدفوعة', reward_reversed: 'مستردّة' } as Record<string, string>,
     strip: (c: Ctx) => [
       ['شارك رمزك', 'أرسل رمزك الشخصي إلى مستشار SAP تعرفه.'],
@@ -580,6 +627,37 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
       { bg: BRAND.soft, border: '#DDD6FE', align }))));
   }
 
+  // Full programme overview: five numbered steps, reward levels from settings, what counts / what does not
+  const levels = b.programme ? (s.tiers ?? []) : [];
+  if (b.programme) {
+    parts.push(divider, H(c.stepsTitle));
+    const stepRows = c.steps(ctx).map((txt, i) => `<tr>`
+      + `<td width="40" valign="top" style="padding:0 0 14px"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td bgcolor="${BRAND.solid}" style="width:30px;height:30px;border-radius:15px;background:${BRAND.solid};color:#ffffff;font-family:${font};font-size:14px;font-weight:800;line-height:30px;text-align:center">${esc(fmtInt(i + 1, lang))}</td></tr></table></td>`
+      + `<td valign="top" style="padding:4px ${rtl ? '10px' : '0'} 14px ${rtl ? '0' : '10px'};font-family:${font};font-size:15px;line-height:1.55;color:#1F2937;text-align:${align}">${esc(txt)}</td></tr>`).join('');
+    parts.push(card(`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}">${stepRows}</table>`, { align, pad: '18px 18px 6px' }));
+
+    if (levels.length) {
+      parts.push(divider, H(u.levelsTitle));
+      const end = rtl ? 'left' : 'right';
+      const rows = levels.map((lv, i) => {
+        const max = i + 1 < levels.length ? levels[i + 1].min - 1 : null;
+        const top = i === levels.length - 1;
+        return `<tr><td style="padding:12px 14px;font-family:${font};font-size:14px;font-weight:700;color:#111827;text-align:${align};border-bottom:1px solid #F1F5F9">${esc(u.levelName(i))}</td>`
+          + `<td style="padding:12px 6px;font-family:${font};font-size:14px;color:#475569;text-align:${align};border-bottom:1px solid #F1F5F9">${esc(u.levelRange(lv.min, max, lang))}</td>`
+          + `<td align="${end}" style="padding:12px 14px;text-align:${end};border-bottom:1px solid #F1F5F9"><span dir="ltr" style="display:inline-block;padding:4px 12px;border-radius:999px;background:${top ? BRAND.solid : BRAND.soft};color:${top ? '#ffffff' : BRAND.ink};font-family:${font};font-size:15px;font-weight:800;white-space:nowrap">${esc(`${fmtRate(lv.rate, lang)} %`)}</span></td></tr>`;
+      }).join('');
+      parts.push(`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}" style="border:1px solid #E5E7EB;border-radius:14px;border-collapse:separate;overflow:hidden">${rows}</table>`);
+      parts.push(`<p style="margin:10px 0 0;font-family:${font};font-size:13px;line-height:1.55;color:#475569;text-align:${align}">${esc(u.levelsNote)}</p>`);
+    }
+
+    const list = (items: string[], mark: string, color: string) => items.map((x) => `<tr><td width="22" valign="top" style="padding:0 0 8px;font-family:${font};font-size:15px;font-weight:800;color:${color}">${mark}</td><td valign="top" style="padding:0 0 8px;font-family:${font};font-size:14px;line-height:1.5;color:#1F2937;text-align:${align}">${esc(x)}</td></tr>`).join('');
+    parts.push(divider);
+    parts.push(columns([
+      card(`<p style="margin:0 0 10px;font-family:${font};font-size:15px;font-weight:800;color:#166534">${esc(u.countsTitle)}</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}">${list(u.counts(ctx), '&#10003;', '#16A34A')}</table>`, { bg: '#F0FDF4', border: '#BBF7D0', align }),
+      card(`<p style="margin:0 0 10px;font-family:${font};font-size:15px;font-weight:800;color:#991B1B">${esc(u.notTitle)}</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}">${list(u.nots(), '&#10007;', '#DC2626')}</table>`, { bg: '#FEF2F2', border: '#FECACA', align }),
+    ]));
+  }
+
   // Simple 3-step strip (done steps get a tick)
   const stripAt = STRIP_STEP[kind];
   if (stripAt) {
@@ -667,6 +745,15 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
   }
   if (tier) out.push('', `${u.tierTitle}: ${u.tierLine(tier, lang)}`, u.tierNext(tier, lang));
   if (b.benefits) { out.push('', c.benefitsTitle); for (const [h, d] of c.benefits(ctx)) out.push(`- ${h}: ${d}`); }
+  if (b.programme) {
+    out.push('', c.stepsTitle); c.steps(ctx).forEach((x, i) => out.push(`${i + 1}. ${x}`));
+    if (levels.length) {
+      out.push('', u.levelsTitle);
+      levels.forEach((lv, i) => out.push(`- ${u.levelName(i)}: ${u.levelRange(lv.min, i + 1 < levels.length ? levels[i + 1].min - 1 : null, lang)} = ${fmtRate(lv.rate, lang)} %`));
+      out.push(u.levelsNote);
+    }
+    out.push('', `${u.countsTitle}:`, ...u.counts(ctx).map((x) => `+ ${x}`), '', `${u.notTitle}:`, ...u.nots().map((x) => `- ${x}`));
+  }
   if (stripAt) { out.push('', u.stripTitle); u.strip(ctx).forEach(([h, d], i) => out.push(`${i + 1}. ${h} - ${d}`)); }
   if (b.example) out.push('', `${c.exampleTitle}: ${c.example(ctx)}`, c.exampleNote(ctx));
   out.push('', `${b.cta}: ${ctaUrl}`);
@@ -707,6 +794,7 @@ export function referralEmailSettingsFrom(rows: Array<{ key: string; value: unkn
   const n = (k: string) => { const v = get(k); const x = typeof v === 'string' ? Number(v) : (v as number); return Number.isFinite(x) ? x : undefined; };
   const cur = get('referral_email_example_currency');
   const draft = get('referral_terms_draft');
+  const levels = cleanTiers(tiers);
   return cleanSettings({
     minRate: rates.length ? Math.min(...rates) : undefined,
     maxRate: rates.length ? Math.max(...rates) : undefined,
@@ -715,6 +803,8 @@ export function referralEmailSettingsFrom(rows: Array<{ key: string; value: unkn
     exampleFee: n('referral_email_example_fee'),
     currency: typeof cur === 'string' ? cur : undefined,
     termsDraft: draft === false || draft === 'false' ? false : true,
+    // Levels only when the live tiers carry their thresholds; otherwise the table is left out rather than guessed.
+    tiers: get('referral_tiers') === undefined ? undefined : levels,
   });
 }
 
