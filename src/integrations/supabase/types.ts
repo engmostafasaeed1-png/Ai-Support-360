@@ -2325,6 +2325,7 @@ export type Database = {
           id: string
           proficiency_level: number | null
           sap_module: string
+          sap_version: string | null
           years_experience: number | null
         }
         Insert: {
@@ -2334,6 +2335,7 @@ export type Database = {
           id?: string
           proficiency_level?: number | null
           sap_module: string
+          sap_version?: string | null
           years_experience?: number | null
         }
         Update: {
@@ -2343,6 +2345,7 @@ export type Database = {
           id?: string
           proficiency_level?: number | null
           sap_module?: string
+          sap_version?: string | null
           years_experience?: number | null
         }
         Relationships: [
@@ -3838,6 +3841,7 @@ export type Database = {
           interview_id: string
           question: string
           question_order: number
+          question_source: Json | null
           sap_module: string | null
           score: number | null
         }
@@ -3850,6 +3854,7 @@ export type Database = {
           interview_id: string
           question: string
           question_order?: number
+          question_source?: Json | null
           sap_module?: string | null
           score?: number | null
         }
@@ -3862,6 +3867,7 @@ export type Database = {
           interview_id?: string
           question?: string
           question_order?: number
+          question_source?: Json | null
           sap_module?: string | null
           score?: number | null
         }
@@ -3915,6 +3921,140 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      interview_knowledge_chunks: {
+        Row: {
+          body: string
+          chunk_no: number
+          created_at: string
+          document_id: string
+          id: string
+          language: string
+          sap_module: string
+          sap_version: string | null
+          tags: string[]
+          tsv: unknown
+        }
+        Insert: {
+          body: string
+          chunk_no: number
+          created_at?: string
+          document_id: string
+          id?: string
+          language?: string
+          sap_module: string
+          sap_version?: string | null
+          tags?: string[]
+          tsv?: unknown
+        }
+        Update: {
+          body?: string
+          chunk_no?: number
+          created_at?: string
+          document_id?: string
+          id?: string
+          language?: string
+          sap_module?: string
+          sap_version?: string | null
+          tags?: string[]
+          tsv?: unknown
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_knowledge_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "interview_knowledge_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_knowledge_documents: {
+        Row: {
+          attempts: number
+          chunk_count: number
+          claimed_at: string | null
+          created_at: string
+          enabled: boolean
+          file_kind: string
+          file_name: string
+          id: string
+          language: string
+          notes: string | null
+          pii_flags: Json
+          rights_confirmed: boolean
+          rights_confirmed_at: string
+          rights_confirmed_by: string
+          sap_module: string
+          sap_version: string | null
+          sha256: string
+          size_bytes: number
+          status: string
+          status_reason: string | null
+          storage_path: string
+          tags: string[]
+          text_chars: number
+          title: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          attempts?: number
+          chunk_count?: number
+          claimed_at?: string | null
+          created_at?: string
+          enabled?: boolean
+          file_kind: string
+          file_name: string
+          id?: string
+          language?: string
+          notes?: string | null
+          pii_flags?: Json
+          rights_confirmed: boolean
+          rights_confirmed_at?: string
+          rights_confirmed_by: string
+          sap_module: string
+          sap_version?: string | null
+          sha256: string
+          size_bytes: number
+          status?: string
+          status_reason?: string | null
+          storage_path: string
+          tags?: string[]
+          text_chars?: number
+          title: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          attempts?: number
+          chunk_count?: number
+          claimed_at?: string | null
+          created_at?: string
+          enabled?: boolean
+          file_kind?: string
+          file_name?: string
+          id?: string
+          language?: string
+          notes?: string | null
+          pii_flags?: Json
+          rights_confirmed?: boolean
+          rights_confirmed_at?: string
+          rights_confirmed_by?: string
+          sap_module?: string
+          sap_version?: string | null
+          sha256?: string
+          size_bytes?: number
+          status?: string
+          status_reason?: string | null
+          storage_path?: string
+          tags?: string[]
+          text_chars?: number
+          title?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: []
       }
       interview_messages: {
         Row: {
@@ -4001,6 +4141,73 @@ export type Database = {
           },
         ]
       }
+      interview_plans: {
+        Row: {
+          ai_calls: number
+          consultant_id: string
+          created_at: string
+          error: string | null
+          interview_id: string
+          model: string | null
+          plan: Json | null
+          questions: Json | null
+          status: string
+          tokens_in: number
+          tokens_out: number
+          updated_at: string
+        }
+        Insert: {
+          ai_calls?: number
+          consultant_id: string
+          created_at?: string
+          error?: string | null
+          interview_id: string
+          model?: string | null
+          plan?: Json | null
+          questions?: Json | null
+          status?: string
+          tokens_in?: number
+          tokens_out?: number
+          updated_at?: string
+        }
+        Update: {
+          ai_calls?: number
+          consultant_id?: string
+          created_at?: string
+          error?: string | null
+          interview_id?: string
+          model?: string | null
+          plan?: Json | null
+          questions?: Json | null
+          status?: string
+          tokens_in?: number
+          tokens_out?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_plans_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "interview_plans_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interview_plans_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: true
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interview_question_library: {
         Row: {
           author_name: string | null
@@ -4051,6 +4258,58 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      interview_question_log: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          id: string
+          interview_id: string | null
+          question_hash: string
+          sap_module: string | null
+          sap_version: string | null
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          id?: string
+          interview_id?: string | null
+          question_hash: string
+          sap_module?: string | null
+          sap_version?: string | null
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          id?: string
+          interview_id?: string | null
+          question_hash?: string
+          sap_module?: string | null
+          sap_version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_question_log_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "interview_question_log_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interview_question_log_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       interview_sessions: {
         Row: {
@@ -7349,6 +7608,36 @@ export type Database = {
           text_bytes?: number
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      sap_version_options: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          module_key: string
+          sort_order: number
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          module_key: string
+          sort_order?: number
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          module_key?: string
+          sort_order?: number
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -11325,6 +11614,16 @@ export type Database = {
           verification_status: string
         }[]
       }
+      admin_interview_question_sources: {
+        Args: { _interview_id: string }
+        Returns: {
+          question: string
+          question_order: number
+          question_source: Json
+          sap_module: string
+          score: number
+        }[]
+      }
       admin_list_client_approvals: {
         Args: { p_limit?: number; p_status?: string }
         Returns: Json
@@ -12228,6 +12527,42 @@ export type Database = {
         Returns: undefined
       }
       iban_valid: { Args: { _iban: string }; Returns: boolean }
+      ik_claim_document: { Args: { _id: string }; Returns: boolean }
+      ik_coverage: {
+        Args: { _days?: number }
+        Returns: {
+          avg_score: number
+          chunks: number
+          consultants: number
+          documents: number
+          module_documents: number
+          questions_asked: number
+          sap_module: string
+          sap_version: string
+        }[]
+      }
+      ik_is_admin: { Args: { _uid: string }; Returns: boolean }
+      ik_module_key: { Args: { _m: string }; Returns: string }
+      ik_public_enabled: { Args: never; Returns: boolean }
+      ik_same_module: { Args: { _a: string; _b: string }; Returns: boolean }
+      ik_search_chunks: {
+        Args: {
+          _limit?: number
+          _module: string
+          _terms: string[]
+          _version: string
+        }
+        Returns: {
+          body: string
+          chunk_no: number
+          document_id: string
+          id: string
+          rank: number
+          sap_version: string
+          title: string
+        }[]
+      }
+      ik_version_key: { Args: { _v: string }; Returns: string }
       interview_role: {
         Args: { _session_id: string; _user_id: string }
         Returns: string
