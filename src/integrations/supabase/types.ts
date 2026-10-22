@@ -12377,7 +12377,110 @@ export type Database = {
       }
       admin_recompute_responsiveness: { Args: never; Returns: number }
       admin_recompute_success: { Args: never; Returns: number }
+      admin_referral_action: {
+        Args: {
+          _action: string
+          _amount?: number
+          _currency?: string
+          _id: string
+          _new_referrer?: string
+          _reason: string
+        }
+        Returns: Json
+      }
+      admin_referral_events: {
+        Args: { _limit?: number }
+        Returns: {
+          action: string
+          actor_name: string
+          after: Json
+          before: Json
+          created_at: string
+          reason: string
+          referred_name: string
+          referrer_name: string
+        }[]
+      }
+      admin_referral_lines: {
+        Args: { _limit?: number; _offset?: number; _status?: string }
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          fee_amount: number
+          flags: string[]
+          hold_reason: string
+          id: string
+          kind: string
+          matures_at: string
+          note: string
+          payment_id: string
+          rate_percent: number
+          referral_payout_id: string
+          referred_id: string
+          referred_name: string
+          referrer_id: string
+          referrer_name: string
+          source_payout_id: string
+          status: string
+          tier_count: number
+          tier_name: string
+        }[]
+      }
       admin_referral_overview: { Args: never; Returns: Json }
+      admin_referral_referrals: {
+        Args: {
+          _filter?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+        }
+        Returns: {
+          activated_at: string
+          activation_expires_at: string
+          activation_status: string
+          approved_at: string
+          attributed_at: string
+          code: string
+          earned: Json
+          first_paid_at: string
+          flags: string[]
+          referred_acknowledged: boolean
+          referred_best_score: number
+          referred_id: string
+          referred_name: string
+          referred_passed: boolean
+          referred_public: string
+          referrer_acknowledged: boolean
+          referrer_best_score: number
+          referrer_id: string
+          referrer_name: string
+          referrer_passed: boolean
+          signals: string[]
+          source: string
+          status: string
+          verified: boolean
+          window_ends_at: string
+        }[]
+      }
+      admin_referral_referrers: {
+        Args: { _limit?: number; _search?: string }
+        Returns: {
+          code: string
+          disabled: boolean
+          last_referral_at: string
+          money: Json
+          paying: number
+          referred: number
+          referrer_id: string
+          referrer_name: string
+          verified: number
+        }[]
+      }
+      admin_referral_set_settings: {
+        Args: { _reason: string; _settings: Json }
+        Returns: Json
+      }
       admin_reject_payment_report: {
         Args: { _note: string; _payment_id: string }
         Returns: undefined
