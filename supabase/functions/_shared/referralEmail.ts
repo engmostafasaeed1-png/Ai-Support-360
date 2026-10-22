@@ -400,7 +400,7 @@ const UI = {
     chip: { earned: 'مكتسبة', held: 'معلّقة', available: 'متاحة', paid: 'مدفوعة', reversed: 'مستردّة', active: 'نشطة', pending: 'قيد التقدّم', rejected: 'غير مقبولة', expired: 'منتهية', statement: 'كشف', digest: 'ملخص أسبوعي', security: 'أمان', invite: 'دعوة' } as Record<ReferralChip, string>,
     levelsTitle: 'مستويات المكافأة',
     levelsNote: 'يعتمد مستواك على عدد المستشارين الموثّقين الذين أحلتهم. ينطبق المستوى الأعلى فقط على الأعمال المسجّلة بعد وصولك إليه.',
-    levelRange: (min: number, max: number | null, lang: ReferralEmailLang) => (max == null ? `${fmtInt(min, lang)}+ إحالات موثّقة` : `${fmtInt(min, lang)}–${fmtInt(max, lang)} إحالات موثّقة`),
+    levelRange: (min: number, max: number | null, lang: ReferralEmailLang) => (max == null ? `${fmtInt(min, lang)} إحالة موثّقة أو أكثر` : `من ${fmtInt(min, lang)} إلى ${fmtInt(max, lang)} إحالات موثّقة`),
     levelName: (i: number) => `المستوى ${i + 1}`,
     countsTitle: 'ما يُحتسب',
     counts: (c: Ctx) => ['أعمال العملاء المعتمدة والمدفوعة للمستشار الذي أحلته', `الأعمال المفوترة خلال ${fmtInt(c.s.months, c.lang)} شهرًا من أول تذكرة مدفوعة له`, `تصبح المكافآت متاحة بعد ${fmtInt(c.s.holdDays, c.lang)} يومًا من دفعته`],
