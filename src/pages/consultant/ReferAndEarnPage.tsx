@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ReferralCalculations from '@/components/referral/ReferralCalculations';
+import { openReferralIntro } from '@/components/referral/ReferEarnStepHost';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
@@ -253,7 +254,10 @@ export default function ReferAndEarnPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Gift className="w-6 h-6 text-primary" />{t('refz.title', 'Refer & earn')}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Gift className="w-6 h-6 text-primary" />{t('refz.title', 'Refer & earn')}</h1>
+          <Button variant="outline" size="sm" className="rounded-xl" onClick={openReferralIntro}>{t('refz.help_intro', 'Refer & earn: how it works')}</Button>
+        </div>
         <p className="mt-1 text-sm text-muted-foreground max-w-3xl">
           {t('refz.pitch', 'Earn {{rate}} % of the fees of every consultant you bring for {{months}} months - paid by AI Support 360, never deducted from them.', { rate, months: s.months })}
         </p>
