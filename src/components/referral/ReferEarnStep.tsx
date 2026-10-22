@@ -133,7 +133,7 @@ export default function ReferEarnStep({ onDone, onLater }: { onDone?: () => void
           <div className="flex flex-wrap items-center gap-2">
             <span dir="ltr" className="rounded-xl border border-border bg-muted/40 px-4 py-2 font-mono text-lg font-semibold tracking-wide">{ov.code}</span>
             <Button variant="outline" size="sm" className="rounded-xl" onClick={copy}>{copied ? <Check className="w-4 h-4 me-1" /> : <Copy className="w-4 h-4 me-1" />}{t('refz.copy', 'Copy')}</Button>
-            {([['whatsapp', 'WhatsApp', MessageCircle], ['linkedin', 'LinkedIn', Share2], ['email', t('refz.email', 'E-mail'), Mail], ['qr', t('refz.qr', 'QR code'), QrCode]] as Array<[ShareChannel | 'qr', string, typeof Share2]>).map(([c, label, Icon]) => (
+            {([['whatsapp', 'WhatsApp', MessageCircle], ['linkedin', 'LinkedIn', Share2], ['telegram', 'Telegram', Send], ['email', t('refz.email_own', 'Open in my mail app'), Mail], ['qr', t('refz.qr', 'QR code'), QrCode]] as Array<[ShareChannel | 'qr', string, typeof Share2]>).map(([c, label, Icon]) => (
               <Button key={c} variant="outline" size="sm" className="rounded-xl" onClick={() => share(c)} disabled={ov.disabled}><Icon className="w-4 h-4 me-1" />{label}</Button>
             ))}
           </div>

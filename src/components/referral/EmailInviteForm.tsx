@@ -8,6 +8,12 @@ import { Send, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { getReferralLink } from '@/hooks/useReferrals';
 
+/** mailto: link opened in the person's OWN mail app: the platform never e-mails people who are not registered. */
+export function ownMailLink(emails: string[], subject: string, body: string): string {
+  const to = emails.filter((e) => /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(e)).slice(0, 20).map(encodeURIComponent).join(',');
+  return `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 interface Props {
   referralCode: string;
   onClose: () => void;
@@ -50,10 +56,14 @@ export default function EmailInviteForm({ referralCode, onClose }: Props) {
         } as any);
       }
 
-      toast.success(`Invitations tracked for ${emailList.length} people!`);
+      // The e-mail itself goes from the person's own mailbox (mail app opens prefilled), never from the platform.
+      const link = getReferralLink(referralCode);
+      window.location.href = ownMailLink(emailList, 'Join me on AI Support 360',
+        `${message.trim() ? `${message.trim()}\n\n` : ''}I use AI Support 360 for SAP support. Sign up with my link: ${link}`);
+      toast.success(`Your mail app opens with the invitation for ${emailList.length} people.`);
       onClose();
     } catch (err) {
-      toast.error('Failed to send invitations.');
+      toast.error('The invitation could not be prepared.');
     } finally {
       setSending(false);
     }
@@ -62,7 +72,7 @@ export default function EmailInviteForm({ referralCode, onClose }: Props) {
   return (
     <div className="bg-muted/20 rounded-xl p-4 space-y-3 border border-border/30">
       <div className="flex justify-between items-center">
-        <p className="text-sm font-medium text-foreground">Send Email Invitation</p>
+        <p className="text-sm font-medium text-foreground">Invite by e-mail from your own mail app</p>
         <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={onClose}>
           <X className="w-4 h-4" />
         </Button>
@@ -90,8 +100,9 @@ export default function EmailInviteForm({ referralCode, onClose }: Props) {
         Your referral link will be included: <span className="font-mono text-primary">{getReferralLink(referralCode).slice(0, 50)}...</span>
       </div>
       <Button className="w-full gradient-primary border-0" disabled={sending} onClick={handleSend}>
-        <Send className="w-4 h-4 me-1" /> {sending ? 'Sending...' : 'Send Invitations'}
+        <Send className="w-4 h-4 me-1" /> {sending ? 'Opening…' : 'Open in my mail app'}
       </Button>
+      <p className="text-[10px] text-muted-foreground">The e-mail is sent from your own address. AI Support 360 never e-mails people who have not registered.</p>
     </div>
   );
 }
