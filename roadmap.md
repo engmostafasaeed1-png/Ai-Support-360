@@ -90,4 +90,4 @@
 - [ ] Switch on Feature Z: awaits owner applying docs/sql/referral-program.sql (then run docs/sql/referral-program.test.sql)
 - [x] Feature Z addition: "Referral calculations" tab (summary strip, per-referral table + totals, invoice-line drill-down with formula, monthly chart + honest forecast, filters, CSV/PDF, monthly statements + notice, illustration calculator, live RPCs + last updated, admin read-only view with consultant picker + reconciliation check, tests, Arabic strings)
 - [ ] Home page (/) redesign: ON HOLD by owner — make no home page changes until a new go-ahead
-- [ ] Feature Z addition: "Refer & earn" step in consultant onboarding guide + first-sign-in tour, dashboard card, welcome e-mail line, tests, Arabic strings
+- [x] Feature Z addition: "Refer & earn" step in consultant onboarding guide + first-sign-in tour, dashboard card, welcome e-mail line, tests, Arabic strings
