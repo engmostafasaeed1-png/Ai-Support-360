@@ -222,6 +222,7 @@ describe('send worker', () => {
 
   it('push goes to every active device of the person; no device = skipped, dead devices switched off', async () => {
     const sent: string[] = [];
+    const updatePushSubscription = vi.fn(async () => {});
     const d = deps([row({ channel: 'push', campaign_id: 'inv', user_id: 'a' }), row({ channel: 'push', user_id: 'b' })], {
       referralCampaigns: vi.fn(async () => new Set(['inv'])),
       pushSubscriptions: vi.fn(async () => [
@@ -229,7 +230,7 @@ describe('send worker', () => {
         { id: 's2', user_id: 'a', endpoint: 'e2', p256dh: 'k', auth: 'x' },
       ]),
       sendPush: vi.fn(async (s: { id: string }, payload: string) => { sent.push(payload); return s.id === 's1' ? { ok: true, gone: false } : { ok: false, gone: true, error: 'subscription_gone' }; }),
-      updatePushSubscription: vi.fn(async () => {}),
+      updatePushSubscription,
     });
     await runBulkBatch(d);
     const finished = firstArg<FinishRow[]>(d.finish);
@@ -238,7 +239,7 @@ describe('send worker', () => {
     const msg = JSON.parse(sent[0]);
     expect(msg.url).toBe('/consultant/referrals?tab=programme&from=invite');
     expect(msg.body).not.toMatch(/Hello|https?:/);
-    expect(d.updatePushSubscription).toHaveBeenCalledTimes(2);
+    expect(updatePushSubscription).toHaveBeenCalledTimes(2);
   });
 
   it('a failing invitation lookup falls back to normal messages', async () => {
