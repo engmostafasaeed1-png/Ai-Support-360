@@ -33,7 +33,11 @@ describe('Refer & earn e-mail layout', () => {
     const m = renderReferralEmail({ kind: 'reward_paid', lang: 'en', name: 'Sara', other: 'D. K****', amount: 5, siteUrl: 'https://evil.example', bannerUrl: 'https://evil.example/b.png' });
     const hrefs = [...m.html.matchAll(/href="([^"]+)"/g)].map((x) => x[1].replace(/&#61;/g, '='));
     expect(hrefs.length).toBeGreaterThan(2);
-    for (const h of hrefs) expect(h).toMatch(/^https:\/\/(www\.)?aisupport360\.com/);
+    for (const h of hrefs) expect(h).toMatch(/^(https:\/\/(www\.)?aisupport360\.com|mailto:[a-z0-9._+-]+@aisupport360\.com$)/);
+    expect(m.html).toContain('mailto:info@aisupport360.com');
+    expect(m.text).toContain('Questions? Write to info@aisupport360.com');
+    // a contact address on another domain is never shown
+    expect(renderReferralEmail({ kind: 'signup', contactEmail: 'x@evil.example' }).html).not.toContain('evil.example');
     expect(m.html).not.toContain('evil.example');
     expect(m.ctaUrl).toBe('https://www.aisupport360.com/consultant/referrals?tab=earnings');
   });

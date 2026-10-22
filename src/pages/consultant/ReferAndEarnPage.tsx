@@ -92,7 +92,7 @@ function CodeCard({ ov, locked }: { ov: ReferralOverview; locked: boolean }) {
 
   const channels: Array<[ShareChannel, string, typeof Send]> = [
     ['whatsapp', 'WhatsApp', MessageCircle], ['linkedin', 'LinkedIn', Share2], ['telegram', 'Telegram', Send], ['x', 'X', Share2],
-    ['email', t('refz.email', 'E-mail'), Mail],
+    ['email', t('refz.email_own', 'Open in my mail app'), Mail],
   ];
 
   return (
@@ -172,6 +172,7 @@ function CodeCard({ ov, locked }: { ov: ReferralOverview; locked: boolean }) {
               <QrCode className="w-4 h-4 me-1" />{t('refz.qr', 'QR code')}
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground">{t('refz.own_mail_hint', 'E-mail opens your own mail app with the message filled in, so it is sent from your address. AI Support 360 never e-mails colleagues who have not registered.')}</p>
           {showQR && <QRCodeDisplay url={link} />}
         </div>
         </>}
