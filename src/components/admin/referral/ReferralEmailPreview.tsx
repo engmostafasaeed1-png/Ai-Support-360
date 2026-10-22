@@ -9,10 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  REFERRAL_BANNER_URL, REFERRAL_EMAIL_KINDS, renderReferralEmail, sampleReferralEmail, type ReferralEmailKind, type ReferralEmailSettings,
+  NOT_APP_EMAIL_KINDS, REFERRAL_BANNER_URL, REFERRAL_EMAIL_KINDS, renderReferralEmail, sampleReferralEmail, type ReferralEmailKind, type ReferralEmailSettings,
 } from '../../../../supabase/functions/_shared/referralEmail';
 
 export const EMAIL_KIND_LABEL: Record<ReferralEmailKind, string> = {
+  programme_invitation: 'Programme invitation (design only)',
   signup: 'Colleague registered with your code', invited: 'You were invited (referred colleague)', passed_self: 'You passed the AI interview',
   passed_other: 'Partner passed the AI interview', active: 'Programme active', verified: 'Referral verified', reminder: 'Still pending (reminder)',
   ack_request: 'Accept the terms', expired: 'Referral expired', first_reward: 'First reward earned', reward_earned: 'Reward earned',
@@ -30,7 +31,7 @@ const SITE = 'https://www.aisupport360.com';
  */
 export default function ReferralEmailPreview({ settings }: { settings: Partial<ReferralEmailSettings> }) {
   const { t } = useTranslation();
-  const [kind, setKind] = useState<ReferralEmailKind>('signup');
+  const [kind, setKind] = useState<ReferralEmailKind>('programme_invitation');
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [dark, setDark] = useState(false);
   const [phone, setPhone] = useState(false);
@@ -93,6 +94,11 @@ export default function ReferralEmailPreview({ settings }: { settings: Partial<R
           <p className="font-medium" dir={lang === 'ar' ? 'rtl' : 'ltr'}>{mail.subject}</p>
           <p className="mt-1 text-xs text-muted-foreground" dir={lang === 'ar' ? 'rtl' : 'ltr'}>{mail.preheader}</p>
         </div>
+        {NOT_APP_EMAIL_KINDS.includes(kind) && (
+          <p className="rounded-xl border border-border/60 bg-muted/40 p-3 text-sm text-muted-foreground" role="note">
+            {t('remail.design_only', 'Design only: the platform does not e-mail this invitation to consultants. Real sending needs a separate marketing e-mail service approved by the owner. "Send test to me" still works.')}
+          </p>
+        )}
 
         <Tabs defaultValue="html">
           <TabsList><TabsTrigger value="html">HTML</TabsTrigger><TabsTrigger value="text">{t('remail.text', 'Plain text')}</TabsTrigger></TabsList>
