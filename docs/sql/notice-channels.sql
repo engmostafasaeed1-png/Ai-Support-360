@@ -27,7 +27,7 @@ DECLARE _me uuid := auth.uid(); _n int;
 BEGIN
   IF _me IS NULL OR NOT public.has_role(_me, 'super_admin') THEN RAISE EXCEPTION 'Only super admins can remove test notifications' USING ERRCODE = '42501'; END IF;
   DELETE FROM public.notifications
-   WHERE is_test AND created_at < now() - make_interval(days => GREATEST(0, LEAST(COALESCE(_older_than_days, 0), 3650)));
+   WHERE is_test AND created_at <= now() - make_interval(days => GREATEST(0, LEAST(COALESCE(_older_than_days, 0), 3650)));
   GET DIAGNOSTICS _n = ROW_COUNT;
   INSERT INTO public.audit_logs (user_id, action, entity_type, metadata)
   VALUES (_me, 'test_notifications_removed', 'notifications', jsonb_build_object('removed', _n, 'older_than_days', COALESCE(_older_than_days, 0)));
