@@ -70,8 +70,8 @@ BEGIN
   IF (r ->> 'queued')::int <> 3 THEN RAISE EXCEPTION 'NC05 queued %', r; END IF;
   IF (SELECT channels FROM public.message_campaigns WHERE id = camp) <> ARRAY['in_app'] THEN RAISE EXCEPTION 'NC05 e-mail reached the campaign'; END IF;
   SELECT count(*) INTO n FROM public.referral_invitation_deliveries WHERE run_id = run1 AND channel = 'email' AND outcome = 'skipped' AND reason = 'email_not_allowed';
-  IF n <> 3 THEN RAISE EXCEPTION 'NC05 e-mail not recorded as skipped %', n; END IF;
-  IF (r -> 'by_channel' -> 'email' -> 'skipped' ->> 'email_not_allowed')::int <> 3 OR (r -> 'by_channel' -> 'in_app' ->> 'sending')::int <> 3 THEN RAISE EXCEPTION 'NC05 report %', r -> 'by_channel'; END IF;
+  IF n <> 4 THEN RAISE EXCEPTION 'NC05 e-mail not recorded as skipped %', n; END IF; -- the paused one too
+  IF (r -> 'by_channel' -> 'email' -> 'skipped' ->> 'email_not_allowed')::int <> 4 OR (r -> 'by_channel' -> 'in_app' ->> 'sending')::int <> 3 THEN RAISE EXCEPTION 'NC05 report %', r -> 'by_channel'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.audit_logs WHERE entity_id = run1 AND action = 'referral_invitation_sent'
                    AND metadata -> 'channels' = '["in_app","email"]'::jsonb AND (metadata -> 'queued_by_channel' ->> 'in_app')::int = 3) THEN RAISE EXCEPTION 'NC05 audit channels'; END IF;
 
