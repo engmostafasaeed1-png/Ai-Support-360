@@ -28,6 +28,7 @@ import {
 } from '@/lib/referrals';
 import { cn } from '@/lib/utils';
 import { ChipBadge, InviteCard, ReferrerActivationCard, useNextStepText } from '@/components/referral/ReferralActivation';
+import TierLadder from '@/components/referral/TierLadder';
 
 const STATUS_TONE: Record<string, string> = {
   signed_up: 'bg-muted text-muted-foreground',
@@ -420,6 +421,11 @@ export default function ReferAndEarnPage() {
                   </div>
                 )}
             </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl">
+            <CardHeader className="pb-2"><CardTitle className="text-base">{t('refz.tier_title', 'Your rate grows with your referrals')}</CardTitle></CardHeader>
+            <CardContent><TierLadder tiers={tiers} count={ov.tier_count} /></CardContent>
           </Card>
 
           <Card className="rounded-2xl">

@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { referralRpc } from '@/hooks/useReferralProgram';
 import {
-  formatRate, formulaText, LINE_STATUS_LABEL, referralEstimate, round2, statementCsv, thresholdProgress, type CalcLine, type LineStatus,
+  formatRate, formulaText, parseTiers, tierFor, type Tier, LINE_STATUS_LABEL, referralEstimate, round2, statementCsv, thresholdProgress, type CalcLine, type LineStatus,
 } from '@/lib/referrals';
 import { exportReferralStatementPdf } from '@/lib/referralStatementPdf';
 import { cn } from '@/lib/utils';
@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 type Row = Record<string, unknown>;
 interface RefRow {
   ref_key: string; referred_name: string; activation_status: string; first_paid_at: string | null; window_ends_at: string | null; currency: string;
-  approved_hours: number; man_days: number; fee_base: number; rate_percent: number; reward_earned: number; reversed: number; net: number;
+  approved_hours: number; man_days: number; fee_base: number; rate_min: number; rate_percent: number; reward_earned: number; reversed: number; net: number;
   pending: number; available: number; paid: number;
 }
 interface Statement { id: string; period_month: string; generated_at: string; summary: Row; lines: CalcLine[] }
@@ -94,7 +94,11 @@ export default function ReferralCalculations({ consultantId = null, code = '' }:
 
   const s = summary.data ?? {};
   const settings = (s.settings ?? {}) as Row;
-  const rate = num(settings.rate_percent) || 0.5;
+  const tiers = parseTiers(s.tiers ?? settings.tiers);
+  const tierRow = (s.tier ?? {}) as Row;
+  const tierCount = num(tierRow.count);
+  const tier = tierFor(tierCount, tiers);
+  const rate = tier.rate;
   const months = num(settings.months) || 12;
   const minPayout = num(settings.min_payout);
   const earnings = ((s.earnings ?? []) as Row[]);
@@ -106,7 +110,7 @@ export default function ReferralCalculations({ consultantId = null, code = '' }:
 
   const rows = (refs.data ?? []).filter((r) => refKey === 'all' || r.ref_key === refKey).map((r) => ({
     ...r, approved_hours: num(r.approved_hours), man_days: num(r.man_days), fee_base: num(r.fee_base), reward_earned: num(r.reward_earned),
-    reversed: num(r.reversed), net: num(r.net), pending: num(r.pending), available: num(r.available), paid: num(r.paid), rate_percent: num(r.rate_percent),
+    reversed: num(r.reversed), net: num(r.net), pending: num(r.pending), available: num(r.available), paid: num(r.paid), rate_percent: num(r.rate_percent), rate_min: num(r.rate_min ?? r.rate_percent),
   }));
   const totals = useMemo(() => {
     const m = new Map<string, RefRow>();
@@ -184,6 +188,9 @@ export default function ReferralCalculations({ consultantId = null, code = '' }:
           <p className="text-xs text-muted-foreground">{t('refz.calc_rule', 'Your reward rule')}</p>
           <p className="mt-1 text-lg font-bold">{formatRate(rate)} % · {t('refz.calc_months', '{{n}} months', { n: months })}</p>
           <p className="text-[11px] text-muted-foreground">{t('refz.calc_rule_hint', 'of the referred consultant\'s fee, from their first paid ticket')}</p>
+          <p className="text-[11px] text-muted-foreground">{tier.next
+            ? t('refz.calc_tier', '{{name}} ({{n}} verified). {{needed}} more for {{next}} ({{rate}} %).', { name: tier.name, n: tierCount, needed: tier.needed, next: tier.next.name, rate: formatRate(tier.next.rate) })
+            : t('refz.calc_tier_top', '{{name}} ({{n}} verified), the highest tier.', { name: tier.name, n: tierCount })}</p>
         </CardContent></Card>
         <Card className="rounded-2xl"><CardContent className="p-4 space-y-1">
           {(earnings.length ? earnings : [{ currency: 'USD', pending: 0, available: 0, paid: 0, lifetime: 0 }]).map((e) => (
@@ -284,7 +291,7 @@ export default function ReferralCalculations({ consultantId = null, code = '' }:
                         <TableCell className="text-xs">{f.date(r.window_ends_at)}</TableCell>
                         <TableCell className="text-end tabular-nums">{r.man_days}</TableCell>
                         <TableCell className="text-end tabular-nums">{f.money(r.fee_base, r.currency)}</TableCell>
-                        <TableCell className="text-end tabular-nums">{formatRate(r.rate_percent)} %</TableCell>
+                        <TableCell className="text-end tabular-nums" dir="ltr">{r.rate_min && r.rate_min !== r.rate_percent ? `${formatRate(r.rate_min)}-${formatRate(r.rate_percent)}` : formatRate(r.rate_percent)} %</TableCell>
                         <TableCell className="text-end tabular-nums">{f.money(r.reward_earned, r.currency)}</TableCell>
                         <TableCell className={cn('text-end tabular-nums', r.reversed < 0 && 'text-destructive')}>{f.money(r.reversed, r.currency)}</TableCell>
                         <TableCell className="text-end font-semibold tabular-nums">{f.money(r.net, r.currency)}</TableCell>
@@ -410,20 +417,20 @@ export default function ReferralCalculations({ consultantId = null, code = '' }:
             ))}
           </CardContent>
         </Card>
-        <EstimateBox rate={rate} months={months} />
+        <EstimateBox tiers={tiers} verified={tierCount} months={months} />
       </div>
     </div>
   );
 }
 
 /** 6. Illustration calculator - uses the real rate and window, clearly not a promise. */
-function EstimateBox({ rate, months }: { rate: number; months: number }) {
+function EstimateBox({ tiers, verified, months }: { tiers: Tier[]; verified: number; months: number }) {
   const { t } = useTranslation();
   const f = useFmt();
   const [n, setN] = useState('2');
   const [days, setDays] = useState('10');
   const [hourly, setHourly] = useState('50');
-  const est = referralEstimate({ referred: Number(n), manDaysPerMonth: Number(days), hourlyRate: Number(hourly), ratePercent: rate, months });
+  const est = referralEstimate({ referred: Number(n), manDaysPerMonth: Number(days), hourlyRate: Number(hourly), tiers, alreadyVerified: verified, months });
   return (
     <Card className="rounded-2xl">
       <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Calculator className="w-4 h-4 text-primary" />{t('refz.est_title', 'Estimate (illustration only)')}</CardTitle></CardHeader>
@@ -438,7 +445,7 @@ function EstimateBox({ rate, months }: { rate: number; months: number }) {
           <p className="font-semibold">{t('refz.est_window', 'About {{v}} over {{m}} months', { v: f.money(est.overWindow), m: months })}</p>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          {t('refz.est_note', 'Illustration only, not a promise of income. Uses the real rate ({{rate}} %) and window ({{m}} months); real rewards depend on approved hours that clients actually pay.', { rate: formatRate(rate), m: months })}
+          {t('refz.est_note', 'Illustration only, not a promise of income. Assumes they all become verified, so you would be at {{rate}} %, and uses the real window ({{m}} months); real rewards depend on approved hours that clients actually pay and your tier when each reward is created.', { rate: formatRate(est.rate), m: months })}
         </p>
       </CardContent>
     </Card>
