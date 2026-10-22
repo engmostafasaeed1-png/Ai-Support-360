@@ -184,7 +184,7 @@ SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.referral_code_attempts WHE
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.as_user(pg_temp.uid(pg_temp.k('spoof')));
 DO $$ DECLARE i int; BEGIN
-  FOR i IN 1..10 LOOP SELECT pg_temp.ip('192.0.2.' || (100 + i)) INTO STRICT i; PERFORM public.referral_claim('SAP-WRONG-' || i || 'ZZZZZZ'); END LOOP;
+  FOR i IN 1..10 LOOP PERFORM pg_temp.ip('192.0.2.' || (100 + i)); PERFORM public.referral_claim('SAP-WRONG-' || i || 'ZZZZZZ'); END LOOP;
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 SELECT pg_temp.ip('192.0.2.250');
 DO $$ BEGIN
@@ -196,6 +196,8 @@ END $$;
 RESET ROLE;
 SELECT pg_temp.as_user(NULL);
 SELECT pg_temp.ip(NULL);
+SELECT pg_temp.check((SELECT invalid >= 10 AND locked_until > now() FROM public.referral_code_attempts WHERE who = 'u:' || pg_temp.uid(pg_temp.k('spoof'))::text),
+                     'T08 code_bruteforce_lockout: account locked after 10 invalid codes from 10 networks');
 UPDATE public.consultant_referral_codes SET disabled_at = NULL WHERE consultant_id = pg_temp.k('ip_ref');
 
 -- T10 min_invoice / T11 hold_period_boundaries ----------------------------------------------------------------------------
@@ -421,7 +423,6 @@ SELECT pg_temp.as_user(NULL);
 UPDATE public.consultant_payout_details SET iban = 'SA00 9999 8888', verified_at = now() - interval '30 days', created_at = now() - interval '30 days' WHERE consultant_id = pg_temp.k('ref');
 SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.notifications WHERE user_id = pg_temp.uid(pg_temp.k('ref')) AND title = 'Your bank details were changed')
                      AND EXISTS (SELECT 1 FROM public.referral_email_queue WHERE user_id = pg_temp.uid(pg_temp.k('ref')) AND kind = 'payout_details_changed'), 'T23: consultant told in the app and by e-mail');
-INSERT INTO public.payouts (consultant_id, amount, gross_amount, status, reference, payment_id) SELECT pg_temp.k('ref'), 1, 1, 'completed', 'x', NULL WHERE false;
 INSERT INTO public.referral_reward_lines (unique_key, kind, referrer_consultant_id, amount, currency, status, created_by, note, available_at)
   VALUES ('t23', 'adjustment', pg_temp.k('ref'), 50, 'USD', 'available', '00000000-0000-0000-0000-0000000000a2', 'test', now());
 UPDATE public.consultant_payout_details SET updated_at = now() - interval '1 day' WHERE consultant_id = pg_temp.k('ref');

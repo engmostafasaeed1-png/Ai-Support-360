@@ -3938,3 +3938,29 @@ SELECT cron.schedule('referral-monthly-statements', '19 3 1 * *', 'SELECT public
 --   SELECT public.referral_public_settings();
 --   SELECT count(*) FROM public.consultant_referral_codes;          -- one per consultant
 --   SELECT jobname, schedule FROM cron.job WHERE jobname LIKE 'referral-%';
+
+-- 14. Default deny (A5): any referral function not on the browser list loses EXECUTE for PUBLIC, anon and authenticated
+-- (trigger functions included). Browser RPCs: the three public checks, the consultant my_* / referral_* RPCs below and the
+-- admin_referral_* RPCs, which check the role themselves. Checked by T25 in docs/sql/referral.test.sql.
+DO $$
+DECLARE
+  f record;
+BEGIN
+  FOR f IN
+    SELECT p.oid::regprocedure AS sig FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'public' AND p.proname ~ '^(referral_|my_referral|admin_referral_)'
+       AND p.proname NOT LIKE 'admin_referral_%' AND p.proname NOT LIKE 'my_referral%'
+       AND p.proname NOT IN ('referral_validate_code', 'referral_track_click', 'referral_public_settings', 'referral_claim', 'referral_accept_terms',
+                             'referral_update_code', 'referral_is_admin', 'referral_calc_summary', 'referral_calc_referrals', 'referral_calc_lines',
+                             'referral_calc_monthly', 'referral_calc_forecast', 'referral_calc_statements')
+  LOOP
+    EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC, anon, authenticated', f.sig);
+  END LOOP;
+  FOR f IN
+    SELECT p.oid::regprocedure AS sig FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'public' AND (p.proname LIKE 'admin_referral_%' OR p.proname LIKE 'my_referral%')
+  LOOP
+    EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC, anon', f.sig);
+  END LOOP;
+END
+$$;
