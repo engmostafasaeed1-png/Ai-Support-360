@@ -26,7 +26,9 @@
 -- 0. Settings ------------------------------------------------------------------------------------------------------------
 INSERT INTO public.platform_settings (key, value) VALUES
   ('referral_enabled', 'true'::jsonb),
-  ('referral_rate_percent', '0.5'::jsonb),
+  -- Tiered rate by the referrer's number of VERIFIED referred consultants (admin-editable, max 5 tiers, rates ascending).
+  ('referral_tiers', '[{"min": 0, "rate": 0.5, "name": "Tier 1"}, {"min": 11, "rate": 0.6, "name": "Tier 2"}, {"min": 21, "rate": 0.7, "name": "Tier 3"}, {"min": 31, "rate": 0.8, "name": "Tier 4"}, {"min": 41, "rate": 1.0, "name": "Tier 5"}]'::jsonb),
+  ('referral_max_rate', '2'::jsonb),
   ('referral_months', '12'::jsonb),
   ('referral_min_payout', '25'::jsonb),
   ('referral_max_reward_per_referred', 'null'::jsonb),
@@ -82,6 +84,54 @@ AS $$
 $$;
 REVOKE ALL ON FUNCTION public.referral_setting_cap(text) FROM PUBLIC, anon, authenticated;
 
+-- Validated tiers (falls back to the defaults if the stored value is not valid). Mirrored by src/lib/referrals.ts.
+CREATE OR REPLACE FUNCTION public.referral_tiers_valid(_t jsonb, _max numeric)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+AS $$
+DECLARE
+  i int;
+  e jsonb;
+  _prev_min int := -1;
+  _prev_rate numeric := 0;
+BEGIN
+  IF jsonb_typeof(_t) IS DISTINCT FROM 'array' OR jsonb_array_length(_t) < 1 OR jsonb_array_length(_t) > 5 THEN RETURN 'Use 1 to 5 tiers'; END IF;
+  FOR i IN 0 .. jsonb_array_length(_t) - 1 LOOP
+    e := _t -> i;
+    IF jsonb_typeof(e -> 'min') <> 'number' OR jsonb_typeof(e -> 'rate') <> 'number' THEN RETURN 'Each tier needs a number of referrals and a rate'; END IF;
+    IF (e ->> 'min')::numeric <> trunc((e ->> 'min')::numeric) OR (e ->> 'min')::int < 0 THEN RETURN 'Referral counts must be whole numbers'; END IF;
+    IF i = 0 AND (e ->> 'min')::int <> 0 THEN RETURN 'The first tier must start at 0 referrals'; END IF;
+    IF (e ->> 'min')::int <= _prev_min THEN RETURN 'Referral counts must go up from tier to tier'; END IF;
+    IF (e ->> 'rate')::numeric <= _prev_rate THEN RETURN 'Rates must go up from tier to tier'; END IF;
+    IF (e ->> 'rate')::numeric > _max THEN RETURN format('Rates can not be above the maximum of %s %%', _max); END IF;
+    IF length(COALESCE(e ->> 'name', '')) > 30 THEN RETURN 'Tier names have at most 30 characters'; END IF;
+    _prev_min := (e ->> 'min')::int; _prev_rate := (e ->> 'rate')::numeric;
+  END LOOP;
+  RETURN NULL;
+END
+$$;
+
+CREATE OR REPLACE FUNCTION public.referral_tiers()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  v jsonb;
+  _max numeric := public.referral_setting_num('referral_max_rate', 2, 0.01, 10);
+  d jsonb := '[{"min": 0, "rate": 0.5, "name": "Tier 1"}, {"min": 11, "rate": 0.6, "name": "Tier 2"}, {"min": 21, "rate": 0.7, "name": "Tier 3"}, {"min": 31, "rate": 0.8, "name": "Tier 4"}, {"min": 41, "rate": 1.0, "name": "Tier 5"}]';
+BEGIN
+  SELECT value INTO v FROM public.platform_settings WHERE key = 'referral_tiers';
+  IF v IS NULL OR public.referral_tiers_valid(v, _max) IS NOT NULL THEN v := d; END IF;
+  RETURN (SELECT jsonb_agg(jsonb_build_object('min', (e ->> 'min')::int, 'rate', (e ->> 'rate')::numeric,
+                                              'name', COALESCE(NULLIF(e ->> 'name', ''), 'Tier ' || o)) ORDER BY o)
+            FROM jsonb_array_elements(v) WITH ORDINALITY AS x(e, o));
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_tiers() FROM PUBLIC, anon, authenticated;
+
 CREATE OR REPLACE FUNCTION public.referral_settings()
  RETURNS jsonb
  LANGUAGE sql
@@ -90,7 +140,10 @@ CREATE OR REPLACE FUNCTION public.referral_settings()
 AS $$
   SELECT jsonb_build_object(
     'enabled', public.platform_flag('referral_enabled', true),
-    'rate_percent', public.referral_setting_num('referral_rate_percent', 0.5, 0, 10),
+    -- Base (first tier) rate; the rate of a reward line is the referrer's tier when the line is created.
+    'rate_percent', (public.referral_tiers() -> 0 ->> 'rate')::numeric,
+    'tiers', public.referral_tiers(),
+    'max_rate', public.referral_setting_num('referral_max_rate', 2, 0.01, 10),
     'months', public.referral_setting_num('referral_months', 12, 1, 60)::int,
     'min_payout', public.referral_setting_num('referral_min_payout', 25, 0, 100000),
     'max_per_referred', public.referral_setting_cap('referral_max_reward_per_referred'),
@@ -114,7 +167,7 @@ CREATE OR REPLACE FUNCTION public.referral_public_settings()
 AS $$
   SELECT jsonb_build_object('enabled', s->'enabled', 'rate_percent', s->'rate_percent', 'months', s->'months',
                             'min_payout', s->'min_payout', 'terms_version', s->'terms_version', 'pass_mark', s->'pass_mark',
-                            'activation_days', s->'activation_days')
+                            'activation_days', s->'activation_days', 'tiers', s->'tiers')
     FROM (SELECT public.referral_settings() AS s) x
 $$;
 REVOKE ALL ON FUNCTION public.referral_public_settings() FROM PUBLIC;
@@ -262,6 +315,8 @@ CREATE TABLE IF NOT EXISTS public.referral_reward_lines (
   reverses_line_id uuid REFERENCES public.referral_reward_lines(id) ON DELETE SET NULL,
   fee_amount numeric(14,2),
   rate_percent numeric(6,3),
+  tier_name text,
+  tier_count int,
   amount numeric(14,2) NOT NULL,
   currency text NOT NULL DEFAULT 'USD',
   status text NOT NULL CHECK (status IN ('pending', 'available', 'held', 'in_payout', 'paid', 'reversed')),
