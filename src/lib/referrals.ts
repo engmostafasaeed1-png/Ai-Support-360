@@ -184,9 +184,13 @@ export interface RewardCheck {
   referrerVerified: boolean;
   referrerSuspended: boolean;
   referrerPolicyOk: boolean;
+  /** Optional (referral_create_reward): the client payment cleared, the line fee and the minimum invoice. */
+  paymentCleared?: boolean;
+  fee?: number;
+  minInvoice?: number;
 }
 
-/** Mirror of referral_reward_block_reason (null = earns). */
+/** Mirror of referral_reward_block_reason + the release checks of referral_create_reward (null = earns). */
 export function rewardBlockReason(c: RewardCheck): string | null {
   if (!c.enabled) return 'programme_off';
   if (c.attributionStatus === 'removed') return 'removed';
@@ -481,15 +485,16 @@ export function referralEstimate(i: EstimateInput): { perMonth: number; overWind
 }
 
 export interface CalcLine {
-  created_at: string; ref_key: string | null; referred_name: string | null; kind: string; status: string; ticket_ref: string | null;
-  approved_hours: number | null; man_days: number | null; hourly_rate: number | null; fee_amount: number | null; rate_percent: number | null;
+  /** Anonymous "Engagement #A12F" - never the client, ticket title or ticket id. No hourly rate is ever sent. */
+  created_at: string; ref_key: string | null; referred_name: string | null; kind: string; status: string; engagement_ref: string | null;
+  approved_hours: number | null; man_days: number | null; fee_amount: number | null; rate_percent: number | null;
   tier_name?: string | null; amount: number; currency: string; payment_status: string | null; client_paid_at: string | null; payout_status: string | null;
   payout_released_at: string | null; referral_payout_due: string | null; note: string | null;
 }
 
 export const STATEMENT_COLUMNS: Array<[keyof CalcLine, string]> = [
-  ['created_at', 'Date'], ['referred_name', 'Referred consultant'], ['kind', 'Type'], ['ticket_ref', 'Ticket'], ['approved_hours', 'Approved hours'],
-  ['man_days', 'Man-days'], ['hourly_rate', 'Hourly rate'], ['fee_amount', 'Fee'], ['rate_percent', 'Rate %'], ['tier_name', 'Tier'], ['amount', 'Reward'],
+  ['created_at', 'Date'], ['referred_name', 'Referred consultant'], ['kind', 'Type'], ['engagement_ref', 'Engagement'], ['approved_hours', 'Approved hours'],
+  ['man_days', 'Man-days'], ['fee_amount', 'Fee'], ['rate_percent', 'Rate %'], ['tier_name', 'Tier'], ['amount', 'Reward'],
   ['currency', 'Currency'], ['status', 'State'], ['payment_status', 'Client invoice'], ['payout_released_at', 'Payout released'],
 ];
 

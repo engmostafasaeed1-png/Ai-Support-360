@@ -51,8 +51,12 @@ describe('12-month window', () => {
 describe('referral codes', () => {
   it('are case-insensitive and readable', () => {
     expect(normalizeReferralCode(' sap-mostafa-7k2 ')).toBe('SAP-MOSTAFA-7K2');
-    expect(referralCodeProblem('sap-mostafa-7k2')).toBeNull();
+    expect(referralCodeProblem('sap-mostafa-7k2m9qx')).toBeNull();
     expect(referralCodeProblem('ab')).toBe('format');
+    // At least 7 letters/digits (dashes do not count).
+    expect(referralCodeProblem('SAP-AB')).toBe('format');
+    expect(referralCodeProblem('SA-P-1-2')).toBe('format');
+    expect(referralCodeProblem('SAPRAMI')).toBeNull();
     expect(referralCodeProblem('SAP--X')).toBe('format');
   });
   it('refuse profanity but allow names that contain short words', () => {
@@ -70,6 +74,8 @@ describe('link capture keeps the code for 30 days', () => {
   it('captures from /join, /signup and /for-consultants only', () => {
     expect(captureReferral('/join', '?ref=sap-rami-7k2', 1000)).toBe('SAP-RAMI-7K2');
     expect(captureReferral('/pricing', '?ref=SAP-X-111', 1000)).toBeNull();
+    localStorage.clear();
+    expect(captureReferral('/join', '?ref=SAP-AB', 1000)).toBeNull();
     expect(captureReferral('/signup', '?ref=<script>', 1000)).toBeNull();
   });
   it('expires after 30 days', () => {
@@ -156,9 +162,9 @@ describe('referral calculations arithmetic', () => {
     expect(referralEstimate({ referred: -2, manDaysPerMonth: 10, hourlyRate: 50, ratePercent: 0.5, months: 12 }).perMonth).toBe(0);
   });
   it('statement CSV keeps the numbers', () => {
-    const csv = statementCsv([{ created_at: '2026-10-01', ref_key: 'k', referred_name: 'D. K****', kind: 'reward', status: 'paid', ticket_ref: 'T-1', approved_hours: 50, man_days: 6.25,
-      hourly_rate: 8, fee_amount: 400, rate_percent: 0.5, tier_name: 'Tier 1', amount: 2, currency: 'USD', payment_status: 'completed', client_paid_at: null, payout_status: 'completed', payout_released_at: null, referral_payout_due: null, note: null }]);
-    expect(csv.split('\r\n')[1]).toBe('2026-10-01,D. K****,reward,T-1,50,6.25,8,400,0.5,Tier 1,2,USD,paid,completed,');
+    const csv = statementCsv([{ created_at: '2026-10-01', ref_key: 'k', referred_name: 'D. K****', kind: 'reward', status: 'paid', engagement_ref: 'Engagement #A12F', approved_hours: 50, man_days: 6.25,
+      fee_amount: 400, rate_percent: 0.5, tier_name: 'Tier 1', amount: 2, currency: 'USD', payment_status: 'completed', client_paid_at: null, payout_status: 'completed', payout_released_at: null, referral_payout_due: null, note: null }]);
+    expect(csv.split('\r\n')[1]).toBe('2026-10-01,D. K****,reward,Engagement #A12F,50,6.25,400,0.5,Tier 1,2,USD,paid,completed,');
   });
 });
 
@@ -236,5 +242,49 @@ describe('reward tiers (owner rule)', () => {
   it('step example uses the tier for one and for several colleagues', () => {
     expect(referStepExample(DEFAULT_TIERS)).toMatchObject({ one: 20, many: 100, rateOne: 0.5, rateMany: 0.5 });
     expect(referStepExample(DEFAULT_TIERS, 10, 50, 11)).toMatchObject({ rateMany: 0.6, many: 264 });
+  });
+});
+
+import { flagScore, maturesAt, needsReview, storedReferralCapturedAt, FLAG_LABEL, HOLD_REASON_LABEL } from './referrals';
+
+describe('referral security mirrors', () => {
+  beforeEach(() => { localStorage.clear(); document.cookie = 'aisupport360_ref=; Max-Age=0; Path=/'; });
+  it('first valid link wins for 30 days and is never overwritten', () => {
+    const t0 = Date.UTC(2026, 0, 1);
+    expect(captureReferral('/join', '?ref=SAP-FIRST-AAAAAAA', t0)).toBe('SAP-FIRST-AAAAAAA');
+    expect(captureReferral('/join', '?ref=SAP-SECOND-BBBBBBB', t0 + 5 * 86_400_000)).toBe('SAP-FIRST-AAAAAAA');
+    expect(storedReferralCapturedAt(t0 + 5 * 86_400_000)).toBe(new Date(t0).toISOString());
+    // After 30 days the first code has expired and a new link may be kept.
+    expect(captureReferral('/join', '?ref=SAP-SECOND-BBBBBBB', t0 + 31 * 86_400_000)).toBe('SAP-SECOND-BBBBBBB');
+  });
+  it('scores fraud signals like the database: 2+ means under review', () => {
+    expect(flagScore(['same_device'])).toBe(1);
+    expect(needsReview(['same_device'])).toBe(false);
+    expect(needsReview(['same_device', 'same_ip'])).toBe(true);
+    expect(flagScore(['same_bank'])).toBe(2);
+    expect(needsReview(['same_phone'])).toBe(true);
+    expect(flagScore(['client_same_email'])).toBe(2);
+    expect(needsReview(['same_device', 'same_ip'], 3)).toBe(false);
+  });
+  it('rewards become available only after the 14-day hold', () => {
+    const released = new Date('2026-03-01T10:00:00Z');
+    expect(maturesAt(released, 14).toISOString()).toBe('2026-03-15T10:00:00.000Z');
+    expect(maturesAt(released, -3).getTime()).toBe(released.getTime());
+  });
+  it('blocks uncleared payments and invoices under the minimum', () => {
+    const base = { enabled: true, activation: 'active' as const, activatedAt: new Date(0), attributionStatus: 'active' as const, referrerId: 'a', referredId: 'b',
+      windowEndsAt: new Date(Date.now() + 86_400_000), paidAt: new Date(), referredVerified: true, referrerVerified: true, referrerSuspended: false, referrerPolicyOk: true };
+    expect(rewardBlockReason({ ...base, fee: 19.99, minInvoice: 20 })).toBe('below_min_invoice');
+    expect(rewardBlockReason({ ...base, fee: 20, minInvoice: 20 })).toBeNull();
+    expect(rewardBlockReason({ ...base, paymentCleared: false })).toBe('payment_not_cleared');
+  });
+  it('labels every hold reason and signal the database can store', () => {
+    for (const k of ['review', 'admin', 'dispute', 'related_party', 'cap']) expect(HOLD_REASON_LABEL[k]).toBeTruthy();
+    for (const k of ['same_device', 'same_ip', 'same_bank', 'same_phone', 'same_domain', 'velocity_referrer', 'velocity_ip', 'tenant_member', 'cap_referrer_month']) expect(FLAG_LABEL[k]).toBeTruthy();
+  });
+  it('statement exports never carry the hourly rate or ticket', () => {
+    const csv = statementCsv([]);
+    expect(csv).not.toMatch(/hourly|ticket/i);
+    expect(csv).toMatch(/Engagement/);
   });
 });
