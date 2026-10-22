@@ -7564,6 +7564,24 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_event_notices: {
+        Row: {
+          created_at: string
+          kind: string
+          ref_id: string
+        }
+        Insert: {
+          created_at?: string
+          kind: string
+          ref_id: string
+        }
+        Update: {
+          created_at?: string
+          kind?: string
+          ref_id?: string
+        }
+        Relationships: []
+      }
       referral_events: {
         Row: {
           action: string
@@ -7605,6 +7623,106 @@ export type Database = {
           referrer_consultant_id?: string | null
         }
         Relationships: []
+      }
+      referral_invitation_recipients: {
+        Row: {
+          created_at: string
+          is_resend: boolean
+          outcome: string
+          reason: string | null
+          run_id: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          is_resend?: boolean
+          outcome: string
+          reason?: string | null
+          run_id: string
+          user_id: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          is_resend?: boolean
+          outcome?: string
+          reason?: string | null
+          run_id?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_invitation_recipients_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "referral_invitation_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_invitation_runs: {
+        Row: {
+          admin_id: string
+          campaign_id: string | null
+          channels: string[]
+          created_at: string
+          filters: Json
+          id: string
+          idempotency_key: string
+          include_tests: boolean
+          mode: string
+          queued: number
+          requested: number
+          resend: boolean
+          resend_reason: string | null
+          skipped: number
+          version: number
+        }
+        Insert: {
+          admin_id: string
+          campaign_id?: string | null
+          channels?: string[]
+          created_at?: string
+          filters?: Json
+          id?: string
+          idempotency_key: string
+          include_tests?: boolean
+          mode: string
+          queued?: number
+          requested?: number
+          resend?: boolean
+          resend_reason?: string | null
+          skipped?: number
+          version: number
+        }
+        Update: {
+          admin_id?: string
+          campaign_id?: string | null
+          channels?: string[]
+          created_at?: string
+          filters?: Json
+          id?: string
+          idempotency_key?: string
+          include_tests?: boolean
+          mode?: string
+          queued?: number
+          requested?: number
+          resend?: boolean
+          resend_reason?: string | null
+          skipped?: number
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_invitation_runs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "message_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referral_party_signals: {
         Row: {
@@ -12524,6 +12642,24 @@ export type Database = {
         }[]
       }
       admin_referral_export: { Args: { _kind: string }; Returns: Json }
+      admin_referral_invite_preview: { Args: { _payload: Json }; Returns: Json }
+      admin_referral_invite_report: { Args: { _run_id: string }; Returns: Json }
+      admin_referral_invite_runs: { Args: { _limit?: number }; Returns: Json }
+      admin_referral_invite_send: { Args: { _payload: Json }; Returns: Json }
+      admin_referral_invite_set_settings: {
+        Args: { _payload: Json }
+        Returns: Json
+      }
+      admin_referral_invite_settings: { Args: never; Returns: Json }
+      admin_referral_invite_status: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          invited_at: string
+          resends: number
+          user_id: string
+          version: number
+        }[]
+      }
       admin_referral_lines: {
         Args: { _limit?: number; _offset?: number; _status?: string }
         Returns: {
@@ -14071,6 +14207,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      referral_notify_event: {
+        Args: {
+          _amount: number
+          _currency: string
+          _kind: string
+          _other: string
+          _ref: string
+          _to: string
+        }
+        Returns: undefined
+      }
       referral_passed_at: { Args: { _cid: string }; Returns: string }
       referral_payout_ref: { Args: { _payout: string }; Returns: string }
       referral_policy_ok: { Args: { _cid: string }; Returns: boolean }
@@ -14317,6 +14464,29 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      ri_candidates: {
+        Args: {
+          _ids: string[]
+          _include_tests: boolean
+          _mode: string
+          _resend: boolean
+        }
+        Returns: {
+          display_name: string
+          is_resend: boolean
+          lang: string
+          last_invited_at: string
+          reason: string
+          telegram: boolean
+          user_id: string
+        }[]
+      }
+      ri_clean_filters: { Args: { _f: Json }; Returns: Json }
+      ri_is_admin: { Args: { _uid: string }; Returns: boolean }
+      ri_message: { Args: never; Returns: Json }
+      ri_parse_ids: { Args: { _payload: Json }; Returns: string[] }
+      ri_rate_text: { Args: { _n: number }; Returns: string }
+      ri_run_summary: { Args: { _run: string }; Returns: Json }
       safe_insert_notification: {
         Args: {
           _body: string
