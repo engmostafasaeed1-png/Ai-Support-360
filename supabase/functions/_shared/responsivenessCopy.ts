@@ -12,21 +12,26 @@ export interface NoticeProps {
   pageUrl?: string
 }
 
+// A missing ticket title never shows as empty quotes: "a request" / "أحد الطلبات" instead.
+const enRef = (t: string) => (t ? `"${t}"` : 'a request')
+const cap = (v: string) => v.charAt(0).toUpperCase() + v.slice(1)
+const arRef = (t: string, withWord = true) => (t ? (withWord ? `الطلب "${t}"` : `"${t}"`) : 'أحد الطلبات')
+
 export const NOTICE_STR = {
   en: {
     // Owner rule: polite notifications, never the word "warning".
     warningTitle: (k: number, n: number) => `Friendly notice ${k} of ${n}: a request was not answered in time`,
-    warningBody: (t: string, k: number, n: number) => `We noticed that "${t}" was not answered within the time limit, so it is included in your response rate. This is friendly notice ${k} of ${n}. If more requests go unanswered, a Responsiveness indicator may appear on your card and your ranking may be affected. Thank you for accepting or declining each request in time.`,
+    warningBody: (t: string, k: number, n: number) => `We noticed that ${enRef(t)} was not answered within the time limit, so it is included in your response rate. This is friendly notice ${k} of ${n}. If more requests go unanswered, a Responsiveness indicator may appear on your card and your ranking may be affected. Thank you for accepting or declining each request in time.`,
     badgeTitle: 'Your Responsiveness indicator is now shown',
-    badgeBody: (t: string, c: number) => `We noticed that "${t}" was not answered within the time limit. As this is unanswered request number ${c} in 30 days, your card may now show "Needs improvement" for responsiveness and your ranking may be affected. It improves automatically as you answer new requests in time, and we are happy to help.`,
+    badgeBody: (t: string, c: number) => `We noticed that ${enRef(t)} was not answered within the time limit. As this is unanswered request number ${c} in 30 days, your card may now show "Needs improvement" for responsiveness and your ranking may be affected. It improves automatically as you answer new requests in time, and we are happy to help.`,
     countedTitle: 'A request was not answered in time',
-    countedBody: (t: string, c: number) => `We noticed that "${t}" was not answered within the time limit, so it is included in your response rate (${c} in the last 30 days).`,
+    countedBody: (t: string, c: number) => `We noticed that ${enRef(t)} was not answered within the time limit, so it is included in your response rate (${c} in the last 30 days).`,
     notCountedTitle: 'A request was not answered (not counted)',
-    notCountedBody: (t: string) => `"${t}" was not answered within the time limit, but it arrived outside your availability, so it is not included in your response rate. No action is needed.`,
+    notCountedBody: (t: string) => `${cap(enRef(t))} was not answered within the time limit, but it arrived outside your availability, so it is not included in your response rate. No action is needed.`,
     upheldTitle: 'Dispute accepted',
-    upheldBody: (t: string) => `The no-response on "${t}" was removed from your statistics.`,
+    upheldBody: (t: string) => `The no-response on ${enRef(t)} was removed from your statistics.`,
     rejectedTitle: 'Dispute not accepted',
-    rejectedBody: (t: string) => `After review, the no-response on "${t}" still counts. Thank you for your understanding.`,
+    rejectedBody: (t: string) => `After review, the no-response on ${enRef(t)} still counts. Thank you for your understanding.`,
     dispute: (d: number) => `If it was not your fault (for example a technical failure, or the request came outside your stated hours), you are welcome to dispute it within ${d} days on your My responsiveness page.`,
     improve: 'How to keep a good responsiveness: accept or decline every request within the time limit (a decline counts as a response), keep your availability up to date and mark vacations in advance.',
     button: 'Open My responsiveness',
@@ -34,17 +39,17 @@ export const NOTICE_STR = {
   },
   ar: {
     warningTitle: (k: number, n: number) => `إشعار ودي ${k} من ${n}: طلب لم يُرد عليه في الوقت`,
-    warningBody: (t: string, k: number, n: number) => `لاحظنا أن الطلب "${t}" لم يُرد عليه خلال المهلة المحددة، لذا يُحتسب ضمن نسبة استجابتك. هذا الإشعار الودي ${k} من ${n}. إذا تكرر عدم الرد فقد يظهر مؤشر الاستجابة على بطاقتك وقد يتأثر ترتيبك. شكراً لقبولك أو رفضك كل طلب في الوقت.`,
+    warningBody: (t: string, k: number, n: number) => `لاحظنا أن ${arRef(t)} لم يُرد عليه خلال المهلة المحددة، لذا يُحتسب ضمن نسبة استجابتك. هذا الإشعار الودي ${k} من ${n}. إذا تكرر عدم الرد فقد يظهر مؤشر الاستجابة على بطاقتك وقد يتأثر ترتيبك. شكراً لقبولك أو رفضك كل طلب في الوقت.`,
     badgeTitle: 'أصبح مؤشر الاستجابة ظاهراً على بطاقتك',
-    badgeBody: (t: string, c: number) => `لاحظنا أن الطلب "${t}" لم يُرد عليه خلال المهلة المحددة. وبما أن هذا الطلب رقم ${c} دون رد خلال 30 يوماً، فقد تُظهر بطاقتك الآن مستوى "يحتاج إلى تحسين" للاستجابة وقد يتأثر ترتيبك. يتحسن المؤشر تلقائياً عندما ترد على الطلبات الجديدة في الوقت، ويسعدنا مساعدتك.`,
+    badgeBody: (t: string, c: number) => `لاحظنا أن ${arRef(t)} لم يُرد عليه خلال المهلة المحددة. وبما أن هذا الطلب رقم ${c} دون رد خلال 30 يوماً، فقد تُظهر بطاقتك الآن مستوى "يحتاج إلى تحسين" للاستجابة وقد يتأثر ترتيبك. يتحسن المؤشر تلقائياً عندما ترد على الطلبات الجديدة في الوقت، ويسعدنا مساعدتك.`,
     countedTitle: 'طلب لم يُرد عليه في الوقت',
-    countedBody: (t: string, c: number) => `لاحظنا أن الطلب "${t}" لم يُرد عليه خلال المهلة المحددة، لذا يُحتسب ضمن نسبة استجابتك (${c} خلال آخر 30 يوماً).`,
+    countedBody: (t: string, c: number) => `لاحظنا أن ${arRef(t)} لم يُرد عليه خلال المهلة المحددة، لذا يُحتسب ضمن نسبة استجابتك (${c} خلال آخر 30 يوماً).`,
     notCountedTitle: 'طلب لم يُرد عليه (غير محتسب)',
-    notCountedBody: (t: string) => `لم يُرد على الطلب "${t}" خلال المهلة، لكنه وصل خارج أوقات توفرك، لذلك لا يُحتسب في نسبة استجابتك. لا يلزم أي إجراء.`,
+    notCountedBody: (t: string) => `لم يُرد على ${arRef(t)} خلال المهلة، لكنه وصل خارج أوقات توفرك، لذلك لا يُحتسب في نسبة استجابتك. لا يلزم أي إجراء.`,
     upheldTitle: 'تم قبول اعتراضك',
-    upheldBody: (t: string) => `أُزيل عدم الرد على "${t}" من إحصاءاتك.`,
+    upheldBody: (t: string) => `أُزيل عدم الرد على ${arRef(t, false)} من إحصاءاتك.`,
     rejectedTitle: 'لم يُقبل اعتراضك',
-    rejectedBody: (t: string) => `بعد المراجعة، لا يزال عدم الرد على "${t}" محتسباً. شكراً لتفهمك.`,
+    rejectedBody: (t: string) => `بعد المراجعة، لا يزال عدم الرد على ${arRef(t, false)} محتسباً. شكراً لتفهمك.`,
     dispute: (d: number) => `إذا لم يكن ذلك بسببك (مثل عطل تقني، أو وصول الطلب خارج ساعاتك المعلنة)، يسعدنا استلام اعتراضك خلال ${d} أيام من صفحة "استجابتي".`,
     improve: 'للحفاظ على استجابة جيدة: اقبل أو ارفض كل طلب خلال المهلة (الرفض يُحتسب رداً)، وحدّث أوقات توفرك، وسجّل إجازاتك مسبقاً.',
     button: 'افتح صفحة استجابتي',
@@ -55,7 +60,8 @@ export const NOTICE_STR = {
 export function noticeCopy(d: NoticeProps): { title: string; body: string; showDispute: boolean } {
   const l = d.lang === 'ar' ? 'ar' : 'en'
   const t = NOTICE_STR[l]
-  const title = (d.ticketTitle || t.fallbackTitle).slice(0, 120)
+  // Empty string = no title: the wording then reads "a request" without quotes.
+  const title = (d.ticketTitle || '').trim().slice(0, 120)
   const n = Math.max(1, Number(d.warningsTotal) || 2)
   const c = Math.max(1, Number(d.count30) || 1)
   const kind = String(d.kind || 'counted')

@@ -166,27 +166,44 @@ export async function disputeNoResponse(eventId: string, reason: string): Promis
 
 export interface ResponsivenessNotice { id: string; kind: string; event_id: string; count_30d: number; warnings_total: number; created_at: string }
 
-/** Unacknowledged notices of the signed-in consultant (popup). */
+/** Kinds that change the consultant's statistics: shown as a popup. Others (not_counted) are informational only. */
+export const POPUP_NOTICE_KINDS = (kind: string) => kind !== 'not_counted';
+
+export const RESPONSIVENESS_NOTICES_KEY = ['responsiveness-notices'] as const;
+
+/**
+ * Unacknowledged notices of the signed-in user. Always filtered to the user's own rows: administrators may read every
+ * consultant's notices, and they could never acknowledge someone else's (the popup would come back for ever).
+ * Re-read on window focus so a notice acknowledged in another tab disappears here too.
+ */
 export function useResponsivenessNotices(enabled: boolean) {
   return useQuery({
-    queryKey: ['responsiveness-notices'],
+    queryKey: RESPONSIVENESS_NOTICES_KEY,
     enabled,
     retry: false,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
     refetchInterval: 5 * 60_000,
     queryFn: async (): Promise<ResponsivenessNotice[]> => {
+      const { data: auth } = await supabase.auth.getSession();
+      const uid = auth.session?.user?.id;
+      if (!uid) return [];
       const { data, error } = await from('responsiveness_notices')
         .select('id, kind, event_id, count_30d, warnings_total, created_at')
+        .eq('user_id', uid)
         .is('acked_at', null)
         .order('created_at', { ascending: true })
-        .limit(5);
+        .limit(20);
       if (error) return [];
       return (data ?? []) as ResponsivenessNotice[];
     },
   });
 }
 
+/** Acknowledge one notice by its NOTICE id (not the event id). Throws on failure so the popup can stay and retry. */
 export async function ackResponsivenessNotice(id: string): Promise<void> {
-  await rpc('ack_responsiveness_notice', { _notice_id: id });
+  const { error } = await rpc('ack_responsiveness_notice', { _notice_id: id });
+  if (error) throw new Error(error.message || 'Could not save');
 }
 
 // ---------------------------------------------------------------- admin
