@@ -357,3 +357,44 @@ created for payouts that already exist.
 | tour.c.refer | اجلب زملاءك واربحوا معًا: شارك رمزك؛ عندما يعمل زميل أحلته تحصل على {{rate}} % من أتعابه لمدة {{months}} شهرًا، تدفعها AI Support 360 ولا تُخصم منه أبدًا. يبدأ ذلك بعد اجتيازكما كليكما المقابلة الذكية. |
 | refz.help_intro | أحِل واربح: كيف يعمل |
 | refz.who_until | متاح حتى {{date}}. |
+
+## Reward tiers (owner rule)
+
+The rate depends on the referrer's number of referred consultants who are **verified and not suspended** (rejected, suspended,
+removed and never-verified sign-ups do not count), checked when each new reward line is created:
+
+| Verified referred | Default rate |
+|---|---|
+| 0-10 | 0.5 % |
+| 11-20 | 0.6 % |
+| 21-30 | 0.7 % |
+| 31-40 | 0.8 % |
+| 41+ | 1.0 % |
+
+- Each reward line stores `rate_percent`, `tier_name` and `tier_count`; old lines never change. Reversals copy the original rate and amount.
+- A lower count later means later lines use the lower rate.
+- Admins edit tiers in Settings (1-5 tiers, first starts at 0, counts and rates strictly ascending, every rate <= `referral_max_rate`, default 2 %). Invalid stored tiers fall back to the defaults. Changes are audited (`admin_referral_rate_history`).
+- Forecast and the illustration calculator use the tier reached today / after the assumed referrals; reconciliation checks `rate_within_tiers_cap`.
+- Mirrors for screens and tests: `tierFor`, `tiersProblem`, `parseTiers`, `rateRangeText` in `src/lib/referrals.ts`.
+
+### Arabic strings (tiers)
+
+| refz.pitch | اربح {{rate}} % من أتعاب كل مستشار تجلبه لمدة {{months}} شهرًا - كلما زاد عدد المستشارين الموثّقين الذين تحيلهم ارتفعت نسبتك. تدفعها AI Support 360 ولا تُخصم منهم أبدًا. |
+| refz.how_3 | لمدة {{months}} شهرًا من أول تذكرة مدفوعة تحصل على نسبة شريحتك ({{rate}} %) من أتعابهم عن كل ساعة معتمدة تُفوتر بعد التفعيل. تدفعها AI Support 360 من رسومها. |
+| refz.example | مثال بنسبتك الحالية ({{rate}} %): مستشار بسعر {{hourly}} للساعة يعمل يوم عمل واحدًا (8 ساعات معتمدة). تحصل على {{reward}}. |
+| refz.step_how_3 | تحصل على {{rate}} % من أتعابهم عن كل يوم عمل لمدة {{months}} شهرًا - ترتفع النسبة مع عدد المستشارين الموثّقين الذين أحلتهم؛ تدفعها AI Support 360 ولا تُخصم منهم أبدًا |
+| refz.ack_3 | يحصل المُحيل على {{rate}} % من أتعاب المستشار المُحال (حسب الشريحة: ترتفع النسبة مع عدد المستشارين الموثّقين الذين أحالهم، وتحتفظ كل مكافأة بنسبة لحظة إنشائها) لمدة {{months}} شهرًا من أول تذكرة مدفوعة، فقط على العمل المُفوتر بعد التفعيل. تدفعها AI Support 360 ولا تُخصم من أحد أبدًا. |
+| refz.est_note | للتوضيح فقط وليس وعدًا بدخل. يفترض أن جميعهم سيصبحون موثّقين فتكون نسبتك {{rate}} %، ويستخدم المدة الفعلية ({{m}} شهرًا)؛ المكافآت الحقيقية تعتمد على الساعات المعتمدة التي يدفعها العملاء فعلًا وعلى شريحتك عند إنشاء كل مكافأة. |
+| refz.calc_tier | {{name}} ({{n}} موثّقين). {{needed}} آخرين للوصول إلى {{next}} ({{rate}} %). |
+| refz.calc_tier_top | {{name}} ({{n}} موثّقين)، أعلى شريحة. |
+| refz.tier_title | نسبتك ترتفع مع إحالاتك |
+| refz.tier_current | شريحتك: {{name}} - {{rate}} % ({{n}} مستشارين موثّقين أحلتهم) |
+| refz.tier_progress | التقدّم نحو الشريحة التالية |
+| refz.tier_next | {{needed}} مستشارين موثّقين آخرين للوصول إلى {{name}} ({{rate}} %) للمكافآت الجديدة. |
+| refz.tier_top | أنت في أعلى شريحة. |
+| refz.tier_table | نسبة المكافأة حسب عدد المستشارين الموثّقين الذين أحلتهم |
+| refz.tier_col_tier | الشريحة |
+| refz.tier_col_count | المستشارون الموثّقون المُحالون |
+| refz.tier_col_rate | النسبة |
+| refz.tier_rule | يُحتسب فقط المستشارون المُحالون الموثّقون وغير الموقوفين. تُحدَّد شريحتك عند إنشاء كل مكافأة جديدة؛ تنطبق النسبة الجديدة على المكافآت اللاحقة فقط ولا تتغيّر المكافآت المُنشأة سابقًا. إذا انخفض عددك تُحسب المكافآت اللاحقة بالنسبة الأدنى. |
+| tour.c.refer | اجلب زملاءك واربحوا معًا: شارك رمزك؛ عندما يعمل زميل أحلته تحصل على {{rate}} % من أتعابه (ترتفع النسبة مع عدد المستشارين الموثّقين الذين أحلتهم) لمدة {{months}} شهرًا، تدفعها AI Support 360 ولا تُخصم منه أبدًا. يبدأ ذلك بعد أن يجتاز كلاكما المقابلة الذكية. |
