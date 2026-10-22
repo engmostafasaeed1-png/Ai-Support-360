@@ -196,7 +196,7 @@ export function inviteChannelReport(r: InviteRunChannels | null | undefined): Pa
   return out;
 }
 
-export interface InviteStatus { user_id: string; version: number; invited_at: string; resends: number }
+export interface InviteStatus { user_id: string; version: number; invited_at: string; resends: number; channels?: string[] }
 
 export function inviteStatusMap(rows: InviteStatus[] | null | undefined): Map<string, InviteStatus> {
   return new Map((rows ?? []).map((r) => [r.user_id, r]));

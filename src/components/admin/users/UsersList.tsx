@@ -22,7 +22,7 @@ export default function UsersList({ rows, loading, columns, selected, focus, sor
   const invitedBadge = (u: UserRow) => {
     const s = invited?.get(u.id);
     if (!s) return null;
-    return <span className="mt-0.5 inline-block rounded-full bg-refer-from/10 px-1.5 text-[10px] text-foreground">{t('rinv.invited_on', 'Invited on {{date}} (v{{v}})', { date: fmtDate(s.invited_at), v: s.version })}</span>;
+    return <span className="mt-0.5 inline-block rounded-full bg-refer-from/10 px-1.5 text-[10px] text-foreground">{t('rinv.invited_on', 'Invited on {{date}} (v{{v}})', { date: fmtDate(s.invited_at), v: s.version })}{s.channels?.length ? ` · ${s.channels.map((c) => t(`chan.c_${c}`, c)).join(', ')}` : ''}</span>;
   };
   const allOn = rows.length > 0 && rows.every((r) => selected.has(r.id));
   const someOn = rows.some((r) => selected.has(r.id));
