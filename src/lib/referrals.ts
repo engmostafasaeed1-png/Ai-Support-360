@@ -25,6 +25,52 @@ export interface ReferralSettings {
   hold_days?: number;
   /** Smallest invoice line that earns a reward (invoice currency). */
   min_invoice?: number;
+  /** Monthly caps (null = none): above them a reward is held for review. */
+  monthly_cap?: number | null;
+  monthly_cap_referred?: number | null;
+  max_per_referred?: number | null;
+  payout_change_hold_days?: number;
+  tier_requires_paid?: boolean;
+  tier_paid_days?: number;
+  /** Administrator notes per hub section, plain text, { section: { en, ar } }. */
+  rules_texts?: RulesTexts;
+  terms_published_at?: string | null;
+}
+
+export type RulesTexts = Partial<Record<string, { en?: string; ar?: string }>>;
+
+const cap = (v: unknown): number | null => {
+  const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
+
+/** Plain-text notes only (mirror of the database rule): known sections, en/ar strings, no < or >, at most 600 characters. */
+export const RULES_SECTIONS = ['overview', 'prerequisites', 'earn', 'rates', 'payment', 'rules', 'simulator'] as const;
+export type RulesSection = typeof RULES_SECTIONS[number];
+export function parseRulesTexts(o: unknown): RulesTexts {
+  const out: RulesTexts = {};
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return out;
+  for (const [k, v] of Object.entries(o as Record<string, unknown>)) {
+    if (!(RULES_SECTIONS as readonly string[]).includes(k) || !v || typeof v !== 'object') continue;
+    const e: { en?: string; ar?: string } = {};
+    for (const l of ['en', 'ar'] as const) {
+      const t = (v as Record<string, unknown>)[l];
+      if (typeof t === 'string' && t.trim() && t.length <= 600 && !/[<>]/.test(t)) e[l] = t.trim();
+    }
+    if (e.en || e.ar) out[k] = e;
+  }
+  return out;
+}
+export function rulesTextsProblem(o: RulesTexts): string | null {
+  for (const [k, v] of Object.entries(o)) {
+    if (!(RULES_SECTIONS as readonly string[]).includes(k)) return 'Unknown section';
+    for (const t of [v?.en, v?.ar]) {
+      if (t == null) continue;
+      if (t.length > 600) return 'Each note can have at most 600 characters';
+      if (/[<>]/.test(t)) return 'Notes are plain text: < and > are not allowed';
+    }
+  }
+  return null;
 }
 
 export interface Tier { min: number; rate: number; name: string }
@@ -110,6 +156,14 @@ export function parseReferralSettings(o: unknown): ReferralSettings {
     terms_version: Math.round(num(r.terms_version, 1, 1, 1000)),
     hold_days: Math.round(num(r.hold_days, 14, 0, 90)),
     min_invoice: num(r.min_invoice, 20, 0, 100000),
+    monthly_cap: cap(r.monthly_cap),
+    monthly_cap_referred: cap(r.monthly_cap_referred),
+    max_per_referred: cap(r.max_per_referred),
+    payout_change_hold_days: Math.round(num(r.payout_change_hold_days, 7, 0, 60)),
+    tier_requires_paid: r.tier_requires_paid !== false,
+    tier_paid_days: Math.round(num(r.tier_paid_days, 90, 1, 365)),
+    rules_texts: parseRulesTexts(r.rules_texts),
+    terms_published_at: typeof r.terms_published_at === 'string' ? r.terms_published_at : null,
   };
 }
 
