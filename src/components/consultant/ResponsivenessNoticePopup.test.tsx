@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import '@/i18n/config';
 import { noticeCopy } from '../../../supabase/functions/_shared/responsivenessCopy';
 
 const h = vi.hoisted(() => ({
