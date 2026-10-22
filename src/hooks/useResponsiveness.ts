@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { isModalNotice } from '@/lib/noticeModalConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { useSessionReady } from '@/hooks/useSessionReady';
 import { safeRpc } from '@/lib/safeRpc';
@@ -168,7 +169,8 @@ export async function disputeNoResponse(eventId: string, reason: string): Promis
 export interface ResponsivenessNotice { id: string; kind: string; event_id: string; count_30d: number; warnings_total: number; created_at: string }
 
 /** Kinds that change the consultant's statistics: shown as a popup. Others (not_counted) are informational only. */
-export const POPUP_NOTICE_KINDS = (kind: string) => kind !== 'not_counted';
+/** Which notices open a pop-up comes only from the shared notice config. */
+export const POPUP_NOTICE_KINDS = (kind: string) => isModalNotice('responsiveness', kind);
 
 export const RESPONSIVENESS_NOTICES_KEY = ['responsiveness-notices'] as const;
 
