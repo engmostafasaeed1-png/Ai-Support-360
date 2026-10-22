@@ -16,6 +16,13 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { extractFileText, TRAINING_FILE_ACCEPT } from '@/lib/extractFileText';
+import { useTranslation } from 'react-i18next';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import KnowledgeDocumentsPanel from '@/components/admin/interview-knowledge/KnowledgeDocumentsPanel';
+import KnowledgeCoveragePanel from '@/components/admin/interview-knowledge/KnowledgeCoveragePanel';
+import KnowledgePreviewPanel from '@/components/admin/interview-knowledge/KnowledgePreviewPanel';
+import KnowledgeSettingsPanel from '@/components/admin/interview-knowledge/KnowledgeSettingsPanel';
+import { useKnowledgeReady, useKnowledgeSettings } from '@/hooks/useInterviewKnowledge';
 
 interface TrainingConfig {
   id: string;
@@ -34,6 +41,10 @@ const SAP_MODULES = [
 ];
 
 export default function InterviewTrainingPage() {
+  const { t } = useTranslation();
+  const knowledgeReady = useKnowledgeReady();
+  const knowledgeSettings = useKnowledgeSettings();
+  const ready = knowledgeReady.data === true;
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newConfig, setNewConfig] = useState(false);
@@ -211,7 +222,7 @@ export default function InterviewTrainingPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Brain className="w-6 h-6 text-primary" />
@@ -221,12 +232,41 @@ export default function InterviewTrainingPage() {
             Configure custom questions, difficulty, and training instructions for the AI interviewer.
           </p>
         </div>
-        {!isEditing && (
-          <Button onClick={startNew} className="gradient-primary border-0">
-            <Plus className="w-4 h-4 me-1.5" /> New Training Config
-          </Button>
-        )}
       </div>
+
+      {knowledgeReady.data === false && (
+        <p role="status" className="rounded-xl border border-border/60 bg-muted/50 p-3 text-sm text-muted-foreground">
+          {t('ik.not_applied', 'Knowledge documents, coverage and the consultant preview need a database update that is prepared but not applied yet. Until then interviews work as before.')}
+        </p>
+      )}
+      {ready && knowledgeSettings.data && (
+        <p className="text-xs text-muted-foreground">
+          {knowledgeSettings.data.enabled ? t('ik.state_on', 'Knowledge base is ON for interview questions.') : t('ik.state_off', 'Knowledge base is OFF: interviews use the current behaviour until it is switched on in Settings.')}
+        </p>
+      )}
+
+      <Tabs defaultValue="configs" className="space-y-4">
+        <div className="overflow-x-auto -mx-1 px-1">
+          <TabsList className="w-max">
+            <TabsTrigger value="configs">{t('ik.tabs.configs', 'Training configs')}</TabsTrigger>
+            <TabsTrigger value="documents">{t('ik.tabs.documents', 'Knowledge documents')}</TabsTrigger>
+            <TabsTrigger value="coverage">{t('ik.tabs.coverage', 'Coverage')}</TabsTrigger>
+            <TabsTrigger value="preview">{t('ik.tabs.preview', 'Preview for a consultant')}</TabsTrigger>
+            <TabsTrigger value="settings">{t('ik.tabs.settings', 'Settings')}</TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="documents"><KnowledgeDocumentsPanel ready={ready} /></TabsContent>
+        <TabsContent value="coverage"><KnowledgeCoveragePanel ready={ready} /></TabsContent>
+        <TabsContent value="preview"><KnowledgePreviewPanel ready={ready} /></TabsContent>
+        <TabsContent value="settings"><KnowledgeSettingsPanel ready={ready} /></TabsContent>
+        <TabsContent value="configs" className="space-y-6">
+        {!isEditing && (
+          <div className="flex justify-end">
+            <Button onClick={startNew} className="gradient-primary border-0">
+              <Plus className="w-4 h-4 me-1.5" /> New Training Config
+            </Button>
+          </div>
+        )}
 
       {/* Editor */}
       {isEditing && (
@@ -238,7 +278,7 @@ export default function InterviewTrainingPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <Label className="text-xs mb-1.5 block">SAP Module</Label>
                 <Select value={form.sap_module} onValueChange={v => setForm(f => ({ ...f, sap_module: v }))}>
@@ -451,6 +491,8 @@ export default function InterviewTrainingPage() {
           ))}
         </div>
       )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

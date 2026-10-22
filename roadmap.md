@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] AI Interviewer Training (knowledge-based, profile-specific questions + admin knowledge documents): inventory, plan builder, version per module, private document bucket + extraction function, preview tool, coverage table, question_source audit, consultant notice line, EN/AR, tests; SQL in docs/sql/interview-knowledge.sql (+ .test.sql), not applied (Oct 22)
+
 - [x] H1 consultant registration: scanner-safe /auth/confirm page + 6-digit code, expired-link panel on /login and confirm page (neutral resend, 60 s cooldown), clearer sign-up inbox screen, admin resend + super-admin "mark e-mail as confirmed" (audited, reason), unconfirmed consultants get a confirmation e-mail instead of profile reminders; tests (Oct 21)
 - [ ] H1 follow-up: owner sets Auth settings → Email → One-time codes expiration to 24 h (the app cannot read or change it).
 

@@ -32,7 +32,8 @@ export default function InterviewAnswersDialog({ interviewId, open, onOpenChange
       if (isGuest) return mockInterviewAnswers[interviewId] || [];
       const { data, error } = await supabase
         .from('interview_answers')
-        .select('*')
+        // named columns: question_source is admin-only (docs/sql/interview-knowledge.sql)
+        .select('id, interview_id, question, answer_transcript, category, score, ai_feedback, question_order, created_at, sap_module')
         .eq('interview_id', interviewId)
         .order('question_order', { ascending: true });
       if (error) throw error;

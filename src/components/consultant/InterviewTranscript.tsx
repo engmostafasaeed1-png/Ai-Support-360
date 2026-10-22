@@ -51,7 +51,8 @@ export default function InterviewTranscript({ consultantId, viewMode = 'consulta
       const ids = interviews.map(i => i.id);
       const { data, error } = await supabase
         .from('interview_answers')
-        .select('*')
+        // named columns: question_source is admin-only (docs/sql/interview-knowledge.sql)
+        .select('id, interview_id, question, answer_transcript, category, score, ai_feedback, question_order, created_at, sap_module')
         .in('interview_id', ids)
         .order('question_order');
       if (error) throw error;

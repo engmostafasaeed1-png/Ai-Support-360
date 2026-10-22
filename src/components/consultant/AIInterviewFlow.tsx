@@ -16,6 +16,7 @@ import aiFemaleAvatar from '@/assets/ai-interviewer-female.jpg';
 import { useQueryClient } from '@tanstack/react-query';
 import { TrustBadge } from './TrustBadge';
 import { classifyStartError, ERROR_TEXT, logStartErrorOnce } from '@/lib/interviewStart';
+import InterviewBasisNotice from './InterviewBasisNotice';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -74,8 +75,8 @@ function splitAuthorTag(content: string): { author: string | null; speaker: { na
   const sp = content.match(/\[\[speaker:\s*([^\]|]{1,60})\|?([^\]]{0,60})\]\]/i);
   // Hide half-streamed tags at the end ("[[by: Ahm", "[[speak") until they complete.
   const text = content
-    .replace(/\[\[(by|speaker):\s*[^\]]{0,140}\]\]\s*/gi, '')
-    .replace(/\[\[[a-z:|\s\-—.,'A-Z\u0600-\u06FF]*$/i, '');
+    .replace(/\[\[(by|speaker|q):\s*[^\]]{0,140}\]\]\s*/gi, '')
+    .replace(/\[\[[a-z0-9:|\s\-—.,'A-Z\u0600-\u06FF]*$/i, '');
   return {
     author: m ? m[1].trim() : null,
     speaker: sp ? { name: sp[1].trim(), role: (sp[2] || '').trim() } : null,
@@ -924,6 +925,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
               ))}
             </div>
           </div>
+
+          <InterviewBasisNotice />
 
           {/* Disclaimer */}
           <div className="w-full bg-white/5 rounded-xl p-4 text-left space-y-3 border border-white/10">

@@ -16,6 +16,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ALL_SAP_AREAS } from '@/lib/sapAreas';
 import { FieldHint } from './onboarding/OnboardingGuidePanel';
+import { useTranslation } from 'react-i18next';
+import { cleanVersion, isNotAppliedError, MAX_VERSION_LENGTH, versionChoices } from '@/lib/interviewKnowledge';
+import { useVersionOptions } from '@/hooks/useInterviewKnowledge';
 
 export const SAP_ROLES = [
   ['functional', 'Functional consultant'],
@@ -42,7 +45,7 @@ const TECHNOLOGIES = [
   'Workflow', 'Adobe Forms', 'SmartForms', 'Solution Manager', 'Cloud ALM', 'GRC', 'Ariba', 'SuccessFactors', 'Concur', 'Signavio',
 ];
 
-type Skill = { id: string; sap_module: string; proficiency_level: number | null; years_experience: number | null };
+type Skill = { id: string; sap_module: string; proficiency_level: number | null; years_experience: number | null; sap_version?: string | null };
 
 function Chips({ options, value, onChange, otherPlaceholder = 'Add another…' }: { options: readonly string[]; value: string[]; onChange: (v: string[]) => void; otherPlaceholder?: string }) {
   const [custom, setCustom] = useState('');
@@ -103,11 +106,24 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
   const [newYears, setNewYears] = useState('');
 
   const knownSkillIds = useRef<string[]>([]);
+  // Optional version / release per module (docs/sql/interview-knowledge.sql); hidden until that column exists.
+  const [versionSupported, setVersionSupported] = useState(false);
+  const knownVersions = useRef<Map<string, string | null>>(new Map());
+  const versionRows = useVersionOptions();
+  const { t } = useTranslation();
   const loadSkills = async (uid: string) => {
-    const { data, error } = await supabase.from('consultant_skills').select('id, sap_module, proficiency_level, years_experience').eq('consultant_id', uid).order('proficiency_level', { ascending: false });
-    if (error) throw error;
+    const withVersion = await (supabase as any).from('consultant_skills').select('id, sap_module, proficiency_level, years_experience, sap_version').eq('consultant_id', uid).order('proficiency_level', { ascending: false });
+    let data = withVersion.data as Skill[] | null;
+    if (withVersion.error) {
+      if (!isNotAppliedError(withVersion.error)) throw withVersion.error;
+      const plain = await supabase.from('consultant_skills').select('id, sap_module, proficiency_level, years_experience').eq('consultant_id', uid).order('proficiency_level', { ascending: false });
+      if (plain.error) throw plain.error;
+      data = plain.data as Skill[];
+      setVersionSupported(false);
+    } else setVersionSupported(true);
     knownSkillIds.current = (data ?? []).map(row => row.id);
-    setSkills((data as Skill[]) || []);
+    knownVersions.current = new Map((data ?? []).map(row => [row.id, row.sap_version ?? null]));
+    setSkills(data || []);
   };
 
   useEffect(() => {
@@ -175,10 +191,16 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
       const sent = patch.skills ?? [];
       for (const row of sent) {
         if (row.id.startsWith('new-')) {
-          const { data: inserted, error } = await supabase.from('consultant_skills').upsert({ consultant_id: userId, sap_module: row.sap_module, proficiency_level: row.proficiency_level, years_experience: row.years_experience }, { onConflict: 'consultant_id,sap_module' }).select('id').single();
+          const { data: inserted, error } = await supabase.from('consultant_skills').upsert({ consultant_id: userId, sap_module: row.sap_module, proficiency_level: row.proficiency_level, years_experience: row.years_experience, ...(versionSupported ? { sap_version: cleanVersion(row.sap_version) } : {}) } as never, { onConflict: 'consultant_id,sap_module' }).select('id').single();
           if (error || !inserted) throw error ?? new Error('Could not save changes. Try again.');
           const localId = row.id; row.id = inserted.id;
+          knownVersions.current.set(inserted.id, cleanVersion(row.sap_version));
           setSkills(current => current.map(item => item.id === localId ? { ...item, id: inserted.id } : item));
+        } else if (versionSupported && cleanVersion(row.sap_version) !== (knownVersions.current.get(row.id) ?? null)) {
+          const next = cleanVersion(row.sap_version);
+          const { error } = await (supabase as any).from('consultant_skills').update({ sap_version: next }).eq('id', row.id).eq('consultant_id', userId);
+          if (error) throw error;
+          knownVersions.current.set(row.id, next);
         }
       }
       const removed = knownSkillIds.current.filter(id => !sent.some(item => item.id === id));
@@ -234,12 +256,31 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
               {skills.map((s) => (
                 <Badge key={s.id} variant="secondary" className="gap-1.5 py-1 ps-2.5 pe-1">
                   {s.sap_module}
-                  <span className="text-muted-foreground">· L{s.proficiency_level ?? '?'}{s.years_experience != null ? ` · ${s.years_experience}y` : ''}</span>
+                  <span className="text-muted-foreground">· L{s.proficiency_level ?? '?'}{s.years_experience != null ? ` · ${s.years_experience}y` : ''}{s.sap_version ? ` · ${s.sap_version}` : ''}</span>
                   <button type="button" aria-label={`Remove ${s.sap_module}`} onClick={() => removeSkill(s.id)} className="rounded-full p-0.5 hover:bg-muted"><X className="h-3 w-3" /></button>
                 </Badge>
               ))}
             </div>
           ) : <p className="text-xs text-muted-foreground">No modules yet.</p>}
+          {versionSupported && skills.length > 0 && (
+            <div className="rounded-xl border border-border/60 p-3 space-y-2">
+              <p className="text-xs font-medium text-foreground">{t('ik.profile.version_title', 'Version / release per module (optional)')}</p>
+              <p className="text-[11px] text-muted-foreground">{t('ik.profile.version_hint', 'The AI interview asks about the releases you name here, for example S/4HANA 2023 or ECC 6.0 EHP8. Pick one or type your own.')}</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {skills.map((s) => {
+                  const listId = `ver-${s.id}`;
+                  return (
+                    <div key={s.id} className="min-w-0">
+                      <Label htmlFor={`v-${s.id}`} className="text-[11px] text-muted-foreground truncate block">{s.sap_module}</Label>
+                      <Input id={`v-${s.id}`} list={listId} className="h-8 text-xs" maxLength={MAX_VERSION_LENGTH} value={s.sap_version ?? ''} placeholder={t('ik.profile.version_placeholder', 'Version / release')}
+                        onChange={(e) => { const v = e.target.value; setSkills(current => current.map(item => item.id === s.id ? { ...item, sap_version: v } : item)); }} />
+                      <datalist id={listId}>{versionChoices(s.sap_module, versionRows.data ?? []).map((v) => <option key={v} value={v} />)}</datalist>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div className="rounded-xl border border-border/60 p-3 space-y-3">
             <Input value={moduleQuery} onChange={(e) => setModuleQuery(e.target.value)} placeholder="Search modules (e.g. FI, payroll, EWM)" className="h-8 text-xs" />
             <div className="max-h-48 overflow-y-auto grid sm:grid-cols-2 gap-1">
