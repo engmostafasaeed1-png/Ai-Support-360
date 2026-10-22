@@ -18,6 +18,7 @@ export const EMAIL_KIND_LABEL: Record<ReferralEmailKind, string> = {
   ack_request: 'Accept the terms', expired: 'Referral expired', first_reward: 'First reward earned', reward_earned: 'Reward earned',
   reward_held: 'Reward on hold', reward_available: 'Reward available', reward_paid: 'Reward paid', reward_reversed: 'Reward reversed',
   referral_rejected: 'Referral not accepted', payout_details_changed: 'Bank details changed',
+  monthly_statement: 'Monthly statement', weekly_digest_admin: 'Weekly summary (administrators)',
 };
 
 const SITE = 'https://www.aisupport360.com';
@@ -39,7 +40,7 @@ export default function ReferralEmailPreview({ settings }: { settings: Partial<R
   // Images are files of the published site; the preview loads the same files from this site so it works before publishing.
   const html = useMemo(() => {
     const origin = typeof window !== 'undefined' ? window.location.origin : SITE;
-    return mail.html.split(REFERRAL_BANNER_URL).join(`${origin}/email/referral-banner.png`).split(`${SITE}/icon-192.png`).join(`${origin}/icon-192.png`);
+    return mail.html.split(REFERRAL_BANNER_URL).join(`${origin}/email/referral-hero.png`).split(`${SITE}/icon-192.png`).join(`${origin}/icon-192.png`);
   }, [mail.html]);
 
   const sendTest = async () => {
@@ -62,7 +63,7 @@ export default function ReferralEmailPreview({ settings }: { settings: Partial<R
     <Card className="rounded-2xl">
       <CardHeader className="pb-2"><CardTitle className="text-base">{t('remail.title', 'Refer & earn e-mails - preview')}</CardTitle></CardHeader>
       <CardContent className="space-y-4 text-sm">
-        <p className="text-muted-foreground">{t('remail.intro', 'One shared design for every referral e-mail, with sample data. Numbers come from the live programme settings; the example is always labelled as an example. The invitation itself is not e-mailed (promotional bulk mail).')}</p>
+        <p className="text-muted-foreground">{t('remail.intro', 'One shared design for every referral e-mail that is sent (event notices, monthly statement, weekly administrator summary), with sample data. Numbers come from the live programme settings; the example is always labelled as an example. The invitation itself is not e-mailed (promotional bulk mail).')}</p>
         <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
           <div className="space-y-1">
             <Label htmlFor="remail-kind">{t('remail.kind', 'E-mail')}</Label>
