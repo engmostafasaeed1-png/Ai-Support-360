@@ -12,13 +12,74 @@ export interface ReferralSettings {
   pass_mark: number;
   /** Days from sign-up for both to pass and acknowledge before the referral expires. */
   activation_days: number;
+  /** Base rate = the first tier's rate. The rate of each reward line is the referrer's tier when the line is created. */
   rate_percent: number;
+  /** Tiers by the referrer's number of verified, non-suspended referred consultants (ascending). */
+  tiers: Tier[];
+  /** Admin cap for every tier rate (default 2 %). */
+  max_rate: number;
   months: number;
   min_payout: number;
   terms_version: number;
 }
 
-export const REFERRAL_DEFAULTS: ReferralSettings = { enabled: true, pass_mark: 50, activation_days: 90, rate_percent: 0.5, months: 12, min_payout: 25, terms_version: 1 };
+export interface Tier { min: number; rate: number; name: string }
+
+/** Owner defaults: 0-10 -> 0.5 %, 11-20 -> 0.6 %, 21-30 -> 0.7 %, 31-40 -> 0.8 %, 41+ -> 1.0 %. Mirror of referral_tiers(). */
+export const DEFAULT_TIERS: Tier[] = [
+  { min: 0, rate: 0.5, name: 'Tier 1' }, { min: 11, rate: 0.6, name: 'Tier 2' }, { min: 21, rate: 0.7, name: 'Tier 3' },
+  { min: 31, rate: 0.8, name: 'Tier 4' }, { min: 41, rate: 1.0, name: 'Tier 5' },
+];
+export const MAX_TIERS = 5;
+export const DEFAULT_MAX_RATE = 2;
+
+/** Mirror of referral_tiers_valid(): null when valid, else the reason. */
+export function tiersProblem(tiers: Array<{ min: unknown; rate: unknown; name?: unknown }>, maxRate = DEFAULT_MAX_RATE): string | null {
+  if (!Array.isArray(tiers) || tiers.length < 1 || tiers.length > MAX_TIERS) return 'Use 1 to 5 tiers';
+  let prevMin = -1; let prevRate = 0;
+  for (let i = 0; i < tiers.length; i++) {
+    const min = Number(tiers[i].min); const rate = Number(tiers[i].rate);
+    if (tiers[i].min === '' || tiers[i].rate === '' || !Number.isFinite(min) || !Number.isFinite(rate)) return 'Each tier needs a number of referrals and a rate';
+    if (!Number.isInteger(min) || min < 0) return 'Referral counts must be whole numbers';
+    if (i === 0 && min !== 0) return 'The first tier must start at 0 referrals';
+    if (min <= prevMin) return 'Referral counts must go up from tier to tier';
+    if (rate <= prevRate) return 'Rates must go up from tier to tier';
+    if (rate > maxRate) return `Rates can not be above the maximum of ${maxRate} %`;
+    if (String(tiers[i].name ?? '').length > 30) return 'Tier names have at most 30 characters';
+    prevMin = min; prevRate = rate;
+  }
+  return null;
+}
+
+/** Stored tiers if valid, else the defaults (same fallback as the database). */
+export function parseTiers(raw: unknown, maxRate = DEFAULT_MAX_RATE): Tier[] {
+  if (!Array.isArray(raw) || tiersProblem(raw as Array<{ min: unknown; rate: unknown }>, maxRate)) return DEFAULT_TIERS;
+  return (raw as Array<Record<string, unknown>>).map((t, i) => ({ min: Number(t.min), rate: Number(t.rate), name: String(t.name || `Tier ${i + 1}`) }));
+}
+
+export interface TierInfo { index: number; name: string; rate: number; min: number; max: number | null; next: Tier | null; needed: number | null }
+
+/** Mirror of referral_tier_for(): the tier for a count of verified referred consultants, and what is needed for the next. */
+export function tierFor(count: number, tiers: Tier[] = DEFAULT_TIERS): TierInfo {
+  const list = tiers.length ? tiers : DEFAULT_TIERS;
+  const c = Math.max(0, Math.floor(Number.isFinite(count) ? count : 0));
+  let i = 0;
+  for (let k = 0; k < list.length; k++) if (list[k].min <= c) i = k;
+  const next = list[i + 1] ?? null;
+  return { index: i + 1, name: list[i].name, rate: list[i].rate, min: list[i].min, max: next ? next.min - 1 : null, next, needed: next ? next.min - c : null };
+}
+
+/** "0.5-1" for texts like "{{rate}} % of the fee" (single rate when there is one tier). */
+export function rateRangeText(tiers: Tier[]): string {
+  const list = tiers.length ? tiers : DEFAULT_TIERS;
+  const lo = formatRate(list[0].rate); const hi = formatRate(list[list.length - 1].rate);
+  return lo === hi ? lo : `${lo}-${hi}`;
+}
+
+/** "0-10", "11-20", "41+" */
+export const tierRangeLabel = (tiers: Tier[], i: number) => (tiers[i + 1] ? `${tiers[i].min}-${tiers[i + 1].min - 1}` : `${tiers[i].min}+`);
+
+export const REFERRAL_DEFAULTS: ReferralSettings = { enabled: true, pass_mark: 50, activation_days: 90, rate_percent: 0.5, tiers: DEFAULT_TIERS, max_rate: DEFAULT_MAX_RATE, months: 12, min_payout: 25, terms_version: 1 };
 
 const num = (v: unknown, def: number, lo: number, hi: number) => {
   const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
@@ -27,11 +88,16 @@ const num = (v: unknown, def: number, lo: number, hi: number) => {
 
 export function parseReferralSettings(o: unknown): ReferralSettings {
   const r = (o && typeof o === 'object' ? o : {}) as Record<string, unknown>;
+  const max_rate = num(r.max_rate, DEFAULT_MAX_RATE, 0.01, 10);
+  const tiers = Array.isArray(r.tiers) ? parseTiers(r.tiers, max_rate)
+    : r.rate_percent != null && num(r.rate_percent, NaN, 0.001, 10) === num(r.rate_percent, NaN, 0.001, 10) ? [{ min: 0, rate: num(r.rate_percent, 0.5, 0.001, 10), name: 'Tier 1' }] : DEFAULT_TIERS;
   return {
+    tiers,
+    max_rate,
     enabled: r.enabled === true,
     pass_mark: num(r.pass_mark, REFERRAL_DEFAULTS.pass_mark, 0, 100),
     activation_days: Math.round(num(r.activation_days, REFERRAL_DEFAULTS.activation_days, 1, 365)),
-    rate_percent: num(r.rate_percent, REFERRAL_DEFAULTS.rate_percent, 0, 10),
+    rate_percent: tiers[0].rate,
     months: Math.round(num(r.months, REFERRAL_DEFAULTS.months, 1, 60)),
     min_payout: num(r.min_payout, REFERRAL_DEFAULTS.min_payout, 0, 100000),
     terms_version: Math.round(num(r.terms_version, 1, 1, 1000)),
@@ -337,31 +403,39 @@ export function thresholdProgress(available: number, minPayout: number): { perce
 /** Net per referral = reward earned + reversed (reversed is negative). */
 export const netReward = (earned: number, reversed: number) => round2(earned + reversed);
 
-export interface EstimateInput { referred: number; manDaysPerMonth: number; hourlyRate: number; ratePercent: number; months: number }
+export interface EstimateInput {
+  referred: number; manDaysPerMonth: number; hourlyRate: number; months: number;
+  /** Flat rate (old callers); ignored when tiers are given. */
+  ratePercent?: number;
+  /** With tiers the rate is the tier reached by alreadyVerified + referred (assumes all of them become verified). */
+  tiers?: Tier[];
+  alreadyVerified?: number;
+}
 
 /**
  * ILLUSTRATION only (no promise): n consultants x man-days per month x 8 h x hourly rate x rate %, per month and over
  * the reward window. Uses the real rate and window from the settings.
  */
-export function referralEstimate(i: EstimateInput): { perMonth: number; overWindow: number } {
+export function referralEstimate(i: EstimateInput): { perMonth: number; overWindow: number; rate: number } {
   const n = Math.max(0, Math.min(1000, Math.floor(i.referred || 0)));
   const d = Math.max(0, Math.min(31, i.manDaysPerMonth || 0));
   const h = Math.max(0, Math.min(10000, i.hourlyRate || 0));
-  const perConsultant = rewardForFee(d * MAN_DAY_HOURS * h, i.ratePercent);
+  const rate = i.tiers ? tierFor(Math.max(0, Math.floor(i.alreadyVerified || 0)) + n, i.tiers).rate : (i.ratePercent ?? 0);
+  const perConsultant = rewardForFee(d * MAN_DAY_HOURS * h, rate);
   const perMonth = round2(perConsultant * n);
-  return { perMonth, overWindow: round2(perMonth * Math.max(0, Math.round(i.months || 0))) };
+  return { perMonth, overWindow: round2(perMonth * Math.max(0, Math.round(i.months || 0))), rate };
 }
 
 export interface CalcLine {
   created_at: string; ref_key: string | null; referred_name: string | null; kind: string; status: string; ticket_ref: string | null;
   approved_hours: number | null; man_days: number | null; hourly_rate: number | null; fee_amount: number | null; rate_percent: number | null;
-  amount: number; currency: string; payment_status: string | null; client_paid_at: string | null; payout_status: string | null;
+  tier_name?: string | null; amount: number; currency: string; payment_status: string | null; client_paid_at: string | null; payout_status: string | null;
   payout_released_at: string | null; referral_payout_due: string | null; note: string | null;
 }
 
 export const STATEMENT_COLUMNS: Array<[keyof CalcLine, string]> = [
   ['created_at', 'Date'], ['referred_name', 'Referred consultant'], ['kind', 'Type'], ['ticket_ref', 'Ticket'], ['approved_hours', 'Approved hours'],
-  ['man_days', 'Man-days'], ['hourly_rate', 'Hourly rate'], ['fee_amount', 'Fee'], ['rate_percent', 'Rate %'], ['amount', 'Reward'],
+  ['man_days', 'Man-days'], ['hourly_rate', 'Hourly rate'], ['fee_amount', 'Fee'], ['rate_percent', 'Rate %'], ['tier_name', 'Tier'], ['amount', 'Reward'],
   ['currency', 'Currency'], ['status', 'State'], ['payment_status', 'Client invoice'], ['payout_released_at', 'Payout released'],
 ];
 
@@ -392,10 +466,13 @@ export function setReferStepState(userId: string | null | undefined, state: Excl
  * ILLUSTRATIVE example for the step, from the live settings: 1 colleague billing 10 man-days in a month at $50/h =
  * 10 x 8 h x $50 = $4,000 fee -> reward at the rate; 5 colleagues -> five times that.
  */
-export function referStepExample(ratePercent: number, manDaysPerMonth = 10, hourlyRate = 50, colleagues = 5) {
+export function referStepExample(rateOrTiers: number | Tier[], manDaysPerMonth = 10, hourlyRate = 50, colleagues = 5) {
   const fee = round2(manDaysPerMonth * MAN_DAY_HOURS * hourlyRate);
-  const one = rewardForFee(fee, ratePercent);
-  return { manDays: manDaysPerMonth, hours: MAN_DAY_HOURS, hourlyRate, fee, one, colleagues, many: round2(one * colleagues) };
+  // Tiers: 1 colleague -> tier for 1; several -> tier for that many (each counted once verified).
+  const rateOne = Array.isArray(rateOrTiers) ? tierFor(1, rateOrTiers).rate : rateOrTiers;
+  const rateMany = Array.isArray(rateOrTiers) ? tierFor(colleagues, rateOrTiers).rate : rateOrTiers;
+  const one = rewardForFee(fee, rateOne);
+  return { manDays: manDaysPerMonth, hours: MAN_DAY_HOURS, hourlyRate, fee, one, colleagues, many: round2(rewardForFee(fee, rateMany) * colleagues), rateOne, rateMany };
 }
 
 /** Opens the "Refer & earn" introduction again (menu page / help sheet). */
