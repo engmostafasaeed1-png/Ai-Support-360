@@ -354,5 +354,56 @@ SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.admin_referral_reconcile((SELE
 RESET ROLE;
 SELECT pg_temp.as_user(NULL);
 
+-- 15. Existing consultants: backfill, claim window, announcement -------------------------------------------------------------
+INSERT INTO auth.users (id, email) VALUES
+  ('00000000-0000-0000-0000-0000000000f1', 'old1@example.com'), ('00000000-0000-0000-0000-0000000000f2', 'old2@example.com'),
+  ('00000000-0000-0000-0000-0000000000f3', 'old3@example.com');
+INSERT INTO public.profiles (user_id, display_name) VALUES
+  ('00000000-0000-0000-0000-0000000000f1', 'Old Pending'), ('00000000-0000-0000-0000-0000000000f2', 'Old Rejected'),
+  ('00000000-0000-0000-0000-0000000000f3', 'Old Verified');
+INSERT INTO public.consultants (id, user_id, verification_status) VALUES
+  ('00000000-0000-0000-0000-00000000ff01', '00000000-0000-0000-0000-0000000000f1', 'pending'),
+  ('00000000-0000-0000-0000-00000000ff02', '00000000-0000-0000-0000-0000000000f2', 'rejected'),
+  ('00000000-0000-0000-0000-00000000ff03', '00000000-0000-0000-0000-0000000000f3', 'verified');
+-- Simulate consultants that existed before the programme (no code yet).
+DELETE FROM public.consultant_referral_codes WHERE consultant_id IN ('00000000-0000-0000-0000-00000000ff01', '00000000-0000-0000-0000-00000000ff02', '00000000-0000-0000-0000-00000000ff03');
+SELECT pg_temp.check((public.referral_backfill_preview() ->> 'will_create')::int = 2, 'dry run counts eligible consultants without a code');
+SELECT pg_temp.check(public.referral_backfill_codes() = 2, 'backfill creates the missing codes');
+SELECT pg_temp.check(public.referral_backfill_codes() = 0, 'rerun creates none');
+SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.consultant_referral_codes WHERE consultant_id = '00000000-0000-0000-0000-00000000ff02'), 'rejected consultants are left out');
+SELECT pg_temp.check((SELECT count(*) FROM public.consultants c WHERE c.verification_status NOT IN ('rejected', 'suspended')
+                        AND (SELECT count(*) FROM public.consultant_referral_codes k WHERE k.consultant_id = c.id) <> 1) = 0, 'every eligible consultant has exactly one code');
+SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.consultant_referrals WHERE referred_consultant_id IN ('00000000-0000-0000-0000-00000000ff01', '00000000-0000-0000-0000-00000000ff03')), 'nobody attributed retroactively');
+-- Claim window for consultants registered before the launch.
+UPDATE auth.users SET created_at = now() - interval '200 days' WHERE id IN ('00000000-0000-0000-0000-0000000000f1', '00000000-0000-0000-0000-0000000000f3');
+UPDATE public.platform_settings SET value = to_jsonb(now() - interval '1 day') WHERE key = 'referral_launch_at';
+UPDATE public.platform_settings SET value = to_jsonb(now() + interval '13 days') WHERE key = 'referral_claim_until';
+SELECT pg_temp.check(public.referral_can_claim('00000000-0000-0000-0000-00000000ff01'), 'existing consultant may claim inside launch window');
+INSERT INTO public.payouts (consultant_id, amount, gross_amount, status, reference) VALUES ('00000000-0000-0000-0000-00000000ff03', 10, 10, 'pending', 'payment:old');
+SELECT pg_temp.check(NOT public.referral_can_claim('00000000-0000-0000-0000-00000000ff03'), 'not after a paid ticket');
+UPDATE public.platform_settings SET value = to_jsonb(now() - interval '1 minute') WHERE key = 'referral_claim_until';
+SELECT pg_temp.check(NOT public.referral_can_claim('00000000-0000-0000-0000-00000000ff01'), 'window closed: admin only');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.as_user('00000000-0000-0000-0000-0000000000f1');
+SELECT pg_temp.check(public.referral_claim((SELECT code FROM _code), NULL) ->> 'result' = 'too_late', 'claim refused after the window');
+SELECT pg_temp.as_user((SELECT admin FROM _ids));
+SELECT public.admin_referral_action('set_referrer', '00000000-0000-0000-0000-00000000ff01', 'Confirmed by e-mail with both', NULL, NULL, (SELECT r FROM _ids));
+SELECT pg_temp.check((SELECT source = 'admin' FROM public.consultant_referrals WHERE referred_consultant_id = '00000000-0000-0000-0000-00000000ff01'), 'admin can set a referrer');
+-- Announcement: test to own account first, then once per consultant; rejected / suspended left out.
+INSERT INTO public.user_admin_state (user_id, suspended_at) SELECT (SELECT s_user FROM _ids), now();
+RESET ROLE;
+SELECT pg_temp.check(public.referral_announcement_status((SELECT s FROM _ids)) = 'account_suspended', 'suspended excluded');
+SELECT pg_temp.check(public.referral_announcement_status('00000000-0000-0000-0000-00000000ff02') = 'rejected_or_suspended', 'rejected excluded');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.check((public.admin_referral_announcement_send(true, 200) ->> 'sent')::int = 1, 'test send');
+SELECT pg_temp.check((SELECT count(*) FROM public.referral_announcements) = 0, 'test send writes no log');
+CREATE TEMP TABLE _ann AS SELECT public.admin_referral_announcement_send(false, 200) AS r;
+SELECT pg_temp.check(((SELECT r FROM _ann) ->> 'sent')::int > 0 AND ((SELECT r FROM _ann) ->> 'remaining')::int = 0, 'announcement sent to everyone eligible');
+SELECT pg_temp.check((public.admin_referral_announcement_send(false, 200) ->> 'sent')::int = 0, 'never sent twice');
+RESET ROLE;
+SELECT pg_temp.as_user(NULL);
+SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.referral_announcements WHERE consultant_id IN ((SELECT s FROM _ids), '00000000-0000-0000-0000-00000000ff02')), 'excluded not in the log');
+SELECT pg_temp.check((SELECT count(*) FROM public.notifications WHERE type = 'referral_intro' AND user_id = (SELECT d_user FROM _ids)) = 1, 'one bell entry each');
+
 SELECT 'referral-program checks passed' AS result;
 ROLLBACK;

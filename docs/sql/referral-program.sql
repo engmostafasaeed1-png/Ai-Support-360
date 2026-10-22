@@ -2935,7 +2935,13 @@ SELECT cron.schedule('referral-nightly', '23 2 * * *', 'SELECT public.referral_n
 SELECT cron.schedule('referral-weekly-digest', '37 4 * * 1', 'SELECT public.referral_weekly_digest()');
 SELECT cron.schedule('referral-monthly-statements', '19 3 1 * *', 'SELECT public.referral_generate_statements(NULL)');
 
+-- Dry run BEFORE applying (read-only, works on the current database):
+--   SELECT count(*) AS consultants,
+--          count(*) FILTER (WHERE verification_status::text NOT IN ('rejected', 'suspended')) AS will_get_a_code,
+--          count(*) FILTER (WHERE verification_status::text IN ('rejected', 'suspended')) AS excluded
+--     FROM public.consultants;
 -- Checks after applying:
+--   SELECT public.referral_backfill_preview();                         -- will_create = 0
 --   SELECT public.referral_public_settings();
 --   SELECT count(*) FROM public.consultant_referral_codes;          -- one per consultant
 --   SELECT jobname, schedule FROM cron.job WHERE jobname LIKE 'referral-%';
