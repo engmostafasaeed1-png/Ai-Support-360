@@ -154,13 +154,15 @@ INSERT INTO k VALUES ('fresh', pg_temp.mk('Fresh Link', 'fresh@fresh-mail.org', 
 SELECT pg_temp.check((SELECT referrer_consultant_id = pg_temp.k('ip_ref') AND source = 'signup' FROM public.consultant_referrals WHERE referred_consultant_id = pg_temp.k('fresh')), 'T07: valid code within 30 days attributed');
 
 -- T08 code_bruteforce_lockout / T09 enumeration_identical ------------------------------------------------------------------
+CREATE TEMP TABLE kc AS SELECT name, pg_temp.code(id) AS code FROM k;
+GRANT SELECT ON kc TO anon, authenticated;
 SET LOCAL ROLE anon;
 SELECT pg_temp.ip('192.0.2.10');
-SELECT pg_temp.check(public.referral_validate_code(lower(pg_temp.code(pg_temp.k('ip_ref')))) = jsonb_build_object('valid', true, 'name', 'O. R****'), 'T09: valid -> masked name only');
+SELECT pg_temp.check(public.referral_validate_code(lower((SELECT code FROM kc WHERE name = 'ip_ref'))) = jsonb_build_object('valid', true, 'name', 'O. R****'), 'T09: valid -> masked name only');
 RESET ROLE;
 UPDATE public.consultant_referral_codes SET disabled_at = now() WHERE consultant_id = pg_temp.k('ip_ref');
 SET LOCAL ROLE anon;
-SELECT pg_temp.check(public.referral_validate_code(pg_temp.code(pg_temp.k('ip_ref')))::text = public.referral_validate_code('SAP-NOBODY-ZZZZZZZ')::text
+SELECT pg_temp.check(public.referral_validate_code((SELECT code FROM kc WHERE name = 'ip_ref'))::text = public.referral_validate_code('SAP-NOBODY-ZZZZZZZ')::text
                      AND public.referral_validate_code('SAP-NOBODY-ZZZZZZZ') = '{"valid": false}'::jsonb
                      AND public.referral_validate_code('AB') = '{"valid": false}'::jsonb, 'T09 enumeration_identical: disabled = unknown = too short');
 DO $$ DECLARE i int; BEGIN
@@ -171,7 +173,7 @@ EXCEPTION WHEN raise_exception THEN
   IF SQLERRM LIKE 'FAILED%' THEN RAISE; END IF;
 END $$;
 DO $$ BEGIN
-  PERFORM public.referral_validate_code(lower((SELECT code FROM public.consultant_referral_codes LIMIT 1)));
+  PERFORM public.referral_validate_code(lower((SELECT code FROM kc WHERE name = 'ref')));
   RAISE EXCEPTION 'FAILED: T08 valid code answered during lock-out';
 EXCEPTION WHEN raise_exception THEN
   IF SQLERRM LIKE 'FAILED%' THEN RAISE; END IF;
