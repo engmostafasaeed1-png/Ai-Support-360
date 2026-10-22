@@ -15,7 +15,7 @@ BEGIN
   INSERT INTO auth.users (id, email) VALUES (_u, _email);
   INSERT INTO public.profiles (user_id, display_name) VALUES (_u, _name);
   INSERT INTO public.consultants (id, user_id, verification_status, profile_submitted_at) VALUES (_c, _u, 'verified', now());
-  INSERT INTO public.consultant_policy_acknowledgements (consultant_id, user_id, version) VALUES (_c, _u, 1);
+  INSERT INTO public.consultant_policy_acknowledgements (consultant_id, user_id, version, language) VALUES (_c, _u, 1, 'en');
   RETURN _c;
 END $$;
 CREATE OR REPLACE FUNCTION pg_temp.uid(_c uuid) RETURNS uuid LANGUAGE sql AS $$ SELECT user_id FROM public.consultants WHERE id = _c $$;
