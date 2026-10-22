@@ -3049,6 +3049,10 @@
       "subtitle": "Configure custom questions, difficulty, and training instructions for the AI interviewer.",
       "new_config": "New Training Config",
       "edit": "Edit"
+    },
+    "sources": {
+      "why": "Why asked (admins only)",
+      "deleted_doc": "deleted document"
     }
   }
 }

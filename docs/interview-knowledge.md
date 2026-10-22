@@ -76,8 +76,8 @@ interview behaves exactly as before.
   5 questions, sources "<document title> #<excerpt>".
 - **Consultant** (after switching on): Profile > SAP expertise > set a version for a module > start the AI interview:
   the pre-interview line lists the modules and versions; after the introduction the questions follow the plan; a module
-  without a version starts with a release warm-up. Admin > Consultant interviews: sources per question via
-  `admin_interview_question_sources`.
+  without a version starts with a release warm-up. Admin > Consultant interviews > open the interview's answers:
+  each question shows "Why asked (admins only)" (document title, library, knowledge base or generated from the profile).
 
 ## 5. New strings (English / Arabic)
 
@@ -236,4 +236,5 @@ interview behaves exactly as before.
 | `ik.versions.customize` | Edit this list | تعديل هذه القائمة |
 | `ik.versions.remove` | Remove {{label}} | إزالة {{label}} |
 | `ik.versions.subtitle` | Consultants pick a release per module from these lists or type their own. Optional unless the owner makes it required. | يختار المستشارون إصدارًا لكل وحدة من هذه القوائم أو يكتبون إصدارهم. اختياري ما لم يجعله المالك إلزاميًا. |
-| `ik.versions.title` | Version / release choices in the profile | خيارات الإصدار / Release في الملف الشخصي |
+| `ik.versions.title` | Version / release choices in the profile | خيارات الإصدار / Release في الملف الشخصي || `ik.sources.deleted_doc` | deleted document | مستند محذوف |
+| `ik.sources.why` | Why asked (admins only) | سبب طرح السؤال (للمشرفين فقط) |
