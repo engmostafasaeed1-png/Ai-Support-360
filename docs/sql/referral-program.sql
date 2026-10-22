@@ -2272,7 +2272,8 @@ BEGIN
   RETURN jsonb_build_object(
     'settings', jsonb_build_object('enabled', s->'enabled', 'rate_percent', s->'rate_percent', 'months', s->'months',
                                    'min_payout', s->'min_payout', 'terms_version', s->'terms_version', 'pass_mark', s->'pass_mark',
-                                   'activation_days', s->'activation_days', 'tiers', s->'tiers'),
+                                   'activation_days', s->'activation_days', 'tiers', s->'tiers', 'hold_days', s->'hold_days',
+                                   'min_invoice', s->'min_invoice'),
     'tier', public.referral_tier_for(public.referral_verified_count(_cid)),
     -- Referrer activation checklist: interview passed -> terms acknowledged -> active (sharing unlocked).
     'activation', jsonb_build_object(
