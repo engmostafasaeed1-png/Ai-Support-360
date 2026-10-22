@@ -91,4 +91,4 @@
 - [x] Feature Z addition: "Referral calculations" tab (summary strip, per-referral table + totals, invoice-line drill-down with formula, monthly chart + honest forecast, filters, CSV/PDF, monthly statements + notice, illustration calculator, live RPCs + last updated, admin read-only view with consultant picker + reconciliation check, tests, Arabic strings)
 - [ ] Home page (/) redesign: ON HOLD by owner — make no home page changes until a new go-ahead
 - [x] Feature Z addition: "Refer & earn" step in consultant onboarding guide + first-sign-in tour, dashboard card, welcome e-mail line, tests, Arabic strings
-- [ ] Feature Z addition: existing consultants — backfill codes (dry-run count), one-time intro pop-up, bell entry, admin set-referrer, claim window referral_claim_until (launch + 14 d), admin "Send announcement" (in-app; e-mail refused as bulk marketing), tests, Arabic strings
+- [x] Feature Z addition: existing consultants — backfill codes (dry-run count), one-time intro pop-up, bell entry, admin set-referrer, claim window referral_claim_until (launch + 14 d), admin "Send announcement" (in-app; e-mail refused as bulk marketing), tests, Arabic strings
