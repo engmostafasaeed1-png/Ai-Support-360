@@ -18,6 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import MessageBody from '@/components/messages/MessageBody';
+import SendViaSelector from '@/components/admin/SendViaSelector';
+import { isSendChannel, type ChannelMap, type SendChannel } from '@/lib/sendChannels';
 import {
   BRAND_IMAGES, EMPTY_FILTER, LIMITS, SELECTED_KEY, VARIABLES, buildAudience, confirmationOk, footerText, needsTypedConfirmation,
   parseEmails, renderVariables, riskWarnings, secretFindings, splitList, toPlainText, zonedToUtc,
@@ -185,6 +187,22 @@ export default function ComposeMessage({ settings, onSent }: { settings: BulkSet
     } catch (e) { toast.error((e as Error).message); }
   };
 
+  // "Send via" (shared with the Refer & earn invitation): in-app, e-mail, push, Telegram. Pop-up and manual channels stay extra rows.
+  const standard = [...channels].filter(isSendChannel) as SendChannel[];
+  const setStandard = (v: SendChannel[]) => setChannels((s) => {
+    const n = new Set<Channel>([...s].filter((c) => !isSendChannel(c)));
+    for (const c of v) if (c !== 'email') n.add(c as Channel);
+    if (!n.has('in_app')) n.delete('popup');
+    return n;
+  });
+  const sendInfo: ChannelMap = {
+    in_app: { available: true, eligible: preview ? count : undefined },
+    email: { available: false, reason: 'email_bulk' },
+    push: !settings.push_channel ? { available: false, reason: 'needs_update' }
+      : settings.push_ready === false ? { available: false, reason: 'push_not_ready' }
+      : { available: true, eligible: preview?.push_enabled },
+    telegram: { available: true, eligible: preview?.telegram_linked },
+  };
   const toggleChannel = (c: Channel, on: boolean) => setChannels((s) => { const n = new Set(s); if (on) n.add(c); else n.delete(c); if (c === 'popup' && on) n.add('in_app'); if (c === 'in_app' && !on) n.delete('popup'); return n; });
   const reasonLabel = (r: string) => ({
     suspended: t('bmsg.ex_suspended', 'suspended'), deleted: t('bmsg.ex_deleted', 'deleted'), unsubscribed: t('bmsg.ex_unsubscribed', 'unsubscribed or e-mail blocked'),
@@ -369,18 +387,10 @@ export default function ComposeMessage({ settings, onSent }: { settings: BulkSet
           <CardHeader className="pb-3"><CardTitle className="flex items-center gap-2 text-base"><Send className="h-4 w-4" />{t('bmsg.step_channels', '3. Channels and time')}</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <ul className="space-y-2">
-              <ChannelRow id="in_app" checked={channels.has('in_app')} onChange={toggleChannel} title={t('bmsg.ch_inapp', 'In-app notification')} status={t('bmsg.st_works', 'Works now')} ok
-                hint={t('bmsg.ch_inapp_hint', 'Appears in the bell and under "Messages from AI Support 360". Up to {{n}} per minute.', { n: settings.inapp_per_minute })} />
+              <li className="list-none"><SendViaSelector idPrefix="bm" value={standard} onChange={setStandard} info={sendInfo} showCounts={!!preview} /></li>
+              <p className="text-xs text-muted-foreground">{t('bmsg.rates', 'In-app up to {{a}} per minute, Telegram about {{b}} per minute. Telegram: plain text and one link.', { a: settings.inapp_per_minute, b: settings.telegram_per_minute })}</p>
               <ChannelRow id="popup" checked={channels.has('popup')} onChange={toggleChannel} title={t('bmsg.ch_popup', 'Pop-up on next visit')} status={t('bmsg.st_works', 'Works now')} ok
                 hint={t('bmsg.ch_popup_hint', 'Also shows the message once in a window until it is read.')} />
-              <ChannelRow id="telegram" checked={channels.has('telegram')} onChange={toggleChannel} title={t('bmsg.ch_telegram', 'Telegram')} status={t('bmsg.st_works', 'Works now')} ok
-                hint={preview ? t('bmsg.ch_telegram_n', '{{n}} of the audience linked Telegram; others are skipped. Plain text and one link, about {{r}} per minute.', { n: preview.telegram_linked, r: settings.telegram_per_minute })
-                  : t('bmsg.ch_telegram_hint', 'Only people who linked Telegram. Plain text and one link.')} />
-              <li className="flex items-start gap-3 rounded-xl border border-dashed p-3 opacity-80">
-                <Mail className="mt-0.5 h-4 w-4 text-muted-foreground" aria-hidden />
-                <div className="text-sm"><span className="font-medium">{t('bmsg.ch_email', 'E-mail')}</span> <Badge variant="outline">{t('bmsg.st_unavailable', 'Not available')}</Badge>
-                  <p className="text-xs text-muted-foreground">{t('bmsg.ch_email_hint', 'The app e-mail service only sends personal e-mails triggered by one event (receipts, reminders). Messages to many people need a separate newsletter service, so e-mail is not offered here.')}</p></div>
-              </li>
               <ChannelRow id="whatsapp_manual" checked={channels.has('whatsapp_manual')} onChange={toggleChannel} title={t('bmsg.ch_whatsapp', 'WhatsApp (you send it yourself)')} status={t('bmsg.st_manual', 'Manual')}
                 hint={t('bmsg.ch_whatsapp_hint', 'After saving you get a list with an "Open WhatsApp" button per person that opens your own WhatsApp with the text filled in.')} />
               <ChannelRow id="sms_manual" checked={channels.has('sms_manual')} onChange={toggleChannel} title={t('bmsg.ch_sms', 'SMS (you send it yourself)')} status={t('bmsg.st_manual', 'Manual')}
