@@ -29,9 +29,34 @@ INSERT INTO public.profiles (user_id, display_name) SELECT e_user, 'Omar Nabil' 
 INSERT INTO public.profiles (user_id, display_name) SELECT f_user, 'Fadi Hamed' FROM _ids;
 INSERT INTO public.consultants (id, user_id, verification_status) SELECT r, r_user, 'verified' FROM _ids;
 INSERT INTO public.consultant_policy_acknowledgements (consultant_id, version) SELECT r, 1 FROM _ids;
+-- Behaviour checks run with a 1-day hold (lines matured by hand below), no minimum invoice, no caps, no paid-ticket tier
+-- rule, and every consultant payout of the fixtures released with a cleared client payment (docs/sql/referral.test.sql
+-- covers those controls adversarially).
+UPDATE public.platform_settings SET value = '0' WHERE key = 'referral_min_invoice';
+UPDATE public.platform_settings SET value = '1' WHERE key = 'referral_hold_days';
+CREATE OR REPLACE FUNCTION pg_temp.mature(_payout uuid) RETURNS int LANGUAGE sql AS $$
+  UPDATE public.referral_reward_lines SET matures_at = now() - interval '1 second' WHERE source_payout_id = _payout AND kind = 'reward' AND status = 'pending';
+  SELECT public.referral_mature_lines(now()) $$;
+UPDATE public.platform_settings SET value = 'null' WHERE key IN ('referral_monthly_cap_per_referrer', 'referral_monthly_cap_per_referred');
+UPDATE public.platform_settings SET value = 'false' WHERE key = 'referral_tier_requires_paid';
+UPDATE public.platform_settings SET value = '100' WHERE key IN ('referral_velocity_per_day', 'referral_velocity_per_ip');
+CREATE OR REPLACE FUNCTION pg_temp.auto_paid() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE _p uuid;
+BEGIN
+  IF COALESCE(NEW.reference, '') NOT LIKE 'referral:%' THEN
+    IF NEW.payment_id IS NULL THEN
+      INSERT INTO public.payments (client_id, consultant_id, amount, status) VALUES ('00000000-0000-0000-0000-0000000000b1', NEW.consultant_id, NEW.gross_amount, 'completed')
+      RETURNING id INTO _p;
+      NEW.payment_id := _p;
+    END IF;
+    NEW.status := 'completed';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER aaa_test_auto_paid BEFORE INSERT ON public.payouts FOR EACH ROW EXECUTE FUNCTION pg_temp.auto_paid();
 
 -- 1. Codes: readable, generated, case-insensitive, no profanity ----------------------------------------------------------
-SELECT pg_temp.check((SELECT code FROM public.consultant_referral_codes WHERE consultant_id = (SELECT r FROM _ids)) ~ '^SAP-RAMI-[A-HJ-NP-Z2-9]{3}$', 'code like SAP-RAMI-7K2');
+SELECT pg_temp.check((SELECT code FROM public.consultant_referral_codes WHERE consultant_id = (SELECT r FROM _ids)) ~ '^SAP-RAMI-[A-HJ-NP-Z2-9]{7}$', 'code like SAP-RAMI-7K2M9QX (7 random characters)');
 SELECT pg_temp.check(public.referral_code_blocked_word('SAP-SEX-123'), 'profanity segment blocked');
 SELECT pg_temp.check(NOT public.referral_code_blocked_word('SAP-HASSAN-7K2'), 'names containing short words allowed');
 CREATE TEMP TABLE _code AS SELECT code FROM public.consultant_referral_codes WHERE consultant_id = (SELECT r FROM _ids);
@@ -85,7 +110,10 @@ SELECT pg_temp.as_user((SELECT f_user FROM _ids));
 SELECT pg_temp.check((SELECT public.referral_claim((SELECT code FROM _code), 'device-of-rami')) ->> 'result' = 'ok', 'flagged claim still recorded');
 RESET ROLE;
 SELECT pg_temp.as_user(NULL);
-SELECT pg_temp.check((SELECT status = 'review' AND 'same_device' = ANY (flags) FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT f FROM _ids)), 'same device flagged for review');
+SELECT pg_temp.check((SELECT status = 'active' AND flags = '{same_device}' AND flag_score = 1 FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT f FROM _ids)),
+                     'one signal: flagged but not under review');
+SELECT public.referral_add_flags((SELECT f FROM _ids), ARRAY['same_ip'], 'Seen at a later sign-in');
+SELECT pg_temp.check((SELECT status = 'review' AND flag_score = 2 FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT f FROM _ids)), 'second signal -> under review');
 
 -- 5. Live validation: only valid/invalid + masked name, rate limited ----------------------------------------------------------
 SET LOCAL ROLE anon;
@@ -151,8 +179,9 @@ CREATE TEMP TABLE _p (n int PRIMARY KEY, id uuid DEFAULT gen_random_uuid());
 INSERT INTO _p (n) SELECT generate_series(1, 12);
 INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, currency, status, reference)
 SELECT id, (SELECT d FROM _ids), 1000, 1000, 'USD', 'pending', 'payment:test1' FROM _p WHERE n = 1;
-SELECT pg_temp.check((SELECT amount = 5.00 AND fee_amount = 1000 AND rate_percent = 0.5 AND status = 'pending' FROM public.referral_reward_lines
-                        WHERE source_payout_id = (SELECT id FROM _p WHERE n = 1)), '0.5 % of 1000 = 5.00, pending');
+SELECT pg_temp.check((SELECT amount = 5.00 AND fee_amount = 1000 AND rate_percent = 0.5 AND status = 'pending' AND released_at IS NOT NULL
+                               AND matures_at = released_at + interval '1 day' FROM public.referral_reward_lines
+                        WHERE source_payout_id = (SELECT id FROM _p WHERE n = 1)), '0.5 % of 1000 = 5.00, created at release, pending for the hold period');
 SELECT pg_temp.check((SELECT window_ends_at = first_paid_at + interval '12 months' FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT d FROM _ids)),
                      '12 months from the first paid ticket');
 SELECT pg_temp.check((SELECT count(*) FROM public.referral_email_queue WHERE kind = 'first_reward') = 1, 'first reward e-mail queued once');
@@ -165,6 +194,7 @@ SELECT id, (SELECT d FROM _ids), 850, 1000, 15, 150, 'USD', 'pending', 'payment:
 SELECT pg_temp.check((SELECT amount FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 3)) = 5.00, 'on the fee, not on commission');
 UPDATE public.payouts SET status = 'completed' WHERE id = (SELECT id FROM _p WHERE n = 1);
 UPDATE public.payouts SET note = 'touch' WHERE id = (SELECT id FROM _p WHERE n = 1);
+SELECT pg_temp.mature((SELECT id FROM _p WHERE n = 1));
 SELECT pg_temp.check((SELECT count(*) = 1 AND bool_and(status = 'available') FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 1)),
                      'payout completed -> available, still one line');
 
@@ -193,7 +223,9 @@ SELECT pg_temp.check((SELECT amount FROM public.referral_reward_lines WHERE sour
 UPDATE public.payments SET status = 'disputed' WHERE id = '00000000-0000-0000-0000-00000000aa02';
 SELECT pg_temp.check((SELECT status = 'held' AND hold_reason = 'dispute' FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 7)), 'dispute holds');
 UPDATE public.payments SET status = 'completed' WHERE id = '00000000-0000-0000-0000-00000000aa02';
-SELECT pg_temp.check((SELECT status FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 7)) = 'available', 'dispute settled releases');
+SELECT pg_temp.check((SELECT status FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 7)) = 'pending', 'dispute settled: back to the hold period');
+SELECT pg_temp.mature((SELECT id FROM _p WHERE n = 7));
+SELECT pg_temp.check((SELECT status FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 7)) = 'available', 'available after the hold period');
 
 -- 9. Eligibility: suspended referrer and flagged referrals ---------------------------------------------------------------------
 INSERT INTO public.user_admin_state (user_id, suspended_at) SELECT r_user, now() FROM _ids;
@@ -216,7 +248,8 @@ SELECT pg_temp.check((SELECT status = 'held' AND hold_reason = 'review' FROM pub
 -- 10. Threshold and referral payout ---------------------------------------------------------------------------------------------
 -- Available now: payout 1 (5.00) + payout 7 (5.00) = 10.00 (< 25) and no bank details yet.
 SELECT pg_temp.check(public.referral_bundle_payouts(NULL) = 0, 'below threshold: no payout');
-INSERT INTO public.consultant_payout_details (consultant_id, account_holder, bank_name, iban) SELECT r, 'Rami Saleh', 'Bank', 'SA00 0000 1111' FROM _ids;
+INSERT INTO public.consultant_payout_details (consultant_id, account_holder, bank_name, iban, verified_at, created_at, updated_at)
+SELECT r, 'Rami Saleh', 'Bank', 'SA00 0000 1111', now() - interval '30 days', now() - interval '30 days', now() - interval '30 days' FROM _ids;
 SELECT pg_temp.check(public.referral_bundle_payouts(NULL) = 0, 'still below threshold');
 SELECT pg_temp.as_user((SELECT admin FROM _ids));
 DO $$ BEGIN
@@ -278,7 +311,9 @@ EXCEPTION WHEN invalid_parameter_value THEN NULL; END $$;
 SELECT public.admin_referral_action('approve_referral', (SELECT f FROM _ids), 'Checked: different people');
 RESET ROLE;
 SELECT pg_temp.as_user(NULL);
-SELECT pg_temp.check((SELECT status FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 9)) = 'available', 'approval releases held line');
+SELECT pg_temp.check((SELECT status FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 9)) = 'pending', 'approval lifts the hold; the hold period still applies');
+SELECT pg_temp.mature((SELECT id FROM _p WHERE n = 9));
+SELECT pg_temp.check((SELECT status FROM public.referral_reward_lines WHERE source_payout_id = (SELECT id FROM _p WHERE n = 9)) = 'available', 'available after the hold period');
 SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.audit_logs WHERE action = 'referral.approve_referral'), 'admin action audited');
 
 -- 12b. Reminders after 14 days (once) and expiry after the activation period; only an administrator revives -----------
@@ -315,7 +350,7 @@ INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, status, ref
   ('00000000-0000-0000-0000-00000000bb10', (SELECT d FROM _ids), 400, 400, 'pending', 'payment:aa03', '00000000-0000-0000-0000-00000000aa03');
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.as_user((SELECT r_user FROM _ids));
-SELECT pg_temp.check((SELECT approved_hours = 50 AND man_days = 6.25 AND hourly_rate = 8 AND fee_amount = 400 AND amount = 2.00 AND ticket_ref = 'T-00000000'
+SELECT pg_temp.check((SELECT approved_hours = 50 AND man_days = 6.25 AND fee_amount = 400 AND amount = 2.00 AND engagement_ref ~ '^Engagement #[0-9A-F]{4}$'
                         AND payment_status = 'completed' AND referred_name = 'D. K****'
                         FROM public.referral_calc_lines(NULL, NULL, NULL, NULL, NULL) WHERE fee_amount = 400 AND kind = 'reward'), 'drill-down: 50 h = 6.25 man-days, $400 x 0.5 % = $2.00');
 SELECT pg_temp.check((SELECT bool_and(net = reward_earned + reversed) AND bool_and(man_days = round(approved_hours / 8, 2))
@@ -410,6 +445,8 @@ SELECT pg_temp.check((public.referral_tier_for(n) ->> 'rate')::numeric = r, form
   FROM (VALUES (0, 0.5), (10, 0.5), (11, 0.6), (20, 0.6), (21, 0.7), (30, 0.7), (31, 0.8), (40, 0.8), (41, 1.0), (500, 1.0)) v(n, r);
 SELECT pg_temp.check((public.referral_tier_for(14) ->> 'needed')::int = 7 AND public.referral_tier_for(14) ->> 'next_rate' = '0.7', 'needed to the next tier');
 SELECT pg_temp.check(public.referral_tier_for(41) ->> 'next_min' IS NULL, 'top tier has no next');
+SELECT pg_temp.check(public.referral_verified_count((SELECT r FROM _ids)) = 0, 'profile gate not passed: not counted');
+UPDATE public.consultants SET profile_submitted_at = now() WHERE id IN ((SELECT d FROM _ids), (SELECT f FROM _ids));
 SELECT pg_temp.check(public.referral_verified_count((SELECT r FROM _ids)) = 2, 'tier count = verified, not suspended referred consultants');
 SELECT pg_temp.check(public.referral_tiers_valid('[{"min":0,"rate":0.6},{"min":11,"rate":0.5}]', 2) IS NOT NULL, 'rates must go up');
 SELECT pg_temp.check(public.referral_tiers_valid('[{"min":0,"rate":0.5},{"min":0,"rate":0.6}]', 2) IS NOT NULL, 'thresholds must go up');

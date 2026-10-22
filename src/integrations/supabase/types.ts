@@ -2362,6 +2362,66 @@ export type Database = {
           },
         ]
       }
+      consultant_success_stats: {
+        Row: {
+          awaiting_confirmation: number
+          computed_at: string
+          consultant_id: string
+          excluded: Json
+          level: string
+          not_solved: number
+          not_solved_12m: number
+          open_count: number
+          requests_12m: number
+          requests_total: number
+          solved: number
+          solved_12m: number
+        }
+        Insert: {
+          awaiting_confirmation?: number
+          computed_at?: string
+          consultant_id: string
+          excluded?: Json
+          level?: string
+          not_solved?: number
+          not_solved_12m?: number
+          open_count?: number
+          requests_12m?: number
+          requests_total?: number
+          solved?: number
+          solved_12m?: number
+        }
+        Update: {
+          awaiting_confirmation?: number
+          computed_at?: string
+          consultant_id?: string
+          excluded?: Json
+          level?: string
+          not_solved?: number
+          not_solved_12m?: number
+          open_count?: number
+          requests_12m?: number
+          requests_total?: number
+          solved?: number
+          solved_12m?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_success_stats_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "consultant_success_stats_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultant_unavailable_periods: {
         Row: {
           consultant_id: string
@@ -7685,6 +7745,137 @@ export type Database = {
         }
         Relationships: []
       }
+      success_disputes: {
+        Row: {
+          admin_note: string | null
+          consultant_id: string
+          created_at: string
+          id: string
+          reason: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          ticket_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          consultant_id: string
+          created_at?: string
+          id?: string
+          reason: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          ticket_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          consultant_id?: string
+          created_at?: string
+          id?: string
+          reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "success_disputes_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "success_disputes_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "success_disputes_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      success_engagement_overrides: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          reason: string
+          ticket_id: string
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          reason: string
+          ticket_id: string
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          reason?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "success_engagement_overrides_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "success_engagement_overrides_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "success_engagement_overrides_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      success_runs: {
+        Row: {
+          consultants: number
+          id: string
+          kind: string
+          ran_at: string
+        }
+        Insert: {
+          consultants?: number
+          id?: string
+          kind?: string
+          ran_at?: string
+        }
+        Update: {
+          consultants?: number
+          id?: string
+          kind?: string
+          ran_at?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -9705,6 +9896,9 @@ export type Database = {
           bidding_closed_at: string | null
           bidding_closed_reason: string | null
           client_id: string
+          close_outcome: string | null
+          close_outcome_at: string | null
+          close_outcome_by: string | null
           consultant_id: string | null
           cost_breakdown: Json | null
           cost_currency: string | null
@@ -9764,6 +9958,9 @@ export type Database = {
           bidding_closed_at?: string | null
           bidding_closed_reason?: string | null
           client_id: string
+          close_outcome?: string | null
+          close_outcome_at?: string | null
+          close_outcome_by?: string | null
           consultant_id?: string | null
           cost_breakdown?: Json | null
           cost_currency?: string | null
@@ -9823,6 +10020,9 @@ export type Database = {
           bidding_closed_at?: string | null
           bidding_closed_reason?: string | null
           client_id?: string
+          close_outcome?: string | null
+          close_outcome_at?: string | null
+          close_outcome_by?: string | null
           consultant_id?: string | null
           cost_breakdown?: Json | null
           cost_currency?: string | null
@@ -11183,6 +11383,7 @@ export type Database = {
         Returns: number
       }
       admin_recompute_responsiveness: { Args: never; Returns: number }
+      admin_recompute_success: { Args: never; Returns: number }
       admin_reject_payment_report: {
         Args: { _note: string; _payment_id: string }
         Returns: undefined
@@ -11211,6 +11412,10 @@ export type Database = {
       }
       admin_review_responsiveness_dispute: {
         Args: { _dispute_id: string; _note: string; _uphold: boolean }
+        Returns: undefined
+      }
+      admin_review_success_dispute: {
+        Args: { _decision: string; _dispute_id: string; _note: string }
         Returns: undefined
       }
       admin_rls_overview: { Args: never; Returns: Json }
@@ -11295,7 +11500,18 @@ export type Database = {
         Args: { _key: string; _value: boolean }
         Returns: undefined
       }
+      admin_set_success_override: {
+        Args: {
+          _action: string
+          _cid: string
+          _reason: string
+          _ticket_id: string
+        }
+        Returns: undefined
+      }
       admin_storage_overview: { Args: never; Returns: Json }
+      admin_success_breakdown: { Args: { _cid: string }; Returns: Json }
+      admin_success_disputes: { Args: never; Returns: Json }
       admin_user_action: {
         Args: {
           _action: string
@@ -11658,6 +11874,10 @@ export type Database = {
         Returns: undefined
       }
       client_review_rate_ok: { Args: never; Returns: boolean }
+      client_set_ticket_outcome: {
+        Args: { _outcome: string; _reason?: string; _ticket_id: string }
+        Returns: undefined
+      }
       client_sign_nda: {
         Args: {
           _nda_id: string
@@ -11717,6 +11937,10 @@ export type Database = {
       }
       consultant_dispute_no_response: {
         Args: { _event_id: string; _reason: string }
+        Returns: string
+      }
+      consultant_dispute_success: {
+        Args: { _reason: string; _ticket_id: string }
         Returns: string
       }
       consultant_engaged_on_ticket: {
@@ -11785,6 +12009,21 @@ export type Database = {
       consultant_submission_missing: {
         Args: { _cid: string }
         Returns: string[]
+      }
+      consultant_success_stats: {
+        Args: { _consultant_ids?: string[] }
+        Returns: {
+          consultant_id: string
+          level: string
+          level_12m: string
+          not_solved: number
+          requests_12m: number
+          requests_total: number
+          solved: number
+          solved_12m: number
+          success_rate: number
+          success_rate_12m: number
+        }[]
       }
       consultants_solved_similar: {
         Args: {
@@ -12079,6 +12318,7 @@ export type Database = {
       my_profile_completion: { Args: never; Returns: Json }
       my_profile_submission: { Args: never; Returns: Json }
       my_responsiveness: { Args: never; Returns: Json }
+      my_success: { Args: never; Returns: Json }
       new_bid_blocked_by_profile: {
         Args: { _cid: string; _ticket: string }
         Returns: boolean
@@ -12523,6 +12763,34 @@ export type Database = {
         Args: { _message?: string; _ticket_id: string }
         Returns: string
       }
+      success_engagements: {
+        Args: { _cid: string }
+        Returns: {
+          confirmed: boolean
+          disputable: boolean
+          ended_at: string
+          outcome: string
+          reason: string
+          ticket_id: string
+          title: string
+        }[]
+      }
+      success_int: {
+        Args: { _def: number; _hi: number; _k: string; _lo: number; _v: Json }
+        Returns: number
+      }
+      success_level: {
+        Args: { _s: Json; _solved: number; _total: number }
+        Returns: string
+      }
+      success_pct: {
+        Args: { _solved: number; _total: number }
+        Returns: number
+      }
+      success_public_config: { Args: never; Returns: Json }
+      success_recompute: { Args: { _cid: string }; Returns: undefined }
+      success_recompute_all: { Args: { _kind?: string }; Returns: number }
+      success_settings: { Args: never; Returns: Json }
       team_accept_bid: {
         Args: {
           _client_notes?: string
