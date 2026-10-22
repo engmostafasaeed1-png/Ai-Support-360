@@ -90,7 +90,7 @@
 
 - [x] Feature Z: consultant referral programme (codes/attribution, 0.5 % rewards for 12 months, referral payouts, Refer & earn page, admin Referrals page, e-mails via referral-run (deployed), SQL file + scratch test, Arabic strings in docs/referral-program.md) — Oct 21
 - [x] Feature Z activation rule: pair active only after both pass the AI interview (referral_min_interview_score 50) and both acknowledge versioned terms; pending/active/expired (referral_activation_days 90), reminders at 14/45 days, notifications both sides, admin filters/resend, tests
-- [ ] Switch on Feature Z: awaits owner applying docs/sql/referral-program.sql (then run docs/sql/referral-program.test.sql)
+- [x] Switch on Feature Z: docs/sql/referral-program.sql applied on owner request (Oct 22, migrations 0079-0085, byte-checked against a tested copy)
 - [x] Feature Z addition: "Referral calculations" tab (summary strip, per-referral table + totals, invoice-line drill-down with formula, monthly chart + honest forecast, filters, CSV/PDF, monthly statements + notice, illustration calculator, live RPCs + last updated, admin read-only view with consultant picker + reconciliation check, tests, Arabic strings)
 - [ ] Home page (/) redesign: ON HOLD by owner — full brief received again 01:05 UTC (new AI Support 360 design, honesty guardrails); waiting for an explicit "hold lifted" before any home page change
 - [x] Feature Z addition: "Refer & earn" step in consultant onboarding guide + first-sign-in tour, dashboard card, welcome e-mail line, tests, Arabic strings
@@ -99,4 +99,4 @@
 - [x] Feature Z security & fraud hardening (A1-A8): flags/under_review, hold days, related-party, min invoice, caps, velocity, tier paid rule, code brute-force lock-out, tamper-proofing, four-eyes adjustments, anomaly dashboard, daily reconciliation alert, privacy (Engagement refs, hash retention), terms short version; docs/sql/referral.test.sql adversarial tests, unit tests, RPC review, docs/referral-security.md threat table (SQL unapplied)
 - [x] Feature Z "Programme rules" hub on Refer & earn (sticky scroll-spy nav, 7 sections, live checklist, tier ladder, payment timeline, rules, simulator + pure tested math, PDF, admin plain-text section notes, EN/AR, tests)
 - [x] Refer & earn page upgrade: header/sidebar pill + dot, policy cards + terms status, journey counts + next action, per-referral funnel chips, reward-line breakdown table (filters/sort/search/pages/CSV), earnings summary + chart, payouts + history, docs/sql/referral-tracking.sql (unapplied) + tests, Arabic
-- [ ] Switch on Refer & earn tracking: awaits owner applying docs/sql/referral-tracking.sql after referral-program.sql (then run docs/sql/referral-tracking.test.sql)
+- [x] Switch on Refer & earn tracking: docs/sql/referral-tracking.sql applied with Feature Z (Oct 22); checks passed on a copy of the database structure

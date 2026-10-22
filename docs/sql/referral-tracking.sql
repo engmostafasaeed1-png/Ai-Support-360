@@ -1,3 +1,4 @@
+-- APPLIED 2026-10-22 on the owner's request (migrations 0079-0085, comments stripped, statements identical).
 -- Feature Z "Refer & earn" page upgrade: read-only tracking RPCs for the signed-in consultant (own data only).
 -- PREPARED, NOT APPLIED. Apply AFTER docs/sql/referral-program.sql. Checks: docs/sql/referral-tracking.test.sql.
 --

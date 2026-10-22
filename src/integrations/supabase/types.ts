@@ -2260,6 +2260,167 @@ export type Database = {
           },
         ]
       }
+      consultant_referral_codes: {
+        Row: {
+          code: string
+          consultant_id: string
+          created_at: string
+          disabled_at: string | null
+          disabled_reason: string | null
+          edits_used: number
+          previous_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          consultant_id: string
+          created_at?: string
+          disabled_at?: string | null
+          disabled_reason?: string | null
+          edits_used?: number
+          previous_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          consultant_id?: string
+          created_at?: string
+          disabled_at?: string | null
+          disabled_reason?: string | null
+          edits_used?: number
+          previous_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_referral_codes_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "consultant_referral_codes_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consultant_referrals: {
+        Row: {
+          activated_at: string | null
+          activation_expires_at: string | null
+          activation_status: string
+          admin_resend_at: string | null
+          approved_at: string | null
+          approved_by: string | null
+          attributed_at: string
+          code: string
+          expired_at: string | null
+          first_paid_at: string | null
+          first_reward_notified_at: string | null
+          flag_score: number
+          flags: string[]
+          referred_consultant_id: string
+          referred_passed_notified_at: string | null
+          referred_verified_at: string | null
+          referrer_consultant_id: string
+          referrer_passed_notified_at: string | null
+          reminder_14_at: string | null
+          reminder_45_at: string | null
+          source: string
+          status: string
+          updated_at: string
+          verified_notified_at: string | null
+          window_ends_at: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          activation_expires_at?: string | null
+          activation_status?: string
+          admin_resend_at?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          attributed_at?: string
+          code: string
+          expired_at?: string | null
+          first_paid_at?: string | null
+          first_reward_notified_at?: string | null
+          flag_score?: number
+          flags?: string[]
+          referred_consultant_id: string
+          referred_passed_notified_at?: string | null
+          referred_verified_at?: string | null
+          referrer_consultant_id: string
+          referrer_passed_notified_at?: string | null
+          reminder_14_at?: string | null
+          reminder_45_at?: string | null
+          source: string
+          status?: string
+          updated_at?: string
+          verified_notified_at?: string | null
+          window_ends_at?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          activation_expires_at?: string | null
+          activation_status?: string
+          admin_resend_at?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          attributed_at?: string
+          code?: string
+          expired_at?: string | null
+          first_paid_at?: string | null
+          first_reward_notified_at?: string | null
+          flag_score?: number
+          flags?: string[]
+          referred_consultant_id?: string
+          referred_passed_notified_at?: string | null
+          referred_verified_at?: string | null
+          referrer_consultant_id?: string
+          referrer_passed_notified_at?: string | null
+          reminder_14_at?: string | null
+          reminder_45_at?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+          verified_notified_at?: string | null
+          window_ends_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_referrals_referred_consultant_id_fkey"
+            columns: ["referred_consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "consultant_referrals_referred_consultant_id_fkey"
+            columns: ["referred_consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultant_referrals_referrer_consultant_id_fkey"
+            columns: ["referrer_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "consultant_referrals_referrer_consultant_id_fkey"
+            columns: ["referrer_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultant_responsiveness: {
         Row: {
           computed_at: string
@@ -7070,6 +7231,554 @@ export type Database = {
           },
         ]
       }
+      referral_acknowledgements: {
+        Row: {
+          accepted_at: string
+          consultant_id: string
+          id: string
+          ip_hash: string | null
+          language: string
+          role: string
+          source: string
+          user_agent: string | null
+          user_id: string
+          version: number
+        }
+        Insert: {
+          accepted_at?: string
+          consultant_id: string
+          id?: string
+          ip_hash?: string | null
+          language?: string
+          role: string
+          source?: string
+          user_agent?: string | null
+          user_id: string
+          version: number
+        }
+        Update: {
+          accepted_at?: string
+          consultant_id?: string
+          id?: string
+          ip_hash?: string | null
+          language?: string
+          role?: string
+          source?: string
+          user_agent?: string | null
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_acknowledgements_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "referral_acknowledgements_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_adjust_requests: {
+        Row: {
+          amount: number
+          consultant_id: string
+          created_at: string
+          currency: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          expires_at: string
+          id: string
+          line_id: string | null
+          reason: string
+          requested_by: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          consultant_id: string
+          created_at?: string
+          currency: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          expires_at?: string
+          id?: string
+          line_id?: string | null
+          reason: string
+          requested_by: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          consultant_id?: string
+          created_at?: string
+          currency?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          expires_at?: string
+          id?: string
+          line_id?: string | null
+          reason?: string
+          requested_by?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_adjust_requests_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "referral_adjust_requests_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_announcements: {
+        Row: {
+          channel: string
+          consultant_id: string
+          sent_at: string
+          sent_by: string | null
+          user_id: string
+        }
+        Insert: {
+          channel?: string
+          consultant_id: string
+          sent_at?: string
+          sent_by?: string | null
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          consultant_id?: string
+          sent_at?: string
+          sent_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_announcements_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "referral_announcements_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_attribution_signals: {
+        Row: {
+          created_at: string
+          device_hash: string | null
+          ip_hash: string | null
+          referred_consultant_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_hash?: string | null
+          ip_hash?: string | null
+          referred_consultant_id: string
+        }
+        Update: {
+          created_at?: string
+          device_hash?: string | null
+          ip_hash?: string | null
+          referred_consultant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_attribution_signals_referred_consultant_id_fkey"
+            columns: ["referred_consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "referral_attribution_signals_referred_consultant_id_fkey"
+            columns: ["referred_consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_clicks: {
+        Row: {
+          clicks: number
+          consultant_id: string
+          day: string
+        }
+        Insert: {
+          clicks?: number
+          consultant_id: string
+          day: string
+        }
+        Update: {
+          clicks?: number
+          consultant_id?: string
+          day?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_clicks_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "referral_clicks_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_code_attempts: {
+        Row: {
+          invalid: number
+          locked_until: string | null
+          who: string
+          window_start: string
+        }
+        Insert: {
+          invalid?: number
+          locked_until?: string | null
+          who: string
+          window_start?: string
+        }
+        Update: {
+          invalid?: number
+          locked_until?: string | null
+          who?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      referral_devices: {
+        Row: {
+          consultant_id: string
+          hash: string
+          kind: string
+          last_seen_at: string
+        }
+        Insert: {
+          consultant_id: string
+          hash: string
+          kind: string
+          last_seen_at?: string
+        }
+        Update: {
+          consultant_id?: string
+          hash?: string
+          kind?: string
+          last_seen_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_devices_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "referral_devices_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_email_queue: {
+        Row: {
+          amount: number | null
+          attempts: number
+          claimed_at: string | null
+          created_at: string
+          currency: string | null
+          days: number | null
+          failed_at: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          next_step: string | null
+          referred_name: string | null
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          attempts?: number
+          claimed_at?: string | null
+          created_at?: string
+          currency?: string | null
+          days?: number | null
+          failed_at?: string | null
+          id?: string
+          kind: string
+          last_error?: string | null
+          next_step?: string | null
+          referred_name?: string | null
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          attempts?: number
+          claimed_at?: string | null
+          created_at?: string
+          currency?: string | null
+          days?: number | null
+          failed_at?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          next_step?: string | null
+          referred_name?: string | null
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referral_events: {
+        Row: {
+          action: string
+          actor: string | null
+          after: Json | null
+          before: Json | null
+          created_at: string
+          id: string
+          line_id: string | null
+          payout_id: string | null
+          reason: string | null
+          referred_consultant_id: string | null
+          referrer_consultant_id: string | null
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          id?: string
+          line_id?: string | null
+          payout_id?: string | null
+          reason?: string | null
+          referred_consultant_id?: string | null
+          referrer_consultant_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          id?: string
+          line_id?: string | null
+          payout_id?: string | null
+          reason?: string | null
+          referred_consultant_id?: string | null
+          referrer_consultant_id?: string | null
+        }
+        Relationships: []
+      }
+      referral_party_signals: {
+        Row: {
+          hash: string
+          kind: string
+          last_seen_at: string
+          user_id: string
+        }
+        Insert: {
+          hash: string
+          kind: string
+          last_seen_at?: string
+          user_id: string
+        }
+        Update: {
+          hash?: string
+          kind?: string
+          last_seen_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referral_private: {
+        Row: {
+          k: string
+          v: string
+        }
+        Insert: {
+          k: string
+          v: string
+        }
+        Update: {
+          k?: string
+          v?: string
+        }
+        Relationships: []
+      }
+      referral_reward_lines: {
+        Row: {
+          amount: number
+          available_at: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          fee_amount: number | null
+          flags: string[]
+          hold_reason: string | null
+          id: string
+          kind: string
+          matures_at: string | null
+          note: string | null
+          paid_at: string | null
+          payment_id: string | null
+          rate_percent: number | null
+          referral_payout_id: string | null
+          referred_consultant_id: string | null
+          referrer_consultant_id: string
+          released_at: string | null
+          reverses_line_id: string | null
+          source_payout_id: string | null
+          status: string
+          tier_count: number | null
+          tier_name: string | null
+          unique_key: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          available_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          fee_amount?: number | null
+          flags?: string[]
+          hold_reason?: string | null
+          id?: string
+          kind: string
+          matures_at?: string | null
+          note?: string | null
+          paid_at?: string | null
+          payment_id?: string | null
+          rate_percent?: number | null
+          referral_payout_id?: string | null
+          referred_consultant_id?: string | null
+          referrer_consultant_id: string
+          released_at?: string | null
+          reverses_line_id?: string | null
+          source_payout_id?: string | null
+          status: string
+          tier_count?: number | null
+          tier_name?: string | null
+          unique_key: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          available_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          fee_amount?: number | null
+          flags?: string[]
+          hold_reason?: string | null
+          id?: string
+          kind?: string
+          matures_at?: string | null
+          note?: string | null
+          paid_at?: string | null
+          payment_id?: string | null
+          rate_percent?: number | null
+          referral_payout_id?: string | null
+          referred_consultant_id?: string | null
+          referrer_consultant_id?: string
+          released_at?: string | null
+          reverses_line_id?: string | null
+          source_payout_id?: string | null
+          status?: string
+          tier_count?: number | null
+          tier_name?: string | null
+          unique_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_reward_lines_referral_payout_id_fkey"
+            columns: ["referral_payout_id"]
+            isOneToOne: false
+            referencedRelation: "payouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_reward_lines_referred_consultant_id_fkey"
+            columns: ["referred_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "referral_reward_lines_referred_consultant_id_fkey"
+            columns: ["referred_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_reward_lines_referrer_consultant_id_fkey"
+            columns: ["referrer_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "referral_reward_lines_referrer_consultant_id_fkey"
+            columns: ["referrer_consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_reward_lines_reverses_line_id_fkey"
+            columns: ["reverses_line_id"]
+            isOneToOne: false
+            referencedRelation: "referral_reward_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_reward_lines_source_payout_id_fkey"
+            columns: ["source_payout_id"]
+            isOneToOne: false
+            referencedRelation: "payouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referral_rewards: {
         Row: {
           amount: number
@@ -7116,6 +7825,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referral_statements: {
+        Row: {
+          consultant_id: string
+          generated_at: string
+          id: string
+          lines: Json
+          period_month: string
+          summary: Json
+        }
+        Insert: {
+          consultant_id: string
+          generated_at?: string
+          id?: string
+          lines?: Json
+          period_month: string
+          summary: Json
+        }
+        Update: {
+          consultant_id?: string
+          generated_at?: string
+          id?: string
+          lines?: Json
+          period_month?: string
+          summary?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_statements_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "referral_statements_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_terms_versions: {
+        Row: {
+          body_ar: string
+          body_en: string
+          is_draft: boolean
+          published_at: string
+          version: number
+        }
+        Insert: {
+          body_ar: string
+          body_en: string
+          is_draft?: boolean
+          published_at?: string
+          version: number
+        }
+        Update: {
+          body_ar?: string
+          body_en?: string
+          is_draft?: boolean
+          published_at?: string
+          version?: number
+        }
+        Relationships: []
       }
       referrals: {
         Row: {
@@ -11683,6 +12458,176 @@ export type Database = {
       }
       admin_recompute_responsiveness: { Args: never; Returns: number }
       admin_recompute_success: { Args: never; Returns: number }
+      admin_referral_action: {
+        Args: {
+          _action: string
+          _amount?: number
+          _currency?: string
+          _id: string
+          _new_referrer?: string
+          _reason: string
+        }
+        Returns: Json
+      }
+      admin_referral_adjust_requests: {
+        Args: { _status?: string }
+        Returns: {
+          amount: number
+          can_decide: boolean
+          consultant_id: string
+          consultant_name: string
+          created_at: string
+          currency: string
+          decided_at: string
+          decided_by_name: string
+          decision_note: string
+          expires_at: string
+          id: string
+          reason: string
+          requested_by_me: boolean
+          requested_by_name: string
+          status: string
+        }[]
+      }
+      admin_referral_announcement_log: {
+        Args: { _limit?: number }
+        Returns: {
+          name: string
+          sent_at: string
+          sent_by_name: string
+        }[]
+      }
+      admin_referral_announcement_preview: {
+        Args: { _limit?: number }
+        Returns: Json
+      }
+      admin_referral_announcement_send: {
+        Args: { _limit?: number; _test?: boolean }
+        Returns: Json
+      }
+      admin_referral_anomalies: { Args: never; Returns: Json }
+      admin_referral_decide_adjustment: {
+        Args: { _approve: boolean; _note: string; _request: string }
+        Returns: Json
+      }
+      admin_referral_events: {
+        Args: { _limit?: number }
+        Returns: {
+          action: string
+          actor_name: string
+          after: Json
+          before: Json
+          created_at: string
+          reason: string
+          referred_name: string
+          referrer_name: string
+        }[]
+      }
+      admin_referral_export: { Args: { _kind: string }; Returns: Json }
+      admin_referral_lines: {
+        Args: { _limit?: number; _offset?: number; _status?: string }
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          fee_amount: number
+          flags: string[]
+          hold_reason: string
+          id: string
+          kind: string
+          matures_at: string
+          note: string
+          payment_id: string
+          rate_percent: number
+          referral_payout_id: string
+          referred_id: string
+          referred_name: string
+          referrer_id: string
+          referrer_name: string
+          source_payout_id: string
+          status: string
+          tier_count: number
+          tier_name: string
+        }[]
+      }
+      admin_referral_overview: { Args: never; Returns: Json }
+      admin_referral_rate_history: {
+        Args: { _limit?: number }
+        Returns: {
+          changed_at: string
+          changed_by: string
+          new_max: number
+          new_tiers: Json
+          old_max: number
+          old_tiers: Json
+          reason: string
+        }[]
+      }
+      admin_referral_reconcile: {
+        Args: { _consultant?: string; _only_problems?: boolean }
+        Returns: {
+          actual: number
+          check_name: string
+          consultant_id: string
+          consultant_name: string
+          detail: string
+          expected: number
+          ok: boolean
+        }[]
+      }
+      admin_referral_referrals: {
+        Args: {
+          _filter?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+        }
+        Returns: {
+          activated_at: string
+          activation_expires_at: string
+          activation_status: string
+          approved_at: string
+          attributed_at: string
+          code: string
+          earned: Json
+          first_paid_at: string
+          flags: string[]
+          referred_acknowledged: boolean
+          referred_best_score: number
+          referred_id: string
+          referred_name: string
+          referred_passed: boolean
+          referred_public: string
+          referrer_acknowledged: boolean
+          referrer_best_score: number
+          referrer_id: string
+          referrer_name: string
+          referrer_passed: boolean
+          signals: string[]
+          source: string
+          status: string
+          verified: boolean
+          window_ends_at: string
+        }[]
+      }
+      admin_referral_referrers: {
+        Args: { _limit?: number; _search?: string }
+        Returns: {
+          code: string
+          disabled: boolean
+          last_referral_at: string
+          money: Json
+          paying: number
+          referred: number
+          referrer_id: string
+          referrer_name: string
+          verified: number
+        }[]
+      }
+      admin_referral_set_settings: {
+        Args: { _reason: string; _settings: Json }
+        Returns: Json
+      }
       admin_reject_payment_report: {
         Args: { _note: string; _payment_id: string }
         Returns: undefined
@@ -12652,6 +13597,86 @@ export type Database = {
       my_notification_pause: { Args: never; Returns: Json }
       my_profile_completion: { Args: never; Returns: Json }
       my_profile_submission: { Args: never; Returns: Json }
+      my_referral_history: {
+        Args: { _limit?: number }
+        Returns: {
+          amount: number
+          available_at: string
+          created_at: string
+          currency: string
+          fee_amount: number
+          kind: string
+          note: string
+          paid_at: string
+          rate_percent: number
+          referred_name: string
+          status: string
+        }[]
+      }
+      my_referral_invite: { Args: never; Returns: Json }
+      my_referral_nav_state: { Args: never; Returns: Json }
+      my_referral_overview: { Args: { _device?: string }; Returns: Json }
+      my_referral_payouts: {
+        Args: never
+        Returns: {
+          amount: number
+          bank_reference: string
+          created_at: string
+          currency: string
+          due_by: string
+          lines: number
+          paid_at: string
+          payout_ref: string
+          status: string
+        }[]
+      }
+      my_referral_reward_lines: {
+        Args: { _limit?: number }
+        Returns: {
+          amount: number
+          approved_hours: number
+          available_at: string
+          created_at: string
+          currency: string
+          engagement_ref: string
+          fee_amount: number
+          hold_reason: string
+          kind: string
+          line_ref: string
+          man_days: number
+          matures_at: string
+          note: string
+          paid_at: string
+          payout_ref: string
+          rate_percent: number
+          ref_key: string
+          referred_name: string
+          released_at: string
+          status: string
+          tier_name: string
+        }[]
+      }
+      my_referral_tracking: { Args: never; Returns: Json }
+      my_referrals: {
+        Args: never
+        Returns: {
+          activated_at: string
+          activation_expires_at: string
+          activation_status: string
+          attributed_at: string
+          chip: string
+          earned: Json
+          first_paid_at: string
+          my_next: string
+          referred_name: string
+          status: string
+          their_next: string
+          they_acknowledged: boolean
+          they_passed: boolean
+          verified: boolean
+          window_ends_at: string
+        }[]
+      }
       my_responsiveness: { Args: never; Returns: Json }
       my_success: { Args: never; Returns: Json }
       new_bid_blocked_by_profile: {
@@ -12776,6 +13801,347 @@ export type Database = {
         Args: { _consultant_id: string }
         Returns: undefined
       }
+      referral_accept_terms: {
+        Args: {
+          _language?: string
+          _source?: string
+          _user_agent?: string
+          _version: number
+        }
+        Returns: undefined
+      }
+      referral_acked_at: { Args: { _cid: string }; Returns: string }
+      referral_activation_sweep: { Args: never; Returns: Json }
+      referral_add_flags: {
+        Args: { _new: string[]; _referred: string; _why: string }
+        Returns: undefined
+      }
+      referral_admin_is_party: {
+        Args: { _consultants: string[] }
+        Returns: boolean
+      }
+      referral_announcement_status: { Args: { _cid: string }; Returns: string }
+      referral_announcement_text: { Args: never; Returns: Json }
+      referral_attribute: {
+        Args: {
+          _code: string
+          _device: string
+          _ip: string
+          _referred: string
+          _source: string
+        }
+        Returns: string
+      }
+      referral_attribution_flags: {
+        Args: { _dh: string; _ih: string; _referred: string; _referrer: string }
+        Returns: string[]
+      }
+      referral_backfill_codes: { Args: never; Returns: number }
+      referral_backfill_preview: { Args: never; Returns: Json }
+      referral_best_score: { Args: { _cid: string }; Returns: number }
+      referral_bundle_payouts: { Args: { _actor?: string }; Returns: number }
+      referral_calc_forecast: {
+        Args: { _consultant?: string }
+        Returns: {
+          approved_hours: number
+          currency: string
+          expected_fee: number
+          expected_reward: number
+          timesheets: number
+        }[]
+      }
+      referral_calc_lines: {
+        Args: {
+          _consultant?: string
+          _from?: string
+          _ref_key?: string
+          _status?: string
+          _to?: string
+        }
+        Returns: {
+          amount: number
+          approved_hours: number
+          client_paid_at: string
+          created_at: string
+          currency: string
+          engagement_ref: string
+          fee_amount: number
+          kind: string
+          man_days: number
+          note: string
+          payment_status: string
+          payout_released_at: string
+          payout_status: string
+          rate_percent: number
+          ref_key: string
+          referral_payout_due: string
+          referred_name: string
+          status: string
+          tier_name: string
+        }[]
+      }
+      referral_calc_monthly: {
+        Args: { _consultant?: string; _months?: number }
+        Returns: {
+          currency: string
+          earned: number
+          month: string
+          paid: number
+        }[]
+      }
+      referral_calc_referrals: {
+        Args: {
+          _consultant?: string
+          _from?: string
+          _status?: string
+          _to?: string
+        }
+        Returns: {
+          activation_status: string
+          approved_hours: number
+          available: number
+          currency: string
+          fee_base: number
+          first_paid_at: string
+          man_days: number
+          net: number
+          paid: number
+          pending: number
+          rate_min: number
+          rate_percent: number
+          ref_key: string
+          referred_name: string
+          reversed: number
+          reward_earned: number
+          window_ends_at: string
+        }[]
+      }
+      referral_calc_statements: {
+        Args: { _consultant?: string }
+        Returns: {
+          generated_at: string
+          id: string
+          lines: Json
+          period_month: string
+          summary: Json
+        }[]
+      }
+      referral_calc_summary: { Args: { _consultant?: string }; Returns: Json }
+      referral_calc_target: { Args: { _consultant: string }; Returns: string }
+      referral_can_claim: { Args: { _cid: string }; Returns: boolean }
+      referral_check_activation: {
+        Args: { _referred: string }
+        Returns: string
+      }
+      referral_check_consultant: { Args: { _cid: string }; Returns: undefined }
+      referral_chip: {
+        Args: { _for: string; _referred: string }
+        Returns: string
+      }
+      referral_claim: {
+        Args: { _code: string; _device?: string }
+        Returns: Json
+      }
+      referral_code_blocked_word: { Args: { _code: string }; Returns: boolean }
+      referral_code_failed: { Args: { _who: string[] }; Returns: undefined }
+      referral_code_locked: { Args: { _who: string[] }; Returns: boolean }
+      referral_code_taken: {
+        Args: { _code: string; _except?: string }
+        Returns: boolean
+      }
+      referral_consultant_suspended: {
+        Args: { _cid: string }
+        Returns: boolean
+      }
+      referral_create_reward: { Args: { _payout: string }; Returns: string }
+      referral_daily_reconcile: { Args: never; Returns: number }
+      referral_email_claim: {
+        Args: { _limit?: number }
+        Returns: {
+          amount: number
+          currency: string
+          days: number
+          display_name: string
+          id: string
+          kind: string
+          lang: string
+          months: number
+          next_step: string
+          pass_mark: number
+          rate_percent: number
+          referred_name: string
+          user_id: string
+        }[]
+      }
+      referral_email_done: {
+        Args: { _error?: string; _id: string; _ok: boolean }
+        Returns: undefined
+      }
+      referral_engagement_ref: {
+        Args: { _engagement: string; _referrer: string }
+        Returns: string
+      }
+      referral_ensure_code: { Args: { _cid: string }; Returns: string }
+      referral_find_code: { Args: { _code: string }; Returns: string }
+      referral_flag_score: { Args: { _flags: string[] }; Returns: number }
+      referral_free_domain: { Args: { _d: string }; Returns: boolean }
+      referral_generate_statements: {
+        Args: { _month?: string }
+        Returns: number
+      }
+      referral_hash: { Args: { _v: string }; Returns: string }
+      referral_is_admin: { Args: never; Returns: boolean }
+      referral_is_loop: {
+        Args: { _referred: string; _referrer: string }
+        Returns: boolean
+      }
+      referral_lines_for: {
+        Args: {
+          _cid: string
+          _from: string
+          _ref_key: string
+          _status: string
+          _to: string
+        }
+        Returns: {
+          amount: number
+          approved_hours: number
+          client_paid_at: string
+          created_at: string
+          currency: string
+          engagement_ref: string
+          fee_amount: number
+          kind: string
+          man_days: number
+          note: string
+          payment_status: string
+          payout_released_at: string
+          payout_status: string
+          rate_percent: number
+          ref_key: string
+          referral_payout_due: string
+          referred_name: string
+          status: string
+          tier_name: string
+        }[]
+      }
+      referral_log: {
+        Args: {
+          _action: string
+          _actor: string
+          _after: Json
+          _before: Json
+          _line: string
+          _payout: string
+          _reason: string
+          _referred: string
+          _referrer: string
+        }
+        Returns: undefined
+      }
+      referral_masked_name: { Args: { _cid: string }; Returns: string }
+      referral_mature_lines: { Args: { _now?: string }; Returns: number }
+      referral_money: { Args: { _v: number }; Returns: number }
+      referral_my_consultant: { Args: never; Returns: string }
+      referral_name_part: { Args: { _name: string }; Returns: string }
+      referral_next_step: {
+        Args: { _for: string; _referred: string }
+        Returns: string
+      }
+      referral_next_text: {
+        Args: { _other: string; _step: string }
+        Returns: string
+      }
+      referral_nightly: { Args: never; Returns: Json }
+      referral_norm_code: { Args: { _code: string }; Returns: string }
+      referral_norm_email: { Args: { _email: string }; Returns: string }
+      referral_norm_phone: { Args: { _p: string }; Returns: string }
+      referral_note_device: {
+        Args: { _cid: string; _device: string; _ip: string }
+        Returns: undefined
+      }
+      referral_notify: {
+        Args: {
+          _amount: number
+          _currency: string
+          _kind: string
+          _next?: string
+          _other: string
+          _to: string
+        }
+        Returns: undefined
+      }
+      referral_passed_at: { Args: { _cid: string }; Returns: string }
+      referral_payout_ref: { Args: { _payout: string }; Returns: string }
+      referral_policy_ok: { Args: { _cid: string }; Returns: boolean }
+      referral_public_hold_reason: {
+        Args: { _reason: string }
+        Returns: string
+      }
+      referral_public_settings: { Args: never; Returns: Json }
+      referral_random: { Args: { _n: number }; Returns: string }
+      referral_reconcile_rows: {
+        Args: { _consultant?: string; _only_problems?: boolean }
+        Returns: {
+          actual: number
+          check_name: string
+          consultant_id: string
+          consultant_name: string
+          detail: string
+          expected: number
+          ok: boolean
+        }[]
+      }
+      referral_ref_key: {
+        Args: { _referred: string; _referrer: string }
+        Returns: string
+      }
+      referral_referrer_payable: { Args: { _cid: string }; Returns: boolean }
+      referral_related_flags: {
+        Args: { _a: string; _b: string }
+        Returns: string[]
+      }
+      referral_release_status: { Args: { _line: string }; Returns: string }
+      referral_request_ip: { Args: never; Returns: string }
+      referral_reverse_line: {
+        Args: { _actor: string; _line: string; _reason: string }
+        Returns: string
+      }
+      referral_reward_block_reason: {
+        Args: {
+          _activated_at: string
+          _activation: string
+          _at: string
+          _referred: string
+          _referrer: string
+          _status: string
+          _window_ends: string
+        }
+        Returns: string
+      }
+      referral_same_bank: { Args: { _a: string; _b: string }; Returns: boolean }
+      referral_setting_cap: { Args: { _key: string }; Returns: number }
+      referral_setting_num: {
+        Args: { _def: number; _hi: number; _key: string; _lo: number }
+        Returns: number
+      }
+      referral_setting_ts: { Args: { _key: string }; Returns: string }
+      referral_settings: { Args: never; Returns: Json }
+      referral_summary_for: { Args: { _cid: string }; Returns: Json }
+      referral_tier_for: { Args: { _count: number }; Returns: Json }
+      referral_tier_qualifies: { Args: { _referred: string }; Returns: boolean }
+      referral_tiers: { Args: never; Returns: Json }
+      referral_tiers_valid: {
+        Args: { _max: number; _t: Json }
+        Returns: string
+      }
+      referral_track_click: { Args: { _code: string }; Returns: undefined }
+      referral_update_code: { Args: { _code: string }; Returns: string }
+      referral_user_ip_hashes: { Args: { _user: string }; Returns: string[] }
+      referral_validate_code: { Args: { _code: string }; Returns: Json }
+      referral_verified_count: { Args: { _referrer: string }; Returns: number }
+      referral_wake: { Args: never; Returns: undefined }
+      referral_weekly_digest: { Args: never; Returns: undefined }
       referrals_link_for: { Args: { _user_id: string }; Returns: string }
       register_card_attempt: {
         Args: {

@@ -1,3 +1,4 @@
+-- APPLIED 2026-10-22 on the owner's request (migrations 0079-0085, comments stripped, statements identical).
 -- Feature Z: consultant referral programme ("Refer & earn").
 -- Prepared for the owner to apply; NOT applied by the app. Safe to run more than once.
 --
