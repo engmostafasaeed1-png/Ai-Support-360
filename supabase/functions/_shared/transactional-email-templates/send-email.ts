@@ -75,6 +75,8 @@ export interface SendTemplateEmailOptions {
    * e-mails and get the signed "Pause for 3 days | 1 week | 1 month | Unsubscribe" footer. Essential mail always goes out.
    */
   pause?: { userId: string; category: PauseCategory }
+  /** Test sends only (e.g. "[TEST] "), prepended to the rendered subject. */
+  subjectPrefix?: string
 }
 
 /**
@@ -132,6 +134,8 @@ export async function sendTemplateEmail(
     typeof template.subject === 'function'
       ? template.subject(templateData)
       : template.subject
+  const prefix = (options.subjectPrefix ?? '').slice(0, 12)
+  const finalSubject = prefix && !subject.startsWith(prefix) ? `${prefix}${subject}` : subject
 
   try {
     await sendLovableEmail(
@@ -139,7 +143,7 @@ export async function sendTemplateEmail(
         to: recipient,
         from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
         sender_domain: SENDER_DOMAIN,
-        subject,
+        subject: finalSubject,
         html,
         text,
         purpose: 'transactional',

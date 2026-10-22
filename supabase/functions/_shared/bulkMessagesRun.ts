@@ -38,7 +38,12 @@ export interface WorkerDeps {
   finish: (rows: FinishRow[]) => Promise<void>;
   sleep: (ms: number) => Promise<void>;
   now: () => number;
+  /** Campaigns created by the Refer & earn invitation (referral_invitation_runs); optional, empty when not installed. */
+  referralCampaigns?: (ids: string[]) => Promise<Set<string>>;
 }
+
+/** In-app notice of a Refer & earn invitation: type 'referral', straight to the programme tab (no token, no personal data). */
+export const REFERRAL_INVITE_LINK = '/consultant/referrals?tab=programme&from=invite';
 
 /** Text one recipient gets: their language, their variables, the standard footer. */
 export function renderFor(row: ClaimRow) {
@@ -64,11 +69,17 @@ export async function runBulkBatch(deps: WorkerDeps, budgetMs = 45_000): Promise
   const inApp = rows.filter((r) => r.channel === 'in_app');
   if (inApp.length) {
     const rendered = new Map(inApp.map((r) => [key(r), renderFor(r)]));
+    let referral = new Set<string>();
+    if (deps.referralCampaigns) {
+      try { referral = await deps.referralCampaigns([...new Set(inApp.map((r) => r.campaign_id))]); } catch { referral = new Set(); }
+    }
     try {
       const created = await deps.insertNotifications(inApp.map((r) => {
         const m = rendered.get(key(r))!;
         const preview = m.plain.length > LIMITS.notificationBody ? `${m.plain.slice(0, LIMITS.notificationBody - 1)}…` : m.plain;
-        return { user_id: r.user_id, title: m.subject, body: preview, type: notificationType(r.category), link: `/notifications?broadcast=${r.campaign_id}` };
+        return referral.has(r.campaign_id)
+          ? { user_id: r.user_id, title: m.subject, body: preview, type: 'referral', link: REFERRAL_INVITE_LINK }
+          : { user_id: r.user_id, title: m.subject, body: preview, type: notificationType(r.category), link: `/notifications?broadcast=${r.campaign_id}` };
       }));
       const byUser = new Map<string, string[]>();
       for (const c of created) byUser.set(c.user_id, [...(byUser.get(c.user_id) ?? []), c.id]);

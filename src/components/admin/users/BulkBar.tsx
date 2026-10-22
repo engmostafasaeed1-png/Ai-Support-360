@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Ban, Bell, CheckCircle2, Download, Megaphone, Tag, X } from 'lucide-react';
+import { Ban, Bell, CheckCircle2, Download, Gift, Megaphone, Tag, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBulkAccess } from '@/hooks/useBulkMessaging';
 import { SELECTED_KEY } from '@/lib/bulkMessaging';
@@ -17,8 +17,10 @@ import { ReasonDialog } from './UserDialogs';
 type Kind = 'tag_add' | 'tag_remove' | 'remind' | 'bulk_suspend' | 'bulk_reactivate';
 interface Preview { eligible: string[]; skipped: Array<{ id: string; reason: string }> }
 
-export default function BulkBar({ ids, total, installed, perms, onClear, onSelectMatching, onExport }: {
+export default function BulkBar({ ids, total, installed, perms, onClear, onSelectMatching, onExport, onReferralInvite }: {
   ids: string[]; total: number; installed: boolean; perms: string[]; onClear: () => void; onSelectMatching: () => void; onExport: () => void;
+  /** Opens the Refer & earn invitation confirmation for the selection (the database re-checks every person). */
+  onReferralInvite?: () => void;
 }) {
   const { t } = useTranslation();
   const invalidate = useInvalidateUsers();
@@ -90,6 +92,7 @@ export default function BulkBar({ ids, total, installed, perms, onClear, onSelec
         {installed && can('users.suspend') && <Button size="sm" variant="outline" disabled={over} onClick={() => open('bulk_suspend')}><Ban className="me-1 h-4 w-4" />{t('um.suspend', 'Suspend')}</Button>}
         {installed && can('users.suspend') && <Button size="sm" variant="outline" disabled={over} onClick={() => open('bulk_reactivate')}><CheckCircle2 className="me-1 h-4 w-4" />{t('um.reactivate', 'Reactivate')}</Button>}
         {messaging.state === 'ready' && <Button size="sm" variant="outline" onClick={messageSelected}><Megaphone className="me-1 h-4 w-4" />{t('bmsg.message_users', 'Message users')}</Button>}
+        {onReferralInvite && <Button size="sm" variant="outline" onClick={onReferralInvite}><Gift className="me-1 h-4 w-4" />{t('rinv.bulk_button', 'Send Refer & earn invitation')}</Button>}
         {can('users.export') && <Button size="sm" variant="outline" onClick={onExport}><Download className="me-1 h-4 w-4" />{t('um.export', 'Export')}</Button>}
         <Button size="sm" variant="ghost" onClick={onClear} aria-label={t('um.clear_selection', 'Clear selection')}><X className="h-4 w-4" /></Button>
       </div>

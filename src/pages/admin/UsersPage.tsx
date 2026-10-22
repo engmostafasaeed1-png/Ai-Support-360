@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Download, Mail, RefreshCw, UserPlus } from 'lucide-react';
+import { Download, Gift, Mail, RefreshCw, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,6 +16,9 @@ import UsersList from '@/components/admin/users/UsersList';
 import UserDetailSheet from '@/components/admin/users/UserDetailSheet';
 import BulkBar from '@/components/admin/users/BulkBar';
 import BulkInviteDialog from '@/components/admin/users/BulkInviteDialog';
+import ReferralInviteDialog from '@/components/admin/users/ReferralInviteDialog';
+import { useInviteStatus } from '@/hooks/useReferralInvitations';
+import { filterSummary, inviteStatusMap } from '@/lib/referralInvitations';
 import { AccessReviewPanel, AdminAuditPanel, PermissionsPanel } from '@/components/admin/users/AccessPanels';
 import { useNotificationPauseOverview } from '@/components/admin/NotificationPauseAdminCard';
 import { callRpc, searchAll, searchIds, useMyAdminPermissions, useUsersSearch, useUsersStats, useInvalidateUsers } from '@/hooks/useUserAdmin';
@@ -42,6 +45,7 @@ export default function UsersPage() {
   const [focus, setFocus] = useState(-1);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [bulkInvite, setBulkInvite] = useState(false);
+  const [refInvite, setRefInvite] = useState<'selected' | 'all_eligible' | null>(null);
   const [consultant, setConsultant] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [columns, setColumns] = useState<Column[]>(() => {
@@ -56,6 +60,9 @@ export default function UsersPage() {
   const rows = search.data?.rows ?? [];
   const total = search.data?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / filters.page_size));
+  // "Invited on <date> (v1)" per row (Refer & earn invitation); no badges until that database update is applied.
+  const inviteStatus = useInviteStatus(rows.map((r) => r.id));
+  const invited = useMemo(() => inviteStatusMap(inviteStatus.data), [inviteStatus.data]);
 
   const setFilters = (f: UserFilters) => { setSp(filtersToParams(f, sp), { replace: true }); setFocus(-1); };
   const setParam = (k: string, v: string | null) => { const n = new URLSearchParams(sp); if (v) n.set(k, v); else n.delete(k); setSp(n, { replace: k !== 'user' }); };
@@ -120,6 +127,8 @@ export default function UsersPage() {
       <ConsultantFullProfileSheet consultantId={consultant} onClose={() => setConsultant(null)} />
       <InviteUserDialog open={inviteOpen} onOpenChange={setInviteOpen} />
       <BulkInviteDialog open={bulkInvite} onOpenChange={setBulkInvite} />
+      <ReferralInviteDialog open={!!refInvite} onOpenChange={(o) => { if (!o) setRefInvite(null); }} mode={refInvite ?? 'selected'}
+        ids={[...selected]} filters={refInvite === 'all_eligible' ? { source: 'all_eligible' } : filterSummary(filtersToParams(filters))} />
 
       <header className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
@@ -129,6 +138,7 @@ export default function UsersPage() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => invalidate()} disabled={search.isFetching}><RefreshCw className={`me-1 h-4 w-4 ${search.isFetching ? 'animate-spin' : ''}`} />{t('um.refresh', 'Refresh')}</Button>
           {(perms.includes('users.export') || me.isLoading) && <Button variant="outline" size="sm" className={me.isLoading ? 'invisible' : undefined} onClick={() => exportCsv(false)} disabled={!total}><Download className="me-1 h-4 w-4" />{t('um.export_csv', 'Export CSV')}</Button>}
+          <Button variant="outline" size="sm" onClick={() => setRefInvite('all_eligible')}><Gift className="me-1 h-4 w-4" />{t('rinv.all_button', 'Refer & earn: all eligible consultants')}</Button>
           {(perms.includes('users.invite') || me.isLoading) && <Button variant="outline" size="sm" className={me.isLoading ? 'invisible' : undefined} onClick={() => setBulkInvite(true)}><Mail className="me-1 h-4 w-4" />{t('um.invite_many', 'Invite people')}</Button>}
           {(perms.includes('users.invite') || me.isLoading) && <Button className={`gradient-primary border-0 ${me.isLoading ? 'invisible' : ''}`} size="sm" onClick={() => setInviteOpen(true)}><UserPlus className="me-1 h-4 w-4" />{t('um.invite_one', 'Invite user')}</Button>}
         </div>
@@ -169,7 +179,7 @@ export default function UsersPage() {
                 <UsersList rows={rows} loading={search.isLoading || me.isLoading} columns={columns} selected={selected} focus={focus}
                   sort={filters.sort} dir={filters.dir} onFocus={setFocus}
                   onSort={(key) => setFilters({ ...filters, sort: key, dir: filters.sort === key && filters.dir === 'desc' ? 'asc' : filters.sort === key ? 'desc' : key === 'name' ? 'asc' : 'desc', page: 1 })}
-                  onToggle={toggle} onTogglePage={togglePage} onOpen={(u) => setParam('user', u.id)} />
+                  onToggle={toggle} onTogglePage={togglePage} onOpen={(u) => setParam('user', u.id)} invited={invited} />
               )}
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/50 px-4 py-2 text-xs text-muted-foreground">
               <span aria-live="polite">{t('um.showing', 'Showing {{a}}–{{b}} of {{n}}', { a: total ? (filters.page - 1) * filters.page_size + 1 : 0, b: Math.min(filters.page * filters.page_size, total), n: total })}</span>
@@ -188,7 +198,7 @@ export default function UsersPage() {
 
           {selected.size > 0 && (
             <BulkBar ids={[...selected]} total={total} installed={!!installed} perms={perms} onClear={() => setSelected(new Set())}
-              onSelectMatching={selectMatching} onExport={() => exportCsv(true)} />
+              onSelectMatching={selectMatching} onExport={() => exportCsv(true)} onReferralInvite={() => setRefInvite('selected')} />
           )}
         </TabsContent>
 

@@ -15,6 +15,8 @@ import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { isReferralNotice, referralNoticeView } from '@/lib/referralNotice';
+import { ReferralNoticeContent, ReferralNoticeIcon } from './ReferralNotice';
 
 interface NotificationBellProps {
   basePath: string; // e.g. '/client', '/consultant', '/admin'
@@ -92,7 +94,19 @@ export default function NotificationBell({ basePath }: NotificationBellProps) {
               {t('notifications.empty')}
             </div>
           ) : (
-            recent.map(n => (
+            recent.map(n => isReferralNotice(n.type) ? (
+              // The card is clickable for mouse users; keyboard and screen-reader users use its one action button.
+              <div key={n.id}
+                onClick={() => { if (!n.is_read) markAsRead(n.id); navigate(referralNoticeView(n).link); }}
+                className={cn('flex w-full cursor-pointer items-start gap-2.5 border-b border-border/30 p-3 text-start transition-colors last:border-0 hover:bg-muted/50', !n.is_read && 'bg-primary/5')}>
+                <ReferralNoticeIcon view={referralNoticeView(n)} className="h-8 w-8" />
+                <div className="min-w-0 flex-1">
+                  <ReferralNoticeContent n={n} compact unread={!n.is_read} onOpen={() => { if (!n.is_read) markAsRead(n.id); }} />
+                  <p className="text-[10px] text-muted-foreground/70 mt-1">{formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale })}</p>
+                </div>
+              </div>
+            ) : (
+
               <button
                 key={n.id}
                 onClick={() => { if (!n.is_read) markAsRead(n.id); if (n.link) navigate(n.link); }}

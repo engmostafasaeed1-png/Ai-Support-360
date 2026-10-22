@@ -20,8 +20,25 @@ import { DEFAULT_MAX_RATE, FLAG_LABEL, parseRulesTexts, RULES_SECTIONS, rulesTex
 import TierLadder from '@/components/referral/TierLadder';
 import { cn } from '@/lib/utils';
 import ReferralCalculations from '@/components/referral/ReferralCalculations';
+import ReferralEmailPreview from '@/components/admin/referral/ReferralEmailPreview';
+import ReferralInviteSettingsCard from '@/components/admin/referral/ReferralInviteSettingsCard';
+import { useInviteSettings } from '@/hooks/useReferralInvitations';
 
 /** In-app announcement (bell + pop-up) to every eligible consultant, once each; test to yourself first. No e-mail. */
+/** Live programme numbers for the e-mail preview (tiers, months, hold, pass mark) + the example settings of the invitation. */
+function EmailPreviewWithSettings({ settings }: { settings: Row }) {
+  const inv = useInviteSettings();
+  const rates = (Array.isArray(settings.tiers) ? (settings.tiers as Row[]) : []).map((x) => Number(x.rate)).filter((n) => Number.isFinite(n) && n > 0);
+  const num = (v: unknown) => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Number(v) : undefined);
+  const mapped = useMemo(() => ({
+    minRate: rates.length ? Math.min(...rates) : num(settings.rate_percent), maxRate: rates.length ? Math.max(...rates) : undefined,
+    months: num(settings.months), holdDays: num(settings.hold_days), passMark: num(settings.pass_mark),
+    activationDays: num(settings.activation_days), payoutChangeDays: num(settings.payout_change_hold_days),
+    exampleFee: inv.data?.example_fee, currency: inv.data?.example_currency, termsDraft: inv.data ? inv.data.terms_draft : undefined,
+  }), [settings, inv.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  return <ReferralEmailPreview settings={mapped} />;
+}
+
 function AnnouncementCard() {
   const qc = useQueryClient();
   const preview = useRpc<Row>(['refadmin', 'announce-preview'], 'admin_referral_announcement_preview', { _limit: 50 });
@@ -628,6 +645,7 @@ export default function ReferralsAdminPage() {
           <TabsTrigger value="audit">Audit trail</TabsTrigger>
           <TabsTrigger value="calc">Calculations</TabsTrigger>
           <TabsTrigger value="announce">Announcement</TabsTrigger>
+          <TabsTrigger value="emails">E-mails & invitation</TabsTrigger>
           <TabsTrigger value="reconcile">Reconciliation</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
@@ -757,6 +775,7 @@ export default function ReferralsAdminPage() {
 
         <TabsContent value="calc"><AdminCalculations /></TabsContent>
         <TabsContent value="announce" className="space-y-4"><AnnouncementCard /><SetReferrerCard /></TabsContent>
+        <TabsContent value="emails" className="space-y-4"><ReferralInviteSettingsCard /><EmailPreviewWithSettings settings={(o.settings ?? {}) as Row} /></TabsContent>
         <TabsContent value="reconcile"><ReconcileCard /></TabsContent>
         <TabsContent value="security" className="space-y-4"><AdjustRequestsCard /><AnomaliesCard /></TabsContent>
 
