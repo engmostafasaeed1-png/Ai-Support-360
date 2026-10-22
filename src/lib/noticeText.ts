@@ -5,7 +5,7 @@
  */
 export type NoticeBlock = { type: 'p'; text: string } | { type: 'ul'; items: string[] };
 
-const GREETING = /^(hello|hi|dear|good (morning|afternoon|evening)|مرحب[ًاٌ]*|مرحباً|أهلاً|اهلا|عزيزي)\b/i;
+const GREETING = /^(hello|hi|dear|good (morning|afternoon|evening)|مرحب[ًاٌ]*|أهلاً|اهلا|عزيزي)(?=[\s,،!.]|$)/i;
 const URL_LINE = /^(?:[^\n:]{0,60}:\s*)?https?:\/\/\S+$/i;
 const BULLET = /^\s*(?:[-•*·]|\d+[.)])\s+/;
 
