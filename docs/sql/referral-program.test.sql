@@ -44,7 +44,7 @@ INSERT INTO public.consultants (id, user_id) SELECT d, d_user FROM _ids;
 SELECT pg_temp.check((SELECT status = 'active' AND source = 'signup' AND referrer_consultant_id = (SELECT r FROM _ids)
                         FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT d FROM _ids)), 'attributed at sign-up');
 SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.notifications WHERE user_id = (SELECT r_user FROM _ids) AND title = 'Someone registered with your referral code'
-                               AND body = 'D. K**** registered with your code. Your referral becomes active when you both pass the AI interview.'), 'referrer told with masked name');
+                               AND body = 'D. K**** registered with your code. Your referral becomes active when you both pass the AI interview. Your current rate: 0.5 % (Tier 1).'), 'referrer told with masked name');
 SELECT pg_temp.check(EXISTS (SELECT 1 FROM public.notifications WHERE user_id = (SELECT d_user FROM _ids)
                                AND body = 'You were invited by R. S****. The referral programme becomes active after you and your referrer pass the AI interview.'), 'referred told at sign-up');
 SELECT pg_temp.check((SELECT activation_status FROM public.consultant_referrals WHERE referred_consultant_id = (SELECT d FROM _ids)) = 'pending', 'pending activation at sign-up');
