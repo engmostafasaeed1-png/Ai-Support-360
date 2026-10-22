@@ -404,7 +404,7 @@ function columns(cells: string[], gap = 12): string {
   const w = Math.floor((CONTENT_W - gap * (n - 1)) / n);
   const open = `<!--[if mso]><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><![endif]-->`;
   const body = cells.map((c, i) => `<!--[if mso]><td width="${w}" valign="top" style="padding:0 ${i < n - 1 ? gap : 0}px 0 0"><![endif]-->`
-    + `<div style="display:inline-block;width:100%;max-width:${w}px;vertical-align:top;margin:0 ${i < n - 1 ? Math.floor(gap / 2) : 0}px ${gap}px ${i > 0 ? Math.floor(gap / 2) : 0}px">${c}</div>`
+    + `<div style="display:inline-block;width:100%;max-width:${w}px;vertical-align:top;font-size:16px;line-height:1.5;margin:0 ${i < n - 1 ? Math.floor(gap / 2) : 0}px ${gap}px ${i > 0 ? Math.floor(gap / 2) : 0}px">${c}</div>`
     + `<!--[if mso]></td><![endif]-->`).join('');
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td style="font-size:0;line-height:0;text-align:center">${open}${body}<!--[if mso]></tr></table><![endif]--></td></tr></table>`;
 }
@@ -615,11 +615,11 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
     + `<h1 style="margin:0;font-family:${font};font-size:28px;line-height:1.25;font-weight:800;color:#ffffff">${esc(b.headline)}</h1>`;
   const heroInner = showArt
     ? `<!--[if mso]><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td width="360" valign="middle"><![endif]-->`
-      + `<div style="display:inline-block;width:100%;max-width:340px;vertical-align:middle;text-align:${align}">${heroText}</div>`
+      + `<div style="display:inline-block;width:100%;max-width:340px;vertical-align:middle;font-size:16px;line-height:1.4;text-align:${align}">${heroText}</div>`
       + `<!--[if mso]></td><td width="180" valign="middle" align="center"><![endif]-->`
       + `<div style="display:inline-block;width:100%;max-width:170px;vertical-align:middle;text-align:center;padding-top:8px"><img src="${esc(hero)}" width="140" alt="${esc(c.bannerAlt)}" style="display:inline-block;width:140px;max-width:100%;height:auto;border:0" /></div>`
       + `<!--[if mso]></td></tr></table><![endif]-->`
-    : `<div style="text-align:${align}">${heroText}</div>`;
+    : `<div style="font-size:16px;line-height:1.4;text-align:${align}">${heroText}</div>`;
 
   const html = `<!DOCTYPE html><html lang="${lang}" dir="${dir}" xmlns:v="urn:schemas-microsoft-com:vml"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>${esc(subject)}</title></head>`
     + `<body style="margin:0;padding:0;background:#ffffff;" dir="${dir}">`
