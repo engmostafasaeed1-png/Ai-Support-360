@@ -39,12 +39,11 @@ export default function SendViaSelector({ value, onChange, info, idPrefix, chann
       <div role="group" aria-label={t('chan.presets', 'Quick choices')} className="flex flex-wrap gap-1.5">
         {PRESET_ORDER.map((p) => {
           const usable = presetUsable(p, info);
-          const partial = usable && presetSelection(p, info).length < (p === 'all' ? 0 : 99) && false;
           return (
             <button key={p} type="button" disabled={!usable || disabled} aria-pressed={current === p}
               onClick={() => onChange(presetSelection(p, info))}
               className={cn('rounded-full border px-2.5 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-                current === p ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background hover:bg-muted', partial && 'border-dashed')}>
+                current === p ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background hover:bg-muted')}>
               {t(`chan.p_${p}`, PRESET_EN[p])}
             </button>
           );
