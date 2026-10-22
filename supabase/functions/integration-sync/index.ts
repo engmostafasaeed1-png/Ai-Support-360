@@ -297,10 +297,20 @@ Deno.serve(async (req) => {
       const status = LOCAL_STATUSES.has(String(ticket.status)) ? String(ticket.status) : 'in_progress';
       const localId = typeof ticket.id === 'string' && UUID_RE.test(ticket.id) ? ticket.id : null;
 
-      // A local ticket reference must belong to the integration owner.
+      // Only external tickets this integration already synced in may be updated.
+      const { data: known } = await supabase.from('integration_sync_log').select('id')
+        .eq('integration_id', integration.id).eq('direction', 'inbound').eq('external_ticket_id', externalId)
+        .limit(1).maybeSingle();
+      if (!known) return jsonResponse(req, { error: 'External ticket is not linked to this integration' }, 404);
+
+      // A local ticket reference must belong to the integration owner and be linked to this external ticket.
       if (localId) {
         const { data: owned } = await supabase.from('tickets').select('id').eq('id', localId).eq('client_id', integration.client_id).maybeSingle();
         if (!owned) return jsonResponse(req, { error: 'Ticket not found' }, 404);
+        const { data: link } = await supabase.from('integration_sync_log').select('id')
+          .eq('integration_id', integration.id).eq('external_ticket_id', externalId).eq('local_ticket_id', localId)
+          .limit(1).maybeSingle();
+        if (!link) return jsonResponse(req, { error: 'Ticket is not linked to this external ticket' }, 404);
       }
 
       const mapped = adapter.mapOutbound({ title, status });
