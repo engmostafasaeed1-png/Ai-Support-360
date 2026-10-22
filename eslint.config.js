@@ -34,6 +34,16 @@ export default tseslint.config(
       "@typescript-eslint/no-empty-object-type": "warn",
       "react-hooks/exhaustive-deps": "warn",
       "no-empty": "warn",
+      // Database query builders (supabase.rpc/from/...) can be awaited but have no .catch(): chaining it crashes
+      // the page at runtime. Use await + try/catch, safeRpc() or .then(undefined, handler).
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.property.name='catch'][callee.object.type='CallExpression'][callee.object.callee.property.name=/^(rpc|from|schema|select|insert|update|upsert|delete|eq|neq|gt|gte|lt|lte|in|is|like|ilike|contains|order|limit|range|single|maybeSingle|match|filter|not|or|returns|csv|throwOnError|abortSignal)$/]",
+          message: "Database query builders have no .catch(). Use await inside try/catch, safeRpc(), or .then(undefined, handler).",
+        },
+      ],
     },
   },
 );

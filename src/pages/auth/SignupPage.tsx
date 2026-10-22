@@ -27,7 +27,7 @@ import { locationError } from '@/lib/consultantLocation';
 import { storeSignupLocation } from '@/lib/signupLocation';
 import ReferralCodeField from '@/components/referral/ReferralCodeField';
 import { usePublicReferralSettings } from '@/hooks/useReferralProgram';
-import { deviceId, normalizeReferralCode, storedReferral, storedReferralCapturedAt } from '@/lib/referrals';
+import { deviceId, normalizeReferralCode, referralCodeFromSearch, storedReferral, storedReferralCapturedAt } from '@/lib/referrals';
 import {
   getVerificationSentAt,
   setVerificationSentAt,
@@ -92,7 +92,7 @@ function SignupForm() {
   const [searchParams] = useSearchParams();
   const initialRole = searchParams.get('role') === 'consultant' ? 'consultant' : 'client';
   // Referral code from the link (?ref=) or kept from an earlier visit (30 days); consultants can type or change it.
-  const [referralInput, setReferralInput] = useState(() => normalizeReferralCode(searchParams.get('ref') || storedReferral() || ''));
+  const [referralInput, setReferralInput] = useState(() => referralCodeFromSearch(searchParams.toString()) || storedReferral() || '');
   const referralProgram = usePublicReferralSettings();
   const referralCode = normalizeReferralCode(referralInput);
   const [referralAck, setReferralAck] = useState(false);

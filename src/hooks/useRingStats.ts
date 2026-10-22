@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { RATING_MIN_REVIEWS_DEFAULT } from '@/lib/ringAvatar';
+import { safeRpc } from '@/lib/safeRpc';
 
 type RpcResult = { data: unknown; error: { message: string } | null };
 const rpc = (fn: string): Promise<RpcResult> =>
-  (supabase as unknown as { rpc: (f: string) => Promise<RpcResult> }).rpc(fn);
+  safeRpc(fn);
 
 /** Platform setting `rating_min_reviews` (docs/sql/rating-ring.sql); the default 3 until that file is applied. */
 export function useRatingMinReviews(): number {

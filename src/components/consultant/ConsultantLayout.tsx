@@ -8,6 +8,7 @@ import LocationGate from '@/components/consultant/LocationGate';
 import { AvailabilityGate } from '@/components/consultant/AvailabilityUrgent';
 import PolicyGate from '@/components/consultant/policy/PolicyGate';
 import { ReferralClaimer } from '@/components/referral/ReferralCapture';
+import SilentErrorBoundary from '@/components/SilentErrorBoundary';
 import ReferralNoticePopup from '@/components/referral/ReferralNoticePopup';
 import { ReferralIntroPopup } from '@/components/referral/ReferEarnStepHost';
 import CriticalAlarm from '@/components/consultant/CriticalAlarm';
@@ -130,7 +131,7 @@ export default function ConsultantLayout() {
         <LocationGate />
         <AvailabilityGate />
         <PolicyGate />
-        <ReferralClaimer />
+        <SilentErrorBoundary><ReferralClaimer /></SilentErrorBoundary>
         <ReferralNoticePopup />
         <ReferralIntroPopup />
         <CriticalAlarm />

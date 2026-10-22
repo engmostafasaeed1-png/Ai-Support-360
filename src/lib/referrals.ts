@@ -360,28 +360,54 @@ export function parseStoredRef(raw: string | null, now = Date.now()): StoredRef 
  * Keep ?ref=CODE from /join, /signup and /for-consultants for 30 days. The FIRST valid link wins: a later link never
  * overwrites a code that is still within its 30 days (the database also keeps the first attribution for ever).
  */
-export function captureReferral(pathname: string, search: string, now = Date.now()): string | null {
-  if (!/^\/(join|signup|for-consultants)\/?$/.test(pathname)) return null;
-  const code = normalizeReferralCode(new URLSearchParams(search).get('ref'));
-  if (referralCodeProblem(code) === 'format' || !/^[A-Z0-9-]+$/.test(code)) return null;
+/** In-memory copy for browsers that block storage and cookies (kept for this page load only). */
+let memoryRef: StoredRef | null = null;
+
+/** A well-formed code from a URL query (?ref=), or null for missing, garbled or malformed values. Never throws. */
+export function referralCodeFromSearch(search: string): string | null {
   try {
-    const kept = parseStoredRef(localStorage.getItem(REF_STORAGE_KEY), now);
-    if (kept) return kept.code;
-    localStorage.setItem(REF_STORAGE_KEY, JSON.stringify({ code, at: now }));
-    document.cookie = `aisupport360_ref=${encodeURIComponent(code)}; Max-Age=${REF_TTL_DAYS * 86400}; Path=/; SameSite=Lax; Secure`;
-  } catch { /* storage blocked */ }
-  return code;
+    const code = normalizeReferralCode(new URLSearchParams(search).get('ref'));
+    if (!code || referralCodeProblem(code) === 'format' || !/^[A-Z0-9-]+$/.test(code)) return null;
+    return code;
+  } catch {
+    return null;
+  }
+}
+
+/** Runs entirely in the browser (no network) and never throws, whatever the URL or storage state. */
+export function captureReferral(pathname: string, search: string, now = Date.now()): string | null {
+  try {
+    if (!/^\/(join|signup|for-consultants)\/?$/.test(pathname)) return null;
+    const code = referralCodeFromSearch(search);
+    if (!code) return null;
+    try {
+      const kept = parseStoredRef(localStorage.getItem(REF_STORAGE_KEY), now);
+      if (kept) return kept.code;
+      localStorage.setItem(REF_STORAGE_KEY, JSON.stringify({ code, at: now }));
+    } catch { /* storage blocked */ }
+    try {
+      if (!/(?:^|;\s*)aisupport360_ref=/.test(document.cookie)) {
+        document.cookie = `aisupport360_ref=${encodeURIComponent(code)}; Max-Age=${REF_TTL_DAYS * 86400}; Path=/; SameSite=Lax; Secure`;
+      }
+    } catch { /* cookies blocked */ }
+    if (!memoryRef || now - memoryRef.at > REF_TTL_DAYS * DAY) memoryRef = { code, at: now };
+    return code;
+  } catch {
+    return null;
+  }
 }
 
 export function storedReferral(now = Date.now()): string | null {
   try {
     const found = parseStoredRef(localStorage.getItem(REF_STORAGE_KEY), now);
     if (found) return found.code;
+  } catch { /* storage blocked: try the cookie */ }
+  try {
     const m = document.cookie.match(/(?:^|;\s*)aisupport360_ref=([^;]+)/);
-    return m ? normalizeReferralCode(decodeURIComponent(m[1])) || null : null;
-  } catch {
-    return null;
-  }
+    const fromCookie = m ? normalizeReferralCode(decodeURIComponent(m[1])) || null : null;
+    if (fromCookie) return fromCookie;
+  } catch { /* cookies blocked or garbled */ }
+  return memoryRef && now - memoryRef.at <= REF_TTL_DAYS * DAY ? memoryRef.code : null;
 }
 
 /** When the stored link was captured (ISO), sent with the sign-up so the database can refuse links older than 30 days. */
@@ -395,10 +421,9 @@ export function storedReferralCapturedAt(now = Date.now()): string | null {
 }
 
 export function clearStoredReferral(): void {
-  try {
-    localStorage.removeItem(REF_STORAGE_KEY);
-    document.cookie = 'aisupport360_ref=; Max-Age=0; Path=/; SameSite=Lax; Secure';
-  } catch { /* ignore */ }
+  memoryRef = null;
+  try { localStorage.removeItem(REF_STORAGE_KEY); } catch { /* ignore */ }
+  try { document.cookie = 'aisupport360_ref=; Max-Age=0; Path=/; SameSite=Lax; Secure'; } catch { /* ignore */ }
 }
 
 /** Random id for this browser (not personal); the database stores only a salted hash of it. */

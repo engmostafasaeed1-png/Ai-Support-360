@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSessionReady } from '@/hooks/useSessionReady';
 import {
+import { safeRpc } from '@/lib/safeRpc';
   isLevel, readRespSettings, RESP_DEFAULTS,
   type RespExclusion, type RespKind, type RespLevel, type RespMetrics, type RespOutcome, type RespSettings,
 } from '../../supabase/functions/_shared/responsiveness';
@@ -9,7 +10,7 @@ import {
 type RpcResult = { data: unknown; error: { message: string } | null };
 // Called as methods: supabase.rpc/from read `this`, so a detached reference throws and every call looks "not applied".
 const rpc = (fn: string, args?: Record<string, unknown>): Promise<RpcResult> =>
-  (supabase as unknown as { rpc: (f: string, a?: Record<string, unknown>) => Promise<RpcResult> }).rpc(fn, args);
+  safeRpc(fn, args);
 // Feature M tables are not in the generated types until docs/sql/responsiveness.sql is applied.
 const from = (table: string): any => (supabase as unknown as { from: (t: string) => any }).from(table);
 

@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { safeRpc } from '@/lib/safeRpc';
 
 type RpcResult = { data: unknown; error: { message: string } | null };
-const rpc = (fn: string): Promise<RpcResult> => (supabase as unknown as { rpc: (f: string) => Promise<RpcResult> }).rpc(fn);
+const rpc = (fn: string): Promise<RpcResult> => safeRpc(fn);
 
 export interface NamePrivacy {
   /** True once docs/sql/consultant-name-privacy.sql is applied (the database then masks names for every viewer). */
