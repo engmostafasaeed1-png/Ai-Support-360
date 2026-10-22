@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { referralRpc, rpcMessage } from '@/hooks/useReferralProgram';
-import { DEFAULT_MAX_RATE, formatRate, LINE_STATUS_LABEL, MAX_TIERS, parseTiers, rateRangeText, referralCsv, tierRangeLabel, tiersProblem, type LineStatus } from '@/lib/referrals';
+import { DEFAULT_MAX_RATE, FLAG_LABEL, formatRate, HOLD_REASON_LABEL, LINE_STATUS_LABEL, MAX_TIERS, parseTiers, rateRangeText, referralCsv, tierRangeLabel, tiersProblem, type LineStatus } from '@/lib/referrals';
 import TierLadder from '@/components/referral/TierLadder';
 import { cn } from '@/lib/utils';
 import ReferralCalculations from '@/components/referral/ReferralCalculations';
@@ -267,13 +267,17 @@ function ActionDialog({ state, onClose }: { state: ActionState; onClose: () => v
       if (error || !hit) { setBusy(false); toast.error('No consultant has this referral code.'); return; }
       newReferrer = String(hit.referrer_id);
     }
-    const { error } = await referralRpc('admin_referral_action', {
+    const { data, error } = await referralRpc('admin_referral_action', {
       _action: state.action, _id: state.id, _reason: reason,
       _amount: state.needsAmount ? Number(amount) : null, _currency: state.needsAmount ? currency : null, _new_referrer: newReferrer,
     });
     setBusy(false);
     if (error) { toast.error(rpcMessage(error, 'The change could not be saved.')); return; }
-    toast.success('Saved and recorded in the audit trail.');
+    if (data && typeof data === 'object' && 'pending_approval' in (data as Row)) {
+      toast.success('Above the four-eyes limit: a second super administrator must approve it (Security tab).');
+    } else {
+      toast.success('Saved and recorded in the audit trail.');
+    }
     qc.invalidateQueries({ queryKey: ['refadmin'] });
     onClose();
   };
@@ -319,6 +323,7 @@ function SettingsCard({ settings }: { settings: Row }) {
   const [saving, setSaving] = useState(false);
   const [claimUntil, setClaimUntil] = useState('');
   const [tiers, setTiers] = useState<Array<{ min: string; rate: string; name: string }>>([]);
+  const [tierPaid, setTierPaid] = useState(true);
   useEffect(() => {
     setTiers(parseTiers(settings.tiers, Number(settings.max_rate) || DEFAULT_MAX_RATE).map((x) => ({ min: String(x.min), rate: String(x.rate), name: x.name })));
     setClaimUntil(settings.claim_until ? String(settings.claim_until).slice(0, 16) : '');
@@ -329,7 +334,13 @@ function SettingsCard({ settings }: { settings: Row }) {
       pass_mark: String(settings.pass_mark ?? 50), activation_days: String(settings.activation_days ?? 90),
       max_per_referred: settings.max_per_referred == null ? '' : String(settings.max_per_referred),
       monthly_cap: settings.monthly_cap == null ? '' : String(settings.monthly_cap),
+      monthly_cap_referred: settings.monthly_cap_referred == null ? '' : String(settings.monthly_cap_referred),
+      hold_days: String(settings.hold_days ?? 14), min_invoice: String(settings.min_invoice ?? 20),
+      flag_threshold: String(settings.flag_threshold ?? 2), velocity_day: String(settings.velocity_day ?? 5), velocity_ip: String(settings.velocity_ip ?? 3),
+      tier_paid_days: String(settings.tier_paid_days ?? 90), four_eyes_amount: String(settings.four_eyes_amount ?? 100),
+      payout_change_hold_days: String(settings.payout_change_hold_days ?? 7), retention_days: String(settings.retention_days ?? 365),
     });
+    setTierPaid(settings.tier_requires_paid !== false);
   }, [settings]);
   const fields: Array<[string, string, string]> = [
     ['max_rate', 'Maximum rate for any tier (%)', '0.1 to 10, default 2'],
@@ -339,15 +350,26 @@ function SettingsCard({ settings }: { settings: Row }) {
     ['pass_mark', 'AI interview pass mark for activation (both consultants)', '0 to 100, default 50'],
     ['activation_days', 'Days from sign-up to activate before the referral expires', '1 to 365, default 90'],
     ['max_per_referred', 'Maximum reward per referred consultant', 'empty = no maximum'],
-    ['monthly_cap', 'Monthly cap per referrer', 'empty = no cap'],
+    ['monthly_cap', 'Monthly cap per referrer (above it a reward is held, never cut)', 'default 1000, empty = no cap'],
+    ['monthly_cap_referred', 'Monthly cap per referred consultant (held above it)', 'default 250, empty = no cap'],
+    ['hold_days', 'Hold period after the payout is released (days)', '0 to 90, default 14'],
+    ['min_invoice', 'Minimum invoice line for a reward (invoice currency)', 'default 20'],
+    ['flag_threshold', 'Fraud signal score that puts a new referral under review', '1 to 10, default 2'],
+    ['velocity_day', 'Sign-ups per referrer per day before flagging', 'default 5'],
+    ['velocity_ip', 'Sign-ups per network per day before flagging', 'default 3'],
+    ['tier_paid_days', 'Days after verification for the first paid ticket (tier counting)', '1 to 365, default 90'],
+    ['four_eyes_amount', 'Adjustments above this need a second super administrator', 'default 100'],
+    ['payout_change_hold_days', 'Days referral payouts wait after bank details change', '0 to 60, default 7'],
+    ['retention_days', 'Keep hashed device / network signals (days)', '30 to 1095, default 365'],
   ];
   const save = async () => {
     const payload: Record<string, unknown> = { enabled };
     if (claimUntil) payload.claim_until = new Date(claimUntil).toISOString();
     for (const [k] of fields) {
       const v = (draft[k] ?? '').trim();
-      payload[k] = (k === 'max_per_referred' || k === 'monthly_cap') && v === '' ? null : Number(v);
+      payload[k] = (k === 'max_per_referred' || k === 'monthly_cap' || k === 'monthly_cap_referred') && v === '' ? null : Number(v);
     }
+    payload.tier_requires_paid = tierPaid;
     const tierRows = tiers.map((x) => ({ min: x.min.trim() === '' ? '' : Number(x.min), rate: x.rate.trim() === '' ? '' : Number(x.rate), name: x.name.trim() }));
     const problem = tiersProblem(tierRows, Number(payload.max_rate) || DEFAULT_MAX_RATE);
     if (problem) { toast.error(problem); return; }
@@ -376,6 +398,10 @@ function SettingsCard({ settings }: { settings: Row }) {
               <Input id={`ref-${k}`} inputMode="decimal" value={draft[k] ?? ''} placeholder={hint} onChange={(e) => setDraft((d) => ({ ...d, [k]: e.target.value }))} />
             </div>
           ))}
+        </div>
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 p-3">
+          <div><Label htmlFor="ref-tier-paid">Tiers count only referred consultants with a paid ticket</Label><p className="text-xs text-muted-foreground">Within the days set above after their verification (or your approval). Protects against fake accounts.</p></div>
+          <Switch id="ref-tier-paid" checked={tierPaid} onCheckedChange={setTierPaid} />
         </div>
         <fieldset className="space-y-2 rounded-xl border border-border/60 p-3">
           <legend className="px-1 text-sm font-medium">Reward tiers (by verified, non-suspended referred consultants)</legend>
@@ -495,6 +521,7 @@ export default function ReferralsAdminPage() {
           <TabsTrigger value="calc">Calculations</TabsTrigger>
           <TabsTrigger value="announce">Announcement</TabsTrigger>
           <TabsTrigger value="reconcile">Reconciliation</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
 
         <div className="mt-3 flex flex-wrap gap-2">
@@ -604,7 +631,7 @@ export default function ReferralsAdminPage() {
                       <TableCell className="text-xs"><div>{String(l.referrer_name ?? '-')}</div><div className="text-muted-foreground">{String(l.referred_name ?? '-')}</div></TableCell>
                       <TableCell className="text-end text-xs tabular-nums">{l.fee_amount != null ? `${money(l.fee_amount, String(l.currency))} x ${formatRate(Number(l.rate_percent) || 0)} %` : '-'}{l.tier_name ? <div className="text-[10px] text-muted-foreground">{String(l.tier_name)}{l.tier_count != null ? ` (${String(l.tier_count)} verified)` : ''}</div> : null}</TableCell>
                       <TableCell className={cn('text-end text-sm font-semibold tabular-nums', Number(l.amount) < 0 && 'text-destructive')}>{money(l.amount, String(l.currency))}</TableCell>
-                      <TableCell><Badge variant="outline" className="text-[10px]">{LINE_STATUS_LABEL[l.status as LineStatus] ?? String(l.status)}</Badge>{l.hold_reason ? <div className="text-[10px] text-muted-foreground">{String(l.hold_reason)}</div> : null}</TableCell>
+                      <TableCell><Badge variant="outline" className="text-[10px]">{LINE_STATUS_LABEL[l.status as LineStatus] ?? String(l.status)}</Badge>{l.hold_reason ? <div className="text-[10px] text-muted-foreground">{HOLD_REASON_LABEL[String(l.hold_reason)] ?? String(l.hold_reason)}</div> : null}{Array.isArray(l.flags) && (l.flags as string[]).length > 0 ? <div className="text-[10px] text-warning">{(l.flags as string[]).map((f) => FLAG_LABEL[f] ?? f).join(', ')}</div> : null}{l.status === 'pending' && l.matures_at ? <div className="text-[10px] text-muted-foreground">Available from {when(l.matures_at)}</div> : null}</TableCell>
                       <TableCell className="text-end whitespace-nowrap space-x-1">
                         {l.status === 'held' && <Button size="sm" className="h-7 text-xs" onClick={() => setAction({ action: 'approve_line', id, title: 'Release this reward' })}>Approve</Button>}
                         {(l.status === 'pending' || l.status === 'available') && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAction({ action: 'hold_line', id, title: 'Hold this reward' })}>Hold</Button>}
@@ -623,6 +650,7 @@ export default function ReferralsAdminPage() {
         <TabsContent value="calc"><AdminCalculations /></TabsContent>
         <TabsContent value="announce" className="space-y-4"><AnnouncementCard /><SetReferrerCard /></TabsContent>
         <TabsContent value="reconcile"><ReconcileCard /></TabsContent>
+        <TabsContent value="security" className="space-y-4"><AdjustRequestsCard /><AnomaliesCard /></TabsContent>
 
         <TabsContent value="audit">
           <Card className="rounded-2xl"><CardContent className="p-0 overflow-x-auto">
