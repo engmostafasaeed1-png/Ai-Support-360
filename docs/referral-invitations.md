@@ -1,6 +1,6 @@
 # Refer & earn notices and invitation
 
-Prepared SQL: `docs/sql/referral-invitations.sql` (**not applied**). Checks: `docs/sql/referral-invitations.test.sql`
+SQL: `docs/sql/referral-invitations.sql` (applied Oct 22 as migrations 0086-0087; invitation switch still OFF). Checks: `docs/sql/referral-invitations.test.sql`
 (RI01–RI14, one rolled-back transaction; passed on a scratch database with Feature R loaded).
 
 ## What it adds
