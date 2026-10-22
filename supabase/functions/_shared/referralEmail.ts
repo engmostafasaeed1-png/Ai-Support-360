@@ -383,7 +383,7 @@ const TIER_KINDS = [...MONEY_KINDS, 'active', 'verified', 'monthly_statement'];
 const STRIP_STEP: Partial<Record<ReferralEmailKind, number>> = {
   signup: 2, invited: 2, passed_self: 2, passed_other: 2, reminder: 2, ack_request: 2, active: 3, verified: 3,
 };
-const CONTENT_W = 552;
+const CONTENT_W = 576;
 
 /** "$12.50", "€12.50" or "12.50 SAR" (amount never computed here, only formatted). */
 function moneyShort(n: number, cur: string, lang: ReferralEmailLang): string {
@@ -524,14 +524,14 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
     parts.push(H(u.tableTitle));
     if (!lines.length) parts.push(P(u.none, ';color:#475569'));
     else {
-      const th = (x: string, a = align) => `<th align="${a}" style="padding:10px 8px;font-family:${font};font-size:12px;font-weight:700;color:#475569;text-align:${a};border-bottom:1px solid #E5E7EB">${esc(x)}</th>`;
+      const th = (x: string, a = align) => `<th align="${a}" style="padding:10px 6px;font-family:${font};font-size:12px;font-weight:700;color:#475569;text-align:${a};border-bottom:1px solid #E5E7EB">${esc(x)}</th>`;
       const end = rtl ? 'left' : 'right';
-      const td = (x: string, a = align, extra = '') => `<td align="${a}" style="padding:10px 8px;font-family:${font};font-size:13px;color:#1F2937;text-align:${a};border-bottom:1px solid #F1F5F9${extra}">${x}</td>`;
+      const td = (x: string, a = align, extra = '') => `<td align="${a}" style="padding:10px 6px;font-family:${font};font-size:13px;color:#1F2937;text-align:${a};border-bottom:1px solid #F1F5F9${extra}">${x}</td>`;
       const rows = lines.map((l) => {
         const lc = lineChip(l.status, l.kind);
         const lcur = /^[A-Z]{3}$/.test(String(l.currency)) ? String(l.currency) : cur;
         const fee = num(l.fee); const rw = num(l.reward);
-        return `<tr>${td(esc(initials(l.who)))}${td(`<span dir="ltr">${esc(String(l.ref ?? '—').slice(0, 16))}</span>`)}`
+        return `<tr>${td(esc(initials(l.who)))}${td(`<span dir="ltr" style="white-space:nowrap;font-size:12px">${esc(String(l.ref ?? '—').slice(0, 16))}</span>`)}`
           + `${td(fee == null ? '—' : `<span dir="ltr">${esc(moneyShort(fee, lcur, lang))}</span>`, end)}`
           + `${td(rw == null ? '—' : `<span dir="ltr" style="font-weight:700;color:${CHIP_COLORS[lc].fg}">${esc((lc === 'reversed' ? '−' : '') + moneyShort(rw, lcur, lang))}</span>`, end)}`
           + `${td(chipHtml(lc, u.chip[lc], font, 11), end)}</tr>`;
@@ -624,16 +624,16 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
   const html = `<!DOCTYPE html><html lang="${lang}" dir="${dir}" xmlns:v="urn:schemas-microsoft-com:vml"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>${esc(subject)}</title></head>`
     + `<body style="margin:0;padding:0;background:#ffffff;" dir="${dir}">`
     + `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(preheader)}</div>`
-    + `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#ffffff"><tr><td align="center" style="padding:24px 10px">`
+    + `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#ffffff"><tr><td align="center" style="padding:24px 8px">`
     + `<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" dir="${dir}" style="width:100%;max-width:600px">`
     // Brand header
     + `<tr><td style="padding:0 8px 16px;text-align:${align}"><a href="${esc(site)}" target="_blank" style="text-decoration:none"><img src="${esc(logo)}" width="36" height="36" alt="${esc(c.logoAlt)}" style="vertical-align:middle;border:0;border-radius:10px" /> <span style="font-family:${FONT_EN};font-size:17px;font-weight:800;color:#1B2559;vertical-align:middle">AI Support 360</span></a></td></tr>`
     // Gradient hero (violet to teal) with the gift-and-coins illustration
     + `<tr><td bgcolor="${BRAND.solid}" style="padding:28px 24px;border-radius:20px;background:${BRAND.solid};background-image:linear-gradient(135deg,${BRAND.from},${BRAND.to});font-size:0;text-align:center">${heroInner}</td></tr>`
     // Body card
-    + `<tr><td style="padding:28px 24px 8px">${parts.join('')}</td></tr>`
+    + `<tr><td style="padding:28px 12px 8px">${parts.join('')}</td></tr>`
     // Footer
-    + `<tr><td style="padding:8px 24px 0;text-align:${align}">`
+    + `<tr><td style="padding:8px 12px 0;text-align:${align}">`
     + `<p style="margin:0 0 6px;font-family:${font};font-size:12px;line-height:1.6;color:#64748B">${esc(admin ? u.adminWhy : c.why)} <a href="${esc(prefsUrl)}" target="_blank" style="color:#475569;text-decoration:underline">${esc(c.prefs)}</a></p>`
     + pause
     + `<p style="margin:8px 0 0;font-family:${font};font-size:12px;color:#94A3B8">${esc(c.company)} · <span dir="ltr">${esc(c.sentBy)}</span></p>`
