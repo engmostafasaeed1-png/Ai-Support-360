@@ -12488,6 +12488,7 @@ export type Database = {
         Args: { _id: string }
         Returns: undefined
       }
+      admin_email_sender_settings: { Args: never; Returns: Json }
       admin_founding_settings: {
         Args: { _boost?: number; _enabled?: boolean; _limit?: number }
         Returns: Json
@@ -12833,6 +12834,10 @@ export type Database = {
           _minutes: number
           _percent: number
         }
+        Returns: Json
+      }
+      admin_set_email_sender_settings: {
+        Args: { _payload: Json }
         Returns: Json
       }
       admin_set_founding_consultant: {
@@ -13467,6 +13472,10 @@ export type Database = {
         Returns: number
       }
       critical_ticket_view: { Args: { _ticket_id: string }; Returns: Json }
+      email_sender_problems: {
+        Args: { _contact: string; _from: string; _name: string; _reply: string }
+        Returns: string[]
+      }
       feedback_add_attachments: {
         Args: { _files: Json; _report_id: string }
         Returns: number
