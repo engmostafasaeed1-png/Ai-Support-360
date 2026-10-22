@@ -12377,6 +12377,7 @@ export type Database = {
       }
       admin_recompute_responsiveness: { Args: never; Returns: number }
       admin_recompute_success: { Args: never; Returns: number }
+      admin_referral_overview: { Args: never; Returns: Json }
       admin_reject_payment_report: {
         Args: { _note: string; _payment_id: string }
         Returns: undefined
@@ -13346,6 +13347,44 @@ export type Database = {
       my_notification_pause: { Args: never; Returns: Json }
       my_profile_completion: { Args: never; Returns: Json }
       my_profile_submission: { Args: never; Returns: Json }
+      my_referral_history: {
+        Args: { _limit?: number }
+        Returns: {
+          amount: number
+          available_at: string
+          created_at: string
+          currency: string
+          fee_amount: number
+          kind: string
+          note: string
+          paid_at: string
+          rate_percent: number
+          referred_name: string
+          status: string
+        }[]
+      }
+      my_referral_invite: { Args: never; Returns: Json }
+      my_referral_overview: { Args: { _device?: string }; Returns: Json }
+      my_referrals: {
+        Args: never
+        Returns: {
+          activated_at: string
+          activation_expires_at: string
+          activation_status: string
+          attributed_at: string
+          chip: string
+          earned: Json
+          first_paid_at: string
+          my_next: string
+          referred_name: string
+          status: string
+          their_next: string
+          they_acknowledged: boolean
+          they_passed: boolean
+          verified: boolean
+          window_ends_at: string
+        }[]
+      }
       my_responsiveness: { Args: never; Returns: Json }
       my_success: { Args: never; Returns: Json }
       new_bid_blocked_by_profile: {
@@ -13470,6 +13509,15 @@ export type Database = {
         Args: { _consultant_id: string }
         Returns: undefined
       }
+      referral_accept_terms: {
+        Args: {
+          _language?: string
+          _source?: string
+          _user_agent?: string
+          _version: number
+        }
+        Returns: undefined
+      }
       referral_acked_at: { Args: { _cid: string }; Returns: string }
       referral_activation_sweep: { Args: never; Returns: Json }
       referral_add_flags: {
@@ -13495,6 +13543,8 @@ export type Database = {
         Returns: string[]
       }
       referral_best_score: { Args: { _cid: string }; Returns: number }
+      referral_bundle_payouts: { Args: { _actor?: string }; Returns: number }
+      referral_can_claim: { Args: { _cid: string }; Returns: boolean }
       referral_check_activation: {
         Args: { _referred: string }
         Returns: string
@@ -13503,6 +13553,10 @@ export type Database = {
       referral_chip: {
         Args: { _for: string; _referred: string }
         Returns: string
+      }
+      referral_claim: {
+        Args: { _code: string; _device?: string }
+        Returns: Json
       }
       referral_code_blocked_word: { Args: { _code: string }; Returns: boolean }
       referral_code_failed: { Args: { _who: string[] }; Returns: undefined }
@@ -13575,6 +13629,7 @@ export type Database = {
         Args: { _other: string; _step: string }
         Returns: string
       }
+      referral_nightly: { Args: never; Returns: Json }
       referral_norm_code: { Args: { _code: string }; Returns: string }
       referral_norm_email: { Args: { _email: string }; Returns: string }
       referral_norm_phone: { Args: { _p: string }; Returns: string }
@@ -13597,6 +13652,7 @@ export type Database = {
       referral_policy_ok: { Args: { _cid: string }; Returns: boolean }
       referral_public_settings: { Args: never; Returns: Json }
       referral_random: { Args: { _n: number }; Returns: string }
+      referral_referrer_payable: { Args: { _cid: string }; Returns: boolean }
       referral_related_flags: {
         Args: { _a: string; _b: string }
         Returns: string[]
@@ -13634,9 +13690,13 @@ export type Database = {
         Args: { _max: number; _t: Json }
         Returns: string
       }
+      referral_track_click: { Args: { _code: string }; Returns: undefined }
+      referral_update_code: { Args: { _code: string }; Returns: string }
       referral_user_ip_hashes: { Args: { _user: string }; Returns: string[] }
+      referral_validate_code: { Args: { _code: string }; Returns: Json }
       referral_verified_count: { Args: { _referrer: string }; Returns: number }
       referral_wake: { Args: never; Returns: undefined }
+      referral_weekly_digest: { Args: never; Returns: undefined }
       referrals_link_for: { Args: { _user_id: string }; Returns: string }
       register_card_attempt: {
         Args: {

@@ -575,6 +575,13 @@
       "when": 1792667236398,
       "tag": "0081_referral_program_part3",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1792667355855,
+      "tag": "0082_referral_program_part4",
+      "breakpoints": true
     }
   ]
 }
