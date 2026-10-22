@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -152,7 +152,6 @@ export default function ReferralRulesHub({ ov, referrals, money, date, onDone }:
     disclaimer: t('refr.pdf_disclaimer', 'Draft for legal review. The full terms on aisupport360.com/referral-terms apply.'),
     lang, blocks: blocks.map((b) => ({ ...b, moreTitle: b.id === 'rules' ? t('refr.rej_title', 'What gets a referral rejected') : undefined })),
   });
-  const year = useMemo(() => new Date().getFullYear(), []);
 
   return (
     <Card className="rounded-2xl" aria-labelledby="refz-rules-title">
@@ -271,7 +270,6 @@ export default function ReferralRulesHub({ ov, referrals, money, date, onDone }:
               settings={{ tiers, months: s.months, minInvoice: s.min_invoice ?? 0, monthlyCap: s.monthly_cap ?? null, monthlyCapReferred: s.monthly_cap_referred ?? null, maxPerReferred: s.max_per_referred ?? null }} />
           </Section>
         </div>
-        <p className="text-[11px] text-muted-foreground">{t('refr.footer', 'All numbers come from the current programme settings ({{year}}).', { year })}</p>
       </CardContent>
 
       <Dialog open={ackOpen} onOpenChange={setAckOpen}>

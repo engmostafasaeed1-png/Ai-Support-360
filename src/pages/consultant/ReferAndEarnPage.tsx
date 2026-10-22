@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { ChipBadge, InviteCard, ReferrerActivationCard, useNextStepText } from '@/components/referral/ReferralActivation';
 import TierLadder from '@/components/referral/TierLadder';
 import ReferralShortTerms from '@/components/referral/ReferralShortTerms';
+import ReferralRulesHub from '@/components/referral/rules/ReferralRulesHub';
 
 const STATUS_TONE: Record<string, string> = {
   signed_up: 'bg-muted text-muted-foreground',
@@ -295,6 +296,8 @@ export default function ReferAndEarnPage() {
           )}
 
           <CodeCard ov={ov} locked={!active} />
+
+          <ReferralRulesHub ov={ov} referrals={list.data ?? []} money={(v) => f.money(v, ov.earnings[0]?.currency ?? 'USD')} date={f.date} onDone={invalidate} />
 
           <section aria-labelledby="refz-earn-h" className="space-y-3">
             <h2 id="refz-earn-h" className="text-base font-semibold flex items-center gap-2"><Wallet className="w-4 h-4 text-primary" />{t('refz.earnings', 'Your earnings')}</h2>
