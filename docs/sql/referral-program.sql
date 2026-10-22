@@ -172,6 +172,8 @@ AS $$
     'four_eyes_amount', public.referral_setting_num('referral_adjust_four_eyes_amount', 100, 0, 100000),
     'payout_change_hold_days', public.referral_setting_num('payout_details_change_hold_days', 7, 0, 60)::int,
     'retention_days', public.referral_setting_num('referral_signal_retention_days', 365, 30, 1095)::int,
+    -- Optional administrator notes per section of the "Programme rules" hub (plain text only, EN/AR).
+    'rules_texts', COALESCE((SELECT CASE WHEN jsonb_typeof(value) = 'object' THEN value END FROM public.platform_settings WHERE key = 'referral_rules_texts'), '{}'::jsonb),
     'claim_days', public.referral_setting_num('referral_claim_days', 7, 0, 30)::int,
     'launch_at', public.referral_setting_ts('referral_launch_at'),
     'claim_until', public.referral_setting_ts('referral_claim_until'),
@@ -2273,7 +2275,16 @@ BEGIN
     'settings', jsonb_build_object('enabled', s->'enabled', 'rate_percent', s->'rate_percent', 'months', s->'months',
                                    'min_payout', s->'min_payout', 'terms_version', s->'terms_version', 'pass_mark', s->'pass_mark',
                                    'activation_days', s->'activation_days', 'tiers', s->'tiers', 'hold_days', s->'hold_days',
-                                   'min_invoice', s->'min_invoice'),
+                                   'min_invoice', s->'min_invoice', 'monthly_cap', s->'monthly_cap', 'monthly_cap_referred', s->'monthly_cap_referred',
+                                   'max_per_referred', s->'max_per_referred', 'payout_change_hold_days', s->'payout_change_hold_days',
+                                   'tier_requires_paid', s->'tier_requires_paid', 'tier_paid_days', s->'tier_paid_days', 'rules_texts', s->'rules_texts',
+                                   'terms_published_at', (SELECT v.published_at FROM public.referral_terms_versions v WHERE v.version = (s->>'terms_version')::int)),
+    -- Simulator defaults: the consultant's own hourly rate and the platform average of signed timesheets in the last
+    -- 12 months (aggregate only, shown only when at least 5 timesheets exist so no single rate can be read).
+    'sim_defaults', jsonb_build_object(
+      'own_rate', (SELECT c.hourly_rate FROM public.consultants c WHERE c.id = _cid),
+      'platform_rate', (SELECT CASE WHEN count(*) >= 5 THEN round(avg(ts.hourly_rate), 0) END FROM public.ticket_timesheet_submissions ts
+                         WHERE ts.status = 'signed' AND ts.hourly_rate > 0 AND ts.updated_at > now() - interval '12 months')),
     'tier', public.referral_tier_for(public.referral_verified_count(_cid)),
     -- Referrer activation checklist: interview passed -> terms acknowledged -> active (sharing unlocked).
     'activation', jsonb_build_object(
@@ -2312,7 +2323,8 @@ BEGIN
       'verified', EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = _cid AND c.verification_status::text = 'verified'),
       'policy', public.referral_policy_ok(_cid),
       'suspended', public.referral_consultant_suspended(_cid),
-      'payout_details', EXISTS (SELECT 1 FROM public.consultant_payout_details d WHERE d.consultant_id = _cid)));
+      'payout_details', EXISTS (SELECT 1 FROM public.consultant_payout_details d WHERE d.consultant_id = _cid),
+      'profile_submitted', EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = _cid AND c.profile_submitted_at IS NOT NULL)));
 END
 $$;
 REVOKE ALL ON FUNCTION public.my_referral_overview(text) FROM PUBLIC, anon;
@@ -2954,6 +2966,18 @@ BEGIN
                       WHEN 'four_eyes_amount' THEN 'referral_adjust_four_eyes_amount' WHEN 'payout_change_hold_days' THEN 'payout_details_change_hold_days'
                       ELSE 'referral_signal_retention_days' END, _v)
       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
+    ELSIF _k = 'rules_texts' THEN
+      -- Plain text only (no HTML / markup), known sections, EN and AR, at most 600 characters each.
+      IF jsonb_typeof(_v) <> 'object' OR EXISTS (
+           SELECT 1 FROM jsonb_each(_v) e
+            WHERE e.key NOT IN ('overview', 'prerequisites', 'earn', 'rates', 'payment', 'rules', 'simulator')
+               OR jsonb_typeof(e.value) <> 'object'
+               OR EXISTS (SELECT 1 FROM jsonb_each(e.value) l
+                           WHERE l.key NOT IN ('en', 'ar') OR jsonb_typeof(l.value) <> 'string'
+                              OR length(l.value #>> '{}') > 600 OR (l.value #>> '{}') ~ '[<>]')) THEN
+        RAISE EXCEPTION 'Section notes must be plain text (no < or >), English and Arabic, up to 600 characters each' USING ERRCODE = '22023';
+      END IF;
+      INSERT INTO public.platform_settings (key, value) VALUES ('referral_rules_texts', _v) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
     ELSIF _k = 'tier_requires_paid' THEN
       IF jsonb_typeof(_v) <> 'boolean' THEN RAISE EXCEPTION 'tier_requires_paid must be true or false' USING ERRCODE = '22023'; END IF;
       INSERT INTO public.platform_settings (key, value) VALUES ('referral_tier_requires_paid', _v) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();

@@ -91,3 +91,9 @@ export function scrollActionFor(opts: {
   // Same page, only the query changed (tabs, filters): keep the reader where they are.
   return opts.pathChanged ? { kind: 'top' } : { kind: 'keep' };
 }
+
+/** Scroll the window so `el` sits `offset` px below the top (sticky header / in-page navigation), respecting reduced motion. */
+export function scrollToElement(el: HTMLElement, offset = 0, win: Window = window): void {
+  const top = el.getBoundingClientRect().top + (win.scrollY || 0) - offset;
+  try { win.scrollTo({ top: Math.max(0, top), behavior: scrollBehavior(win) }); } catch { /* old browsers / tests */ }
+}

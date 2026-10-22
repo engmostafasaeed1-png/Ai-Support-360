@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { referralRpc, rpcMessage } from '@/hooks/useReferralProgram';
-import { DEFAULT_MAX_RATE, FLAG_LABEL, formatRate, HOLD_REASON_LABEL, LINE_STATUS_LABEL, MAX_TIERS, parseTiers, rateRangeText, referralCsv, tierRangeLabel, tiersProblem, type LineStatus } from '@/lib/referrals';
+import { DEFAULT_MAX_RATE, FLAG_LABEL, parseRulesTexts, RULES_SECTIONS, rulesTextsProblem, type RulesTexts, formatRate, HOLD_REASON_LABEL, LINE_STATUS_LABEL, MAX_TIERS, parseTiers, rateRangeText, referralCsv, tierRangeLabel, tiersProblem, type LineStatus } from '@/lib/referrals';
 import TierLadder from '@/components/referral/TierLadder';
 import { cn } from '@/lib/utils';
 import ReferralCalculations from '@/components/referral/ReferralCalculations';
@@ -405,6 +405,7 @@ function SettingsCard({ settings }: { settings: Row }) {
   const [claimUntil, setClaimUntil] = useState('');
   const [tiers, setTiers] = useState<Array<{ min: string; rate: string; name: string }>>([]);
   const [tierPaid, setTierPaid] = useState(true);
+  const [notes, setNotes] = useState<RulesTexts>({});
   useEffect(() => {
     setTiers(parseTiers(settings.tiers, Number(settings.max_rate) || DEFAULT_MAX_RATE).map((x) => ({ min: String(x.min), rate: String(x.rate), name: x.name })));
     setClaimUntil(settings.claim_until ? String(settings.claim_until).slice(0, 16) : '');
@@ -422,6 +423,7 @@ function SettingsCard({ settings }: { settings: Row }) {
       payout_change_hold_days: String(settings.payout_change_hold_days ?? 7), retention_days: String(settings.retention_days ?? 365),
     });
     setTierPaid(settings.tier_requires_paid !== false);
+    setNotes(parseRulesTexts(settings.rules_texts));
   }, [settings]);
   const fields: Array<[string, string, string]> = [
     ['max_rate', 'Maximum rate for any tier (%)', '0.1 to 10, default 2'],
@@ -451,6 +453,14 @@ function SettingsCard({ settings }: { settings: Row }) {
       payload[k] = (k === 'max_per_referred' || k === 'monthly_cap' || k === 'monthly_cap_referred') && v === '' ? null : Number(v);
     }
     payload.tier_requires_paid = tierPaid;
+    const cleanNotes: RulesTexts = {};
+    for (const [k, v] of Object.entries(notes)) {
+      const e = { ...(v?.en?.trim() ? { en: v.en.trim() } : {}), ...(v?.ar?.trim() ? { ar: v.ar.trim() } : {}) };
+      if (e.en || e.ar) cleanNotes[k] = e;
+    }
+    const notesProblem = rulesTextsProblem(cleanNotes);
+    if (notesProblem) { toast.error(notesProblem); return; }
+    payload.rules_texts = cleanNotes;
     const tierRows = tiers.map((x) => ({ min: x.min.trim() === '' ? '' : Number(x.min), rate: x.rate.trim() === '' ? '' : Number(x.rate), name: x.name.trim() }));
     const problem = tiersProblem(tierRows, Number(payload.max_rate) || DEFAULT_MAX_RATE);
     if (problem) { toast.error(problem); return; }
@@ -484,6 +494,23 @@ function SettingsCard({ settings }: { settings: Row }) {
           <div><Label htmlFor="ref-tier-paid">Tiers count only referred consultants with a paid ticket</Label><p className="text-xs text-muted-foreground">Within the days set above after their verification (or your approval). Protects against fake accounts.</p></div>
           <Switch id="ref-tier-paid" checked={tierPaid} onCheckedChange={setTierPaid} />
         </div>
+        <details className="rounded-xl border border-border/60 p-3">
+          <summary className="cursor-pointer text-sm font-medium">Programme rules hub: notes per section (plain text, optional)</summary>
+          <p className="mt-1 text-xs text-muted-foreground">Shown at the top of each section on the consultant's Refer &amp; earn page and in the rules PDF. Plain text only (no &lt; or &gt;), up to 600 characters. All numbers already come from the settings above.</p>
+          <div className="mt-2 space-y-3">
+            {RULES_SECTIONS.map((sec) => (
+              <div key={sec} className="grid gap-2 sm:grid-cols-2">
+                {(['en', 'ar'] as const).map((l) => (
+                  <div key={l} className="space-y-1">
+                    <Label htmlFor={`note-${sec}-${l}`} className="text-xs capitalize">{sec} ({l === 'en' ? 'English' : 'Arabic'})</Label>
+                    <Textarea id={`note-${sec}-${l}`} dir={l === 'ar' ? 'rtl' : 'ltr'} rows={2} maxLength={600} value={notes[sec]?.[l] ?? ''}
+                      onChange={(e) => setNotes((n) => ({ ...n, [sec]: { ...n[sec], [l]: e.target.value } }))} />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </details>
         <fieldset className="space-y-2 rounded-xl border border-border/60 p-3">
           <legend className="px-1 text-sm font-medium">Reward tiers (by verified, non-suspended referred consultants)</legend>
           <p className="text-xs text-muted-foreground">Up to {MAX_TIERS} tiers. The first starts at 0; counts and rates must go up. A change applies to rewards created from now on; existing rewards keep their rate.</p>

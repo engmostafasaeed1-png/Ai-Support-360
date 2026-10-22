@@ -40,7 +40,9 @@ export interface ReferralOverview {
   terms_accepted_version: number | null;
   funnel: { clicks: number; signups: number; verified: number; paying: number };
   earnings: EarningsRow[];
-  eligibility: { verified: boolean; policy: boolean; suspended: boolean; payout_details: boolean };
+  eligibility: { verified: boolean; policy: boolean; suspended: boolean; payout_details: boolean; profile_submitted: boolean };
+  /** Simulator defaults: own hourly rate and the platform average (null when unknown). */
+  sim_defaults: { own_rate: number | null; platform_rate: number | null };
   /** Referrer checklist: AI interview passed -> terms acknowledged -> active (decided in the database). */
   activation: { pass_mark: number; interview_passed: boolean; best_score: number | null; acknowledged: boolean; active: boolean };
   /** "Who invited you?" is open (new accounts: first days; existing consultants: until the launch window ends). */
@@ -77,7 +79,12 @@ export function parseOverview(o: Record<string, unknown>): ReferralOverview {
       acknowledged: ac.acknowledged === true,
       active: ac.active === true,
     },
-    eligibility: { verified: el.verified === true, policy: el.policy !== false, suspended: el.suspended === true, payout_details: el.payout_details === true },
+    eligibility: { verified: el.verified === true, policy: el.policy !== false, suspended: el.suspended === true, payout_details: el.payout_details === true,
+                   profile_submitted: el.profile_submitted === true },
+    sim_defaults: {
+      own_rate: Number((o.sim_defaults as Record<string, unknown> | undefined)?.own_rate) > 0 ? Number((o.sim_defaults as Record<string, unknown>).own_rate) : null,
+      platform_rate: Number((o.sim_defaults as Record<string, unknown> | undefined)?.platform_rate) > 0 ? Number((o.sim_defaults as Record<string, unknown>).platform_rate) : null,
+    },
   };
 }
 

@@ -487,5 +487,26 @@ SELECT pg_temp.check((public.admin_referral_overview() -> 'tier_distribution') ?
 RESET ROLE;
 SELECT pg_temp.as_user(NULL);
 
+-- 17. Programme rules hub: live settings in the overview, plain-text section notes only --------------------------------------
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.as_user((SELECT admin FROM _ids));
+DO $$ BEGIN
+  PERFORM public.admin_referral_set_settings('{"rules_texts": {"overview": {"en": "<script>alert(1)</script>"}}}', 'Notes with markup');
+  RAISE EXCEPTION 'FAILED: markup accepted in section notes';
+EXCEPTION WHEN invalid_parameter_value THEN NULL; END $$;
+DO $$ BEGIN
+  PERFORM public.admin_referral_set_settings('{"rules_texts": {"secret": {"en": "x"}}}', 'Unknown section');
+  RAISE EXCEPTION 'FAILED: unknown section accepted';
+EXCEPTION WHEN invalid_parameter_value THEN NULL; END $$;
+SELECT public.admin_referral_set_settings('{"rules_texts": {"payment": {"en": "Payouts run on Mondays.", "ar": "تُصرف الدفعات أيام الاثنين."}}}', 'Payment note');
+SELECT pg_temp.as_user((SELECT r_user FROM _ids));
+SELECT pg_temp.check((public.my_referral_overview(NULL) -> 'settings' -> 'rules_texts' -> 'payment' ->> 'en') = 'Payouts run on Mondays.', 'section note reaches the hub');
+SELECT pg_temp.check((public.my_referral_overview(NULL) -> 'settings') ?& ARRAY['hold_days', 'min_invoice', 'monthly_cap', 'monthly_cap_referred', 'terms_published_at', 'tier_paid_days'],
+                     'hub reads every live setting');
+SELECT pg_temp.check((public.my_referral_overview(NULL) -> 'eligibility') ? 'profile_submitted' AND (public.my_referral_overview(NULL) -> 'sim_defaults') ? 'platform_rate',
+                     'checklist and simulator inputs');
+RESET ROLE;
+SELECT pg_temp.as_user(NULL);
+
 SELECT 'referral-program checks passed' AS result;
 ROLLBACK;

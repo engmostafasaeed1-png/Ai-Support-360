@@ -52,7 +52,7 @@ export default function TierLadder({ tiers, count, compact = false }: { tiers: T
       </table>
       {!compact && (
         <p className="text-[11px] text-muted-foreground">
-          {t('refz.tier_rule', 'Only referred consultants who are verified and not suspended count. Your tier is checked when each new reward is created; a new rate applies to later rewards only, never to rewards already created. If your count goes down, later rewards use the lower rate.')}
+          {t('refz.tier_rule', 'Only referred consultants who are verified, have at least one paid ticket and are not suspended count. Your tier is checked when each new reward is created; a new rate applies to later rewards only, never to rewards already created. If your count goes down, later rewards use the lower rate.')}
         </p>
       )}
     </div>
