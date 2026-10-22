@@ -177,13 +177,94 @@ const perCurrency = (o: unknown) => {
   return e.length ? e.map(([c, v]) => money(v, c)).join(' · ') : '-';
 };
 
-const FLAG_LABEL: Record<string, string> = {
-  same_device: 'Same device as the referrer',
-  same_ip: 'Same network (IP) as the referrer',
-  same_bank: 'Same bank account as the referrer',
-  many_from_same_ip: 'Several referrals from one network',
-  many_from_same_email_domain: 'Several referrals from one e-mail domain',
-};
+/** Four-eyes adjustments: a second super administrator approves amounts above the limit. */
+function AdjustRequestsCard() {
+  const qc = useQueryClient();
+  const list = useRpc<Row[]>(['refadmin', 'adjust-requests'], 'admin_referral_adjust_requests', { _status: 'all' });
+  const [note, setNote] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const decide = async (id: string, approve: boolean) => {
+    setBusy(id);
+    const { error } = await referralRpc('admin_referral_decide_adjustment', { _request: id, _approve: approve, _note: note[id] ?? '' });
+    setBusy(null);
+    if (error) { toast.error(rpcMessage(error, 'The decision could not be saved.')); return; }
+    toast.success(approve ? 'Approved: the adjustment line was created.' : 'Rejected. Nothing was paid.');
+    qc.invalidateQueries({ queryKey: ['refadmin'] });
+  };
+  const rows = list.data ?? [];
+  return (
+    <Card className="rounded-2xl">
+      <CardHeader className="pb-2"><CardTitle className="text-base">Adjustments waiting for a second approval</CardTitle></CardHeader>
+      <CardContent className="overflow-x-auto">
+        {list.isLoading ? <Skeleton className="h-16 w-full" /> : rows.length === 0 ? <p className="text-sm text-muted-foreground">No adjustment requests.</p> : (
+          <Table>
+            <TableHeader><TableRow><TableHead>Consultant</TableHead><TableHead className="text-end">Amount</TableHead><TableHead>Reason</TableHead><TableHead>Asked by</TableHead><TableHead>State</TableHead><TableHead className="text-end">Decision</TableHead></TableRow></TableHeader>
+            <TableBody>{rows.map((r) => {
+              const id = String(r.id);
+              return (
+                <TableRow key={id}>
+                  <TableCell className="text-sm">{String(r.consultant_name ?? '-')}</TableCell>
+                  <TableCell className="text-end tabular-nums">{Number(r.amount).toFixed(2)} {String(r.currency)}</TableCell>
+                  <TableCell className="text-xs max-w-[240px]">{String(r.reason)}</TableCell>
+                  <TableCell className="text-xs">{String(r.requested_by_name ?? '-')}{r.requested_by_me ? ' (you)' : ''}<div className="text-muted-foreground">{when(r.created_at)}</div></TableCell>
+                  <TableCell className="text-xs capitalize">{String(r.status)}{r.decided_by_name ? <div className="text-muted-foreground normal-case">by {String(r.decided_by_name)}</div> : null}</TableCell>
+                  <TableCell className="text-end">
+                    {r.can_decide ? (
+                      <div className="flex flex-col items-end gap-1">
+                        <Input aria-label="Reason for the decision" placeholder="Reason (required)" className="h-8 w-48 text-xs" value={note[id] ?? ''} onChange={(e) => setNote((n) => ({ ...n, [id]: e.target.value }))} />
+                        <div className="space-x-1">
+                          <Button size="sm" className="h-7 text-xs" disabled={busy === id || (note[id] ?? '').trim().length < 5} onClick={() => decide(id, true)}>Approve</Button>
+                          <Button size="sm" variant="outline" className="h-7 text-xs" disabled={busy === id || (note[id] ?? '').trim().length < 5} onClick={() => decide(id, false)}>Reject</Button>
+                        </div>
+                      </div>
+                    ) : r.status === 'pending' ? <span className="text-xs text-muted-foreground">Needs another super administrator</span> : null}
+                  </TableCell>
+                </TableRow>
+              );
+            })}</TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Anomaly dashboard: patterns worth a closer look (hashes never leave the database; clusters are numbered). */
+function AnomaliesCard() {
+  const a = useRpc<Row>(['refadmin', 'anomalies'], 'admin_referral_anomalies');
+  const d = (a.data ?? {}) as Row;
+  const list = (k: string) => ((d[k] ?? []) as Row[]);
+  const stat = (label: string, v: unknown, warn = false) => (
+    <div className="rounded-xl border border-border/60 p-3"><p className="text-xs text-muted-foreground">{label}</p><p className={cn('text-xl font-bold tabular-nums', warn && Number(v) > 0 && 'text-warning')}>{Number(v) || 0}</p></div>
+  );
+  const clusters = (k: string) => list(k).map((c) => (
+    <li key={String(c.cluster)}>Cluster {String(c.cluster)} ({String(c.size)}): {((c.members ?? []) as Row[]).map((m) => String(m.name ?? 'Consultant')).join(', ')}</li>
+  ));
+  return (
+    <Card className="rounded-2xl">
+      <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><ShieldAlert className="w-4 h-4 text-primary" />Anomalies</CardTitle></CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        {a.isLoading ? <Skeleton className="h-24 w-full" /> : (
+          <>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+              {stat('Under review', d.under_review, true)}{stat('Held: related client', d.held_related_party, true)}{stat('Held: cap', d.held_cap, true)}
+              {stat('Above the maximum rate', d.over_max_rate, true)}{stat('Reconciliation problems', d.reconcile_problems, true)}
+              {stat('Fast risers (7 days)', list('fast_risers').length, true)}
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div><p className="font-medium">Top earners (30 days)</p><ul className="mt-1 space-y-0.5 text-xs">{list('top_earners').map((t, i) => <li key={i}>{String(t.name ?? '-')}: {Number(t.amount).toFixed(2)} {String(t.currency)} ({String(t.lines)} lines)</li>)}{!list('top_earners').length && <li className="text-muted-foreground">None</li>}</ul></div>
+              <div><p className="font-medium">Fast risers</p><ul className="mt-1 space-y-0.5 text-xs">{list('fast_risers').map((t, i) => <li key={i}>{String(t.name ?? '-')}: {String(t.new_7d)} in 7 days, {String(t.new_30d)} in 30 days, tier count {String(t.tier_count)}</li>)}{!list('fast_risers').length && <li className="text-muted-foreground">None</li>}</ul></div>
+              <div><p className="font-medium">Shared network clusters</p><ul className="mt-1 space-y-0.5 text-xs">{clusters('network_clusters')}{!list('network_clusters').length && <li className="text-muted-foreground">None</li>}</ul></div>
+              <div><p className="font-medium">Shared bank account clusters</p><ul className="mt-1 space-y-0.5 text-xs">{clusters('bank_clusters')}{!list('bank_clusters').length && <li className="text-muted-foreground">None</li>}</ul></div>
+              <div><p className="font-medium">High reversal ratio (20 % or more)</p><ul className="mt-1 space-y-0.5 text-xs">{list('reversal_ratio').map((t, i) => <li key={i}>{String(t.name ?? '-')}: {String(t.reversals)} of {String(t.rewards)} rewards reversed</li>)}{!list('reversal_ratio').length && <li className="text-muted-foreground">None</li>}</ul></div>
+              <div><p className="font-medium">Rewards against invoice totals</p><ul className="mt-1 space-y-0.5 text-xs">{list('rewards_vs_invoices').map((t, i) => <li key={i} className={cn(Number(t.percent) > Number(t.max_percent) && 'text-destructive')}>{String(t.currency)}: {Number(t.rewards ?? 0).toFixed(2)} on {Number(t.fees ?? 0).toFixed(2)} = {String(t.percent ?? 0)} % (maximum {String(t.max_percent)} %)</li>)}{!list('rewards_vs_invoices').length && <li className="text-muted-foreground">None</li>}</ul></div>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 /** How many referrers are in each tier now (by verified, non-suspended referred consultants). */
 function TierDistributionCard({ o }: { o: Row }) {
