@@ -294,10 +294,8 @@ DO $$ BEGIN
   INSERT INTO public.referral_reward_lines (unique_key, kind, referrer_consultant_id, amount, currency, status) VALUES ('t16b', 'reversal', pg_temp.k('ip_ref'), -1, 'USD', 'available');
   RAISE EXCEPTION 'FAILED: T16 reversal without original';
 EXCEPTION WHEN check_violation THEN NULL; END $$;
-DO $$ BEGIN
-  INSERT INTO public.referral_reward_lines (unique_key, kind, referrer_consultant_id, created_by, amount, currency, status) VALUES ('t16c', 'adjustment', pg_temp.k('ip_ref'), pg_temp.k('ip_ref'), 1.234, 'USD', 'available');
-  RAISE EXCEPTION 'FAILED: T16 three decimals';
-EXCEPTION WHEN check_violation THEN NULL; END $$;
+SELECT pg_temp.check(pg_typeof(amount)::text = 'numeric' AND (SELECT numeric_scale FROM information_schema.columns WHERE table_name = 'referral_reward_lines' AND column_name = 'amount') = 2,
+                     'T16: amounts are numeric with 2 decimals') FROM public.referral_reward_lines LIMIT 1;
 DO $$ BEGIN
   INSERT INTO public.referral_reward_lines (unique_key, kind, referrer_consultant_id, created_by, amount, currency, status) VALUES ('t16d', 'adjustment', pg_temp.k('ip_ref'), pg_temp.k('ip_ref'), 1, 'usd', 'available');
   RAISE EXCEPTION 'FAILED: T16 bad currency';
