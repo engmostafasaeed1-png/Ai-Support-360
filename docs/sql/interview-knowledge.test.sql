@@ -119,6 +119,7 @@ DO $$ DECLARE a boolean; b boolean; c boolean; BEGIN
   IF NOT c THEN RAISE EXCEPTION 'T06 stale claim not taken over'; END IF;
   UPDATE public.interview_knowledge_documents SET attempts = 5, status = 'failed' WHERE id = '00000000-0000-4000-8000-0000000000d2';
   IF public.ik_claim_document('00000000-0000-4000-8000-0000000000d2') THEN RAISE EXCEPTION 'T06 attempts cap'; END IF;
+  UPDATE public.interview_knowledge_documents SET attempts = 0, status = 'ready', claimed_at = NULL WHERE id = '00000000-0000-4000-8000-0000000000d2';
   RESET ROLE;
 END $$;
 
