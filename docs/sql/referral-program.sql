@@ -26,7 +26,9 @@
 -- 0. Settings ------------------------------------------------------------------------------------------------------------
 INSERT INTO public.platform_settings (key, value) VALUES
   ('referral_enabled', 'true'::jsonb),
-  ('referral_rate_percent', '0.5'::jsonb),
+  -- Tiered rate by the referrer's number of VERIFIED referred consultants (admin-editable, max 5 tiers, rates ascending).
+  ('referral_tiers', '[{"min": 0, "rate": 0.5, "name": "Tier 1"}, {"min": 11, "rate": 0.6, "name": "Tier 2"}, {"min": 21, "rate": 0.7, "name": "Tier 3"}, {"min": 31, "rate": 0.8, "name": "Tier 4"}, {"min": 41, "rate": 1.0, "name": "Tier 5"}]'::jsonb),
+  ('referral_max_rate', '2'::jsonb),
   ('referral_months', '12'::jsonb),
   ('referral_min_payout', '25'::jsonb),
   ('referral_max_reward_per_referred', 'null'::jsonb),
@@ -82,6 +84,54 @@ AS $$
 $$;
 REVOKE ALL ON FUNCTION public.referral_setting_cap(text) FROM PUBLIC, anon, authenticated;
 
+-- Validated tiers (falls back to the defaults if the stored value is not valid). Mirrored by src/lib/referrals.ts.
+CREATE OR REPLACE FUNCTION public.referral_tiers_valid(_t jsonb, _max numeric)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+AS $$
+DECLARE
+  i int;
+  e jsonb;
+  _prev_min int := -1;
+  _prev_rate numeric := 0;
+BEGIN
+  IF jsonb_typeof(_t) IS DISTINCT FROM 'array' OR jsonb_array_length(_t) < 1 OR jsonb_array_length(_t) > 5 THEN RETURN 'Use 1 to 5 tiers'; END IF;
+  FOR i IN 0 .. jsonb_array_length(_t) - 1 LOOP
+    e := _t -> i;
+    IF jsonb_typeof(e -> 'min') <> 'number' OR jsonb_typeof(e -> 'rate') <> 'number' THEN RETURN 'Each tier needs a number of referrals and a rate'; END IF;
+    IF (e ->> 'min')::numeric <> trunc((e ->> 'min')::numeric) OR (e ->> 'min')::int < 0 THEN RETURN 'Referral counts must be whole numbers'; END IF;
+    IF i = 0 AND (e ->> 'min')::int <> 0 THEN RETURN 'The first tier must start at 0 referrals'; END IF;
+    IF (e ->> 'min')::int <= _prev_min THEN RETURN 'Referral counts must go up from tier to tier'; END IF;
+    IF (e ->> 'rate')::numeric <= _prev_rate THEN RETURN 'Rates must go up from tier to tier'; END IF;
+    IF (e ->> 'rate')::numeric > _max THEN RETURN format('Rates can not be above the maximum of %s %%', _max); END IF;
+    IF length(COALESCE(e ->> 'name', '')) > 30 THEN RETURN 'Tier names have at most 30 characters'; END IF;
+    _prev_min := (e ->> 'min')::int; _prev_rate := (e ->> 'rate')::numeric;
+  END LOOP;
+  RETURN NULL;
+END
+$$;
+
+CREATE OR REPLACE FUNCTION public.referral_tiers()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  v jsonb;
+  _max numeric := public.referral_setting_num('referral_max_rate', 2, 0.01, 10);
+  d jsonb := '[{"min": 0, "rate": 0.5, "name": "Tier 1"}, {"min": 11, "rate": 0.6, "name": "Tier 2"}, {"min": 21, "rate": 0.7, "name": "Tier 3"}, {"min": 31, "rate": 0.8, "name": "Tier 4"}, {"min": 41, "rate": 1.0, "name": "Tier 5"}]';
+BEGIN
+  SELECT value INTO v FROM public.platform_settings WHERE key = 'referral_tiers';
+  IF v IS NULL OR public.referral_tiers_valid(v, _max) IS NOT NULL THEN v := d; END IF;
+  RETURN (SELECT jsonb_agg(jsonb_build_object('min', (e ->> 'min')::int, 'rate', (e ->> 'rate')::numeric,
+                                              'name', COALESCE(NULLIF(e ->> 'name', ''), 'Tier ' || o)) ORDER BY o)
+            FROM jsonb_array_elements(v) WITH ORDINALITY AS x(e, o));
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_tiers() FROM PUBLIC, anon, authenticated;
+
 CREATE OR REPLACE FUNCTION public.referral_settings()
  RETURNS jsonb
  LANGUAGE sql
@@ -90,7 +140,10 @@ CREATE OR REPLACE FUNCTION public.referral_settings()
 AS $$
   SELECT jsonb_build_object(
     'enabled', public.platform_flag('referral_enabled', true),
-    'rate_percent', public.referral_setting_num('referral_rate_percent', 0.5, 0, 10),
+    -- Base (first tier) rate; the rate of a reward line is the referrer's tier when the line is created.
+    'rate_percent', (public.referral_tiers() -> 0 ->> 'rate')::numeric,
+    'tiers', public.referral_tiers(),
+    'max_rate', public.referral_setting_num('referral_max_rate', 2, 0.01, 10),
     'months', public.referral_setting_num('referral_months', 12, 1, 60)::int,
     'min_payout', public.referral_setting_num('referral_min_payout', 25, 0, 100000),
     'max_per_referred', public.referral_setting_cap('referral_max_reward_per_referred'),
@@ -114,7 +167,7 @@ CREATE OR REPLACE FUNCTION public.referral_public_settings()
 AS $$
   SELECT jsonb_build_object('enabled', s->'enabled', 'rate_percent', s->'rate_percent', 'months', s->'months',
                             'min_payout', s->'min_payout', 'terms_version', s->'terms_version', 'pass_mark', s->'pass_mark',
-                            'activation_days', s->'activation_days')
+                            'activation_days', s->'activation_days', 'tiers', s->'tiers')
     FROM (SELECT public.referral_settings() AS s) x
 $$;
 REVOKE ALL ON FUNCTION public.referral_public_settings() FROM PUBLIC;
@@ -262,6 +315,8 @@ CREATE TABLE IF NOT EXISTS public.referral_reward_lines (
   reverses_line_id uuid REFERENCES public.referral_reward_lines(id) ON DELETE SET NULL,
   fee_amount numeric(14,2),
   rate_percent numeric(6,3),
+  tier_name text,
+  tier_count int,
   amount numeric(14,2) NOT NULL,
   currency text NOT NULL DEFAULT 'USD',
   status text NOT NULL CHECK (status IN ('pending', 'available', 'held', 'in_payout', 'paid', 'reversed')),
@@ -610,6 +665,38 @@ AS $$
 $$;
 REVOKE ALL ON FUNCTION public.referral_consultant_suspended(uuid) FROM PUBLIC, anon, authenticated;
 
+-- Tier count: the referrer's referred consultants who are VERIFIED and not suspended right now (never-verified sign-ups,
+-- rejected, suspended and removed referrals do not count).
+CREATE OR REPLACE FUNCTION public.referral_verified_count(_referrer uuid)
+ RETURNS int
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+  SELECT count(*)::int FROM public.consultant_referrals r JOIN public.consultants c ON c.id = r.referred_consultant_id
+   WHERE r.referrer_consultant_id = _referrer AND r.status <> 'removed' AND c.verification_status::text = 'verified'
+     AND NOT public.referral_consultant_suspended(c.id)
+$$;
+REVOKE ALL ON FUNCTION public.referral_verified_count(uuid) FROM PUBLIC, anon, authenticated;
+
+-- Tier for a count: {index, name, rate, min, next_name, next_min, next_rate, needed}. Mirrored by tierFor().
+CREATE OR REPLACE FUNCTION public.referral_tier_for(_count int)
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+  WITH t AS (SELECT (e ->> 'min')::int AS min, (e ->> 'rate')::numeric AS rate, e ->> 'name' AS name, o::int AS idx
+               FROM jsonb_array_elements(public.referral_tiers()) WITH ORDINALITY AS x(e, o)),
+       cur AS (SELECT * FROM t WHERE t.min <= greatest(COALESCE(_count, 0), 0) ORDER BY t.min DESC LIMIT 1),
+       nxt AS (SELECT * FROM t WHERE t.min > greatest(COALESCE(_count, 0), 0) ORDER BY t.min LIMIT 1)
+  SELECT jsonb_build_object('count', greatest(COALESCE(_count, 0), 0), 'index', cur.idx, 'name', cur.name, 'rate', cur.rate, 'min', cur.min,
+                            'next_name', nxt.name, 'next_min', nxt.min, 'next_rate', nxt.rate,
+                            'needed', CASE WHEN nxt.min IS NULL THEN NULL ELSE nxt.min - greatest(COALESCE(_count, 0), 0) END)
+    FROM cur LEFT JOIN nxt ON true
+$$;
+REVOKE ALL ON FUNCTION public.referral_tier_for(int) FROM PUBLIC, anon, authenticated;
+
 -- Signed policy = an acknowledgement exists and the consultant is not blocked for a missing one.
 CREATE OR REPLACE FUNCTION public.referral_policy_ok(_cid uuid)
  RETURNS boolean
@@ -788,7 +875,8 @@ BEGIN
   IF _user IS NULL THEN RETURN; END IF;
   IF _kind = 'signup' THEN
     _title := 'Someone registered with your referral code';
-    _body := format('%s registered with your code. Your referral becomes active when you both pass the AI interview.', _name);
+    _body := format('%s registered with your code. Your referral becomes active when you both pass the AI interview. Your current rate: %s %% (%s).',
+                    _name, public.referral_tier_for(public.referral_verified_count(_to)) ->> 'rate', public.referral_tier_for(public.referral_verified_count(_to)) ->> 'name');
   ELSIF _kind = 'invited' THEN
     _title := 'You were invited to AI Support 360';
     _body := format('You were invited by %s. The referral programme becomes active after you and your referrer pass the AI interview.', _name);
@@ -1201,7 +1289,8 @@ DECLARE
   s jsonb := public.referral_settings();
   _why text;
   _fee numeric;
-  _rate numeric := (s->>'rate_percent')::numeric;
+  _rate numeric;
+  _tier jsonb;
   _amt numeric;
   _cap numeric;
   _used numeric;
@@ -1235,6 +1324,9 @@ BEGIN
                                               r.activation_status, r.activated_at);
   _fee := round(COALESCE(NEW.gross_amount, NEW.amount, 0), 2);
   IF _why IS NULL AND _fee <= 0 THEN _why := 'no_fee'; END IF;
+  -- Rate = the referrer's tier at this moment (not retroactive; a later tier change affects later lines only).
+  _tier := public.referral_tier_for(public.referral_verified_count(r.referrer_consultant_id));
+  _rate := (_tier ->> 'rate')::numeric;
   _amt := round(_fee * _rate / 100, 2);
   IF _why IS NULL AND _amt <= 0 THEN _why := 'no_fee'; END IF;
   IF _why IS NULL THEN
@@ -1265,14 +1357,14 @@ BEGIN
     _status := 'pending';
   END IF;
   INSERT INTO public.referral_reward_lines (unique_key, kind, referrer_consultant_id, referred_consultant_id, source_payout_id, payment_id,
-                                            fee_amount, rate_percent, amount, currency, status, hold_reason, available_at)
+                                            fee_amount, rate_percent, tier_name, tier_count, amount, currency, status, hold_reason, available_at)
   VALUES ('reward:payout:' || NEW.id::text, 'reward', r.referrer_consultant_id, r.referred_consultant_id, NEW.id, NEW.payment_id,
-          _fee, _rate, _amt, _cur, _status, _hold, CASE WHEN _status = 'available' THEN now() END)
+          _fee, _rate, _tier ->> 'name', (_tier ->> 'count')::int, _amt, _cur, _status, _hold, CASE WHEN _status = 'available' THEN now() END)
   ON CONFLICT (unique_key) DO NOTHING
   RETURNING id INTO _line;
   IF _line IS NULL THEN RETURN NULL; END IF;
   PERFORM public.referral_log(NULL, 'reward_created', r.referrer_consultant_id, r.referred_consultant_id, _line, NEW.id, NULL,
-                              jsonb_build_object('fee', _fee, 'rate', _rate, 'amount', _amt, 'currency', _cur, 'status', _status), NULL);
+                              jsonb_build_object('fee', _fee, 'rate', _rate, 'tier', _tier ->> 'name', 'tier_count', _tier ->> 'count', 'amount', _amt, 'currency', _cur, 'status', _status), NULL);
   IF r.first_reward_notified_at IS NULL THEN
     UPDATE public.consultant_referrals SET first_reward_notified_at = now(), updated_at = now() WHERE referred_consultant_id = r.referred_consultant_id;
     PERFORM public.referral_notify(r.referrer_consultant_id, 'first_reward', r.referred_consultant_id, _amt, _cur);
@@ -1340,9 +1432,9 @@ BEGIN
     UPDATE public.referral_reward_lines SET status = 'reversed', updated_at = now() WHERE id = l.id;
   END IF;
   INSERT INTO public.referral_reward_lines (unique_key, kind, referrer_consultant_id, referred_consultant_id, source_payout_id, payment_id,
-                                            reverses_line_id, fee_amount, rate_percent, amount, currency, status, note, created_by, available_at)
+                                            reverses_line_id, fee_amount, rate_percent, tier_name, tier_count, amount, currency, status, note, created_by, available_at)
   VALUES ('reversal:' || l.id::text, 'reversal', l.referrer_consultant_id, l.referred_consultant_id, l.source_payout_id, l.payment_id,
-          l.id, l.fee_amount, l.rate_percent, -l.amount, l.currency, _st, left(COALESCE(_reason, 'Reversed'), 300), _actor,
+          l.id, l.fee_amount, l.rate_percent, l.tier_name, l.tier_count, -l.amount, l.currency, _st, left(COALESCE(_reason, 'Reversed'), 300), _actor,
           CASE WHEN _st = 'available' THEN now() END)
   ON CONFLICT (unique_key) DO NOTHING
   RETURNING id INTO _new;
@@ -1632,7 +1724,8 @@ BEGIN
   RETURN jsonb_build_object(
     'settings', jsonb_build_object('enabled', s->'enabled', 'rate_percent', s->'rate_percent', 'months', s->'months',
                                    'min_payout', s->'min_payout', 'terms_version', s->'terms_version', 'pass_mark', s->'pass_mark',
-                                   'activation_days', s->'activation_days'),
+                                   'activation_days', s->'activation_days', 'tiers', s->'tiers'),
+    'tier', public.referral_tier_for(public.referral_verified_count(_cid)),
     -- Referrer activation checklist: interview passed -> terms acknowledged -> active (sharing unlocked).
     'activation', jsonb_build_object(
       'pass_mark', s->'pass_mark',
@@ -1744,7 +1837,7 @@ BEGIN
     'they_passed', public.referral_passed_at(r.referrer_consultant_id) IS NOT NULL,
     'i_acknowledged_at', public.referral_acked_at(_cid),
     'they_acknowledged', public.referral_acked_at(r.referrer_consultant_id) IS NOT NULL,
-    'pass_mark', s->'pass_mark', 'rate_percent', s->'rate_percent', 'months', s->'months', 'terms_version', s->'terms_version');
+    'pass_mark', s->'pass_mark', 'rate_percent', s->'rate_percent', 'tiers', s->'tiers', 'months', s->'months', 'terms_version', s->'terms_version');
 END
 $$;
 REVOKE ALL ON FUNCTION public.my_referral_invite() FROM PUBLIC, anon;
@@ -1856,6 +1949,10 @@ BEGIN
                   WHERE r.status <> 'removed' AND c.verification_status::text = 'verified'),
     'paying', (SELECT count(*) FROM public.consultant_referrals WHERE status <> 'removed' AND first_paid_at IS NOT NULL),
     'review', (SELECT count(*) FROM public.consultant_referrals WHERE status IN ('review', 'held')),
+    'tier_distribution', COALESCE((SELECT jsonb_object_agg(n, c) FROM (
+                          SELECT public.referral_tier_for(public.referral_verified_count(x.rid)) ->> 'name' AS n, count(*) AS c
+                            FROM (SELECT DISTINCT referrer_consultant_id AS rid FROM public.consultant_referrals WHERE status <> 'removed') x
+                           GROUP BY 1) d), '{}'::jsonb),
     'pending_activation', (SELECT count(*) FROM public.consultant_referrals WHERE status <> 'removed' AND activation_status = 'pending'),
     'active_pairs', (SELECT count(*) FROM public.consultant_referrals WHERE status <> 'removed' AND activation_status = 'active'),
     'expired', (SELECT count(*) FROM public.consultant_referrals WHERE status <> 'removed' AND activation_status = 'expired'),
@@ -1970,9 +2067,10 @@ $$;
 REVOKE ALL ON FUNCTION public.admin_referral_referrers(text, int) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.admin_referral_referrers(text, int) TO authenticated;
 
+DROP FUNCTION IF EXISTS public.admin_referral_lines(text, int, int);
 CREATE OR REPLACE FUNCTION public.admin_referral_lines(_status text DEFAULT NULL, _limit int DEFAULT 300, _offset int DEFAULT 0)
  RETURNS TABLE (id uuid, created_at timestamptz, kind text, status text, hold_reason text, amount numeric, currency text, fee_amount numeric,
-                rate_percent numeric, referrer_id uuid, referrer_name text, referred_id uuid, referred_name text, source_payout_id uuid,
+                rate_percent numeric, tier_name text, tier_count int, referrer_id uuid, referrer_name text, referred_id uuid, referred_name text, source_payout_id uuid,
                 payment_id uuid, referral_payout_id uuid, note text)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
@@ -1981,7 +2079,7 @@ AS $$
 BEGIN
   IF NOT public.referral_is_admin() THEN RAISE EXCEPTION 'Administrators only' USING ERRCODE = '42501'; END IF;
   RETURN QUERY
-  SELECT l.id, l.created_at, l.kind, l.status, l.hold_reason, l.amount, l.currency, l.fee_amount, l.rate_percent,
+  SELECT l.id, l.created_at, l.kind, l.status, l.hold_reason, l.amount, l.currency, l.fee_amount, l.rate_percent, l.tier_name, l.tier_count,
          l.referrer_consultant_id, pr.display_name, l.referred_consultant_id, pd.display_name, l.source_payout_id, l.payment_id,
          l.referral_payout_id, l.note
     FROM public.referral_reward_lines l
@@ -2216,9 +2314,22 @@ BEGIN
       INSERT INTO public.platform_settings (key, value)
       VALUES (CASE WHEN _k = 'pass_mark' THEN 'referral_min_interview_score' ELSE 'referral_activation_days' END, _v)
       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
-    ELSIF _k IN ('rate_percent', 'months', 'min_payout', 'claim_days') THEN
+    ELSIF _k = 'tiers' THEN
+      DECLARE _p text := public.referral_tiers_valid(_v, COALESCE((_settings ->> 'max_rate')::numeric, public.referral_setting_num('referral_max_rate', 2, 0.01, 10)));
+      BEGIN
+        IF _p IS NOT NULL THEN RAISE EXCEPTION '%', _p USING ERRCODE = '22023'; END IF;
+      END;
+      INSERT INTO public.platform_settings (key, value) VALUES ('referral_tiers', _v) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
+    ELSIF _k = 'max_rate' THEN
+      IF jsonb_typeof(_v) <> 'number' OR (_v #>> '{}')::numeric < 0.1 OR (_v #>> '{}')::numeric > 10 THEN
+        RAISE EXCEPTION 'The maximum rate must be between 0.1 and 10 %%' USING ERRCODE = '22023';
+      END IF;
+      IF public.referral_tiers_valid(COALESCE(_settings -> 'tiers', public.referral_tiers()), (_v #>> '{}')::numeric) IS NOT NULL THEN
+        RAISE EXCEPTION 'A tier rate is above the new maximum' USING ERRCODE = '22023';
+      END IF;
+      INSERT INTO public.platform_settings (key, value) VALUES ('referral_max_rate', _v) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
+    ELSIF _k IN ('months', 'min_payout', 'claim_days') THEN
       IF jsonb_typeof(_v) <> 'number'
-         OR (_k = 'rate_percent' AND ((_v #>> '{}')::numeric < 0 OR (_v #>> '{}')::numeric > 10))
          OR (_k = 'months' AND ((_v #>> '{}')::numeric < 1 OR (_v #>> '{}')::numeric > 60 OR (_v #>> '{}')::numeric <> trunc((_v #>> '{}')::numeric)))
          OR (_k = 'min_payout' AND ((_v #>> '{}')::numeric < 0 OR (_v #>> '{}')::numeric > 100000))
          OR (_k = 'claim_days' AND ((_v #>> '{}')::numeric < 0 OR (_v #>> '{}')::numeric > 30 OR (_v #>> '{}')::numeric <> trunc((_v #>> '{}')::numeric))) THEN
@@ -2390,9 +2501,10 @@ AS $$
 $$;
 
 -- Internal: one row per reward/reversal line of a referrer, with its invoice facts (no access check; callers check).
+DROP FUNCTION IF EXISTS public.referral_lines_for(uuid, text, date, date, text);
 CREATE OR REPLACE FUNCTION public.referral_lines_for(_cid uuid, _ref_key text, _from date, _to date, _status text)
  RETURNS TABLE (created_at timestamptz, ref_key text, referred_name text, kind text, status text, ticket_ref text, approved_hours numeric,
-                man_days numeric, hourly_rate numeric, fee_amount numeric, rate_percent numeric, amount numeric, currency text,
+                man_days numeric, hourly_rate numeric, fee_amount numeric, rate_percent numeric, tier_name text, amount numeric, currency text,
                 payment_status text, client_paid_at timestamptz, payout_status text, payout_released_at timestamptz,
                 referral_payout_due date, note text)
  LANGUAGE sql
@@ -2407,7 +2519,7 @@ AS $$
          ts.billable_hours,
          CASE WHEN ts.billable_hours IS NULL THEN NULL ELSE round(ts.billable_hours / 8, 2) END,
          ts.hourly_rate,
-         l.fee_amount, l.rate_percent, l.amount, l.currency,
+         l.fee_amount, l.rate_percent, l.tier_name, l.amount, l.currency,
          p.status::text, p.paid_at, po.status::text, CASE WHEN po.status::text = 'completed' THEN po.paid_at END,
          rp.due_by,
          CASE WHEN l.kind = 'reward' THEN NULL ELSE l.note END
@@ -2453,7 +2565,7 @@ BEGIN
             HAVING sum(l.amount) >= greatest((s->>'min_payout')::numeric, 0.01) ORDER BY 2 DESC LIMIT 1) t;
   END IF;
   RETURN jsonb_build_object(
-    'settings', jsonb_build_object('rate_percent', s->'rate_percent', 'months', s->'months', 'min_payout', s->'min_payout'),
+    'settings', jsonb_build_object('rate_percent', s->'rate_percent', 'months', s->'months', 'min_payout', s->'min_payout', 'tiers', s->'tiers'),
     'referred', jsonb_build_object(
       'total', (SELECT count(*) FROM public.consultant_referrals r WHERE r.referrer_consultant_id = _cid AND r.status <> 'removed'),
       'verified', (SELECT count(*) FROM public.consultant_referrals r JOIN public.consultants c ON c.id = r.referred_consultant_id
@@ -2472,6 +2584,8 @@ BEGIN
                         SELECT l.currency, sum(l.amount) a FROM public.referral_reward_lines l
                          WHERE l.referrer_consultant_id = _cid AND l.status = 'available' GROUP BY l.currency) x), '{}'::jsonb),
     'next_payout', _next,
+    'tier', public.referral_tier_for(public.referral_verified_count(_cid)),
+    'tiers', s -> 'tiers',
     'last_updated', GREATEST((SELECT max(l.updated_at) FROM public.referral_reward_lines l WHERE l.referrer_consultant_id = _cid),
                              (SELECT max(r.updated_at) FROM public.consultant_referrals r WHERE r.referrer_consultant_id = _cid)),
     'generated_at', now());
@@ -2491,9 +2605,10 @@ REVOKE ALL ON FUNCTION public.referral_calc_summary(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.referral_calc_summary(uuid) TO authenticated;
 
 -- Per referred consultant (and currency): man-days, fee base, reward, reversed, net, state amounts.
+DROP FUNCTION IF EXISTS public.referral_calc_referrals(uuid, date, date, text);
 CREATE OR REPLACE FUNCTION public.referral_calc_referrals(_consultant uuid DEFAULT NULL, _from date DEFAULT NULL, _to date DEFAULT NULL, _status text DEFAULT NULL)
  RETURNS TABLE (ref_key text, referred_name text, activation_status text, first_paid_at timestamptz, window_ends_at timestamptz, currency text,
-                approved_hours numeric, man_days numeric, fee_base numeric, rate_percent numeric, reward_earned numeric, reversed numeric,
+                approved_hours numeric, man_days numeric, fee_base numeric, rate_min numeric, rate_percent numeric, reward_earned numeric, reversed numeric,
                 net numeric, pending numeric, available numeric, paid numeric)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
@@ -2501,13 +2616,13 @@ CREATE OR REPLACE FUNCTION public.referral_calc_referrals(_consultant uuid DEFAU
 AS $$
 DECLARE
   _cid uuid := public.referral_calc_target(_consultant);
-  _rate numeric := (public.referral_settings() ->> 'rate_percent')::numeric;
+  _rate numeric := (public.referral_tier_for(public.referral_verified_count(_cid)) ->> 'rate')::numeric;
 BEGIN
   RETURN QUERY
   WITH l AS (SELECT * FROM public.referral_lines_for(_cid, NULL, _from, _to, _status))
   SELECT public.referral_ref_key(r.referrer_consultant_id, r.referred_consultant_id), public.referral_masked_name(r.referred_consultant_id),
          r.activation_status, r.first_paid_at, r.window_ends_at, COALESCE(x.currency, 'USD'),
-         COALESCE(x.hours, 0), round(COALESCE(x.hours, 0) / 8, 2), COALESCE(x.fee, 0), COALESCE(x.rate, _rate),
+         COALESCE(x.hours, 0), round(COALESCE(x.hours, 0) / 8, 2), COALESCE(x.fee, 0), COALESCE(x.rate_lo, _rate), COALESCE(x.rate, _rate),
          COALESCE(x.earned, 0), COALESCE(x.rev, 0), COALESCE(x.earned, 0) + COALESCE(x.rev, 0),
          COALESCE(x.pend, 0), COALESCE(x.avail, 0), COALESCE(x.paid, 0)
     FROM public.consultant_referrals r
@@ -2516,6 +2631,7 @@ BEGIN
              sum(l.approved_hours) FILTER (WHERE l.kind = 'reward') hours,
              sum(l.fee_amount) FILTER (WHERE l.kind = 'reward') fee,
              max(l.rate_percent) FILTER (WHERE l.kind = 'reward') rate,
+             min(l.rate_percent) FILTER (WHERE l.kind = 'reward') rate_lo,
              sum(l.amount) FILTER (WHERE l.kind = 'reward') earned,
              sum(l.amount) FILTER (WHERE l.kind = 'reversal') rev,
              sum(l.amount) FILTER (WHERE l.status IN ('pending', 'held')) pend,
@@ -2530,10 +2646,11 @@ $$;
 REVOKE ALL ON FUNCTION public.referral_calc_referrals(uuid, date, date, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.referral_calc_referrals(uuid, date, date, text) TO authenticated;
 
+DROP FUNCTION IF EXISTS public.referral_calc_lines(uuid, text, date, date, text);
 CREATE OR REPLACE FUNCTION public.referral_calc_lines(_consultant uuid DEFAULT NULL, _ref_key text DEFAULT NULL, _from date DEFAULT NULL,
                                                       _to date DEFAULT NULL, _status text DEFAULT NULL)
  RETURNS TABLE (created_at timestamptz, ref_key text, referred_name text, kind text, status text, ticket_ref text, approved_hours numeric,
-                man_days numeric, hourly_rate numeric, fee_amount numeric, rate_percent numeric, amount numeric, currency text,
+                man_days numeric, hourly_rate numeric, fee_amount numeric, rate_percent numeric, tier_name text, amount numeric, currency text,
                 payment_status text, client_paid_at timestamptz, payout_status text, payout_released_at timestamptz,
                 referral_payout_due date, note text)
  LANGUAGE sql
@@ -2584,7 +2701,8 @@ CREATE OR REPLACE FUNCTION public.referral_calc_forecast(_consultant uuid DEFAUL
 AS $$
 DECLARE
   _cid uuid := public.referral_calc_target(_consultant);
-  _rate numeric := (public.referral_settings() ->> 'rate_percent')::numeric;
+  -- Expected at today's tier (the real rate is the tier when the client pays).
+  _rate numeric := (public.referral_tier_for(public.referral_verified_count(_cid)) ->> 'rate')::numeric;
 BEGIN
   RETURN QUERY
   SELECT COALESCE(ts.cost_currency, 'USD'), count(*)::int, sum(ts.billable_hours), round(sum(ts.billable_hours * ts.hourly_rate), 2),
@@ -2726,6 +2844,14 @@ BEGIN
            'Paid lines equal completed referral payouts'
       FROM c
     UNION ALL
+    SELECT c.cid, 'rate_within_tiers_cap',
+           (SELECT count(*) = 0 FROM public.referral_reward_lines l WHERE l.referrer_consultant_id = c.cid AND l.kind = 'reward'
+              AND (l.rate_percent > (public.referral_settings() ->> 'max_rate')::numeric OR l.tier_name IS NULL)),
+           (public.referral_settings() ->> 'max_rate')::numeric,
+           (SELECT max(l.rate_percent) FROM public.referral_reward_lines l WHERE l.referrer_consultant_id = c.cid AND l.kind = 'reward'),
+           'Every reward line stores its tier and a rate within the maximum'
+      FROM c
+    UNION ALL
     SELECT c.cid, 'one_reward_per_payout',
            (SELECT count(*) = 0 FROM (SELECT l.source_payout_id FROM public.referral_reward_lines l WHERE l.referrer_consultant_id = c.cid AND l.kind = 'reward'
                                        AND l.source_payout_id IS NOT NULL GROUP BY 1 HAVING count(*) > 1) d),
@@ -2743,6 +2869,27 @@ END
 $$;
 REVOKE ALL ON FUNCTION public.admin_referral_reconcile(uuid, boolean) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.admin_referral_reconcile(uuid, boolean) TO authenticated;
+
+-- Rate-change audit trail: who changed the tiers / maximum rate and when, old and new values.
+CREATE OR REPLACE FUNCTION public.admin_referral_rate_history(_limit int DEFAULT 100)
+ RETURNS TABLE (changed_at timestamptz, changed_by text, old_tiers jsonb, new_tiers jsonb, old_max numeric, new_max numeric, reason text)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+BEGIN
+  IF NOT public.referral_is_admin() THEN RAISE EXCEPTION 'Administrators only' USING ERRCODE = '42501'; END IF;
+  RETURN QUERY
+  SELECT e.created_at, p.display_name, e.before -> 'tiers', e.after -> 'tiers', (e.before ->> 'max_rate')::numeric, (e.after ->> 'max_rate')::numeric, e.reason
+    FROM public.referral_events e LEFT JOIN public.profiles p ON p.user_id = e.actor
+   WHERE e.action = 'settings_changed'
+     AND ((e.before -> 'tiers') IS DISTINCT FROM (e.after -> 'tiers') OR (e.before -> 'max_rate') IS DISTINCT FROM (e.after -> 'max_rate'))
+   ORDER BY e.created_at DESC
+   LIMIT greatest(1, least(COALESCE(_limit, 100), 500));
+END
+$$;
+REVOKE ALL ON FUNCTION public.admin_referral_rate_history(int) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_referral_rate_history(int) TO authenticated;
 
 -- 11. Codes for every existing consultant (existing consultants have no referrer: attribution starts with new sign-ups).
 -- Every consultant except rejected / suspended gets exactly one code (idempotent, collision-safe through
@@ -2840,8 +2987,8 @@ CREATE OR REPLACE FUNCTION public.referral_announcement_text()
 AS $$
   SELECT jsonb_build_object(
     'title', 'Introducing Refer & earn',
-    'body', format('Bring colleagues, earn together: you earn %s %% of the fee of every consultant you refer, for %s months from their first paid ticket - paid by AI Support 360, never deducted from them. It starts after you both pass the AI interview. Open Refer & earn to see your code.',
-                   s ->> 'rate_percent', s ->> 'months'))
+    'body', format('Bring colleagues, earn together: you earn %s %% to %s %% (rising with the number of verified consultants you referred) of the fee of every consultant you refer, for %s months from their first paid ticket - paid by AI Support 360, never deducted from them. It starts after you both pass the AI interview. Open Refer & earn to see your code.',
+                   s -> 'tiers' -> 0 ->> 'rate', s -> 'tiers' -> (jsonb_array_length(s -> 'tiers') - 1) ->> 'rate', s ->> 'months'))
     FROM (SELECT public.referral_settings() AS s) x
 $$;
 REVOKE ALL ON FUNCTION public.referral_announcement_text() FROM PUBLIC, anon, authenticated;

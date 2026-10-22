@@ -11,7 +11,7 @@ import { TOUR_KEY, resumeStep, shouldAutoStart } from '@/lib/tour';
 import ProductTour, { type TourStep } from './ProductTour';
 import { useAssignmentPolicyText } from '@/components/consultant/AssignmentPolicyNote';
 import { usePublicReferralSettings } from '@/hooks/useReferralProgram';
-import { formatRate } from '@/lib/referrals';
+import { rateRangeText, settingsTiers } from '@/lib/referrals';
 import { Gift } from 'lucide-react';
 
 interface TourContextValue { start: () => void; running: boolean }
@@ -52,12 +52,12 @@ export function useConsultantTourSteps(): TourStep[] {
     // Refer & earn: only while the programme is live; numbers from the real settings, no income promise.
     ...(referral.available && referral.settings.enabled ? [{ id: 'nav-referrals', target: 'nav-referrals', placement: 'end' as const, icon: Gift,
       title: t('tour.c.refer_title', 'Refer & earn'),
-      body: t('tour.c.refer', 'Bring colleagues, earn together: share your code; when a colleague you referred works, you earn {{rate}} % of their fee for {{months}} months, paid by AI Support 360 and never deducted from them. It starts after you both pass the AI interview.', { rate: formatRate(referral.settings.rate_percent), months: referral.settings.months }) }] : []),
+      body: t('tour.c.refer', 'Bring colleagues, earn together: share your code; when a colleague you referred works, you earn {{rate}} % of their fee (the rate rises with the number of verified consultants you referred) for {{months}} months, paid by AI Support 360 and never deducted from them. It starts after you both pass the AI interview.', { rate: rateRangeText(settingsTiers(referral.settings)), months: referral.settings.months }) }] : []),
     { id: 'bell', target: 'bell', placement: 'bottom', icon: Bell, title: t('tour.c.bell_title', 'Notifications'),
       body: t('tour.c.bell', 'New requests and bid answers arrive here. Turn on phone alerts (and Telegram) in Settings so you never miss a critical request.') },
     { id: 'help-button', target: 'help-button', placement: 'bottom', icon: CircleHelp, title: t('tour.c.help_title', 'Help'),
       body: t('tour.c.help', 'Open the quick guide any time, or take this tour again.') },
-  ], [t, replyPolicy, referral.available, referral.settings.enabled, referral.settings.rate_percent, referral.settings.months]);
+  ], [t, replyPolicy, referral.available, referral.settings.enabled, referral.settings.tiers, referral.settings.months]);
 }
 
 /** Nav steps whose menu item is not on the page (feature switched off / hidden) are left out on wide screens.

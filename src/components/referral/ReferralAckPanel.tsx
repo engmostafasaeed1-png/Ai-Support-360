@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { acceptReferralTerms, rpcMessage, useReferralTerms } from '@/hooks/useReferralProgram';
-import { formatRate } from '@/lib/referrals';
 
 interface Props {
   version: number;
-  rate: number;
+  /** Rate or tier range, e.g. "0.5-1". */
+  rateText: string;
   months: number;
   passMark: number;
   source: 'page' | 'share' | 'popup';
@@ -22,7 +22,7 @@ interface Props {
  * The referral acknowledgement (both sides). Plain-language summary + the stored versioned text; saving is append-only
  * in the database with time, language, browser and a hashed network address. No acknowledgement = no activation.
  */
-export default function ReferralAckPanel({ version, rate, months, passMark, source, onDone }: Props) {
+export default function ReferralAckPanel({ version, rateText, months, passMark, source, onDone }: Props) {
   const { t, i18n } = useTranslation();
   const lang: 'en' | 'ar' = i18n.language?.startsWith('ar') ? 'ar' : 'en';
   const terms = useReferralTerms(version);
@@ -42,7 +42,7 @@ export default function ReferralAckPanel({ version, rate, months, passMark, sour
       <ul className="list-disc ps-5 space-y-1 text-muted-foreground">
         <li>{t('refz.ack_1', 'The referral becomes active only when BOTH of you have passed the AI interview (score at least {{pass}}) and both accepted these terms.', { pass: passMark })}</li>
         <li>{t('refz.ack_2', 'The AI interview must be taken honestly, by you alone, without outside help.')}</li>
-        <li>{t('refz.ack_3', 'The referrer earns {{rate}} % of the referred consultant\'s fee for {{months}} months from their first paid ticket, only on work invoiced after activation. It is paid by AI Support 360, never deducted from anyone.', { rate: formatRate(rate), months })}</li>
+        <li>{t('refz.ack_3', 'The referrer earns {{rate}} % of the referred consultant\'s fee (by tier: the rate rises with the number of verified consultants the referrer brought, and each reward keeps the rate of the moment it is created) for {{months}} months from their first paid ticket, only on work invoiced after activation. It is paid by AI Support 360, never deducted from anyone.', { rate: rateText, months })}</li>
         <li>{t('refz.ack_4', 'AI Support 360 may review, hold, reverse or forfeit rewards in case of fraud, self-referral, shared accounts or a dishonest interview.')}</li>
         <li>{t('refz.ack_5', 'Rewards are a referral incentive, not wages or salary, and may be taxable.')}</li>
       </ul>

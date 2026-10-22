@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Gift } from 'lucide-react';
 import { useMyReferralInvite, useMyReferralList, usePublicReferralSettings } from '@/hooks/useReferralProgram';
 import { ChipBadge, useNextStepText } from '@/components/referral/ReferralActivation';
-import { formatRate } from '@/lib/referrals';
+import { rateRangeText, settingsTiers } from '@/lib/referrals';
 import { cn } from '@/lib/utils';
 
 /** One honest line with the real rate and months from the settings. Hidden until the programme is live. */
@@ -12,7 +12,7 @@ export default function ReferralBanner({ variant }: { variant: 'dashboard' | 'la
   const { available, settings } = usePublicReferralSettings();
   if (!available || !settings.enabled) return null;
   const text = t('refz.banner', 'Refer and earn: {{rate}} % of the fees of every consultant you bring, for {{months}} months - paid by AI Support 360, never deducted from them.', {
-    rate: formatRate(settings.rate_percent), months: settings.months,
+    rate: rateRangeText(settingsTiers(settings)), months: settings.months,
   });
   if (variant === 'landing') {
     return (

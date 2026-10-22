@@ -1,3 +1,4 @@
+import { formatRate, rateRangeText } from '@/lib/referrals';
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -78,7 +79,7 @@ export default function ReferralNoticePopup() {
               <p className="text-sm font-medium">
                 {t('refz.signup_invited', 'You were invited by {{name}}. The referral programme becomes active after you and your referrer pass the AI interview.', { name: invite.data.referrer_name })}
               </p>
-              <ReferralAckPanel version={invite.data.terms_version} rate={invite.data.rate_percent} months={invite.data.months}
+              <ReferralAckPanel version={invite.data.terms_version} rateText={invite.data.tiers?.length ? rateRangeText(invite.data.tiers) : formatRate(invite.data.rate_percent)} months={invite.data.months}
                 passMark={invite.data.pass_mark} source="popup" onDone={() => { invalidate(); void close(); }} />
             </div>
           )}

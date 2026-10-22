@@ -152,13 +152,13 @@ describe('referral calculations arithmetic', () => {
   });
   it('estimate is an illustration with the real rate and window', () => {
     // 3 consultants x 10 man-days x 8 h x $50 = $12,000 per month -> 0.5 % = $60, over 12 months $720
-    expect(referralEstimate({ referred: 3, manDaysPerMonth: 10, hourlyRate: 50, ratePercent: 0.5, months: 12 })).toEqual({ perMonth: 60, overWindow: 720 });
+    expect(referralEstimate({ referred: 3, manDaysPerMonth: 10, hourlyRate: 50, ratePercent: 0.5, months: 12 })).toEqual({ perMonth: 60, overWindow: 720, rate: 0.5 });
     expect(referralEstimate({ referred: -2, manDaysPerMonth: 10, hourlyRate: 50, ratePercent: 0.5, months: 12 }).perMonth).toBe(0);
   });
   it('statement CSV keeps the numbers', () => {
     const csv = statementCsv([{ created_at: '2026-10-01', ref_key: 'k', referred_name: 'D. K****', kind: 'reward', status: 'paid', ticket_ref: 'T-1', approved_hours: 50, man_days: 6.25,
-      hourly_rate: 8, fee_amount: 400, rate_percent: 0.5, amount: 2, currency: 'USD', payment_status: 'completed', client_paid_at: null, payout_status: 'completed', payout_released_at: null, referral_payout_due: null, note: null }]);
-    expect(csv.split('\r\n')[1]).toBe('2026-10-01,D. K****,reward,T-1,50,6.25,8,400,0.5,2,USD,paid,completed,');
+      hourly_rate: 8, fee_amount: 400, rate_percent: 0.5, tier_name: 'Tier 1', amount: 2, currency: 'USD', payment_status: 'completed', client_paid_at: null, payout_status: 'completed', payout_released_at: null, referral_payout_due: null, note: null }]);
+    expect(csv.split('\r\n')[1]).toBe('2026-10-01,D. K****,reward,T-1,50,6.25,8,400,0.5,Tier 1,2,USD,paid,completed,');
   });
 });
 
@@ -195,5 +195,46 @@ describe('one-time Refer & earn introduction', () => {
     expect(shouldShowReferralIntro({ ...base, live: false })).toBe(false);
     expect(shouldShowReferralIntro({ ...base, isGuest: true })).toBe(false);
     expect(shouldShowReferralIntro({ ...base, progressLoaded: false })).toBe(false);
+  });
+});
+
+import { DEFAULT_TIERS, parseTiers, rateRangeText, tierFor, tiersProblem } from './referrals';
+
+describe('reward tiers (owner rule)', () => {
+  it('uses the owner boundaries 0-10, 11-20, 21-30, 31-40, 41+', () => {
+    const cases: Array<[number, number]> = [[0, 0.5], [10, 0.5], [11, 0.6], [20, 0.6], [21, 0.7], [30, 0.7], [31, 0.8], [40, 0.8], [41, 1.0], [300, 1.0]];
+    for (const [n, rate] of cases) expect(tierFor(n, DEFAULT_TIERS).rate).toBe(rate);
+  });
+  it('tells how many more are needed for the next tier', () => {
+    expect(tierFor(14)).toMatchObject({ name: 'Tier 2', needed: 7, next: { rate: 0.7 } });
+    expect(tierFor(41)).toMatchObject({ name: 'Tier 5', needed: null, next: null });
+  });
+  it('validates admin tiers: ascending, max 5, cap 2 %', () => {
+    expect(tiersProblem(DEFAULT_TIERS, 2)).toBeNull();
+    expect(tiersProblem([{ min: 0, rate: 0.6 }, { min: 11, rate: 0.5 }])).toMatch(/Rates must go up/);
+    expect(tiersProblem([{ min: 0, rate: 0.5 }, { min: 0, rate: 0.6 }])).toMatch(/counts must go up/);
+    expect(tiersProblem([{ min: 0, rate: 0.5 }, { min: 5, rate: 2.5 }])).toMatch(/maximum of 2/);
+    expect(tiersProblem([0, 1, 2, 3, 4, 5].map((m) => ({ min: m, rate: 0.1 * (m + 1) })))).toMatch(/1 to 5/);
+    expect(tiersProblem([{ min: 3, rate: 0.5 }])).toMatch(/start at 0/);
+  });
+  it('falls back to the defaults for invalid stored tiers', () => {
+    expect(parseTiers([{ min: 0, rate: 5 }])).toBe(DEFAULT_TIERS);
+    expect(parseReferralSettings({ tiers: [{ min: 0, rate: 0.4 }, { min: 3, rate: 0.9 }] }).rate_percent).toBe(0.4);
+  });
+  it('shows the range of rates', () => {
+    expect(rateRangeText(DEFAULT_TIERS)).toBe('0.5-1');
+    expect(rateRangeText([{ min: 0, rate: 0.5, name: 'A' }])).toBe('0.5');
+  });
+  it('estimates with the tier reached by existing + new verified referrals', () => {
+    // 10 already + 1 new = 11 -> 0.6 %: 10 days x 8 h x $50 = $4,000 -> $24
+    expect(referralEstimate({ referred: 1, manDaysPerMonth: 10, hourlyRate: 50, months: 12, tiers: DEFAULT_TIERS, alreadyVerified: 10 })).toEqual({ perMonth: 24, overWindow: 288, rate: 0.6 });
+    expect(referralEstimate({ referred: 1, manDaysPerMonth: 10, hourlyRate: 50, months: 12, tiers: DEFAULT_TIERS, alreadyVerified: 9 }).rate).toBe(0.5);
+  });
+  it('rounds the reward to cents at the stored rate (333.33 x 0.6 % = 2.00)', () => {
+    expect(rewardForFee(333.33, 0.6)).toBe(2);
+  });
+  it('step example uses the tier for one and for several colleagues', () => {
+    expect(referStepExample(DEFAULT_TIERS)).toMatchObject({ one: 20, many: 100, rateOne: 0.5, rateMany: 0.5 });
+    expect(referStepExample(DEFAULT_TIERS, 10, 50, 11)).toMatchObject({ rateMany: 0.6, many: 264 });
   });
 });

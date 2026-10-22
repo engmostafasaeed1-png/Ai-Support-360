@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ReferralAckPanel from '@/components/referral/ReferralAckPanel';
 import type { MyInvite, ReferralOverview } from '@/hooks/useReferralProgram';
-import { CHIP_LABEL, CHIP_TONE, type ActivationChip } from '@/lib/referrals';
+import { CHIP_LABEL, CHIP_TONE, formatRate, rateRangeText, settingsTiers, type ActivationChip } from '@/lib/referrals';
 import { cn } from '@/lib/utils';
 
 export function ChipBadge({ chip }: { chip: string }) {
@@ -62,7 +62,7 @@ export function ReferrerActivationCard({ ov, onDone }: { ov: ReferralOverview; o
           <Step done={a.acknowledged} label={t('refz.step_ack', 'Referral terms acknowledged')}>
             {a.interview_passed && !a.acknowledged && (
               <div className="mt-2">
-                <ReferralAckPanel version={ov.settings.terms_version} rate={ov.settings.rate_percent} months={ov.settings.months} passMark={a.pass_mark} source="page" onDone={onDone} />
+                <ReferralAckPanel version={ov.settings.terms_version} rateText={rateRangeText(settingsTiers(ov.settings))} months={ov.settings.months} passMark={a.pass_mark} source="page" onDone={onDone} />
               </div>
             )}
           </Step>
@@ -101,7 +101,7 @@ export function InviteCard({ invite, onDone }: { invite: MyInvite; onDone: () =>
           </Step>
           <Step done={!!invite.i_acknowledged_at} label={t('refz.t_you_acked', 'You accepted the referral terms')}>
             {!invite.i_acknowledged_at && pending && (
-              <div className="mt-2"><ReferralAckPanel version={invite.terms_version} rate={invite.rate_percent} months={invite.months} passMark={invite.pass_mark} source="popup" onDone={onDone} /></div>
+              <div className="mt-2"><ReferralAckPanel version={invite.terms_version} rateText={invite.tiers?.length ? rateRangeText(invite.tiers) : formatRate(invite.rate_percent)} months={invite.months} passMark={invite.pass_mark} source="popup" onDone={onDone} /></div>
             )}
           </Step>
           <Step done={invite.they_passed && invite.they_acknowledged} label={t('refz.t_they_ready', '{{name}} passed the AI interview and accepted the terms', { name: invite.referrer_name })} />
