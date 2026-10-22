@@ -311,10 +311,9 @@ export default function ReferralCalculations({ consultantId = null, code = '' }:
                                 <Table>
                                   <TableHeader><TableRow>
                                     <TableHead>{t('refz.h_date', 'Date')}</TableHead>
-                                    <TableHead>{t('refz.calc_ticket', 'Ticket')}</TableHead>
+                                    <TableHead>{t('refz.calc_engagement', 'Engagement')}</TableHead>
                                     <TableHead className="text-end">{t('refz.calc_hours', 'Approved hours')}</TableHead>
                                     <TableHead className="text-end">{t('refz.calc_mandays', 'Man-days')}</TableHead>
-                                    <TableHead className="text-end">{t('refz.calc_hourly', 'Hourly rate')}</TableHead>
                                     <TableHead>{t('refz.calc_formula', 'Calculation')}</TableHead>
                                     <TableHead>{t('refz.calc_invoice', 'Client invoice')}</TableHead>
                                     <TableHead>{t('refz.calc_release', 'Payout released')}</TableHead>
@@ -324,10 +323,9 @@ export default function ReferralCalculations({ consultantId = null, code = '' }:
                                     {(lines.data ?? []).map((l, i) => (
                                       <TableRow key={`${l.created_at}-${i}`}>
                                         <TableCell className="text-xs">{f.date(l.created_at)}</TableCell>
-                                        <TableCell className="text-xs font-mono" dir="ltr">{l.ticket_ref ?? '-'}</TableCell>
+                                        <TableCell className="text-xs font-mono" dir="ltr">{l.engagement_ref ?? '-'}</TableCell>
                                         <TableCell className="text-end text-xs tabular-nums">{l.approved_hours ?? '-'}</TableCell>
                                         <TableCell className="text-end text-xs tabular-nums">{l.man_days ?? '-'}</TableCell>
-                                        <TableCell className="text-end text-xs tabular-nums">{l.hourly_rate != null ? f.money(num(l.hourly_rate), l.currency) : '-'}</TableCell>
                                         <TableCell className="text-xs" dir="ltr">
                                           {l.kind === 'reward' && l.fee_amount != null
                                             ? formulaText(num(l.fee_amount), num(l.rate_percent), num(l.amount), (v) => f.money(v, l.currency))

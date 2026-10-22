@@ -31,8 +31,9 @@ export function exportReferralStatementPdf(d: StatementData): void {
   let y = 31;
   d.summary.forEach(([k, v], i) => { doc.text(`${k}: ${v}`, 14 + (i % 3) * 90, y + Math.floor(i / 3) * 5); });
   y += Math.ceil(d.summary.length / 3) * 5 + 6;
-  const cols = ['Date', 'Referred', 'Ticket', 'Hours', 'Man-days', 'Rate/h', 'Fee', 'Formula', 'Reward', 'State'];
-  const x = [14, 36, 62, 84, 100, 118, 138, 162, 238, 262];
+  // Privacy: an anonymous engagement reference, never the client, ticket or the referred consultant's hourly rate.
+  const cols = ['Date', 'Referred', 'Engagement', 'Hours', 'Man-days', 'Fee', 'Formula', 'Reward', 'State'];
+  const x = [14, 36, 62, 92, 110, 130, 156, 236, 262];
   const header = () => { doc.setFont('helvetica', 'bold'); cols.forEach((c, i) => doc.text(c, x[i], y)); doc.setFont('helvetica', 'normal'); y += 5; };
   header();
   for (const l of d.lines) {
@@ -40,10 +41,10 @@ export function exportReferralStatementPdf(d: StatementData): void {
     const formula = l.kind === 'reward' && l.fee_amount != null
       ? `${money(l.fee_amount, l.currency)} x ${formatRate(Number(l.rate_percent) || 0)} %`
       : l.kind === 'reversal' ? 'Reversal' : 'Adjustment';
-    const cells = [day(l.created_at), l.referred_name ?? '-', l.ticket_ref ?? '-', l.approved_hours == null ? '-' : String(l.approved_hours),
-      l.man_days == null ? '-' : String(l.man_days), l.hourly_rate == null ? '-' : money(l.hourly_rate, l.currency), money(l.fee_amount, l.currency),
+    const cells = [day(l.created_at), l.referred_name ?? '-', l.engagement_ref ?? '-', l.approved_hours == null ? '-' : String(l.approved_hours),
+      l.man_days == null ? '-' : String(l.man_days), money(l.fee_amount, l.currency),
       formula, money(l.amount, l.currency), l.status];
-    cells.forEach((c, i) => doc.text(String(c).slice(0, i === 7 ? 40 : 18), x[i], y));
+    cells.forEach((c, i) => doc.text(String(c).slice(0, i === 6 ? 40 : 18), x[i], y));
     y += 5;
   }
   doc.setFontSize(7);
@@ -56,13 +57,13 @@ function printStatement(d: StatementData) {
   const page = window.open('', '_blank');
   if (!page) return;
   const rtl = d.lang === 'ar';
-  const rows = d.lines.map((l) => `<tr><td>${day(l.created_at)}</td><td><bdi>${esc(l.referred_name ?? '-')}</bdi></td><td>${esc(l.ticket_ref ?? '-')}</td>
-    <td>${l.approved_hours ?? '-'}</td><td>${l.man_days ?? '-'}</td><td>${money(l.hourly_rate, l.currency)}</td><td>${money(l.fee_amount, l.currency)}</td>
+  const rows = d.lines.map((l) => `<tr><td>${day(l.created_at)}</td><td><bdi>${esc(l.referred_name ?? '-')}</bdi></td><td>${esc(l.engagement_ref ?? '-')}</td>
+    <td>${l.approved_hours ?? '-'}</td><td>${l.man_days ?? '-'}</td><td>${money(l.fee_amount, l.currency)}</td>
     <td dir="ltr">${l.kind === 'reward' && l.fee_amount != null ? `${money(l.fee_amount, l.currency)} x ${formatRate(Number(l.rate_percent) || 0)} % = ${money(l.amount, l.currency)}` : esc(l.kind)}</td>
     <td>${money(l.amount, l.currency)}</td><td>${esc(l.status)}</td></tr>`).join('');
   const head = rtl
-    ? ['التاريخ', 'المستشار المُحال', 'التذكرة', 'الساعات', 'أيام العمل', 'السعر/ساعة', 'الأتعاب', 'المعادلة', 'المكافأة', 'الحالة']
-    : ['Date', 'Referred', 'Ticket', 'Hours', 'Man-days', 'Rate/h', 'Fee', 'Formula', 'Reward', 'State'];
+    ? ['التاريخ', 'المستشار المُحال', 'التكليف', 'الساعات', 'أيام العمل', 'الأتعاب', 'المعادلة', 'المكافأة', 'الحالة']
+    : ['Date', 'Referred', 'Engagement', 'Hours', 'Man-days', 'Fee', 'Formula', 'Reward', 'State'];
   page.document.write(`<!doctype html><html lang="${d.lang}" dir="${rtl ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><title>${esc(d.title)}</title><style>
     @page{size:A4 landscape;margin:12mm}body{font:9pt Tahoma,Arial,sans-serif;color:#0f172a}h1{font-size:15pt;margin:0 0 4px}
     .meta{color:#475569;margin-bottom:8px}.sum{display:flex;flex-wrap:wrap;gap:6px 18px;margin:8px 0 12px}table{width:100%;border-collapse:collapse}
