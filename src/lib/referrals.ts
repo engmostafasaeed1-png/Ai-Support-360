@@ -21,6 +21,10 @@ export interface ReferralSettings {
   months: number;
   min_payout: number;
   terms_version: number;
+  /** Review period after the payout is released, before a reward is available (days). */
+  hold_days?: number;
+  /** Smallest invoice line that earns a reward (invoice currency). */
+  min_invoice?: number;
 }
 
 export interface Tier { min: number; rate: number; name: string }
@@ -104,6 +108,8 @@ export function parseReferralSettings(o: unknown): ReferralSettings {
     months: Math.round(num(r.months, REFERRAL_DEFAULTS.months, 1, 60)),
     min_payout: num(r.min_payout, REFERRAL_DEFAULTS.min_payout, 0, 100000),
     terms_version: Math.round(num(r.terms_version, 1, 1, 1000)),
+    hold_days: Math.round(num(r.hold_days, 14, 0, 90)),
+    min_invoice: num(r.min_invoice, 20, 0, 100000),
   };
 }
 
