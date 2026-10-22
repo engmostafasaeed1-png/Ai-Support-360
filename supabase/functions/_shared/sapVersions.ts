@@ -53,6 +53,6 @@ export function versionChoices(module: string, adminRows: ReadonlyArray<{ module
 
 /** Trimmed, bounded version text, or null for "not set". */
 export function cleanVersion(v: unknown): string | null {
-  const s = typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, MAX_VERSION_LENGTH) : "";
+  const s = typeof v === "string" ? v.replace(/[<>[\]{}]/g, "").replace(/\s+/g, " ").trim().slice(0, MAX_VERSION_LENGTH) : "";
   return s || null;
 }
