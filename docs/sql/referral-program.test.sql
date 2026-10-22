@@ -390,8 +390,8 @@ SELECT pg_temp.as_user((SELECT admin FROM _ids));
 SELECT public.admin_referral_action('set_referrer', '00000000-0000-0000-0000-00000000ff01', 'Confirmed by e-mail with both', NULL, NULL, (SELECT r FROM _ids));
 SELECT pg_temp.check((SELECT source = 'admin' FROM public.consultant_referrals WHERE referred_consultant_id = '00000000-0000-0000-0000-00000000ff01'), 'admin can set a referrer');
 -- Announcement: test to own account first, then once per consultant; rejected / suspended left out.
-INSERT INTO public.user_admin_state (user_id, suspended_at) SELECT (SELECT s_user FROM _ids), now();
 RESET ROLE;
+INSERT INTO public.user_admin_state (user_id, suspended_at) SELECT (SELECT s_user FROM _ids), now();
 SELECT pg_temp.check(public.referral_announcement_status((SELECT s FROM _ids)) = 'account_suspended', 'suspended excluded');
 SELECT pg_temp.check(public.referral_announcement_status('00000000-0000-0000-0000-00000000ff02') = 'rejected_or_suspended', 'rejected excluded');
 SET LOCAL ROLE authenticated;
