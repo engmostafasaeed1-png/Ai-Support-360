@@ -92,3 +92,4 @@
 - [ ] Home page (/) redesign: ON HOLD by owner — make no home page changes until a new go-ahead
 - [x] Feature Z addition: "Refer & earn" step in consultant onboarding guide + first-sign-in tour, dashboard card, welcome e-mail line, tests, Arabic strings
 - [x] Feature Z addition: existing consultants — backfill codes (dry-run count), one-time intro pop-up, bell entry, admin set-referrer, claim window referral_claim_until (launch + 14 d), admin "Send announcement" (in-app; e-mail refused as bulk marketing), tests, Arabic strings
+- [ ] Feature Z change: tiered rates (referral_tiers 0.5/0.6/0.7/0.8/1.0 by verified referrals 0-10/11+/21+/31+/41+), applied rate + tier stored per line, all displays, tier card/ladder, admin editor + distribution + audit, tests, Arabic
