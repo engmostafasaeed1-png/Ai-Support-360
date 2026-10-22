@@ -69,7 +69,7 @@ export default function ReferralPolicyCards({ s, tiers, passMark, money, date, t
         {state !== 'current' && !canAccept && <span className="text-xs">{t('refr.c_terms_locked', 'Opens after you pass the AI interview.')}</span>}
       </p>
 
-      <Accordion type="multiple" className="grid gap-2 md:grid-cols-2">
+      <Accordion type="multiple" className="grid items-start gap-2 md:grid-cols-2">
         {cards.map((c, i) => (
           <AccordionItem key={c.id} value={c.id} className="rounded-xl border border-border/60 bg-card px-3 [&]:border-b">
             <AccordionTrigger className="gap-3 py-3 text-start text-sm font-semibold hover:no-underline">

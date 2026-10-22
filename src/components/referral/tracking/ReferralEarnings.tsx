@@ -150,8 +150,8 @@ export default function ReferralEarnings({ lines, loading, detailed, payouts, pa
                 <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} orientation={rtl ? 'right' : 'left'} />
                 <Tooltip formatter={(v: number) => money(v, main.currency)} contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: 12 }} />
                 <Legend />
-                <Bar dataKey="earned" name={t('reft.s_month', 'Net per month')} fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
-                <Line dataKey="cumulative" name={t('reft.s_total', 'Running total')} stroke="hsl(var(--success))" strokeWidth={2} dot={false} type="monotone" />
+                <Bar dataKey="earned" name={t('reft.s_month', 'Net per month')} fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} isAnimationActive={false} />
+                <Line dataKey="cumulative" name={t('reft.s_total', 'Running total')} stroke="hsl(var(--success))" strokeWidth={2} dot={false} type="monotone" isAnimationActive={false} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
