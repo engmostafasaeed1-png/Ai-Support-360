@@ -42,7 +42,8 @@ function useReferStep() {
     setLocal(s);
     void save(0, s === 'done' ? 'completed' : 'skipped');
   };
-  return { live, isGuest, show, local, seenOnServer, set };
+  const skippedOnServer = !!progress?.skipped_at && !progress?.completed_at;
+  return { live, isGuest, show, local, skippedOnServer, set };
 }
 
 /** Profile / onboarding flow: the optional "Refer & earn" step, shown once until "Got it" or "Maybe later". */
@@ -101,10 +102,9 @@ export function ReferralIntroPopup() {
 /** Dashboard: after "Maybe later", a small card that reopens the introduction. */
 export function ReferEarnLaterCard() {
   const { t } = useTranslation();
-  const { live, local, seenOnServer, set } = useReferStep();
+  const { live, local, skippedOnServer, set } = useReferStep();
   const [open, setOpen] = useState(false);
-  if (!live || (local !== 'later' && !(seenOnServer && local === 'new'))) return null;
-  if (local === 'done') return null;
+  if (!live || local === 'done' || (local !== 'later' && !skippedOnServer)) return null;
   return (
     <>
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-3 text-sm">
