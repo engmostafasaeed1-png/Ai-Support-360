@@ -631,6 +631,13 @@
       "when": 1792672063509,
       "tag": "0089_referral_admin_dashboard",
       "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1792693909761,
+      "tag": "0090_email_sender_settings",
+      "breakpoints": true
     }
   ]
 }
