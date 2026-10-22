@@ -121,7 +121,7 @@ BEGIN
                                           -- hold already over but not yet released counts in the current month
                                           AND date_trunc('month', GREATEST(COALESCE(l.matures_at, l.created_at + make_interval(days => public.referral_setting_num('referral_hold_days', 14, 0, 90)::int)), now()) AT TIME ZONE _tz)::date = g.m::date), 0),
                  'trend', cur.trend) ORDER BY g.m, cur.currency)
-          FROM generate_series(_this, _this + make_interval(months => _n - 1), interval '1 month') AS g(m)
+          FROM generate_series(_this::timestamp, (_this + make_interval(months => _n - 1))::timestamp, interval '1 month') AS g(m)
           CROSS JOIN (SELECT c.currency, COALESCE(round((SELECT COALESCE(sum(l.amount), 0) FROM public.referral_reward_lines l
                                                 WHERE l.currency = c.currency AND l.kind IN ('reward', 'adjustment')
                                                   AND l.created_at >= ((_this - interval '3 months')::timestamp AT TIME ZONE _tz)
