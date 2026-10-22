@@ -17,6 +17,8 @@ export interface NavItem {
   tourId?: string;
   /** Public-site link: opens in a new tab and is never marked as the current page. */
   external?: boolean;
+  /** Drawn as a gradient pill with an "Earn" badge (Refer & earn). */
+  highlight?: boolean;
 }
 
 export interface NavGroup {

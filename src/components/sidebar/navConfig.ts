@@ -143,6 +143,8 @@ export const consultantNavGroups: NavGroup[] = [
     items: [
       { key: 'dashboard', icon: Gauge, path: '/consultant', required: true },
       { key: 'profile', icon: UserCircle, path: '/consultant/profile', required: true, tourId: 'nav-profile' },
+      // Own highlighted entry in the always-open first group so it is easy to find (also on the mobile menu).
+      { key: 'referrals', icon: Gift, path: '/consultant/referrals', labelKey: 'sidebar.refer_earn', fallback: 'Refer & earn', tourId: 'nav-referrals', highlight: true },
     ],
   },
   {
@@ -189,7 +191,6 @@ export const consultantNavGroups: NavGroup[] = [
       { key: 'interviews', icon: Video, path: '/consultant/interviews' },
       { key: 'remote_access', icon: MonitorSmartphone, path: '/consultant/remote-access' },
       { key: 'knowledge', icon: BookOpenCheck, path: '/consultant/knowledge' },
-      { key: 'referrals', icon: Gift, path: '/consultant/referrals', labelKey: 'sidebar.refer_earn', fallback: 'Refer & earn', tourId: 'nav-referrals' },
     ],
   },
   {
