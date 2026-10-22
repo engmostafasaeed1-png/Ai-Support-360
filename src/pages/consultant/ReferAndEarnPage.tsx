@@ -29,6 +29,7 @@ import {
 import { cn } from '@/lib/utils';
 import { ChipBadge, InviteCard, ReferrerActivationCard, useNextStepText } from '@/components/referral/ReferralActivation';
 import TierLadder from '@/components/referral/TierLadder';
+import ReferralShortTerms from '@/components/referral/ReferralShortTerms';
 
 const STATUS_TONE: Record<string, string> = {
   signed_up: 'bg-muted text-muted-foreground',
@@ -447,6 +448,7 @@ export default function ReferAndEarnPage() {
                 <Link to="/referral-terms" className="text-primary underline">{t('refz.terms_link', 'referral programme terms')}</Link>
               </p>
               <p className="text-xs text-muted-foreground">{t('refz.honest', 'No income is promised: you earn only when a consultant you referred is paid for real work.')}</p>
+              <ReferralShortTerms holdDays={s.hold_days} minInvoice={s.min_invoice} />
             </CardContent>
           </Card>
         </>
