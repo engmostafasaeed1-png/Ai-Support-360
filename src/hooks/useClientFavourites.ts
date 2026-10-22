@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { useSessionReady } from '@/hooks/useSessionReady';
+import { safeRpc } from '@/lib/safeRpc';
 import {
   canEditScope, cleanTags, DEFAULT_INVITE_LIMIT, isMissingFeature, scopeFor,
   type ConsultantGroup, type Favourite, type FavScope, type GroupColour, type GroupIcon,
@@ -13,7 +14,7 @@ import {
 const from = (table: string): any => (supabase as unknown as { from: (t: string) => any }).from(table);
 type RpcResult = { data: unknown; error: { message: string } | null };
 const rpc = (fn: string, args?: Record<string, unknown>): Promise<RpcResult> =>
-  (supabase as unknown as { rpc: (f: string, a?: Record<string, unknown>) => Promise<RpcResult> }).rpc(fn, args);
+  safeRpc(fn, args);
 
 export interface ClientFavData {
   ready: boolean;

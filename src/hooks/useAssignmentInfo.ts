@@ -4,6 +4,7 @@ import { useSessionReady } from '@/hooks/useSessionReady';
 import { validateAttachment } from '@/lib/attachments';
 import { safeFileName } from '@/lib/storagePath';
 import { sanitizePreview, type DecisionPreview, type InfoRow } from '../../supabase/functions/_shared/assignmentInfo';
+import { safeRpc } from '@/lib/safeRpc';
 
 /**
  * Feature L addition: decision preview, "Request more information" and decline reasons.
@@ -15,7 +16,7 @@ type DbError = { message: string; code?: string };
 type RpcResult = { data: unknown; error: DbError | null };
 // Called as a method: supabase.rpc reads `this`, so a detached reference throws.
 const rpc = (fn: string, args?: Record<string, unknown>): Promise<RpcResult> =>
-  (supabase as unknown as { rpc: (f: string, a?: Record<string, unknown>) => Promise<RpcResult> }).rpc(fn, args);
+  safeRpc(fn, args);
 // The new table is not in the generated types until the SQL is applied.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const table = (name: string) => (supabase as any).from(name);

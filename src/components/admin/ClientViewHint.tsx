@@ -2,14 +2,14 @@ import { useContext } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { UNSAFE_LocationContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { NAME_PRIVACY_STRINGS, pickLang } from '@/lib/consultantName';
+import { safeRpc } from '@/lib/safeRpc';
 
 type Row = { consultant_id: string; user_id: string; client_view: string | null };
 type RpcResult = { data: unknown; error: { message: string } | null };
 const rpc = (fn: string, args: Record<string, unknown>): Promise<RpcResult> =>
-  (supabase as unknown as { rpc: (f: string, a: Record<string, unknown>) => Promise<RpcResult> }).rpc(fn, args);
+  safeRpc(fn, args);
 
 // Hints on one screen ask together: ids are collected for one tick and read in one request.
 let queue = new Map<string, Array<(v: string | null) => void>>();

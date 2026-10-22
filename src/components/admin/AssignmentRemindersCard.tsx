@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAdminSettings } from '@/hooks/useAdminSettings';
 import { useAssignmentPolicy } from '@/hooks/useAssignmentPolicy';
 import { useAssignmentInfoReady } from '@/hooks/useAssignmentInfo';
+import { safeRpc } from '@/lib/safeRpc';
 import {
   policyText, timingsProblems, type PolicyMinutes,
 } from '../../../supabase/functions/_shared/assignmentPolicy';
@@ -30,7 +31,7 @@ type Stats = {
 
 type RpcResult = { data: unknown; error: { message: string } | null };
 // Called as a method: supabase.rpc reads `this`, so a detached reference throws.
-const rpc = (fn: string): Promise<RpcResult> => (supabase as unknown as { rpc: (f: string) => Promise<RpcResult> }).rpc(fn);
+const rpc = (fn: string): Promise<RpcResult> => safeRpc(fn);
 
 /** Fields of the form: normal timings in hours, Critical timings in minutes. */
 const HOUR_FIELDS = [

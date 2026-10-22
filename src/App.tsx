@@ -18,6 +18,8 @@ import UiTranslator from "./components/UiTranslator";
 import { HelmetProvider } from "react-helmet-async";
 const GlobalSearch = lazyWithRetry(() => import("./components/GlobalSearch.tsx"), 'GlobalSearch');
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
+import SilentErrorBoundary from "./components/SilentErrorBoundary.tsx";
+import SignupErrorBoundary from "./components/auth/SignupErrorBoundary.tsx";
 import { Loader2 } from 'lucide-react';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
@@ -323,7 +325,7 @@ const App = () => (
           <RealtimeStatusSync />
           <a href="#main-content" className="skip-to-main">Skip to main content</a>
           <ScrollToTop />
-          <ReferralCapture />
+          <SilentErrorBoundary><ReferralCapture /></SilentErrorBoundary>
           <RouteSeo />
           <Suspense fallback={null}><Watermark /></Suspense>
           <IdleMount><Suspense fallback={null}><GlobalSearch /></Suspense></IdleMount>
@@ -354,7 +356,7 @@ const App = () => (
             </Route>
             <Route element={<PublicLayout variant="auth" />}>
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/signup" element={<SignupErrorBoundary><SignupPage /></SignupErrorBoundary>} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/auth/confirm" element={<ConfirmEmailPage />} />

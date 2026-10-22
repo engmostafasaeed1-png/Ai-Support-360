@@ -1,11 +1,11 @@
 import { useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { parseSuccessSettings, SUCCESS_DEFAULTS, type SuccessCounts, type SuccessSettings } from '@/lib/successLevel';
+import { safeRpc } from '@/lib/safeRpc';
 
 type RpcResult = { data: unknown; error: { message: string } | null };
 const rpc = (fn: string, args?: Record<string, unknown>): Promise<RpcResult> =>
-  (supabase as unknown as { rpc: (f: string, a?: Record<string, unknown>) => Promise<RpcResult> }).rpc(fn, args);
+  safeRpc(fn, args);
 
 export interface SuccessConfig { available: boolean; publicOn: boolean; settings: SuccessSettings }
 const OFF: SuccessConfig = { available: false, publicOn: false, settings: SUCCESS_DEFAULTS };

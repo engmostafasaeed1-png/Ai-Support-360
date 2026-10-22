@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { deviceId, parseReferralSettings, parseTiers, REFERRAL_DEFAULTS, type ReferralSettings, type Tier } from '@/lib/referrals';
+import { safeRpc } from '@/lib/safeRpc';
 
 type RpcResult = { data: unknown; error: { message: string; code?: string } | null };
 export const referralRpc = (fn: string, args?: Record<string, unknown>): Promise<RpcResult> =>
-  (supabase as unknown as { rpc: (f: string, a?: Record<string, unknown>) => Promise<RpcResult> }).rpc(fn, args);
+  safeRpc(fn, args);
 
 /** Plain error text from the database (our RAISE messages are written for people). */
 export function rpcMessage(e: { message?: string } | null | undefined, fallback: string): string {

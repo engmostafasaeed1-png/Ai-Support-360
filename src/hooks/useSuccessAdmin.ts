@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { parseSuccessSettings, type SuccessSettings } from '@/lib/successLevel';
+import { safeRpc } from '@/lib/safeRpc';
 
 type RpcResult = { data: unknown; error: { message: string } | null };
 const rpc = (fn: string, args?: Record<string, unknown>): Promise<RpcResult> =>
-  (supabase as unknown as { rpc: (f: string, a?: Record<string, unknown>) => Promise<RpcResult> }).rpc(fn, args);
+  safeRpc(fn, args);
 async function call<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
   const { data, error } = await rpc(fn, args);
   if (error) throw new Error(error.message);
