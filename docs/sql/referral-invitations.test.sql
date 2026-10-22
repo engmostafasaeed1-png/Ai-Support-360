@@ -180,8 +180,10 @@ BEGIN
   -- RI14 event_notices: one notice per line and event, never twice, never blocking the money write -------------------
   INSERT INTO public.consultant_referrals (referred_consultant_id, referrer_consultant_id, code, source, first_reward_notified_at)
   VALUES (c_ar, c_ok, 'TESTCODE1', 'admin', now());
+  -- a real source payout row (the line has a foreign key); 'referral:' payouts are skipped by the reward code
+  INSERT INTO public.payouts (id, consultant_id, amount, currency, reference) VALUES (k1, c_ar, 1000, 'USD', 'referral:ri-test') ON CONFLICT DO NOTHING;
   INSERT INTO public.referral_reward_lines (id, unique_key, kind, referrer_consultant_id, referred_consultant_id, source_payout_id, fee_amount, rate_percent, amount, currency, status)
-  VALUES (gen_random_uuid(), 'ri-test-1', 'reward', c_ok, c_ar, gen_random_uuid(), 1000, 0.5, 5, 'USD', 'pending') RETURNING id INTO line;
+  VALUES (gen_random_uuid(), 'ri-test-1', 'reward', c_ok, c_ar, k1, 1000, 0.5, 5, 'USD', 'pending') RETURNING id INTO line;
   UPDATE public.referral_reward_lines SET status = 'available' WHERE id = line;
   UPDATE public.referral_reward_lines SET status = 'paid' WHERE id = line;
   UPDATE public.referral_reward_lines SET status = 'paid', updated_at = now() WHERE id = line;
