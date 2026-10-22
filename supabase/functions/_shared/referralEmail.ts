@@ -5,7 +5,8 @@
  *
  * Mail-client rules followed here: table layout, 600 px, inline CSS only (no <style>, no external fonts, system font
  * stack), white body background, colours that survive dark-mode inversion, alt text on every image, a bulletproof button
- * (table cell + Outlook VML), images only from our own domain. Every value that comes from data is escaped with `esc`
+ * (table cell + Outlook VML), images only from our own domain. Fluid-hybrid columns (inline-block + Outlook tables) put
+ * cards side by side on wide screens and stack them on phones; progress and status bars are table cells (Outlook-safe). Every value that comes from data is escaped with `esc`
  * and every link goes through `safeUrl` (our own domain only, no tokens or personal data in query strings).
  * Numbers come from the live programme settings passed in; the example is always labelled as an example.
  * The managed e-mail platform appends the unsubscribe footer itself, so this layout never adds its own unsubscribe link.
@@ -15,16 +16,16 @@ export type ReferralEmailLang = 'en' | 'ar';
 export type ReferralEmailKind =
   | 'signup' | 'invited' | 'passed_self' | 'passed_other' | 'active' | 'reminder' | 'expired' | 'ack_request' | 'verified'
   | 'first_reward' | 'reward_earned' | 'reward_available' | 'reward_held' | 'reward_paid' | 'reward_reversed'
-  | 'referral_rejected' | 'payout_details_changed';
+  | 'referral_rejected' | 'payout_details_changed' | 'monthly_statement' | 'weekly_digest_admin';
 
 export const REFERRAL_EMAIL_KINDS: readonly ReferralEmailKind[] = [
   'signup', 'invited', 'passed_self', 'passed_other', 'active', 'verified', 'reminder', 'ack_request', 'expired',
   'first_reward', 'reward_earned', 'reward_held', 'reward_available', 'reward_paid', 'reward_reversed', 'referral_rejected',
-  'payout_details_changed',
+  'payout_details_changed', 'monthly_statement', 'weekly_digest_admin',
 ] as const;
 
 export type ReferralTone = 'invite' | 'earned' | 'pending' | 'negative';
-export type ReferralTab = 'programme' | 'referrals' | 'earnings';
+export type ReferralTab = 'programme' | 'referrals' | 'earnings' | 'calculations';
 export type ReferralNextStep = 'pass_interview' | 'acknowledge' | 'wait_other' | 'none';
 
 export interface ReferralEmailSettings {
@@ -51,7 +52,19 @@ export interface ReferralEmailInput {
   logoUrl?: string | null;
   pauseLinks?: { d3: string; w1: string; m1: string } | null;
   test?: boolean;
+  /** Progress to the next reward level (database referral_tier_for): verified referrals counted, current and next level. */
+  tier?: ReferralEmailTier | null;
+  /** Monthly statement / weekly digest: period label, lines (masked names, anonymous ticket references) and totals. */
+  period?: string | null;
+  lines?: ReferralEmailLine[] | null;
+  totals?: ReferralEmailTotal[] | null;
+  /** Weekly digest (administrators): programme counts of the week. */
+  stats?: { signups?: number; verified?: number; review?: number } | null;
 }
+
+export interface ReferralEmailTier { count: number; name?: string | null; rate?: number | null; min?: number | null; next_name?: string | null; next_min?: number | null; next_rate?: number | null; needed?: number | null }
+export interface ReferralEmailLine { who?: string | null; ref?: string | null; fee?: number | null; reward?: number | null; status?: string | null; kind?: string | null; currency?: string | null }
+export interface ReferralEmailTotal { currency: string; earned?: number; held?: number; available?: number; paid?: number; reversed?: number }
 
 export interface RenderedReferralEmail {
   kind: ReferralEmailKind; lang: ReferralEmailLang; tone: ReferralTone; tab: ReferralTab;
@@ -91,6 +104,7 @@ export function toneFor(kind: ReferralEmailKind): ReferralTone {
 }
 
 export function tabFor(kind: ReferralEmailKind): ReferralTab {
+  if (kind === 'monthly_statement') return 'calculations';
   if (kind.startsWith('reward_') || kind === 'first_reward' || kind === 'payout_details_changed') return 'earnings';
   if (kind === 'signup' || kind === 'invited') return 'programme';
   return 'referrals';
@@ -103,12 +117,6 @@ export function pauseCategoryFor(kind: ReferralEmailKind): 'essential' | 'remind
   return 'activity';
 }
 
-const TONES: Record<ReferralTone, { from: string; to: string; solid: string; soft: string; ink: string; button: string; emoji: string }> = {
-  invite: { from: '#6D28D9', to: '#0F766E', solid: '#5B21B6', soft: '#F3EEFF', ink: '#4C1D95', button: '#5B21B6', emoji: '🎁' },
-  earned: { from: '#15803D', to: '#0F766E', solid: '#166534', soft: '#ECFDF3', ink: '#14532D', button: '#166534', emoji: '✓' },
-  pending: { from: '#B45309', to: '#A16207', solid: '#92400E', soft: '#FFF7E6', ink: '#78350F', button: '#92400E', emoji: '⏳' },
-  negative: { from: '#B91C1C', to: '#9F1239', solid: '#991B1B', soft: '#FEF2F2', ink: '#7F1D1D', button: '#991B1B', emoji: '!' },
-};
 
 const fmtNum = (n: number, lang: ReferralEmailLang, digits = 2) =>
   new Intl.NumberFormat('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n);
@@ -117,7 +125,7 @@ const fmtRate = (n: number, lang: ReferralEmailLang) =>
 const fmtInt = (n: number, lang: ReferralEmailLang) => new Intl.NumberFormat('en-US').format(n);
 
 function money(amount: unknown, currency: string, lang: ReferralEmailLang): string | null {
-  const n = typeof amount === 'number' ? amount : Number(String(amount ?? '').replace(/[^0-9.\-]/g, ''));
+  const n = typeof amount === 'number' ? amount : Number(String(amount ?? '').replace(/[^0-9.-]/g, ''));
   if (amount == null || amount === '' || !Number.isFinite(n)) return null;
   const cur = /^[A-Z]{3}$/.test(currency) ? currency : 'USD';
   return `${fmtNum(Math.abs(n), lang)} ${cur}`;
@@ -226,6 +234,8 @@ const COPY: Record<ReferralEmailLang, {
       reward_reversed: ({ o }) => ({ subject: 'A referral reward was reversed', headline: 'Reward reversed', intro: `A reward from the work of ${o} was reversed because the client payment was refunded or disputed. It is taken off at the original rate.`, amountLabel: 'reward_reversed', cta: 'View earning' }),
       referral_rejected: ({ o }) => ({ subject: 'A referral was not accepted', headline: 'Referral not accepted', intro: `Your referral with ${o} was not accepted after review and will not earn rewards. If you think this is wrong, contact support.`, cta: 'View my referrals' }),
       payout_details_changed: ({ s, lang }) => ({ subject: 'Your bank details were changed', headline: 'Your bank details were changed', intro: `Your payout bank details were just changed. If this was not you, contact support immediately. For your safety, referral payouts wait ${fmtInt(s.payoutChangeDays, lang)} days after a change.`, cta: 'Check my details' }),
+      monthly_statement: () => ({ subject: 'Your monthly referral statement', headline: 'Your monthly referral statement', intro: 'Here is a summary of your Refer & earn reward lines for the month. The full statement with every calculation is on your Refer & earn page.', cta: 'Open my statement' }),
+      weekly_digest_admin: () => ({ subject: 'Weekly Refer & earn summary', headline: 'Refer & earn this week', intro: 'The programme numbers of the last 7 days. Lines waiting for review need an administrator.', cta: 'Open admin referrals' }),
     },
   },
   ar: {
@@ -286,6 +296,8 @@ const COPY: Record<ReferralEmailLang, {
       reward_reversed: ({ o }) => ({ subject: 'تم استرداد مكافأة إحالة', headline: 'تم استرداد المكافأة', intro: `استُردّت مكافأة من عمل ${o} لأن دفعة العميل رُدّت أو عليها نزاع. تُخصم بالنسبة الأصلية.`, amountLabel: 'reward_reversed', cta: 'عرض المكافأة' }),
       referral_rejected: ({ o }) => ({ subject: 'لم تُقبل إحالة', headline: 'لم تُقبل الإحالة', intro: `لم تُقبل إحالتك مع ${o} بعد المراجعة ولن تحقق مكافآت. إن كنت ترى أن هذا خطأ، تواصل مع الدعم.`, cta: 'عرض إحالاتي' }),
       payout_details_changed: ({ s, lang }) => ({ subject: 'تم تغيير بياناتك البنكية', headline: 'تم تغيير بياناتك البنكية', intro: `تم للتو تغيير بيانات حسابك البنكي لاستلام المدفوعات. إن لم تكن أنت، تواصل مع الدعم فورًا. حفاظًا على أمانك، تنتظر مدفوعات الإحالة ${fmtInt(s.payoutChangeDays, lang)} أيام بعد أي تغيير.`, cta: 'مراجعة بياناتي' }),
+      monthly_statement: () => ({ subject: 'كشف الإحالات الشهري', headline: 'كشف الإحالات الشهري', intro: 'هذا ملخص أسطر مكافآت أحِل واربح لهذا الشهر. الكشف الكامل بكل الحسابات موجود في صفحة أحِل واربح.', cta: 'فتح الكشف' }),
+      weekly_digest_admin: () => ({ subject: 'ملخص أحِل واربح الأسبوعي', headline: 'أحِل واربح هذا الأسبوع', intro: 'أرقام البرنامج لآخر 7 أيام. الأسطر التي تنتظر المراجعة تحتاج إلى مسؤول.', cta: 'فتح إحالات الإدارة' }),
     },
   },
 };
@@ -293,12 +305,148 @@ const COPY: Record<ReferralEmailLang, {
 const FONT_EN = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 const FONT_AR = "Tahoma, 'Segoe UI', 'Geeza Pro', Arial, sans-serif";
 
+// Brand hero: violet to teal on every Refer & earn e-mail; the status shows in the chip and the amount colour.
+const BRAND = { from: '#6D28D9', to: '#0F766E', solid: '#5B21B6', button: '#5B21B6', ink: '#4C1D95', soft: '#F5F3FF', track: '#E9E5F5' };
+
+export type ReferralChip = 'earned' | 'held' | 'available' | 'paid' | 'reversed' | 'active' | 'pending' | 'rejected' | 'expired' | 'statement' | 'digest' | 'security';
+/** Status chip colours (all with dark text on a light fill, readable in light and inverted dark mode). */
+export const CHIP_COLORS: Record<ReferralChip, { bg: string; fg: string }> = {
+  earned: { bg: '#DCFCE7', fg: '#166534' }, held: { bg: '#FEF3C7', fg: '#92400E' }, available: { bg: '#CCFBF1', fg: '#115E59' },
+  paid: { bg: '#DBEAFE', fg: '#1E40AF' }, reversed: { bg: '#FEE2E2', fg: '#991B1B' }, active: { bg: '#DCFCE7', fg: '#166534' },
+  pending: { bg: '#EDE9FE', fg: '#5B21B6' }, rejected: { bg: '#FEE2E2', fg: '#991B1B' }, expired: { bg: '#F1F5F9', fg: '#475569' },
+  statement: { bg: '#EDE9FE', fg: '#5B21B6' }, digest: { bg: '#EDE9FE', fg: '#5B21B6' }, security: { bg: '#FEE2E2', fg: '#991B1B' },
+};
+const KIND_CHIP: Record<ReferralEmailKind, ReferralChip> = {
+  signup: 'pending', invited: 'pending', passed_self: 'active', passed_other: 'active', active: 'active', verified: 'active', reminder: 'pending',
+  ack_request: 'pending', expired: 'expired', first_reward: 'earned', reward_earned: 'earned', reward_held: 'held', reward_available: 'available',
+  reward_paid: 'paid', reward_reversed: 'reversed', referral_rejected: 'rejected', payout_details_changed: 'security',
+  monthly_statement: 'statement', weekly_digest_admin: 'digest',
+};
+export const chipFor = (kind: ReferralEmailKind): ReferralChip => KIND_CHIP[kind];
+/** Status of one reward line (database status / kind) as a chip. */
+export function lineChip(status: unknown, kind?: unknown): ReferralChip {
+  const s = String(status ?? '');
+  if (kind === 'reversal' || s === 'reversed') return 'reversed';
+  if (s === 'paid') return 'paid';
+  if (s === 'held') return 'held';
+  if (s === 'available' || s === 'in_payout') return 'available';
+  return 'earned';
+}
+
+const UI = {
+  en: {
+    chip: { earned: 'Earned', held: 'Held', available: 'Available', paid: 'Paid', reversed: 'Reversed', active: 'Active', pending: 'In progress', rejected: 'Not accepted', expired: 'Expired', statement: 'Statement', digest: 'Weekly summary', security: 'Security' } as Record<ReferralChip, string>,
+    amountWord: { first_reward: 'earned', reward_earned: 'earned', reward_held: 'on hold', reward_available: 'available', reward_paid: 'paid', reward_reversed: 'reversed' } as Record<string, string>,
+    strip: (c: Ctx) => [
+      ['Share your code', 'Send your personal code to an SAP consultant you know.'],
+      ['Both pass the AI interview', `Score at least ${fmtInt(c.s.passMark, c.lang)} and accept the referral terms.`],
+      ['Earn on paid work', `${rateRange(c.s, c.lang)} of their approved fee for ${fmtInt(c.s.months, c.lang)} months.`],
+    ],
+    stripTitle: 'Three simple steps',
+    tierTitle: 'Your reward level',
+    tierLine: (t: ReferralEmailTier, lang: ReferralEmailLang) => `${t.name ? `${t.name} · ` : ''}${t.rate != null ? `${fmtRate(Number(t.rate), lang)} %` : ''} · ${fmtInt(t.count, lang)} verified referral${t.count === 1 ? '' : 's'}`,
+    tierNext: (t: ReferralEmailTier, lang: ReferralEmailLang) => (t.next_min != null && t.needed != null
+      ? `${fmtInt(Number(t.needed), lang)} more verified referral${Number(t.needed) === 1 ? '' : 's'} to reach ${t.next_rate != null ? `${fmtRate(Number(t.next_rate), lang)} %` : 'the next level'} on later work.`
+      : 'You are on the top level.'),
+    tableTitle: 'Reward lines', thWho: 'Referral', thRef: 'Ticket', thFee: 'Fee', thReward: 'Reward', thStatus: 'Status',
+    total: 'Total', net: 'Net for the period', more: (n: number) => `+ ${n} more line${n === 1 ? '' : 's'} in your statement`, none: 'No reward lines in this period.',
+    barTitle: 'Where the period’s rewards stand',
+    kpi: { signups: 'New sign-ups', verified: 'Verified', review: 'Waiting for review' },
+    period: 'Period',
+    adminWhy: 'You receive this summary because you are an administrator of AI Support 360.',
+  },
+  ar: {
+    chip: { earned: 'مكتسبة', held: 'معلّقة', available: 'متاحة', paid: 'مدفوعة', reversed: 'مستردّة', active: 'نشطة', pending: 'قيد التقدّم', rejected: 'غير مقبولة', expired: 'منتهية', statement: 'كشف', digest: 'ملخص أسبوعي', security: 'أمان' } as Record<ReferralChip, string>,
+    amountWord: { first_reward: 'مكتسبة', reward_earned: 'مكتسبة', reward_held: 'معلّقة', reward_available: 'متاحة', reward_paid: 'مدفوعة', reward_reversed: 'مستردّة' } as Record<string, string>,
+    strip: (c: Ctx) => [
+      ['شارك رمزك', 'أرسل رمزك الشخصي إلى مستشار SAP تعرفه.'],
+      ['اجتيازكما المقابلة الذكية', `بدرجة ${fmtInt(c.s.passMark, c.lang)} على الأقل مع الموافقة على شروط الإحالة.`],
+      ['اربح من الأعمال المدفوعة', `${rateRange(c.s, c.lang)} من أتعابه المعتمدة لمدة ${fmtInt(c.s.months, c.lang)} شهرًا.`],
+    ],
+    stripTitle: 'ثلاث خطوات بسيطة',
+    tierTitle: 'مستوى مكافأتك',
+    tierLine: (t: ReferralEmailTier, lang: ReferralEmailLang) => `${t.name ? `${t.name} · ` : ''}${t.rate != null ? `${fmtRate(Number(t.rate), lang)} ٪` : ''} · ${fmtInt(t.count, lang)} إحالات موثّقة`,
+    tierNext: (t: ReferralEmailTier, lang: ReferralEmailLang) => (t.next_min != null && t.needed != null
+      ? `${fmtInt(Number(t.needed), lang)} إحالات موثّقة أخرى للوصول إلى ${t.next_rate != null ? `${fmtRate(Number(t.next_rate), lang)} ٪` : 'المستوى التالي'} على الأعمال اللاحقة.`
+      : 'أنت في أعلى مستوى.'),
+    tableTitle: 'أسطر المكافآت', thWho: 'الإحالة', thRef: 'التذكرة', thFee: 'الأتعاب', thReward: 'المكافأة', thStatus: 'الحالة',
+    total: 'الإجمالي', net: 'الصافي للفترة', more: (n: number) => `+ ${n} أسطر أخرى في كشفك`, none: 'لا توجد أسطر مكافآت في هذه الفترة.',
+    barTitle: 'وضع مكافآت الفترة',
+    kpi: { signups: 'تسجيلات جديدة', verified: 'موثّقة', review: 'بانتظار المراجعة' },
+    period: 'الفترة',
+    adminWhy: 'يصلك هذا الملخص لأنك مسؤول في AI Support 360.',
+  },
+} as const;
+
+const MONEY_KINDS = ['first_reward', 'reward_earned', 'reward_held', 'reward_available', 'reward_paid', 'reward_reversed'];
+const TIER_KINDS = [...MONEY_KINDS, 'active', 'verified', 'monthly_statement'];
+const STRIP_STEP: Partial<Record<ReferralEmailKind, number>> = {
+  signup: 2, invited: 2, passed_self: 2, passed_other: 2, reminder: 2, ack_request: 2, active: 3, verified: 3,
+};
+const CONTENT_W = 552;
+
+/** "$12.50", "€12.50" or "12.50 SAR" (amount never computed here, only formatted). */
+function moneyShort(n: number, cur: string, lang: ReferralEmailLang): string {
+  const c = /^[A-Z]{3}$/.test(cur) ? cur : 'USD';
+  const v = fmtNum(Math.abs(n), lang);
+  return c === 'USD' ? `$${v}` : c === 'EUR' ? `€${v}` : `${v} ${c}`;
+}
+const num = (v: unknown): number | null => { const n = Number(v); return v == null || v === '' || !Number.isFinite(n) ? null : n; };
+/** "D. K****" -> "D. K." (initials only in tables). */
+export function initials(name: unknown): string {
+  const parts = String(name ?? '').trim().split(/\s+/).filter(Boolean).slice(0, 3);
+  return parts.length ? parts.map((p) => `${p.replace(/[^\p{L}\p{N}]/gu, '').charAt(0).toUpperCase()}.`).join(' ') : '—';
+}
+
+/** Columns that sit side by side on wide screens and stack on phones (fluid hybrid; Outlook gets a real table). */
+function columns(cells: string[], gap = 12): string {
+  const n = Math.max(1, cells.length);
+  const w = Math.floor((CONTENT_W - gap * (n - 1)) / n);
+  const open = `<!--[if mso]><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><![endif]-->`;
+  const body = cells.map((c, i) => `<!--[if mso]><td width="${w}" valign="top" style="padding:0 ${i < n - 1 ? gap : 0}px 0 0"><![endif]-->`
+    + `<div style="display:inline-block;width:100%;max-width:${w}px;vertical-align:top;margin:0 ${i < n - 1 ? Math.floor(gap / 2) : 0}px ${gap}px ${i > 0 ? Math.floor(gap / 2) : 0}px">${c}</div>`
+    + `<!--[if mso]></td><![endif]-->`).join('');
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td style="font-size:0;line-height:0;text-align:center">${open}${body}<!--[if mso]></tr></table><![endif]--></td></tr></table>`;
+}
+
+function card(inner: string, opts: { bg?: string; border?: string; pad?: string; align: string } ): string {
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td style="padding:${opts.pad ?? '16px 18px'};border-radius:14px;background:${opts.bg ?? '#ffffff'};border:1px solid ${opts.border ?? '#E5E7EB'};text-align:${opts.align}">${inner}</td></tr></table>`;
+}
+
+function chipHtml(chip: ReferralChip, label: string, font: string, size = 12): string {
+  const c = CHIP_COLORS[chip];
+  return `<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:${c.bg};color:${c.fg};font-family:${font};font-size:${size}px;font-weight:700;line-height:18px;white-space:nowrap">${esc(label)}</span>`;
+}
+
+/** Progress bar made of table cells (works in Outlook): filled part in brand violet, the rest a light track. */
+function barHtml(parts: Array<{ pct: number; color: string }>, height = 10): string {
+  const clean = parts.map((p) => ({ pct: Math.max(0, Math.min(100, Math.round(p.pct))), color: p.color })).filter((p) => p.pct > 0);
+  const used = clean.reduce((a, p) => a + p.pct, 0);
+  const cells = clean.map((p) => `<td width="${p.pct}%" bgcolor="${p.color}" style="background:${p.color};height:${height}px;font-size:0;line-height:0">&nbsp;</td>`).join('')
+    + (used < 100 ? `<td width="${100 - used}%" bgcolor="${BRAND.track}" style="background:${BRAND.track};height:${height}px;font-size:0;line-height:0">&nbsp;</td>` : '');
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-radius:${height}px;overflow:hidden;table-layout:fixed"><tr>${cells}</tr></table>`;
+}
+
 function button(href: string, label: string, color: string, font: string): string {
   // Bulletproof: VML roundrect for Outlook on Windows, a padded link inside a coloured table cell everywhere else.
-  return `<table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin:24px 0 8px"><tr><td align="center" bgcolor="${color}" style="border-radius:12px;background:${color}">`
-    + `<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${href}" style="height:48px;v-text-anchor:middle;width:260px" arcsize="25%" stroke="f" fillcolor="${color}"><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold">${esc(label)}</center></v:roundrect><![endif]-->`
-    + `<!--[if !mso]><!--><a href="${href}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:${font};font-size:16px;font-weight:700;line-height:20px;color:#ffffff;text-decoration:none;border-radius:12px;background:${color}">${esc(label)}</a><!--<![endif]-->`
+  return `<table role="presentation" border="0" cellspacing="0" cellpadding="0" align="center" style="margin:28px auto 8px"><tr><td align="center" bgcolor="${color}" style="border-radius:999px;background:${color}">`
+    + `<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${href}" style="height:52px;v-text-anchor:middle;width:300px" arcsize="50%" stroke="f" fillcolor="${color}"><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:17px;font-weight:bold">${esc(label)}</center></v:roundrect><![endif]-->`
+    + `<!--[if !mso]><!--><a href="${href}" target="_blank" style="display:inline-block;padding:16px 40px;font-family:${font};font-size:17px;font-weight:700;line-height:20px;color:#ffffff;text-decoration:none;border-radius:999px;background:${color}">${esc(label)}</a><!--<![endif]-->`
     + `</td></tr></table>`;
+}
+
+function totalsFrom(lines: ReferralEmailLine[], given: ReferralEmailTotal[] | null | undefined, fallbackCur: string): ReferralEmailTotal[] {
+  if (given && given.length) return given.filter((t) => /^[A-Z]{3}$/.test(String(t.currency))).slice(0, 4);
+  const map = new Map<string, ReferralEmailTotal>();
+  for (const l of lines) {
+    const cur = /^[A-Z]{3}$/.test(String(l.currency)) ? String(l.currency) : fallbackCur;
+    const t = map.get(cur) ?? { currency: cur, earned: 0, held: 0, available: 0, paid: 0, reversed: 0 };
+    const chip = lineChip(l.status, l.kind);
+    const key = (['earned', 'held', 'available', 'paid', 'reversed'] as const).includes(chip as never) ? chip as 'earned' : 'earned';
+    t[key] = (t[key] ?? 0) + Math.abs(num(l.reward) ?? 0);
+    map.set(cur, t);
+  }
+  return [...map.values()].slice(0, 4);
 }
 
 export function renderReferralEmail(input: ReferralEmailInput): RenderedReferralEmail {
@@ -308,113 +456,240 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
   const tab = tabFor(kind);
   const s = cleanSettings(input.settings);
   const c = COPY[lang];
-  const t = TONES[tone];
+  const u = UI[lang];
   const rtl = lang === 'ar';
   const dir = rtl ? 'rtl' : 'ltr';
   const align = rtl ? 'right' : 'left';
   const font = rtl ? FONT_AR : FONT_EN;
+  const admin = kind === 'weekly_digest_admin';
   const site = safeUrl(input.siteUrl || SITE).replace(/\/+$/, '');
   const other = String(input.other || '').trim().slice(0, 80) || (lang === 'ar' ? 'المستشار' : 'the consultant');
   const ctx: Ctx = { o: other, s, lang };
   const b = c.k[kind](ctx);
-  const amount = money(input.amount, String(input.currency || s.currency), lang);
+  const chip = chipFor(kind);
+  const amountN = num(input.amount);
+  const cur = /^[A-Z]{3}$/.test(String(input.currency)) ? String(input.currency) : s.currency;
+  const amount = money(input.amount, cur, lang);
   const step = (['pass_interview', 'acknowledge', 'wait_other'].includes(String(input.nextStep)) ? input.nextStep : 'none') as ReferralNextStep;
   const nextText = b.next ? c.next[step](ctx) : '';
-  const ctaUrl = safeUrl(`${site}/consultant/referrals?tab=${tab}`);
+  const ctaUrl = admin ? safeUrl(`${site}/admin/referrals`) : safeUrl(`${site}/consultant/referrals?tab=${tab}`);
   const howUrl = safeUrl(`${site}/consultant/referrals?tab=programme`);
   const termsUrl = safeUrl(`${site}/referral-terms`);
-  const prefsUrl = safeUrl(`${site}/consultant/settings`);
+  const prefsUrl = safeUrl(admin ? `${site}/admin` : `${site}/consultant/settings`);
   const logo = safeUrl(input.logoUrl || `${SITE}/icon-192.png`, `${SITE}/icon-192.png`);
-  const banner = input.bannerUrl ? safeUrl(input.bannerUrl, '') : '';
+  const hero = input.bannerUrl ? safeUrl(input.bannerUrl, '') : '';
   const subject = `${input.test ? '[TEST] ' : ''}${b.subject}`;
   const preheader = b.intro.length > 110 ? `${b.intro.slice(0, 107)}…` : b.intro;
-  const p = (txt: string, extra = '') => `<p style="margin:0 0 16px;font-family:${font};font-size:16px;line-height:1.6;color:#1F2937;text-align:${align}${extra}">${esc(txt)}</p>`;
+  const lines = (input.lines ?? []).slice(0, 20);
+  const isTable = kind === 'monthly_statement' || admin;
+  const tier = input.tier && Number.isFinite(Number(input.tier.count)) && TIER_KINDS.includes(kind) ? input.tier : null;
+  const P = (txt: string, extra = '') => `<p style="margin:0 0 16px;font-family:${font};font-size:16px;line-height:1.65;color:#1F2937;text-align:${align}${extra}">${esc(txt)}</p>`;
+  const H = (txt: string) => `<p style="margin:8px 0 12px;font-family:${font};font-size:18px;font-weight:800;color:#111827;text-align:${align}">${esc(txt)}</p>`;
+  const divider = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td style="padding:12px 0"><div style="height:1px;line-height:1px;font-size:0;background:#EEF0F4">&nbsp;</div></td></tr></table>`;
 
   const parts: string[] = [];
-  if (input.test) parts.push(`<p style="margin:0 0 16px;padding:8px 12px;border-radius:8px;background:#FFF7E6;font-family:${font};font-size:13px;color:#78350F;text-align:${align}">${esc(c.test)}</p>`);
-  parts.push(p(c.hello(input.name ? String(input.name).slice(0, 80) : undefined)));
-  parts.push(p(b.intro));
-  if (amount && b.amountLabel) {
-    const sign = kind === 'reward_reversed' ? '−' : '';
-    parts.push(`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:4px 0 20px"><tr><td style="padding:16px 20px;border-radius:14px;background:${t.soft};border:1px solid ${t.solid}33;text-align:${align}">`
-      + `<p style="margin:0;font-family:${font};font-size:13px;color:${t.ink};text-transform:${rtl ? 'none' : 'uppercase'};letter-spacing:${rtl ? '0' : '0.04em'}">${esc(c.amountNote[b.amountLabel] ?? '')}</p>`
-      + `<p style="margin:4px 0 0;font-family:${font};font-size:28px;font-weight:800;color:${t.ink}" dir="ltr">${esc(sign + amount)}</p></td></tr></table>`);
+  if (input.test) parts.push(`<p style="margin:0 0 16px;padding:8px 12px;border-radius:10px;background:#FFF7E6;font-family:${font};font-size:13px;color:#78350F;text-align:${align}">${esc(c.test)}</p>`);
+  parts.push(P(c.hello(input.name ? String(input.name).slice(0, 80) : undefined)));
+  parts.push(P(b.intro));
+
+  // Large number highlight: "+$12.50 earned"
+  if (amountN != null && amount && b.amountLabel) {
+    const sign = kind === 'reward_reversed' ? '−' : kind === 'first_reward' || kind === 'reward_earned' ? '+' : '';
+    const ch = CHIP_COLORS[chip];
+    parts.push(card(
+      `<p style="margin:0 0 6px">${chipHtml(chip, u.chip[chip], font)}</p>`
+      + `<p style="margin:0;font-family:${font};line-height:1.15;color:${ch.fg}"><span dir="ltr" style="font-size:40px;font-weight:800;letter-spacing:-0.02em">${esc(sign + moneyShort(amountN, cur, lang))}</span> <span style="font-size:18px;font-weight:700">${esc(u.amountWord[kind] ?? '')}</span></p>`
+      + `<p style="margin:6px 0 0;font-family:${font};font-size:13px;color:#475569">${esc(c.amountNote[b.amountLabel] ?? '')}</p>`,
+      { bg: ch.bg, border: `${ch.fg}33`, pad: '20px 22px', align }));
+    parts.push('<div style="height:16px;line-height:16px;font-size:0">&nbsp;</div>');
   }
+
   if (nextText) {
-    parts.push(`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 16px"><tr><td style="padding:14px 18px;border-radius:12px;background:#F8FAFC;border-${rtl ? 'right' : 'left'}:4px solid ${t.solid};text-align:${align}">`
-      + `<p style="margin:0 0 4px;font-family:${font};font-size:13px;font-weight:700;color:${t.ink}">${esc(c.nextTitle)}</p><p style="margin:0;font-family:${font};font-size:15px;line-height:1.5;color:#1F2937">${esc(nextText)}</p></td></tr></table>`);
+    parts.push(card(`<p style="margin:0 0 4px;font-family:${font};font-size:13px;font-weight:700;color:${BRAND.ink}">${esc(c.nextTitle)}</p><p style="margin:0;font-family:${font};font-size:16px;line-height:1.55;color:#1F2937">${esc(nextText)}</p>`,
+      { bg: BRAND.soft, border: '#DDD6FE', align }));
+    parts.push('<div style="height:16px;line-height:16px;font-size:0">&nbsp;</div>');
   }
+
+  // Weekly digest: three KPI cards
+  if (admin) {
+    const st = input.stats ?? {};
+    parts.push(columns((['signups', 'verified', 'review'] as const).map((k) => card(
+      `<p style="margin:0;font-family:${font};font-size:30px;font-weight:800;color:${BRAND.ink}">${esc(fmtInt(Number(st[k] ?? 0), lang))}</p><p style="margin:4px 0 0;font-family:${font};font-size:13px;color:#475569">${esc(u.kpi[k])}</p>`,
+      { bg: BRAND.soft, border: '#DDD6FE', align: 'center', pad: '14px 10px' }))));
+  }
+
+  // Statement / digest: period, mini table, totals and a stacked bar
+  if (isTable) {
+    if (input.period) parts.push(`<p style="margin:0 0 10px;font-family:${font};font-size:14px;color:#475569;text-align:${align}">${esc(u.period)}: <strong style="color:#111827">${esc(String(input.period).slice(0, 60))}</strong></p>`);
+    parts.push(H(u.tableTitle));
+    if (!lines.length) parts.push(P(u.none, ';color:#475569'));
+    else {
+      const th = (x: string, a = align) => `<th align="${a}" style="padding:10px 8px;font-family:${font};font-size:12px;font-weight:700;color:#475569;text-align:${a};border-bottom:1px solid #E5E7EB">${esc(x)}</th>`;
+      const end = rtl ? 'left' : 'right';
+      const td = (x: string, a = align, extra = '') => `<td align="${a}" style="padding:10px 8px;font-family:${font};font-size:13px;color:#1F2937;text-align:${a};border-bottom:1px solid #F1F5F9${extra}">${x}</td>`;
+      const rows = lines.map((l) => {
+        const lc = lineChip(l.status, l.kind);
+        const lcur = /^[A-Z]{3}$/.test(String(l.currency)) ? String(l.currency) : cur;
+        const fee = num(l.fee); const rw = num(l.reward);
+        return `<tr>${td(esc(initials(l.who)))}${td(`<span dir="ltr">${esc(String(l.ref ?? '—').slice(0, 16))}</span>`)}`
+          + `${td(fee == null ? '—' : `<span dir="ltr">${esc(moneyShort(fee, lcur, lang))}</span>`, end)}`
+          + `${td(rw == null ? '—' : `<span dir="ltr" style="font-weight:700;color:${CHIP_COLORS[lc].fg}">${esc((lc === 'reversed' ? '−' : '') + moneyShort(rw, lcur, lang))}</span>`, end)}`
+          + `${td(chipHtml(lc, u.chip[lc], font, 11), end)}</tr>`;
+      }).join('');
+      parts.push(`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}" style="border:1px solid #E5E7EB;border-radius:14px;border-collapse:separate;overflow:hidden">`
+        + `<tr style="background:#F8FAFC">${th(u.thWho)}${th(u.thRef)}${th(u.thFee, end)}${th(u.thReward, end)}${th(u.thStatus, end)}</tr>${rows}</table>`);
+      const extraLines = Math.max(0, (input.lines ?? []).length - lines.length);
+      if (extraLines) parts.push(`<p style="margin:8px 0 0;font-family:${font};font-size:13px;color:#64748B;text-align:${align}">${esc(u.more(extraLines))}</p>`);
+    }
+    const totals = totalsFrom(input.lines ?? [], input.totals, cur);
+    for (const tt of totals) {
+      const keys = ['earned', 'held', 'available', 'paid', 'reversed'] as const;
+      const sum = keys.reduce((a, k) => a + Math.abs(Number(tt[k] ?? 0)), 0);
+      const net = keys.filter((k) => k !== 'reversed').reduce((a, k) => a + Math.abs(Number(tt[k] ?? 0)), 0) - Math.abs(Number(tt.reversed ?? 0));
+      const legend = keys.filter((k) => Number(tt[k] ?? 0) !== 0).map((k) => `${chipHtml(k, `${u.chip[k]} ${moneyShort(Number(tt[k]), tt.currency, lang)}`, font, 11)} `).join('');
+      parts.push('<div style="height:16px;line-height:16px;font-size:0">&nbsp;</div>');
+      parts.push(card(
+        `<p style="margin:0 0 4px;font-family:${font};font-size:13px;font-weight:700;color:#475569">${esc(u.barTitle)} · ${esc(tt.currency)}</p>`
+        + `<p style="margin:0 0 12px;font-family:${font};font-size:15px;color:#111827">${esc(u.net)}: <strong dir="ltr" style="font-size:22px;color:${BRAND.ink}">${esc((net < 0 ? '−' : '') + moneyShort(net, tt.currency, lang))}</strong></p>`
+        + (sum > 0 ? barHtml(keys.map((k) => ({ pct: (Math.abs(Number(tt[k] ?? 0)) / sum) * 100, color: CHIP_COLORS[k].fg })), 12) : '')
+        + `<p style="margin:12px 0 0;line-height:26px">${legend}</p>`,
+        { align }));
+    }
+  }
+
+  // Progress to the next reward level (table cells, works in Outlook)
+  if (tier) {
+    const min = Number(tier.min ?? 0); const next = tier.next_min != null ? Number(tier.next_min) : null;
+    const pct = next == null ? 100 : Math.max(0, Math.min(100, ((Number(tier.count) - min) / Math.max(1, next - min)) * 100));
+    parts.push('<div style="height:16px;line-height:16px;font-size:0">&nbsp;</div>');
+    parts.push(card(
+      `<p style="margin:0 0 4px;font-family:${font};font-size:13px;font-weight:700;color:${BRAND.ink}">${esc(u.tierTitle)}</p>`
+      + `<p style="margin:0 0 12px;font-family:${font};font-size:16px;font-weight:700;color:#111827">${esc(u.tierLine(tier, lang))}</p>`
+      + barHtml([{ pct, color: BRAND.solid }], 10)
+      + `<p style="margin:10px 0 0;font-family:${font};font-size:13px;line-height:1.5;color:#475569">${esc(u.tierNext(tier, lang))}</p>`,
+      { bg: BRAND.soft, border: '#DDD6FE', align }));
+  }
+
+  // Benefit cards (side by side, stacked on phones)
   if (b.benefits) {
-    const cells = c.benefits(ctx).map(([h, d]) => `<tr><td style="padding:0 0 10px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td style="padding:14px 16px;border-radius:12px;background:${t.soft};text-align:${align}">`
-      + `<p style="margin:0 0 4px;font-family:${font};font-size:15px;font-weight:700;color:${t.ink}">${esc(h)}</p><p style="margin:0;font-family:${font};font-size:14px;line-height:1.5;color:#374151">${esc(d)}</p></td></tr></table></td></tr>`).join('');
-    parts.push(`<p style="margin:8px 0 10px;font-family:${font};font-size:17px;font-weight:700;color:#111827;text-align:${align}">${esc(c.benefitsTitle)}</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">${cells}</table>`);
+    parts.push(divider, H(c.benefitsTitle));
+    parts.push(columns(c.benefits(ctx).map(([h, d]) => card(
+      `<p style="margin:0 0 6px;font-family:${font};font-size:15px;font-weight:800;color:${BRAND.ink}">${esc(h)}</p><p style="margin:0;font-family:${font};font-size:14px;line-height:1.5;color:#374151">${esc(d)}</p>`,
+      { bg: BRAND.soft, border: '#DDD6FE', align }))));
   }
-  if (b.steps) {
-    const rows = c.steps(ctx).map((st, i) => `<tr><td width="36" valign="top" style="padding:0 0 10px"><div style="width:26px;height:26px;border-radius:13px;background:${t.solid};color:#ffffff;font-family:${font};font-size:13px;font-weight:700;line-height:26px;text-align:center">${fmtInt(i + 1, lang)}</div></td>`
-      + `<td valign="top" style="padding:3px 0 10px;font-family:${font};font-size:15px;line-height:1.5;color:#1F2937;text-align:${align}">${esc(st)}</td></tr>`).join('');
-    parts.push(`<p style="margin:8px 0 10px;font-family:${font};font-size:17px;font-weight:700;color:#111827;text-align:${align}">${esc(c.stepsTitle)}</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}">${rows}</table>`);
+
+  // Simple 3-step strip (done steps get a tick)
+  const stripAt = STRIP_STEP[kind];
+  if (stripAt) {
+    parts.push(divider, H(u.stripTitle));
+    parts.push(columns(u.strip(ctx).map(([h, d], i) => {
+      const done = i + 1 < stripAt; const now = i + 1 === stripAt;
+      const bg = done ? '#16A34A' : now ? BRAND.solid : '#CBD5E1';
+      return card(
+        `<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="${rtl ? 'right' : 'left'}"><tr><td bgcolor="${bg}" style="width:30px;height:30px;border-radius:15px;background:${bg};color:#ffffff;font-family:${font};font-size:14px;font-weight:800;line-height:30px;text-align:center">${done ? '&#10003;' : esc(fmtInt(i + 1, lang))}</td></tr></table>`
+        + `<div style="clear:both;height:10px;line-height:10px;font-size:0">&nbsp;</div>`
+        + `<p style="margin:0 0 4px;font-family:${font};font-size:15px;font-weight:800;color:#111827">${esc(h)}</p><p style="margin:0;font-family:${font};font-size:13px;line-height:1.5;color:#475569">${esc(d)}</p>`,
+        { bg: now ? BRAND.soft : '#ffffff', border: now ? '#C4B5FD' : '#E5E7EB', align, pad: '14px 14px' });
+    })));
   }
+
   if (b.example) {
-    parts.push(`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:12px 0 4px"><tr><td style="padding:16px 18px;border-radius:12px;border:1px dashed #94A3B8;background:#F8FAFC;text-align:${align}">`
-      + `<p style="margin:0 0 6px;font-family:${font};font-size:13px;font-weight:700;color:#475569">${esc(c.exampleTitle)}</p>`
-      + `<p style="margin:0 0 6px;font-family:${font};font-size:16px;font-weight:700;color:#111827">${esc(c.example(ctx))}</p>`
-      + `<p style="margin:0;font-family:${font};font-size:13px;line-height:1.5;color:#475569">${esc(c.exampleNote(ctx))}</p></td></tr></table>`);
+    parts.push('<div style="height:8px;line-height:8px;font-size:0">&nbsp;</div>');
+    parts.push(card(`<p style="margin:0 0 6px;font-family:${font};font-size:13px;font-weight:700;color:#475569">${esc(c.exampleTitle)}</p>`
+      + `<p style="margin:0 0 6px;font-family:${font};font-size:17px;font-weight:800;color:#111827">${esc(c.example(ctx))}</p>`
+      + `<p style="margin:0;font-family:${font};font-size:13px;line-height:1.5;color:#475569">${esc(c.exampleNote(ctx))}</p>`,
+      { bg: '#F8FAFC', border: '#CBD5E1', align }));
   }
-  parts.push(button(esc(ctaUrl), b.cta, t.button, font));
-  parts.push(`<p style="margin:0 0 20px;font-family:${font};font-size:14px;text-align:${align}"><a href="${esc(howUrl)}" target="_blank" style="color:${t.ink};text-decoration:underline">${esc(c.how)}</a></p>`);
-  parts.push(`<p style="margin:0 0 6px;font-family:${font};font-size:12px;line-height:1.6;color:#64748B;text-align:${align}">${esc(c.fine(ctx))}${s.termsDraft ? ` ${esc(c.draft)}` : ''} <a href="${esc(termsUrl)}" target="_blank" style="color:#475569;text-decoration:underline">${esc(c.terms)}</a></p>`);
+
+  parts.push(button(esc(ctaUrl), b.cta, BRAND.button, font));
+  if (!admin) parts.push(`<p style="margin:0 0 8px;font-family:${font};font-size:14px;text-align:center"><a href="${esc(howUrl)}" target="_blank" style="color:${BRAND.ink};text-decoration:underline">${esc(c.how)}</a></p>`);
+  parts.push(divider);
+  if (!admin) parts.push(`<p style="margin:0 0 6px;font-family:${font};font-size:12px;line-height:1.6;color:#64748B;text-align:${align}">${esc(c.fine(ctx))}${s.termsDraft ? ` ${esc(c.draft)}` : ''} <a href="${esc(termsUrl)}" target="_blank" style="color:#475569;text-decoration:underline">${esc(c.terms)}</a></p>`);
 
   const pl = input.pauseLinks;
   const pause = pl ? `<p style="margin:8px 0 0;font-family:${font};font-size:12px;color:#64748B">${esc(c.pauseLead)} <a href="${esc(safeUrl(pl.d3))}" style="color:#475569">${esc(c.d3)}</a> | <a href="${esc(safeUrl(pl.w1))}" style="color:#475569">${esc(c.w1)}</a> | <a href="${esc(safeUrl(pl.m1))}" style="color:#475569">${esc(c.m1)}</a></p>` : '';
 
-  const bannerImg = banner && tone !== 'negative' && tone !== 'pending'
-    ? `<tr><td style="padding:0;line-height:0;font-size:0"><img src="${esc(banner)}" width="600" alt="${esc(c.bannerAlt)}" style="display:block;width:100%;max-width:600px;height:auto;border:0;border-radius:16px 16px 0 0" /></td></tr>`
-    : '';
+  const showArt = hero && tone !== 'negative' && tone !== 'pending' && kind !== 'payout_details_changed';
+  const heroText = `<p style="margin:0 0 10px">${chipHtml(chip, u.chip[chip], font)}</p>`
+    + `<p style="margin:0 0 6px;font-family:${font};font-size:13px;font-weight:700;letter-spacing:${rtl ? '0' : '0.08em'};text-transform:${rtl ? 'none' : 'uppercase'};color:#EDE9FE">${esc(c.eyebrow)}</p>`
+    + `<h1 style="margin:0;font-family:${font};font-size:28px;line-height:1.25;font-weight:800;color:#ffffff">${esc(b.headline)}</h1>`;
+  const heroInner = showArt
+    ? `<!--[if mso]><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td width="360" valign="middle"><![endif]-->`
+      + `<div style="display:inline-block;width:100%;max-width:340px;vertical-align:middle;text-align:${align}">${heroText}</div>`
+      + `<!--[if mso]></td><td width="180" valign="middle" align="center"><![endif]-->`
+      + `<div style="display:inline-block;width:100%;max-width:170px;vertical-align:middle;text-align:center;padding-top:8px"><img src="${esc(hero)}" width="140" alt="${esc(c.bannerAlt)}" style="display:inline-block;width:140px;max-width:100%;height:auto;border:0" /></div>`
+      + `<!--[if mso]></td></tr></table><![endif]-->`
+    : `<div style="text-align:${align}">${heroText}</div>`;
 
   const html = `<!DOCTYPE html><html lang="${lang}" dir="${dir}" xmlns:v="urn:schemas-microsoft-com:vml"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>${esc(subject)}</title></head>`
     + `<body style="margin:0;padding:0;background:#ffffff;" dir="${dir}">`
     + `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(preheader)}</div>`
-    + `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#ffffff"><tr><td align="center" style="padding:24px 12px">`
+    + `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#ffffff"><tr><td align="center" style="padding:24px 10px">`
     + `<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" dir="${dir}" style="width:100%;max-width:600px">`
     // Brand header
-    + `<tr><td style="padding:0 4px 16px;text-align:${align}"><a href="${esc(site)}" target="_blank" style="text-decoration:none"><img src="${esc(logo)}" width="36" height="36" alt="${esc(c.logoAlt)}" style="vertical-align:middle;border:0;border-radius:8px" /> <span style="font-family:${FONT_EN};font-size:17px;font-weight:800;color:#1B2559;vertical-align:middle">AI Support 360</span></a></td></tr>`
-    // Banner (illustration + gradient headline)
-    + `<tr><td style="border-radius:16px;overflow:hidden;background:${t.solid}"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">${bannerImg}`
-    + `<tr><td bgcolor="${t.solid}" style="padding:24px 28px 26px;background:${t.solid};background-image:linear-gradient(135deg,${t.from},${t.to});border-radius:${bannerImg ? '0 0 16px 16px' : '16px'};text-align:${align}">`
-    + `<p style="margin:0 0 6px;font-family:${font};font-size:13px;font-weight:700;letter-spacing:${rtl ? '0' : '0.06em'};text-transform:${rtl ? 'none' : 'uppercase'};color:#ffffff">${esc(c.eyebrow)}</p>`
-    + `<h1 style="margin:0;font-family:${font};font-size:26px;line-height:1.25;font-weight:800;color:#ffffff">${esc(b.headline)}</h1></td></tr></table></td></tr>`
-    // Body
-    + `<tr><td style="padding:28px 8px 8px">${parts.join('')}</td></tr>`
+    + `<tr><td style="padding:0 8px 16px;text-align:${align}"><a href="${esc(site)}" target="_blank" style="text-decoration:none"><img src="${esc(logo)}" width="36" height="36" alt="${esc(c.logoAlt)}" style="vertical-align:middle;border:0;border-radius:10px" /> <span style="font-family:${FONT_EN};font-size:17px;font-weight:800;color:#1B2559;vertical-align:middle">AI Support 360</span></a></td></tr>`
+    // Gradient hero (violet to teal) with the gift-and-coins illustration
+    + `<tr><td bgcolor="${BRAND.solid}" style="padding:28px 24px;border-radius:20px;background:${BRAND.solid};background-image:linear-gradient(135deg,${BRAND.from},${BRAND.to});font-size:0;text-align:center">${heroInner}</td></tr>`
+    // Body card
+    + `<tr><td style="padding:28px 24px 8px">${parts.join('')}</td></tr>`
     // Footer
-    + `<tr><td style="padding:16px 8px 0;border-top:1px solid #E2E8F0;text-align:${align}">`
-    + `<p style="margin:0 0 6px;font-family:${font};font-size:12px;line-height:1.6;color:#64748B">${esc(c.why)} <a href="${esc(prefsUrl)}" target="_blank" style="color:#475569;text-decoration:underline">${esc(c.prefs)}</a></p>`
+    + `<tr><td style="padding:8px 24px 0;text-align:${align}">`
+    + `<p style="margin:0 0 6px;font-family:${font};font-size:12px;line-height:1.6;color:#64748B">${esc(admin ? u.adminWhy : c.why)} <a href="${esc(prefsUrl)}" target="_blank" style="color:#475569;text-decoration:underline">${esc(c.prefs)}</a></p>`
     + pause
     + `<p style="margin:8px 0 0;font-family:${font};font-size:12px;color:#94A3B8">${esc(c.company)} · <span dir="ltr">${esc(c.sentBy)}</span></p>`
     + `</td></tr></table></td></tr></table></body></html>`;
 
-  const lines: string[] = [];
-  if (input.test) lines.push(c.test, '');
-  lines.push(`${c.eyebrow.toUpperCase()} - ${b.headline}`, '', c.hello(input.name ? String(input.name).slice(0, 80) : undefined), '', b.intro);
-  if (amount && b.amountLabel) lines.push('', `${c.amountNote[b.amountLabel]}: ${kind === 'reward_reversed' ? '-' : ''}${amount}`);
-  if (nextText) lines.push('', `${c.nextTitle}: ${nextText}`);
-  if (b.benefits) { lines.push('', c.benefitsTitle); for (const [h, d] of c.benefits(ctx)) lines.push(`- ${h}: ${d}`); }
-  if (b.steps) { lines.push('', c.stepsTitle); c.steps(ctx).forEach((st, i) => lines.push(`${i + 1}. ${st}`)); }
-  if (b.example) lines.push('', `${c.exampleTitle}: ${c.example(ctx)}`, c.exampleNote(ctx));
-  lines.push('', `${b.cta}: ${ctaUrl}`, `${c.how}: ${howUrl}`, '', `${c.fine(ctx)}${s.termsDraft ? ` ${c.draft}` : ''}`, `${c.terms}: ${termsUrl}`, '', '--',
-    `${c.why} ${c.prefs}: ${prefsUrl}`);
-  if (pl) lines.push(`${c.pauseLead} ${c.d3}: ${safeUrl(pl.d3)} | ${c.w1}: ${safeUrl(pl.w1)} | ${c.m1}: ${safeUrl(pl.m1)}`);
-  lines.push(`${c.company} · ${c.sentBy}`);
+  // Plain-text part (same content, same order)
+  const out: string[] = [];
+  if (input.test) out.push(c.test, '');
+  out.push(`${c.eyebrow.toUpperCase()} - ${b.headline} [${u.chip[chip]}]`, '', c.hello(input.name ? String(input.name).slice(0, 80) : undefined), '', b.intro);
+  if (amount && b.amountLabel) out.push('', `${c.amountNote[b.amountLabel]}: ${kind === 'reward_reversed' ? '-' : ''}${amount}`);
+  if (nextText) out.push('', `${c.nextTitle}: ${nextText}`);
+  if (admin) { const st = input.stats ?? {}; out.push('', `${u.kpi.signups}: ${st.signups ?? 0} | ${u.kpi.verified}: ${st.verified ?? 0} | ${u.kpi.review}: ${st.review ?? 0}`); }
+  if (isTable) {
+    if (input.period) out.push('', `${u.period}: ${input.period}`);
+    out.push('', u.tableTitle);
+    if (!lines.length) out.push(u.none);
+    for (const l of lines) {
+      const lc = lineChip(l.status, l.kind); const lcur = /^[A-Z]{3}$/.test(String(l.currency)) ? String(l.currency) : cur;
+      const fee = num(l.fee); const rw = num(l.reward);
+      out.push(`- ${initials(l.who)} | ${String(l.ref ?? '-').slice(0, 16)} | ${fee == null ? '-' : moneyShort(fee, lcur, lang)} | ${rw == null ? '-' : (lc === 'reversed' ? '-' : '') + moneyShort(rw, lcur, lang)} | ${u.chip[lc]}`);
+    }
+    for (const tt of totalsFrom(input.lines ?? [], input.totals, cur)) {
+      out.push(`${u.total} ${tt.currency}: ${(['earned', 'held', 'available', 'paid', 'reversed'] as const).filter((k) => Number(tt[k] ?? 0)).map((k) => `${u.chip[k]} ${moneyShort(Number(tt[k]), tt.currency, lang)}`).join(', ') || '0'}`);
+    }
+  }
+  if (tier) out.push('', `${u.tierTitle}: ${u.tierLine(tier, lang)}`, u.tierNext(tier, lang));
+  if (b.benefits) { out.push('', c.benefitsTitle); for (const [h, d] of c.benefits(ctx)) out.push(`- ${h}: ${d}`); }
+  if (stripAt) { out.push('', u.stripTitle); u.strip(ctx).forEach(([h, d], i) => out.push(`${i + 1}. ${h} - ${d}`)); }
+  if (b.example) out.push('', `${c.exampleTitle}: ${c.example(ctx)}`, c.exampleNote(ctx));
+  out.push('', `${b.cta}: ${ctaUrl}`);
+  if (!admin) out.push(`${c.how}: ${howUrl}`, '', `${c.fine(ctx)}${s.termsDraft ? ` ${c.draft}` : ''}`, `${c.terms}: ${termsUrl}`);
+  out.push('', '--', `${admin ? u.adminWhy : c.why} ${c.prefs}: ${prefsUrl}`);
+  if (pl) out.push(`${c.pauseLead} ${c.d3}: ${safeUrl(pl.d3)} | ${c.w1}: ${safeUrl(pl.w1)} | ${c.m1}: ${safeUrl(pl.m1)}`);
+  out.push(`${c.company} · ${c.sentBy}`);
 
-  return { kind, lang, tone, tab, subject, preheader, html, text: lines.join('\n'), ctaUrl };
+  return { kind, lang, tone, tab, subject, preheader, html, text: out.join('\n'), ctaUrl };
 }
 
 /** Sample data for the admin preview and the "Send test to me" mail (masked names only, clearly fake amounts). */
 export function sampleReferralEmail(kind: ReferralEmailKind, lang: ReferralEmailLang): ReferralEmailInput {
-  const money = ['first_reward', 'reward_earned', 'reward_available', 'reward_held', 'reward_paid', 'reward_reversed'].includes(kind);
+  const isMoney = MONEY_KINDS.includes(kind);
+  const sampleLines: ReferralEmailLine[] = [
+    { who: 'D. K****', ref: 'R-7Q4M', fee: 480, reward: 2.4, status: 'pending', currency: 'USD' },
+    { who: 'M. A****', ref: 'R-2H9X', fee: 1200, reward: 6, status: 'available', currency: 'USD' },
+    { who: 'D. K****', ref: 'R-5K1T', fee: 960, reward: 4.8, status: 'paid', currency: 'USD' },
+    { who: 'S. N****', ref: 'R-8P3C', fee: 300, reward: 1.5, status: 'held', currency: 'USD' },
+    { who: 'M. A****', ref: 'R-2H9X', fee: 240, reward: 1.2, status: 'reversed', kind: 'reversal', currency: 'USD' },
+  ];
   return {
     kind, lang, name: lang === 'ar' ? 'سارة' : 'Sara', other: 'D. K****',
-    amount: money ? 12.5 : null, currency: 'USD',
+    amount: isMoney ? (kind === 'reward_earned' || kind === 'first_reward' ? 2.4 : 12.5) : null, currency: 'USD',
     nextStep: kind === 'passed_self' ? 'acknowledge' : kind === 'passed_other' || kind === 'reminder' ? 'pass_interview' : 'none',
+    tier: TIER_KINDS.includes(kind) ? { count: 7, name: 'Tier 1', rate: 0.5, min: 0, next_name: 'Tier 2', next_min: 11, next_rate: 0.6, needed: 4 } : null,
+    period: kind === 'monthly_statement' ? (lang === 'ar' ? 'سبتمبر 2026' : 'September 2026') : kind === 'weekly_digest_admin' ? '12–18 Oct 2026' : null,
+    lines: kind === 'monthly_statement' || kind === 'weekly_digest_admin' ? sampleLines : null,
+    stats: kind === 'weekly_digest_admin' ? { signups: 4, verified: 2, review: 1 } : null,
   };
 }
 
@@ -442,4 +717,5 @@ export const REFERRAL_EMAIL_SETTING_KEYS = [
   'payout_details_change_hold_days', 'referral_email_example_fee', 'referral_email_example_currency', 'referral_terms_draft',
 ] as const;
 
-export const REFERRAL_BANNER_URL = `${SITE}/email/referral-banner.png`;
+/** Gift-and-coins illustration of the hero (a file of the published site; omitted until it is live). */
+export const REFERRAL_BANNER_URL = `${SITE}/email/referral-hero.png`;

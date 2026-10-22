@@ -1,6 +1,7 @@
 // Feature Z e-mails: one short referral notice per event to one consultant (registered with your code, invited, passed,
 // active, reminders, expired, acknowledgement request, verified, rewards earned / held / available / paid / reversed,
-// referral not accepted, bank details changed). Woken by the database (pg_net, referral_wake) only while e-mails wait in
+// referral not accepted, bank details changed) plus, once docs/sql/referral-emails.sql is applied, the monthly statement
+// (to the consultant) and the weekly Refer & earn summary (to each administrator). Woken by the database (pg_net, referral_wake) only while e-mails wait in
 // referral_email_queue - no permanent schedule. Credential-free like the other sweeps (verify_jwt=false): safety lives in
 // the service-role-only referral_email_claim RPC (atomic, at most 5 attempts, 10-minute lease) and a call can only send
 // what the database queued. Responses contain counts only. Layout: _shared/referralEmail.ts (shared with the admin preview).
@@ -29,6 +30,18 @@ async function bannerLive(): Promise<string | null> {
   }
 }
 
+/** Extra data per queued e-mail (level progress, statement / digest lines) from the service-only referral_email_payload;
+ * empty until docs/sql/referral-emails.sql is applied, so the e-mail simply goes out without those blocks. */
+// deno-lint-ignore no-explicit-any
+async function payloadFor(admin: any, id: string): Promise<Record<string, unknown>> {
+  try {
+    const { data, error } = await admin.rpc('referral_email_payload', { _id: id });
+    return !error && data && typeof data === 'object' ? data as Record<string, unknown> : {};
+  } catch {
+    return {};
+  }
+}
+
 // deno-lint-ignore no-explicit-any
 async function sendOne(admin: any, row: Row, settings: ReferralEmailSettings, bannerUrl: string | null): Promise<'sent' | 'skipped'> {
   const { data: u } = await admin.auth.admin.getUserById(row.user_id);
@@ -38,11 +51,14 @@ async function sendOne(admin: any, row: Row, settings: ReferralEmailSettings, ba
   const category = pauseCategoryFor(kind);
   const s = { ...settings, passMark: row.pass_mark ?? settings.passMark, activationDays: kind === 'expired' && row.days ? row.days : settings.activationDays,
     payoutChangeDays: kind === 'payout_details_changed' && row.days != null ? row.days : settings.payoutChangeDays };
+  const extra = await payloadFor(admin, row.id);
   const r = await sendTemplateEmail('referral-notice', email, {
     templateData: {
       kind, lang: row.lang === 'ar' ? 'ar' : 'en', name: row.display_name || undefined, other: row.referred_name || undefined,
       nextStep: row.next_step || undefined, amount: row.amount ?? undefined, currency: row.currency || undefined,
       settings: s, siteUrl: SITE_URL, bannerUrl,
+      tier: extra.tier ?? undefined, period: extra.period ?? undefined, lines: extra.lines ?? undefined,
+      totals: extra.totals ?? undefined, stats: extra.stats ?? undefined,
     },
     idempotencyKey: `referral-${row.kind}-${row.id}`,
     ...(category === 'essential' ? {} : { pause: { userId: row.user_id, category } }),
