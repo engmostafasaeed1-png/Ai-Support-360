@@ -9,7 +9,7 @@
 
 export const SITE = 'https://www.aisupport360.com';
 
-export const CHANNELS = ['in_app', 'popup', 'telegram', 'whatsapp_manual', 'sms_manual'] as const;
+export const CHANNELS = ['in_app', 'popup', 'push', 'telegram', 'whatsapp_manual', 'sms_manual'] as const;
 export type Channel = typeof CHANNELS[number];
 /** Channels stored per recipient (popup rides on the in-app notification). */
 export type RecipientChannel = Exclude<Channel, 'popup'>;
@@ -26,6 +26,7 @@ export const DEFAULTS = {
   maxRecipients: 5000,
   maxPastedEmails: 2000,
   telegramGapMs: 150,
+  pushPerMinute: 60,
   maxClaimsPerRun: 300,
 } as const;
 
@@ -54,7 +55,7 @@ export function renderVariables(text: string, vars: Vars, lang: 'en' | 'ar' = 'e
     const s = v === null || v === undefined ? '' : String(v).trim();
     if (!s) return fallback[name as Variable];
     return name === 'profile_completion' ? `${s.replace(/\s*%$/, '')} %` : s;
-  }).replace(/(Hello|Hi|مرحباً|مرحبا) ,/g, '$1,');
+  }).replace(/(Hello|Hi|Dear|مرحبًا|مرحباً|مرحبا)[ \t]+([,،])/g, '$1$2');
 }
 
 /** The recipient's language decides the text; Arabic falls back to English when no Arabic text was written. */
@@ -177,6 +178,15 @@ export function footerText(lang: 'en' | 'ar', category: Category): string {
   ].join('\n');
 }
 
+/** Web Push text (read by public/sw.js): subject as title, the start of the message (no greeting, no addresses) as body. */
+export function pushMessage(subject: string, bodyPlain: string, url: string, tag: string, nowMs = Date.now()): string {
+  const lines = String(bodyPlain ?? '').split(/\n+/).map((l) => l.trim())
+    .filter((l) => l && !/^(hello|hi|dear|مرحب)/i.test(l) && !/https?:\/\//i.test(l));
+  let body = lines.join(' ').replace(/^\s*[-•*]\s+/, '').replace(/\s+/g, ' ').trim();
+  if (body.length > 180) body = `${body.slice(0, 179).trimEnd()}…`;
+  return JSON.stringify({ v: 1, title: String(subject ?? '').slice(0, 80), body, url, tag: String(tag).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 60), urgent: false, sent_at: nowMs });
+}
+
 export const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /** Telegram: plain text plus one link, HTML-escaped (the bot sends with parse_mode HTML), within Telegram's size. */
@@ -235,6 +245,8 @@ export interface AudienceMember {
   /** Paused non-essential notifications (Feature Q). */
   paused?: boolean;
   telegram?: boolean;
+  /** At least one active Web Push subscription (a device where the person enabled push notifications). */
+  push?: boolean;
   has_phone?: boolean;
 }
 export type ExclusionReason = 'deleted' | 'suspended' | 'unsubscribed' | 'paused' | 'excluded_by_admin';
@@ -260,6 +272,7 @@ export function recipientPlan(m: AudienceMember, category: Category, channels: r
   return [...set].map((channel) => {
     if (why) return { channel, status: 'skipped' as const, reason: why };
     if (channel === 'telegram') return m.telegram ? { channel, status: 'queued' as const, reason: null } : { channel, status: 'skipped' as const, reason: 'not_linked' };
+    if (channel === 'push') return m.push ? { channel, status: 'queued' as const, reason: null } : { channel, status: 'skipped' as const, reason: 'push_not_enabled' };
     if (channel === 'whatsapp_manual' || channel === 'sms_manual') {
       return m.has_phone ? { channel, status: 'manual_pending' as const, reason: null } : { channel, status: 'skipped' as const, reason: 'no_phone' };
     }
