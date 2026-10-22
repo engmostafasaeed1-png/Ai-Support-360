@@ -65,8 +65,8 @@ describe('Refer & earn invitation sending rules', () => {
     expect(resendReasonOk('x'.repeat(301))).toBe(false);
     expect(inviteBlocker({ ...base, resend: true, reason: 'short' })).toBe('reason');
   });
-  it('the payload carries only valid ids, in-app always, Telegram on request, and the request id', () => {
-    const p = invitePayload({ mode: 'selected', ids: ['00000000-0000-4000-8000-000000000001', 'bad', '00000000-0000-4000-8000-000000000001'], telegram: true, confirmed: true, key: 'k' });
+  it('the payload carries only valid ids, the chosen channels (known ones, fixed order) and the request id', () => {
+    const p = invitePayload({ mode: 'selected', ids: ['00000000-0000-4000-8000-000000000001', 'bad', '00000000-0000-4000-8000-000000000001'], channels: ['telegram', 'in_app', 'fax' as never], confirmed: true, key: 'k' });
     expect(p.user_ids).toEqual(['00000000-0000-4000-8000-000000000001']);
     expect(p.channels).toEqual(['in_app', 'telegram']);
     expect(p.idempotency_key).toBe('k');
@@ -82,7 +82,8 @@ describe('Refer & earn invitation sending rules', () => {
 describe('Refer & earn invitation report CSV', () => {
   it('has no e-mail column and neutralises formulas in names', () => {
     const csv = inviteReportCsv([{ user_id: 'u1', name: '=HYPERLINK("x")', lang: 'ar', outcome: 'skipped', reason: 'paused', telegram: null, sent_at: null, resend: false }]);
-    expect(csv.split('\n')[0]).not.toMatch(/mail/i);
+    // Per-channel status columns only: no column with e-mail addresses.
+    expect(csv.split('\n')[0].split(',').filter((h) => /mail/i.test(h))).toEqual(['channel_email']);
     expect(csv).toContain(`"'=HYPERLINK(""x"")"`);
     expect(csv).toContain('notifications paused');
     expect(csvCell('@cmd')).toBe(`"'@cmd"`);

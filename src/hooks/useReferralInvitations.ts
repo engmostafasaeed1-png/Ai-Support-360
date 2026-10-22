@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isMissingRpc, safeRpc } from '@/lib/safeRpc';
 import type { InviteReportRow, InviteStatus } from '@/lib/referralInvitations';
+import type { ChannelReport, SendChannel } from '@/lib/sendChannels';
 
 /** Refer & earn invitation RPCs (docs/sql/referral-invitations.sql). Until that file is applied every call reports not installed. */
 export class InviteNotInstalled extends Error { constructor() { super('not_installed'); } }
@@ -19,12 +20,18 @@ export interface InvitePreview {
   candidates: number; eligible: number; skipped: Record<string, number>; sample: string[]; arabic: number; english: number;
   telegram_linked: number; resends: number; announced_before: number; sent_today: number; daily_cap: number;
   message: { subject_en: string; subject_ar: string; body_en: string; body_ar: string; link_url: string };
+  /** After docs/sql/notice-channels.sql: availability, reach and skip reasons per channel. */
+  push_enabled?: number;
+  by_channel?: Partial<Record<SendChannel, { available: boolean; reason?: string | null; eligible?: number; skipped?: Record<string, number> }>>;
+  /** People reached by each channel combination, key = channels joined with "," in the fixed order. */
+  reach?: Record<string, number>;
 }
 
 export interface InviteRun {
   id: string; mode: string; version: number; created_at: string; resend: boolean; channels: string[]; admin_name: string | null;
   requested: number; queued: number; skipped: number; skipped_by_reason: Record<string, number>; sent: number; failed: number;
   sending: number; telegram_sent: number; campaign_status: string | null; repeated?: boolean; rows?: InviteReportRow[];
+  by_channel?: Partial<Record<SendChannel, Partial<ChannelReport>>>;
 }
 
 export interface InviteSettings {
