@@ -179,7 +179,7 @@ export default function UsersPage() {
                 <UsersList rows={rows} loading={search.isLoading || me.isLoading} columns={columns} selected={selected} focus={focus}
                   sort={filters.sort} dir={filters.dir} onFocus={setFocus}
                   onSort={(key) => setFilters({ ...filters, sort: key, dir: filters.sort === key && filters.dir === 'desc' ? 'asc' : filters.sort === key ? 'desc' : key === 'name' ? 'asc' : 'desc', page: 1 })}
-                  onToggle={toggle} onTogglePage={togglePage} onOpen={(u) => setParam('user', u.id)} />
+                  onToggle={toggle} onTogglePage={togglePage} onOpen={(u) => setParam('user', u.id)} invited={invited} />
               )}
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/50 px-4 py-2 text-xs text-muted-foreground">
               <span aria-live="polite">{t('um.showing', 'Showing {{a}}–{{b}} of {{n}}', { a: total ? (filters.page - 1) * filters.page_size + 1 : 0, b: Math.min(filters.page * filters.page_size, total), n: total })}</span>

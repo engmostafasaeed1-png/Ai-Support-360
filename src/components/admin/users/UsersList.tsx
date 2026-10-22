@@ -6,16 +6,24 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { UserRow } from '@/lib/userAdmin';
+import type { InviteStatus } from '@/lib/referralInvitations';
 import { columnLabel, type Column } from './UsersToolbar';
 import { STATUS_VARIANT, fmtDate, roleLabel, statusLabel, verificationLabel } from './labels';
 
 const SORTABLE: Partial<Record<Column, string>> = { created_at: 'created_at', last_active_at: 'last_active_at', completion: 'completion', open_tickets: 'open_tickets', status: 'status' };
 
-export default function UsersList({ rows, loading, columns, selected, focus, sort, dir, onSort, onToggle, onTogglePage, onOpen, onFocus }: {
+export default function UsersList({ rows, loading, columns, selected, focus, sort, dir, onSort, onToggle, onTogglePage, onOpen, onFocus, invited }: {
   rows: UserRow[]; loading: boolean; columns: Column[]; selected: Set<string>; focus: number; sort: string; dir: 'asc' | 'desc';
   onSort: (key: string) => void; onToggle: (id: string) => void; onTogglePage: (on: boolean) => void; onOpen: (u: UserRow) => void; onFocus: (i: number) => void;
+  /** Refer & earn invitation per user (latest), shown as "Invited on <date> (v1)". No opened/clicked: nothing is tracked. */
+  invited?: Map<string, InviteStatus>;
 }) {
   const { t } = useTranslation();
+  const invitedBadge = (u: UserRow) => {
+    const s = invited?.get(u.id);
+    if (!s) return null;
+    return <span className="mt-0.5 inline-block rounded-full bg-refer-from/10 px-1.5 text-[10px] text-foreground">{t('rinv.invited_on', 'Invited on {{date}} (v{{v}})', { date: fmtDate(s.invited_at), v: s.version })}</span>;
+  };
   const allOn = rows.length > 0 && rows.every((r) => selected.has(r.id));
   const someOn = rows.some((r) => selected.has(r.id));
 
@@ -50,6 +58,7 @@ export default function UsersList({ rows, loading, columns, selected, focus, sor
         <span className="block truncate font-medium text-foreground">{u.name || '—'}{u.is_self && <span className="text-xs text-muted-foreground"> · {t('um.you', 'you')}</span>}</span>
         {u.consultant_id && <ClientViewHint id={u.consultant_id} className="truncate" />}
         <span className="block truncate text-xs text-muted-foreground" dir="ltr">{u.email}</span>
+        {invitedBadge(u)}
       </span>
     </button>
   );
