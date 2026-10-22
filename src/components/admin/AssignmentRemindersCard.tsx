@@ -13,8 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAdminSettings } from '@/hooks/useAdminSettings';
 import { useAssignmentPolicy } from '@/hooks/useAssignmentPolicy';
 import { useAssignmentInfoReady } from '@/hooks/useAssignmentInfo';
-import {
 import { safeRpc } from '@/lib/safeRpc';
+import {
   policyText, timingsProblems, type PolicyMinutes,
 } from '../../../supabase/functions/_shared/assignmentPolicy';
 
