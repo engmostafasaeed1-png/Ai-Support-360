@@ -132,7 +132,8 @@ export const REFERRAL_CODE_RE = /^[A-Z0-9]{2,12}(-[A-Z0-9]{1,12}){0,3}$/;
 /** null when the code may be saved (uniqueness is checked by the database). */
 export function referralCodeProblem(raw: string): 'format' | 'blocked' | null {
   const c = normalizeReferralCode(raw);
-  if (c.length < 4 || c.length > 24 || !REFERRAL_CODE_RE.test(c)) return 'format';
+  // Mirror of the database rule: 7 to 32 characters, at least 7 letters/digits.
+  if (c.length < 7 || c.length > 32 || c.replace(/-/g, '').length < 7 || !REFERRAL_CODE_RE.test(c)) return 'format';
   if (isBlockedReferralWord(c)) return 'blocked';
   return null;
 }
@@ -197,6 +198,8 @@ export function rewardBlockReason(c: RewardCheck): string | null {
   if (!c.referrerVerified) return 'referrer_not_verified';
   if (c.referrerSuspended) return 'referrer_suspended';
   if (!c.referrerPolicyOk) return 'referrer_policy';
+  if (c.paymentCleared === false) return 'payment_not_cleared';
+  if (c.fee != null && c.minInvoice != null && c.fee > 0 && c.fee < c.minInvoice) return 'below_min_invoice';
   return null;
 }
 
@@ -229,6 +232,39 @@ export const LINE_STATUS_LABEL: Record<LineStatus, string> = {
   reversed: 'Reversed',
 };
 
+/** Why a reward line is on hold (database hold_reason). */
+export const HOLD_REASON_LABEL: Record<string, string> = {
+  review: 'Referral under review',
+  admin: 'Held by an administrator',
+  dispute: 'Client payment disputed',
+  related_party: 'Paying client may be related',
+  cap: 'Monthly or total cap exceeded',
+};
+
+/** Fraud signals (database flags) in plain words, for administrators. */
+export const FLAG_LABEL: Record<string, string> = {
+  same_device: 'Same browser / device', same_ip: 'Same network', same_bank: 'Same bank account', same_phone: 'Same phone',
+  same_domain: 'Same company e-mail domain', velocity_referrer: 'Many sign-ups in a day', velocity_ip: 'Many sign-ups from one network',
+  client_same_account: 'Client is the same account', client_same_email: 'Client has the same e-mail', client_same_domain: 'Client on the same company domain',
+  client_same_phone: 'Client has the same phone', client_same_ip: 'Client on the same network', tenant_member: 'Member of the paying company',
+  cap_referrer_month: 'Referrer monthly cap', cap_referred_month: 'Referred consultant monthly cap', cap_referred_total: 'Total cap per referred consultant',
+};
+
+const STRONG_FLAGS = new Set(['same_bank', 'same_phone', 'same_email', 'same_account']);
+
+/** Mirror of referral_flag_score: near-identity signals count 2, others 1. */
+export function flagScore(flags: string[]): number {
+  return flags.reduce((n, f) => n + (STRONG_FLAGS.has(f.replace(/^(client_|tenant_)/, '')) ? 2 : 1), 0);
+}
+
+/** A new referral is created under review when its score reaches the threshold (default 2). */
+export const needsReview = (flags: string[], threshold = 2) => flagScore(flags) >= threshold;
+
+/** Mirror of the hold period: a released reward becomes available only after holdDays. */
+export function maturesAt(releasedAt: Date, holdDays: number): Date {
+  return new Date(releasedAt.getTime() + Math.max(0, holdDays) * 86_400_000);
+}
+
 /** Referral payouts are normal payouts rows whose reference starts with "referral:". */
 export const isReferralPayout = (p: { reference?: string | null } | null | undefined) =>
   String(p?.reference ?? '').startsWith('referral:');
@@ -254,12 +290,17 @@ export function parseStoredRef(raw: string | null, now = Date.now()): StoredRef 
   }
 }
 
-/** Keep ?ref=CODE from /join, /signup and /for-consultants for 30 days (latest link wins). */
+/**
+ * Keep ?ref=CODE from /join, /signup and /for-consultants for 30 days. The FIRST valid link wins: a later link never
+ * overwrites a code that is still within its 30 days (the database also keeps the first attribution for ever).
+ */
 export function captureReferral(pathname: string, search: string, now = Date.now()): string | null {
   if (!/^\/(join|signup|for-consultants)\/?$/.test(pathname)) return null;
   const code = normalizeReferralCode(new URLSearchParams(search).get('ref'));
-  if (code.length < 4 || code.length > 24 || !/^[A-Z0-9-]+$/.test(code)) return null;
+  if (referralCodeProblem(code) === 'format' || !/^[A-Z0-9-]+$/.test(code)) return null;
   try {
+    const kept = parseStoredRef(localStorage.getItem(REF_STORAGE_KEY), now);
+    if (kept) return kept.code;
     localStorage.setItem(REF_STORAGE_KEY, JSON.stringify({ code, at: now }));
     document.cookie = `aisupport360_ref=${encodeURIComponent(code)}; Max-Age=${REF_TTL_DAYS * 86400}; Path=/; SameSite=Lax; Secure`;
   } catch { /* storage blocked */ }
@@ -272,6 +313,16 @@ export function storedReferral(now = Date.now()): string | null {
     if (found) return found.code;
     const m = document.cookie.match(/(?:^|;\s*)aisupport360_ref=([^;]+)/);
     return m ? normalizeReferralCode(decodeURIComponent(m[1])) || null : null;
+  } catch {
+    return null;
+  }
+}
+
+/** When the stored link was captured (ISO), sent with the sign-up so the database can refuse links older than 30 days. */
+export function storedReferralCapturedAt(now = Date.now()): string | null {
+  try {
+    const found = parseStoredRef(localStorage.getItem(REF_STORAGE_KEY), now);
+    return found ? new Date(found.at).toISOString() : null;
   } catch {
     return null;
   }
