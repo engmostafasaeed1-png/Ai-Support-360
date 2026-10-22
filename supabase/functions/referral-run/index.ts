@@ -11,6 +11,7 @@ import {
   normaliseKind, pauseCategoryFor, REFERRAL_BANNER_URL, REFERRAL_EMAIL_SETTING_KEYS, referralEmailSettingsFrom,
   type ReferralEmailSettings,
 } from '../_shared/referralEmail.ts';
+import { SENDER_SETTING_KEYS, senderFromSettings, type SenderSettings } from '../_shared/emailSender.ts';
 
 interface Row {
   id: string; user_id: string; kind: string; lang: string | null; display_name: string | null; referred_name: string | null;
@@ -43,7 +44,7 @@ async function payloadFor(admin: any, id: string): Promise<Record<string, unknow
 }
 
 // deno-lint-ignore no-explicit-any
-async function sendOne(admin: any, row: Row, settings: ReferralEmailSettings, bannerUrl: string | null): Promise<'sent' | 'skipped'> {
+async function sendOne(admin: any, row: Row, settings: ReferralEmailSettings, bannerUrl: string | null, sender: SenderSettings): Promise<'sent' | 'skipped'> {
   const { data: u } = await admin.auth.admin.getUserById(row.user_id);
   const email = u?.user?.email;
   if (!email || !u.user.email_confirmed_at) return 'skipped';
@@ -58,8 +59,9 @@ async function sendOne(admin: any, row: Row, settings: ReferralEmailSettings, ba
       nextStep: row.next_step || undefined, amount: row.amount ?? undefined, currency: row.currency || undefined,
       settings: s, siteUrl: SITE_URL, bannerUrl,
       tier: extra.tier ?? undefined, period: extra.period ?? undefined, lines: extra.lines ?? undefined,
-      totals: extra.totals ?? undefined, stats: extra.stats ?? undefined,
+      totals: extra.totals ?? undefined, stats: extra.stats ?? undefined, contactEmail: sender.contactEmail,
     },
+    displayName: sender.displayName, fromLocal: sender.fromLocal, replyTo: sender.replyTo,
     idempotencyKey: `referral-${row.kind}-${row.id}`,
     ...(category === 'essential' ? {} : { pause: { userId: row.user_id, category } }),
   });
@@ -78,13 +80,14 @@ Deno.serve(async (req) => {
   }
   const rows = (data ?? []) as Row[];
   if (!rows.length) return jsonResponse(req, { ok: true, claimed: 0, sent: 0, skipped: 0, failed: 0 }, 200);
-  const { data: settingRows } = await admin.from('platform_settings').select('key, value').in('key', [...REFERRAL_EMAIL_SETTING_KEYS]);
+  const { data: settingRows } = await admin.from('platform_settings').select('key, value').in('key', [...REFERRAL_EMAIL_SETTING_KEYS, ...SENDER_SETTING_KEYS]);
   const settings = referralEmailSettingsFrom(settingRows);
+  const sender = senderFromSettings(settingRows);
   const bannerUrl = await bannerLive();
   let sent = 0, skipped = 0, failed = 0;
   for (const row of rows) {
     try {
-      const r = await sendOne(admin, row, settings, bannerUrl);
+      const r = await sendOne(admin, row, settings, bannerUrl, sender);
       if (r === 'sent') sent++; else skipped++;
       await admin.rpc('referral_email_done', { _id: row.id, _ok: true });
     } catch (e) {

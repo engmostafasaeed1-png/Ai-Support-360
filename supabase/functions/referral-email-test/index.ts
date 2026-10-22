@@ -8,6 +8,7 @@ import {
   REFERRAL_BANNER_URL, REFERRAL_EMAIL_KINDS, REFERRAL_EMAIL_SETTING_KEYS, referralEmailSettingsFrom, sampleReferralEmail,
   type ReferralEmailKind,
 } from '../_shared/referralEmail.ts';
+import { SENDER_SETTING_KEYS, senderFromSettings } from '../_shared/emailSender.ts';
 
 Deno.serve(async (req) => {
   const pre = preflight(req);
@@ -34,16 +35,19 @@ Deno.serve(async (req) => {
     return jsonResponse(req, { error: 'Too many test e-mails, try again later' }, 429);
   }
 
-  const { data: settingRows } = await admin.from('platform_settings').select('key, value').in('key', [...REFERRAL_EMAIL_SETTING_KEYS]);
+  const { data: settingRows } = await admin.from('platform_settings').select('key, value').in('key', [...REFERRAL_EMAIL_SETTING_KEYS, ...SENDER_SETTING_KEYS]);
+  const sender = senderFromSettings(settingRows);
   let bannerUrl: string | null = null;
   try { const r = await fetch(REFERRAL_BANNER_URL, { method: 'HEAD' }); if (r.ok) bannerUrl = REFERRAL_BANNER_URL; } catch { /* without banner */ }
   try {
     const r = await sendTemplateEmail('referral-notice', email, {
-      templateData: { ...sampleReferralEmail(kind as ReferralEmailKind, lang), settings: referralEmailSettingsFrom(settingRows), siteUrl: SITE_URL, bannerUrl, test: true },
+      templateData: { ...sampleReferralEmail(kind as ReferralEmailKind, lang), settings: referralEmailSettingsFrom(settingRows), siteUrl: SITE_URL, bannerUrl, test: true, contactEmail: sender.contactEmail },
       subjectPrefix: '[TEST] ',
+      displayName: sender.displayName, fromLocal: sender.fromLocal, replyTo: sender.replyTo,
       idempotencyKey: `referral-email-test-${caller.id}-${crypto.randomUUID()}`,
     });
-    return jsonResponse(req, { ok: r.sent, reason: r.sent ? undefined : r.reason, to: 'self' }, 200);
+    return jsonResponse(req, { ok: r.sent, reason: r.sent ? undefined : r.reason, to: 'self',
+      from: `${sender.displayName} <${sender.fromLocal}@aisupport360.com>`, reply_to: sender.replyTo }, 200);
   } catch (e) {
     const err = e as { code?: string; status?: number };
     return jsonResponse(req, { ok: false, error: err.code ?? 'send_failed' }, 502);
