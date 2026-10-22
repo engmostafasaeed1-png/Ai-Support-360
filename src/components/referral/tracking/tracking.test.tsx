@@ -43,7 +43,7 @@ afterEach(() => cleanup());
 describe('Earnings & payouts tab', () => {
   it('shows the exact calculation, the release date and the payout references', () => {
     renderEarnings([line({}), line({ line_ref: 'L-BBBBBB', status: 'paid', amount: 5, fee_amount: 1000, approved_hours: 20, payout_ref: 'RP-1A2B3C4D' })]);
-    const table = screen.getByRole('table', { name: '' });
+    const table = screen.getByRole('table', { name: 'Reward lines' });
     expect(within(table).getAllByText('8 h approved → Fee $400.00 x 0.5 % = $2.00').length).toBe(1);
     expect(within(table).getByText('Pending · available 2026-11-05')).toBeTruthy();
     expect(screen.getAllByText('RP-1A2B3C4D').length).toBeGreaterThan(0);

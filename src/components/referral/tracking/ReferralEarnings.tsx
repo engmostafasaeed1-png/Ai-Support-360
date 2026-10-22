@@ -226,7 +226,7 @@ export default function ReferralEarnings({ lines, loading, detailed, payouts, pa
               </ul>
               {/* Larger screens: table */}
               <div className="hidden overflow-x-auto md:block">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm" aria-label={t('reft.lines', 'Reward lines')}>
                   <thead className="text-xs text-muted-foreground">
                     <tr className="border-b border-border">
                       <th scope="col" className="py-2 text-start"><SortBtn k="date">{t('refz.h_date', 'Date')}</SortBtn></th>
@@ -297,7 +297,7 @@ export default function ReferralEarnings({ lines, loading, detailed, payouts, pa
               <p className="text-xs text-muted-foreground">{t('reft.payouts_empty', 'No referral payouts yet. The first one is made when your available rewards reach the minimum.')}</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+                <table className="w-full text-xs" aria-label={t('reft.payout_history', 'Payout history')}>
                   <thead className="text-muted-foreground"><tr className="border-b border-border">
                     <th scope="col" className="py-1.5 text-start font-medium">{t('reft.ref_no', 'Reference')}</th>
                     <th scope="col" className="py-1.5 text-start font-medium">{t('refz.h_date', 'Date')}</th>
