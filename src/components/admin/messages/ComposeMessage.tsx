@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
-  AlertTriangle, Bold, CalendarClock, Eye, FlaskConical, ImageIcon, Link2, List, Loader2, Mail, MessageCircle, MousePointerClick,
+  AlertTriangle, Bold, CalendarClock, Eye, FlaskConical, ImageIcon, Link2, List, Loader2, MessageCircle, MousePointerClick,
   Save, Search, Send, ShieldAlert, Smartphone, Users,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

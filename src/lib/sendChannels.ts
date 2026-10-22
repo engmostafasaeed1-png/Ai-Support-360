@@ -61,7 +61,7 @@ export const CHANNEL_SKIP_REASONS = [
 ] as const;
 export type ChannelSkipReason = typeof CHANNEL_SKIP_REASONS[number];
 
-export const CHANNEL_REASON_TEXT: Record<ChannelSkipReason | 'not_linked' | 'needs_update' | 'push_not_ready', string> = {
+export const CHANNEL_REASON_TEXT: Record<ChannelSkipReason | 'not_linked' | 'needs_update' | 'push_not_ready' | 'email_bulk', string> = {
   paused: 'notifications paused by the person',
   push_not_enabled: 'push notifications not enabled',
   telegram_not_connected: 'Telegram not connected',
@@ -72,6 +72,7 @@ export const CHANNEL_REASON_TEXT: Record<ChannelSkipReason | 'not_linked' | 'nee
   resend_too_soon: 'invited on this channel in the last 14 days',
   needs_update: 'waits for the prepared database update',
   push_not_ready: 'push notifications are not set up yet',
+  email_bulk: 'messages to many people need a separate newsletter service, so e-mail is not offered here',
 };
 
 export interface ChannelPerson {
