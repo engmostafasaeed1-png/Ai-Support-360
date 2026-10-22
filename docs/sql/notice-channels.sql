@@ -403,7 +403,8 @@ BEGIN
     ARRAY['in_app', 'email', 'push', 'telegram']);
   WITH persons AS (
     SELECT p.user_id, min(p.display_name) AS display_name, min(p.lang) AS lang, min(p.person_reason) AS person_reason,
-           bool_or(p.reason IS NULL AND p.channel = ANY (_sel)) AS gets, bool_or(p.reason IS NULL AND p.channel = ANY (_sel) AND p.is_resend) AS resend
+           bool_or(p.reason IS NULL AND p.channel = ANY (_sel)) AS gets, bool_or(p.reason IS NULL AND p.channel = ANY (_sel) AND p.is_resend) AS resend,
+           (array_agg(p.reason ORDER BY array_position(_sel, p.channel)) FILTER (WHERE p.reason IS NOT NULL AND p.channel = ANY (_sel)))[1] AS first_reason
       FROM ri_tmp_plan p GROUP BY p.user_id)
   SELECT jsonb_build_object(
     'enabled', public.platform_flag('referral_invitations_enabled', false),
@@ -416,7 +417,7 @@ BEGIN
     'candidates', (SELECT count(*) FROM persons),
     'eligible', (SELECT count(*) FROM persons WHERE gets),
     'skipped', COALESCE((SELECT jsonb_object_agg(r, n) FROM (
-        SELECT COALESCE(person_reason, 'no_channel') r, count(*) n FROM persons WHERE NOT gets GROUP BY 1) x), '{}'::jsonb),
+        SELECT COALESCE(person_reason, first_reason, 'no_channel') r, count(*) n FROM persons WHERE NOT gets GROUP BY 1) x), '{}'::jsonb),
     'sample', COALESCE((SELECT jsonb_agg(display_name) FROM (SELECT display_name FROM persons WHERE gets ORDER BY display_name LIMIT 5) s), '[]'::jsonb),
     'arabic', (SELECT count(*) FROM persons WHERE gets AND lang = 'ar'),
     'english', (SELECT count(*) FROM persons WHERE gets AND lang <> 'ar'),
