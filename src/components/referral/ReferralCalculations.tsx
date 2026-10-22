@@ -2,10 +2,9 @@ import { Fragment, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Bar, CartesianGrid, ComposedChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Calculator, ChevronDown, ChevronRight, Download, FileText, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, FileText, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { referralRpc } from '@/hooks/useReferralProgram';
 import {
-  formatRate, formulaText, parseTiers, tierFor, type Tier, LINE_STATUS_LABEL, referralEstimate, round2, statementCsv, thresholdProgress, type CalcLine, type LineStatus,
+  formatRate, formulaText, parseTiers, tierFor, LINE_STATUS_LABEL, round2, statementCsv, thresholdProgress, type CalcLine, type LineStatus,
 } from '@/lib/referrals';
 import { exportReferralStatementPdf } from '@/lib/referralStatementPdf';
 import { cn } from '@/lib/utils';
@@ -394,7 +393,7 @@ export default function ReferralCalculations({ consultantId = null, code = '' }:
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4">
         {/* 5b. Monthly statements */}
         <Card className="rounded-2xl">
           <CardHeader className="pb-2"><CardTitle className="text-base">{t('refz.calc_statements', 'Monthly statements')}</CardTitle></CardHeader>
@@ -415,37 +414,7 @@ export default function ReferralCalculations({ consultantId = null, code = '' }:
             ))}
           </CardContent>
         </Card>
-        <EstimateBox tiers={tiers} verified={tierCount} months={months} />
       </div>
     </div>
-  );
-}
-
-/** 6. Illustration calculator - uses the real rate and window, clearly not a promise. */
-function EstimateBox({ tiers, verified, months }: { tiers: Tier[]; verified: number; months: number }) {
-  const { t } = useTranslation();
-  const f = useFmt();
-  const [n, setN] = useState('2');
-  const [days, setDays] = useState('10');
-  const [hourly, setHourly] = useState('50');
-  const est = referralEstimate({ referred: Number(n), manDaysPerMonth: Number(days), hourlyRate: Number(hourly), tiers, alreadyVerified: verified, months });
-  return (
-    <Card className="rounded-2xl">
-      <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Calculator className="w-4 h-4 text-primary" />{t('refz.est_title', 'Estimate (illustration only)')}</CardTitle></CardHeader>
-      <CardContent className="space-y-3 text-sm">
-        <div className="grid grid-cols-3 gap-2">
-          <div className="space-y-1"><Label htmlFor="est-n" className="text-xs">{t('refz.est_n', 'Referred consultants')}</Label><Input id="est-n" inputMode="numeric" value={n} onChange={(e) => setN(e.target.value)} /></div>
-          <div className="space-y-1"><Label htmlFor="est-d" className="text-xs">{t('refz.est_days', 'Man-days per month each')}</Label><Input id="est-d" inputMode="decimal" value={days} onChange={(e) => setDays(e.target.value)} /></div>
-          <div className="space-y-1"><Label htmlFor="est-h" className="text-xs">{t('refz.est_hourly', 'Assumed hourly rate ($)')}</Label><Input id="est-h" inputMode="decimal" value={hourly} onChange={(e) => setHourly(e.target.value)} /></div>
-        </div>
-        <div className="rounded-xl bg-muted/40 p-3" aria-live="polite">
-          <p>{t('refz.est_month', 'About {{v}} per month', { v: f.money(est.perMonth) })}</p>
-          <p className="font-semibold">{t('refz.est_window', 'About {{v}} over {{m}} months', { v: f.money(est.overWindow), m: months })}</p>
-        </div>
-        <p className="text-[11px] text-muted-foreground">
-          {t('refz.est_note', 'Illustration only, not a promise of income. Assumes they all become verified, so you would be at {{rate}} %, and uses the real window ({{m}} months); real rewards depend on approved hours that clients actually pay and your tier when each reward is created.', { rate: formatRate(est.rate), m: months })}
-        </p>
-      </CardContent>
-    </Card>
   );
 }

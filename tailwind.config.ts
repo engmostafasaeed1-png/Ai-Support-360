@@ -50,6 +50,11 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
+        refer: {
+          from: "hsl(var(--refer-from))",
+          to: "hsl(var(--refer-to))",
+          foreground: "hsl(var(--refer-foreground))",
+        },
         info: {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",

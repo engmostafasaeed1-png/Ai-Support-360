@@ -1,50 +1,44 @@
-import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ReferralCalculations from '@/components/referral/ReferralCalculations';
 import { openReferralIntro } from '@/components/referral/ReferEarnStepHost';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
-  Award, Check, Copy, Gift, Info, Link2, Loader2, Mail, MessageCircle, Pencil, QrCode, Send, Share2, ShieldAlert, Users, Wallet,
+  Award, Check, Copy, Gift, Link2, Loader2, Mail, MessageCircle, Pencil, QrCode, Send, Share2, ShieldAlert,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import QRCodeDisplay from '@/components/referral/QRCodeDisplay';
 import ReferralsPage from '@/pages/ReferralsPage';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   referralRpc, rpcMessage, useInvalidateReferral, useMyReferralHistory, useMyReferralInvite, useMyReferralList, useReferralOverview,
-  type EarningsRow, type ReferralOverview,
+  type ReferralOverview,
 } from '@/hooks/useReferralProgram';
 import {
-  formatRate, LINE_STATUS_LABEL, rateRangeText, settingsTiers, tierFor, normalizeReferralCode, REFERRAL_STATUS_LABEL, referralCodeProblem, referralLink, referrerBadges,
-  rewardPerManDay, shareMessage, shareUrl, type LineStatus, type ReferralStatus, type ShareChannel,
+  markReferPageOpened, useReferralPayouts, useReferralRewardLines, useReferralTrackingInfo,
+} from '@/hooks/useReferralTracking';
+import {
+  rateRangeText, settingsTiers, normalizeReferralCode, referralCodeProblem, referralLink, referrerBadges,
+  shareMessage, shareUrl, type ShareChannel,
 } from '@/lib/referrals';
+import { linesFromHistory } from '@/lib/referralTracking';
 import { cn } from '@/lib/utils';
-import { ChipBadge, InviteCard, ReferrerActivationCard, useNextStepText } from '@/components/referral/ReferralActivation';
-import TierLadder from '@/components/referral/TierLadder';
+import { InviteCard, ReferrerActivationCard } from '@/components/referral/ReferralActivation';
 import ReferralShortTerms from '@/components/referral/ReferralShortTerms';
 import ReferralRulesHub from '@/components/referral/rules/ReferralRulesHub';
+import ReferralPolicyCards from '@/components/referral/tracking/ReferralPolicyCards';
+import ReferralJourney, { type ReferTab } from '@/components/referral/tracking/ReferralJourney';
+import ReferralFunnelList from '@/components/referral/tracking/ReferralFunnelList';
+import ReferralEarnings from '@/components/referral/tracking/ReferralEarnings';
+import RewardCalcBox from '@/components/referral/tracking/RewardCalcBox';
 
-const STATUS_TONE: Record<string, string> = {
-  signed_up: 'bg-muted text-muted-foreground',
-  verified: 'bg-primary/10 text-primary',
-  paying: 'bg-success/15 text-success',
-  ended: 'bg-muted text-muted-foreground',
-  on_review: 'bg-warning/15 text-warning',
-  pending: 'bg-muted text-muted-foreground',
-  available: 'bg-success/15 text-success',
-  held: 'bg-warning/15 text-warning',
-  in_payout: 'bg-primary/10 text-primary',
-  paid: 'bg-success/15 text-success',
-  reversed: 'bg-destructive/10 text-destructive',
-};
 
 function useFormat() {
   const { i18n } = useTranslation();
@@ -58,6 +52,7 @@ function useFormat() {
         catch { return `${v.toFixed(2)} ${cur}`; }
       },
       date: (iso: string | null | undefined) => (iso ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(iso)) : '-'),
+      month: (iso: string) => new Intl.DateTimeFormat(locale, { month: 'short', year: '2-digit', timeZone: 'UTC' }).format(new Date(iso)),
       num: (v: number) => new Intl.NumberFormat(locale).format(v),
     };
   }, [lang]);
@@ -101,7 +96,7 @@ function CodeCard({ ov, locked }: { ov: ReferralOverview; locked: boolean }) {
   ];
 
   return (
-    <Card className="rounded-2xl">
+    <Card id="refz-code-card" tabIndex={-1} className="rounded-2xl scroll-mt-28 outline-none">
       <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Link2 className="w-4 h-4 text-primary" />{t('refz.your_code', 'Your code and link')}</CardTitle></CardHeader>
       <CardContent className="space-y-4">
         {ov.disabled && (
@@ -185,38 +180,13 @@ function CodeCard({ ov, locked }: { ov: ReferralOverview; locked: boolean }) {
   );
 }
 
-function EarningsCards({ rows, minPayout }: { rows: EarningsRow[]; minPayout: number }) {
-  const { t } = useTranslation();
-  const f = useFormat();
-  const list = rows.length ? rows : [{ currency: 'USD', pending: 0, available: 0, held: 0, in_payout: 0, paid: 0, lifetime: 0 }];
-  return (
-    <div className="space-y-3">
-      {list.map((r) => (
-        <div key={r.currency} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {([
-            ['pending', t('refz.pending', 'Pending'), r.pending + r.held, t('refz.pending_hint', 'Waiting until the referred consultant\'s payout is completed')],
-            ['available', t('refz.available', 'Available'), r.available + r.in_payout, t('refz.available_hint', 'Paid with the next payout run once it reaches {{min}}', { min: f.money(minPayout, r.currency) })],
-            ['paid', t('refz.paid', 'Paid'), r.paid, t('refz.paid_hint', 'Transferred to your bank account')],
-            ['lifetime', t('refz.lifetime', 'Lifetime'), r.lifetime, t('refz.lifetime_hint', 'Everything earned, after any reversals')],
-          ] as Array<[string, string, number, string]>).map(([k, label, v, hint]) => (
-            <Card key={k} className="rounded-2xl">
-              <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">{label}</p>
-                <p className="mt-1 text-xl font-bold text-foreground tabular-nums">{f.money(v, r.currency)}</p>
-                <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{hint}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
+const TABS: ReferTab[] = ['overview', 'programme', 'referrals', 'earnings', 'calculations'];
 
 export default function ReferAndEarnPage() {
   const { t } = useTranslation();
   const f = useFormat();
   const { isGuest } = useGuestMode();
+  const qc = useQueryClient();
   const overview = useReferralOverview(!isGuest);
   const ov = overview.data?.data ?? null;
   const loaded = !!ov;
@@ -224,10 +194,26 @@ export default function ReferAndEarnPage() {
   const list = useMyReferralList(loaded);
   const history = useMyReferralHistory(loaded);
   const invite = useMyReferralInvite(loaded);
-  const invalidate = useInvalidateReferral();
-  const nextText = useNextStepText();
+  const lines = useReferralRewardLines(loaded);
+  const payouts = useReferralPayouts(loaded);
+  const tracking = useReferralTrackingInfo(loaded);
+  const invalidateBase = useInvalidateReferral();
+  const invalidate = () => {
+    invalidateBase();
+    for (const k of ['referral-reward-lines', 'referral-payouts', 'referral-tracking', 'referral-nav-state']) qc.invalidateQueries({ queryKey: [k] });
+  };
   const [params, setParams] = useSearchParams();
-  const tab = params.get('tab') === 'calculations' ? 'calculations' : 'overview';
+  const raw = params.get('tab') as ReferTab | null;
+  const tab: ReferTab = raw && TABS.includes(raw) ? raw : 'overview';
+  const setTab = (v: ReferTab) => {
+    const n = new URLSearchParams(params);
+    if (v === 'overview') n.delete('tab'); else n.set('tab', v);
+    setParams(n, { replace: true });
+    window.requestAnimationFrame(() => document.getElementById('refz-tabs')?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+  };
+
+  // Opening the page stops the menu pulse and clears the "new earnings" dot.
+  useEffect(() => { if (loaded) markReferPageOpened(); }, [loaded]);
 
   // Until the programme SQL is applied (or for demo visitors) the existing member referral page stays.
   if (isGuest || (overview.data && !overview.data.available)) return <ReferralsPage />;
@@ -247,14 +233,27 @@ export default function ReferAndEarnPage() {
   const s = ov.settings;
   const tiers = settingsTiers(s);
   const rate = rateRangeText(tiers);
-  const myTier = tierFor(ov.tier_count, tiers);
   const badges = referrerBadges(ov.funnel.verified);
+  const referrals = list.data ?? [];
+  const mainCur = ov.earnings[0]?.currency ?? 'USD';
+  const money1 = (v: number) => f.money(v, mainCur);
+  const detailed = lines.data?.available === true;
+  const rewardLines = detailed ? lines.data!.data : linesFromHistory((history.data ?? []) as unknown as Array<Record<string, unknown>>);
   const missing = [
     !ov.eligibility.verified && t('refz.need_verified', 'Your profile must be verified.'),
     !ov.eligibility.policy && t('refz.need_policy', 'Please accept the Consultant Service Policy.'),
     ov.eligibility.suspended && t('refz.need_active', 'Your account is suspended.'),
     !ov.eligibility.payout_details && t('refz.need_bank', 'Add your bank details (Earnings, Bank details) to receive payouts.'),
   ].filter(Boolean) as string[];
+  const goShare = () => {
+    const el = document.getElementById('refz-code-card');
+    if (tab !== 'overview') setTab('overview');
+    window.setTimeout(() => { const x = document.getElementById('refz-code-card') ?? el; x?.scrollIntoView({ behavior: 'smooth', block: 'start' }); x?.focus({ preventScroll: true }); }, 60);
+  };
+  const goSimulator = () => {
+    setTab('programme');
+    window.setTimeout(() => { const x = document.getElementById('refz-rules-simulator'); x?.scrollIntoView({ behavior: 'smooth', block: 'start' }); x?.focus({ preventScroll: true }); }, 120);
+  };
 
   return (
     <div className="space-y-6">
@@ -272,17 +271,20 @@ export default function ReferAndEarnPage() {
         <Card className="rounded-2xl border-warning/40"><CardContent className="p-4 text-sm">{t('refz.paused', 'The referral programme is paused at the moment. Rewards already earned stay yours.')}</CardContent></Card>
       )}
 
-      <Tabs value={tab} onValueChange={(v) => { const n = new URLSearchParams(params); if (v === 'overview') n.delete('tab'); else n.set('tab', v); setParams(n, { replace: true }); }}>
-        <TabsList>
-          <TabsTrigger value="overview">{t('refz.tab_overview', 'Overview')}</TabsTrigger>
-          <TabsTrigger value="calculations">{t('refz.tab_calc', 'Referral calculations')}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="calculations" className="mt-4"><ReferralCalculations code={ov.code} /></TabsContent>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as ReferTab)}>
+        <div id="refz-tabs" className="scroll-mt-28 -mx-1 overflow-x-auto px-1 pb-1">
+          <TabsList className="w-max">
+            <TabsTrigger value="overview">{t('refz.tab_overview', 'Overview')}</TabsTrigger>
+            <TabsTrigger value="programme">{t('reft.tab_programme', 'Programme & policy')}</TabsTrigger>
+            <TabsTrigger value="referrals">{t('reft.tab_referrals', 'My referrals')}{referrals.length ? ` (${f.num(referrals.length)})` : ''}</TabsTrigger>
+            <TabsTrigger value="earnings">{t('reft.tab_earnings', 'Earnings & payouts')}</TabsTrigger>
+            <TabsTrigger value="calculations">{t('refz.tab_calc', 'Referral calculations')}</TabsTrigger>
+          </TabsList>
+        </div>
+
         <TabsContent value="overview" className="mt-4 space-y-6">
-      {invite.data && <InviteCard invite={invite.data} onDone={invalidate} />}
-      {!active && <ReferrerActivationCard ov={ov} onDone={invalidate} />}
-      {(
-        <>
+          {invite.data && <InviteCard invite={invite.data} onDone={invalidate} />}
+          {!active && <ReferrerActivationCard ov={ov} onDone={invalidate} />}
           {missing.length > 0 && (
             <Card className="rounded-2xl border-warning/40">
               <CardContent className="p-4 text-sm flex gap-3">
@@ -294,169 +296,62 @@ export default function ReferAndEarnPage() {
               </CardContent>
             </Card>
           )}
-
+          <ReferralJourney ov={ov} referrals={referrals} num={f.num} onTab={setTab} onShare={goShare} />
           <CodeCard ov={ov} locked={!active} />
-
-          <ReferralRulesHub ov={ov} referrals={list.data ?? []} money={(v) => f.money(v, ov.earnings[0]?.currency ?? 'USD')} date={f.date} onDone={invalidate} />
-
-          <section aria-labelledby="refz-earn-h" className="space-y-3">
-            <h2 id="refz-earn-h" className="text-base font-semibold flex items-center gap-2"><Wallet className="w-4 h-4 text-primary" />{t('refz.earnings', 'Your earnings')}</h2>
-            <EarningsCards rows={ov.earnings} minPayout={s.min_payout} />
-          </section>
-
-          <div className="grid gap-4 lg:grid-cols-3">
-            <Card className="rounded-2xl lg:col-span-2">
-              <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Users className="w-4 h-4 text-primary" />{t('refz.funnel', 'Your referrals so far')}</CardTitle></CardHeader>
-              <CardContent>
-                <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                  {([
-                    [t('refz.f_clicks', 'Link visits'), ov.funnel.clicks],
-                    [t('refz.f_signups', 'Signed up'), ov.funnel.signups],
-                    [t('refz.f_verified', 'Verified'), ov.funnel.verified],
-                    [t('refz.f_paying', 'First paid ticket'), ov.funnel.paying],
-                  ] as Array<[string, number]>).map(([label, v]) => (
-                    <div key={label} className="rounded-xl bg-muted/40 p-3">
-                      <dd className="text-xl font-bold tabular-nums">{f.num(v)}</dd>
-                      <dt className="text-xs text-muted-foreground">{label}</dt>
-                    </div>
-                  ))}
-                </dl>
-                <p className="mt-2 text-[11px] text-muted-foreground">{t('refz.f_note', 'Link visits are counted without storing anything about the visitor.')}</p>
-              </CardContent>
-            </Card>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <RewardCalcBox tiers={tiers} tierCount={ov.tier_count} ownRate={ov.sim_defaults.own_rate} platformRate={ov.sim_defaults.platform_rate} money={money1} onSimulator={goSimulator} />
             <Card className="rounded-2xl">
               <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Award className="w-4 h-4 text-primary" />{t('refz.badges', 'Referrer badges')}</CardTitle></CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
-                {badges.map((b) => (
-                  <span key={b.at} className={cn('inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium',
-                    b.earned ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground')}>
-                    {b.earned ? <Check className="w-3 h-3" aria-hidden /> : null}
-                    {t('refz.badge', 'Verified referrals: {{n}}', { n: b.at })}
-                    <span className="sr-only">{b.earned ? t('refz.badge_earned', 'earned') : t('refz.badge_not_yet', 'not yet')}</span>
-                  </span>
-                ))}
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {badges.map((b) => (
+                    <span key={b.at} className={cn('inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium',
+                      b.earned ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground')}>
+                      {b.earned ? <Check className="w-3 h-3" aria-hidden /> : null}
+                      {t('refz.badge', 'Verified referrals: {{n}}', { n: b.at })}
+                      <span className="sr-only">{b.earned ? t('refz.badge_earned', 'earned') : t('refz.badge_not_yet', 'not yet')}</span>
+                    </span>
+                  ))}
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  {([
+                    [t('refz.pending', 'Pending'), ov.earnings.reduce((n, e) => n + e.pending + e.held, 0)],
+                    [t('refz.available', 'Available'), ov.earnings.reduce((n, e) => n + e.available + e.in_payout, 0)],
+                    [t('refz.paid', 'Paid'), ov.earnings.reduce((n, e) => n + e.paid, 0)],
+                  ] as Array<[string, number]>).map(([l, v]) => (
+                    <div key={l} className="rounded-xl bg-muted/40 p-2"><p className="text-muted-foreground">{l}</p><p className="font-semibold tabular-nums">{money1(v)}</p></div>
+                  ))}
+                </div>
+                <Button variant="ghost" size="sm" className="rounded-xl" onClick={() => setTab('earnings')}>{t('reft.see_earnings', 'See earnings and payouts')}</Button>
               </CardContent>
             </Card>
           </div>
-
-          <Card className="rounded-2xl">
-            <CardHeader className="pb-2"><CardTitle className="text-base">{t('refz.list', 'Consultants you referred')}</CardTitle></CardHeader>
-            <CardContent className="p-0">
-              {list.isLoading ? <div className="p-4"><Skeleton className="h-16 w-full" /></div>
-                : (list.data ?? []).length === 0 ? <p className="p-6 text-sm text-muted-foreground">{t('refz.list_empty', 'No one has signed up with your code yet.')}</p>
-                : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader><TableRow>
-                        <TableHead>{t('refz.c_name', 'Consultant')}</TableHead>
-                        <TableHead>{t('refz.c_activation', 'Activation')}</TableHead>
-                        <TableHead>{t('refz.c_status', 'Status')}</TableHead>
-                        <TableHead>{t('refz.c_joined', 'Signed up')}</TableHead>
-                        <TableHead>{t('refz.c_first', 'First paid ticket')}</TableHead>
-                        <TableHead>{t('refz.c_ends', 'Rewards until')}</TableHead>
-                        <TableHead className="text-end">{t('refz.c_earned', 'Earned')}</TableHead>
-                      </TableRow></TableHeader>
-                      <TableBody>
-                        {(list.data ?? []).map((r, i) => (
-                          <TableRow key={`${r.referred_name}-${r.attributed_at}-${i}`}>
-                            <TableCell className="font-medium" dir="auto">{r.referred_name}</TableCell>
-                            <TableCell className="text-xs min-w-[220px]">
-                              <ChipBadge chip={r.chip} />
-                              {r.activation_status === 'pending' && (
-                                <div className="mt-1 space-y-0.5 text-muted-foreground">
-                                  <div>{r.they_passed ? '✓' : '○'} {t('refz.t_they_passed', 'They passed the AI interview')}</div>
-                                  <div>{r.they_acknowledged ? '✓' : '○'} {t('refz.t_they_acked', 'They accepted the terms')}</div>
-                                  <div className="text-foreground">{r.chip === 'waiting_you'
-                                    ? <>{t('refz.your_next', 'Your next step:')} {nextText(r.my_next, r.referred_name, ov.activation.pass_mark)}</>
-                                    : <>{t('refz.their_next', 'Their next step:')} {nextText(r.their_next, r.referred_name, ov.activation.pass_mark)}</>}</div>
-                                  {r.activation_expires_at && <div>{t('refz.deadline', 'Deadline: {{date}}', { date: f.date(r.activation_expires_at) })}</div>}
-                                </div>
-                              )}
-                              {r.activation_status === 'active' && r.activated_at && <div className="mt-1 text-muted-foreground">{t('refz.active_since', 'Active since {{date}}', { date: f.date(r.activated_at) })}</div>}
-                            </TableCell>
-                            <TableCell><span className={cn('rounded-full px-2 py-0.5 text-xs', STATUS_TONE[r.status])}>{t(`refz.st_${r.status}`, REFERRAL_STATUS_LABEL[r.status as ReferralStatus] ?? r.status)}</span></TableCell>
-                            <TableCell className="text-sm">{f.date(r.attributed_at)}</TableCell>
-                            <TableCell className="text-sm">{f.date(r.first_paid_at)}</TableCell>
-                            <TableCell className="text-sm">{r.window_ends_at ? f.date(r.window_ends_at) : t('refz.starts_first_paid', 'Starts with the first paid ticket')}</TableCell>
-                            <TableCell className="text-end text-sm tabular-nums">
-                              {Object.keys(r.earned ?? {}).length ? Object.entries(r.earned).map(([c, v]) => <div key={c}>{f.money(Number(v), c)}</div>) : '-'}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl">
-            <CardHeader className="pb-2"><CardTitle className="text-base">{t('refz.history', 'Reward history')}</CardTitle></CardHeader>
-            <CardContent className="p-0">
-              {history.isLoading ? <div className="p-4"><Skeleton className="h-16 w-full" /></div>
-                : (history.data ?? []).length === 0 ? <p className="p-6 text-sm text-muted-foreground">{t('refz.history_empty', 'No rewards yet. They appear when a consultant you referred is paid for their work.')}</p>
-                : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader><TableRow>
-                        <TableHead>{t('refz.h_date', 'Date')}</TableHead>
-                        <TableHead>{t('refz.h_what', 'What')}</TableHead>
-                        <TableHead className="text-end">{t('refz.h_fee', 'Their fee')}</TableHead>
-                        <TableHead className="text-end">{t('refz.h_amount', 'Your reward')}</TableHead>
-                        <TableHead>{t('refz.h_status', 'Status')}</TableHead>
-                      </TableRow></TableHeader>
-                      <TableBody>
-                        {(history.data ?? []).map((l, i) => (
-                          <TableRow key={`${l.created_at}-${i}`}>
-                            <TableCell className="text-sm">{f.date(l.created_at)}</TableCell>
-                            <TableCell className="text-sm">
-                              {l.kind === 'reward' ? t('refz.k_reward', 'Reward ({{rate}} %) from {{name}}', { rate: formatRate(Number(l.rate_percent) || 0) + (l.tier_name ? `, ${l.tier_name}` : ''), name: l.referred_name ?? '' })
-                                : l.kind === 'reversal' ? t('refz.k_reversal', 'Reversal (refund or correction)')
-                                : t('refz.k_adjust', 'Adjustment by AI Support 360')}
-                              {l.note && l.kind !== 'reward' && <div className="text-xs text-muted-foreground">{l.note}</div>}
-                            </TableCell>
-                            <TableCell className="text-end text-sm tabular-nums">{l.fee_amount != null && l.kind === 'reward' ? f.money(Number(l.fee_amount), l.currency) : '-'}</TableCell>
-                            <TableCell className={cn('text-end text-sm font-semibold tabular-nums', l.amount < 0 && 'text-destructive')}>{f.money(l.amount, l.currency)}</TableCell>
-                            <TableCell><span className={cn('rounded-full px-2 py-0.5 text-xs', STATUS_TONE[l.status])}>{t(`refz.ls_${l.status}`, LINE_STATUS_LABEL[l.status as LineStatus] ?? l.status)}</span></TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl">
-            <CardHeader className="pb-2"><CardTitle className="text-base">{t('refz.tier_title', 'Your rate grows with your referrals')}</CardTitle></CardHeader>
-            <CardContent><TierLadder tiers={tiers} count={ov.tier_count} /></CardContent>
-          </Card>
-
-          <Card className="rounded-2xl">
-            <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Info className="w-4 h-4 text-primary" />{t('refz.how', 'How it works')}</CardTitle></CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <ol className="list-decimal ps-5 space-y-1 text-muted-foreground">
-                <li>{t('refz.how_1', 'Share your link or code with SAP consultants you know.')}</li>
-                <li>{t('refz.how_2', 'They sign up with it and get verified.')}</li>
-                <li>{t('refz.how_2b', 'The referral becomes active when you both pass the AI interview (score at least {{pass}}) and both accept the terms, within {{days}} days of their sign-up.', { pass: ov.activation.pass_mark, days: s.activation_days })}</li>
-                <li>{t('refz.how_3', 'For {{months}} months from their first paid ticket you earn your tier rate ({{rate}} %) of their fee for every approved hour invoiced after activation. AI Support 360 pays it from its own fee.', { months: s.months, rate })}</li>
-                <li>{t('refz.how_4', 'A reward is pending until their payout is completed, then available. From {{min}} it is paid with the normal payout run to your bank details.', { min: f.money(s.min_payout) })}</li>
-              </ol>
-              <p className="rounded-xl bg-muted/40 p-3">
-                {t('refz.example', 'Example at your current rate ({{rate}} %): a consultant at {{hourly}} per hour works one man-day (8 approved hours). You earn {{reward}}.', { rate: formatRate(myTier.rate), hourly: f.money(100), reward: f.money(rewardPerManDay(100, myTier.rate)) })}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                <Badge variant="outline" className="me-1 text-[10px]">{t('refz.draft', 'Draft')}</Badge>
-                {t('refz.tax', 'Referral rewards may be taxable. You are responsible for declaring them where you live.')}{' '}
-                <Link to="/referral-terms" className="text-primary underline">{t('refz.terms_link', 'referral programme terms')}</Link>
-              </p>
-              <p className="text-xs text-muted-foreground">{t('refz.honest', 'No income is promised: you earn only when a consultant you referred is paid for real work.')}</p>
-              <ReferralShortTerms holdDays={s.hold_days} minInvoice={s.min_invoice} />
-            </CardContent>
-          </Card>
-        </>
-      )}
+          <ReferralShortTerms holdDays={s.hold_days} minInvoice={s.min_invoice} />
         </TabsContent>
+
+        <TabsContent value="programme" className="mt-4">
+          <ReferralRulesHub ov={ov} referrals={referrals} money={money1} date={f.date} onDone={invalidate}
+            policy={(
+              <ReferralPolicyCards s={s} tiers={tiers} passMark={ov.activation.pass_mark} money={money1} date={f.date}
+                terms={tracking.data?.data.terms ?? null} acceptedVersion={ov.terms_accepted_version}
+                canAccept={ov.activation.interview_passed} onDone={invalidate} />
+            )} />
+        </TabsContent>
+
+        <TabsContent value="referrals" className="mt-4 space-y-4">
+          <ReferralJourney ov={ov} referrals={referrals} num={f.num} onTab={setTab} onShare={goShare} />
+          <ReferralFunnelList referrals={referrals} rejected={tracking.data?.data.rejected ?? []} loading={list.isLoading}
+            passMark={ov.activation.pass_mark} date={f.date} money={f.money} />
+        </TabsContent>
+
+        <TabsContent value="earnings" className="mt-4">
+          <ReferralEarnings lines={rewardLines} loading={lines.isLoading || (!detailed && history.isLoading)} detailed={detailed}
+            payouts={payouts.data?.data ?? []} payoutsAvailable={payouts.data?.available === true}
+            tiers={tiers} tierCount={ov.tier_count} minPayout={s.min_payout} payoutDetails={ov.eligibility.payout_details}
+            money={f.money} date={f.date} month={f.month} />
+        </TabsContent>
+
+        <TabsContent value="calculations" className="mt-4"><ReferralCalculations code={ov.code} /></TabsContent>
       </Tabs>
     </div>
   );

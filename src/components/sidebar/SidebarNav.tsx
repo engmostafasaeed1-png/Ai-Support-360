@@ -42,9 +42,11 @@ interface NavRowProps {
   collapsed: boolean;
   done?: boolean;
   badge?: number;
+  /** Small dot without a number (for example new referral earnings). */
+  dot?: boolean;
 }
 
-function NavRow({ item, label, active, collapsed, done, badge }: NavRowProps) {
+function NavRow({ item, label, active, collapsed, done, badge, dot }: NavRowProps) {
   const { t } = useTranslation();
   const Icon = done ? CheckCircle2 : item.icon;
   const external = item.external === true;
@@ -61,6 +63,15 @@ function NavRow({ item, label, active, collapsed, done, badge }: NavRowProps) {
       {!collapsed && external && (
         <ExternalLink aria-hidden="true" focusable="false" className="h-3 w-3 shrink-0 opacity-60" />
       )}
+      {!collapsed && item.highlight && !badge && (
+        <span className="ms-auto rounded-full bg-refer-foreground/20 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide">
+          {t('sidebar.earn_badge', 'Earn')}
+        </span>
+      )}
+      {dot && !badge ? (
+        <span aria-hidden="true" className={cn('h-2 w-2 shrink-0 rounded-full bg-warning ring-2 ring-sidebar', collapsed ? 'absolute end-1 top-1' : item.highlight ? '' : 'ms-auto')} />
+      ) : null}
+      {dot && !badge ? <span className="sr-only">{t('sidebar.new_activity', 'new activity')}</span> : null}
       {!collapsed && badge ? (
         <span className="ms-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-accent-foreground">
           {badge > 99 ? '99+' : badge}
@@ -83,6 +94,8 @@ function NavRow({ item, label, active, collapsed, done, badge }: NavRowProps) {
           'hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
           'data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground',
           'data-[active=true]:before:absolute data-[active=true]:before:inset-y-2 data-[active=true]:before:start-0 data-[active=true]:before:w-[3px] data-[active=true]:before:rounded-full data-[active=true]:before:bg-sidebar-primary',
+          // Highlighted entry (Refer & earn): gradient pill, same height so nothing shifts.
+          item.highlight && 'bg-gradient-refer font-semibold text-refer-foreground hover:text-refer-foreground hover:brightness-110 data-[active=true]:text-refer-foreground',
         )}
       >
         {external ? (
@@ -108,7 +121,7 @@ interface SidebarNavProps {
   loading: boolean;
   labelOf: (item: NavItem) => string;
   groupLabelOf: (group: NavGroup) => string;
-  itemState?: Record<string, { done?: boolean; badge?: number }>;
+  itemState?: Record<string, { done?: boolean; badge?: number; dot?: boolean }>;
   showSearch: boolean;
 }
 
@@ -186,7 +199,7 @@ export default function SidebarNav({
                       label={labelOf(item)}
                       active={item.path === activePath}
                       collapsed
-                      done={itemState?.[item.key]?.done} badge={itemState?.[item.key]?.badge}
+                      done={itemState?.[item.key]?.done} badge={itemState?.[item.key]?.badge} dot={itemState?.[item.key]?.dot}
                     />
                   ))}
                 </SidebarMenu>
@@ -295,7 +308,7 @@ export default function SidebarNav({
                           label={labelOf(item)}
                           active={item.path === activePath}
                           collapsed={false}
-                          done={itemState?.[item.key]?.done} badge={itemState?.[item.key]?.badge}
+                          done={itemState?.[item.key]?.done} badge={itemState?.[item.key]?.badge} dot={itemState?.[item.key]?.dot}
                         />
                       ))}
                     </SidebarMenu>

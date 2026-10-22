@@ -83,6 +83,10 @@
     /* Client-review star (single outlined yellow star, >= 3:1 on the card). */
     --review-star: 42 96% 40%;
     --gradient-profile-header: linear-gradient(120deg, hsl(var(--accent) / 0.12), hsl(var(--success) / 0.06));
+    /* Refer & earn pill: violet to teal, white text >= 4.5:1 on both stops (light and dark). */
+    --refer-from: 262 70% 46%;
+    --refer-to: 181 80% 26%;
+    --refer-foreground: 0 0% 100%;
 
     --info: 226 68% 50%;
     --info-foreground: 0 0% 100%;
@@ -162,6 +166,9 @@
 
     --success: 152 55% 45%;
     --success-foreground: 218 50% 8%;
+    --refer-from: 262 62% 50%;
+    --refer-to: 181 72% 30%;
+    --refer-foreground: 0 0% 100%;
 
     --warning: 38 92% 56%;
     --warning-foreground: 28 80% 10%;
@@ -332,6 +339,14 @@
 
   .gradient-primary {
     background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+  }
+
+  /* Refer & earn menu pill; mirrored in right-to-left pages. */
+  .bg-gradient-refer {
+    background-image: linear-gradient(90deg, hsl(var(--refer-from)), hsl(var(--refer-to)));
+  }
+  [dir='rtl'] .bg-gradient-refer {
+    background-image: linear-gradient(270deg, hsl(var(--refer-from)), hsl(var(--refer-to)));
   }
 
   .gradient-text {
