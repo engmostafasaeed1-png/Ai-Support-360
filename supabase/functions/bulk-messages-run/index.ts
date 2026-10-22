@@ -2,8 +2,10 @@
 // Credential-free like the other sweeps (verify_jwt=false, POST only). Safety lives in the service-only bm_claim RPC
 // (kill switch, per-minute budgets per channel, FOR UPDATE SKIP LOCKED, max 300 per run) and bm_finish; this function only
 // renders and delivers what was claimed, then answers counts. No names, numbers or message text in responses or logs.
-// Channels sent here: in-app notifications and Telegram. E-mail is never used for bulk messages.
-import { adminClient, jsonResponse, preflight } from '../_shared/security.ts';
+// Channels sent here: in-app notifications, Telegram and Web Push (to devices where the person enabled push notifications).
+// E-mail is never used for bulk messages.
+import { adminClient, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
+import { loadVapidKeys, sendWebPush, subscriptionUpdate, type VapidKeys } from '../_shared/webpush.ts';
 import { sendTelegram } from '../_shared/telegram.ts';
 import { runBulkBatch } from '../_shared/bulkMessagesRun.ts';
 
@@ -13,6 +15,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return jsonResponse(req, { error: 'Method not allowed' }, 405);
   const admin = adminClient();
   const token = Deno.env.get('TELEGRAM_BOT_TOKEN') ?? '';
+  let vapid: VapidKeys | null | undefined; // loaded once, only when a push row was claimed
   try {
     const counts = await runBulkBatch({
       claim: async (max) => {
@@ -45,6 +48,23 @@ Deno.serve(async (req) => {
         const { data, error } = await admin.from('referral_invitation_runs').select('campaign_id').in('campaign_id', ids);
         if (error) return new Set();
         return new Set((data ?? []).map((r: { campaign_id: string }) => r.campaign_id));
+      },
+      pushSubscriptions: async (userIds) => {
+        const out: Array<{ id: string; user_id: string; endpoint: string; p256dh: string; auth: string }> = [];
+        for (let i = 0; i < userIds.length; i += 100) {
+          const { data, error } = await admin.from('push_subscriptions').select('id, user_id, endpoint, p256dh, auth').eq('active', true).in('user_id', userIds.slice(i, i + 100));
+          if (error) throw new Error('subscriptions failed');
+          out.push(...(data ?? []));
+        }
+        return out;
+      },
+      sendPush: async (sub, payload) => {
+        if (vapid === undefined) vapid = await loadVapidKeys(admin);
+        if (!vapid) return { ok: false, gone: false, error: 'push_not_configured' };
+        return await sendWebPush(sub, payload, { ...vapid, subject: SITE_URL }, { ttl: 24 * 3600, urgency: 'normal' });
+      },
+      updatePushSubscription: async (id, outcome) => {
+        await admin.from('push_subscriptions').update(subscriptionUpdate({ status: 0, ...outcome }, new Date().toISOString())).eq('id', id);
       },
       sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
       now: () => Date.now(),

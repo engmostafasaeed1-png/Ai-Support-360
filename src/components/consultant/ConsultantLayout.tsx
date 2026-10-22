@@ -10,6 +10,7 @@ import PolicyGate from '@/components/consultant/policy/PolicyGate';
 import { ReferralClaimer } from '@/components/referral/ReferralCapture';
 import SilentErrorBoundary from '@/components/SilentErrorBoundary';
 import ReferralNoticePopup from '@/components/referral/ReferralNoticePopup';
+import ReferralInviteBanner from '@/components/referral/ReferralInviteBanner';
 import { ReferralIntroPopup } from '@/components/referral/ReferEarnStepHost';
 import CriticalAlarm from '@/components/consultant/CriticalAlarm';
 import QuickGuideSheet from '@/components/consultant/QuickGuideSheet';
@@ -118,6 +119,7 @@ export default function ConsultantLayout() {
           </FixedSubHeader>
           <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-6 mt-14 md:mt-24 protected-content">
             <SecurityAlert />
+            <SilentErrorBoundary><ReferralInviteBanner /></SilentErrorBoundary>
             <PageTransition>
               <PageErrorBoundary homePath="/consultant">
                 <Outlet />

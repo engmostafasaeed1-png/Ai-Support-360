@@ -98,7 +98,7 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.audit_logs WHERE entity_id = run1 AND action = 'referral_invitation_sent' AND user_id = adm
                    AND (metadata ->> 'queued')::int = 2 AND metadata ->> 'template' = 'referral_invitation_v1') THEN RAISE EXCEPTION 'RI07 audit'; END IF;
   IF (SELECT link_url FROM public.message_campaigns WHERE id = (r ->> 'campaign_id')::uuid) !~ '^/consultant/referrals\?tab=programme' THEN RAISE EXCEPTION 'RI07 link'; END IF;
-  IF (SELECT body_en !~ 'there is no guaranteed income' OR body_en ~* 'you will earn|guaranteed (reward|payment)' OR body_ar !~ 'لا يوجد دخل مضمون'
+  IF (SELECT body_en !~* 'there is no guaranteed income' OR body_en ~* 'you will earn|guaranteed (reward|payment)' OR body_ar !~ 'لا يوجد دخل مضمون'
         FROM public.message_campaigns WHERE id = (r ->> 'campaign_id')::uuid) THEN RAISE EXCEPTION 'RI07 promise wording'; END IF;
 
   -- RI08 idempotent: the same request id twice returns the first run and sends nothing new ---------------------------
@@ -114,10 +114,15 @@ BEGIN
   EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
   r := public.admin_referral_invite_preview(jsonb_build_object('mode', 'selected', 'user_ids', to_jsonb(ARRAY[ok1, ar1])));
   IF (r -> 'skipped' ->> 'already_invited')::int <> 2 THEN RAISE EXCEPTION 'RI09 reason %', r; END IF;
-  -- even a direct insert (service role) cannot record a second first invitation for the same version
+  -- even a direct insert (service role) cannot record a second first invitation for the same version (and channel,
+  -- once docs/sql/notice-channels.sql moved the dedupe to referral_invitation_deliveries)
   INSERT INTO public.referral_invitation_runs (id, admin_id, idempotency_key, version, mode) VALUES (k1, adm, gen_random_uuid(), 1, 'selected');
   BEGIN
-    INSERT INTO public.referral_invitation_recipients (run_id, user_id, version, outcome) VALUES (k1, ok1, 1, 'queued');
+    IF to_regclass('public.referral_invitation_deliveries') IS NOT NULL THEN
+      EXECUTE 'INSERT INTO public.referral_invitation_deliveries (run_id, user_id, version, channel, outcome) VALUES ($1, $2, 1, ''in_app'', ''queued'')' USING k1, ok1;
+    ELSE
+      INSERT INTO public.referral_invitation_recipients (run_id, user_id, version, outcome) VALUES (k1, ok1, 1, 'queued');
+    END IF;
     RAISE EXCEPTION 'RI09 unique index missing';
   EXCEPTION WHEN unique_violation THEN NULL; END;
 
@@ -131,6 +136,11 @@ BEGIN
   ALTER TABLE public.referral_invitation_recipients DISABLE TRIGGER trg_ri_recipients_append_only;
   UPDATE public.referral_invitation_recipients SET created_at = now() - interval '15 days' WHERE run_id = run1;
   ALTER TABLE public.referral_invitation_recipients ENABLE TRIGGER trg_ri_recipients_append_only;
+  IF to_regclass('public.referral_invitation_deliveries') IS NOT NULL THEN
+    EXECUTE 'ALTER TABLE public.referral_invitation_deliveries DISABLE TRIGGER trg_ri_deliveries_append_only';
+    EXECUTE 'UPDATE public.referral_invitation_deliveries SET created_at = now() - interval ''15 days'' WHERE run_id = $1' USING run1;
+    EXECUTE 'ALTER TABLE public.referral_invitation_deliveries ENABLE TRIGGER trg_ri_deliveries_append_only';
+  END IF;
   r := public.admin_referral_invite_send(jsonb_build_object('mode', 'selected', 'user_ids', to_jsonb(ARRAY[ok1]), 'resend', true,
         'reason', 'Owner asked for a reminder after the launch', 'confirmed', true, 'idempotency_key', gen_random_uuid()));
   IF (r ->> 'queued')::int <> 1 OR NOT EXISTS (SELECT 1 FROM public.referral_invitation_recipients WHERE run_id = (r ->> 'id')::uuid AND is_resend) THEN
@@ -170,8 +180,10 @@ BEGIN
   -- RI14 event_notices: one notice per line and event, never twice, never blocking the money write -------------------
   INSERT INTO public.consultant_referrals (referred_consultant_id, referrer_consultant_id, code, source, first_reward_notified_at)
   VALUES (c_ar, c_ok, 'TESTCODE1', 'admin', now());
+  -- a real source payout row (the line has a foreign key); 'referral:' payouts are skipped by the reward code
+  INSERT INTO public.payouts (id, consultant_id, amount, currency, reference) VALUES (k1, c_ar, 1000, 'USD', 'referral:ri-test') ON CONFLICT DO NOTHING;
   INSERT INTO public.referral_reward_lines (id, unique_key, kind, referrer_consultant_id, referred_consultant_id, source_payout_id, fee_amount, rate_percent, amount, currency, status)
-  VALUES (gen_random_uuid(), 'ri-test-1', 'reward', c_ok, c_ar, gen_random_uuid(), 1000, 0.5, 5, 'USD', 'pending') RETURNING id INTO line;
+  VALUES (gen_random_uuid(), 'ri-test-1', 'reward', c_ok, c_ar, k1, 1000, 0.5, 5, 'USD', 'pending') RETURNING id INTO line;
   UPDATE public.referral_reward_lines SET status = 'available' WHERE id = line;
   UPDATE public.referral_reward_lines SET status = 'paid' WHERE id = line;
   UPDATE public.referral_reward_lines SET status = 'paid', updated_at = now() WHERE id = line;

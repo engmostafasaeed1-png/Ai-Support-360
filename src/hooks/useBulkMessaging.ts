@@ -24,6 +24,10 @@ export interface BulkSettings {
   can_edit: boolean;
   pause_installed: boolean;
   groups_installed: boolean;
+  /** After docs/sql/notice-channels.sql: Web Push is a campaign channel (and the platform push keys exist). */
+  push_channel?: boolean;
+  push_ready?: boolean;
+  push_per_minute?: number;
 }
 export type AccessState = { state: 'loading' } | { state: 'not_installed' } | { state: 'denied' } | { state: 'ready'; settings: BulkSettings };
 
@@ -105,6 +109,7 @@ export interface PreviewRecipient { user_id: string; name: string; role: string 
 export interface AudiencePreview {
   candidates: number; eligible: number; unknown_emails: number; excluded: Record<string, number>;
   telegram_linked: number; with_phone: number; arabic: number; recipients: PreviewRecipient[]; sent_today: number; daily_cap: number;
+  push_enabled?: number;
 }
 
 export interface CampaignReport {

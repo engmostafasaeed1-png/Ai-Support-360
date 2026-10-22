@@ -3,13 +3,13 @@
  * dependencies; the database claim (bm_claim) already applied throttling, the kill switch and FOR UPDATE SKIP LOCKED.
  */
 import {
-  DEFAULTS, LIMITS, footerText, notificationType, pickText, renderVariables, telegramText, toPlainText, SITE, type Category,
+  DEFAULTS, LIMITS, footerText, notificationType, pickText, pushMessage, renderVariables, telegramText, toPlainText, SITE, type Category,
 } from './bulkMessaging.ts';
 
 export interface ClaimRow {
   campaign_id: string;
   user_id: string;
-  channel: 'in_app' | 'telegram';
+  channel: 'in_app' | 'telegram' | 'push';
   lang: string | null;
   category: Category;
   popup: boolean;
@@ -40,7 +40,13 @@ export interface WorkerDeps {
   now: () => number;
   /** Campaigns created by the Refer & earn invitation (referral_invitation_runs); optional, empty when not installed. */
   referralCampaigns?: (ids: string[]) => Promise<Set<string>>;
+  /** Web Push (docs/sql/notice-channels.sql): the recipients' active device subscriptions, sending and deactivating. */
+  pushSubscriptions?: (userIds: string[]) => Promise<PushSub[]>;
+  sendPush?: (sub: PushSub, payload: string) => Promise<{ ok: boolean; gone: boolean; error?: string }>;
+  updatePushSubscription?: (id: string, outcome: { ok: boolean; gone: boolean; error?: string }) => Promise<void>;
 }
+
+export interface PushSub { id: string; user_id: string; endpoint: string; p256dh: string; auth: string }
 
 /** In-app notice of a Refer & earn invitation: type 'referral', straight to the programme tab (no token, no personal data). */
 export const REFERRAL_INVITE_LINK = '/consultant/referrals?tab=programme&from=invite';
@@ -65,14 +71,17 @@ export async function runBulkBatch(deps: WorkerDeps, budgetMs = 45_000): Promise
   const results: FinishRow[] = [];
   const key = (r: { campaign_id: string; user_id: string }) => `${r.campaign_id}:${r.user_id}`;
 
+  // Refer & earn invitation campaigns link straight to the programme tab (in-app and push).
+  let referral = new Set<string>();
+  const linked = rows.filter((r) => r.channel === 'in_app' || r.channel === 'push');
+  if (deps.referralCampaigns && linked.length) {
+    try { referral = await deps.referralCampaigns([...new Set(linked.map((r) => r.campaign_id))]); } catch { referral = new Set(); }
+  }
+
   // In-app: one insert for the batch; the notification links back to the full message.
   const inApp = rows.filter((r) => r.channel === 'in_app');
   if (inApp.length) {
     const rendered = new Map(inApp.map((r) => [key(r), renderFor(r)]));
-    let referral = new Set<string>();
-    if (deps.referralCampaigns) {
-      try { referral = await deps.referralCampaigns([...new Set(inApp.map((r) => r.campaign_id))]); } catch { referral = new Set(); }
-    }
     try {
       const created = await deps.insertNotifications(inApp.map((r) => {
         const m = rendered.get(key(r))!;
@@ -111,6 +120,34 @@ export async function runBulkBatch(deps: WorkerDeps, budgetMs = 45_000): Promise
       ? { campaign_id: r.campaign_id, user_id: r.user_id, channel: 'telegram', ok: true, subject: m.subject }
       : { campaign_id: r.campaign_id, user_id: r.user_id, channel: 'telegram', ok: false, error: res.error ?? 'failed', retry: !res.blocked });
     await deps.sleep(DEFAULTS.telegramGapMs);
+  }
+
+  // Web Push: every active device of the person; sent when at least one device accepted it. Dead devices are switched off.
+  const push = rows.filter((r) => r.channel === 'push');
+  if (push.length) {
+    let subs: PushSub[] | null = null;
+    if (deps.pushSubscriptions && deps.sendPush) {
+      try { subs = await deps.pushSubscriptions([...new Set(push.map((r) => r.user_id))]); } catch { subs = null; }
+    }
+    for (const r of push) {
+      const base = { campaign_id: r.campaign_id, user_id: r.user_id, channel: 'push' };
+      if (!deps.sendPush || !deps.pushSubscriptions) { results.push({ ...base, ok: false, error: 'push_not_configured' }); continue; }
+      if (subs === null) { results.push({ ...base, ok: false, error: 'subscriptions_failed', retry: true }); continue; }
+      if (deps.now() - started > budgetMs) { results.push({ ...base, ok: false, error: 'deferred', retry: true }); continue; }
+      const mine = subs.filter((s) => s.user_id === r.user_id);
+      if (!mine.length) { results.push({ ...base, ok: false, error: 'push_not_enabled' }); continue; }
+      const m = renderFor(r);
+      const url = referral.has(r.campaign_id) ? REFERRAL_INVITE_LINK : `/notifications?broadcast=${r.campaign_id}`;
+      const payload = pushMessage(m.subject, m.plain, url, `bm-${r.campaign_id.slice(0, 8)}`, deps.now());
+      let ok = false; let lastError = 'failed'; let retry = false;
+      for (const sub of mine.slice(0, 5)) {
+        let out: { ok: boolean; gone: boolean; error?: string };
+        try { out = await deps.sendPush(sub, payload); } catch { out = { ok: false, gone: false, error: 'network' }; }
+        if (deps.updatePushSubscription) await deps.updatePushSubscription(sub.id, out).catch(() => undefined);
+        if (out.ok) ok = true; else { lastError = out.error ?? 'failed'; if (!out.gone) retry = true; }
+      }
+      results.push(ok ? { ...base, ok: true, subject: m.subject } : { ...base, ok: false, error: lastError, retry });
+    }
   }
 
   if (results.length) await deps.finish(results);

@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, BadgeCheck, CheckCircle2, Coins, FileText, Gift, Hourglass, ShieldAlert, Sparkles, Undo2, UserPlus, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { cleanNoticeText, noticePreview, stripTestPrefix } from '@/lib/noticeText';
+import NoticeTextBlocks from '@/components/notifications/NoticeTextBlocks';
 import { referralNoticeView, type NoticeLike, type ReferralNoticeKind, type ReferralNoticeTone, type ReferralNoticeView } from '@/lib/referralNotice';
 
 /** Colour family per tone: violet-teal gift for invitations, green earned, amber held / pending, red reversed / rejected. */
@@ -42,12 +44,13 @@ const ACTION_EN = { open: 'Open Refer & earn', view_earning: 'View earning', vie
 export function useReferralNoticeText(n: NoticeLike, v: ReferralNoticeView) {
   const { t, i18n } = useTranslation();
   const ar = i18n.language?.startsWith('ar');
-  const stored = String(n.title ?? '').replace(/^\[TEST\]\s*/i, '');
+  const stored = stripTestPrefix(n.title);
   const title = v.kind === 'generic' ? stored : t(`refn.k.${v.kind}`, TITLE_EN[v.kind]);
   // English: the stored text (it has the masked name and the amount). Arabic: the translated line for the event.
-  const body = !ar || v.kind === 'generic'
+  // Cleaned: no empty greeting gap ("Hello ,"), no unknown placeholders, no stray trailing ";".
+  const body = cleanNoticeText(!ar || v.kind === 'generic'
     ? (n.body || BODY_EN[v.kind] || '')
-    : t(`refn.b.${v.kind}`, n.body || '');
+    : t(`refn.b.${v.kind}`, n.body || ''));
   return { title, body, action: t(`refn.a.${v.action}`, ACTION_EN[v.action]) };
 }
 
@@ -73,7 +76,9 @@ export function ReferralNoticeContent({ n, compact = false, unread, onOpen }: { 
         <p className={cn('text-sm', unread && 'font-semibold', compact && 'truncate')}>{text.title}</p>
         {v.test && <span className="rounded-full border border-border px-1.5 text-[10px] text-muted-foreground">{t('refn.test', 'Test')}</span>}
       </div>
-      {text.body && <p className={cn('mt-0.5 text-xs text-muted-foreground', compact ? 'line-clamp-2' : 'line-clamp-3')}>{text.body}</p>}
+      {text.body && (compact
+        ? <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{noticePreview(text.body)}</p>
+        : <NoticeTextBlocks text={text.body} className="mt-1 text-xs" />)}
       <div className="mt-2 flex flex-wrap items-center gap-2">
         {v.amount && (
           <span className={cn('rounded-full border px-2 py-0.5 text-xs font-semibold tabular-nums', PILL[v.tone])} dir="ltr">
