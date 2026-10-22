@@ -3,6 +3,20 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
+import type { Plugin } from "vite";
+import { repairMalformedUrl } from "./src/lib/malformedUrl";
+
+// Preview server only: a garbled link such as /signup?ref=%%% would otherwise stop the server with "URI malformed"
+// before the app loads. Stray % signs are escaped so the page opens normally.
+const tolerateMalformedUrls = (): Plugin => ({
+  name: "tolerate-malformed-urls",
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      if (req.url) req.url = repairMalformedUrl(req.url);
+      next();
+    });
+  },
+});
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -22,7 +36,7 @@ export default defineConfig(({ mode }) => ({
       'Content-Security-Policy': "frame-ancestors 'self' https://lovable.dev https://*.lovable.dev https://*.lovable.app https://*.lovableproject.com",
     },
   },
-  plugins: [react(), mcpPlugin(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [tolerateMalformedUrls(), react(), mcpPlugin(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
