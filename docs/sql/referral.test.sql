@@ -126,7 +126,8 @@ SELECT pg_temp.check(NOT EXISTS (
 UPDATE public.consultant_payout_details SET iban = 'GB00 1111 2222' WHERE consultant_id = pg_temp.k('b');
 
 -- T06 velocity ---------------------------------------------------------------------------------------------------------------
-UPDATE public.platform_settings SET value = '6' WHERE key = 'referral_velocity_per_day';
+-- ref already has 3 referrals today (B, phone twin, device mate): limit 4 -> the 4th passes, the 5th is flagged.
+UPDATE public.platform_settings SET value = '4' WHERE key = 'referral_velocity_per_day';
 INSERT INTO k VALUES ('v1', pg_temp.mk('Velo One', 'v1@velo-a.org', false)), ('v2', pg_temp.mk('Velo Two', 'v2@velo-b.org', false));
 SELECT public.referral_attribute(pg_temp.k('v1'), pg_temp.code(pg_temp.k('ref')), 'signup', NULL, NULL);
 SELECT public.referral_attribute(pg_temp.k('v2'), pg_temp.code(pg_temp.k('ref')), 'signup', NULL, NULL);
