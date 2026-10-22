@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Check, CheckCircle2, Coins, Copy, Gift, Loader2, Mail, MessageCircle, Play, QrCode, Share2, UserCheck, XCircle } from 'lucide-react';
+import { Check, CheckCircle2, Coins, Copy, Gift, Loader2, Mail, MessageCircle, Play, QrCode, Send, Share2, UserCheck, XCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
