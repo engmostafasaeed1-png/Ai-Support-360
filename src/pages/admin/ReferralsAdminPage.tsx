@@ -16,7 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { referralRpc, rpcMessage } from '@/hooks/useReferralProgram';
-import { formatRate, LINE_STATUS_LABEL, referralCsv, type LineStatus } from '@/lib/referrals';
+import { DEFAULT_MAX_RATE, formatRate, LINE_STATUS_LABEL, MAX_TIERS, parseTiers, rateRangeText, referralCsv, tierRangeLabel, tiersProblem, type LineStatus } from '@/lib/referrals';
+import TierLadder from '@/components/referral/TierLadder';
 import { cn } from '@/lib/utils';
 import ReferralCalculations from '@/components/referral/ReferralCalculations';
 
@@ -184,6 +185,53 @@ const FLAG_LABEL: Record<string, string> = {
   many_from_same_email_domain: 'Several referrals from one e-mail domain',
 };
 
+/** How many referrers are in each tier now (by verified, non-suspended referred consultants). */
+function TierDistributionCard({ o }: { o: Row }) {
+  const tiers = parseTiers((o.settings as Row | undefined)?.tiers);
+  const dist = (o.tier_distribution ?? {}) as Record<string, number>;
+  return (
+    <Card className="rounded-2xl">
+      <CardHeader className="pb-2"><CardTitle className="text-base">Tier distribution</CardTitle></CardHeader>
+      <CardContent className="grid gap-4 md:grid-cols-2">
+        <TierLadder tiers={tiers} compact />
+        <Table>
+          <TableHeader><TableRow><TableHead>Tier</TableHead><TableHead>Verified referred</TableHead><TableHead className="text-end">Referrers now</TableHead></TableRow></TableHeader>
+          <TableBody>{tiers.map((x, i) => (
+            <TableRow key={x.min}><TableCell>{x.name}</TableCell><TableCell dir="ltr">{tierRangeLabel(tiers, i)}</TableCell><TableCell className="text-end tabular-nums">{Number(dist[x.name] ?? 0)}</TableCell></TableRow>
+          ))}</TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Audit of every tier / maximum-rate change: who, when, old and new. */
+function RateHistoryCard() {
+  const hist = useRpc<Row[]>(['refadmin', 'rate-history'], 'admin_referral_rate_history', { _limit: 100 });
+  const show = (v: unknown) => (Array.isArray(v) ? parseTiers(v).map((x) => `${x.min}+: ${formatRate(x.rate)} %`).join(' · ') : '-');
+  return (
+    <Card className="rounded-2xl">
+      <CardHeader className="pb-2"><CardTitle className="text-base">Rate change history</CardTitle></CardHeader>
+      <CardContent className="overflow-x-auto">
+        {hist.isLoading ? <Skeleton className="h-16 w-full" /> : !(hist.data ?? []).length ? <p className="text-sm text-muted-foreground">No tier changes yet.</p> : (
+          <Table>
+            <TableHeader><TableRow><TableHead>When</TableHead><TableHead>By</TableHead><TableHead>Before</TableHead><TableHead>After</TableHead><TableHead>Reason</TableHead></TableRow></TableHeader>
+            <TableBody>{(hist.data ?? []).map((h, i) => (
+              <TableRow key={i}>
+                <TableCell className="text-xs whitespace-nowrap">{new Date(String(h.changed_at)).toLocaleString('en-GB')}</TableCell>
+                <TableCell className="text-xs">{String(h.changed_by ?? '-')}</TableCell>
+                <TableCell className="text-xs" dir="ltr">{show(h.old_tiers)}{h.old_max != null ? ` (max ${formatRate(Number(h.old_max))} %)` : ''}</TableCell>
+                <TableCell className="text-xs" dir="ltr">{show(h.new_tiers)}{h.new_max != null ? ` (max ${formatRate(Number(h.new_max))} %)` : ''}</TableCell>
+                <TableCell className="text-xs">{String(h.reason ?? '')}</TableCell>
+              </TableRow>
+            ))}</TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function useRpc<T>(key: unknown[], fn: string, args?: Record<string, unknown>) {
   return useQuery({
     queryKey: key,
@@ -270,11 +318,13 @@ function SettingsCard({ settings }: { settings: Row }) {
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
   const [claimUntil, setClaimUntil] = useState('');
+  const [tiers, setTiers] = useState<Array<{ min: string; rate: string; name: string }>>([]);
   useEffect(() => {
+    setTiers(parseTiers(settings.tiers, Number(settings.max_rate) || DEFAULT_MAX_RATE).map((x) => ({ min: String(x.min), rate: String(x.rate), name: x.name })));
     setClaimUntil(settings.claim_until ? String(settings.claim_until).slice(0, 16) : '');
     setEnabled(settings.enabled === true);
     setDraft({
-      rate_percent: String(settings.rate_percent ?? 0.5), months: String(settings.months ?? 12), min_payout: String(settings.min_payout ?? 25),
+      max_rate: String(settings.max_rate ?? DEFAULT_MAX_RATE), months: String(settings.months ?? 12), min_payout: String(settings.min_payout ?? 25),
       claim_days: String(settings.claim_days ?? 7),
       pass_mark: String(settings.pass_mark ?? 50), activation_days: String(settings.activation_days ?? 90),
       max_per_referred: settings.max_per_referred == null ? '' : String(settings.max_per_referred),
@@ -282,7 +332,7 @@ function SettingsCard({ settings }: { settings: Row }) {
     });
   }, [settings]);
   const fields: Array<[string, string, string]> = [
-    ['rate_percent', 'Reward rate (% of the referred consultant\'s fee)', '0 to 10'],
+    ['max_rate', 'Maximum rate for any tier (%)', '0.1 to 10, default 2'],
     ['months', 'Months from the first paid ticket', '1 to 60'],
     ['min_payout', 'Minimum available amount before a payout', 'e.g. 25'],
     ['claim_days', 'Days after sign-up a code can still be entered', '0 to 30'],
@@ -298,6 +348,10 @@ function SettingsCard({ settings }: { settings: Row }) {
       const v = (draft[k] ?? '').trim();
       payload[k] = (k === 'max_per_referred' || k === 'monthly_cap') && v === '' ? null : Number(v);
     }
+    const tierRows = tiers.map((x) => ({ min: x.min.trim() === '' ? '' : Number(x.min), rate: x.rate.trim() === '' ? '' : Number(x.rate), name: x.name.trim() }));
+    const problem = tiersProblem(tierRows, Number(payload.max_rate) || DEFAULT_MAX_RATE);
+    if (problem) { toast.error(problem); return; }
+    payload.tiers = tierRows.map((x, i) => ({ min: x.min, rate: x.rate, name: x.name || `Tier ${i + 1}` }));
     setSaving(true);
     const { error } = await referralRpc('admin_referral_set_settings', { _settings: payload, _reason: reason });
     setSaving(false);
@@ -323,6 +377,19 @@ function SettingsCard({ settings }: { settings: Row }) {
             </div>
           ))}
         </div>
+        <fieldset className="space-y-2 rounded-xl border border-border/60 p-3">
+          <legend className="px-1 text-sm font-medium">Reward tiers (by verified, non-suspended referred consultants)</legend>
+          <p className="text-xs text-muted-foreground">Up to {MAX_TIERS} tiers. The first starts at 0; counts and rates must go up. A change applies to rewards created from now on; existing rewards keep their rate.</p>
+          {tiers.map((x, i) => (
+            <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-2">
+              <div className="space-y-1"><Label htmlFor={`tier-name-${i}`} className="text-xs">Name</Label><Input id={`tier-name-${i}`} value={x.name} maxLength={30} onChange={(e) => setTiers((t) => t.map((r, j) => (j === i ? { ...r, name: e.target.value } : r)))} /></div>
+              <div className="space-y-1"><Label htmlFor={`tier-min-${i}`} className="text-xs">From (verified)</Label><Input id={`tier-min-${i}`} inputMode="numeric" value={x.min} disabled={i === 0} onChange={(e) => setTiers((t) => t.map((r, j) => (j === i ? { ...r, min: e.target.value } : r)))} /></div>
+              <div className="space-y-1"><Label htmlFor={`tier-rate-${i}`} className="text-xs">Rate %</Label><Input id={`tier-rate-${i}`} inputMode="decimal" value={x.rate} onChange={(e) => setTiers((t) => t.map((r, j) => (j === i ? { ...r, rate: e.target.value } : r)))} /></div>
+              <Button type="button" variant="ghost" size="sm" disabled={tiers.length <= 1} onClick={() => setTiers((t) => t.filter((_, j) => j !== i))} aria-label={`Remove ${x.name || `tier ${i + 1}`}`}>Remove</Button>
+            </div>
+          ))}
+          <Button type="button" variant="outline" size="sm" disabled={tiers.length >= MAX_TIERS} onClick={() => setTiers((t) => [...t, { min: '', rate: '', name: `Tier ${t.length + 1}` }])}>Add tier</Button>
+        </fieldset>
         <div className="space-y-1">
           <Label htmlFor="ref-claim-until">Existing consultants may enter "Who invited you?" until</Label>
           <Input id="ref-claim-until" type="datetime-local" value={claimUntil} onChange={(e) => setClaimUntil(e.target.value)} className="max-w-xs" />
@@ -384,7 +451,7 @@ export default function ReferralsAdminPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Gift className="w-6 h-6 text-primary" />{t('refz.admin_title', 'Referrals')}</h1>
-          <p className="text-sm text-muted-foreground">Consultant referral programme: {formatRate(Number((o.settings as Row | undefined)?.rate_percent ?? 0.5))} % of the referred consultant's fee for {String((o.settings as Row | undefined)?.months ?? 12)} months, paid by the platform.</p>
+          <p className="text-sm text-muted-foreground">Consultant referral programme: {rateRangeText(parseTiers((o.settings as Row | undefined)?.tiers))} % (by tier) of the referred consultant's fee for {String((o.settings as Row | undefined)?.months ?? 12)} months, paid by the platform.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => qc.invalidateQueries({ queryKey: ['refadmin'] })}><RefreshCw className="w-4 h-4 me-1" />Refresh</Button>
@@ -535,7 +602,7 @@ export default function ReferralsAdminPage() {
                       <TableCell className="text-xs">{when(l.created_at)}</TableCell>
                       <TableCell className="text-xs capitalize">{String(l.kind)}{l.note ? <div className="text-muted-foreground normal-case">{String(l.note)}</div> : null}</TableCell>
                       <TableCell className="text-xs"><div>{String(l.referrer_name ?? '-')}</div><div className="text-muted-foreground">{String(l.referred_name ?? '-')}</div></TableCell>
-                      <TableCell className="text-end text-xs tabular-nums">{l.fee_amount != null ? `${money(l.fee_amount, String(l.currency))} x ${formatRate(Number(l.rate_percent) || 0)} %` : '-'}</TableCell>
+                      <TableCell className="text-end text-xs tabular-nums">{l.fee_amount != null ? `${money(l.fee_amount, String(l.currency))} x ${formatRate(Number(l.rate_percent) || 0)} %` : '-'}{l.tier_name ? <div className="text-[10px] text-muted-foreground">{String(l.tier_name)}{l.tier_count != null ? ` (${String(l.tier_count)} verified)` : ''}</div> : null}</TableCell>
                       <TableCell className={cn('text-end text-sm font-semibold tabular-nums', Number(l.amount) < 0 && 'text-destructive')}>{money(l.amount, String(l.currency))}</TableCell>
                       <TableCell><Badge variant="outline" className="text-[10px]">{LINE_STATUS_LABEL[l.status as LineStatus] ?? String(l.status)}</Badge>{l.hold_reason ? <div className="text-[10px] text-muted-foreground">{String(l.hold_reason)}</div> : null}</TableCell>
                       <TableCell className="text-end whitespace-nowrap space-x-1">
@@ -551,7 +618,7 @@ export default function ReferralsAdminPage() {
           </CardContent></Card>
         </TabsContent>
 
-        <TabsContent value="settings">{overview.data ? <SettingsCard settings={(o.settings ?? {}) as Row} /> : <Skeleton className="h-40 w-full rounded-2xl" />}</TabsContent>
+        <TabsContent value="settings" className="space-y-4">{overview.data ? <SettingsCard settings={(o.settings ?? {}) as Row} /> : <Skeleton className="h-40 w-full rounded-2xl" />}<TierDistributionCard o={o} /><RateHistoryCard /></TabsContent>
 
         <TabsContent value="calc"><AdminCalculations /></TabsContent>
         <TabsContent value="announce" className="space-y-4"><AnnouncementCard /><SetReferrerCard /></TabsContent>

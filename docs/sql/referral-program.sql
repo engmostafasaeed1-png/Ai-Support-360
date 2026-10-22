@@ -2067,9 +2067,10 @@ $$;
 REVOKE ALL ON FUNCTION public.admin_referral_referrers(text, int) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.admin_referral_referrers(text, int) TO authenticated;
 
+DROP FUNCTION IF EXISTS public.admin_referral_lines(text, int, int);
 CREATE OR REPLACE FUNCTION public.admin_referral_lines(_status text DEFAULT NULL, _limit int DEFAULT 300, _offset int DEFAULT 0)
  RETURNS TABLE (id uuid, created_at timestamptz, kind text, status text, hold_reason text, amount numeric, currency text, fee_amount numeric,
-                rate_percent numeric, referrer_id uuid, referrer_name text, referred_id uuid, referred_name text, source_payout_id uuid,
+                rate_percent numeric, tier_name text, tier_count int, referrer_id uuid, referrer_name text, referred_id uuid, referred_name text, source_payout_id uuid,
                 payment_id uuid, referral_payout_id uuid, note text)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
@@ -2078,7 +2079,7 @@ AS $$
 BEGIN
   IF NOT public.referral_is_admin() THEN RAISE EXCEPTION 'Administrators only' USING ERRCODE = '42501'; END IF;
   RETURN QUERY
-  SELECT l.id, l.created_at, l.kind, l.status, l.hold_reason, l.amount, l.currency, l.fee_amount, l.rate_percent,
+  SELECT l.id, l.created_at, l.kind, l.status, l.hold_reason, l.amount, l.currency, l.fee_amount, l.rate_percent, l.tier_name, l.tier_count,
          l.referrer_consultant_id, pr.display_name, l.referred_consultant_id, pd.display_name, l.source_payout_id, l.payment_id,
          l.referral_payout_id, l.note
     FROM public.referral_reward_lines l
