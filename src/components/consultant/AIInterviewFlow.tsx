@@ -16,6 +16,7 @@ import aiFemaleAvatar from '@/assets/ai-interviewer-female.jpg';
 import { useQueryClient } from '@tanstack/react-query';
 import { TrustBadge } from './TrustBadge';
 import { classifyStartError, ERROR_TEXT, logStartErrorOnce } from '@/lib/interviewStart';
+import InterviewBasisNotice from './InterviewBasisNotice';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -924,6 +925,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
               ))}
             </div>
           </div>
+
+          <InterviewBasisNotice />
 
           {/* Disclaimer */}
           <div className="w-full bg-white/5 rounded-xl p-4 text-left space-y-3 border border-white/10">
