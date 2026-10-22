@@ -10,6 +10,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import ReferEarnNavPill from '@/components/referral/ReferEarnNavPill';
 
 interface NavItem {
   label: string;
@@ -97,6 +98,7 @@ export default function HeaderNav({ role }: HeaderNavProps) {
             <span>{item.label}</span>
           </NavLink>
         ))}
+        {role === 'consultant' && <ReferEarnNavPill />}
       </nav>
       <ScrollBar orientation="horizontal" className="h-1" />
     </ScrollArea>
