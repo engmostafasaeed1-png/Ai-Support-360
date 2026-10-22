@@ -1837,7 +1837,7 @@ BEGIN
     'they_passed', public.referral_passed_at(r.referrer_consultant_id) IS NOT NULL,
     'i_acknowledged_at', public.referral_acked_at(_cid),
     'they_acknowledged', public.referral_acked_at(r.referrer_consultant_id) IS NOT NULL,
-    'pass_mark', s->'pass_mark', 'rate_percent', s->'rate_percent', 'months', s->'months', 'terms_version', s->'terms_version');
+    'pass_mark', s->'pass_mark', 'rate_percent', s->'rate_percent', 'tiers', s->'tiers', 'months', s->'months', 'terms_version', s->'terms_version');
 END
 $$;
 REVOKE ALL ON FUNCTION public.my_referral_invite() FROM PUBLIC, anon;

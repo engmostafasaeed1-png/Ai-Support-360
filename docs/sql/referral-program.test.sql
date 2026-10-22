@@ -405,5 +405,50 @@ SELECT pg_temp.as_user(NULL);
 SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.referral_announcements WHERE consultant_id IN ((SELECT s FROM _ids), '00000000-0000-0000-0000-00000000ff02')), 'excluded not in the log');
 SELECT pg_temp.check((SELECT count(*) FROM public.notifications WHERE type = 'referral_intro' AND user_id = (SELECT d_user FROM _ids)) = 1, 'one bell entry each');
 
+-- 16. Tiered rates ---------------------------------------------------------------------------------------------------------
+SELECT pg_temp.check((public.referral_tier_for(n) ->> 'rate')::numeric = r, format('tier boundary %s -> %s', n, r))
+  FROM (VALUES (0, 0.5), (10, 0.5), (11, 0.6), (20, 0.6), (21, 0.7), (30, 0.7), (31, 0.8), (40, 0.8), (41, 1.0), (500, 1.0)) v(n, r);
+SELECT pg_temp.check((public.referral_tier_for(14) ->> 'needed')::int = 7 AND public.referral_tier_for(14) ->> 'next_rate' = '0.7', 'needed to the next tier');
+SELECT pg_temp.check(public.referral_tier_for(41) ->> 'next_min' IS NULL, 'top tier has no next');
+SELECT pg_temp.check(public.referral_verified_count((SELECT r FROM _ids)) = 2, 'tier count = verified, not suspended referred consultants');
+SELECT pg_temp.check(public.referral_tiers_valid('[{"min":0,"rate":0.6},{"min":11,"rate":0.5}]', 2) IS NOT NULL, 'rates must go up');
+SELECT pg_temp.check(public.referral_tiers_valid('[{"min":0,"rate":0.5},{"min":0,"rate":0.6}]', 2) IS NOT NULL, 'thresholds must go up');
+SELECT pg_temp.check(public.referral_tiers_valid('[{"min":0,"rate":0.5},{"min":5,"rate":2.5}]', 2) IS NOT NULL, 'cap 2 %');
+SELECT pg_temp.check(public.referral_tiers_valid('[{"min":0,"rate":0.1},{"min":1,"rate":0.2},{"min":2,"rate":0.3},{"min":3,"rate":0.4},{"min":4,"rate":0.5},{"min":5,"rate":0.6}]', 2) IS NOT NULL, 'max 5 tiers');
+SELECT pg_temp.check((SELECT bool_and(rate_percent = 0.5 AND tier_name = 'Tier 1') FROM public.referral_reward_lines WHERE kind = 'reward'), 'lines so far at Tier 1 with tier stored');
+-- Lower the thresholds so the referrer (2 verified) reaches Tier 2: later lines only.
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.as_user((SELECT admin FROM _ids));
+DO $$ BEGIN
+  PERFORM public.admin_referral_set_settings('{"tiers": [{"min": 0, "rate": 0.6}, {"min": 2, "rate": 0.5}]}', 'Wrong order test');
+  RAISE EXCEPTION 'FAILED: descending rates accepted';
+EXCEPTION WHEN invalid_parameter_value THEN NULL; END $$;
+SELECT public.admin_referral_set_settings('{"tiers": [{"min": 0, "rate": 0.5, "name": "Tier 1"}, {"min": 2, "rate": 0.6, "name": "Tier 2"}, {"min": 3, "rate": 0.7, "name": "Tier 3"}]}', 'Tier test');
+SELECT pg_temp.check((SELECT count(*) FROM public.admin_referral_rate_history(10)) = 1, 'rate change audit trail');
+RESET ROLE;
+SELECT pg_temp.as_user(NULL);
+CREATE TEMP TABLE _before AS SELECT id, rate_percent, amount FROM public.referral_reward_lines;
+INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, status, reference) VALUES
+  ('00000000-0000-0000-0000-00000000bb20', (SELECT d FROM _ids), 333.33, 333.33, 'pending', 'payment:tier2');
+SELECT pg_temp.check((SELECT rate_percent = 0.6 AND tier_name = 'Tier 2' AND tier_count = 2 AND amount = 2.00 FROM public.referral_reward_lines
+                        WHERE source_payout_id = '00000000-0000-0000-0000-00000000bb20'), 'next tier on later lines; 333.33 x 0.6 % = 2.00');
+SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.referral_reward_lines l JOIN _before b ON b.id = l.id WHERE l.rate_percent <> b.rate_percent OR l.amount <> b.amount), 'not retroactive');
+-- Drop back: a referred consultant is suspended -> lower rate on later lines.
+INSERT INTO public.user_admin_state (user_id, suspended_at) SELECT f_user, now() FROM _ids;
+SELECT pg_temp.check(public.referral_verified_count((SELECT r FROM _ids)) = 1, 'suspended referral no longer counts');
+INSERT INTO public.payouts (id, consultant_id, amount, gross_amount, status, reference) VALUES
+  ('00000000-0000-0000-0000-00000000bb21', (SELECT d FROM _ids), 1000, 1000, 'pending', 'payment:tier1again');
+SELECT pg_temp.check((SELECT rate_percent = 0.5 AND tier_name = 'Tier 1' AND amount = 5.00 FROM public.referral_reward_lines WHERE source_payout_id = '00000000-0000-0000-0000-00000000bb21'), 'drop back to Tier 1');
+-- Reversal keeps the original line's rate.
+SELECT public.referral_reverse_line((SELECT id FROM public.referral_reward_lines WHERE source_payout_id = '00000000-0000-0000-0000-00000000bb20' AND kind = 'reward'), NULL, 'Tier reversal test');
+SELECT pg_temp.check((SELECT rate_percent = 0.6 AND tier_name = 'Tier 2' AND amount = -2.00 FROM public.referral_reward_lines
+                        WHERE kind = 'reversal' AND source_payout_id = '00000000-0000-0000-0000-00000000bb20'), 'reversal uses the original rate');
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.as_user((SELECT admin FROM _ids));
+SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.admin_referral_reconcile((SELECT r FROM _ids), true) WHERE check_name = 'rate_within_tiers_cap'), 'reconciliation: rates within cap, tier stored');
+SELECT pg_temp.check((public.admin_referral_overview() -> 'tier_distribution') ? 'Tier 1', 'tier distribution');
+RESET ROLE;
+SELECT pg_temp.as_user(NULL);
+
 SELECT 'referral-program checks passed' AS result;
 ROLLBACK;
