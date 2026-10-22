@@ -7348,6 +7348,45 @@ export type Database = {
           },
         ]
       }
+      referral_announcements: {
+        Row: {
+          channel: string
+          consultant_id: string
+          sent_at: string
+          sent_by: string | null
+          user_id: string
+        }
+        Insert: {
+          channel?: string
+          consultant_id: string
+          sent_at?: string
+          sent_by?: string | null
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          consultant_id?: string
+          sent_at?: string
+          sent_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_announcements_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "referral_announcements_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: true
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referral_attribution_signals: {
         Row: {
           created_at: string
@@ -12430,6 +12469,47 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_referral_adjust_requests: {
+        Args: { _status?: string }
+        Returns: {
+          amount: number
+          can_decide: boolean
+          consultant_id: string
+          consultant_name: string
+          created_at: string
+          currency: string
+          decided_at: string
+          decided_by_name: string
+          decision_note: string
+          expires_at: string
+          id: string
+          reason: string
+          requested_by_me: boolean
+          requested_by_name: string
+          status: string
+        }[]
+      }
+      admin_referral_announcement_log: {
+        Args: { _limit?: number }
+        Returns: {
+          name: string
+          sent_at: string
+          sent_by_name: string
+        }[]
+      }
+      admin_referral_announcement_preview: {
+        Args: { _limit?: number }
+        Returns: Json
+      }
+      admin_referral_announcement_send: {
+        Args: { _limit?: number; _test?: boolean }
+        Returns: Json
+      }
+      admin_referral_anomalies: { Args: never; Returns: Json }
+      admin_referral_decide_adjustment: {
+        Args: { _approve: boolean; _note: string; _request: string }
+        Returns: Json
+      }
       admin_referral_events: {
         Args: { _limit?: number }
         Returns: {
@@ -13534,7 +13614,49 @@ export type Database = {
         }[]
       }
       my_referral_invite: { Args: never; Returns: Json }
+      my_referral_nav_state: { Args: never; Returns: Json }
       my_referral_overview: { Args: { _device?: string }; Returns: Json }
+      my_referral_payouts: {
+        Args: never
+        Returns: {
+          amount: number
+          bank_reference: string
+          created_at: string
+          currency: string
+          due_by: string
+          lines: number
+          paid_at: string
+          payout_ref: string
+          status: string
+        }[]
+      }
+      my_referral_reward_lines: {
+        Args: { _limit?: number }
+        Returns: {
+          amount: number
+          approved_hours: number
+          available_at: string
+          created_at: string
+          currency: string
+          engagement_ref: string
+          fee_amount: number
+          hold_reason: string
+          kind: string
+          line_ref: string
+          man_days: number
+          matures_at: string
+          note: string
+          paid_at: string
+          payout_ref: string
+          rate_percent: number
+          ref_key: string
+          referred_name: string
+          released_at: string
+          status: string
+          tier_name: string
+        }[]
+      }
+      my_referral_tracking: { Args: never; Returns: Json }
       my_referrals: {
         Args: never
         Returns: {
@@ -13698,6 +13820,8 @@ export type Database = {
         Args: { _consultants: string[] }
         Returns: boolean
       }
+      referral_announcement_status: { Args: { _cid: string }; Returns: string }
+      referral_announcement_text: { Args: never; Returns: Json }
       referral_attribute: {
         Args: {
           _code: string
@@ -13712,6 +13836,7 @@ export type Database = {
         Args: { _dh: string; _ih: string; _referred: string; _referrer: string }
         Returns: string[]
       }
+      referral_backfill_codes: { Args: never; Returns: number }
       referral_backfill_preview: { Args: never; Returns: Json }
       referral_best_score: { Args: { _cid: string }; Returns: number }
       referral_bundle_payouts: { Args: { _actor?: string }; Returns: number }
@@ -13829,6 +13954,7 @@ export type Database = {
         Returns: boolean
       }
       referral_create_reward: { Args: { _payout: string }; Returns: string }
+      referral_daily_reconcile: { Args: never; Returns: number }
       referral_email_claim: {
         Args: { _limit?: number }
         Returns: {
@@ -13946,7 +14072,12 @@ export type Database = {
         Returns: undefined
       }
       referral_passed_at: { Args: { _cid: string }; Returns: string }
+      referral_payout_ref: { Args: { _payout: string }; Returns: string }
       referral_policy_ok: { Args: { _cid: string }; Returns: boolean }
+      referral_public_hold_reason: {
+        Args: { _reason: string }
+        Returns: string
+      }
       referral_public_settings: { Args: never; Returns: Json }
       referral_random: { Args: { _n: number }; Returns: string }
       referral_reconcile_rows: {
