@@ -8,7 +8,7 @@
 import { adminClient, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
 import {
-  normaliseKind, pauseCategoryFor, REFERRAL_BANNER_URL, REFERRAL_EMAIL_SETTING_KEYS, referralEmailSettingsFrom,
+  normaliseKind, NOT_APP_EMAIL_KINDS, pauseCategoryFor, REFERRAL_BANNER_URL, REFERRAL_EMAIL_SETTING_KEYS, referralEmailSettingsFrom,
   type ReferralEmailSettings,
 } from '../_shared/referralEmail.ts';
 import { SENDER_SETTING_KEYS, senderFromSettings, type SenderSettings } from '../_shared/emailSender.ts';
@@ -49,6 +49,8 @@ async function sendOne(admin: any, row: Row, settings: ReferralEmailSettings, ba
   const email = u?.user?.email;
   if (!email || !u.user.email_confirmed_at) return 'skipped';
   const kind = normaliseKind(row.kind);
+  // Campaign designs (same message to many people) are never sent through the app e-mail sender.
+  if ((NOT_APP_EMAIL_KINDS as readonly string[]).includes(kind)) return 'skipped';
   const category = pauseCategoryFor(kind);
   const s = { ...settings, passMark: row.pass_mark ?? settings.passMark, activationDays: kind === 'expired' && row.days ? row.days : settings.activationDays,
     payoutChangeDays: kind === 'payout_details_changed' && row.days != null ? row.days : settings.payoutChangeDays };

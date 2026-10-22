@@ -13,6 +13,7 @@ import {
 } from '../../../../supabase/functions/_shared/referralEmail';
 
 export const EMAIL_KIND_LABEL: Record<ReferralEmailKind, string> = {
+  programme_invitation: 'Programme invitation (design only)',
   signup: 'Colleague registered with your code', invited: 'You were invited (referred colleague)', passed_self: 'You passed the AI interview',
   passed_other: 'Partner passed the AI interview', active: 'Programme active', verified: 'Referral verified', reminder: 'Still pending (reminder)',
   ack_request: 'Accept the terms', expired: 'Referral expired', first_reward: 'First reward earned', reward_earned: 'Reward earned',
@@ -30,7 +31,7 @@ const SITE = 'https://www.aisupport360.com';
  */
 export default function ReferralEmailPreview({ settings }: { settings: Partial<ReferralEmailSettings> }) {
   const { t } = useTranslation();
-  const [kind, setKind] = useState<ReferralEmailKind>('signup');
+  const [kind, setKind] = useState<ReferralEmailKind>('programme_invitation');
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [dark, setDark] = useState(false);
   const [phone, setPhone] = useState(false);
