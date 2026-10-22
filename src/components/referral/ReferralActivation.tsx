@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ReferralAckPanel from '@/components/referral/ReferralAckPanel';
 import type { MyInvite, ReferralOverview } from '@/hooks/useReferralProgram';
-import { CHIP_LABEL, CHIP_TONE, type ActivationChip } from '@/lib/referrals';
+import { CHIP_LABEL, CHIP_TONE, formatRate, rateRangeText, settingsTiers, type ActivationChip } from '@/lib/referrals';
 import { cn } from '@/lib/utils';
 
 export function ChipBadge({ chip }: { chip: string }) {

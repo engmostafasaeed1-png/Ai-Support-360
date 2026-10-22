@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import QRCodeDisplay from '@/components/referral/QRCodeDisplay';
 import ReferralAckPanel from '@/components/referral/ReferralAckPanel';
+import TierLadder from '@/components/referral/TierLadder';
 import {
   referralRpc, rpcMessage, useInvalidateReferral, useMyReferralInvite, useReferralOverview,
 } from '@/hooks/useReferralProgram';
@@ -96,6 +97,12 @@ export default function ReferEarnStep({ onDone, onLater }: { onDone?: () => void
           <p className="text-sm">{t('refz.step_example_many', '{{n}} colleagues like that -> {{reward}} in that month.', { n: ex.colleagues, reward: usd(ex.many) })}</p>
           <p className="text-[11px] text-muted-foreground">{t('refz.step_example_note', 'Example only, not a promise; rewards depend on your colleagues\' approved and paid work.')}</p>
         </section>
+        {tiers.length > 1 && (
+          <section aria-labelledby="refstep-tiers" className="rounded-xl border border-border/60 p-4 space-y-2">
+            <h3 id="refstep-tiers" className="text-sm font-semibold">{t('refz.tier_title', 'Your rate grows with your referrals')}</h3>
+            <TierLadder tiers={tiers} compact />
+          </section>
+        )}
 
         {/* 4. How you get paid + 5. rules */}
         <div className="grid gap-4 md:grid-cols-2">

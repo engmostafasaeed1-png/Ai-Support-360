@@ -23,7 +23,7 @@ import {
   type EarningsRow, type ReferralOverview,
 } from '@/hooks/useReferralProgram';
 import {
-  formatRate, LINE_STATUS_LABEL, normalizeReferralCode, REFERRAL_STATUS_LABEL, referralCodeProblem, referralLink, referrerBadges,
+  formatRate, LINE_STATUS_LABEL, rateRangeText, settingsTiers, tierFor, normalizeReferralCode, REFERRAL_STATUS_LABEL, referralCodeProblem, referralLink, referrerBadges,
   rewardPerManDay, shareMessage, shareUrl, type LineStatus, type ReferralStatus, type ShareChannel,
 } from '@/lib/referrals';
 import { cn } from '@/lib/utils';
@@ -242,7 +242,9 @@ export default function ReferAndEarnPage() {
   }
 
   const s = ov.settings;
-  const rate = formatRate(s.rate_percent);
+  const tiers = settingsTiers(s);
+  const rate = rateRangeText(tiers);
+  const myTier = tierFor(ov.tier_count, tiers);
   const badges = referrerBadges(ov.funnel.verified);
   const missing = [
     !ov.eligibility.verified && t('refz.need_verified', 'Your profile must be verified.'),
@@ -259,7 +261,7 @@ export default function ReferAndEarnPage() {
           <Button variant="outline" size="sm" className="rounded-xl" onClick={openReferralIntro}>{t('refz.help_intro', 'Refer & earn: how it works')}</Button>
         </div>
         <p className="mt-1 text-sm text-muted-foreground max-w-3xl">
-          {t('refz.pitch', 'Earn {{rate}} % of the fees of every consultant you bring for {{months}} months - paid by AI Support 360, never deducted from them.', { rate, months: s.months })}
+          {t('refz.pitch', 'Earn {{rate}} % of the fees of every consultant you bring for {{months}} months - the more verified consultants you refer, the higher your rate. Paid by AI Support 360, never deducted from them.', { rate, months: s.months })}
         </p>
       </div>
 
@@ -403,7 +405,7 @@ export default function ReferAndEarnPage() {
                           <TableRow key={`${l.created_at}-${i}`}>
                             <TableCell className="text-sm">{f.date(l.created_at)}</TableCell>
                             <TableCell className="text-sm">
-                              {l.kind === 'reward' ? t('refz.k_reward', 'Reward ({{rate}} %) from {{name}}', { rate: formatRate(Number(l.rate_percent) || 0), name: l.referred_name ?? '' })
+                              {l.kind === 'reward' ? t('refz.k_reward', 'Reward ({{rate}} %) from {{name}}', { rate: formatRate(Number(l.rate_percent) || 0) + (l.tier_name ? `, ${l.tier_name}` : ''), name: l.referred_name ?? '' })
                                 : l.kind === 'reversal' ? t('refz.k_reversal', 'Reversal (refund or correction)')
                                 : t('refz.k_adjust', 'Adjustment by AI Support 360')}
                               {l.note && l.kind !== 'reward' && <div className="text-xs text-muted-foreground">{l.note}</div>}
@@ -427,11 +429,11 @@ export default function ReferAndEarnPage() {
                 <li>{t('refz.how_1', 'Share your link or code with SAP consultants you know.')}</li>
                 <li>{t('refz.how_2', 'They sign up with it and get verified.')}</li>
                 <li>{t('refz.how_2b', 'The referral becomes active when you both pass the AI interview (score at least {{pass}}) and both accept the terms, within {{days}} days of their sign-up.', { pass: ov.activation.pass_mark, days: s.activation_days })}</li>
-                <li>{t('refz.how_3', 'For {{months}} months from their first paid ticket you earn {{rate}} % of their fee for every approved hour invoiced after activation. AI Support 360 pays it from its own fee.', { months: s.months, rate })}</li>
+                <li>{t('refz.how_3', 'For {{months}} months from their first paid ticket you earn your tier rate ({{rate}} %) of their fee for every approved hour invoiced after activation. AI Support 360 pays it from its own fee.', { months: s.months, rate })}</li>
                 <li>{t('refz.how_4', 'A reward is pending until their payout is completed, then available. From {{min}} it is paid with the normal payout run to your bank details.', { min: f.money(s.min_payout) })}</li>
               </ol>
               <p className="rounded-xl bg-muted/40 p-3">
-                {t('refz.example', 'Example: a consultant at {{hourly}} per hour works one man-day (8 approved hours). You earn {{reward}}.', { hourly: f.money(100), reward: f.money(rewardPerManDay(100, s.rate_percent)) })}
+                {t('refz.example', 'Example at your current rate ({{rate}} %): a consultant at {{hourly}} per hour works one man-day (8 approved hours). You earn {{reward}}.', { rate: formatRate(myTier.rate), hourly: f.money(100), reward: f.money(rewardPerManDay(100, myTier.rate)) })}
               </p>
               <p className="text-xs text-muted-foreground">
                 <Badge variant="outline" className="me-1 text-[10px]">{t('refz.draft', 'Draft')}</Badge>
