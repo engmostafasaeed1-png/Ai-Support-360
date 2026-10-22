@@ -561,3 +561,192 @@ Sticky scroll-spy navigation, seven sections, live prerequisites, tier ladder, p
 | refr.pdf_disclaimer | مسودة للمراجعة القانونية. تسري الشروط الكاملة المنشورة على aisupport360.com/referral-terms. |
 | refz.tier_rule | يُحتسب فقط المستشارون المُحالون الموثّقون الذين لديهم تذكرة مدفوعة واحدة على الأقل وغير الموقوفين. تُحدَّد شريحتك عند إنشاء كل مكافأة جديدة؛ تنطبق النسبة الجديدة على المكافآت اللاحقة فقط ولا تتغيّر المكافآت المُنشأة سابقًا. إذا انخفض عددك تُحسب المكافآت اللاحقة بالنسبة الأدنى. |
 | refr.adm_title | ملاحظات أقسام قواعد البرنامج (نص عادي) |
+
+## Refer & earn page upgrade
+
+- Menu: "Refer & earn" is a gradient pill (violet to teal, `--refer-*` tokens) with an "Earn" badge in the header tabs and the first sidebar group (also the phone menu). It pulses (motion-safe) for 14 days or until the page is opened; a dot shows a new reward since the last visit or referrals still waiting (`my_referral_nav_state`).
+- Page tabs: Overview (journey with own counts + one next step, code card, how the reward is calculated, badges), Programme & policy (rules hub with 15 numbered policy cards, terms version/date, "accept again"), My referrals (plain status per referral incl. Rejected with a plain reason and Expired), Earnings & payouts (6 summary cards, month comparison, tier progress, monthly bars + running total, reward lines with filters/sort/search/pages/CSV, payouts and history with reference numbers, notification settings link), Referral calculations (unchanged; the duplicate estimate box was removed in favour of the simulator).
+- Ticket titles are not shown (privacy rule A7): lines show `Engagement #XXXX`, approved hours and the fee, never the colleague's hourly rate.
+- Not sent yet: notices for "reward released", "paid", "reversed" and "referral rejected" (existing notices: sign-up, verified, active, expired, first reward).
+- SQL: `docs/sql/referral-tracking.sql` (after referral-program.sql), checks `docs/sql/referral-tracking.test.sql`. Until applied, the Earnings tab uses the older history rows and says detailed lines come soon.
+
+### Arabic strings (namespace `reft`, plus `sidebar.earn_badge`, `sidebar.new_activity`, `refr.s_policy`)
+
+| Key | Arabic |
+|---|---|
+| `reft.p_join` | من يمكنه الانضمام |
+| `reft.p_join_1` | الاستشاريون الموثَّقون الذين اجتازوا مقابلة الذكاء الاصطناعي (بدرجة {{pass}} على الأقل) ووافقوا على شروط البرنامج. |
+| `reft.p_join_2` | يجب ألا يكون حسابك موقوفًا، ويجب قبول سياسة خدمة الاستشاريين. |
+| `reft.p_code` | كيف يعمل رمزك |
+| `reft.p_code_1` | شارك رمزك الشخصي أو رابطك. يُستخدم فقط عند تسجيل زميلك. |
+| `reft.p_code_2` | أول رمز صالح هو المعتمد ولا يُستبدل أبدًا. يُحفَظ الرابط 30 يومًا على الجهاز الذي فتحه. |
+| `reft.p_code_3` | يمكنك تغيير رمزك مرة واحدة، وتبقى الروابط القديمة صالحة. |
+| `reft.p_counts` | متى تُحتسب الإحالة |
+| `reft.p_counts_1` | يسجّل زميلك برمزك ويجتاز مقابلة الذكاء الاصطناعي (بدرجة {{pass}} على الأقل). |
+| `reft.p_counts_2` | توافقان كلاكما على شروط البرنامج خلال {{days}} يومًا من تسجيله، وإلا تنتهي الإحالة. |
+| `reft.p_counts_3` | لا يُكافأ إلا العمل الذي يُفوتَر بعد تفعيل الإحالة. |
+| `reft.p_earn` | ما الذي تكسبه |
+| `reft.p_earn_1` | {{rate}} % (حسب مستواك) من الأتعاب المعتمدة للاستشاري المُحال، لمدة {{months}} شهرًا من أول تذكرة مدفوعة له. |
+| `reft.p_earn_2` | الأتعاب = الساعات المعتمدة × السعر المعتمد للساعة. تدفع AI Support 360 المكافأة من رسومها الخاصة؛ لا يُخصم شيء من زميلك ولا يُضاف شيء على العميل. |
+| `reft.p_tiers` | المستويات |
+| `reft.p_tiers_1` | يُطبَّق المستوى الجديد فقط على المكافآت التي تُنشأ بعد ذلك. |
+| `reft.p_reversals` | الاسترداد والنزاعات |
+| `reft.p_rev_1` | يؤدي الاسترداد أو رد المبلغ إلى عكس المكافأة بالنسبة نفسها التي أُنشئت بها. |
+| `reft.p_rev_2` | أثناء نزاع العميل على دفعة، تُعلَّق المكافأة، وتُفرَج إذا ثبتت الدفعة. |
+| `reft.p_rev_3` | المكافأة المعكوسة التي دُفعت سابقًا تُخصم من المكافآت اللاحقة. |
+| `reft.p_hold` | فترة الانتظار وموعد الدفع |
+| `reft.p_hold_1` | تُنشأ المكافأة بعد أن يدفع العميل ويُصرف مستحق زميلك. |
+| `reft.p_hold_2` | تبقى قيد الانتظار {{days}} يومًا، ثم تصبح متاحة وتُدفع مع دورة الدفع العادية. |
+| `reft.p_hold_3` | بعد تغيير بياناتك المصرفية، تنتظر دفعات الإحالة {{days}} يومًا. |
+| `reft.p_min` | الحد الأدنى للدفع |
+| `reft.p_min_1` | تُدفع عندما يتوفر {{min}} على الأقل بعملة واحدة، إلى بياناتك المصرفية الموثَّقة. |
+| `reft.p_min_2` | بنود الفواتير الأقل من {{v}} لا تُكسب مكافأة. |
+| `reft.p_fraud` | قواعد الاحتيال - ما الذي يؤدي إلى رفض الإحالة |
+| `reft.p_fraud_1` | تُراجَع الإحالات التي تظهر فيها مؤشرات كهذه أولًا ولا تُكسب شيئًا حتى تُعتمد. الاحتيال يعني المصادرة والعكس. |
+| `reft.p_self` | لا إحالة ذاتية ولا حسابات مكررة |
+| `reft.p_self_1` | لا يمكنك إحالة نفسك بحساب أو بريد أو هاتف أو جهاز أو حساب مصرفي أو شركة أخرى تخصك. |
+| `reft.p_self_2` | شخص واحد، حساب واحد. تُغلق الحسابات المكررة وتُلغى مكافآتها. |
+| `reft.p_susp` | إذا أُوقف أحد الحسابين |
+| `reft.p_susp_1` | إذا أُوقف حسابك، لا تُنشأ مكافآت جديدة طوال فترة الإيقاف، وقد تُعلَّق المكافآت الحالية للمراجعة. |
+| `reft.p_susp_2` | إذا أُوقف حساب زميلك، يتوقف احتسابه في مستواك، ولا تأتي مكافآت من عمل لم يُدفع له. |
+| `reft.p_tax` | الضرائب |
+| `reft.p_changes` | تغيير الشروط |
+| `reft.p_changes_1` | يجوز لـ AI Support 360 تغيير البرنامج أو إنهاؤه للمكافآت المستقبلية مع إشعار مسبق. يجب قبول كل إصدار جديد من الشروط من جديد. |
+| `reft.p_dispute` | كيف تعترض على إحالة |
+| `reft.p_dispute_1` | إذا رأيت أن قرار إحالة أو مكافأة غير صحيح، راسل {{email}} مع الاسم الظاهر هنا ورقم البند أو الدفعة (L-… أو RP-…). |
+| `reft.p_dispute_2` | يراجعه أحد المشرفين ويرد عليك كتابيًا. |
+| `reft.p_contact` | التواصل |
+| `reft.p_contact_1` | للأسئلة عن البرنامج: {{email}}. |
+| `reft.terms_version` | الشروط - الإصدار {{v}}، آخر تحديث {{date}} |
+| `reft.draft_legal` | مسودة بانتظار المراجعة القانونية |
+| `reft.accepted_on` | وافقت على الإصدار {{v}} بتاريخ {{date}}. |
+| `reft.accepted` | وافقت على الإصدار {{v}}. |
+| `reft.accepted_old` | وافقت على الإصدار {{old}}{{when}}. الإصدار {{v}} جديد - يُرجى قراءته والموافقة عليه مجددًا. |
+| `reft.not_accepted` | لم توافق على شروط البرنامج بعد. |
+| `reft.reaccept` | الموافقة على الإصدار الجديد |
+| `reft.j_share` | شارك رمزك |
+| `reft.j_share_n` | زيارات للرابط |
+| `reft.j_register` | تسجيل الزميل |
+| `reft.j_register_n` | مسجَّلون |
+| `reft.j_interview` | اجتياز مقابلة الذكاء الاصطناعي |
+| `reft.j_interview_n` | اجتازوا المقابلة |
+| `reft.j_paid` | أول تذكرة مدفوعة |
+| `reft.j_paid_n` | بدأت تذاكرهم المدفوعة |
+| `reft.j_earn` | أنت تكسب |
+| `reft.j_earn_n` | يُدِرّون مكافآت |
+| `reft.na_support` | تواصل مع الدعم بشأن حسابك |
+| `reft.na_profile` | أكمل ملفك الشخصي وأرسله |
+| `reft.na_interview` | ابدأ مقابلة الذكاء الاصطناعي |
+| `reft.na_terms` | وافق على شروط البرنامج |
+| `reft.na_policy` | وافق على سياسة خدمة الاستشاريين |
+| `reft.na_verify` | تحقق من حالة التوثيق |
+| `reft.na_share` | شارك رمزك مع زميل |
+| `reft.na_follow` | اطّلع على ما تبقى على زملائك |
+| `reft.na_payout` | أضف بياناتك المصرفية لتحصل على المبالغ |
+| `reft.na_earnings` | اطّلع على مكافآتك المتاحة |
+| `reft.na_verify_hint` | يوثّق فريقنا ملفك؛ تُفتح المشاركة فور الانتهاء. |
+| `reft.na_follow_hint` | {{n}} إحالة بانتظار مقابلة الذكاء الاصطناعي أو الموافقة على الشروط. |
+| `reft.journey_title` | رحلة الإحالة الخاصة بك |
+| `reft.next` | خطوتك التالية |
+| `reft.journey_note` | تُحصى زيارات الرابط دون حفظ أي شيء عن الزائر. لا تُتتبَّع الدعوات لكل شخص. |
+| `reft.rej_account` | أُغلق الحساب أو أُوقف. |
+| `reft.rej_review` | لم تجتز مراجعة الاحتيال لدينا (انظر «قواعد الاحتيال» في سياسة البرنامج). |
+| `reft.rej_rules` | لم تستوفِ قواعد البرنامج. |
+| `reft.list_empty` | لم يسجّل أحد برمزك بعد. شاركه من تبويب «نظرة عامة» - يظهر زملاؤك هنا فور تسجيلهم. |
+| `reft.signed_up_on` | سجّل في {{date}} |
+| `reft.window_until` | المكافآت حتى {{date}} |
+| `reft.expired_hint` | لم تُفعَّل في الوقت المحدد. لا يمكن إعادة تفعيلها إلا من قِبل مشرف. |
+| `reft.review_hint` | يراجع فريقنا هذه الإحالة. لا يُدفع شيء حتى تُعتمد. |
+| `reft.rejected_on` | سجّل في {{a}} · القرار في {{b}} |
+| `reft.calc_title` | كيف تُحتسب مكافأتك |
+| `reft.calc_formula` | المكافأة = الساعات المعتمدة × السعر المعتمد للساعة (= الأتعاب) × نسبة مستواك ({{rate}} %). |
+| `reft.calc_step1` | 1. يوم عمل واحد = {{h}} ساعات معتمدة بسعر {{hourly}} للساعة |
+| `reft.calc_step2` | 2. الأتعاب = {{h}} × {{hourly}} = {{fee}} |
+| `reft.calc_step3` | 3. مكافأتك = {{fee}} × {{rate}} % = {{reward}} |
+| `reft.calc_basis_own` | يستخدم المثال سعرك المعتمد للساعة؛ السعر الحقيقي لزميلك هو ما يحدد الأتعاب الفعلية. |
+| `reft.calc_basis_platform` | يستخدم المثال متوسط سعر الساعة على المنصة. |
+| `reft.calc_basis_example` | سعر توضيحي فقط. |
+| `reft.calc_paid_by` | تدفعها AI Support 360، ولا تُخصم أبدًا من زميلك. |
+| `reft.calc_try` | جرّب أرقامك في المحاكي |
+| `reft.until` | متاحة في {{date}} |
+| `reft.fee` | الأتعاب |
+| `reft.hours_n` | {{n}} ساعة معتمدة |
+| `reft.sort_by` | ترتيب حسب {{col}} |
+| `reft.next_release` | أقرب إتاحة {{date}} |
+| `reft.pending_hint` | بانتظار انتهاء فترة الانتظار |
+| `reft.held` | معلّقة |
+| `reft.held_hint` | تُفرَج بعد المراجعة أو عند انتهاء النزاع |
+| `reft.reversed` | معكوسة |
+| `reft.reversed_hint` | الاسترداد ورد المبالغ والتصحيحات |
+| `reft.basic_mode` | ستظهر هنا قريبًا البنود المفصلة (الساعات والأرقام المرجعية وتواريخ الإتاحة). الإجماليات أدناه صحيحة بالفعل. |
+| `reft.other_cur` | عملات أخرى |
+| `reft.month_vs` | هذا الشهر مقارنة بالشهر الماضي |
+| `reft.month_none` | لا يوجد ما يُقارن بعد |
+| `reft.month_change` | {{sign}}{{n}} % مقارنة بالشهر الماضي |
+| `reft.tier_now` | المستوى الحالي |
+| `reft.chart` | المكافآت لكل شهر والإجمالي التراكمي |
+| `reft.chart_aria` | رسم بياني بالأعمدة لصافي المكافآت لكل شهر مع خط للإجمالي التراكمي |
+| `reft.s_month` | الصافي لكل شهر |
+| `reft.s_total` | الإجمالي التراكمي |
+| `reft.month` | الشهر |
+| `reft.lines` | بنود المكافآت |
+| `reft.search` | بحث |
+| `reft.search_ph` | الاسم أو الرقم المرجعي |
+| `reft.csv` | CSV ({{n}} صف) |
+| `reft.lines_empty` | لا توجد مكافآت بعد. تظهر المكافأة عندما يُدفع لزميل أحلته مقابل عمل معتمد بعد تفعيل الإحالة. |
+| `reft.lines_none` | لا توجد بنود تطابق هذه المرشحات. |
+| `reft.payout_col` | الدفعة |
+| `reft.pages` | الصفحات |
+| `reft.page_of` | الصفحة {{p}} من {{n}} · {{total}} بندًا |
+| `reft.prev` | السابق |
+| `reft.next_page` | التالي |
+| `reft.privacy` | حفاظًا على الخصوصية ترى أتعاب كل بند فقط، ولا ترى أبدًا سعر ساعة زميلك أو العميل أو التذكرة. يبقى «Engagement #» ثابتًا للعمل نفسه. |
+| `reft.payouts` | الدفعات |
+| `reft.next_run` | مع دورة الدفع القادمة |
+| `reft.avail_now` | المتاح الآن |
+| `reft.min_payout` | الحد الأدنى للدفع |
+| `reft.method` | طريقة الدفع |
+| `reft.method_ok` | أُضيفت البيانات المصرفية |
+| `reft.method_missing` | البيانات المصرفية غير مضافة |
+| `reft.method_view` | عرض بيانات الدفع |
+| `reft.payout_history` | سجل الدفعات |
+| `reft.payouts_soon` | سيظهر سجل دفعات الإحالة هنا قريبًا. المبالغ المدفوعة مشمولة بالفعل في الإجماليات أعلاه. |
+| `reft.payouts_empty` | لا توجد دفعات إحالة بعد. تتم أول دفعة عندما تبلغ مكافآتك المتاحة الحد الأدنى. |
+| `reft.ref_no` | الرقم المرجعي |
+| `reft.amount` | المبلغ |
+| `reft.paid_on` | تاريخ الدفع |
+| `reft.notices` | يصلك إشعار عند تسجيل زميل وعند توثيقه، وعند تفعيل الإحالة أو انتهائها، وعند أول مكافأة. |
+| `reft.notice_settings` | إعدادات الإشعارات |
+| `reft.tab_programme` | البرنامج والسياسة |
+| `reft.tab_referrals` | إحالاتي |
+| `reft.tab_earnings` | الأرباح والدفعات |
+| `reft.see_earnings` | عرض الأرباح والدفعات |
+| `reft.chip_registered` | مسجَّل |
+| `reft.chip_interview_pending` | المقابلة قيد الانتظار |
+| `reft.chip_active` | نشطة |
+| `reft.chip_earning` | تُدِرّ مكافآت |
+| `reft.chip_ended` | انتهت المدة |
+| `reft.chip_on_review` | قيد المراجعة |
+| `reft.chip_expired` | منتهية |
+| `reft.chip_rejected` | مرفوضة |
+| `reft.hold_review` | قيد المراجعة |
+| `reft.hold_dispute` | نزاع من العميل |
+| `reft.hold_cap` | فوق الحد الشهري |
+| `reft.period_all` | كل الفترات |
+| `reft.period_month` | هذا الشهر |
+| `reft.period_last_month` | الشهر الماضي |
+| `reft.period_3m` | آخر 3 أشهر |
+| `reft.period_year` | هذا العام |
+| `reft.fs_all` | كل الحالات |
+| `reft.fs_pending` | قيد الانتظار |
+| `reft.fs_held` | معلّقة |
+| `reft.fs_available` | متاحة |
+| `reft.fs_paid` | مدفوعة |
+| `reft.fs_reversed` | معكوسة |
+| `reft.po_pending` | مجدولة |
+| `reft.po_processing` | قيد المعالجة |
+| `reft.po_completed` | مدفوعة |
+| `reft.po_failed` | فشلت |
+| `sidebar.new_activity` | نشاط جديد |
+| `sidebar.earn_badge` | اربح |
+| `refr.s_policy` | سياسة البرنامج |

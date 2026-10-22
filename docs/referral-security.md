@@ -42,7 +42,23 @@ Run (scratch database only): apply the stub, then `referral-program.sql`, then b
 | A7.3 | Fingerprint / IP / bank leaks | Salted hashes in service-only tables (`referral_devices`, `referral_attribution_signals`, `referral_party_signals`, `referral_code_attempts`); acknowledgement hash/user agent not granted to the browser; retention `referral_signal_retention_days` (365) in the nightly job | T20 rls_own_data_only, T04, T05 |
 | A8 | Disputes about rules | Terms (lawyer draft) state the review period, hold / reverse / cancel / forfeit for fraud, monthly limits and not-wages; short version on the Refer & earn page | manual review |
 
+## Refer & earn page tracking (docs/sql/referral-tracking.sql, prepared, not applied)
+
+| # | Threat | Control | Test name |
+|---|---|---|---|
+| TR.1 | Anonymous callers or other signed-in users read referral tracking | All four RPCs take the consultant only from `auth.uid()` (`referral_my_consultant`), EXECUTE revoked from PUBLIC/anon; internal helpers revoked from authenticated | TR01 tracking_functions_denied |
+| TR.2 | Wrong or tampered calculation shown | Lines show the stored fee, rate, tier and amount exactly as created by the database; the page only formats them (`src/lib/referralTracking.ts`) | TR02 reward_line_breakdown |
+| TR.3 | Hold reasons reveal fraud signals | `referral_public_hold_reason` reduces holds to review / dispute / cap; related-party and admin holds read as "review" | TR03 hold_reason_public |
+| TR.4 | Leak of ids, full names, client, ticket or hourly rate | Masked name (Feature X public format), anonymous `L-XXXXXX` line and `Engagement #XXXX` references, approved hours and fee only; no ticket title (decided against the request's "shortened ticket title": a title can name the client) | TR04 privacy_no_ids_names_rates |
+| TR.5 | Payout references usable to reach other data | `RP-` + first 8 hex of the consultant's own payout row plus the bank's own transfer reference; nothing else | TR05 payouts_with_reference |
+| TR.6 | Rejection reasons reveal the admin note or flags | One of three plain categories (account closed, fraud review, rules) | TR06 rejected_reason_plain |
+| TR.7 | Terms re-acceptance skipped | Accepted version/date and current version from the append-only acknowledgements; a new version shows "accept again" | TR07 terms_status |
+| TR.8 | Menu dot reveals other people's activity | `my_referral_nav_state` returns only the caller's newest line time and own pending count; NULL for non-consultants | TR08 nav_state |
+
 ## RPC and edge function review
+
+Refer & earn page (read-only, SECURITY DEFINER, fixed search_path, no service key): `my_referral_reward_lines`, `my_referral_payouts`, `my_referral_tracking`, `my_referral_nav_state`; CSV is built in the browser from the caller's own rows.
+
 
 Browser RPCs (all `SECURITY DEFINER`, `search_path` pinned, revoked from PUBLIC; anon only the first three):
 
