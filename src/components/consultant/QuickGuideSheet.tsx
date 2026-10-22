@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { Gift } from 'lucide-react';
+import { usePublicReferralSettings } from '@/hooks/useReferralProgram';
+import { openReferralIntro } from '@/components/referral/ReferEarnStepHost';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { CircleHelp, Compass, LifeBuoy } from 'lucide-react';
@@ -21,6 +24,8 @@ export const QUICK_GUIDE: { key: string; q: string; a: string }[] = [
 ];
 
 export default function QuickGuideSheet() {
+  const referral = usePublicReferralSettings();
+  const referralLive = referral.available && referral.settings.enabled;
   const { t } = useTranslation();
   const tour = useConsultantTour();
   const [open, setOpen] = useState(false);
@@ -50,6 +55,11 @@ export default function QuickGuideSheet() {
           <Button className="gap-2" onClick={() => { setOpen(false); tour.start(); }}>
             <Compass className="w-4 h-4" aria-hidden="true" /> {t('quick_guide.tour_again', 'Take the tour again')}
           </Button>
+          {referralLive && (
+            <Button variant="outline" className="gap-2" onClick={() => { setOpen(false); openReferralIntro(); }}>
+              <Gift className="w-4 h-4" aria-hidden="true" /> {t('refz.help_intro', 'Refer & earn: how it works')}
+            </Button>
+          )}
           <Button variant="outline" asChild className="gap-2">
             <Link to="/#contact" onClick={() => setOpen(false)}>
               <LifeBuoy className="w-4 h-4" aria-hidden="true" /> {t('quick_guide.contact', 'Contact support')}

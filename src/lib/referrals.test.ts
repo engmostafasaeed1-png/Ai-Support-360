@@ -180,3 +180,20 @@ describe('Refer & earn onboarding step', () => {
     expect(referStepState(null)).toBe('done');
   });
 });
+
+import { shouldShowReferralIntro } from './referrals';
+
+describe('one-time Refer & earn introduction', () => {
+  const base = { live: true, isGuest: false, progressLoaded: true, seenOnServer: false, localState: 'new' as const };
+  it('shows once for a consultant who has not seen it', () => {
+    expect(shouldShowReferralIntro(base)).toBe(true);
+    expect(shouldShowReferralIntro({ ...base, seenOnServer: true })).toBe(false);
+    expect(shouldShowReferralIntro({ ...base, localState: 'later' })).toBe(false);
+    expect(shouldShowReferralIntro({ ...base, localState: 'done' })).toBe(false);
+  });
+  it('never before the programme is live, for demo visitors or before the stored state is read', () => {
+    expect(shouldShowReferralIntro({ ...base, live: false })).toBe(false);
+    expect(shouldShowReferralIntro({ ...base, isGuest: true })).toBe(false);
+    expect(shouldShowReferralIntro({ ...base, progressLoaded: false })).toBe(false);
+  });
+});

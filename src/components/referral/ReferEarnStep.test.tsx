@@ -14,6 +14,7 @@ const h = vi.hoisted(() => ({
       code: 'SAP-MOSTAFA-7K2', previous_code: null, edits_left: 1, disabled: false, terms_accepted_version: null,
       funnel: { clicks: 0, signups: 0, verified: 0, paying: 0 }, earnings: [],
       eligibility: { verified: false, policy: true, suspended: false, payout_details: false },
+      claim: { can_claim: true, until: '2026-11-05T00:00:00Z' },
       activation: { pass_mark: 50, interview_passed: false, best_score: null, acknowledged: false, active: false },
     },
   },
@@ -65,6 +66,13 @@ describe('Refer & earn onboarding step', () => {
     fireEvent.change(screen.getByPlaceholderText('SAP-NAME-7K2'), { target: { value: 'sap-rami-7k2' } });
     await waitFor(() => expect(screen.getByText('Code belongs to R. S****')).toBeTruthy(), { timeout: 2000 });
     expect(h.rpc).toHaveBeenCalledWith('referral_validate_code', { _code: 'SAP-RAMI-7K2' });
+  });
+
+  it('hides the invite field when the claim window is closed', () => {
+    h.overview.data.claim.can_claim = false;
+    renderStep();
+    expect(screen.queryByPlaceholderText('SAP-NAME-7K2')).toBeNull();
+    h.overview.data.claim.can_claim = true;
   });
 
   it('hides the invite field when a referrer is already linked', () => {

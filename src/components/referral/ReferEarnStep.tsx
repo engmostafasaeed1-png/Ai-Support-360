@@ -145,7 +145,7 @@ export default function ReferEarnStep({ onDone, onLater }: { onDone?: () => void
         </section>
 
         {/* 6b. Who invited you? */}
-        {invite.isFetched && !invite.data && <WhoInvited onLinked={invalidate} />}
+        {invite.isFetched && !invite.data && ov.claim.can_claim && <WhoInvited onLinked={invalidate} until={ov.claim.until} />}
 
         {/* 7. Skippable */}
         <div className="flex flex-wrap justify-end gap-2 border-t border-border/60 pt-4">
@@ -157,8 +157,8 @@ export default function ReferEarnStep({ onDone, onLater }: { onDone?: () => void
   );
 }
 
-function WhoInvited({ onLinked }: { onLinked: () => void }) {
-  const { t } = useTranslation();
+function WhoInvited({ onLinked, until }: { onLinked: () => void; until: string | null }) {
+  const { t, i18n } = useTranslation();
   const [value, setValue] = useState('');
   const [check, setCheck] = useState<{ state: 'idle' | 'checking' | 'valid' | 'invalid' | 'error'; name?: string }>({ state: 'idle' });
   const [busy, setBusy] = useState(false);
@@ -201,7 +201,8 @@ function WhoInvited({ onLinked }: { onLinked: () => void }) {
   return (
     <section aria-labelledby="refstep-who" className="space-y-2 rounded-xl border border-border/60 p-4">
       <h3 id="refstep-who" className="text-sm font-semibold">{t('refz.who_title', 'Who invited you? Enter a referral code')}</h3>
-      <p className="text-xs text-muted-foreground">{t('refz.who_hint', 'Optional. Once linked it can not be changed.')}</p>
+      <p className="text-xs text-muted-foreground">{t('refz.who_hint', 'Optional. Once linked it can not be changed.')}
+        {until && <> {t('refz.who_until', 'Possible until {{date}}.', { date: new Intl.DateTimeFormat(i18n.language?.startsWith('ar') ? 'ar-EG' : 'en-US', { dateStyle: 'medium' }).format(new Date(until)) })}</>}</p>
       <div className="flex flex-wrap gap-2">
         <Label htmlFor="refstep-who-code" className="sr-only">{t('refz.signup_label', 'Referral code (optional)')}</Label>
         <Input id="refstep-who-code" dir="ltr" value={value} maxLength={24} onChange={(e) => setValue(e.target.value.toUpperCase())} placeholder="SAP-NAME-7K2"

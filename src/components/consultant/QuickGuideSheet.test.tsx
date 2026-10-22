@@ -4,6 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 
 const start = vi.fn();
 vi.mock('@/components/tour/ConsultantTour', () => ({ useConsultantTour: () => ({ start, running: false }) }));
+vi.mock('@/hooks/useReferralProgram', () => ({ usePublicReferralSettings: () => ({ available: false, settings: {} }) }));
+vi.mock('@/components/referral/ReferEarnStepHost', () => ({ openReferralIntro: () => {} }));
 
 vi.mock('@/hooks/useAssignmentPolicy', async () => {
   const m = await import('../../../supabase/functions/_shared/assignmentPolicy');

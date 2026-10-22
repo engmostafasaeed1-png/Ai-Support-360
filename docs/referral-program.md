@@ -65,6 +65,24 @@ the sign-up form shows no referral field, and the admin page says the programme 
 - Not done on purpose: no line in the welcome / confirmation e-mail. Adding programme promotion to a transactional
   e-mail is not allowed (it is marketing content and harms deliverability); the dashboard card and tour cover it.
 
+## Existing consultants (registered before the launch)
+- Backfill: `referral_backfill_codes()` gives every consultant except rejected/suspended exactly one code (idempotent,
+  collision-safe, no other column touched); everyone else gets one lazily when they open Refer & earn, and new consultants
+  at registration. Dry run before applying (read-only):
+  `SELECT count(*) AS consultants, count(*) FILTER (WHERE verification_status::text NOT IN ('rejected','suspended')) AS will_get_a_code, count(*) FILTER (WHERE verification_status::text IN ('rejected','suspended')) AS excluded FROM public.consultants;`
+  On 22 Oct 2026 this returned 32 consultants, 31 will get a code, 1 excluded. After applying, `SELECT public.referral_backfill_preview();` shows will_create = 0.
+- Nobody gets a referrer retroactively; administrators can set one (Referrals > Announcement > "Set a referrer", reason, audited).
+  Existing consultants are referrers immediately under the same rules (verified, not suspended, policy accepted, AI interview).
+- "Who invited you?" for consultants registered before the launch: until `referral_claim_until` (launch + 14 days,
+  editable in Referrals > Settings) and only without a paid ticket; afterwards administrators only.
+- Discovery: menu item and dashboard card for all consultants; a one-time introduction pop-up on the next sign-in (stored per
+  account in tour progress, re-openable from the Refer & earn page and the help sheet); a bell entry sent by an administrator
+  (Referrals > Announcement: preview, test to yourself, then once per consultant in batches of 200, log of who received it;
+  rejected/suspended accounts and people who paused in-app notices are left out).
+- The announcement is NOT e-mailed: a programme introduction sent to every consultant is promotional bulk e-mail, which the
+  app's e-mail service must not carry (it hurts delivery for every other app e-mail). Use a dedicated marketing e-mail
+  service if an e-mail campaign is wanted; the in-app announcement and pop-up cover everyone in the portal.
+
 ## Not done / notes
 - No announcement e-mail to all consultants: app e-mails must be one-recipient and event-triggered (promotional bulk e-mail
   is not allowed). Announce through Admin > Messages (in-app / Telegram) instead; the dashboard banner and the pop-up cover it.
@@ -337,3 +355,5 @@ created for payouts that already exist.
 | refz.later_open | اعرف كيف يعمل |
 | tour.c.refer_title | أحِل واربح |
 | tour.c.refer | اجلب زملاءك واربحوا معًا: شارك رمزك؛ عندما يعمل زميل أحلته تحصل على {{rate}} % من أتعابه لمدة {{months}} شهرًا، تدفعها AI Support 360 ولا تُخصم منه أبدًا. يبدأ ذلك بعد اجتيازكما كليكما المقابلة الذكية. |
+| refz.help_intro | أحِل واربح: كيف يعمل |
+| refz.who_until | متاح حتى {{date}}. |

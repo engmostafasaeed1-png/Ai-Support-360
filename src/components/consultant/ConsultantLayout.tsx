@@ -9,6 +9,7 @@ import { AvailabilityGate } from '@/components/consultant/AvailabilityUrgent';
 import PolicyGate from '@/components/consultant/policy/PolicyGate';
 import { ReferralClaimer } from '@/components/referral/ReferralCapture';
 import ReferralNoticePopup from '@/components/referral/ReferralNoticePopup';
+import { ReferralIntroPopup } from '@/components/referral/ReferEarnStepHost';
 import CriticalAlarm from '@/components/consultant/CriticalAlarm';
 import QuickGuideSheet from '@/components/consultant/QuickGuideSheet';
 import { ConsultantTourProvider } from '@/components/tour/ConsultantTour';
@@ -131,6 +132,7 @@ export default function ConsultantLayout() {
         <PolicyGate />
         <ReferralClaimer />
         <ReferralNoticePopup />
+        <ReferralIntroPopup />
         <CriticalAlarm />
       </div>
       </ConsultantTourProvider>

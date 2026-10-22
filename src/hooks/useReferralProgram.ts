@@ -43,6 +43,8 @@ export interface ReferralOverview {
   eligibility: { verified: boolean; policy: boolean; suspended: boolean; payout_details: boolean };
   /** Referrer checklist: AI interview passed -> terms acknowledged -> active (decided in the database). */
   activation: { pass_mark: number; interview_passed: boolean; best_score: number | null; acknowledged: boolean; active: boolean };
+  /** "Who invited you?" is open (new accounts: first days; existing consultants: until the launch window ends). */
+  claim: { can_claim: boolean; until: string | null };
 }
 
 const n = (v: unknown) => Number(v) || 0;
@@ -51,6 +53,7 @@ export function parseOverview(o: Record<string, unknown>): ReferralOverview {
   const f = (o.funnel ?? {}) as Record<string, unknown>;
   const el = (o.eligibility ?? {}) as Record<string, unknown>;
   const ac = (o.activation ?? {}) as Record<string, unknown>;
+  const cl = (o.claim ?? {}) as Record<string, unknown>;
   return {
     settings: parseReferralSettings(o.settings),
     code: String(o.code ?? ''),
@@ -63,6 +66,7 @@ export function parseOverview(o: Record<string, unknown>): ReferralOverview {
       const r = e as Record<string, unknown>;
       return { currency: String(r.currency ?? 'USD'), pending: n(r.pending), available: n(r.available), held: n(r.held), in_payout: n(r.in_payout), paid: n(r.paid), lifetime: n(r.lifetime) };
     }),
+    claim: { can_claim: cl.can_claim === true, until: cl.until ? String(cl.until) : null },
     activation: {
       pass_mark: ac.pass_mark == null ? 50 : n(ac.pass_mark),
       interview_passed: ac.interview_passed === true,

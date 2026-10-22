@@ -20,6 +20,88 @@ import { formatRate, LINE_STATUS_LABEL, referralCsv, type LineStatus } from '@/l
 import { cn } from '@/lib/utils';
 import ReferralCalculations from '@/components/referral/ReferralCalculations';
 
+/** In-app announcement (bell + pop-up) to every eligible consultant, once each; test to yourself first. No e-mail. */
+function AnnouncementCard() {
+  const qc = useQueryClient();
+  const preview = useRpc<Row>(['refadmin', 'announce-preview'], 'admin_referral_announcement_preview', { _limit: 50 });
+  const log = useRpc<Row[]>(['refadmin', 'announce-log'], 'admin_referral_announcement_log', { _limit: 500 });
+  const [tested, setTested] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const counts = ((preview.data?.counts ?? {}) as Record<string, number>);
+  const msg = (preview.data?.message ?? {}) as Row;
+  const send = async (test: boolean) => {
+    setBusy(true);
+    const { data, error } = await referralRpc('admin_referral_announcement_send', { _test: test, _limit: 200 });
+    setBusy(false);
+    if (error) { toast.error(rpcMessage(error, 'The announcement could not be sent.')); return; }
+    const r = (data ?? {}) as Row;
+    if (test) { setTested(true); toast.success('Test sent to your own bell. Check it, then send to everyone.'); }
+    else toast.success(`Sent to ${Number(r.sent) || 0} consultant(s). ${Number(r.remaining) || 0} left${Number(r.remaining) ? ' - press Send again for the next batch' : ''}.`);
+    qc.invalidateQueries({ queryKey: ['refadmin'] });
+  };
+  const labels: Record<string, string> = {
+    eligible: 'Will receive it', already_sent: 'Already received', rejected_or_suspended: 'Rejected / suspended profile (left out)',
+    account_suspended: 'Suspended account (left out)', paused: 'Paused notifications (left out)',
+  };
+  return (
+    <Card className="rounded-2xl">
+      <CardHeader className="pb-2"><CardTitle className="text-base">Introduce Refer & earn to existing consultants</CardTitle></CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        <p className="text-muted-foreground">Sends one notification (bell and pop-up) to each consultant, once. It is not e-mailed: an announcement to every consultant is promotional bulk mail, which app e-mails must not carry. Every consultant also sees the one-time introduction pop-up on their next sign-in.</p>
+        <div className="rounded-xl border border-border/60 p-3"><p className="font-medium">{String(msg.title ?? '')}</p><p className="mt-1 text-muted-foreground">{String(msg.body ?? '')}</p></div>
+        <div className="flex flex-wrap gap-2">{Object.entries(counts).map(([k, v]) => <Badge key={k} variant={k === 'eligible' ? 'secondary' : 'outline'}>{labels[k] ?? k}: {v}</Badge>)}</div>
+        {((preview.data?.recipients ?? []) as Row[]).length > 0 && (
+          <details><summary className="cursor-pointer text-xs">First recipients ({((preview.data?.recipients ?? []) as Row[]).length} shown)</summary>
+            <p className="mt-1 text-xs text-muted-foreground">{((preview.data?.recipients ?? []) as Row[]).map((r) => String(r.name ?? '-')).join(', ')}</p></details>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => void send(true)} disabled={busy}>Send test to me</Button>
+          <Button onClick={() => void send(false)} disabled={busy || !tested || !counts.eligible}>{busy && <Loader2 className="w-4 h-4 me-2 animate-spin" />}Send announcement ({counts.eligible ?? 0})</Button>
+        </div>
+        {!tested && <p className="text-xs text-muted-foreground">Send the test first; the button unlocks afterwards.</p>}
+        <details><summary className="cursor-pointer text-xs">Who received it ({(log.data ?? []).length})</summary>
+          <ul className="mt-2 max-h-60 overflow-y-auto text-xs space-y-0.5">{(log.data ?? []).map((r, i) => <li key={i}>{String(r.name ?? '-')} - {when(r.sent_at)}{r.sent_by_name ? ` (by ${String(r.sent_by_name)})` : ''}</li>)}</ul>
+        </details>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Existing consultants have no referrer; an administrator can set one with a reason (audited). */
+function SetReferrerCard() {
+  const qc = useQueryClient();
+  const [referredCode, setReferredCode] = useState('');
+  const [referrerCode, setReferrerCode] = useState('');
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const find = async (code: string) => {
+    const { data } = await referralRpc('admin_referral_referrers', { _search: code.trim(), _limit: 5 });
+    return ((data ?? []) as Row[]).find((r) => String(r.code).toUpperCase() === code.trim().toUpperCase());
+  };
+  const run = async () => {
+    setBusy(true);
+    const [a, b] = await Promise.all([find(referredCode), find(referrerCode)]);
+    if (!a || !b) { setBusy(false); toast.error('Both referral codes must belong to a consultant.'); return; }
+    const { error } = await referralRpc('admin_referral_action', { _action: 'set_referrer', _id: a.referrer_id, _reason: reason, _new_referrer: b.referrer_id });
+    setBusy(false);
+    if (error) { toast.error(rpcMessage(error, 'The referrer could not be set.')); return; }
+    toast.success('Referrer set and recorded in the audit trail. The activation rule still applies.');
+    setReferredCode(''); setReferrerCode(''); setReason('');
+    qc.invalidateQueries({ queryKey: ['refadmin'] });
+  };
+  return (
+    <Card className="rounded-2xl">
+      <CardHeader className="pb-2"><CardTitle className="text-base">Set a referrer for a consultant who has none</CardTitle></CardHeader>
+      <CardContent className="grid gap-3 sm:grid-cols-3 text-sm">
+        <div className="space-y-1"><Label htmlFor="sr-a">Referred consultant's code</Label><Input id="sr-a" dir="ltr" className="font-mono" value={referredCode} onChange={(e) => setReferredCode(e.target.value.toUpperCase())} /></div>
+        <div className="space-y-1"><Label htmlFor="sr-b">Referrer's code</Label><Input id="sr-b" dir="ltr" className="font-mono" value={referrerCode} onChange={(e) => setReferrerCode(e.target.value.toUpperCase())} /></div>
+        <div className="space-y-1"><Label htmlFor="sr-r">Reason (required)</Label><Input id="sr-r" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} /></div>
+        <div className="sm:col-span-3"><Button onClick={run} disabled={busy || reason.trim().length < 5 || !referredCode || !referrerCode}>{busy && <Loader2 className="w-4 h-4 me-2 animate-spin" />}Set referrer</Button></div>
+      </CardContent>
+    </Card>
+  );
+}
+
 /** Same calculations page as the consultant sees, for any consultant, read-only. */
 function AdminCalculations() {
   const [q, setQ] = useState('');
@@ -187,7 +269,9 @@ function SettingsCard({ settings }: { settings: Row }) {
   const [enabled, setEnabled] = useState(true);
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
+  const [claimUntil, setClaimUntil] = useState('');
   useEffect(() => {
+    setClaimUntil(settings.claim_until ? String(settings.claim_until).slice(0, 16) : '');
     setEnabled(settings.enabled === true);
     setDraft({
       rate_percent: String(settings.rate_percent ?? 0.5), months: String(settings.months ?? 12), min_payout: String(settings.min_payout ?? 25),
@@ -209,6 +293,7 @@ function SettingsCard({ settings }: { settings: Row }) {
   ];
   const save = async () => {
     const payload: Record<string, unknown> = { enabled };
+    if (claimUntil) payload.claim_until = new Date(claimUntil).toISOString();
     for (const [k] of fields) {
       const v = (draft[k] ?? '').trim();
       payload[k] = (k === 'max_per_referred' || k === 'monthly_cap') && v === '' ? null : Number(v);
@@ -237,6 +322,11 @@ function SettingsCard({ settings }: { settings: Row }) {
               <Input id={`ref-${k}`} inputMode="decimal" value={draft[k] ?? ''} placeholder={hint} onChange={(e) => setDraft((d) => ({ ...d, [k]: e.target.value }))} />
             </div>
           ))}
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="ref-claim-until">Existing consultants may enter "Who invited you?" until</Label>
+          <Input id="ref-claim-until" type="datetime-local" value={claimUntil} onChange={(e) => setClaimUntil(e.target.value)} className="max-w-xs" />
+          <p className="text-xs text-muted-foreground">Default: 14 days after the launch ({settings.launch_at ? new Date(String(settings.launch_at)).toLocaleDateString('en-GB') : 'not launched yet'}). After it, only an administrator can set a referrer.</p>
         </div>
         <div className="space-y-1"><Label htmlFor="ref-reason">Reason for the change (required)</Label><Input id="ref-reason" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} /></div>
         <Button onClick={save} disabled={saving || reason.trim().length < 5}>{saving && <Loader2 className="w-4 h-4 me-2 animate-spin" />}Save settings</Button>
@@ -336,6 +426,7 @@ export default function ReferralsAdminPage() {
           <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="audit">Audit trail</TabsTrigger>
           <TabsTrigger value="calc">Calculations</TabsTrigger>
+          <TabsTrigger value="announce">Announcement</TabsTrigger>
           <TabsTrigger value="reconcile">Reconciliation</TabsTrigger>
         </TabsList>
 
@@ -463,6 +554,7 @@ export default function ReferralsAdminPage() {
         <TabsContent value="settings">{overview.data ? <SettingsCard settings={(o.settings ?? {}) as Row} /> : <Skeleton className="h-40 w-full rounded-2xl" />}</TabsContent>
 
         <TabsContent value="calc"><AdminCalculations /></TabsContent>
+        <TabsContent value="announce" className="space-y-4"><AnnouncementCard /><SetReferrerCard /></TabsContent>
         <TabsContent value="reconcile"><ReconcileCard /></TabsContent>
 
         <TabsContent value="audit">
