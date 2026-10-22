@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { formatRate, rateRangeText, tierFor, tierRangeLabel, type ReferralSettings, type RulesSection, type Tier } from '@/lib/referrals';
+import { formatRate, MAN_DAY_HOURS, rateRangeText, tierFor, tierRangeLabel, type ReferralSettings, type RulesSection, type Tier } from '@/lib/referrals';
 
 /**
  * One source for the "Programme rules" text (the hub on screen and the PDF): every number comes from the live settings
@@ -51,7 +51,7 @@ export function buildRulesContent(t: TFunction, c: RulesCtx): RulesBlock[] {
     {
       id: 'earn', title: t('refr.s_earn', 'How you earn'), note: note('earn'),
       bullets: [
-        t('refr.earn_1', 'Reward = your tier rate x the consultant fee. Fee = approved hourly rate x approved hours; 1 man-day = 8 hours.'),
+        t('refr.earn_1', 'Reward = your tier rate x the consultant fee. Fee = approved hourly rate x approved hours; 1 man-day = {{h}} hours.', { h: MAN_DAY_HOURS }),
         t('refr.earn_2', 'Example at your rate ({{rate}} %): a fee of {{fee}} gives you {{reward}}.', { rate, fee: c.money(c.exampleFee), reward: c.money(example) }),
         t('refr.earn_3', 'Paid by AI Support 360 - never deducted from your colleague and never added to the client\'s price.'),
         t('refr.earn_4', 'A reward is created only after the client has paid and your colleague\'s payout was released; invoice lines below {{min}} earn nothing.', { min: c.money(s.min_invoice ?? 0) }),

@@ -126,3 +126,15 @@ describe('simulator inputs', () => {
     expect(realNumbersFromReferrals([], now)).toEqual({ referred: 0, manDays: 0 });
   });
 });
+
+import { parseRulesTexts, rulesTextsProblem } from './referrals';
+
+describe('administrator section notes', () => {
+  it('are plain text only, known sections, at most 600 characters', () => {
+    expect(rulesTextsProblem({ payment: { en: 'Payouts run on Mondays.' } })).toBeNull();
+    expect(rulesTextsProblem({ payment: { en: '<b>bold</b>' } })).toMatch(/plain text/);
+    expect(rulesTextsProblem({ secret: { en: 'x' } })).toBe('Unknown section');
+    expect(rulesTextsProblem({ rules: { ar: 'x'.repeat(601) } })).toMatch(/600/);
+    expect(parseRulesTexts({ payment: { en: '<script>x</script>', ar: 'نص' }, other: { en: 'x' } })).toEqual({ payment: { ar: 'نص' } });
+  });
+});
