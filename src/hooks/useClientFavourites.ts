@@ -4,8 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { useSessionReady } from '@/hooks/useSessionReady';
-import {
 import { safeRpc } from '@/lib/safeRpc';
+import {
   canEditScope, cleanTags, DEFAULT_INVITE_LIMIT, isMissingFeature, scopeFor,
   type ConsultantGroup, type Favourite, type FavScope, type GroupColour, type GroupIcon,
 } from '@/lib/clientFavourites';

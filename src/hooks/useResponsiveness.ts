@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSessionReady } from '@/hooks/useSessionReady';
-import {
 import { safeRpc } from '@/lib/safeRpc';
+import {
   isLevel, readRespSettings, RESP_DEFAULTS,
   type RespExclusion, type RespKind, type RespLevel, type RespMetrics, type RespOutcome, type RespSettings,
 } from '../../supabase/functions/_shared/responsiveness';
