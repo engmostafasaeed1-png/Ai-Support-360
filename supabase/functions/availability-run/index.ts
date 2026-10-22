@@ -4,6 +4,7 @@
 // lives in the service-role-only availability_email_claim RPC (atomic, at most 5 attempts, 10-minute claim lease) and
 // a call can only send what the database queued. Responses contain counts only.
 import { adminClient, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
+import { isJobCaller } from '../_shared/jobAuth.ts';
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
 
 interface Row { id: string; consultant_id: string; user_id: string; kind: 'first' | 'admin' | 'resumed'; lang: string | null; display_name: string | null; deadline: string | null }
@@ -35,6 +36,7 @@ Deno.serve(async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
   if (req.method !== 'POST') return jsonResponse(req, { error: 'Method not allowed' }, 405);
+  if (!(await isJobCaller(req, adminClient()))) return jsonResponse(req, { error: 'Unauthorized' }, 401);
   const admin = adminClient();
   const { data, error } = await admin.rpc('availability_email_claim', { _limit: 100 });
   if (error) {

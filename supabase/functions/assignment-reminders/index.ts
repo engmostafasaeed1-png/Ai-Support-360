@@ -8,6 +8,7 @@
 // Safety lives in the service-only claim_assignment_reminders / claim_assignment_info_emails RPCs (atomic FOR UPDATE SKIP LOCKED, due times, stop rules,
 // per-consultant hourly limit, admin switch assignment_reminders, max 200 per run). Responses contain counts only.
 import { adminClient, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
+import { isJobCaller } from '../_shared/jobAuth.ts';
 import { parseRunBody, readPolicyMinutes, runResponse, sweepGuarded, type PolicyMinutes } from '../_shared/assignmentPolicy.ts';
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
 import { assignmentEmailCategory } from '../_shared/notificationPause.ts';
@@ -151,6 +152,7 @@ Deno.serve(async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
   if (req.method !== 'POST') return jsonResponse(req, { error: 'Method not allowed' }, 405);
+  if (!(await isJobCaller(req, adminClient()))) return jsonResponse(req, { error: 'Unauthorized' }, 401);
 
   let body: unknown = null;
   try { body = await req.json(); } catch { body = null; }

@@ -4,6 +4,7 @@
 // consultant and version, admin reminders at most once per 24 h, flag consultant_policy_emails, max 200), and a 30-minute
 // guard ignores repeat calls. Responses contain counts only.
 import { adminClient, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
+import { isJobCaller } from '../_shared/jobAuth.ts';
 import { reminderRunBody, startReminderRun } from '../_shared/profileReminderRun.ts';
 import { formatPolicyDeadline, policyNoticeLang } from '../_shared/consultantPolicyCopy.ts';
 import { policyEmailNumbers, type PolicyEmailNumbers } from '../_shared/consultantPolicyEmail.ts';
@@ -56,6 +57,7 @@ Deno.serve(async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
   if (req.method !== 'POST') return jsonResponse(req, { error: 'Method not allowed' }, 405);
+  if (!(await isJobCaller(req, adminClient()))) return jsonResponse(req, { error: 'Unauthorized' }, 401);
 
   const admin = adminClient();
   const result = await startReminderRun<DueRow>({

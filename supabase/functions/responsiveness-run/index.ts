@@ -4,6 +4,7 @@
 // LOCKED, each notice e-mailed once, max 200 per run, nightly work at most once per 20 hours) plus an 8-minute repeat
 // guard here. Responses contain counts only.
 import { adminClient, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
+import { isJobCaller } from '../_shared/jobAuth.ts';
 import { respRunGuarded } from '../_shared/responsiveness.ts';
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
 
@@ -49,6 +50,7 @@ Deno.serve(async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
   if (req.method !== 'POST') return jsonResponse(req, { error: 'Method not allowed' }, 405);
+  if (!(await isJobCaller(req, adminClient()))) return jsonResponse(req, { error: 'Unauthorized' }, 401);
   const admin = adminClient();
 
   let rows: NoticeRow[] = [];

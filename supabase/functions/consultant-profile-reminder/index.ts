@@ -5,6 +5,7 @@
 // weekly after profile_reminder_daily_days, stop when complete, max 200, admin flag), and a
 // 30-minute guard ignores repeat calls. Responses contain counts only.
 import { adminClient, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
+import { isJobCaller } from '../_shared/jobAuth.ts';
 import { reminderRunBody, startReminderRun } from '../_shared/profileReminderRun.ts';
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -86,6 +87,7 @@ Deno.serve(async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
   if (req.method !== 'POST') return jsonResponse(req, { error: 'Method not allowed' }, 405);
+  if (!(await isJobCaller(req, adminClient()))) return jsonResponse(req, { error: 'Unauthorized' }, 401);
 
   const admin = adminClient();
   const result = await startReminderRun<DueRow>({
