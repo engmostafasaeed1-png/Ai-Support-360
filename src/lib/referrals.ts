@@ -368,3 +368,32 @@ export const STATEMENT_COLUMNS: Array<[keyof CalcLine, string]> = [
 export function statementCsv(lines: CalcLine[]): string {
   return referralCsv(lines as unknown as Array<Record<string, unknown>>, STATEMENT_COLUMNS as Array<[string, string]>);
 }
+
+// ------------------------------------------------------------------ "Refer & earn" onboarding step
+
+export type ReferStepState = 'new' | 'done' | 'later';
+const stepKey = (userId: string) => `aisupport360.refer-step.${userId}`;
+
+/** The onboarding step is shown once per account and browser; "Maybe later" moves it to a dashboard card. */
+export function referStepState(userId: string | null | undefined): ReferStepState {
+  if (!userId) return 'done';
+  try {
+    const v = localStorage.getItem(stepKey(userId));
+    return v === 'done' || v === 'later' ? v : 'new';
+  } catch { return 'new'; }
+}
+
+export function setReferStepState(userId: string | null | undefined, state: Exclude<ReferStepState, 'new'>): void {
+  if (!userId) return;
+  try { localStorage.setItem(stepKey(userId), state); } catch { /* storage blocked */ }
+}
+
+/**
+ * ILLUSTRATIVE example for the step, from the live settings: 1 colleague billing 10 man-days in a month at $50/h =
+ * 10 x 8 h x $50 = $4,000 fee -> reward at the rate; 5 colleagues -> five times that.
+ */
+export function referStepExample(ratePercent: number, manDaysPerMonth = 10, hourlyRate = 50, colleagues = 5) {
+  const fee = round2(manDaysPerMonth * MAN_DAY_HOURS * hourlyRate);
+  const one = rewardForFee(fee, ratePercent);
+  return { manDays: manDaysPerMonth, hours: MAN_DAY_HOURS, hourlyRate, fee, one, colleagues, many: round2(one * colleagues) };
+}

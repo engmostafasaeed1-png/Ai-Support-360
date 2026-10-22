@@ -10,6 +10,9 @@ import { useTourProgress } from '@/hooks/useTourProgress';
 import { TOUR_KEY, resumeStep, shouldAutoStart } from '@/lib/tour';
 import ProductTour, { type TourStep } from './ProductTour';
 import { useAssignmentPolicyText } from '@/components/consultant/AssignmentPolicyNote';
+import { usePublicReferralSettings } from '@/hooks/useReferralProgram';
+import { formatRate } from '@/lib/referrals';
+import { Gift } from 'lucide-react';
 
 interface TourContextValue { start: () => void; running: boolean }
 
@@ -24,6 +27,7 @@ export const AUTO_START_DELAY_MS = 800;
 export function useConsultantTourSteps(): TourStep[] {
   const { t } = useTranslation();
   const replyPolicy = useAssignmentPolicyText();
+  const referral = usePublicReferralSettings();
   return useMemo(() => [
     { id: 'welcome', placement: 'center', icon: Sparkles, title: t('tour.c.welcome_title', 'Welcome'),
       body: t('tour.c.welcome', 'Welcome to AI Support 360. This 2-minute tour shows you where everything is.') },
@@ -45,11 +49,15 @@ export function useConsultantTourSteps(): TourStep[] {
       body: t('tour.c.earnings', 'See what you earned and add your bank details. They are private: only you and the administrators can see them. Payouts arrive within 15 business days after the client pays.') },
     { id: 'nav-profile', target: 'nav-profile', placement: 'end', icon: UserCircle, title: t('tour.c.profile_title', 'My profile'),
       body: t('tour.c.profile', 'Your trust score, certificates and AI interview live here. A complete profile gets more invitations.') },
+    // Refer & earn: only while the programme is live; numbers from the real settings, no income promise.
+    ...(referral.available && referral.settings.enabled ? [{ id: 'nav-referrals', target: 'nav-referrals', placement: 'end' as const, icon: Gift,
+      title: t('tour.c.refer_title', 'Refer & earn'),
+      body: t('tour.c.refer', 'Bring colleagues, earn together: share your code; when a colleague you referred works, you earn {{rate}} % of their fee for {{months}} months, paid by AI Support 360 and never deducted from them. It starts after you both pass the AI interview.', { rate: formatRate(referral.settings.rate_percent), months: referral.settings.months }) }] : []),
     { id: 'bell', target: 'bell', placement: 'bottom', icon: Bell, title: t('tour.c.bell_title', 'Notifications'),
       body: t('tour.c.bell', 'New requests and bid answers arrive here. Turn on phone alerts (and Telegram) in Settings so you never miss a critical request.') },
     { id: 'help-button', target: 'help-button', placement: 'bottom', icon: CircleHelp, title: t('tour.c.help_title', 'Help'),
       body: t('tour.c.help', 'Open the quick guide any time, or take this tour again.') },
-  ], [t, replyPolicy]);
+  ], [t, replyPolicy, referral.available, referral.settings.enabled, referral.settings.rate_percent, referral.settings.months]);
 }
 
 /** Nav steps whose menu item is not on the page (feature switched off / hidden) are left out on wide screens.

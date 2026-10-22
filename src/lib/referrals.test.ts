@@ -161,3 +161,22 @@ describe('referral calculations arithmetic', () => {
     expect(csv.split('\r\n')[1]).toBe('2026-10-01,D. K****,reward,T-1,50,6.25,8,400,0.5,2,USD,paid,completed,');
   });
 });
+
+import { referStepExample, referStepState, setReferStepState } from './referrals';
+
+describe('Refer & earn onboarding step', () => {
+  beforeEach(() => localStorage.clear());
+  it('example from the settings: 10 x 8 h x $50 = $4,000 -> $20.00; 5 colleagues -> $100.00', () => {
+    expect(referStepExample(0.5)).toMatchObject({ fee: 4000, one: 20, many: 100 });
+    expect(referStepExample(0.75)).toMatchObject({ fee: 4000, one: 30, many: 150 });
+  });
+  it('is shown once, and "Maybe later" is remembered', () => {
+    expect(referStepState('u1')).toBe('new');
+    setReferStepState('u1', 'later');
+    expect(referStepState('u1')).toBe('later');
+    setReferStepState('u1', 'done');
+    expect(referStepState('u1')).toBe('done');
+    expect(referStepState('u2')).toBe('new');
+    expect(referStepState(null)).toBe('done');
+  });
+});

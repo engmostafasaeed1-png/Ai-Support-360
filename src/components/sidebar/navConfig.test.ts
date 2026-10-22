@@ -59,7 +59,7 @@ describe('consultant tour ids', () => {
     const ids = Object.fromEntries(consultantNavGroups.flatMap((g) => g.items).filter((i) => i.tourId).map((i) => [i.tourId, i.key]));
     expect(ids).toEqual({
       'nav-profile': 'profile', 'nav-my-bids': 'proposals', 'nav-open-requests': 'open_tickets',
-      'nav-sessions': 'calendar', 'nav-messages': 'chat', 'nav-earnings': 'earnings',
+      'nav-sessions': 'calendar', 'nav-messages': 'chat', 'nav-earnings': 'earnings', 'nav-referrals': 'referrals',
     });
   });
 });

@@ -189,7 +189,7 @@ export const consultantNavGroups: NavGroup[] = [
       { key: 'interviews', icon: Video, path: '/consultant/interviews' },
       { key: 'remote_access', icon: MonitorSmartphone, path: '/consultant/remote-access' },
       { key: 'knowledge', icon: BookOpenCheck, path: '/consultant/knowledge' },
-      { key: 'referrals', icon: Gift, path: '/consultant/referrals', labelKey: 'sidebar.refer_earn', fallback: 'Refer & earn' },
+      { key: 'referrals', icon: Gift, path: '/consultant/referrals', labelKey: 'sidebar.refer_earn', fallback: 'Refer & earn', tourId: 'nav-referrals' },
     ],
   },
   {

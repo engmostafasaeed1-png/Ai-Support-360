@@ -55,6 +55,16 @@ the sign-up form shows no referral field, and the admin page says the programme 
 - Administrators: Referrals > Calculations (any consultant, read-only) and Reconciliation (reward = fee x rate, reversal =
   minus reward, referral payout = its lines, paid lines = completed referral payouts, one reward per payout).
 
+## Onboarding step "Refer & earn"
+- Shown once on the consultant Profile (the consolidated onboarding editor) after the profile sections, and as a step of the
+  first-sign-in tour (only while the programme is live). Optional: "Maybe later" hides it and shows a dashboard card that
+  reopens it; it is never a required item. Numbers (rate, months, minimum, pass mark) come from the live settings.
+- The consultant's code is created by the database when the step opens. Share buttons follow the activation rule: before
+  the AI interview is passed they explain that sharing starts after passing; after it, the terms acknowledgement is asked
+  on the first Share (never at registration). "Who invited you?" uses the one-time claim (locked once linked).
+- Not done on purpose: no line in the welcome / confirmation e-mail. Adding programme promotion to a transactional
+  e-mail is not allowed (it is marketing content and harms deliverability); the dashboard card and tour cover it.
+
 ## Not done / notes
 - No announcement e-mail to all consultants: app e-mails must be one-recipient and event-triggered (promotional bulk e-mail
   is not allowed). Announce through Admin > Messages (in-app / Telegram) instead; the dashboard banner and the pop-up cover it.
@@ -289,3 +299,41 @@ created for payouts that already exist.
 | refz.pay_pending | قيد الانتظار |
 | refz.pay_refunded | مستردة |
 | refz.pay_disputed | محل نزاع |
+| refz.step_headline | اجلب زملاءك واربحوا معًا |
+| refz.step_optional | اختياري - لا يؤثر على ملفك الشخصي |
+| refz.step_how_1 | شارك رمزك أو رابطك الشخصي |
+| refz.step_how_2 | يسجّل زميلك به ويتم توثيقه |
+| refz.step_how_3 | تحصل على {{rate}} % من أتعابه عن كل يوم عمل لمدة {{months}} شهرًا - تدفعها AI Support 360 ولا تُخصم منه أبدًا |
+| refz.step_activation | تصبح إحالتك نشطة عندما تجتازان كلاكما المقابلة الذكية (بدرجة {{pass}} على الأقل). |
+| refz.step_example_title | ما الذي يمكن أن تربحه |
+| refz.step_illustrative | مثال توضيحي |
+| refz.step_example_one | زميل واحد يفوتر {{days}} أيام عمل في شهر بسعر {{hourly}}/ساعة: {{days}} × {{hours}} ساعات × {{hourly}} = أتعاب {{fee}} ← مكافأتك {{reward}}. |
+| refz.step_example_many | {{n}} زملاء مثله ← {{reward}} في ذلك الشهر. |
+| refz.step_example_note | مثال فقط وليس وعدًا؛ المكافآت تعتمد على أعمال زملائك المعتمدة والمدفوعة. |
+| refz.step_paid_title | كيف تُدفع لك |
+| refz.step_paid_1 | يظهر بند المكافأة بعد أن يدفع العميل. |
+| refz.step_paid_2 | يصبح متاحًا عند صرف دفعة زميلك. |
+| refz.step_paid_3 | يُدفع مع دفعتك المعتادة عندما يبلغ رصيدك المتاح {{min}}. |
+| refz.step_paid_4 | ترى كل بند في صفحتي الأرباح وحسابات الإحالة. |
+| refz.step_rules_title | القواعد |
+| refz.step_rule_1 | الزملاء الموثّقون فقط. |
+| refz.step_rule_2 | لا إحالة للنفس. |
+| refz.step_rule_3 | تُعكس المكافآت إذا استُردّت الدفعة. |
+| refz.step_rule_tax | الضريبة على المكافآت مسؤوليتك. |
+| refz.step_code_title | رمزك الشخصي |
+| refz.share_needs_interview | تبدأ المشاركة بعد اجتيازك المقابلة الذكية (بدرجة {{pass}} على الأقل). رمزك محفوظ بالفعل. |
+| refz.step_later | لاحقًا |
+| refz.step_done | فهمت |
+| refz.who_title | من دعاك؟ أدخل رمز الإحالة |
+| refz.who_hint | اختياري. بعد ربطه لا يمكن تغييره. |
+| refz.who_link | ربط هذا الرمز |
+| refz.claim_failed | تعذّر إضافة الرمز. |
+| refz.claim_too_late | يمكن إضافة الرمز فقط في الأيام الأولى بعد التسجيل وقبل أول تذكرة مدفوعة. |
+| refz.claim_self | لا يمكنك استخدام رمزك الخاص. |
+| refz.claim_loop | لا يمكن استخدام هذا الرمز (أنت من أحال هذا المستشار). |
+| refz.claim_already | يوجد رمز إحالة مرتبط بحسابك بالفعل. |
+| refz.later_title | أحِل واربح: اجلب زملاءك واربحوا معًا |
+| refz.later_body | رمزك الشخصي جاهز. اطّلع على طريقة العمل عندما يتوفر لديك دقيقة. |
+| refz.later_open | اعرف كيف يعمل |
+| tour.c.refer_title | أحِل واربح |
+| tour.c.refer | اجلب زملاءك واربحوا معًا: شارك رمزك؛ عندما يعمل زميل أحلته تحصل على {{rate}} % من أتعابه لمدة {{months}} شهرًا، تدفعها AI Support 360 ولا تُخصم منه أبدًا. يبدأ ذلك بعد اجتيازكما كليكما المقابلة الذكية. |
