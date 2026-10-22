@@ -1,4 +1,5 @@
 import * as React from 'npm:react@18.3.1'
+import { fromHeader } from '../emailSender.ts'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { EmailAPIError, sendLovableEmail } from 'npm:@lovable.dev/email-js@0.1.0'
 import { TEMPLATES } from './registry.ts'
@@ -77,6 +78,12 @@ export interface SendTemplateEmailOptions {
   pause?: { userId: string; category: PauseCategory }
   /** Test sends only (e.g. "[TEST] "), prepended to the rendered subject. */
   subjectPrefix?: string
+  /**
+   * Sender identity from the admin settings (_shared/emailSender.ts). The From domain is always the verified one;
+   * an invalid name or local part falls back to "AI Support 360" <noreply@...>.
+   */
+  displayName?: string
+  fromLocal?: string
 }
 
 /**
@@ -141,7 +148,9 @@ export async function sendTemplateEmail(
     await sendLovableEmail(
       {
         to: recipient,
-        from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+        from: options.displayName || options.fromLocal
+          ? fromHeader(options.displayName ?? SITE_NAME, options.fromLocal)
+          : `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
         sender_domain: SENDER_DOMAIN,
         subject: finalSubject,
         html,
