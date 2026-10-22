@@ -19,7 +19,7 @@ BEGIN
     (sa, 'Super', 'en'), (adm, '', 'en'), (cl, 'Client', 'en'), (ok1, 'Omar Saleh', 'en'), (ar1, 'Laila', 'ar'), (pau, 'Paused', 'en'), (nop, 'Nora', 'en');
   INSERT INTO public.consultants (user_id, verification_status) VALUES (ok1, 'verified'), (ar1, 'verified'), (pau, 'verified'), (nop, 'verified');
   INSERT INTO public.telegram_links (user_id, chat_id, active) VALUES (ar1, 777, true);
-  INSERT INTO public.push_subscriptions (user_id, endpoint, p256dh, auth) VALUES (ok1, 'https://fcm.googleapis.com/fcm/send/nc-test', 'k', 'a');
+  INSERT INTO public.push_subscriptions (user_id, endpoint, p256dh, auth) VALUES (ok1, 'https://fcm.googleapis.com/fcm/send/nc-test', 'BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM', 'tBHItJI5svbpez7KI4CCXg');
   INSERT INTO public.user_notification_pauses (user_id, paused_until, duration) VALUES (pau, now() + interval '3 days', '3d');
   INSERT INTO public.platform_settings (key, value) VALUES ('referral_invitations_enabled', 'true'::jsonb)
     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
