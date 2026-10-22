@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] AI Interviewer Training (knowledge-based, profile-specific questions + admin knowledge documents): inventory, plan builder, version per module, private document bucket + extraction function, preview tool, coverage table, question_source audit, consultant notice line, EN/AR, tests; SQL in docs/sql/interview-knowledge.sql (+ .test.sql), not applied (Oct 22)
+- [x] AI Interviewer Training (knowledge-based, profile-specific questions + admin knowledge documents): inventory, plan builder, optional version per module, document upload/extraction function, coverage, preview, question sources, consultant notice line, EN/AR, tests; docs/sql/interview-knowledge.sql + test file checked on a scratch database; functions deployed (Oct 22)
+- [ ] Switch on AI Interviewer knowledge base: awaits owner applying docs/sql/interview-knowledge.sql (then run docs/sql/interview-knowledge.test.sql) and switching it on in Settings.
 
 - [x] H1 consultant registration: scanner-safe /auth/confirm page + 6-digit code, expired-link panel on /login and confirm page (neutral resend, 60 s cooldown), clearer sign-up inbox screen, admin resend + super-admin "mark e-mail as confirmed" (audited, reason), unconfirmed consultants get a confirmation e-mail instead of profile reminders; tests (Oct 21)
 - [ ] H1 follow-up: owner sets Auth settings → Email → One-time codes expiration to 24 h (the app cannot read or change it).
