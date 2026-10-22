@@ -247,7 +247,9 @@ export const HOLD_REASON_LABEL: Record<string, string> = {
 
 /** Fraud signals (database flags) in plain words, for administrators. */
 export const FLAG_LABEL: Record<string, string> = {
-  same_device: 'Same browser / device', same_ip: 'Same network', same_bank: 'Same bank account', same_phone: 'Same phone',
+  same_device: 'Same device as the referrer', same_ip: 'Same network (IP) as the referrer', same_bank: 'Same bank account as the referrer',
+  same_phone: 'Same phone as the referrer', many_from_same_ip: 'Several referrals from one network',
+  many_from_same_email_domain: 'Several referrals from one e-mail domain',
   same_domain: 'Same company e-mail domain', velocity_referrer: 'Many sign-ups in a day', velocity_ip: 'Many sign-ups from one network',
   client_same_account: 'Client is the same account', client_same_email: 'Client has the same e-mail', client_same_domain: 'Client on the same company domain',
   client_same_phone: 'Client has the same phone', client_same_ip: 'Client on the same network', tenant_member: 'Member of the paying company',
