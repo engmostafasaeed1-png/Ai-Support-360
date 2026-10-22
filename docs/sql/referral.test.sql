@@ -165,8 +165,9 @@ SET LOCAL ROLE anon;
 SELECT pg_temp.check(public.referral_validate_code((SELECT code FROM kc WHERE name = 'ip_ref'))::text = public.referral_validate_code('SAP-NOBODY-ZZZZZZZ')::text
                      AND public.referral_validate_code('SAP-NOBODY-ZZZZZZZ') = '{"valid": false}'::jsonb
                      AND public.referral_validate_code('AB') = '{"valid": false}'::jsonb, 'T09 enumeration_identical: disabled = unknown = too short');
-DO $$ DECLARE i int; BEGIN
-  FOR i IN 1..6 LOOP PERFORM public.referral_validate_code('SAP-GUESS-' || i || 'ABCDEF'); END LOOP;   -- 10 invalid in total now
+-- (Plain statements: a DO block that ends in an exception would roll the counters back.)
+SELECT public.referral_validate_code('SAP-GUESS-' || i || 'ABCDEF') FROM generate_series(1, 6) i;   -- 10 invalid in total now
+DO $$ BEGIN
   PERFORM public.referral_validate_code('SAP-GUESS-XABCDEF');
   RAISE EXCEPTION 'FAILED: T08 no lock-out after 10 invalid codes';
 EXCEPTION WHEN raise_exception THEN
@@ -186,9 +187,7 @@ SELECT pg_temp.check(NOT EXISTS (SELECT 1 FROM public.referral_code_attempts WHE
 -- A signed-in account is locked as well (claim path), whatever network it uses.
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.as_user(pg_temp.uid(pg_temp.k('spoof')));
-DO $$ DECLARE i int; BEGIN
-  FOR i IN 1..10 LOOP PERFORM pg_temp.ip('192.0.2.' || (100 + i)); PERFORM public.referral_claim('SAP-WRONG-' || i || 'ZZZZZZ'); END LOOP;
-EXCEPTION WHEN OTHERS THEN NULL; END $$;
+SELECT pg_temp.ip('192.0.2.' || (100 + i)), public.referral_claim('SAP-WRONG-' || i || 'ZZZZZZ') FROM generate_series(1, 10) i;
 SELECT pg_temp.ip('192.0.2.250');
 DO $$ BEGIN
   PERFORM public.referral_claim('SAP-WRONG-LASTZZZ');
