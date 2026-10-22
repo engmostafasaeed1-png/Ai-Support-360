@@ -803,7 +803,7 @@ export function referralEmailSettingsFrom(rows: Array<{ key: string; value: unkn
     exampleFee: n('referral_email_example_fee'),
     currency: typeof cur === 'string' ? cur : undefined,
     termsDraft: draft === false || draft === 'false' ? false : true,
-    // Levels only when the live tiers carry their thresholds; otherwise the table is left out rather than guessed.
+    // Live levels when the setting exists (malformed rows dropped); a missing setting uses the documented defaults.
     tiers: get('referral_tiers') === undefined ? undefined : levels,
   });
 }
