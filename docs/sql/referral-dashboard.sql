@@ -31,7 +31,11 @@ BEGIN
                   WHERE m.channel = 'in_app' AND m.status = 'sent'),
         'failed', (SELECT count(*) FROM public.message_campaign_recipients m JOIN public.referral_invitation_runs x ON x.campaign_id = m.campaign_id
                     WHERE m.channel = 'in_app' AND m.status = 'failed'),
-        'last_at', max(r.created_at) FILTER (WHERE r.mode <> 'test'))
+        'last_at', max(r.created_at) FILTER (WHERE r.mode <> 'test'),
+        'by_month', COALESCE((SELECT jsonb_agg(jsonb_build_object('month', mo, 'count', c) ORDER BY mo)
+                                FROM (SELECT to_char(date_trunc('month', m.sent_at AT TIME ZONE 'Asia/Riyadh'), 'YYYY-MM') mo, count(*) c
+                                        FROM public.message_campaign_recipients m JOIN public.referral_invitation_runs x ON x.campaign_id = m.campaign_id
+                                       WHERE m.channel = 'in_app' AND m.status = 'sent' AND m.sent_at > now() - interval '12 months' GROUP BY 1) q), '[]'::jsonb))
         FROM public.referral_invitation_runs r $q$ INTO _inv;
   END IF;
 
