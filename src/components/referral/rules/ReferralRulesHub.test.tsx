@@ -88,7 +88,7 @@ describe('Programme rules hub', () => {
     renderHub(overview());
     const nav = screen.getByRole('navigation', { name: 'Programme rules sections' });
     const chips = within(nav).getAllByRole('button');
-    expect(chips.map((c) => c.textContent)).toEqual(['Overview', 'Prerequisites', 'How you earn', 'Rates', 'Payment', 'Rules & fairness', 'Simulator']);
+    expect(chips.map((c) => c.textContent)).toEqual(['Overview', 'Prerequisites', 'How you earn', 'Rates', 'Payment', 'Programme policy', 'Simulator']);
     for (const c of chips) expect(document.getElementById(c.getAttribute('aria-controls') as string)).toBeTruthy();
     fireEvent.click(chips[3]);
     expect(document.activeElement?.id).toBe('refz-rules-rates');

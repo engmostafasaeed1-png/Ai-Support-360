@@ -83,7 +83,7 @@ export function buildRulesContent(t: TFunction, c: RulesCtx): RulesBlock[] {
       more: [],
     },
     {
-      id: 'rules', title: t('refr.s_rules', 'Rules & fairness'), note: note('rules'),
+      id: 'rules', title: t('refr.s_policy', 'Programme policy'), note: note('rules'),
       bullets: [
         t('refr.rule_1', 'No self-referral: not with another account, e-mail, device, phone, bank account or company of your own.'),
         t('refr.rule_2', 'One referrer per consultant: the first valid code wins and can not be changed.'),

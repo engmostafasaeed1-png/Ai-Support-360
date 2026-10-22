@@ -24,7 +24,7 @@ const ICON: Record<RulesSection, typeof Info> = {
 };
 const sectionId = (id: RulesSection) => `refz-rules-${id}`;
 
-function Section({ block, children, moreTitle }: { block: RulesBlock; children?: ReactNode; moreTitle?: string }) {
+function Section({ block, children, moreTitle, hideList = false }: { block: RulesBlock; children?: ReactNode; moreTitle?: string; hideList?: boolean }) {
   const { t } = useTranslation();
   const Icon = ICON[block.id];
   return (
@@ -35,8 +35,8 @@ function Section({ block, children, moreTitle }: { block: RulesBlock; children?:
       </h3>
       {block.note && <p className="rounded-xl bg-primary/5 p-3 text-sm" dir="auto">{block.note}</p>}
       {children}
-      {block.bullets.length > 0 && <ul className="list-disc ps-5 space-y-1 text-sm text-muted-foreground">{block.bullets.map((b) => <li key={b}>{b}</li>)}</ul>}
-      {block.more.length > 0 && (
+      {!hideList && block.bullets.length > 0 && <ul className="list-disc ps-5 space-y-1 text-sm text-muted-foreground">{block.bullets.map((b) => <li key={b}>{b}</li>)}</ul>}
+      {!hideList && block.more.length > 0 && (
         <details className="rounded-xl border border-border/60 p-3 text-sm">
           <summary className="cursor-pointer font-medium">{moreTitle ?? t('refr.learn_more', 'Learn more')}</summary>
           <ul className="mt-2 list-disc ps-5 space-y-1 text-muted-foreground">{block.more.map((b) => <li key={b}>{b}</li>)}</ul>
@@ -57,8 +57,10 @@ const STATE_STYLE: Record<CheckState, { cls: string; Icon: typeof Check }> = {
  * consultant, how earnings work, rates, payment, rules and a simulator. All numbers come from the live settings
  * (my_referral_overview), notes from the administrator settings (plain text).
  */
-export default function ReferralRulesHub({ ov, referrals, money, date, onDone }: {
+export default function ReferralRulesHub({ ov, referrals, money, date, onDone, policy }: {
   ov: ReferralOverview; referrals: MyReferral[]; money: (v: number) => string; date: (iso: string | null | undefined) => string; onDone: () => void;
+  /** "Programme policy" cards (Refer & earn page): replace the short rules list on screen; the PDF keeps the list. */
+  policy?: ReactNode;
 }) {
   const { t, i18n } = useTranslation();
   const lang: 'en' | 'ar' = i18n.language?.startsWith('ar') ? 'ar' : 'en';
@@ -257,11 +259,12 @@ export default function ReferralRulesHub({ ov, referrals, money, date, onDone }:
               <Link to="?tab=calculations" className="text-primary underline">{t('refz.tab_calc', 'Referral calculations')}</Link></p>
           </Section>
 
-          <Section block={byId.rules} moreTitle={t('refr.rej_title', 'What gets a referral rejected')}>
+          <Section block={byId.rules} moreTitle={t('refr.rej_title', 'What gets a referral rejected')} hideList={!!policy}>
             <div className="flex gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs">
               <ShieldAlert className="h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
               <span>{t('refr.rej_short', 'Referrals and rewards with fraud signals are reviewed first; nothing is paid until they are cleared.')}</span>
             </div>
+            {policy}
           </Section>
 
           <Section block={byId.simulator}>
