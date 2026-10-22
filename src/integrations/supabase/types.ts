@@ -13471,6 +13471,7 @@ export type Database = {
         Returns: undefined
       }
       referral_acked_at: { Args: { _cid: string }; Returns: string }
+      referral_activation_sweep: { Args: never; Returns: Json }
       referral_add_flags: {
         Args: { _new: string[]; _referred: string; _why: string }
         Returns: undefined
@@ -13479,11 +13480,26 @@ export type Database = {
         Args: { _consultants: string[] }
         Returns: boolean
       }
+      referral_attribute: {
+        Args: {
+          _code: string
+          _device: string
+          _ip: string
+          _referred: string
+          _source: string
+        }
+        Returns: string
+      }
       referral_attribution_flags: {
         Args: { _dh: string; _ih: string; _referred: string; _referrer: string }
         Returns: string[]
       }
       referral_best_score: { Args: { _cid: string }; Returns: number }
+      referral_check_activation: {
+        Args: { _referred: string }
+        Returns: string
+      }
+      referral_check_consultant: { Args: { _cid: string }; Returns: undefined }
       referral_chip: {
         Args: { _for: string; _referred: string }
         Returns: string
@@ -13499,6 +13515,7 @@ export type Database = {
         Args: { _cid: string }
         Returns: boolean
       }
+      referral_create_reward: { Args: { _payout: string }; Returns: string }
       referral_email_claim: {
         Args: { _limit?: number }
         Returns: {
@@ -13546,6 +13563,7 @@ export type Database = {
         Returns: undefined
       }
       referral_masked_name: { Args: { _cid: string }; Returns: string }
+      referral_mature_lines: { Args: { _now?: string }; Returns: number }
       referral_money: { Args: { _v: number }; Returns: number }
       referral_my_consultant: { Args: never; Returns: string }
       referral_name_part: { Args: { _name: string }; Returns: string }
@@ -13583,7 +13601,24 @@ export type Database = {
         Args: { _a: string; _b: string }
         Returns: string[]
       }
+      referral_release_status: { Args: { _line: string }; Returns: string }
       referral_request_ip: { Args: never; Returns: string }
+      referral_reverse_line: {
+        Args: { _actor: string; _line: string; _reason: string }
+        Returns: string
+      }
+      referral_reward_block_reason: {
+        Args: {
+          _activated_at: string
+          _activation: string
+          _at: string
+          _referred: string
+          _referrer: string
+          _status: string
+          _window_ends: string
+        }
+        Returns: string
+      }
       referral_same_bank: { Args: { _a: string; _b: string }; Returns: boolean }
       referral_setting_cap: { Args: { _key: string }; Returns: number }
       referral_setting_num: {
