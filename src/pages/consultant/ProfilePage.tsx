@@ -19,6 +19,7 @@ import ReinterviewDialog from '@/components/consultant/ReinterviewDialog';
 import AvailabilityToggle from '@/components/consultant/AvailabilityToggle';
 import { useConsultantProfile } from '@/hooks/useConsultantProfile';
 import ConsultantOnboarding from '@/components/consultant/onboarding/ConsultantOnboarding';
+import { ReferEarnOnboardingStep } from '@/components/referral/ReferEarnStepHost';
 import { EmbeddedGuideProvider, EmbeddedGuideSwitch, EmbeddedGuideCard } from '@/components/consultant/onboarding/EmbeddedGuides';
 import { FieldHint } from '@/components/consultant/onboarding/OnboardingGuidePanel';
 import ProfileSubmitGate, { ProfileRequiredSummary, ProfileSubmissionProvider, SectionRequiredStatus } from '@/components/consultant/profile/ProfileSubmitGate';
@@ -53,6 +54,7 @@ export default function ProfilePage() {
       <AvailabilityUrgentBanner compact />
       <PolicyBanner inlineAnchor />
       <ConsultantOnboarding embedded />
+      <ReferEarnOnboardingStep />
       <section id="payout-details" className="scroll-mt-20">
         <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
           <Landmark className="w-5 h-5 text-primary" /> Payout bank details

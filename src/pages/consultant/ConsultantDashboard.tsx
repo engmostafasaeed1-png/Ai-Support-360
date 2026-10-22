@@ -24,6 +24,7 @@ import AvailabilityToggle from '@/components/consultant/AvailabilityToggle';
 import CriticalDashboardNotice from '@/components/consultant/CriticalDashboardNotice';
 import PayoutDetailsNudge from '@/components/consultant/PayoutDetailsNudge';
 import ReferralBanner from '@/components/referral/ReferralBanner';
+import { ReferEarnLaterCard } from '@/components/referral/ReferEarnStepHost';
 import GettingStartedCard from '@/components/consultant/GettingStartedCard';
 import LocationBanner from '@/components/consultant/LocationBanner';
 import AvailabilityUrgentBanner from '@/components/consultant/AvailabilityUrgent';
@@ -221,6 +222,7 @@ export default function ConsultantDashboard() {
       <PayoutDetailsNudge />
       <CriticalDashboardNotice />
       <ReferralBanner variant="dashboard" />
+      <ReferEarnLaterCard />
       <WelcomeBanner />
       <EmailVerificationBanner />
       <OnboardingProgressCard role="consultant" />
