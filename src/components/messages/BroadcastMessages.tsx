@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Megaphone } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -8,7 +7,10 @@ import MessageBody from '@/components/messages/MessageBody';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSessionReady } from '@/hooks/useSessionReady';
 import { useGuestMode } from '@/contexts/GuestModeContext';
-import { markNotificationRead, useBroadcastMessage, useBroadcastPopups, type BroadcastMessage } from '@/hooks/useBulkMessaging';
+import { useBroadcastMessage, useBroadcastPopups, type BroadcastMessage } from '@/hooks/useBulkMessaging';
+import { markNotificationsRead } from '@/hooks/useReferralNotices';
+import { useNoticeQueue } from '@/hooks/useNoticeQueue';
+import NoticeModal from '@/components/notifications/NoticeModal';
 
 /** Full text of one "Message from AI Support 360", opened from the notification centre. */
 export function BroadcastMessageDialog({ notificationId, onClose }: { notificationId: string | null; onClose: () => void }) {
@@ -41,28 +43,33 @@ function MessageView({ m }: { m: BroadcastMessage }) {
   );
 }
 
-/** Shows unread pop-up messages once (one at a time); closing marks the notification as read. */
+/**
+ * Pop-up messages (the administrator chose "Pop-up on next visit"): shared notice queue, so one at a time with "1 of N",
+ * closing is immediate and marks the notification read in the background, and each message opens at most once per device.
+ */
 export function BroadcastPopup() {
   const { t } = useTranslation();
   const { signedIn } = useSessionReady();
   const { isGuest } = useGuestMode();
   const qc = useQueryClient();
   const q = useBroadcastPopups(signedIn && !isGuest);
-  const [closed, setClosed] = useState<Set<string>>(new Set());
-  const current = (q.data ?? []).find((m) => !closed.has(m.notification_id)) ?? null;
-  const dismiss = async () => {
-    if (!current) return;
-    setClosed((s) => new Set(s).add(current.notification_id));
-    await markNotificationRead(current.notification_id).catch(() => undefined);
-    qc.invalidateQueries({ queryKey: ['notifications'] });
-  };
+  const items = q.data ?? [];
+  const queue = useNoticeQueue<BroadcastMessage>({
+    family: 'broadcast', items, enabled: signedIn && !isGuest, idOf: (m) => m.notification_id, kindOf: () => 'popup', ack: markNotificationsRead,
+  });
+  const current = queue.current;
   if (!current) return null;
+  const close = () => { queue.dismiss(); qc.invalidateQueries({ queryKey: ['notifications'] }); };
   return (
-    <Dialog open onOpenChange={(o) => !o && dismiss()}>
-      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
-        <MessageView m={current} />
-        <DialogFooter><Button onClick={dismiss}>{t('bmsg.r_got_it', 'Got it')}</Button></DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <NoticeModal
+      icon={<Megaphone className="h-4 w-4 shrink-0 text-primary" aria-hidden />}
+      title={<span dir={current.lang === 'ar' ? 'rtl' : 'ltr'}>{current.subject}</span>}
+      position={queue.position} total={queue.total} onClose={close}
+      onDismissAll={() => { queue.dismissAll(); qc.invalidateQueries({ queryKey: ['notifications'] }); }}
+      closeLabel={t('bmsg.r_got_it', 'Got it')}
+    >
+      <p className="text-xs font-medium text-primary">{t('bmsg.r_title', 'Message from AI Support 360')}</p>
+      <MessageBody text={current.body} lang={current.lang} />
+    </NoticeModal>
   );
 }
