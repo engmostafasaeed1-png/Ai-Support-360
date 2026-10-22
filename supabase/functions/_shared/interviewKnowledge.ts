@@ -67,8 +67,9 @@ export async function loadKnowledgeSettings(db: Db): Promise<KnowledgeSettings> 
 
 /** True once docs/sql/interview-knowledge.sql is applied (the plan table exists). */
 export async function knowledgeTablesReady(db: Db): Promise<boolean> {
-  const { error } = await db.from("interview_plans").select("interview_id", { head: true, count: "exact" }).limit(1);
-  return !error;
+  // a normal read: a HEAD request on a missing table comes back without an error
+  const { error, status } = await db.from("interview_plans").select("interview_id").limit(1);
+  return !error && status !== 404;
 }
 
 const arr = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x) => typeof x === "string").map((x) => String(x).slice(0, 120)) : []);
@@ -108,7 +109,7 @@ export async function loadPlanProfile(db: Db, consultantId: string): Promise<Pla
 function removePersonalData(text: string): string {
   return text
     .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, "[email]")
-    .replace(/(?:\+|00)\d[\d\s().-]{7,}\d/g, "[phone]")
+    .replace(/(?<![\w+])(?:\+|00)\d[\d\s().-]{7,}\d/g, "[phone]")
     .replace(/(?<![\d.])\d{9,}(?![\d.])/g, "[number]");
 }
 
@@ -160,7 +161,7 @@ async function collectSources(db: Db, profile: PlanProfile, plan: InterviewPlan,
     const ids = (sols || []).map((s: any) => s.id);
     const { data: meta } = ids.length ? await db.from("knowledge_solution_meta").select("solution_id, privacy_flags, reviewed_at").in("solution_id", ids) : { data: [] };
     const clean = new Set((meta || []).filter((m: any) => m.reviewed_at && (!m.privacy_flags || m.privacy_flags.length === 0)).map((m: any) => m.solution_id));
-    for (const s of seededShuffle(sols || [], `ks|${seed}`)) {
+    for (const s of seededShuffle<any>(sols || [], `ks|${seed}`)) {
       if (e >= settings.max_excerpts) break;
       if (!clean.has(s.id)) continue;
       const mod = modules.find((m) => [s.sap_module, ...(s.sap_modules || [])].some((x: string) => x && moduleKey(x) === moduleKey(m)));
@@ -289,7 +290,7 @@ export async function buildPlanAndQuestions(db: Db, args: {
   let error: string | null = null;
 
   const draftSlots = slots.filter((s) => s.kind !== "version_warmup");
-  const rules: SlotRule[] = draftSlots.map((s) => ({
+  const rules: Array<SlotRule & { allowedSources: Set<string> }> = draftSlots.map((s) => ({
     slot: s.slot,
     module: s.module,
     allowedSources: new Set([

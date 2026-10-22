@@ -2856,5 +2856,203 @@
     "resp_excellent": "Excellent",
     "resp_good": "Good or better",
     "resp_fair": "Fair or better"
+  },
+  "ik": {
+    "pii": {
+      "emails": "{{count}} e-mail address(es)",
+      "phones": "{{count}} phone number(s)",
+      "numbers": "{{count}} long number(s)",
+      "after": "The text seems to contain {{what}}. Delete the document if it holds client data.",
+      "card": "May contain {{what}}.",
+      "title": "This document may contain personal data",
+      "body": "We found {{what}}. Knowledge documents must not contain confidential client data. Cancel and remove it, or upload anyway if these are public examples.",
+      "cancel": "Cancel upload",
+      "continue": "Upload anyway"
+    },
+    "upload": {
+      "ready": "Document ready: {{count}} excerpts.",
+      "failed": "The text could not be read. Use Re-extract or upload the file again.",
+      "title": "Upload a knowledge document",
+      "doc_title": "Title",
+      "module": "SAP module",
+      "version": "Version / release (optional)",
+      "language": "Language",
+      "tags": "Tags (comma-separated)",
+      "notes": "Notes (only for administrators)",
+      "rights": "I confirm I may use this document for training the interviewer (no confidential client data, copyright respected).",
+      "working": "Uploading and reading…",
+      "too_large": "The file is larger than 10 MB.",
+      "wrong_type": "Only PDF, DOCX, TXT and MD files are accepted.",
+      "empty": "The file is empty."
+    },
+    "status_reason": {
+      "no_text": "No text found. This looks like a scanned PDF or an image-only file.",
+      "failed": "Text extraction failed. Try Re-extract, or upload the file again."
+    },
+    "docs": {
+      "busy": "This document is being read right now. Try again in a few minutes.",
+      "reextracted": "Text read again.",
+      "deleted": "Document, file and excerpts deleted.",
+      "title": "Knowledge documents",
+      "subtitle": "Private to administrators. Short excerpts feed the interview questions; candidates never see the documents.",
+      "upload": "Upload document",
+      "types": "PDF, DOCX, TXT or MD, up to 10 MB",
+      "empty": "No documents yet. Without documents the interviewer uses the question library and general SAP knowledge.",
+      "chunks": "{{count}} excerpts",
+      "uploaded_at": "Uploaded {{date}}",
+      "enabled": "Enabled",
+      "excerpts": "Preview excerpts",
+      "reextract": "Re-extract",
+      "delete": "Delete"
+    },
+    "delete": {
+      "title": "Delete this document?",
+      "body": "\"{{title}}\", its file and all its excerpts are deleted. Questions already asked keep their history. This is recorded in the audit log.",
+      "reason": "Reason (required)"
+    },
+    "coverage": {
+      "title": "Coverage (module × version)",
+      "subtitle": "Modules and versions that consultants declare or documents cover. Questions and scores are from the last 30 days.",
+      "empty": "Nothing to show yet.",
+      "module": "Module",
+      "version": "Version",
+      "documents": "Documents",
+      "consultants": "Consultants",
+      "asked": "Questions asked",
+      "score": "Average score",
+      "any_version": "any / not given",
+      "none": "No documents for {{what}}",
+      "general_only": "Only release-independent documents"
+    },
+    "preview": {
+      "title": "Preview for a consultant",
+      "subtitle": "See the plan and 5 sample questions with their sources. Nothing is saved and the consultant is not told.",
+      "consultant": "Consultant",
+      "search": "Search by name",
+      "language": "Question language",
+      "run": "Build preview",
+      "off_note": "The knowledge base is switched off: real interviews still use the current behaviour. This preview shows what would be asked once it is on.",
+      "plan": "Plan",
+      "no_modules": "This consultant has no SAP modules in the profile.",
+      "weight": "Weight",
+      "questions": "Questions",
+      "difficulty": "Difficulty",
+      "ask_version": "not given: asked first",
+      "inferred": "from the module name",
+      "uncovered": "Not covered (limit reached): {{list}}",
+      "samples": "Sample questions",
+      "version_specific": "Version-specific",
+      "key_points": "Key points (scoring only)",
+      "source": "Source",
+      "references": "Official SAP references (administrators only)",
+      "usage": "AI calls: {{calls}} · tokens in {{tin}} / out {{tout}}"
+    },
+    "source": {
+      "generated_from_profile": "Generated from the profile",
+      "library": "Question library",
+      "knowledge": "Knowledge base",
+      "document": "Knowledge document",
+      "follow_up": "Follow-up"
+    },
+    "settings": {
+      "saved": "Settings saved",
+      "title": "Knowledge base settings",
+      "enabled": "Use knowledge base for interview questions",
+      "enabled_hint": "Off by default. Switch on only after the owner approves. While off, interviews keep today's behaviour.",
+      "min_per_module": "Questions per module: minimum",
+      "max_per_module": "Questions per module: maximum",
+      "total_questions": "Main questions per interview",
+      "max_modules": "Modules covered at most",
+      "max_docs_per_module": "Documents per module at most",
+      "max_total_mb": "Total document size at most (MB)",
+      "max_ai_calls": "AI drafting calls per interview at most",
+      "max_excerpts": "Excerpts passed to the AI at most",
+      "excerpt_chars": "Characters per excerpt at most"
+    },
+    "versions": {
+      "title": "Version / release choices in the profile",
+      "subtitle": "Consultants pick a release per module from these lists or type their own. Optional unless the owner makes it required.",
+      "customize": "Edit this list",
+      "remove": "Remove {{label}}",
+      "add": "Add a release"
+    },
+    "not_applied": "Knowledge documents, coverage and the consultant preview need a database update that is prepared but not applied yet. Until then interviews work as before.",
+    "state_on": "Knowledge base is ON for interview questions.",
+    "state_off": "Knowledge base is OFF: interviews use the current behaviour until it is switched on in Settings.",
+    "tabs": {
+      "configs": "Training configs",
+      "documents": "Knowledge documents",
+      "coverage": "Coverage",
+      "preview": "Preview for a consultant",
+      "settings": "Settings"
+    },
+    "profile": {
+      "version_title": "Version / release per module (optional)",
+      "version_hint": "The AI interview asks about the releases you name here, for example S/4HANA 2023 or ECC 6.0 EHP8. Pick one or type your own.",
+      "version_placeholder": "Version / release"
+    },
+    "notice": {
+      "based_on": "Questions are based on the modules and versions in your profile: {{list}}.",
+      "no_modules": "Questions are based on the modules and versions in your profile, but your profile has no SAP modules yet.",
+      "update": "Update your profile if this is not right."
+    },
+    "status": {
+      "uploaded": "Uploaded",
+      "extracting": "Extracting",
+      "ready": "Ready",
+      "no_text": "No text found",
+      "failed": "Failed"
+    },
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard",
+      "expert": "Expert"
+    },
+    "kind": {
+      "scenario": "Scenario",
+      "troubleshooting": "Troubleshooting",
+      "design": "Design trade-off",
+      "technical": "Technical",
+      "soft_skill": "Soft skill",
+      "version_warmup": "Version warm-up"
+    },
+    "lang": {
+      "en": "English",
+      "ar": "Arabic",
+      "de": "German",
+      "fr": "French",
+      "es": "Spanish",
+      "other": "Other"
+    },
+    "errors": {
+      "not_ready": "The database update for knowledge documents is not applied yet.",
+      "rate_limited": "Too many requests. Please wait a while.",
+      "wrong_type": "Only PDF, DOCX, TXT and MD files are accepted, and the content must match the file type.",
+      "too_large": "The file is larger than 10 MB.",
+      "duplicate": "This file is already uploaded.",
+      "module_cap": "This module has reached its document limit (see Settings).",
+      "total_cap": "The total size limit for documents would be exceeded (see Settings).",
+      "invalid_meta": "Please check the title, module and confirmation.",
+      "save_failed": "Could not save. Please try again.",
+      "storage_failed": "The file could not be stored. Please try again.",
+      "failed": "Something went wrong. Please try again.",
+      "not_found": "Not found.",
+      "no_file": "Choose a file first.",
+      "ai_credits": "AI credits are used up; questions were filled from the library and the profile.",
+      "ai_busy": "The AI is busy; questions were filled from the library and the profile.",
+      "ai_denied": "The AI request was refused; questions were filled from the library and the profile.",
+      "ai_failed": "The AI was not available; questions were filled from the library and the profile."
+    },
+    "page": {
+      "title": "AI Interviewer Training",
+      "subtitle": "Configure custom questions, difficulty, and training instructions for the AI interviewer.",
+      "new_config": "New Training Config",
+      "edit": "Edit"
+    },
+    "sources": {
+      "why": "Why asked (admins only)",
+      "deleted_doc": "deleted document"
+    }
   }
 }

@@ -11,6 +11,8 @@ import { generateInterviewPdf } from '@/lib/interviewPdf';
 import ShareMenu from '@/components/ShareMenu';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { mockInterviewAnswers } from '@/data/interviewMockData';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { QuestionSourceLine, useQuestionSources } from '@/components/admin/interview-knowledge/QuestionSources';
 
 interface Props {
   interviewId: string | null;
@@ -22,6 +24,8 @@ interface Props {
 
 export default function InterviewAnswersDialog({ interviewId, open, onOpenChange, session, consultantName }: Props) {
   const { t } = useTranslation();
+  const isAdmin = useIsAdmin();
+  const sources = useQuestionSources(interviewId, isAdmin && open);
   const { isGuest } = useGuestMode();
 
   const signedIn = useSessionReady().signedIn;
@@ -119,6 +123,7 @@ export default function InterviewAnswersDialog({ interviewId, open, onOpenChange
                       })()}
                     </div>
                     <p className="text-sm font-medium text-foreground">{a.question}</p>
+                    {sources.data && <QuestionSourceLine source={sources.data.byOrder.get(a.question_order)} titles={sources.data.titles} />}
                   </div>
                 </div>
 

@@ -239,7 +239,7 @@ export interface PiiFindings {
 export function scanPersonalData(text: string): PiiFindings {
   const s = String(text || "");
   const emails = (s.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g) ?? []).length;
-  const phones = (s.match(/(?:\+|00)\d[\d\s().-]{7,}\d/g) ?? []).length;
+  const phones = (s.match(/(?<![\w+])(?:\+|00)\d[\d\s().-]{7,}\d/g) ?? []).length;
   // 9+ digits in a row (account numbers, IBAN parts, IDs) that are not years or T-code style numbers
   const longNumbers = (s.match(/(?<![\d.])\d{9,}(?![\d.])/g) ?? []).length + (s.match(/\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b/g) ?? []).length;
   return { emails, phones, longNumbers };
