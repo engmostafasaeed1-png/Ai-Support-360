@@ -97,7 +97,7 @@ export default function ReferralEmailPreview({ settings }: { settings: Partial<R
           <TabsList><TabsTrigger value="html">HTML</TabsTrigger><TabsTrigger value="text">{t('remail.text', 'Plain text')}</TabsTrigger></TabsList>
           <TabsContent value="html">
             <div className="flex justify-center overflow-x-auto rounded-xl border border-border/60 bg-muted/30 p-3">
-              <iframe title={t('remail.frame', 'E-mail preview: {{name}}', { name: EMAIL_KIND_LABEL[kind] })} sandbox="" srcDoc={html}
+              <iframe title={t('remail.frame', 'E-mail preview: {{name}}', { name: EMAIL_KIND_LABEL[kind] })} sandbox="allow-same-origin" srcDoc={html}
                 className="h-[760px] rounded-lg border-0 bg-card"
                 style={{ width: phone ? 375 : 640, maxWidth: '100%', filter: dark ? 'invert(0.92) hue-rotate(180deg)' : undefined }} />
             </div>
