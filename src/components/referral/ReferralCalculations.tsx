@@ -2,10 +2,9 @@ import { Fragment, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Bar, CartesianGrid, ComposedChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Calculator, ChevronDown, ChevronRight, Download, FileText, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, FileText, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { referralRpc } from '@/hooks/useReferralProgram';
 import {
-  formatRate, formulaText, parseTiers, tierFor, type Tier, LINE_STATUS_LABEL, referralEstimate, round2, statementCsv, thresholdProgress, type CalcLine, type LineStatus,
+  formatRate, formulaText, parseTiers, tierFor, LINE_STATUS_LABEL, round2, statementCsv, thresholdProgress, type CalcLine, type LineStatus,
 } from '@/lib/referrals';
 import { exportReferralStatementPdf } from '@/lib/referralStatementPdf';
 import { cn } from '@/lib/utils';
@@ -394,7 +393,7 @@ export default function ReferralCalculations({ consultantId = null, code = '' }:
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4">
         {/* 5b. Monthly statements */}
         <Card className="rounded-2xl">
           <CardHeader className="pb-2"><CardTitle className="text-base">{t('refz.calc_statements', 'Monthly statements')}</CardTitle></CardHeader>
