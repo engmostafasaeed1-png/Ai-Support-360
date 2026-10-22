@@ -210,6 +210,22 @@ describe('send worker', () => {
     expect(finished[0].body).toContain('/privacy-policy');
   });
 
+  it('Refer & earn invitation campaigns are stored as type referral linking to the programme tab', async () => {
+    const d = deps([row({ campaign_id: 'inv' }), row({ campaign_id: 'other', user_id: 'u2' })], {
+      referralCampaigns: vi.fn(async () => new Set(['inv'])),
+    });
+    await runBulkBatch(d);
+    const inserted = firstArg<Inserted>(d.insertNotifications);
+    expect(inserted[0]).toMatchObject({ type: 'referral', link: '/consultant/referrals?tab=programme&from=invite' });
+    expect(inserted[1]).toMatchObject({ type: 'admin_marketing', link: '/notifications?broadcast=other' });
+  });
+
+  it('a failing invitation lookup falls back to normal messages', async () => {
+    const d = deps([row({})], { referralCampaigns: vi.fn(async () => { throw new Error('missing'); }) });
+    await runBulkBatch(d);
+    expect(firstArg<Inserted>(d.insertNotifications)[0].type).toBe('admin_marketing');
+  });
+
   it('a blocked bot pauses the link without retry; rate limits retry; out of time defers', async () => {
     let t = 0;
     const d = deps([
