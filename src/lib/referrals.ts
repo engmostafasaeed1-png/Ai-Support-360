@@ -397,3 +397,15 @@ export function referStepExample(ratePercent: number, manDaysPerMonth = 10, hour
   const one = rewardForFee(fee, ratePercent);
   return { manDays: manDaysPerMonth, hours: MAN_DAY_HOURS, hourlyRate, fee, one, colleagues, many: round2(one * colleagues) };
 }
+
+/** Opens the "Refer & earn" introduction again (menu page / help sheet). */
+export const REFERRAL_INTRO_EVENT = 'aisupport360:open-referral-intro';
+export const REFERRAL_INTRO_TOUR_KEY = 'referral-intro';
+
+/**
+ * One-time introduction pop-up for every consultant (existing and new): only while the programme is live, never for demo
+ * visitors, and only if this consultant has not seen it (stored per account on the server, browser copy as fallback).
+ */
+export function shouldShowReferralIntro(s: { live: boolean; isGuest: boolean; progressLoaded: boolean; seenOnServer: boolean; localState: ReferStepState }): boolean {
+  return s.live && !s.isGuest && s.progressLoaded && !s.seenOnServer && s.localState === 'new';
+}
