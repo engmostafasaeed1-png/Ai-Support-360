@@ -547,6 +547,13 @@
       "when": 1792608625538,
       "tag": "0077_profile_submit_gate",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1792658964497,
+      "tag": "0078_interview_knowledge",
+      "breakpoints": true
     }
   ]
 }
