@@ -43,6 +43,8 @@ export default function ResponsivenessNoticePopup() {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const quietDone = useRef(new Set<string>());
+  // The notices waiting when the first popup opened, for "1 of 3", "2 of 3"...
+  const [batch, setBatch] = useState<string[]>([]);
 
   // Another tab acknowledged a notice.
   useEffect(() => {
@@ -76,14 +78,18 @@ export default function ResponsivenessNoticePopup() {
       return;
     }
     const shown = readIds(session, SHOWN_KEY);
-    const next = popups.find((n) => !shown.includes(n.id));
-    if (next) { addIds(session, SHOWN_KEY, [next.id]); setCurrent(next); setFailed(false); }
+    const waiting = popups.filter((n) => !shown.includes(n.id));
+    const next = waiting[0];
+    if (!next) return;
+    addIds(session, SHOWN_KEY, [next.id]);
+    setBatch((b) => (b.includes(next.id) ? b : waiting.map((n) => n.id)));
+    setCurrent(next);
+    setFailed(false);
   }, [popups, current, acked]);
 
   if (!current) return null;
-  const queue = popups.filter((n) => n.id === current.id || !readIds(session, SHOWN_KEY).includes(n.id));
-  const position = Math.max(1, queue.findIndex((n) => n.id === current.id) + 1);
-  const total = Math.max(position, queue.length);
+  const total = Math.max(1, batch.length);
+  const position = Math.max(1, batch.indexOf(current.id) + 1);
   const copy = noticeCopy({ lang, kind: current.kind, count30: current.count_30d, warningsTotal: current.warnings_total });
   const good = current.kind === 'dispute_upheld';
 
@@ -103,7 +109,8 @@ export default function ResponsivenessNoticePopup() {
       setBusy(false);
     }
   };
-  const all = queue.map((n) => n.id);
+  // "Dismiss all": this notice and every later one of the batch that is still open.
+  const all = [current.id, ...batch.slice(position).filter((id) => popups.some((n) => n.id === id))];
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) void finish([current.id]); }}>
