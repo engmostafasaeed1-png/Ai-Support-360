@@ -2,7 +2,7 @@ import { useSessionReady } from '@/hooks/useSessionReady';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { getSessionWithRetry } from '@/lib/authSession';
+import { getSessionWithRetry, onUserChange } from '@/lib/authSession';
 
 interface UserProfile {
   displayName: string;
@@ -15,10 +15,8 @@ export function useUserProfile() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-    });
-    return () => subscription.unsubscribe();
+    // Same account: only a profile/metadata change (USER_UPDATED) needs a refresh.
+    return onUserChange(() => { void queryClient.invalidateQueries({ queryKey: ['user-profile'] }); }, ['USER_UPDATED']);
   }, [queryClient]);
 
   const signedIn = useSessionReady().signedIn;

@@ -22,3 +22,20 @@ export async function getSessionWithRetry(maxAttempts = 4): Promise<Session | nu
   }
   throw lastError;
 }
+
+/**
+ * Run `cb` only when the signed-in account really changes (sign-in, sign-out, switching accounts), not on every
+ * auth event: token refreshes, tab focus and the initial session event would otherwise refetch roles, tenants and
+ * profile on every page and slow the app down. `alsoOn` adds events that must refresh even for the same account.
+ */
+export function onUserChange(cb: (userId: string | null) => void, alsoOn: string[] = []): () => void {
+  let last: string | null | undefined;
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const id = session?.user?.id ?? null;
+    if (last === undefined) { last = id; return; }
+    if (id === last && !alsoOn.includes(event)) return;
+    last = id;
+    cb(id);
+  });
+  return () => subscription.unsubscribe();
+}
