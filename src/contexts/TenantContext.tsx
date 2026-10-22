@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { onUserChange } from '@/lib/authSession';
 
 interface Tenant {
   id: string;
@@ -66,7 +67,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   const fetchTenants = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Local session (no auth-server round trip); the database policies still decide what is returned.
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) {
         setTenants([]);
         setMemberships([]);
@@ -138,10 +141,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchTenants();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      fetchTenants();
-    });
-    return () => subscription.unsubscribe();
+    // Only a different account needs new tenants (not token refreshes or the initial session event).
+    return onUserChange(() => { void fetchTenants(); });
   }, [fetchTenants]);
 
   const switchTenant = useCallback((tenantId: string) => {

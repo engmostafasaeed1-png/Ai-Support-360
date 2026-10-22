@@ -2,7 +2,7 @@ import { useSessionReady } from '@/hooks/useSessionReady';
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { getSessionWithRetry } from '@/lib/authSession';
+import { getSessionWithRetry, onUserChange } from '@/lib/authSession';
 
 const QUERY_KEY = ['is-consultant'];
 
@@ -15,10 +15,7 @@ export function useIsConsultant() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-    });
-    return () => subscription.unsubscribe();
+    return onUserChange(() => { void queryClient.invalidateQueries({ queryKey: QUERY_KEY }); });
   }, [queryClient]);
 
   const signedIn = useSessionReady().signedIn;

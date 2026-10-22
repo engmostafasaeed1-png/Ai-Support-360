@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Wrench } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { getSessionWithRetry } from '@/lib/authSession';
+import { getSessionWithRetry, onUserChange } from '@/lib/authSession';
 import { Button } from '@/components/ui/button';
 
 /** Pages that stay open in maintenance mode: administrators must be able to sign in, and the legal pages and the unsubscribe link must always work. */
@@ -62,10 +62,7 @@ export default function MaintenanceGate({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      void queryClient.invalidateQueries({ queryKey: ['maintenance-gate-who'] });
-    });
-    return () => subscription.unsubscribe();
+    return onUserChange(() => { void queryClient.invalidateQueries({ queryKey: ['maintenance-gate-who'] }); });
   }, [queryClient]);
 
   if (!gated) return <>{children}</>;
