@@ -27,7 +27,7 @@ import { locationError } from '@/lib/consultantLocation';
 import { storeSignupLocation } from '@/lib/signupLocation';
 import ReferralCodeField from '@/components/referral/ReferralCodeField';
 import { usePublicReferralSettings } from '@/hooks/useReferralProgram';
-import { deviceId, normalizeReferralCode, storedReferral } from '@/lib/referrals';
+import { deviceId, normalizeReferralCode, storedReferral, storedReferralCapturedAt } from '@/lib/referrals';
 import {
   getVerificationSentAt,
   setVerificationSentAt,
@@ -233,7 +233,7 @@ function SignupForm() {
       password,
       options: {
         emailRedirectTo: `${emailRedirectBase(window.location.origin)}/login`,
-        data: { display_name: name, role, ...(role === 'consultant' ? { country: place.country.trim(), city: place.city.trim() } : {}), ...(referralCode ? { referral_code: referralCode, referral_device: deviceId() } : {}),
+        data: { display_name: name, role, ...(role === 'consultant' ? { country: place.country.trim(), city: place.city.trim() } : {}), ...(referralCode ? { referral_code: referralCode, referral_device: deviceId(), ...(referralCode === storedReferral() && storedReferralCapturedAt() ? { referral_captured_at: storedReferralCapturedAt() } : {}) } : {}),
           ...(referralCode && showReferralField && referralAck ? {
             referral_ack_version: String(referralProgram.settings.terms_version),
             referral_ack_lang: (document.documentElement.lang || '').startsWith('ar') ? 'ar' : 'en',

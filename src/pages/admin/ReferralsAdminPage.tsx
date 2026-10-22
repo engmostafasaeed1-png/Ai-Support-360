@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { referralRpc, rpcMessage } from '@/hooks/useReferralProgram';
-import { DEFAULT_MAX_RATE, formatRate, LINE_STATUS_LABEL, MAX_TIERS, parseTiers, rateRangeText, referralCsv, tierRangeLabel, tiersProblem, type LineStatus } from '@/lib/referrals';
+import { DEFAULT_MAX_RATE, FLAG_LABEL, formatRate, HOLD_REASON_LABEL, LINE_STATUS_LABEL, MAX_TIERS, parseTiers, rateRangeText, referralCsv, tierRangeLabel, tiersProblem, type LineStatus } from '@/lib/referrals';
 import TierLadder from '@/components/referral/TierLadder';
 import { cn } from '@/lib/utils';
 import ReferralCalculations from '@/components/referral/ReferralCalculations';
@@ -177,13 +177,94 @@ const perCurrency = (o: unknown) => {
   return e.length ? e.map(([c, v]) => money(v, c)).join(' · ') : '-';
 };
 
-const FLAG_LABEL: Record<string, string> = {
-  same_device: 'Same device as the referrer',
-  same_ip: 'Same network (IP) as the referrer',
-  same_bank: 'Same bank account as the referrer',
-  many_from_same_ip: 'Several referrals from one network',
-  many_from_same_email_domain: 'Several referrals from one e-mail domain',
-};
+/** Four-eyes adjustments: a second super administrator approves amounts above the limit. */
+function AdjustRequestsCard() {
+  const qc = useQueryClient();
+  const list = useRpc<Row[]>(['refadmin', 'adjust-requests'], 'admin_referral_adjust_requests', { _status: 'all' });
+  const [note, setNote] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const decide = async (id: string, approve: boolean) => {
+    setBusy(id);
+    const { error } = await referralRpc('admin_referral_decide_adjustment', { _request: id, _approve: approve, _note: note[id] ?? '' });
+    setBusy(null);
+    if (error) { toast.error(rpcMessage(error, 'The decision could not be saved.')); return; }
+    toast.success(approve ? 'Approved: the adjustment line was created.' : 'Rejected. Nothing was paid.');
+    qc.invalidateQueries({ queryKey: ['refadmin'] });
+  };
+  const rows = list.data ?? [];
+  return (
+    <Card className="rounded-2xl">
+      <CardHeader className="pb-2"><CardTitle className="text-base">Adjustments waiting for a second approval</CardTitle></CardHeader>
+      <CardContent className="overflow-x-auto">
+        {list.isLoading ? <Skeleton className="h-16 w-full" /> : rows.length === 0 ? <p className="text-sm text-muted-foreground">No adjustment requests.</p> : (
+          <Table>
+            <TableHeader><TableRow><TableHead>Consultant</TableHead><TableHead className="text-end">Amount</TableHead><TableHead>Reason</TableHead><TableHead>Asked by</TableHead><TableHead>State</TableHead><TableHead className="text-end">Decision</TableHead></TableRow></TableHeader>
+            <TableBody>{rows.map((r) => {
+              const id = String(r.id);
+              return (
+                <TableRow key={id}>
+                  <TableCell className="text-sm">{String(r.consultant_name ?? '-')}</TableCell>
+                  <TableCell className="text-end tabular-nums">{Number(r.amount).toFixed(2)} {String(r.currency)}</TableCell>
+                  <TableCell className="text-xs max-w-[240px]">{String(r.reason)}</TableCell>
+                  <TableCell className="text-xs">{String(r.requested_by_name ?? '-')}{r.requested_by_me ? ' (you)' : ''}<div className="text-muted-foreground">{when(r.created_at)}</div></TableCell>
+                  <TableCell className="text-xs capitalize">{String(r.status)}{r.decided_by_name ? <div className="text-muted-foreground normal-case">by {String(r.decided_by_name)}</div> : null}</TableCell>
+                  <TableCell className="text-end">
+                    {r.can_decide ? (
+                      <div className="flex flex-col items-end gap-1">
+                        <Input aria-label="Reason for the decision" placeholder="Reason (required)" className="h-8 w-48 text-xs" value={note[id] ?? ''} onChange={(e) => setNote((n) => ({ ...n, [id]: e.target.value }))} />
+                        <div className="space-x-1">
+                          <Button size="sm" className="h-7 text-xs" disabled={busy === id || (note[id] ?? '').trim().length < 5} onClick={() => decide(id, true)}>Approve</Button>
+                          <Button size="sm" variant="outline" className="h-7 text-xs" disabled={busy === id || (note[id] ?? '').trim().length < 5} onClick={() => decide(id, false)}>Reject</Button>
+                        </div>
+                      </div>
+                    ) : r.status === 'pending' ? <span className="text-xs text-muted-foreground">Needs another super administrator</span> : null}
+                  </TableCell>
+                </TableRow>
+              );
+            })}</TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Anomaly dashboard: patterns worth a closer look (hashes never leave the database; clusters are numbered). */
+function AnomaliesCard() {
+  const a = useRpc<Row>(['refadmin', 'anomalies'], 'admin_referral_anomalies');
+  const d = (a.data ?? {}) as Row;
+  const list = (k: string) => ((d[k] ?? []) as Row[]);
+  const stat = (label: string, v: unknown, warn = false) => (
+    <div className="rounded-xl border border-border/60 p-3"><p className="text-xs text-muted-foreground">{label}</p><p className={cn('text-xl font-bold tabular-nums', warn && Number(v) > 0 && 'text-warning')}>{Number(v) || 0}</p></div>
+  );
+  const clusters = (k: string) => list(k).map((c) => (
+    <li key={String(c.cluster)}>Cluster {String(c.cluster)} ({String(c.size)}): {((c.members ?? []) as Row[]).map((m) => String(m.name ?? 'Consultant')).join(', ')}</li>
+  ));
+  return (
+    <Card className="rounded-2xl">
+      <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><ShieldAlert className="w-4 h-4 text-primary" />Anomalies</CardTitle></CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        {a.isLoading ? <Skeleton className="h-24 w-full" /> : (
+          <>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+              {stat('Under review', d.under_review, true)}{stat('Held: related client', d.held_related_party, true)}{stat('Held: cap', d.held_cap, true)}
+              {stat('Above the maximum rate', d.over_max_rate, true)}{stat('Reconciliation problems', d.reconcile_problems, true)}
+              {stat('Fast risers (7 days)', list('fast_risers').length, true)}
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div><p className="font-medium">Top earners (30 days)</p><ul className="mt-1 space-y-0.5 text-xs">{list('top_earners').map((t, i) => <li key={i}>{String(t.name ?? '-')}: {Number(t.amount).toFixed(2)} {String(t.currency)} ({String(t.lines)} lines)</li>)}{!list('top_earners').length && <li className="text-muted-foreground">None</li>}</ul></div>
+              <div><p className="font-medium">Fast risers</p><ul className="mt-1 space-y-0.5 text-xs">{list('fast_risers').map((t, i) => <li key={i}>{String(t.name ?? '-')}: {String(t.new_7d)} in 7 days, {String(t.new_30d)} in 30 days, tier count {String(t.tier_count)}</li>)}{!list('fast_risers').length && <li className="text-muted-foreground">None</li>}</ul></div>
+              <div><p className="font-medium">Shared network clusters</p><ul className="mt-1 space-y-0.5 text-xs">{clusters('network_clusters')}{!list('network_clusters').length && <li className="text-muted-foreground">None</li>}</ul></div>
+              <div><p className="font-medium">Shared bank account clusters</p><ul className="mt-1 space-y-0.5 text-xs">{clusters('bank_clusters')}{!list('bank_clusters').length && <li className="text-muted-foreground">None</li>}</ul></div>
+              <div><p className="font-medium">High reversal ratio (20 % or more)</p><ul className="mt-1 space-y-0.5 text-xs">{list('reversal_ratio').map((t, i) => <li key={i}>{String(t.name ?? '-')}: {String(t.reversals)} of {String(t.rewards)} rewards reversed</li>)}{!list('reversal_ratio').length && <li className="text-muted-foreground">None</li>}</ul></div>
+              <div><p className="font-medium">Rewards against invoice totals</p><ul className="mt-1 space-y-0.5 text-xs">{list('rewards_vs_invoices').map((t, i) => <li key={i} className={cn(Number(t.percent) > Number(t.max_percent) && 'text-destructive')}>{String(t.currency)}: {Number(t.rewards ?? 0).toFixed(2)} on {Number(t.fees ?? 0).toFixed(2)} = {String(t.percent ?? 0)} % (maximum {String(t.max_percent)} %)</li>)}{!list('rewards_vs_invoices').length && <li className="text-muted-foreground">None</li>}</ul></div>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 /** How many referrers are in each tier now (by verified, non-suspended referred consultants). */
 function TierDistributionCard({ o }: { o: Row }) {
@@ -267,13 +348,17 @@ function ActionDialog({ state, onClose }: { state: ActionState; onClose: () => v
       if (error || !hit) { setBusy(false); toast.error('No consultant has this referral code.'); return; }
       newReferrer = String(hit.referrer_id);
     }
-    const { error } = await referralRpc('admin_referral_action', {
+    const { data, error } = await referralRpc('admin_referral_action', {
       _action: state.action, _id: state.id, _reason: reason,
       _amount: state.needsAmount ? Number(amount) : null, _currency: state.needsAmount ? currency : null, _new_referrer: newReferrer,
     });
     setBusy(false);
     if (error) { toast.error(rpcMessage(error, 'The change could not be saved.')); return; }
-    toast.success('Saved and recorded in the audit trail.');
+    if (data && typeof data === 'object' && 'pending_approval' in (data as Row)) {
+      toast.success('Above the four-eyes limit: a second super administrator must approve it (Security tab).');
+    } else {
+      toast.success('Saved and recorded in the audit trail.');
+    }
     qc.invalidateQueries({ queryKey: ['refadmin'] });
     onClose();
   };
@@ -319,6 +404,7 @@ function SettingsCard({ settings }: { settings: Row }) {
   const [saving, setSaving] = useState(false);
   const [claimUntil, setClaimUntil] = useState('');
   const [tiers, setTiers] = useState<Array<{ min: string; rate: string; name: string }>>([]);
+  const [tierPaid, setTierPaid] = useState(true);
   useEffect(() => {
     setTiers(parseTiers(settings.tiers, Number(settings.max_rate) || DEFAULT_MAX_RATE).map((x) => ({ min: String(x.min), rate: String(x.rate), name: x.name })));
     setClaimUntil(settings.claim_until ? String(settings.claim_until).slice(0, 16) : '');
@@ -329,7 +415,13 @@ function SettingsCard({ settings }: { settings: Row }) {
       pass_mark: String(settings.pass_mark ?? 50), activation_days: String(settings.activation_days ?? 90),
       max_per_referred: settings.max_per_referred == null ? '' : String(settings.max_per_referred),
       monthly_cap: settings.monthly_cap == null ? '' : String(settings.monthly_cap),
+      monthly_cap_referred: settings.monthly_cap_referred == null ? '' : String(settings.monthly_cap_referred),
+      hold_days: String(settings.hold_days ?? 14), min_invoice: String(settings.min_invoice ?? 20),
+      flag_threshold: String(settings.flag_threshold ?? 2), velocity_day: String(settings.velocity_day ?? 5), velocity_ip: String(settings.velocity_ip ?? 3),
+      tier_paid_days: String(settings.tier_paid_days ?? 90), four_eyes_amount: String(settings.four_eyes_amount ?? 100),
+      payout_change_hold_days: String(settings.payout_change_hold_days ?? 7), retention_days: String(settings.retention_days ?? 365),
     });
+    setTierPaid(settings.tier_requires_paid !== false);
   }, [settings]);
   const fields: Array<[string, string, string]> = [
     ['max_rate', 'Maximum rate for any tier (%)', '0.1 to 10, default 2'],
@@ -339,15 +431,26 @@ function SettingsCard({ settings }: { settings: Row }) {
     ['pass_mark', 'AI interview pass mark for activation (both consultants)', '0 to 100, default 50'],
     ['activation_days', 'Days from sign-up to activate before the referral expires', '1 to 365, default 90'],
     ['max_per_referred', 'Maximum reward per referred consultant', 'empty = no maximum'],
-    ['monthly_cap', 'Monthly cap per referrer', 'empty = no cap'],
+    ['monthly_cap', 'Monthly cap per referrer (above it a reward is held, never cut)', 'default 1000, empty = no cap'],
+    ['monthly_cap_referred', 'Monthly cap per referred consultant (held above it)', 'default 250, empty = no cap'],
+    ['hold_days', 'Hold period after the payout is released (days)', '0 to 90, default 14'],
+    ['min_invoice', 'Minimum invoice line for a reward (invoice currency)', 'default 20'],
+    ['flag_threshold', 'Fraud signal score that puts a new referral under review', '1 to 10, default 2'],
+    ['velocity_day', 'Sign-ups per referrer per day before flagging', 'default 5'],
+    ['velocity_ip', 'Sign-ups per network per day before flagging', 'default 3'],
+    ['tier_paid_days', 'Days after verification for the first paid ticket (tier counting)', '1 to 365, default 90'],
+    ['four_eyes_amount', 'Adjustments above this need a second super administrator', 'default 100'],
+    ['payout_change_hold_days', 'Days referral payouts wait after bank details change', '0 to 60, default 7'],
+    ['retention_days', 'Keep hashed device / network signals (days)', '30 to 1095, default 365'],
   ];
   const save = async () => {
     const payload: Record<string, unknown> = { enabled };
     if (claimUntil) payload.claim_until = new Date(claimUntil).toISOString();
     for (const [k] of fields) {
       const v = (draft[k] ?? '').trim();
-      payload[k] = (k === 'max_per_referred' || k === 'monthly_cap') && v === '' ? null : Number(v);
+      payload[k] = (k === 'max_per_referred' || k === 'monthly_cap' || k === 'monthly_cap_referred') && v === '' ? null : Number(v);
     }
+    payload.tier_requires_paid = tierPaid;
     const tierRows = tiers.map((x) => ({ min: x.min.trim() === '' ? '' : Number(x.min), rate: x.rate.trim() === '' ? '' : Number(x.rate), name: x.name.trim() }));
     const problem = tiersProblem(tierRows, Number(payload.max_rate) || DEFAULT_MAX_RATE);
     if (problem) { toast.error(problem); return; }
@@ -376,6 +479,10 @@ function SettingsCard({ settings }: { settings: Row }) {
               <Input id={`ref-${k}`} inputMode="decimal" value={draft[k] ?? ''} placeholder={hint} onChange={(e) => setDraft((d) => ({ ...d, [k]: e.target.value }))} />
             </div>
           ))}
+        </div>
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 p-3">
+          <div><Label htmlFor="ref-tier-paid">Tiers count only referred consultants with a paid ticket</Label><p className="text-xs text-muted-foreground">Within the days set above after their verification (or your approval). Protects against fake accounts.</p></div>
+          <Switch id="ref-tier-paid" checked={tierPaid} onCheckedChange={setTierPaid} />
         </div>
         <fieldset className="space-y-2 rounded-xl border border-border/60 p-3">
           <legend className="px-1 text-sm font-medium">Reward tiers (by verified, non-suspended referred consultants)</legend>
@@ -495,6 +602,7 @@ export default function ReferralsAdminPage() {
           <TabsTrigger value="calc">Calculations</TabsTrigger>
           <TabsTrigger value="announce">Announcement</TabsTrigger>
           <TabsTrigger value="reconcile">Reconciliation</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
 
         <div className="mt-3 flex flex-wrap gap-2">
@@ -604,7 +712,7 @@ export default function ReferralsAdminPage() {
                       <TableCell className="text-xs"><div>{String(l.referrer_name ?? '-')}</div><div className="text-muted-foreground">{String(l.referred_name ?? '-')}</div></TableCell>
                       <TableCell className="text-end text-xs tabular-nums">{l.fee_amount != null ? `${money(l.fee_amount, String(l.currency))} x ${formatRate(Number(l.rate_percent) || 0)} %` : '-'}{l.tier_name ? <div className="text-[10px] text-muted-foreground">{String(l.tier_name)}{l.tier_count != null ? ` (${String(l.tier_count)} verified)` : ''}</div> : null}</TableCell>
                       <TableCell className={cn('text-end text-sm font-semibold tabular-nums', Number(l.amount) < 0 && 'text-destructive')}>{money(l.amount, String(l.currency))}</TableCell>
-                      <TableCell><Badge variant="outline" className="text-[10px]">{LINE_STATUS_LABEL[l.status as LineStatus] ?? String(l.status)}</Badge>{l.hold_reason ? <div className="text-[10px] text-muted-foreground">{String(l.hold_reason)}</div> : null}</TableCell>
+                      <TableCell><Badge variant="outline" className="text-[10px]">{LINE_STATUS_LABEL[l.status as LineStatus] ?? String(l.status)}</Badge>{l.hold_reason ? <div className="text-[10px] text-muted-foreground">{HOLD_REASON_LABEL[String(l.hold_reason)] ?? String(l.hold_reason)}</div> : null}{Array.isArray(l.flags) && (l.flags as string[]).length > 0 ? <div className="text-[10px] text-warning">{(l.flags as string[]).map((f) => FLAG_LABEL[f] ?? f).join(', ')}</div> : null}{l.status === 'pending' && l.matures_at ? <div className="text-[10px] text-muted-foreground">Available from {when(l.matures_at)}</div> : null}</TableCell>
                       <TableCell className="text-end whitespace-nowrap space-x-1">
                         {l.status === 'held' && <Button size="sm" className="h-7 text-xs" onClick={() => setAction({ action: 'approve_line', id, title: 'Release this reward' })}>Approve</Button>}
                         {(l.status === 'pending' || l.status === 'available') && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setAction({ action: 'hold_line', id, title: 'Hold this reward' })}>Hold</Button>}
@@ -623,6 +731,7 @@ export default function ReferralsAdminPage() {
         <TabsContent value="calc"><AdminCalculations /></TabsContent>
         <TabsContent value="announce" className="space-y-4"><AnnouncementCard /><SetReferrerCard /></TabsContent>
         <TabsContent value="reconcile"><ReconcileCard /></TabsContent>
+        <TabsContent value="security" className="space-y-4"><AdjustRequestsCard /><AnomaliesCard /></TabsContent>
 
         <TabsContent value="audit">
           <Card className="rounded-2xl"><CardContent className="p-0 overflow-x-auto">

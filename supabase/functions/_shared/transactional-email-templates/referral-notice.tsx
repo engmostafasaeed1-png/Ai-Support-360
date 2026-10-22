@@ -6,7 +6,7 @@ import type { TemplateEntry } from './registry.ts'
  * Feature Z: one short, honest referral notice to one consultant (the event that concerns them). Names are the masked
  * public format (Feature X) only. EN/AR by the recipient's language.
  */
-type Kind = 'signup' | 'invited' | 'passed_self' | 'passed_other' | 'active' | 'reminder' | 'expired' | 'ack_request' | 'verified' | 'first_reward'
+type Kind = 'signup' | 'invited' | 'passed_self' | 'passed_other' | 'active' | 'reminder' | 'expired' | 'ack_request' | 'verified' | 'first_reward' | 'payout_details_changed'
 
 interface Props {
   kind?: Kind
@@ -50,7 +50,8 @@ const STR = {
       expired: { s: 'Your referral has expired', b: (o: string, d?: number) => `Your referral with ${o} has expired: both of you had to pass the AI interview and accept the terms within ${d ?? 90} days. An administrator can revive it.` },
       ack_request: { s: 'Please accept the referral terms', b: (o: string) => `Please accept the referral terms so your referral with ${o} can become active.` },
       verified: { s: 'Your referral is verified', b: (o: string) => `${o} is now a verified consultant. Your reward starts with their first paid ticket after your referral is active.` },
-      first_reward: { s: 'You earned your first referral reward', b: (o: string, _d?: number, a?: string) => `You earned ${a ?? ''} from the work of ${o}. It becomes available when their payout is completed. It is paid by AI Support 360, never deducted from them.` },
+      first_reward: { s: 'You earned your first referral reward', b: (o: string, _d?: number, a?: string) => `You earned ${a ?? ''} from the work of ${o}. It becomes available after the hold period that follows their payout. It is paid by AI Support 360, never deducted from them.` },
+      payout_details_changed: { s: 'Your bank details were changed', b: (_o: string, d?: number) => `Your payout bank details were just changed. If this was not you, contact support immediately. For your safety, referral payouts wait ${d ?? 7} days after a change.` },
     },
   },
   ar: {
@@ -66,7 +67,8 @@ const STR = {
       expired: { s: 'انتهت صلاحية إحالتك', b: (o: string, d?: number) => `انتهت صلاحية إحالتك مع ${o}: كان على كليكما اجتياز المقابلة الذكية والموافقة على الشروط خلال ${d ?? 90} يومًا. يمكن للمسؤول إعادة تفعيلها.` },
       ack_request: { s: 'يرجى الموافقة على شروط الإحالة', b: (o: string) => `يرجى الموافقة على شروط الإحالة حتى تصبح إحالتك مع ${o} نشطة.` },
       verified: { s: 'تم توثيق المستشار الذي أحلته', b: (o: string) => `أصبح ${o} مستشارًا موثّقًا. تبدأ مكافأتك مع أول تذكرة مدفوعة له بعد تفعيل الإحالة.` },
-      first_reward: { s: 'حصلت على أول مكافأة إحالة', b: (o: string, _d?: number, a?: string) => `حصلت على ${a ?? ''} من عمل ${o}. تصبح متاحة عند اكتمال دفعته. تدفعها AI Support 360 ولا تُخصم منه أبدًا.` },
+      first_reward: { s: 'حصلت على أول مكافأة إحالة', b: (o: string, _d?: number, a?: string) => `حصلت على ${a ?? ''} من عمل ${o}. تصبح متاحة بعد فترة الانتظار التي تلي دفعته. تدفعها AI Support 360 ولا تُخصم منه أبدًا.` },
+      payout_details_changed: { s: 'تم تغيير بياناتك البنكية', b: (_o: string, d?: number) => `تم للتو تغيير بيانات الحساب البنكي لاستلام المدفوعات. إن لم تكن أنت، تواصل مع الدعم فورًا. حفاظًا على أمانك، تنتظر مدفوعات الإحالة ${d ?? 7} أيام بعد أي تغيير.` },
     },
   },
 } as const

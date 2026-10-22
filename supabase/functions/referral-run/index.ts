@@ -11,8 +11,8 @@ interface Row {
   amount: number | null; currency: string | null; next_step: string | null; days: number | null; pass_mark: number | null;
 }
 
-// Reward and payout notices are essential; everything else follows the recipient's pause choice.
-const ESSENTIAL = new Set(['first_reward']);
+// Reward, payout and bank-detail change notices are essential; everything else follows the recipient's pause choice.
+const ESSENTIAL = new Set(['first_reward', 'payout_details_changed']);
 const REMINDERS = new Set(['reminder', 'ack_request']);
 
 // deno-lint-ignore no-explicit-any
