@@ -220,6 +220,27 @@ describe('send worker', () => {
     expect(inserted[1]).toMatchObject({ type: 'admin_marketing', link: '/notifications?broadcast=other' });
   });
 
+  it('push goes to every active device of the person; no device = skipped, dead devices switched off', async () => {
+    const sent: string[] = [];
+    const d = deps([row({ channel: 'push', campaign_id: 'inv', user_id: 'a' }), row({ channel: 'push', user_id: 'b' })], {
+      referralCampaigns: vi.fn(async () => new Set(['inv'])),
+      pushSubscriptions: vi.fn(async () => [
+        { id: 's1', user_id: 'a', endpoint: 'e1', p256dh: 'k', auth: 'x' },
+        { id: 's2', user_id: 'a', endpoint: 'e2', p256dh: 'k', auth: 'x' },
+      ]),
+      sendPush: vi.fn(async (s: { id: string }, payload: string) => { sent.push(payload); return s.id === 's1' ? { ok: true, gone: false } : { ok: false, gone: true, error: 'subscription_gone' }; }),
+      updatePushSubscription: vi.fn(async () => {}),
+    });
+    await runBulkBatch(d);
+    const finished = firstArg<FinishRow[]>(d.finish);
+    expect(finished.find((f) => f.user_id === 'a')).toMatchObject({ channel: 'push', ok: true });
+    expect(finished.find((f) => f.user_id === 'b')).toMatchObject({ channel: 'push', ok: false, error: 'push_not_enabled' });
+    const msg = JSON.parse(sent[0]);
+    expect(msg.url).toBe('/consultant/referrals?tab=programme&from=invite');
+    expect(msg.body).not.toMatch(/Hello|https?:/);
+    expect(d.updatePushSubscription).toHaveBeenCalledTimes(2);
+  });
+
   it('a failing invitation lookup falls back to normal messages', async () => {
     const d = deps([row({})], { referralCampaigns: vi.fn(async () => { throw new Error('missing'); }) });
     await runBulkBatch(d);
