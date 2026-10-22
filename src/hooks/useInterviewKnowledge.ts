@@ -15,7 +15,9 @@ export function useKnowledgeReady() {
     queryKey: ['ik', 'ready'],
     staleTime: 60_000,
     queryFn: async () => {
-      const { error } = await db.from('interview_knowledge_documents').select('id', { head: true, count: 'exact' }).limit(1);
+      // a normal read (not a HEAD request): a HEAD request on a missing table comes back without an error
+      const { error, status } = await db.from('interview_knowledge_documents').select('id').limit(1);
+      if (status === 404) return false;
       if (error && isNotAppliedError(error)) return false;
       if (error) throw error;
       return true;

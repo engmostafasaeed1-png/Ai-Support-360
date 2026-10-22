@@ -226,10 +226,10 @@ export default function InterviewTrainingPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Brain className="w-6 h-6 text-primary" />
-            AI Interviewer Training
+            {t('ik.page.title', 'AI Interviewer Training')}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Configure custom questions, difficulty, and training instructions for the AI interviewer.
+            {t('ik.page.subtitle', 'Configure custom questions, difficulty, and training instructions for the AI interviewer.')}
           </p>
         </div>
       </div>
@@ -263,7 +263,7 @@ export default function InterviewTrainingPage() {
         {!isEditing && (
           <div className="flex justify-end">
             <Button onClick={startNew} className="gradient-primary border-0">
-              <Plus className="w-4 h-4 me-1.5" /> New Training Config
+              <Plus className="w-4 h-4 me-1.5" /> {t('ik.page.new_config', 'New Training Config')}
             </Button>
           </div>
         )}
@@ -445,15 +445,15 @@ export default function InterviewTrainingPage() {
           {(configs || []).map(config => (
             <Card key={config.id} className={`rounded-2xl border-border/50 ${!config.is_active ? 'opacity-60' : ''}`}>
               <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex items-start gap-4 min-w-0">
                     <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
                       config.is_active ? 'bg-primary/10' : 'bg-muted'
                     }`}>
                       <Brain className={`w-5 h-5 ${config.is_active ? 'text-primary' : 'text-muted-foreground'}`} />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
                         <h3 className="font-semibold text-foreground">{config.sap_module}</h3>
                         <Badge variant="secondary" className={`text-[10px] ${
                           config.difficulty_level === 'easy' ? 'bg-green-100 text-green-700' :
@@ -479,8 +479,8 @@ export default function InterviewTrainingPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-1.5">
-                    <Button size="sm" variant="outline" className="text-xs" onClick={() => startEdit(config)}>Edit</Button>
+                  <div className="flex gap-1.5 shrink-0 self-end sm:self-auto">
+                    <Button size="sm" variant="outline" className="text-xs" onClick={() => startEdit(config)}>{t('ik.page.edit', 'Edit')}</Button>
                     <Button size="sm" variant="ghost" className="text-xs text-red-500 hover:text-red-700" onClick={() => deleteMutation.mutate(config.id)}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>

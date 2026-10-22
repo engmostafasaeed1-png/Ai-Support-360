@@ -46,7 +46,7 @@ const tags = (list: string[] | undefined) => [...new Set((list ?? []).map((t) =>
 const cleanVersion = (v: string | null | undefined) => (v && v.replace(/[<>[\]{}]/g, "").trim()) || null;
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const d = await crypto.subtle.digest("SHA-256", bytes);
+  const d = await crypto.subtle.digest("SHA-256", bytes as unknown as ArrayBuffer);
   return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
