@@ -36,6 +36,26 @@ INSERT INTO public.platform_settings (key, value) VALUES
   ('referral_min_interview_score', '50'::jsonb),
   ('referral_activation_days', '90'::jsonb)
 ON CONFLICT (key) DO NOTHING;
+-- Launch moment (first apply) and the window in which EXISTING consultants may still enter "Who invited you?".
+INSERT INTO public.platform_settings (key, value) VALUES ('referral_launch_at', to_jsonb(now())) ON CONFLICT (key) DO NOTHING;
+INSERT INTO public.platform_settings (key, value) VALUES ('referral_claim_until', to_jsonb(now() + interval '14 days')) ON CONFLICT (key) DO NOTHING;
+
+CREATE OR REPLACE FUNCTION public.referral_setting_ts(_key text)
+ RETURNS timestamptz
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  v text;
+BEGIN
+  SELECT value #>> '{}' INTO v FROM public.platform_settings WHERE key = _key;
+  RETURN v::timestamptz;
+EXCEPTION WHEN OTHERS THEN
+  RETURN NULL;
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_setting_ts(text) FROM PUBLIC, anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.referral_setting_num(_key text, _def numeric, _lo numeric, _hi numeric)
  RETURNS numeric
@@ -76,6 +96,8 @@ AS $$
     'max_per_referred', public.referral_setting_cap('referral_max_reward_per_referred'),
     'monthly_cap', public.referral_setting_cap('referral_monthly_cap_per_referrer'),
     'claim_days', public.referral_setting_num('referral_claim_days', 7, 0, 30)::int,
+    'launch_at', public.referral_setting_ts('referral_launch_at'),
+    'claim_until', public.referral_setting_ts('referral_claim_until'),
     'terms_version', public.referral_setting_num('referral_terms_version', 1, 1, 1000)::int,
     'pass_mark', public.referral_setting_num('referral_min_interview_score', 50, 0, 100),
     'activation_days', public.referral_setting_num('referral_activation_days', 90, 1, 365)::int)
@@ -1534,6 +1556,30 @@ GRANT EXECUTE ON FUNCTION public.referral_track_click(text) TO anon, authenticat
 
 -- Late attribution (Google sign-in or a code typed after sign-up): within referral_claim_days of the account and
 -- before the first paid ticket. Locked afterwards.
+-- May this consultant still add "Who invited you?" themselves? New accounts: within referral_claim_days of sign-up.
+-- Consultants registered before the launch: until referral_claim_until (launch + 14 days). Never after a paid ticket.
+CREATE OR REPLACE FUNCTION public.referral_can_claim(_cid uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  s jsonb := public.referral_settings();
+  _created timestamptz;
+  _launch timestamptz := (s ->> 'launch_at')::timestamptz;
+  _until timestamptz := (s ->> 'claim_until')::timestamptz;
+BEGIN
+  IF _cid IS NULL OR EXISTS (SELECT 1 FROM public.consultant_referrals WHERE referred_consultant_id = _cid) THEN RETURN false; END IF;
+  IF EXISTS (SELECT 1 FROM public.payouts p WHERE p.consultant_id = _cid) THEN RETURN false; END IF;
+  SELECT u.created_at INTO _created FROM public.consultants c JOIN auth.users u ON u.id = c.user_id WHERE c.id = _cid;
+  IF _created IS NULL THEN RETURN false; END IF;
+  IF _created >= now() - make_interval(days => (s ->> 'claim_days')::int) AND (_launch IS NULL OR _created >= _launch) THEN RETURN true; END IF;
+  RETURN _launch IS NOT NULL AND _created < _launch AND _until IS NOT NULL AND now() <= _until;
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_can_claim(uuid) FROM PUBLIC, anon, authenticated;
+
 CREATE OR REPLACE FUNCTION public.referral_claim(_code text, _device text DEFAULT NULL)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -1553,9 +1599,7 @@ BEGIN
   IF EXISTS (SELECT 1 FROM public.consultant_referrals WHERE referred_consultant_id = _cid) THEN
     RETURN jsonb_build_object('result', 'already');
   END IF;
-  SELECT u.created_at INTO _created FROM auth.users u WHERE u.id = auth.uid();
-  IF _created IS NULL OR _created < now() - make_interval(days => (public.referral_settings() ->> 'claim_days')::int)
-     OR EXISTS (SELECT 1 FROM public.payouts p WHERE p.consultant_id = _cid) THEN
+  IF NOT public.referral_can_claim(_cid) THEN
     RETURN jsonb_build_object('result', 'too_late');
   END IF;
   _res := public.referral_attribute(_cid, _code, 'claim', _device, public.referral_request_ip());
@@ -1618,6 +1662,10 @@ BEGIN
                                          COALESCE(sum(l.amount) FILTER (WHERE l.status = 'paid'), 0) d,
                                          COALESCE(sum(l.amount) FILTER (WHERE l.status <> 'reversed'), 0) t
                                     FROM public.referral_reward_lines l WHERE l.referrer_consultant_id = _cid GROUP BY l.currency) e), '[]'::jsonb),
+    'claim', jsonb_build_object('can_claim', public.referral_can_claim(_cid),
+                                'until', CASE WHEN (SELECT u.created_at FROM auth.users u WHERE u.id = auth.uid()) < (s ->> 'launch_at')::timestamptz
+                                              THEN (s ->> 'claim_until')::timestamptz
+                                              ELSE (SELECT u.created_at FROM auth.users u WHERE u.id = auth.uid()) + make_interval(days => (s ->> 'claim_days')::int) END),
     'eligibility', jsonb_build_object(
       'verified', EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = _cid AND c.verification_status::text = 'verified'),
       'policy', public.referral_policy_ok(_cid),
@@ -2036,6 +2084,23 @@ BEGIN
   END IF;
 
   -- Resend the pending reminders / acknowledgement requests (once per pair per 24 hours), or revive an expired pair.
+  -- Existing consultants have no referrer; only an administrator can set one (reason required, audited).
+  IF _action = 'set_referrer' THEN
+    IF EXISTS (SELECT 1 FROM public.consultant_referrals WHERE referred_consultant_id = _id) THEN
+      RAISE EXCEPTION 'This consultant already has a referrer. Use "Change referrer".' USING ERRCODE = '22023';
+    END IF;
+    IF _new_referrer IS NULL OR NOT EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = _new_referrer) THEN
+      RAISE EXCEPTION 'Choose the referrer' USING ERRCODE = '22023';
+    END IF;
+    _n := 0;
+    DECLARE _res text; BEGIN
+      _res := public.referral_attribute(_id, public.referral_ensure_code(_new_referrer), 'admin', NULL, NULL);
+      IF _res <> 'ok' THEN RAISE EXCEPTION 'The referrer can not be set (%).', _res USING ERRCODE = '22023'; END IF;
+    END;
+    PERFORM public.referral_log(_actor, 'set_referrer', _new_referrer, _id, NULL, NULL, NULL, jsonb_build_object('referrer', _new_referrer), _why);
+    RETURN jsonb_build_object('ok', true);
+  END IF;
+
   IF _action IN ('resend', 'revive') THEN
     SELECT * INTO r FROM public.consultant_referrals WHERE referred_consultant_id = _id FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'Referral not found' USING ERRCODE = '42704'; END IF;
@@ -2134,6 +2199,14 @@ BEGIN
     IF _k = 'enabled' THEN
       IF jsonb_typeof(_v) <> 'boolean' THEN RAISE EXCEPTION 'enabled must be true or false' USING ERRCODE = '22023'; END IF;
       INSERT INTO public.platform_settings (key, value) VALUES ('referral_enabled', _v) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
+    ELSIF _k = 'claim_until' THEN
+      BEGIN
+        PERFORM (_v #>> '{}')::timestamptz;
+      EXCEPTION WHEN OTHERS THEN
+        RAISE EXCEPTION 'claim_until must be a date and time' USING ERRCODE = '22023';
+      END;
+      INSERT INTO public.platform_settings (key, value) VALUES ('referral_claim_until', to_jsonb((_v #>> '{}')::timestamptz))
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
     ELSIF _k IN ('pass_mark', 'activation_days') THEN
       IF jsonb_typeof(_v) <> 'number' OR (_v #>> '{}')::numeric <> trunc((_v #>> '{}')::numeric)
          OR (_k = 'pass_mark' AND ((_v #>> '{}')::numeric < 0 OR (_v #>> '{}')::numeric > 100))
@@ -2672,7 +2745,189 @@ REVOKE ALL ON FUNCTION public.admin_referral_reconcile(uuid, boolean) FROM PUBLI
 GRANT EXECUTE ON FUNCTION public.admin_referral_reconcile(uuid, boolean) TO authenticated;
 
 -- 11. Codes for every existing consultant (existing consultants have no referrer: attribution starts with new sign-ups).
-SELECT public.referral_ensure_code(c.id) FROM public.consultants c;
+-- Every consultant except rejected / suspended gets exactly one code (idempotent, collision-safe through
+-- referral_ensure_code; touches no other column). Others still get one lazily when they open Refer & earn.
+CREATE OR REPLACE FUNCTION public.referral_backfill_preview()
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+  SELECT jsonb_build_object(
+    'consultants', count(*),
+    'eligible', count(*) FILTER (WHERE c.verification_status::text NOT IN ('rejected', 'suspended')),
+    'already_have_code', count(*) FILTER (WHERE k.consultant_id IS NOT NULL),
+    'will_create', count(*) FILTER (WHERE c.verification_status::text NOT IN ('rejected', 'suspended') AND k.consultant_id IS NULL),
+    'excluded_rejected_or_suspended', count(*) FILTER (WHERE c.verification_status::text IN ('rejected', 'suspended')))
+    FROM public.consultants c LEFT JOIN public.consultant_referral_codes k ON k.consultant_id = c.id
+$$;
+REVOKE ALL ON FUNCTION public.referral_backfill_preview() FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.referral_backfill_codes()
+ RETURNS int
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  x record;
+  _n int := 0;
+BEGIN
+  FOR x IN SELECT c.id FROM public.consultants c
+            WHERE c.verification_status::text NOT IN ('rejected', 'suspended')
+              AND NOT EXISTS (SELECT 1 FROM public.consultant_referral_codes k WHERE k.consultant_id = c.id)
+            ORDER BY c.created_at LOOP
+    PERFORM public.referral_ensure_code(x.id);
+    _n := _n + 1;
+  END LOOP;
+  RETURN _n;
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_backfill_codes() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.referral_backfill_codes() TO service_role;
+
+SELECT public.referral_backfill_preview() AS backfill_before;
+SELECT public.referral_backfill_codes() AS codes_created;
+
+-- 11b. Announcement to existing consultants: IN-APP only (bell entry + pop-up), sent by an administrator, once per
+-- consultant. Not e-mailed: a programme announcement to every consultant is bulk promotional mail, which app e-mails
+-- must not carry. Excludes rejected/suspended/deleted accounts and anyone who paused in-app notices.
+CREATE TABLE IF NOT EXISTS public.referral_announcements (
+  consultant_id uuid PRIMARY KEY REFERENCES public.consultants(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL,
+  sent_at timestamptz NOT NULL DEFAULT now(),
+  sent_by uuid,
+  channel text NOT NULL DEFAULT 'in_app' CHECK (channel IN ('in_app'))
+);
+GRANT SELECT ON public.referral_announcements TO authenticated;
+GRANT ALL ON public.referral_announcements TO service_role;
+ALTER TABLE public.referral_announcements ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Admins read referral announcements" ON public.referral_announcements;
+CREATE POLICY "Admins read referral announcements" ON public.referral_announcements
+  FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'super_admin'));
+
+-- Who would receive it now: 'eligible' (not yet sent) or the reason they are left out.
+CREATE OR REPLACE FUNCTION public.referral_announcement_status(_cid uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  c record;
+BEGIN
+  SELECT * INTO c FROM public.consultants WHERE id = _cid;
+  IF NOT FOUND THEN RETURN 'missing'; END IF;
+  IF EXISTS (SELECT 1 FROM public.referral_announcements a WHERE a.consultant_id = _cid) THEN RETURN 'already_sent'; END IF;
+  IF c.verification_status::text IN ('rejected', 'suspended') THEN RETURN 'rejected_or_suspended'; END IF;
+  IF public.referral_consultant_suspended(_cid) THEN RETURN 'account_suspended'; END IF;
+  IF to_regprocedure('public.notifications_paused(uuid,text,text)') IS NOT NULL THEN
+    BEGIN
+      IF public.notifications_paused(c.user_id, 'activity', 'in_app') THEN RETURN 'paused'; END IF;
+    EXCEPTION WHEN OTHERS THEN NULL;
+    END;
+  END IF;
+  RETURN 'eligible';
+END
+$$;
+REVOKE ALL ON FUNCTION public.referral_announcement_status(uuid) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.referral_announcement_text()
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+  SELECT jsonb_build_object(
+    'title', 'Introducing Refer & earn',
+    'body', format('Bring colleagues, earn together: you earn %s %% of the fee of every consultant you refer, for %s months from their first paid ticket - paid by AI Support 360, never deducted from them. It starts after you both pass the AI interview. Open Refer & earn to see your code.',
+                   s ->> 'rate_percent', s ->> 'months'))
+    FROM (SELECT public.referral_settings() AS s) x
+$$;
+REVOKE ALL ON FUNCTION public.referral_announcement_text() FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.admin_referral_announcement_preview(_limit int DEFAULT 50)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+BEGIN
+  IF NOT public.referral_is_admin() THEN RAISE EXCEPTION 'Administrators only' USING ERRCODE = '42501'; END IF;
+  RETURN (
+    WITH st AS (SELECT c.id, p.display_name, public.referral_announcement_status(c.id) AS status
+                  FROM public.consultants c LEFT JOIN public.profiles p ON p.user_id = c.user_id)
+    SELECT jsonb_build_object(
+      'message', public.referral_announcement_text(),
+      'counts', (SELECT jsonb_object_agg(status, n) FROM (SELECT status, count(*) n FROM st GROUP BY status) q),
+      'recipients', COALESCE((SELECT jsonb_agg(jsonb_build_object('name', display_name)) FROM (
+                       SELECT display_name FROM st WHERE status = 'eligible' ORDER BY display_name LIMIT greatest(1, least(COALESCE(_limit, 50), 500))) r), '[]'::jsonb)));
+END
+$$;
+REVOKE ALL ON FUNCTION public.admin_referral_announcement_preview(int) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_referral_announcement_preview(int) TO authenticated;
+
+-- _test = true: only to the administrator's own account (no log). Otherwise up to _limit (max 200) per call,
+-- 10 calls per hour per administrator, once per consultant (primary key), audited.
+CREATE OR REPLACE FUNCTION public.admin_referral_announcement_send(_test boolean DEFAULT true, _limit int DEFAULT 200)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ VOLATILE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  m jsonb := public.referral_announcement_text();
+  x record;
+  _n int := 0;
+  _left int;
+BEGIN
+  IF NOT public.referral_is_admin() THEN RAISE EXCEPTION 'Administrators only' USING ERRCODE = '42501'; END IF;
+  IF NOT public.check_rate_limit('refannounce:' || auth.uid()::text, 10, 3600) THEN
+    RAISE EXCEPTION 'Too many sends in a short time. Please wait a little.' USING ERRCODE = 'P0001';
+  END IF;
+  IF COALESCE(_test, true) THEN
+    PERFORM public.safe_insert_notification(auth.uid(), '[TEST] ' || (m ->> 'title'), m ->> 'body', 'referral_intro', '/consultant/referrals');
+    PERFORM public.referral_log(auth.uid(), 'announcement_test', NULL, NULL, NULL, NULL, NULL, NULL, 'Test to own account');
+    RETURN jsonb_build_object('test', true, 'sent', 1);
+  END IF;
+  FOR x IN SELECT c.id, c.user_id FROM public.consultants c
+            WHERE public.referral_announcement_status(c.id) = 'eligible'
+            ORDER BY c.created_at
+            LIMIT greatest(1, least(COALESCE(_limit, 200), 200)) LOOP
+    INSERT INTO public.referral_announcements (consultant_id, user_id, sent_by) VALUES (x.id, x.user_id, auth.uid())
+    ON CONFLICT (consultant_id) DO NOTHING;
+    IF FOUND THEN
+      PERFORM public.safe_insert_notification(x.user_id, m ->> 'title', m ->> 'body', 'referral_intro', '/consultant/referrals');
+      _n := _n + 1;
+    END IF;
+  END LOOP;
+  SELECT count(*) INTO _left FROM public.consultants c WHERE public.referral_announcement_status(c.id) = 'eligible';
+  PERFORM public.referral_log(auth.uid(), 'announcement_sent', NULL, NULL, NULL, NULL, NULL, jsonb_build_object('sent', _n, 'remaining', _left), 'In-app announcement');
+  RETURN jsonb_build_object('test', false, 'sent', _n, 'remaining', _left);
+END
+$$;
+REVOKE ALL ON FUNCTION public.admin_referral_announcement_send(boolean, int) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_referral_announcement_send(boolean, int) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.admin_referral_announcement_log(_limit int DEFAULT 500)
+ RETURNS TABLE (name text, sent_at timestamptz, sent_by_name text)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+BEGIN
+  IF NOT public.referral_is_admin() THEN RAISE EXCEPTION 'Administrators only' USING ERRCODE = '42501'; END IF;
+  RETURN QUERY
+  SELECT p.display_name, a.sent_at, pb.display_name
+    FROM public.referral_announcements a
+    LEFT JOIN public.profiles p ON p.user_id = a.user_id
+    LEFT JOIN public.profiles pb ON pb.user_id = a.sent_by
+   ORDER BY a.sent_at DESC
+   LIMIT greatest(1, least(COALESCE(_limit, 500), 2000));
+END
+$$;
+REVOKE ALL ON FUNCTION public.admin_referral_announcement_log(int) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_referral_announcement_log(int) TO authenticated;
 
 -- 12. Jobs (plain database calls, credential-free like the other sweeps) --------------------------------------------------------
 SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname IN ('referral-nightly', 'referral-weekly-digest', 'referral-monthly-statements');
