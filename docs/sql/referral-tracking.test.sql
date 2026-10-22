@@ -9,6 +9,8 @@ BEGIN IF NOT COALESCE(_ok, false) THEN RAISE EXCEPTION 'FAILED: %', _what; END I
 CREATE OR REPLACE FUNCTION pg_temp.as_user(_u uuid) RETURNS void LANGUAGE sql AS $$
   SELECT set_config('request.jwt.claims', CASE WHEN _u IS NULL THEN '' ELSE json_build_object('sub', _u, 'role', 'authenticated')::text END, true);
 $$;
+CREATE TEMP TABLE _uid (c uuid PRIMARY KEY, u uuid);
+GRANT SELECT ON _uid TO anon, authenticated;
 CREATE OR REPLACE FUNCTION pg_temp.mk(_name text, _email text) RETURNS uuid LANGUAGE plpgsql AS $$
 DECLARE _u uuid := gen_random_uuid(); _c uuid := gen_random_uuid();
 BEGIN
@@ -16,9 +18,10 @@ BEGIN
   INSERT INTO public.profiles (user_id, display_name) VALUES (_u, _name);
   INSERT INTO public.consultants (id, user_id, verification_status, profile_submitted_at) VALUES (_c, _u, 'verified', now());
   INSERT INTO public.consultant_policy_acknowledgements (consultant_id, user_id, version, language) VALUES (_c, _u, 1, 'en');
+  INSERT INTO _uid VALUES (_c, _u);
   RETURN _c;
 END $$;
-CREATE OR REPLACE FUNCTION pg_temp.uid(_c uuid) RETURNS uuid LANGUAGE sql AS $$ SELECT user_id FROM public.consultants WHERE id = _c $$;
+CREATE OR REPLACE FUNCTION pg_temp.uid(_c uuid) RETURNS uuid LANGUAGE sql AS $$ SELECT u FROM _uid WHERE c = _c $$;
 CREATE OR REPLACE FUNCTION pg_temp.code(_c uuid) RETURNS text LANGUAGE sql AS $$ SELECT code FROM public.consultant_referral_codes WHERE consultant_id = _c $$;
 CREATE OR REPLACE FUNCTION pg_temp.activate(_referred uuid) RETURNS text LANGUAGE plpgsql AS $$
 DECLARE r record;
@@ -44,7 +47,7 @@ BEGIN
   RETURN false;
 EXCEPTION WHEN insufficient_privilege THEN RETURN true;
 END $$;
-GRANT EXECUTE ON FUNCTION pg_temp.denied(text), pg_temp.check(boolean, text), pg_temp.as_user(uuid) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION pg_temp.denied(text), pg_temp.check(boolean, text), pg_temp.as_user(uuid), pg_temp.uid(uuid) TO anon, authenticated;
 
 INSERT INTO auth.users (id, email) VALUES ('00000000-0000-0000-0000-0000000000c1', 'buyer@client-co.com');
 INSERT INTO public.profiles (user_id, display_name) VALUES ('00000000-0000-0000-0000-0000000000c1', 'Buyer One');
