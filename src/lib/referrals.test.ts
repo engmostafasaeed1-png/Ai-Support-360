@@ -152,13 +152,13 @@ describe('referral calculations arithmetic', () => {
   });
   it('estimate is an illustration with the real rate and window', () => {
     // 3 consultants x 10 man-days x 8 h x $50 = $12,000 per month -> 0.5 % = $60, over 12 months $720
-    expect(referralEstimate({ referred: 3, manDaysPerMonth: 10, hourlyRate: 50, ratePercent: 0.5, months: 12 })).toEqual({ perMonth: 60, overWindow: 720 });
+    expect(referralEstimate({ referred: 3, manDaysPerMonth: 10, hourlyRate: 50, ratePercent: 0.5, months: 12 })).toEqual({ perMonth: 60, overWindow: 720, rate: 0.5 });
     expect(referralEstimate({ referred: -2, manDaysPerMonth: 10, hourlyRate: 50, ratePercent: 0.5, months: 12 }).perMonth).toBe(0);
   });
   it('statement CSV keeps the numbers', () => {
     const csv = statementCsv([{ created_at: '2026-10-01', ref_key: 'k', referred_name: 'D. K****', kind: 'reward', status: 'paid', ticket_ref: 'T-1', approved_hours: 50, man_days: 6.25,
-      hourly_rate: 8, fee_amount: 400, rate_percent: 0.5, amount: 2, currency: 'USD', payment_status: 'completed', client_paid_at: null, payout_status: 'completed', payout_released_at: null, referral_payout_due: null, note: null }]);
-    expect(csv.split('\r\n')[1]).toBe('2026-10-01,D. K****,reward,T-1,50,6.25,8,400,0.5,2,USD,paid,completed,');
+      hourly_rate: 8, fee_amount: 400, rate_percent: 0.5, tier_name: 'Tier 1', amount: 2, currency: 'USD', payment_status: 'completed', client_paid_at: null, payout_status: 'completed', payout_released_at: null, referral_payout_due: null, note: null }]);
+    expect(csv.split('\r\n')[1]).toBe('2026-10-01,D. K****,reward,T-1,50,6.25,8,400,0.5,Tier 1,2,USD,paid,completed,');
   });
 });
 
