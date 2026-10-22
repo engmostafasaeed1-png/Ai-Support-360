@@ -52,6 +52,8 @@ export interface ReferralEmailInput {
   logoUrl?: string | null;
   pauseLinks?: { d3: string; w1: string; m1: string } | null;
   test?: boolean;
+  /** Visible contact line in the footer (own domain only; default info@aisupport360.com). */
+  contactEmail?: string | null;
   /** Progress to the next reward level (database referral_tier_for): verified referrals counted, current and next level. */
   tier?: ReferralEmailTier | null;
   /** Monthly statement / weekly digest: period label, lines (masked names, anonymous ticket references) and totals. */
@@ -606,6 +608,9 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
   parts.push(divider);
   if (!admin) parts.push(`<p style="margin:0 0 6px;font-family:${font};font-size:12px;line-height:1.6;color:#64748B;text-align:${align}">${esc(c.fine(ctx))}${s.termsDraft ? ` ${esc(c.draft)}` : ''} <a href="${esc(termsUrl)}" target="_blank" style="color:#475569;text-decoration:underline">${esc(c.terms)}</a></p>`);
 
+  const contact = /^[a-z0-9._+-]+@(www\.)?aisupport360\.com$/i.test(String(input.contactEmail ?? '').trim())
+    ? String(input.contactEmail).trim().toLowerCase() : 'info@aisupport360.com';
+  const contactLine = `<p style="margin:0 0 6px;font-family:${font};font-size:12px;line-height:1.6;color:#64748B">${esc(rtl ? 'أسئلة؟ راسلنا على' : 'Questions? Write to')} <a href="mailto:${esc(contact)}" style="color:#475569;text-decoration:underline" dir="ltr">${esc(contact)}</a></p>`;
   const pl = input.pauseLinks;
   const pause = pl ? `<p style="margin:8px 0 0;font-family:${font};font-size:12px;color:#64748B">${esc(c.pauseLead)} <a href="${esc(safeUrl(pl.d3))}" style="color:#475569">${esc(c.d3)}</a> | <a href="${esc(safeUrl(pl.w1))}" style="color:#475569">${esc(c.w1)}</a> | <a href="${esc(safeUrl(pl.m1))}" style="color:#475569">${esc(c.m1)}</a></p>` : '';
 
@@ -634,6 +639,7 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
     + `<tr><td style="padding:28px 12px 8px">${parts.join('')}</td></tr>`
     // Footer
     + `<tr><td style="padding:8px 12px 0;text-align:${align}">`
+    + contactLine
     + `<p style="margin:0 0 6px;font-family:${font};font-size:12px;line-height:1.6;color:#64748B">${esc(admin ? u.adminWhy : c.why)} <a href="${esc(prefsUrl)}" target="_blank" style="color:#475569;text-decoration:underline">${esc(c.prefs)}</a></p>`
     + pause
     + `<p style="margin:8px 0 0;font-family:${font};font-size:12px;color:#94A3B8">${esc(c.company)} · <span dir="ltr">${esc(c.sentBy)}</span></p>`
@@ -665,7 +671,7 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
   if (b.example) out.push('', `${c.exampleTitle}: ${c.example(ctx)}`, c.exampleNote(ctx));
   out.push('', `${b.cta}: ${ctaUrl}`);
   if (!admin) out.push(`${c.how}: ${howUrl}`, '', `${c.fine(ctx)}${s.termsDraft ? ` ${c.draft}` : ''}`, `${c.terms}: ${termsUrl}`);
-  out.push('', '--', `${admin ? u.adminWhy : c.why} ${c.prefs}: ${prefsUrl}`);
+  out.push('', '--', `${rtl ? 'أسئلة؟ راسلنا على' : 'Questions? Write to'} ${contact}`, `${admin ? u.adminWhy : c.why} ${c.prefs}: ${prefsUrl}`);
   if (pl) out.push(`${c.pauseLead} ${c.d3}: ${safeUrl(pl.d3)} | ${c.w1}: ${safeUrl(pl.w1)} | ${c.m1}: ${safeUrl(pl.m1)}`);
   out.push(`${c.company} · ${c.sentBy}`);
 
