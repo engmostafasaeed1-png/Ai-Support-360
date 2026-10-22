@@ -4800,6 +4800,24 @@ export type Database = {
         }
         Relationships: []
       }
+      job_invoke_secret: {
+        Row: {
+          created_at: string
+          id: number
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          token?: string
+        }
+        Relationships: []
+      }
       knowledge_articles: {
         Row: {
           author_id: string
@@ -13688,6 +13706,8 @@ export type Database = {
       }
       is_ticket_participant: { Args: { _ticket_id: string }; Returns: boolean }
       is_untrusted_writer: { Args: never; Returns: boolean }
+      job_invoke_headers: { Args: never; Returns: Json }
+      job_token_valid: { Args: { _token: string }; Returns: boolean }
       knowledge_terms: { Args: { _query: string }; Returns: string[] }
       knowledge_tsquery: { Args: { _query: string }; Returns: unknown }
       location_grace_deadline: { Args: { _cid: string }; Returns: string }
