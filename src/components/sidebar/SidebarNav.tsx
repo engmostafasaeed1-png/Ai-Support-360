@@ -95,7 +95,7 @@ function NavRow({ item, label, active, collapsed, done, badge, dot }: NavRowProp
           'data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground',
           'data-[active=true]:before:absolute data-[active=true]:before:inset-y-2 data-[active=true]:before:start-0 data-[active=true]:before:w-[3px] data-[active=true]:before:rounded-full data-[active=true]:before:bg-sidebar-primary',
           // Highlighted entry (Refer & earn): gradient pill, same height so nothing shifts.
-          item.highlight && 'bg-gradient-refer font-semibold text-refer-foreground hover:bg-gradient-refer hover:text-refer-foreground hover:brightness-110 data-[active=true]:bg-gradient-refer data-[active=true]:text-refer-foreground',
+          item.highlight && 'bg-gradient-refer font-semibold text-refer-foreground hover:text-refer-foreground hover:brightness-110 data-[active=true]:text-refer-foreground',
         )}
       >
         {external ? (
