@@ -863,7 +863,7 @@ AS $$
 BEGIN
   IF to_regnamespace('net') IS NULL THEN RETURN; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.availability_email_queue q WHERE q.sent_at IS NULL AND q.failed_at IS NULL AND q.attempts < 5) THEN RETURN; END IF;
-  EXECUTE $q$SELECT net.http_post(url := $1, headers := jsonb_build_object('Content-Type', 'application/json'), body := '{}'::jsonb)$q$
+  EXECUTE $q$SELECT net.http_post(url := $1, headers := public.job_invoke_headers(), body := '{}'::jsonb)$q$
     USING 'https://ozzgsfsnlejfuexikwrm.supabase.co/functions/v1/availability-run';
 END
 $$;

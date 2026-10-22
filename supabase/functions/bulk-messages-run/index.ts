@@ -5,6 +5,7 @@
 // Channels sent here: in-app notifications, Telegram and Web Push (to devices where the person enabled push notifications).
 // E-mail is never used for bulk messages.
 import { adminClient, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
+import { isJobCaller } from '../_shared/jobAuth.ts';
 import { loadVapidKeys, sendWebPush, subscriptionUpdate, type VapidKeys } from '../_shared/webpush.ts';
 import { sendTelegram } from '../_shared/telegram.ts';
 import { runBulkBatch } from '../_shared/bulkMessagesRun.ts';
@@ -13,6 +14,7 @@ Deno.serve(async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
   if (req.method !== 'POST') return jsonResponse(req, { error: 'Method not allowed' }, 405);
+  if (!(await isJobCaller(req, adminClient()))) return jsonResponse(req, { error: 'Unauthorized' }, 401);
   const admin = adminClient();
   const token = Deno.env.get('TELEGRAM_BOT_TOKEN') ?? '';
   let vapid: VapidKeys | null | undefined; // loaded once, only when a push row was claimed

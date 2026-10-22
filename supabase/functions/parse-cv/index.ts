@@ -173,7 +173,8 @@ ${cv_text.substring(0, 15000)}`}`;
       const cleaned = rawContent.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
       aiParsed = JSON.parse(cleaned);
     } catch {
-      console.error("Failed to parse AI response:", rawContent);
+      // Never log the model output: it contains personal CV details.
+      console.error("Failed to parse AI response", { length: typeof rawContent === "string" ? rawContent.length : 0 });
       throw new Error("Failed to parse CV data");
     }
 

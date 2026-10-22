@@ -21,8 +21,10 @@ interface ErrorPayload {
   context?: Record<string, unknown>;
 }
 
-async function fingerprint(message: string, stack?: string): Promise<string> {
-  const base = (message || '') + '|' + (stack || '').split('\n').slice(0, 3).join('|');
+// The reporter (signed-in user id, otherwise the caller's network address) is part of the fingerprint, so a
+// caller can only ever bump the count of reports it filed itself, never another person's report.
+async function fingerprint(message: string, stack: string | undefined, reporter: string): Promise<string> {
+  const base = reporter + '|' + (message || '') + '|' + (stack || '').split('\n').slice(0, 3).join('|');
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(base));
   const hex = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
   return `fp_${hex.slice(0, 24)}`;
@@ -83,7 +85,8 @@ Deno.serve(async (req) => {
 
     const message = body.message.slice(0, 4000);
     const stack = typeof body.stack === 'string' ? body.stack.slice(0, 8000) : undefined;
-    const fp = await fingerprint(message, stack);
+    const reporter = userId ? `u:${userId}` : `ip:${clientIp(req)}`;
+    const fp = await fingerprint(message, stack, reporter);
     const level = body.level && LEVELS.has(body.level) ? body.level : 'error';
 
     let context: Record<string, unknown> = {};
@@ -92,13 +95,15 @@ Deno.serve(async (req) => {
       context = serialized.length <= MAX_CONTEXT_CHARS ? body.context : { truncated: true, original_size: serialized.length };
     }
 
-    // Dedupe: bump occurrence_count for a recent unresolved error with the same fingerprint (last 1h).
-    const { data: existing } = await supabase
+    // Dedupe: bump occurrence_count for this reporter's own recent unresolved error (last 1h).
+    let lookup = supabase
       .from('error_reports')
       .select('id, occurrence_count')
       .eq('fingerprint', fp)
       .eq('resolved', false)
-      .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString())
+      .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString());
+    lookup = userId ? lookup.eq('user_id', userId) : lookup.is('user_id', null);
+    const { data: existing } = await lookup
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -108,7 +113,7 @@ Deno.serve(async (req) => {
         .from('error_reports')
         .update({ occurrence_count: (existing.occurrence_count ?? 1) + 1, updated_at: new Date().toISOString() })
         .eq('id', existing.id);
-      return reply(req, { ok: true, id: existing.id, deduped: true });
+      return reply(req, { ok: true, deduped: true });
     }
 
     const { data, error } = await supabase

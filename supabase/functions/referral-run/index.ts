@@ -6,6 +6,7 @@
 // the service-role-only referral_email_claim RPC (atomic, at most 5 attempts, 10-minute lease) and a call can only send
 // what the database queued. Responses contain counts only. Layout: _shared/referralEmail.ts (shared with the admin preview).
 import { adminClient, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
+import { isJobCaller } from '../_shared/jobAuth.ts';
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
 import {
   normaliseKind, NOT_APP_EMAIL_KINDS, pauseCategoryFor, REFERRAL_BANNER_URL, REFERRAL_EMAIL_SETTING_KEYS, referralEmailSettingsFrom,
@@ -74,6 +75,7 @@ Deno.serve(async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
   if (req.method !== 'POST') return jsonResponse(req, { error: 'Method not allowed' }, 405);
+  if (!(await isJobCaller(req, adminClient()))) return jsonResponse(req, { error: 'Unauthorized' }, 401);
   const admin = adminClient();
   const { data, error } = await admin.rpc('referral_email_claim', { _limit: 100 });
   if (error) {
