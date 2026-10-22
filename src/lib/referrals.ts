@@ -79,6 +79,9 @@ export function rateRangeText(tiers: Tier[]): string {
 /** "0-10", "11-20", "41+" */
 export const tierRangeLabel = (tiers: Tier[], i: number) => (tiers[i + 1] ? `${tiers[i].min}-${tiers[i + 1].min - 1}` : `${tiers[i].min}+`);
 
+/** Tiers of a settings object (older shapes without tiers fall back to the defaults). */
+export const settingsTiers = (s: { tiers?: Tier[] } | null | undefined): Tier[] => (s?.tiers?.length ? s.tiers : DEFAULT_TIERS);
+
 export const REFERRAL_DEFAULTS: ReferralSettings = { enabled: true, pass_mark: 50, activation_days: 90, rate_percent: 0.5, tiers: DEFAULT_TIERS, max_rate: DEFAULT_MAX_RATE, months: 12, min_payout: 25, terms_version: 1 };
 
 const num = (v: unknown, def: number, lo: number, hi: number) => {
@@ -90,7 +93,7 @@ export function parseReferralSettings(o: unknown): ReferralSettings {
   const r = (o && typeof o === 'object' ? o : {}) as Record<string, unknown>;
   const max_rate = num(r.max_rate, DEFAULT_MAX_RATE, 0.01, 10);
   const tiers = Array.isArray(r.tiers) ? parseTiers(r.tiers, max_rate)
-    : r.rate_percent != null && num(r.rate_percent, NaN, 0.001, 10) === num(r.rate_percent, NaN, 0.001, 10) ? [{ min: 0, rate: num(r.rate_percent, 0.5, 0.001, 10), name: 'Tier 1' }] : DEFAULT_TIERS;
+    : r.rate_percent != null ? [{ min: 0, rate: num(r.rate_percent, 0.5, 0.001, 10), name: 'Tier 1' }] : DEFAULT_TIERS;
   return {
     tiers,
     max_rate,
