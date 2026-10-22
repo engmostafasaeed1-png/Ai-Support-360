@@ -1,6 +1,7 @@
 import * as React from 'npm:react@18.3.1'
 import { Body, Button, Container, Head, Heading, Html, Preview, Text } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
+import { renderReferralEmail, sampleReferralEmail } from '../referralEmail.ts'
 
 /**
  * Feature Z: one short, honest referral notice to one consultant (the event that concerns them). Names are the masked
@@ -105,9 +106,13 @@ const ReferralNoticeEmail = (p: Props) => {
 
 export const template = {
   component: ReferralNoticeEmail,
-  subject: (d: Record<string, any>) => referralNoticeText(d as Props).subject,
+  // The shared Refer & earn layout (_shared/referralEmail.ts) renders the HTML and the plain-text part in one piece;
+  // the React component above stays only as a simple fallback.
+  subject: (d: Record<string, any>) => renderReferralEmail(d as any).subject,
+  html: (d: Record<string, any>) => renderReferralEmail(d as any).html,
+  text: (d: Record<string, any>) => renderReferralEmail(d as any).text,
   displayName: 'Referral notice',
-  previewData: { kind: 'signup', lang: 'en', name: 'Rami', other: 'D. K****', passMark: 50 },
+  previewData: { ...sampleReferralEmail('signup', 'en') },
 } satisfies TemplateEntry
 
 const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }

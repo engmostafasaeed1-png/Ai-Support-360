@@ -39,6 +39,13 @@ Deno.serve(async (req) => {
         const { error } = await admin.rpc('bm_finish', { _results: rows });
         if (error) throw new Error('finish failed');
       },
+      referralCampaigns: async (ids) => {
+        // Refer & earn invitations (docs/sql/referral-invitations.sql); before that file is applied the table is missing -> none.
+        if (!ids.length) return new Set();
+        const { data, error } = await admin.from('referral_invitation_runs').select('campaign_id').in('campaign_id', ids);
+        if (error) return new Set();
+        return new Set((data ?? []).map((r: { campaign_id: string }) => r.campaign_id));
+      },
       sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
       now: () => Date.now(),
     });

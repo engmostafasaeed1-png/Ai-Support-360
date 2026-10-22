@@ -15,6 +15,8 @@ import { supabase } from '@/integrations/supabase/client';
 import NotificationPauseCard from '@/components/notifications/NotificationPauseCard';
 import { BroadcastMessageDialog } from '@/components/messages/BroadcastMessages';
 import { BROADCAST_TYPES } from '@/lib/bulkMessaging';
+import { isReferralNotice, referralNoticeView } from '@/lib/referralNotice';
+import { ReferralNoticeContent, ReferralNoticeIcon } from '@/components/notifications/ReferralNotice';
 
 const isBroadcast = (type: string | null | undefined) => (BROADCAST_TYPES as readonly string[]).includes(String(type ?? ''));
 
@@ -267,6 +269,7 @@ export default function NotificationsPage() {
               }
               if (!n.is_read) markAsRead(n.id);
               if (isBroadcast(n.type)) { setOpenMessage(n.id); return; }
+              if (isReferralNotice(n.type)) { navigate(referralNoticeView(n).link); return; }
               if (n.link) navigate(n.link);
             };
             return (
@@ -288,6 +291,21 @@ export default function NotificationsPage() {
                     />
                   </div>
                 )}
+                {isReferralNotice(n.type) ? (
+                  <>
+                    <ReferralNoticeIcon view={referralNoticeView(n)} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-2">
+                        <ReferralNoticeContent n={n} unread={!n.is_read} onOpen={() => { if (!n.is_read) markAsRead(n.id); }} />
+                        {!n.is_read && <Badge className="text-[9px] px-1.5 py-0">{t('notifications.new')}</Badge>}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground/60 mt-1">
+                        {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale })}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                <>
                 <div
                   className={cn(
                     'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
@@ -328,6 +346,8 @@ export default function NotificationsPage() {
                     {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale })}
                   </p>
                 </div>
+                </>
+                )}
                 {!selectMode && (
                   <div className="flex items-center gap-1 shrink-0">
                     {(n as any).delivery_status === 'failed' && (

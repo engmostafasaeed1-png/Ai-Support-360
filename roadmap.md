@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Refer & earn notices + invitation (Oct 22): (A) in-app referral cards per type, shared bilingual referral e-mail layout + per-type blocks (HTML + text), admin e-mail preview (EN/AR, light/dark) + "Send test to me"; (B) Users console "Send Refer & earn invitation" (selected / all eligible) with confirmation, server-side eligibility, dedupe per version, resend rules, caps, kill switch OFF, per-recipient report + CSV, "Invited on" in rows; docs/sql/referral-invitations.sql + test file (NOT applied, nothing sent to real users)
+- [ ] Switch on Refer & earn invitation: awaits owner applying docs/sql/referral-invitations.sql (then its test file), turning on the invitation switch, and approving the first real send.
+
 - [x] AI Interviewer Training (knowledge-based, profile-specific questions + admin knowledge documents): inventory, plan builder, optional version per module, document upload/extraction function, coverage, preview, question sources, consultant notice line, EN/AR, tests; docs/sql/interview-knowledge.sql + test file checked on a scratch database; functions deployed (Oct 22)
 - [ ] Switch on AI Interviewer knowledge base: awaits owner applying docs/sql/interview-knowledge.sql (then run docs/sql/interview-knowledge.test.sql) and switching it on in Settings.
 

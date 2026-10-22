@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -44,7 +45,12 @@ interface Props {
 export default function ReferralEarnings({ lines, loading, detailed, payouts, payoutsAvailable, tiers, tierCount, minPayout, payoutDetails, money, date, month }: Props) {
   const { t, i18n } = useTranslation();
   const rtl = i18n.language?.startsWith('ar');
-  const [filter, setFilter] = useState<LineFilter>(DEFAULT_LINE_FILTER);
+  // Deep links from referral notices (?tab=earnings&status=held) open the table already filtered.
+  const [params] = useSearchParams();
+  const [filter, setFilter] = useState<LineFilter>(() => {
+    const st = params.get('status');
+    return (LINE_FILTER_STATES as readonly string[]).includes(st ?? '') ? { ...DEFAULT_LINE_FILTER, status: st as LineFilter['status'] } : DEFAULT_LINE_FILTER;
+  });
   const [sort, setSort] = useState<{ key: LineSortKey; dir: 'asc' | 'desc' }>({ key: 'date', dir: 'desc' });
   const [page, setPage] = useState(1);
 
