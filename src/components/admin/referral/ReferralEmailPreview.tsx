@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  REFERRAL_BANNER_URL, REFERRAL_EMAIL_KINDS, renderReferralEmail, sampleReferralEmail, type ReferralEmailKind, type ReferralEmailSettings,
+  NOT_APP_EMAIL_KINDS, REFERRAL_BANNER_URL, REFERRAL_EMAIL_KINDS, renderReferralEmail, sampleReferralEmail, type ReferralEmailKind, type ReferralEmailSettings,
 } from '../../../../supabase/functions/_shared/referralEmail';
 
 export const EMAIL_KIND_LABEL: Record<ReferralEmailKind, string> = {
@@ -94,6 +94,11 @@ export default function ReferralEmailPreview({ settings }: { settings: Partial<R
           <p className="font-medium" dir={lang === 'ar' ? 'rtl' : 'ltr'}>{mail.subject}</p>
           <p className="mt-1 text-xs text-muted-foreground" dir={lang === 'ar' ? 'rtl' : 'ltr'}>{mail.preheader}</p>
         </div>
+        {NOT_APP_EMAIL_KINDS.includes(kind) && (
+          <p className="rounded-xl border border-border/60 bg-muted/40 p-3 text-sm text-muted-foreground" role="note">
+            {t('remail.design_only', 'Design only: the platform does not e-mail this invitation to consultants. Real sending needs a separate marketing e-mail service approved by the owner. "Send test to me" still works.')}
+          </p>
+        )}
 
         <Tabs defaultValue="html">
           <TabsList><TabsTrigger value="html">HTML</TabsTrigger><TabsTrigger value="text">{t('remail.text', 'Plain text')}</TabsTrigger></TabsList>

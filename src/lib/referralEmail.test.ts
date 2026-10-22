@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CHIP_COLORS, chipFor, esc, initials, lineChip, pauseCategoryFor, REFERRAL_EMAIL_KINDS, referralEmailSettingsFrom, renderReferralEmail, safeUrl, sampleReferralEmail, tabFor, toneFor,
+  CHIP_COLORS, chipFor, esc, initials, lineChip, NOT_APP_EMAIL_KINDS, pauseCategoryFor, REFERRAL_EMAIL_KINDS, referralEmailSettingsFrom, renderReferralEmail, safeUrl, sampleReferralEmail, tabFor, toneFor,
 } from '../../supabase/functions/_shared/referralEmail';
 
 describe('Refer & earn e-mail layout', () => {
@@ -120,3 +120,19 @@ describe('Refer & earn e-mail layout', () => {
   });
 });
 
+
+describe('Refer & earn programme invitation design', () => {
+  it('shows every reward level from the live settings with its range and rate', () => {
+    const s = referralEmailSettingsFrom([{ key: 'referral_tiers', value: [{ min: 0, rate: 0.5 }, { min: 11, rate: 0.6 }, { min: 41, rate: 1 }] }]);
+    const m = renderReferralEmail({ kind: 'programme_invitation', lang: 'en', settings: s });
+    expect(m.text).toContain('Level 1: 0–10 verified referrals = 0.5 %');
+    expect(m.text).toContain('Level 2: 11–40 verified referrals = 0.6 %');
+    expect(m.text).toContain('Level 3: 41+ verified referrals = 1 %');
+    expect(m.ctaUrl).toBe('https://www.aisupport360.com/consultant/referrals?tab=programme');
+  });
+
+  it('is never sent by the platform app-email sender', () => {
+    expect(NOT_APP_EMAIL_KINDS).toContain('programme_invitation');
+    expect(NOT_APP_EMAIL_KINDS).not.toContain('reward_paid');
+  });
+});
