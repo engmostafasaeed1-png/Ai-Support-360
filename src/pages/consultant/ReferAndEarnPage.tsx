@@ -38,6 +38,7 @@ import ReferralJourney, { type ReferTab } from '@/components/referral/tracking/R
 import ReferralFunnelList from '@/components/referral/tracking/ReferralFunnelList';
 import ReferralEarnings from '@/components/referral/tracking/ReferralEarnings';
 import RewardCalcBox from '@/components/referral/tracking/RewardCalcBox';
+import { inviteSourceFrom, trackInviteClick, withoutInviteTag } from '@/lib/inviteTracking';
 
 
 function useFormat() {
