@@ -242,6 +242,19 @@ describe('send worker', () => {
     expect(updatePushSubscription).toHaveBeenCalledTimes(2);
   });
 
+  it('Telegram invitations link to the programme tab tagged telegram, other campaigns keep their own link', async () => {
+    const send = vi.fn(async () => ({ ok: true, blocked: false }));
+    const d = deps([
+      row({ channel: 'telegram', campaign_id: 'inv', user_id: 'a', chat_id: 1, link_url: '/consultant/referrals?tab=programme&from=invite', body_en: 'Open: {{link}}' }),
+      row({ channel: 'telegram', campaign_id: 'other', user_id: 'b', chat_id: 2, link_url: '/consultant/profile' }),
+    ], { referralCampaigns: vi.fn(async () => new Set(['inv'])), sendTelegram: send });
+    await runBulkBatch(d);
+    const calls = send.mock.calls as unknown as Array<[number, string, string | null]>;
+    expect(calls[0][2]).toBe('https://www.aisupport360.com/consultant/referrals?tab=programme&from=invite&ch=telegram');
+    expect(calls[0][1]).toContain('from=invite&ch=telegram');
+    expect(calls[1][2]).toBe('https://www.aisupport360.com/consultant/profile');
+  });
+
   it('a failing invitation lookup falls back to normal messages', async () => {
     const d = deps([row({})], { referralCampaigns: vi.fn(async () => { throw new Error('missing'); }) });
     await runBulkBatch(d);
