@@ -51,6 +51,18 @@ export interface PushSub { id: string; user_id: string; endpoint: string; p256dh
 /** In-app notice of a Refer & earn invitation: type 'referral', straight to the programme tab (no token, no personal data). */
 export const REFERRAL_INVITE_LINK = '/consultant/referrals?tab=programme&from=invite';
 
+/** Channels whose click-throughs are counted (docs/sql/referral-invite-tracking.sql). */
+export const INVITE_CLICK_CHANNELS = ['in_app', 'push', 'telegram', 'email'] as const;
+export type InviteClickChannel = typeof INVITE_CLICK_CHANNELS[number];
+
+/**
+ * Invitation link tagged only with the channel it was sent on, so a signed-in click can be counted per channel.
+ * Never a token, user id or e-mail address: the person is known from their own sign-in when they open the page.
+ */
+export function referralInviteLink(channel: InviteClickChannel): string {
+  return `${REFERRAL_INVITE_LINK}&ch=${channel}`;
+}
+
 /** Text one recipient gets: their language, their variables, the standard footer. */
 export function renderFor(row: ClaimRow) {
   const body = pickText(row.lang, row.body_en, row.body_ar);
@@ -71,11 +83,10 @@ export async function runBulkBatch(deps: WorkerDeps, budgetMs = 45_000): Promise
   const results: FinishRow[] = [];
   const key = (r: { campaign_id: string; user_id: string }) => `${r.campaign_id}:${r.user_id}`;
 
-  // Refer & earn invitation campaigns link straight to the programme tab (in-app and push).
+  // Refer & earn invitation campaigns link straight to the programme tab, tagged with the channel (in-app, push, Telegram).
   let referral = new Set<string>();
-  const linked = rows.filter((r) => r.channel === 'in_app' || r.channel === 'push');
-  if (deps.referralCampaigns && linked.length) {
-    try { referral = await deps.referralCampaigns([...new Set(linked.map((r) => r.campaign_id))]); } catch { referral = new Set(); }
+  if (deps.referralCampaigns && rows.length) {
+    try { referral = await deps.referralCampaigns([...new Set(rows.map((r) => r.campaign_id))]); } catch { referral = new Set(); }
   }
 
   // In-app: one insert for the batch; the notification links back to the full message.
