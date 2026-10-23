@@ -122,7 +122,7 @@ export async function runBulkBatch(deps: WorkerDeps, budgetMs = 45_000): Promise
       continue;
     }
     if (!r.chat_id) { results.push({ campaign_id: r.campaign_id, user_id: r.user_id, channel: 'telegram', ok: false, error: 'not_linked' }); continue; }
-    const m = renderFor(r);
+    const m = renderFor(referral.has(r.campaign_id) ? { ...r, link_url: referralInviteLink('telegram') } : r);
     let res: { ok: boolean; blocked: boolean; error?: string };
     try { res = await deps.sendTelegram(r.chat_id, telegramText(m.subject, m.plain, m.link, m.footer), m.link); }
     catch { res = { ok: false, blocked: false, error: 'network' }; }
