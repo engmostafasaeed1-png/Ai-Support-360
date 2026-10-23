@@ -24,6 +24,7 @@ import ReferralEmailPreview from '@/components/admin/referral/ReferralEmailPrevi
 import ReferralDashboard from '@/components/admin/referral/ReferralDashboard';
 import ReferralInviteSettingsCard from '@/components/admin/referral/ReferralInviteSettingsCard';
 import EmailSenderCard from '@/components/admin/referral/EmailSenderCard';
+import InviteEffectivenessCard from '@/components/admin/referral/InviteEffectivenessCard';
 import { useInviteSettings } from '@/hooks/useReferralInvitations';
 
 /** In-app announcement (bell + pop-up) to every eligible consultant, once each; test to yourself first. No e-mail. */
@@ -657,7 +658,7 @@ export default function ReferralsAdminPage() {
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name or code" className="max-w-xs rounded-xl" aria-label="Search name or code" />
         </div>
 
-        <TabsContent value="dashboard"><ReferralDashboard /></TabsContent>
+        <TabsContent value="dashboard" className="space-y-4"><ReferralDashboard /><InviteEffectivenessCard /></TabsContent>
         <TabsContent value="referred">
           <div className="mb-2 flex flex-wrap gap-2">
             <Select value={filter} onValueChange={setFilter}>
@@ -779,7 +780,7 @@ export default function ReferralsAdminPage() {
 
         <TabsContent value="calc"><AdminCalculations /></TabsContent>
         <TabsContent value="announce" className="space-y-4"><AnnouncementCard /><SetReferrerCard /></TabsContent>
-        <TabsContent value="emails" className="space-y-4"><ReferralInviteSettingsCard /><EmailSenderCard /><EmailPreviewWithSettings settings={(o.settings ?? {}) as Row} /></TabsContent>
+        <TabsContent value="emails" className="space-y-4"><InviteEffectivenessCard /><ReferralInviteSettingsCard /><EmailSenderCard /><EmailPreviewWithSettings settings={(o.settings ?? {}) as Row} /></TabsContent>
         <TabsContent value="reconcile"><ReconcileCard /></TabsContent>
         <TabsContent value="security" className="space-y-4"><AdjustRequestsCard /><AnomaliesCard /></TabsContent>
 
