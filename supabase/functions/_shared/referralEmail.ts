@@ -533,60 +533,73 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
   const isTable = kind === 'monthly_statement' || admin;
   const tier = input.tier && Number.isFinite(Number(input.tier.count)) && TIER_KINDS.includes(kind) ? input.tier : null;
   const P = (txt: string, extra = '') => `<p style="margin:0 0 16px;font-family:${font};font-size:16px;line-height:1.65;color:#1F2937;text-align:${align}${extra}">${esc(txt)}</p>`;
-  const H = (txt: string) => `<p style="margin:8px 0 12px;font-family:${font};font-size:18px;font-weight:800;color:#111827;text-align:${align}">${esc(txt)}</p>`;
-  const divider = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td style="padding:12px 0"><div style="height:1px;line-height:1px;font-size:0;background:#EEF0F4">&nbsp;</div></td></tr></table>`;
+  // Section title with a small violet-to-teal accent bar
+  const H = (txt: string) => `<table role="presentation" cellspacing="0" cellpadding="0" border="0" dir="${dir}" style="margin:4px 0 14px"><tr>`
+    + `<td width="4" bgcolor="${BRAND.solid}" style="width:4px;border-radius:2px;background:${BRAND.solid};background-image:linear-gradient(180deg,${BRAND.from},${BRAND.to});font-size:0;line-height:0">&nbsp;</td>`
+    + `<td style="padding:${rtl ? '0 10px 0 0' : '0 0 0 10px'};font-family:${font};font-size:19px;line-height:1.3;font-weight:800;color:#111827;text-align:${align}">${esc(txt)}</td></tr></table>`;
+  const divider = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td style="padding:18px 0"><div style="height:1px;line-height:1px;font-size:0;background:#EEF0F4">&nbsp;</div></td></tr></table>`;
+  const spacer = (h: number) => `<div style="height:${h}px;line-height:${h}px;font-size:0">&nbsp;</div>`;
+  // Round icon badge (fixed emoji entities only, never data)
+  const bubble = (icon: string, bg: string, size = 40, center = false) =>
+    `<table role="presentation" cellspacing="0" cellpadding="0" border="0" ${center ? 'align="center" style="margin:0 auto 12px"' : ''}><tr><td bgcolor="${bg}" width="${size}" height="${size}" style="width:${size}px;height:${size}px;border-radius:${Math.round(size / 2)}px;background:${bg};font-size:${Math.round(size * 0.5)}px;line-height:${size}px;text-align:center;mso-line-height-rule:exactly">${icon}</td></tr></table>`;
+  const numberDot = (label: string, bg = BRAND.solid, size = 32) =>
+    `<table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td bgcolor="${bg}" width="${size}" height="${size}" style="width:${size}px;height:${size}px;border-radius:${Math.round(size / 2)}px;background:${bg};${bg === BRAND.solid ? `background-image:linear-gradient(135deg,${BRAND.from},${BRAND.to});` : ''}color:#ffffff;font-family:${font};font-size:14px;font-weight:800;line-height:${size}px;text-align:center">${label}</td></tr></table>`;
 
   const parts: string[] = [];
-  if (input.test) parts.push(`<p style="margin:0 0 16px;padding:8px 12px;border-radius:10px;background:#FFF7E6;font-family:${font};font-size:13px;color:#78350F;text-align:${align}">${esc(c.test)}</p>`);
-  parts.push(P(c.hello(input.name ? String(input.name).slice(0, 80) : undefined)));
+  if (input.test) parts.push(`<p style="margin:0 0 18px;padding:10px 14px;border-radius:12px;background:#FFF7E6;border:1px solid #FDE68A;font-family:${font};font-size:13px;font-weight:700;color:#78350F;text-align:${align}">&#9888;&#65039; ${esc(c.test)}</p>`);
+  parts.push(`<p style="margin:0 0 12px;font-family:${font};font-size:18px;font-weight:800;color:#111827;text-align:${align}">${esc(c.hello(input.name ? String(input.name).slice(0, 80) : undefined))}</p>`);
   parts.push(P(b.intro));
 
   // Large number highlight: "+$12.50 earned"
   if (amountN != null && amount && b.amountLabel) {
     const sign = kind === 'reward_reversed' ? '−' : kind === 'first_reward' || kind === 'reward_earned' ? '+' : '';
     const ch = CHIP_COLORS[chip];
+    parts.push(spacer(4));
     parts.push(card(
-      `<p style="margin:0 0 6px">${chipHtml(chip, u.chip[chip], font)}</p>`
-      + `<p style="margin:0;font-family:${font};line-height:1.15;color:${ch.fg}"><span dir="ltr" style="font-size:40px;font-weight:800;letter-spacing:-0.02em">${esc(sign + moneyShort(amountN, cur, lang))}</span> <span style="font-size:18px;font-weight:700">${esc(u.amountWord[kind] ?? '')}</span></p>`
-      + `<p style="margin:6px 0 0;font-family:${font};font-size:13px;color:#475569">${esc(c.amountNote[b.amountLabel] ?? '')}</p>`,
-      { bg: ch.bg, border: `${ch.fg}33`, pad: '20px 22px', align }));
-    parts.push('<div style="height:16px;line-height:16px;font-size:0">&nbsp;</div>');
+      bubble(AMOUNT_ICON[kind] ?? '&#128176;', '#ffffff', 52, true)
+      + `<p style="margin:0 0 6px;font-family:${font};font-size:13px;font-weight:700;letter-spacing:${rtl ? '0' : '0.06em'};text-transform:${rtl ? 'none' : 'uppercase'};color:${ch.fg}">${esc(c.amountNote[b.amountLabel] ?? '')}</p>`
+      + `<p style="margin:0;font-family:${font};line-height:1.1;color:${ch.fg}"><span dir="ltr" style="font-size:46px;font-weight:800;letter-spacing:-0.02em">${esc(sign + moneyShort(amountN, cur, lang))}</span> <span style="font-size:18px;font-weight:700">${esc(u.amountWord[kind] ?? '')}</span></p>`
+      + `<p style="margin:12px 0 0">${chipHtml(chip, u.chip[chip], font)}</p>`,
+      { bg: ch.bg, border: `${ch.fg}33`, pad: '26px 22px', align: 'center' }));
+    parts.push(spacer(18));
   }
 
   if (nextText) {
-    parts.push(card(`<p style="margin:0 0 4px;font-family:${font};font-size:13px;font-weight:700;color:${BRAND.ink}">${esc(c.nextTitle)}</p><p style="margin:0;font-family:${font};font-size:16px;line-height:1.55;color:#1F2937">${esc(nextText)}</p>`,
+    parts.push(card(`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}"><tr>`
+      + `<td width="52" valign="top">${bubble('&#128073;', '#ffffff', 40)}</td>`
+      + `<td valign="top" style="text-align:${align}"><p style="margin:0 0 4px;font-family:${font};font-size:13px;font-weight:800;letter-spacing:${rtl ? '0' : '0.04em'};text-transform:${rtl ? 'none' : 'uppercase'};color:${BRAND.ink}">${esc(c.nextTitle)}</p><p style="margin:0;font-family:${font};font-size:16px;line-height:1.55;font-weight:600;color:#1F2937">${esc(nextText)}</p></td></tr></table>`,
       { bg: BRAND.soft, border: '#DDD6FE', align }));
-    parts.push('<div style="height:16px;line-height:16px;font-size:0">&nbsp;</div>');
+    parts.push(spacer(16));
   }
 
   // Weekly digest: three KPI cards
   if (admin) {
     const st = input.stats ?? {};
     parts.push(columns((['signups', 'verified', 'review'] as const).map((k) => card(
-      `<p style="margin:0;font-family:${font};font-size:30px;font-weight:800;color:${BRAND.ink}">${esc(fmtInt(Number(st[k] ?? 0), lang))}</p><p style="margin:4px 0 0;font-family:${font};font-size:13px;color:#475569">${esc(u.kpi[k])}</p>`,
-      { bg: BRAND.soft, border: '#DDD6FE', align: 'center', pad: '14px 10px' }))));
+      `<p style="margin:0;font-family:${font};font-size:32px;font-weight:800;color:${BRAND.ink}">${esc(fmtInt(Number(st[k] ?? 0), lang))}</p><p style="margin:4px 0 0;font-family:${font};font-size:13px;color:#475569">${esc(u.kpi[k])}</p>`,
+      { bg: BRAND.soft, border: '#DDD6FE', align: 'center', pad: '16px 10px' }))));
   }
 
   // Statement / digest: period, mini table, totals and a stacked bar
   if (isTable) {
-    if (input.period) parts.push(`<p style="margin:0 0 10px;font-family:${font};font-size:14px;color:#475569;text-align:${align}">${esc(u.period)}: <strong style="color:#111827">${esc(String(input.period).slice(0, 60))}</strong></p>`);
+    if (input.period) parts.push(`<p style="margin:0 0 14px;font-family:${font};font-size:14px;color:#475569;text-align:${align}">${esc(u.period)}: <strong style="display:inline-block;padding:2px 10px;border-radius:999px;background:${BRAND.soft};color:${BRAND.ink}">${esc(String(input.period).slice(0, 60))}</strong></p>`);
     parts.push(H(u.tableTitle));
     if (!lines.length) parts.push(P(u.none, ';color:#475569'));
     else {
-      const th = (x: string, a = align) => `<th align="${a}" style="padding:10px 6px;font-family:${font};font-size:12px;font-weight:700;color:#475569;text-align:${a};border-bottom:1px solid #E5E7EB">${esc(x)}</th>`;
+      const th = (x: string, a = align) => `<th align="${a}" style="padding:11px 8px;font-family:${font};font-size:11px;font-weight:800;letter-spacing:${rtl ? '0' : '0.05em'};text-transform:${rtl ? 'none' : 'uppercase'};color:${BRAND.ink};text-align:${a};border-bottom:1px solid #DDD6FE">${esc(x)}</th>`;
       const end = rtl ? 'left' : 'right';
-      const td = (x: string, a = align, extra = '') => `<td align="${a}" style="padding:10px 6px;font-family:${font};font-size:13px;color:#1F2937;text-align:${a};border-bottom:1px solid #F1F5F9${extra}">${x}</td>`;
-      const rows = lines.map((l) => {
+      const td = (x: string, a = align, extra = '') => `<td align="${a}" style="padding:11px 8px;font-family:${font};font-size:13px;color:#1F2937;text-align:${a};border-bottom:1px solid #F1F5F9${extra}">${x}</td>`;
+      const rows = lines.map((l, i) => {
         const lc = lineChip(l.status, l.kind);
         const lcur = /^[A-Z]{3}$/.test(String(l.currency)) ? String(l.currency) : cur;
         const fee = num(l.fee); const rw = num(l.reward);
-        return `<tr>${td(esc(initials(l.who)))}${td(`<span dir="ltr" style="white-space:nowrap;font-size:12px">${esc(String(l.ref ?? '—').slice(0, 16))}</span>`)}`
+        return `<tr${i % 2 ? ' style="background:#FAFAFF"' : ''}>${td(`<strong>${esc(initials(l.who))}</strong>`)}${td(`<span dir="ltr" style="white-space:nowrap;font-size:12px;color:#475569">${esc(String(l.ref ?? '—').slice(0, 16))}</span>`)}`
           + `${td(fee == null ? '—' : `<span dir="ltr">${esc(moneyShort(fee, lcur, lang))}</span>`, end)}`
-          + `${td(rw == null ? '—' : `<span dir="ltr" style="font-weight:700;color:${CHIP_COLORS[lc].fg}">${esc((lc === 'reversed' ? '−' : '') + moneyShort(rw, lcur, lang))}</span>`, end)}`
+          + `${td(rw == null ? '—' : `<span dir="ltr" style="font-weight:800;color:${CHIP_COLORS[lc].fg}">${esc((lc === 'reversed' ? '−' : '') + moneyShort(rw, lcur, lang))}</span>`, end)}`
           + `${td(chipHtml(lc, u.chip[lc], font, 11), end)}</tr>`;
       }).join('');
       parts.push(`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}" style="border:1px solid #E5E7EB;border-radius:14px;border-collapse:separate;overflow:hidden">`
-        + `<tr style="background:#F8FAFC">${th(u.thWho)}${th(u.thRef)}${th(u.thFee, end)}${th(u.thReward, end)}${th(u.thStatus, end)}</tr>${rows}</table>`);
+        + `<tr style="background:${BRAND.soft}">${th(u.thWho)}${th(u.thRef)}${th(u.thFee, end)}${th(u.thReward, end)}${th(u.thStatus, end)}</tr>${rows}</table>`);
       const extraLines = Math.max(0, (input.lines ?? []).length - lines.length);
       if (extraLines) parts.push(`<p style="margin:8px 0 0;font-family:${font};font-size:13px;color:#64748B;text-align:${align}">${esc(u.more(extraLines))}</p>`);
     }
@@ -596,13 +609,13 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
       const sum = keys.reduce((a, k) => a + Math.abs(Number(tt[k] ?? 0)), 0);
       const net = keys.filter((k) => k !== 'reversed').reduce((a, k) => a + Math.abs(Number(tt[k] ?? 0)), 0) - Math.abs(Number(tt.reversed ?? 0));
       const legend = keys.filter((k) => Number(tt[k] ?? 0) !== 0).map((k) => `${chipHtml(k, `${u.chip[k]} ${moneyShort(Number(tt[k]), tt.currency, lang)}`, font, 11)} `).join('');
-      parts.push('<div style="height:16px;line-height:16px;font-size:0">&nbsp;</div>');
+      parts.push(spacer(16));
       parts.push(card(
         `<p style="margin:0 0 4px;font-family:${font};font-size:13px;font-weight:700;color:#475569">${esc(u.barTitle)} · ${esc(tt.currency)}</p>`
-        + `<p style="margin:0 0 12px;font-family:${font};font-size:15px;color:#111827">${esc(u.net)}: <strong dir="ltr" style="font-size:22px;color:${BRAND.ink}">${esc((net < 0 ? '−' : '') + moneyShort(net, tt.currency, lang))}</strong></p>`
+        + `<p style="margin:0 0 14px;font-family:${font};font-size:15px;color:#111827">${esc(u.net)}: <strong dir="ltr" style="font-size:26px;color:${BRAND.ink}">${esc((net < 0 ? '−' : '') + moneyShort(net, tt.currency, lang))}</strong></p>`
         + (sum > 0 ? barHtml(keys.map((k) => ({ pct: (Math.abs(Number(tt[k] ?? 0)) / sum) * 100, color: CHIP_COLORS[k].fg })), 12) : '')
         + `<p style="margin:12px 0 0;line-height:26px">${legend}</p>`,
-        { align }));
+        { align, pad: '18px 20px' }));
     }
   }
 
@@ -610,31 +623,39 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
   if (tier) {
     const min = Number(tier.min ?? 0); const next = tier.next_min != null ? Number(tier.next_min) : null;
     const pct = next == null ? 100 : Math.max(0, Math.min(100, ((Number(tier.count) - min) / Math.max(1, next - min)) * 100));
-    parts.push('<div style="height:16px;line-height:16px;font-size:0">&nbsp;</div>');
+    parts.push(spacer(16));
     parts.push(card(
-      `<p style="margin:0 0 4px;font-family:${font};font-size:13px;font-weight:700;color:${BRAND.ink}">${esc(u.tierTitle)}</p>`
-      + `<p style="margin:0 0 12px;font-family:${font};font-size:16px;font-weight:700;color:#111827">${esc(u.tierLine(tier, lang))}</p>`
-      + barHtml([{ pct, color: BRAND.solid }], 10)
+      `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}"><tr>`
+      + `<td width="52" valign="top">${bubble('&#127942;', '#ffffff', 40)}</td>`
+      + `<td valign="top" style="text-align:${align}"><p style="margin:0 0 2px;font-family:${font};font-size:13px;font-weight:800;letter-spacing:${rtl ? '0' : '0.04em'};text-transform:${rtl ? 'none' : 'uppercase'};color:${BRAND.ink}">${esc(u.tierTitle)}</p>`
+      + `<p style="margin:0;font-family:${font};font-size:16px;font-weight:800;color:#111827">${esc(u.tierLine(tier, lang))}</p></td></tr></table>`
+      + spacer(14)
+      + barHtml([{ pct, color: BRAND.solid }], 12)
       + `<p style="margin:10px 0 0;font-family:${font};font-size:13px;line-height:1.5;color:#475569">${esc(u.tierNext(tier, lang))}</p>`,
-      { bg: BRAND.soft, border: '#DDD6FE', align }));
+      { bg: BRAND.soft, border: '#DDD6FE', align, pad: '18px 20px' }));
   }
 
-  // Benefit cards (side by side, stacked on phones)
+  // Benefits: one card, three rows with an icon each (reads well on every screen size)
   if (b.benefits) {
     parts.push(divider, H(c.benefitsTitle));
-    parts.push(columns(c.benefits(ctx).map(([h, d]) => card(
-      `<p style="margin:0 0 6px;font-family:${font};font-size:15px;font-weight:800;color:${BRAND.ink}">${esc(h)}</p><p style="margin:0;font-family:${font};font-size:14px;line-height:1.5;color:#374151">${esc(d)}</p>`,
-      { bg: BRAND.soft, border: '#DDD6FE', align }))));
+    const icons = ['&#128176;', '&#9989;', '&#128202;'];
+    const rows = c.benefits(ctx).map(([h, d], i, all) => `<tr>`
+      + `<td width="56" valign="top" style="padding:0 0 ${i < all.length - 1 ? 16 : 0}px">${bubble(icons[i] ?? '&#10024;', '#ffffff', 44)}</td>`
+      + `<td valign="top" style="padding:2px 0 ${i < all.length - 1 ? 16 : 0}px;text-align:${align}"><p style="margin:0 0 4px;font-family:${font};font-size:16px;font-weight:800;color:${BRAND.ink}">${esc(h)}</p><p style="margin:0;font-family:${font};font-size:14px;line-height:1.55;color:#374151">${esc(d)}</p></td></tr>`).join('');
+    parts.push(card(`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}">${rows}</table>`,
+      { bg: BRAND.soft, border: '#DDD6FE', align, pad: '20px 20px' }));
   }
 
   // Full programme overview: five numbered steps, reward levels from settings, what counts / what does not
   const levels = b.programme ? (s.tiers ?? []) : [];
   if (b.programme) {
     parts.push(divider, H(c.stepsTitle));
-    const stepRows = c.steps(ctx).map((txt, i) => `<tr>`
-      + `<td width="40" valign="top" style="padding:0 0 14px"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td bgcolor="${BRAND.solid}" style="width:30px;height:30px;border-radius:15px;background:${BRAND.solid};color:#ffffff;font-family:${font};font-size:14px;font-weight:800;line-height:30px;text-align:center">${esc(fmtInt(i + 1, lang))}</td></tr></table></td>`
-      + `<td valign="top" style="padding:4px ${rtl ? '10px' : '0'} 14px ${rtl ? '0' : '10px'};font-family:${font};font-size:15px;line-height:1.55;color:#1F2937;text-align:${align}">${esc(txt)}</td></tr>`).join('');
-    parts.push(card(`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}">${stepRows}</table>`, { align, pad: '18px 18px 6px' }));
+    const all = c.steps(ctx);
+    const stepRows = all.map((txt, i) => `<tr>`
+      + `<td width="46" valign="top" style="padding:0 0 ${i < all.length - 1 ? 12 : 0}px">${numberDot(esc(fmtInt(i + 1, lang)))}</td>`
+      + `<td valign="top" style="padding:5px 0 ${i < all.length - 1 ? 12 : 0}px;font-family:${font};font-size:15px;line-height:1.55;color:#1F2937;text-align:${align}${i < all.length - 1 ? ';border-bottom:1px dashed #E5E7EB' : ''}">${esc(txt)}</td></tr>`
+      + (i < all.length - 1 ? `<tr><td colspan="2" style="height:12px;line-height:12px;font-size:0">&nbsp;</td></tr>` : '')).join('');
+    parts.push(card(`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}">${stepRows}</table>`, { align, pad: '20px 20px' }));
 
     if (levels.length) {
       parts.push(divider, H(u.levelsTitle));
@@ -642,86 +663,104 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
       const rows = levels.map((lv, i) => {
         const max = i + 1 < levels.length ? levels[i + 1].min - 1 : null;
         const top = i === levels.length - 1;
-        return `<tr><td style="padding:12px 14px;font-family:${font};font-size:14px;font-weight:700;color:#111827;text-align:${align};border-bottom:1px solid #F1F5F9">${esc(u.levelName(i))}</td>`
-          + `<td style="padding:12px 6px;font-family:${font};font-size:14px;color:#475569;text-align:${align};border-bottom:1px solid #F1F5F9">${esc(u.levelRange(lv.min, max, lang))}</td>`
-          + `<td align="${end}" style="padding:12px 14px;text-align:${end};border-bottom:1px solid #F1F5F9"><span dir="ltr" style="display:inline-block;padding:4px 12px;border-radius:999px;background:${top ? BRAND.solid : BRAND.soft};color:${top ? '#ffffff' : BRAND.ink};font-family:${font};font-size:15px;font-weight:800;white-space:nowrap">${esc(`${fmtRate(lv.rate, lang)} %`)}</span></td></tr>`;
+        const w = Math.round(((i + 1) / levels.length) * 100);
+        return `<tr${top ? ` style="background:${BRAND.soft}"` : ''}><td style="padding:12px 14px;font-family:${font};font-size:14px;font-weight:800;color:#111827;text-align:${align};border-bottom:1px solid #F1F5F9;white-space:nowrap">${top ? '&#11088; ' : ''}${esc(u.levelName(i))}</td>`
+          + `<td style="padding:12px 6px;font-family:${font};font-size:13px;color:#475569;text-align:${align};border-bottom:1px solid #F1F5F9">${esc(u.levelRange(lv.min, max, lang))}`
+          + `<table role="presentation" width="${w}%" cellspacing="0" cellpadding="0" border="0" style="margin-top:6px"><tr><td bgcolor="${BRAND.solid}" style="height:4px;border-radius:2px;background:${BRAND.solid};background-image:linear-gradient(90deg,${BRAND.from},${BRAND.to});font-size:0;line-height:0">&nbsp;</td></tr></table></td>`
+          + `<td align="${end}" style="padding:12px 14px;text-align:${end};border-bottom:1px solid #F1F5F9"><span dir="ltr" style="display:inline-block;padding:5px 12px;border-radius:999px;background:${top ? BRAND.solid : '#ffffff'};border:1px solid ${top ? BRAND.solid : '#DDD6FE'};color:${top ? '#ffffff' : BRAND.ink};font-family:${font};font-size:15px;font-weight:800;white-space:nowrap">${esc(`${fmtRate(lv.rate, lang)} %`)}</span></td></tr>`;
       }).join('');
       parts.push(`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}" style="border:1px solid #E5E7EB;border-radius:14px;border-collapse:separate;overflow:hidden">${rows}</table>`);
       parts.push(`<p style="margin:10px 0 0;font-family:${font};font-size:13px;line-height:1.55;color:#475569;text-align:${align}">${esc(u.levelsNote)}</p>`);
     }
 
-    const list = (items: string[], mark: string, color: string) => items.map((x) => `<tr><td width="22" valign="top" style="padding:0 0 8px;font-family:${font};font-size:15px;font-weight:800;color:${color}">${mark}</td><td valign="top" style="padding:0 0 8px;font-family:${font};font-size:14px;line-height:1.5;color:#1F2937;text-align:${align}">${esc(x)}</td></tr>`).join('');
+    const list = (items: string[], mark: string, color: string) => items.map((x) => `<tr><td width="24" valign="top" style="padding:0 0 10px;font-family:${font};font-size:15px;font-weight:800;color:${color}">${mark}</td><td valign="top" style="padding:0 0 10px;font-family:${font};font-size:14px;line-height:1.5;color:#1F2937;text-align:${align}">${esc(x)}</td></tr>`).join('');
     parts.push(divider);
-    parts.push(columns([
-      card(`<p style="margin:0 0 10px;font-family:${font};font-size:15px;font-weight:800;color:#166534">${esc(u.countsTitle)}</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}">${list(u.counts(ctx), '&#10003;', '#16A34A')}</table>`, { bg: '#F0FDF4', border: '#BBF7D0', align }),
-      card(`<p style="margin:0 0 10px;font-family:${font};font-size:15px;font-weight:800;color:#991B1B">${esc(u.notTitle)}</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}">${list(u.nots(), '&#10007;', '#DC2626')}</table>`, { bg: '#FEF2F2', border: '#FECACA', align }),
-    ]));
+    parts.push(card(`<p style="margin:0 0 12px;font-family:${font};font-size:16px;font-weight:800;color:#166534">&#9989; ${esc(u.countsTitle)}</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}">${list(u.counts(ctx), '&#10003;', '#16A34A')}</table>`, { bg: '#F0FDF4', border: '#BBF7D0', align, pad: '18px 20px 10px' }));
+    parts.push(spacer(12));
+    parts.push(card(`<p style="margin:0 0 12px;font-family:${font};font-size:16px;font-weight:800;color:#991B1B">&#9940; ${esc(u.notTitle)}</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}">${list(u.nots(), '&#10007;', '#DC2626')}</table>`, { bg: '#FEF2F2', border: '#FECACA', align, pad: '18px 20px 10px' }));
   }
 
   // Simple 3-step strip (done steps get a tick)
   const stripAt = STRIP_STEP[kind];
   if (stripAt) {
     parts.push(divider, H(u.stripTitle));
-    parts.push(columns(u.strip(ctx).map(([h, d], i) => {
+    const all = u.strip(ctx);
+    const rows = all.map(([h, d], i) => {
       const done = i + 1 < stripAt; const now = i + 1 === stripAt;
       const bg = done ? '#16A34A' : now ? BRAND.solid : '#CBD5E1';
-      return card(
-        `<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="${rtl ? 'right' : 'left'}"><tr><td bgcolor="${bg}" style="width:30px;height:30px;border-radius:15px;background:${bg};color:#ffffff;font-family:${font};font-size:14px;font-weight:800;line-height:30px;text-align:center">${done ? '&#10003;' : esc(fmtInt(i + 1, lang))}</td></tr></table>`
-        + `<div style="clear:both;height:10px;line-height:10px;font-size:0">&nbsp;</div>`
-        + `<p style="margin:0 0 4px;font-family:${font};font-size:15px;font-weight:800;color:#111827">${esc(h)}</p><p style="margin:0;font-family:${font};font-size:13px;line-height:1.5;color:#475569">${esc(d)}</p>`,
-        { bg: now ? BRAND.soft : '#ffffff', border: now ? '#C4B5FD' : '#E5E7EB', align, pad: '14px 14px' });
-    })));
+      return `<tr${now ? ` style="background:${BRAND.soft}"` : ''}><td width="56" valign="top" style="padding:14px 0 14px ${rtl ? '0' : '14px'};${rtl ? 'padding-right:14px;' : ''}${i < all.length - 1 ? 'border-bottom:1px solid #F1F5F9' : ''}">${numberDot(done ? '&#10003;' : esc(fmtInt(i + 1, lang)), bg)}</td>`
+        + `<td valign="top" style="padding:14px 14px;text-align:${align};${i < all.length - 1 ? 'border-bottom:1px solid #F1F5F9' : ''}"><p style="margin:0 0 3px;font-family:${font};font-size:15px;font-weight:800;color:${done ? '#166534' : '#111827'}">${esc(h)}${now ? ` ${chipHtml('pending', u.now, font, 11)}` : ''}</p><p style="margin:0;font-family:${font};font-size:13px;line-height:1.5;color:#475569">${esc(d)}</p></td></tr>`;
+    }).join('');
+    parts.push(`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}" style="border:1px solid #E5E7EB;border-radius:14px;border-collapse:separate;overflow:hidden">${rows}</table>`);
   }
 
+  // Example calculation as a small receipt (always labelled as an example)
   if (b.example) {
-    parts.push('<div style="height:8px;line-height:8px;font-size:0">&nbsp;</div>');
-    parts.push(card(`<p style="margin:0 0 6px;font-family:${font};font-size:13px;font-weight:700;color:#475569">${esc(c.exampleTitle)}</p>`
-      + `<p style="margin:0 0 6px;font-family:${font};font-size:17px;font-weight:800;color:#111827">${esc(c.example(ctx))}</p>`
-      + `<p style="margin:0;font-family:${font};font-size:13px;line-height:1.5;color:#475569">${esc(c.exampleNote(ctx))}</p>`,
-      { bg: '#F8FAFC', border: '#CBD5E1', align }));
+    const e = exampleCalc(s);
+    const end = rtl ? 'left' : 'right';
+    const row = (label: string, value: string, strong = false) => `<tr><td style="padding:${strong ? '12px' : '7px'} 0 ${strong ? '4px' : '7px'};font-family:${font};font-size:${strong ? 15 : 14}px;font-weight:${strong ? 800 : 400};color:${strong ? '#0F766E' : '#475569'};text-align:${align}">${esc(label)}</td>`
+      + `<td align="${end}" style="padding:${strong ? '12px' : '7px'} 0 ${strong ? '4px' : '7px'};font-family:${font};font-size:${strong ? 24 : 15}px;font-weight:800;color:${strong ? '#0F766E' : '#111827'};text-align:${end};white-space:nowrap"><span dir="ltr">${esc(value)}</span></td></tr>`;
+    parts.push(divider);
+    parts.push(card(
+      `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}"><tr><td style="text-align:${align};font-family:${font};font-size:16px;font-weight:800;color:#115E59">&#129518; ${esc(c.exampleTitle)}</td><td align="${end}" style="text-align:${end}">${chipHtml('available', u.exBadge, font, 11)}</td></tr></table>`
+      + spacer(8)
+      + `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}">${row(u.exFee, `${fmtNum(e.fee, lang, 0)} ${s.currency}`)}${row(u.exRate, `× ${fmtRate(e.rate, lang)} %`)}</table>`
+      + `<div style="height:1px;line-height:1px;font-size:0;background:#99F6E4;margin:4px 0">&nbsp;</div>`
+      + `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}">${row(u.exReward, `= ${fmtNum(e.reward, lang)} ${s.currency}`, true)}</table>`
+      + `<p style="margin:10px 0 0;font-family:${font};font-size:12px;line-height:1.5;color:#475569">${esc(c.exampleNote(ctx))}</p>`,
+      { bg: '#F0FDFA', border: '#99F6E4', align, pad: '18px 20px' }));
   }
 
-  parts.push(button(esc(ctaUrl), b.cta, BRAND.button, font));
-  if (!admin) parts.push(`<p style="margin:0 0 8px;font-family:${font};font-size:14px;text-align:center"><a href="${esc(howUrl)}" target="_blank" style="color:${BRAND.ink};text-decoration:underline">${esc(c.how)}</a></p>`);
-  parts.push(divider);
-  if (!admin) parts.push(`<p style="margin:0 0 6px;font-family:${font};font-size:12px;line-height:1.6;color:#64748B;text-align:${align}">${esc(c.fine(ctx))}${s.termsDraft ? ` ${esc(c.draft)}` : ''} <a href="${esc(termsUrl)}" target="_blank" style="color:#475569;text-decoration:underline">${esc(c.terms)}</a></p>`);
+  parts.push(button(esc(ctaUrl), b.cta, BRAND.button, font, rtl));
+  if (!admin) parts.push(`<p style="margin:0 0 4px;font-family:${font};font-size:14px;text-align:center"><a href="${esc(howUrl)}" target="_blank" style="color:${BRAND.ink};font-weight:700;text-decoration:underline">${esc(c.how)}</a></p>`);
+  if (!admin) parts.push(divider, `<p style="margin:0;font-family:${font};font-size:12px;line-height:1.65;color:#64748B;text-align:${align}">${esc(c.fine(ctx))}${s.termsDraft ? ` ${esc(c.draft)}` : ''} <a href="${esc(termsUrl)}" target="_blank" style="color:#475569;text-decoration:underline">${esc(c.terms)}</a></p>`);
 
   const contact = /^[a-z0-9._+-]+@(www\.)?aisupport360\.com$/i.test(String(input.contactEmail ?? '').trim())
     ? String(input.contactEmail).trim().toLowerCase() : 'info@aisupport360.com';
-  const contactLine = `<p style="margin:0 0 6px;font-family:${font};font-size:12px;line-height:1.6;color:#64748B">${esc(rtl ? 'أسئلة؟ راسلنا على' : 'Questions? Write to')} <a href="mailto:${esc(contact)}" style="color:#475569;text-decoration:underline" dir="ltr">${esc(contact)}</a></p>`;
+  const contactLine = `<p style="margin:0 0 8px;font-family:${font};font-size:13px;line-height:1.6;color:#475569">&#9993;&#65039; ${esc(rtl ? 'أسئلة؟ راسلنا على' : 'Questions? Write to')} <a href="mailto:${esc(contact)}" style="color:${BRAND.ink};font-weight:700;text-decoration:underline" dir="ltr">${esc(contact)}</a></p>`;
   const pl = input.pauseLinks;
   const pause = pl ? `<p style="margin:8px 0 0;font-family:${font};font-size:12px;color:#64748B">${esc(c.pauseLead)} <a href="${esc(safeUrl(pl.d3))}" style="color:#475569">${esc(c.d3)}</a> | <a href="${esc(safeUrl(pl.w1))}" style="color:#475569">${esc(c.w1)}</a> | <a href="${esc(safeUrl(pl.m1))}" style="color:#475569">${esc(c.m1)}</a></p>` : '';
 
   const showArt = hero && tone !== 'negative' && tone !== 'pending' && kind !== 'payout_details_changed';
-  const heroText = `<p style="margin:0 0 10px">${chipHtml(chip, u.chip[chip], font)}</p>`
-    + `<p style="margin:0 0 6px;font-family:${font};font-size:13px;font-weight:700;letter-spacing:${rtl ? '0' : '0.08em'};text-transform:${rtl ? 'none' : 'uppercase'};color:#EDE9FE">${esc(c.eyebrow)}</p>`
-    + `<h1 style="margin:0;font-family:${font};font-size:28px;line-height:1.25;font-weight:800;color:#ffffff">${esc(b.headline)}</h1>`;
+  const pills = HERO_PILL_KINDS.includes(kind)
+    ? `<p style="margin:16px 0 0;line-height:34px">${u.heroPills(ctx).map((x) => `<span style="display:inline-block;margin:0 ${rtl ? '0' : '6px'} 0 ${rtl ? '6px' : '0'};padding:5px 12px;border-radius:999px;background:#7C3AED;background-color:rgba(255,255,255,0.16);border:1px solid #A78BFA;font-family:${font};font-size:13px;font-weight:700;line-height:20px;color:#ffffff;white-space:nowrap">${esc(x)}</span>`).join('')}</p>`
+    : '';
+  const heroText = `<p style="margin:0 0 12px">${chipHtml(chip, u.chip[chip], font)}</p>`
+    + `<h1 style="margin:0;font-family:${font};font-size:30px;line-height:1.22;font-weight:800;letter-spacing:${rtl ? '0' : '-0.01em'};color:#ffffff">${esc(b.headline)}</h1>`
+    + pills;
   const heroInner = showArt
-    ? `<!--[if mso]><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td width="360" valign="middle"><![endif]-->`
-      + `<div style="display:inline-block;width:100%;max-width:340px;vertical-align:middle;font-size:16px;line-height:1.4;text-align:${align}">${heroText}</div>`
-      + `<!--[if mso]></td><td width="180" valign="middle" align="center"><![endif]-->`
-      + `<div style="display:inline-block;width:100%;max-width:170px;vertical-align:middle;text-align:center;padding-top:8px"><img src="${esc(hero)}" width="140" alt="${esc(c.bannerAlt)}" style="display:inline-block;width:140px;max-width:100%;height:auto;border:0" /></div>`
+    ? `<!--[if mso]><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td width="340" valign="middle"><![endif]-->`
+      + `<div style="display:inline-block;width:100%;max-width:330px;vertical-align:middle;font-size:16px;line-height:1.4;text-align:${align}">${heroText}</div>`
+      + `<!--[if mso]></td><td width="170" valign="middle" align="center"><![endif]-->`
+      + `<div style="display:inline-block;width:100%;max-width:170px;vertical-align:middle;text-align:center;padding-top:8px"><img src="${esc(hero)}" width="150" alt="${esc(c.bannerAlt)}" style="display:inline-block;width:150px;max-width:100%;height:auto;border:0" /></div>`
       + `<!--[if mso]></td></tr></table><![endif]-->`
     : `<div style="font-size:16px;line-height:1.4;text-align:${align}">${heroText}</div>`;
+  const end = rtl ? 'left' : 'right';
 
   const html = `<!DOCTYPE html><html lang="${lang}" dir="${dir}" xmlns:v="urn:schemas-microsoft-com:vml"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>${esc(subject)}</title></head>`
-    + `<body style="margin:0;padding:0;background:#ffffff;" dir="${dir}">`
+    + `<body style="margin:0;padding:0;background:${CANVAS};" dir="${dir}">`
     + `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(preheader)}</div>`
-    + `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#ffffff"><tr><td align="center" style="padding:24px 8px">`
-    + `<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" dir="${dir}" style="width:100%;max-width:600px">`
+    + `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${CANVAS}" style="background:${CANVAS}"><tr><td align="center" style="padding:28px 10px">`
+    // White rounded container
+    + `<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" dir="${dir}" bgcolor="#ffffff" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #E9E5F5;border-radius:24px;border-collapse:separate;overflow:hidden">`
     // Brand header
-    + `<tr><td style="padding:0 8px 16px;text-align:${align}"><a href="${esc(site)}" target="_blank" style="text-decoration:none"><img src="${esc(logo)}" width="36" height="36" alt="${esc(c.logoAlt)}" style="vertical-align:middle;border:0;border-radius:10px" /> <span style="font-family:${FONT_EN};font-size:17px;font-weight:800;color:#1B2559;vertical-align:middle">AI Support 360</span></a></td></tr>`
+    + `<tr><td style="padding:20px 24px 16px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}"><tr>`
+    + `<td style="text-align:${align}"><a href="${esc(site)}" target="_blank" style="text-decoration:none"><img src="${esc(logo)}" width="36" height="36" alt="${esc(c.logoAlt)}" style="vertical-align:middle;border:0;border-radius:10px" /> <span style="font-family:${FONT_EN};font-size:17px;font-weight:800;color:#1B2559;vertical-align:middle">AI Support 360</span></a></td>`
+    + `<td align="${end}" style="text-align:${end}">${chipHtml('pending', `🎁 ${c.eyebrow}`, font, 12)}</td></tr></table></td></tr>`
     // Gradient hero (violet to teal) with the gift-and-coins illustration
-    + `<tr><td bgcolor="${BRAND.solid}" style="padding:28px 24px;border-radius:20px;background:${BRAND.solid};background-image:linear-gradient(135deg,${BRAND.from},${BRAND.to});font-size:0;text-align:center">${heroInner}</td></tr>`
-    // Body card
-    + `<tr><td style="padding:28px 12px 8px">${parts.join('')}</td></tr>`
-    // Footer
-    + `<tr><td style="padding:8px 12px 0;text-align:${align}">`
+    + `<tr><td style="padding:0 14px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td bgcolor="${BRAND.solid}" style="padding:32px 26px;border-radius:20px;background:${BRAND.solid};background-image:linear-gradient(135deg,${BRAND.from} 0%,#4338CA 55%,${BRAND.to} 100%);font-size:0;text-align:center">${heroInner}</td></tr></table></td></tr>`
+    // Body
+    + `<tr><td style="padding:30px 28px 26px">${parts.join('')}</td></tr>`
+    // Footer band
+    + `<tr><td bgcolor="#F8FAFC" style="padding:22px 28px 26px;background:#F8FAFC;border-top:1px solid #EEF0F4;text-align:${align}">`
+    + `<p style="margin:0 0 10px;font-family:${FONT_EN};font-size:14px;font-weight:800;color:#1B2559"><img src="${esc(logo)}" width="22" height="22" alt="${esc(c.logoAlt)}" style="vertical-align:middle;border:0;border-radius:6px" /> <span style="vertical-align:middle">AI Support 360</span></p>`
     + contactLine
     + `<p style="margin:0 0 6px;font-family:${font};font-size:12px;line-height:1.6;color:#64748B">${esc(admin ? u.adminWhy : c.why)} <a href="${esc(prefsUrl)}" target="_blank" style="color:#475569;text-decoration:underline">${esc(c.prefs)}</a></p>`
     + pause
-    + `<p style="margin:8px 0 0;font-family:${font};font-size:12px;color:#94A3B8">${esc(c.company)} · <span dir="ltr">${esc(c.sentBy)}</span></p>`
-    + `</td></tr></table></td></tr></table></body></html>`;
+    + `<p style="margin:10px 0 0;font-family:${font};font-size:12px;color:#94A3B8">${esc(c.company)} · <span dir="ltr">${esc(c.sentBy)}</span></p>`
+    + `</td></tr></table>`
+    + `<div style="height:20px;line-height:20px;font-size:0">&nbsp;</div>`
+    + `</td></tr></table></body></html>`;
 
   // Plain-text part (same content, same order)
   const out: string[] = [];
