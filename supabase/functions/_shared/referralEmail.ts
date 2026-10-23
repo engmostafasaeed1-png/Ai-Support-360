@@ -574,7 +574,7 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
       bubble(AMOUNT_ICON[kind] ?? '&#128176;', '#ffffff', 52, true)
       + `<p style="margin:0 0 6px;font-family:${font};font-size:13px;font-weight:700;letter-spacing:${rtl ? '0' : '0.06em'};text-transform:${rtl ? 'none' : 'uppercase'};color:${ch.fg}">${esc(c.amountNote[b.amountLabel] ?? '')}</p>`
       + `<p style="margin:0;font-family:${font};line-height:1.1;color:${ch.fg}"><span dir="ltr" style="font-size:46px;font-weight:800;letter-spacing:-0.02em">${esc(sign + moneyShort(amountN, cur, lang))}</span> <span style="font-size:18px;font-weight:700">${esc(u.amountWord[kind] ?? '')}</span></p>`
-      + `<p style="margin:12px 0 0">${chipHtml(chip, u.chip[chip], font)}</p>`,
+      ,
       { bg: ch.bg, border: `${ch.fg}33`, pad: '26px 22px', align: 'center' }));
     parts.push(spacer(18));
   }
@@ -717,7 +717,7 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
       + `<td align="${end}" style="padding:${strong ? '12px' : '7px'} 0 ${strong ? '4px' : '7px'};font-family:${font};font-size:${strong ? 24 : 15}px;font-weight:800;color:${strong ? '#0F766E' : '#111827'};text-align:${end};white-space:nowrap"><span dir="ltr">${esc(value)}</span></td></tr>`;
     parts.push(divider);
     parts.push(card(
-      `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}"><tr><td style="text-align:${align};font-family:${font};font-size:16px;font-weight:800;color:#115E59">&#129518; ${esc(c.exampleTitle)}</td><td align="${end}" style="text-align:${end}">${chipHtml('available', u.exBadge, font, 11)}</td></tr></table>`
+      `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}"><tr><td style="text-align:${align};font-family:${font};font-size:16px;font-weight:800;color:#115E59">&#128161; ${esc(c.exampleTitle)}</td><td align="${end}" style="text-align:${end}">${chipHtml('available', u.exBadge, font, 11)}</td></tr></table>`
       + spacer(8)
       + `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" dir="${dir}">${row(u.exFee, `${fmtNum(e.fee, lang, 0)} ${s.currency}`)}${row(u.exRate, `× ${fmtRate(e.rate, lang)} %`)}</table>`
       + `<div style="height:1px;line-height:1px;font-size:0;background:#99F6E4;margin:4px 0">&nbsp;</div>`
