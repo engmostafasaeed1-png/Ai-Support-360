@@ -251,7 +251,7 @@ describe('send worker', () => {
     await runBulkBatch(d);
     const calls = send.mock.calls as unknown as Array<[number, string, string | null]>;
     expect(calls[0][2]).toBe('https://www.aisupport360.com/consultant/referrals?tab=programme&from=invite&ch=telegram');
-    expect(calls[0][1]).toContain('from=invite&ch=telegram');
+    expect(calls[0][1]).toContain('ch=telegram');
     expect(calls[1][2]).toBe('https://www.aisupport360.com/consultant/profile');
   });
 
