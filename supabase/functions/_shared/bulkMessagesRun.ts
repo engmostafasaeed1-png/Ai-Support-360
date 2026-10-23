@@ -98,7 +98,7 @@ export async function runBulkBatch(deps: WorkerDeps, budgetMs = 45_000): Promise
         const m = rendered.get(key(r))!;
         const preview = m.plain.length > LIMITS.notificationBody ? `${m.plain.slice(0, LIMITS.notificationBody - 1)}…` : m.plain;
         return referral.has(r.campaign_id)
-          ? { user_id: r.user_id, title: m.subject, body: preview, type: 'referral', link: REFERRAL_INVITE_LINK }
+          ? { user_id: r.user_id, title: m.subject, body: preview, type: 'referral', link: referralInviteLink('in_app') }
           : { user_id: r.user_id, title: m.subject, body: preview, type: notificationType(r.category), link: `/notifications?broadcast=${r.campaign_id}` };
       }));
       const byUser = new Map<string, string[]>();
@@ -148,7 +148,7 @@ export async function runBulkBatch(deps: WorkerDeps, budgetMs = 45_000): Promise
       const mine = subs.filter((s) => s.user_id === r.user_id);
       if (!mine.length) { results.push({ ...base, ok: false, error: 'push_not_enabled' }); continue; }
       const m = renderFor(r);
-      const url = referral.has(r.campaign_id) ? REFERRAL_INVITE_LINK : `/notifications?broadcast=${r.campaign_id}`;
+      const url = referral.has(r.campaign_id) ? referralInviteLink('push') : `/notifications?broadcast=${r.campaign_id}`;
       const payload = pushMessage(m.subject, m.plain, url, `bm-${r.campaign_id.slice(0, 8)}`, deps.now());
       let ok = false; let lastError = 'failed'; let retry = false;
       for (const sub of mine.slice(0, 5)) {
