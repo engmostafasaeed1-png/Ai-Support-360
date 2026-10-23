@@ -216,7 +216,7 @@ describe('send worker', () => {
     });
     await runBulkBatch(d);
     const inserted = firstArg<Inserted>(d.insertNotifications);
-    expect(inserted[0]).toMatchObject({ type: 'referral', link: '/consultant/referrals?tab=programme&from=invite' });
+    expect(inserted[0]).toMatchObject({ type: 'referral', link: '/consultant/referrals?tab=programme&from=invite&ch=in_app' });
     expect(inserted[1]).toMatchObject({ type: 'admin_marketing', link: '/notifications?broadcast=other' });
   });
 
@@ -237,9 +237,22 @@ describe('send worker', () => {
     expect(finished.find((f) => f.user_id === 'a')).toMatchObject({ channel: 'push', ok: true });
     expect(finished.find((f) => f.user_id === 'b')).toMatchObject({ channel: 'push', ok: false, error: 'push_not_enabled' });
     const msg = JSON.parse(sent[0]);
-    expect(msg.url).toBe('/consultant/referrals?tab=programme&from=invite');
+    expect(msg.url).toBe('/consultant/referrals?tab=programme&from=invite&ch=push');
     expect(msg.body).not.toMatch(/Hello|https?:/);
     expect(updatePushSubscription).toHaveBeenCalledTimes(2);
+  });
+
+  it('Telegram invitations link to the programme tab tagged telegram, other campaigns keep their own link', async () => {
+    const send = vi.fn(async () => ({ ok: true, blocked: false }));
+    const d = deps([
+      row({ channel: 'telegram', campaign_id: 'inv', user_id: 'a', chat_id: 1, link_url: '/consultant/referrals?tab=programme&from=invite', body_en: 'Open: {{link}}' }),
+      row({ channel: 'telegram', campaign_id: 'other', user_id: 'b', chat_id: 2, link_url: '/consultant/profile' }),
+    ], { referralCampaigns: vi.fn(async () => new Set(['inv'])), sendTelegram: send });
+    await runBulkBatch(d);
+    const calls = send.mock.calls as unknown as Array<[number, string, string | null]>;
+    expect(calls[0][2]).toBe('https://www.aisupport360.com/consultant/referrals?tab=programme&from=invite&ch=telegram');
+    expect(calls[0][1]).toContain('ch=telegram');
+    expect(calls[1][2]).toBe('https://www.aisupport360.com/consultant/profile');
   });
 
   it('a failing invitation lookup falls back to normal messages', async () => {

@@ -128,7 +128,7 @@ describe('Refer & earn programme invitation design', () => {
     expect(m.text).toContain('Level 1: 0–10 verified referrals = 0.5 %');
     expect(m.text).toContain('Level 2: 11–40 verified referrals = 0.6 %');
     expect(m.text).toContain('Level 3: 41+ verified referrals = 1 %');
-    expect(m.ctaUrl).toBe('https://www.aisupport360.com/consultant/referrals?tab=programme');
+    expect(m.ctaUrl).toBe('https://www.aisupport360.com/consultant/referrals?tab=programme&from=invite&ch=email');
   });
 
   it('is never sent by the platform app-email sender', () => {

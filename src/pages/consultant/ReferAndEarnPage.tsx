@@ -38,6 +38,7 @@ import ReferralJourney, { type ReferTab } from '@/components/referral/tracking/R
 import ReferralFunnelList from '@/components/referral/tracking/ReferralFunnelList';
 import ReferralEarnings from '@/components/referral/tracking/ReferralEarnings';
 import RewardCalcBox from '@/components/referral/tracking/RewardCalcBox';
+import { inviteSourceFrom, trackInviteClick, withoutInviteTag } from '@/lib/inviteTracking';
 
 
 function useFormat() {
@@ -215,6 +216,14 @@ export default function ReferAndEarnPage() {
 
   // Opening the page stops the menu pulse and clears the "new earnings" dot.
   useEffect(() => { if (loaded) markReferPageOpened(); }, [loaded]);
+
+  // Opened from an invitation (bell, push, Telegram or e-mail): count one click for this person, then drop the tag.
+  useEffect(() => {
+    const ch = inviteSourceFrom(params);
+    if (!ch) return;
+    if (!isGuest) void trackInviteClick(ch);
+    setParams(withoutInviteTag(params), { replace: true });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Until the programme SQL is applied (or for demo visitors) the existing member referral page stays.
   if (isGuest || (overview.data && !overview.data.available)) return <ReferralsPage />;

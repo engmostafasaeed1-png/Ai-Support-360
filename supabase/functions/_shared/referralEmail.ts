@@ -536,7 +536,9 @@ export function renderReferralEmail(input: ReferralEmailInput): RenderedReferral
   const amount = money(input.amount, cur, lang);
   const step = (['pass_interview', 'acknowledge', 'wait_other'].includes(String(input.nextStep)) ? input.nextStep : 'none') as ReferralNextStep;
   const nextText = b.next ? c.next[step](ctx) : '';
-  const ctaUrl = admin ? safeUrl(`${site}/admin/referrals`) : safeUrl(`${site}/consultant/referrals?tab=${tab}`);
+  // The programme invitation's button carries only the channel tag (no token or personal data) so a signed-in click counts.
+  const ctaUrl = admin ? safeUrl(`${site}/admin/referrals`)
+    : safeUrl(`${site}/consultant/referrals?tab=${tab}${kind === 'programme_invitation' ? '&from=invite&ch=email' : ''}`);
   const howUrl = safeUrl(`${site}/consultant/referrals?tab=programme`);
   const termsUrl = safeUrl(`${site}/referral-terms`);
   const prefsUrl = safeUrl(admin ? `${site}/admin` : `${site}/consultant/settings`);

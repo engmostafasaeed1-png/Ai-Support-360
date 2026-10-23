@@ -8,7 +8,7 @@ import { sendTelegram } from '../_shared/telegram.ts';
 import { loadVapidKeys, sendWebPush, subscriptionUpdate } from '../_shared/webpush.ts';
 import { footerText, pushMessage, renderVariables, telegramText, toPlainText } from '../_shared/bulkMessaging.ts';
 
-const LINK_PATH = '/consultant/referrals?tab=programme&from=invite';
+const LINK_PATH = (ch: 'push' | 'telegram') => `/consultant/referrals?tab=programme&from=invite&ch=${ch}`;
 type Result = { channel: 'push' | 'telegram'; status: 'sent' | 'skipped' | 'failed'; reason?: string };
 
 Deno.serve(async (req) => {
@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
   const { data: m, error: mErr } = await admin.rpc('ri_message');
   if (mErr || !m) return jsonResponse(req, { error: 'The invitation text is not available' }, 503);
   const firstName = String(prof?.display_name ?? '').trim().split(/\s+/)[0] ?? '';
-  const link = `${SITE_URL}${LINK_PATH}`;
+  const link = `${SITE_URL}${LINK_PATH('telegram')}`;
   const subject = `[TEST] ${lang === 'ar' ? m.subject_ar : m.subject_en}`;
   const text = renderVariables(String(lang === 'ar' ? m.body_ar : m.body_en), { first_name: firstName, link }, lang);
   const plain = toPlainText(text);
@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     if (!keys) results.push({ channel: 'push', status: 'skipped', reason: 'push_not_ready' });
     else if (!subs?.length) results.push({ channel: 'push', status: 'skipped', reason: 'push_not_enabled' });
     else {
-      const payload = pushMessage(subject, plain, LINK_PATH, 'referral-invite-test');
+      const payload = pushMessage(subject, plain, LINK_PATH('push'), 'referral-invite-test');
       let ok = false;
       for (const s of subs) {
         const res = await sendWebPush(s, payload, { ...keys, subject: SITE_URL }, { ttl: 600, urgency: 'normal', topic: 'test' });

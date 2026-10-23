@@ -51,6 +51,18 @@ export interface PushSub { id: string; user_id: string; endpoint: string; p256dh
 /** In-app notice of a Refer & earn invitation: type 'referral', straight to the programme tab (no token, no personal data). */
 export const REFERRAL_INVITE_LINK = '/consultant/referrals?tab=programme&from=invite';
 
+/** Channels whose click-throughs are counted (docs/sql/referral-invite-tracking.sql). */
+export const INVITE_CLICK_CHANNELS = ['in_app', 'push', 'telegram', 'email'] as const;
+export type InviteClickChannel = typeof INVITE_CLICK_CHANNELS[number];
+
+/**
+ * Invitation link tagged only with the channel it was sent on, so a signed-in click can be counted per channel.
+ * Never a token, user id or e-mail address: the person is known from their own sign-in when they open the page.
+ */
+export function referralInviteLink(channel: InviteClickChannel): string {
+  return `${REFERRAL_INVITE_LINK}&ch=${channel}`;
+}
+
 /** Text one recipient gets: their language, their variables, the standard footer. */
 export function renderFor(row: ClaimRow) {
   const body = pickText(row.lang, row.body_en, row.body_ar);
@@ -71,11 +83,10 @@ export async function runBulkBatch(deps: WorkerDeps, budgetMs = 45_000): Promise
   const results: FinishRow[] = [];
   const key = (r: { campaign_id: string; user_id: string }) => `${r.campaign_id}:${r.user_id}`;
 
-  // Refer & earn invitation campaigns link straight to the programme tab (in-app and push).
+  // Refer & earn invitation campaigns link straight to the programme tab, tagged with the channel (in-app, push, Telegram).
   let referral = new Set<string>();
-  const linked = rows.filter((r) => r.channel === 'in_app' || r.channel === 'push');
-  if (deps.referralCampaigns && linked.length) {
-    try { referral = await deps.referralCampaigns([...new Set(linked.map((r) => r.campaign_id))]); } catch { referral = new Set(); }
+  if (deps.referralCampaigns && rows.length) {
+    try { referral = await deps.referralCampaigns([...new Set(rows.map((r) => r.campaign_id))]); } catch { referral = new Set(); }
   }
 
   // In-app: one insert for the batch; the notification links back to the full message.
@@ -87,7 +98,7 @@ export async function runBulkBatch(deps: WorkerDeps, budgetMs = 45_000): Promise
         const m = rendered.get(key(r))!;
         const preview = m.plain.length > LIMITS.notificationBody ? `${m.plain.slice(0, LIMITS.notificationBody - 1)}…` : m.plain;
         return referral.has(r.campaign_id)
-          ? { user_id: r.user_id, title: m.subject, body: preview, type: 'referral', link: REFERRAL_INVITE_LINK }
+          ? { user_id: r.user_id, title: m.subject, body: preview, type: 'referral', link: referralInviteLink('in_app') }
           : { user_id: r.user_id, title: m.subject, body: preview, type: notificationType(r.category), link: `/notifications?broadcast=${r.campaign_id}` };
       }));
       const byUser = new Map<string, string[]>();
@@ -111,7 +122,7 @@ export async function runBulkBatch(deps: WorkerDeps, budgetMs = 45_000): Promise
       continue;
     }
     if (!r.chat_id) { results.push({ campaign_id: r.campaign_id, user_id: r.user_id, channel: 'telegram', ok: false, error: 'not_linked' }); continue; }
-    const m = renderFor(r);
+    const m = renderFor(referral.has(r.campaign_id) ? { ...r, link_url: referralInviteLink('telegram') } : r);
     let res: { ok: boolean; blocked: boolean; error?: string };
     try { res = await deps.sendTelegram(r.chat_id, telegramText(m.subject, m.plain, m.link, m.footer), m.link); }
     catch { res = { ok: false, blocked: false, error: 'network' }; }
@@ -137,7 +148,7 @@ export async function runBulkBatch(deps: WorkerDeps, budgetMs = 45_000): Promise
       const mine = subs.filter((s) => s.user_id === r.user_id);
       if (!mine.length) { results.push({ ...base, ok: false, error: 'push_not_enabled' }); continue; }
       const m = renderFor(r);
-      const url = referral.has(r.campaign_id) ? REFERRAL_INVITE_LINK : `/notifications?broadcast=${r.campaign_id}`;
+      const url = referral.has(r.campaign_id) ? referralInviteLink('push') : `/notifications?broadcast=${r.campaign_id}`;
       const payload = pushMessage(m.subject, m.plain, url, `bm-${r.campaign_id.slice(0, 8)}`, deps.now());
       let ok = false; let lastError = 'failed'; let retry = false;
       for (const sub of mine.slice(0, 5)) {

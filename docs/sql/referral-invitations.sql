@@ -295,7 +295,7 @@ END $$;
 REVOKE ALL ON FUNCTION public.admin_referral_invite_runs(int) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.admin_referral_invite_runs(int) TO authenticated;
 
--- "Invited on <date> (v1)" for the rows on screen (no opened / clicked: there is no e-mail and no tracking).
+-- "Invited on <date> (v1)" for the rows on screen. Click-throughs per channel: referral-invite-tracking.sql (no pixels, no opens).
 CREATE OR REPLACE FUNCTION public.admin_referral_invite_status(_user_ids uuid[])
 RETURNS TABLE (user_id uuid, version int, invited_at timestamptz, resends int)
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$

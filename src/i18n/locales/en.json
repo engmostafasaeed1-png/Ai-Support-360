@@ -3054,5 +3054,27 @@
       "why": "Why asked (admins only)",
       "deleted_doc": "deleted document"
     }
+  },
+  "rinvx": {
+    "title": "Invitation effectiveness",
+    "version": "Invitation version",
+    "refresh": "Refresh",
+    "pending": "Click counting turns on after the prepared database update (invitation tracking) is applied. Until then no clicks are recorded.",
+    "reached": "Consultants reached",
+    "read": "Read in the bell",
+    "clickers": "Opened Refer & earn",
+    "click_rate": "Click rate",
+    "by_channel": "Invitation results by channel",
+    "channel": "Channel",
+    "delivered": "Delivered",
+    "clicked": "Clicked",
+    "rate": "Rate",
+    "not_sent": "not sent",
+    "ch_in_app": "In-app (bell)",
+    "ch_push": "Push",
+    "ch_telegram": "Telegram",
+    "ch_email": "E-mail",
+    "span": "Version v{{v}} · first click {{first}} · latest click {{last}} · your own test clicks (not counted): {{tests}}",
+    "how": "Each consultant counts once per channel when they open Refer & earn from the invitation while signed in. Links carry no personal data and there are no hidden tracking images, so e-mail opens are not measured."
   }
 }
