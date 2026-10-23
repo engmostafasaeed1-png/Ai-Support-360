@@ -216,7 +216,7 @@ describe('send worker', () => {
     });
     await runBulkBatch(d);
     const inserted = firstArg<Inserted>(d.insertNotifications);
-    expect(inserted[0]).toMatchObject({ type: 'referral', link: '/consultant/referrals?tab=programme&from=invite' });
+    expect(inserted[0]).toMatchObject({ type: 'referral', link: '/consultant/referrals?tab=programme&from=invite&ch=in_app' });
     expect(inserted[1]).toMatchObject({ type: 'admin_marketing', link: '/notifications?broadcast=other' });
   });
 
@@ -237,7 +237,7 @@ describe('send worker', () => {
     expect(finished.find((f) => f.user_id === 'a')).toMatchObject({ channel: 'push', ok: true });
     expect(finished.find((f) => f.user_id === 'b')).toMatchObject({ channel: 'push', ok: false, error: 'push_not_enabled' });
     const msg = JSON.parse(sent[0]);
-    expect(msg.url).toBe('/consultant/referrals?tab=programme&from=invite');
+    expect(msg.url).toBe('/consultant/referrals?tab=programme&from=invite&ch=push');
     expect(msg.body).not.toMatch(/Hello|https?:/);
     expect(updatePushSubscription).toHaveBeenCalledTimes(2);
   });
