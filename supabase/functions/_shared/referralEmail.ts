@@ -395,6 +395,9 @@ const UI = {
     kpi: { signups: 'New sign-ups', verified: 'Verified', review: 'Waiting for review' },
     period: 'Period',
     adminWhy: 'You receive this summary because you are an administrator of AI Support 360.',
+    now: 'Now',
+    exBadge: 'Example only', exFee: 'Approved consultant fee', exRate: 'Reward rate', exReward: 'Example reward',
+    heroPills: (c: Ctx) => [`${rateRange(c.s, c.lang)} of approved fees`, `${fmtInt(c.s.months, c.lang)} months per referral`, 'Paid by AI Support 360'],
   },
   ar: {
     chip: { earned: 'مكتسبة', held: 'معلّقة', available: 'متاحة', paid: 'مدفوعة', reversed: 'مستردّة', active: 'نشطة', pending: 'قيد التقدّم', rejected: 'غير مقبولة', expired: 'منتهية', statement: 'كشف', digest: 'ملخص أسبوعي', security: 'أمان', invite: 'دعوة' } as Record<ReferralChip, string>,
@@ -424,6 +427,9 @@ const UI = {
     kpi: { signups: 'تسجيلات جديدة', verified: 'موثّقة', review: 'بانتظار المراجعة' },
     period: 'الفترة',
     adminWhy: 'يصلك هذا الملخص لأنك مسؤول في AI Support 360.',
+    now: 'الآن',
+    exBadge: 'مثال فقط', exFee: 'الأتعاب المعتمدة للمستشار', exRate: 'نسبة المكافأة', exReward: 'مكافأة المثال',
+    heroPills: (c: Ctx) => [`${rateRange(c.s, c.lang)} من الأتعاب المعتمدة`, `${fmtInt(c.s.months, c.lang)} شهرًا لكل إحالة`, 'تدفعها AI Support 360'],
   },
 } as const;
 
@@ -432,7 +438,15 @@ const TIER_KINDS = [...MONEY_KINDS, 'active', 'verified', 'monthly_statement'];
 const STRIP_STEP: Partial<Record<ReferralEmailKind, number>> = {
   signup: 2, invited: 2, passed_self: 2, passed_other: 2, reminder: 2, ack_request: 2, active: 3, verified: 3,
 };
-const CONTENT_W = 576;
+/** Kinds whose hero shows the programme facts (rate range, months, who pays) as pills. */
+const HERO_PILL_KINDS: readonly ReferralEmailKind[] = ['programme_invitation', 'invited', 'signup', 'active'];
+/** Emoji badge above the amount (fixed entities, never data). */
+const AMOUNT_ICON: Partial<Record<ReferralEmailKind, string>> = {
+  first_reward: '&#127881;', reward_earned: '&#128176;', reward_held: '&#9203;', reward_available: '&#9989;', reward_paid: '&#127974;', reward_reversed: '&#8617;&#65039;',
+};
+/** Soft lavender page canvas around the white card. */
+const CANVAS = '#F4F2FB';
+const CONTENT_W = 544;
 
 /** "$12.50", "€12.50" or "12.50 SAR" (amount never computed here, only formatted). */
 function moneyShort(n: number, cur: string, lang: ReferralEmailLang): string {
@@ -476,11 +490,12 @@ function barHtml(parts: Array<{ pct: number; color: string }>, height = 10): str
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-radius:${height}px;overflow:hidden;table-layout:fixed"><tr>${cells}</tr></table>`;
 }
 
-function button(href: string, label: string, color: string, font: string): string {
-  // Bulletproof: VML roundrect for Outlook on Windows, a padded link inside a coloured table cell everywhere else.
-  return `<table role="presentation" border="0" cellspacing="0" cellpadding="0" align="center" style="margin:28px auto 8px"><tr><td align="center" bgcolor="${color}" style="border-radius:999px;background:${color}">`
-    + `<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${href}" style="height:52px;v-text-anchor:middle;width:300px" arcsize="50%" stroke="f" fillcolor="${color}"><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:17px;font-weight:bold">${esc(label)}</center></v:roundrect><![endif]-->`
-    + `<!--[if !mso]><!--><a href="${href}" target="_blank" style="display:inline-block;padding:16px 40px;font-family:${font};font-size:17px;font-weight:700;line-height:20px;color:#ffffff;text-decoration:none;border-radius:999px;background:${color}">${esc(label)}</a><!--<![endif]-->`
+function button(href: string, label: string, color: string, font: string, rtl = false): string {
+  // Bulletproof: VML roundrect for Outlook on Windows, a padded gradient link inside a coloured table cell everywhere else.
+  const grad = `background-image:linear-gradient(135deg,${BRAND.from},${BRAND.to})`;
+  return `<table role="presentation" border="0" cellspacing="0" cellpadding="0" align="center" style="margin:30px auto 12px"><tr><td align="center" bgcolor="${color}" style="border-radius:999px;background:${color};${grad};box-shadow:0 10px 24px rgba(91,33,182,0.30)">`
+    + `<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${href}" style="height:56px;v-text-anchor:middle;width:320px" arcsize="50%" stroke="f" fillcolor="${color}"><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:17px;font-weight:bold">${esc(label)}</center></v:roundrect><![endif]-->`
+    + `<!--[if !mso]><!--><a href="${href}" target="_blank" style="display:inline-block;padding:18px 44px;font-family:${font};font-size:17px;font-weight:800;line-height:20px;color:#ffffff;text-decoration:none;border-radius:999px;background:${color};${grad}">${esc(label)} ${rtl ? '&larr;' : '&rarr;'}</a><!--<![endif]-->`
     + `</td></tr></table>`;
 }
 
