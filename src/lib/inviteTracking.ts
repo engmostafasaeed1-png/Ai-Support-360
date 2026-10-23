@@ -1,13 +1,14 @@
 import { safeRpc, type RpcResult } from '@/lib/safeRpc';
-import { INVITE_CLICK_CHANNELS, type InviteClickChannel } from '../../supabase/functions/_shared/bulkMessagesRun';
 
 /**
  * Refer & earn invitation click-throughs (docs/sql/referral-invite-tracking.sql).
  * The invitation links carry only `from=invite&ch=<channel>` - no token, id or address. When a signed-in consultant opens
  * the page from such a link, the database records one click for that person, invitation version and channel (only if
  * they really received the invitation). No tracking pixels: e-mail opens are not measured.
+ * Mirrors INVITE_CLICK_CHANNELS of supabase/functions/_shared/bulkMessagesRun.ts (checked by a test).
  */
-export { INVITE_CLICK_CHANNELS, type InviteClickChannel };
+export const INVITE_CLICK_CHANNELS = ['in_app', 'push', 'telegram', 'email'] as const;
+export type InviteClickChannel = typeof INVITE_CLICK_CHANNELS[number];
 
 /** Channel of an invitation link, or null when the page was not opened from one. Old untagged links were bell notices. */
 export function inviteSourceFrom(params: URLSearchParams): InviteClickChannel | null {

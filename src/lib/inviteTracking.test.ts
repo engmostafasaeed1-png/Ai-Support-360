@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { claimInviteClick, inviteSourceFrom, parseEffectiveness, rate, trackInviteClick, withoutInviteTag } from './inviteTracking';
-import { referralInviteLink } from '../../supabase/functions/_shared/bulkMessagesRun';
+import { INVITE_CLICK_CHANNELS, claimInviteClick, inviteSourceFrom, parseEffectiveness, rate, trackInviteClick, withoutInviteTag } from './inviteTracking';
+import { INVITE_CLICK_CHANNELS as WORKER_CHANNELS, referralInviteLink } from '../../supabase/functions/_shared/bulkMessagesRun';
 
 function memory() {
   const m = new Map<string, string>();
@@ -8,6 +8,10 @@ function memory() {
 }
 
 describe('Refer & earn invitation click tracking', () => {
+  it('app and sending worker agree on the counted channels', () => {
+    expect([...INVITE_CLICK_CHANNELS]).toEqual([...WORKER_CHANNELS]);
+  });
+
   it('invitation links carry only the channel tag, never a token or personal data', () => {
     expect(referralInviteLink('telegram')).toBe('/consultant/referrals?tab=programme&from=invite&ch=telegram');
     const keys = [...new URL(`https://x.test${referralInviteLink('email')}`).searchParams.keys()];
