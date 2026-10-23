@@ -1,5 +1,5 @@
 -- Refer & earn invitation effectiveness: who opened Refer & earn from the invitation, per channel.
--- PREPARED ONLY: the owner reviews and applies this file. Safe to run twice (IF NOT EXISTS / CREATE OR REPLACE).
+-- APPLIED 2026-10-23 on the owner's instruction. Safe to run twice (IF NOT EXISTS / CREATE OR REPLACE).
 -- Needs the live referral-invitations.sql objects (referral_invitation_runs / _recipients, ri_is_admin) and Feature R
 -- (message_campaign_recipients).
 --
@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS public.referral_invitation_clicks (
 COMMENT ON TABLE public.referral_invitation_clicks IS 'Refer & earn invitation click-throughs; written only by referral_invite_track_click, read by admins.';
 CREATE INDEX IF NOT EXISTS referral_invitation_clicks_version_idx ON public.referral_invitation_clicks (version, channel) WHERE NOT is_test;
 
+REVOKE ALL ON public.referral_invitation_clicks FROM anon;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON public.referral_invitation_clicks FROM authenticated;
 GRANT SELECT ON public.referral_invitation_clicks TO authenticated;
 GRANT ALL ON public.referral_invitation_clicks TO service_role;
 ALTER TABLE public.referral_invitation_clicks ENABLE ROW LEVEL SECURITY;

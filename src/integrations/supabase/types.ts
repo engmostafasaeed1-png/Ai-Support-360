@@ -7642,6 +7642,36 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_invitation_clicks: {
+        Row: {
+          channel: string
+          clicks: number
+          first_clicked_at: string
+          is_test: boolean
+          last_clicked_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          channel: string
+          clicks?: number
+          first_clicked_at?: string
+          is_test?: boolean
+          last_clicked_at?: string
+          user_id: string
+          version: number
+        }
+        Update: {
+          channel?: string
+          clicks?: number
+          first_clicked_at?: string
+          is_test?: boolean
+          last_clicked_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       referral_invitation_recipients: {
         Row: {
           created_at: string
@@ -12662,6 +12692,10 @@ export type Database = {
         }[]
       }
       admin_referral_export: { Args: { _kind: string }; Returns: Json }
+      admin_referral_invite_effectiveness: {
+        Args: { _version?: number }
+        Returns: Json
+      }
       admin_referral_invite_preview: { Args: { _payload: Json }; Returns: Json }
       admin_referral_invite_report: { Args: { _run_id: string }; Returns: Json }
       admin_referral_invite_runs: { Args: { _limit?: number }; Returns: Json }
@@ -14156,6 +14190,10 @@ export type Database = {
         Returns: number
       }
       referral_hash: { Args: { _v: string }; Returns: string }
+      referral_invite_track_click: {
+        Args: { _channel: string }
+        Returns: boolean
+      }
       referral_is_admin: { Args: never; Returns: boolean }
       referral_is_loop: {
         Args: { _referred: string; _referrer: string }
