@@ -1324,8 +1324,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                 variant="outline"
                 onClick={async () => {
                   shouldAutoResumeRef.current = false;
-                  if (isListening) stopListening();
-                  if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+                  voiceRef.current.cancel();
                   window.speechSynthesis.cancel();
                   // Save conversation progress to DB for resuming later
                   await supabase.from('interview_sessions').update({
