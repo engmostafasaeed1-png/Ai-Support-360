@@ -254,6 +254,7 @@ BEGIN
   PERFORM pg_temp.check(s = '', 'TT24b client reads the row');
 
   -- TT25 new tickets get "Not started" (system) without notifications
+  PERFORM pg_temp.as_user(NULL);
   INSERT INTO public.tickets (id, client_id, title, description, sap_module, status)
     VALUES ('00000000-0000-0000-0000-00000000aaa3', C, 'New one', 'A new request about posting periods in FI.', 'FI', 'new');
   PERFORM pg_temp.check((SELECT status_key = 'not_started' AND set_by_role = 'system' FROM public.ticket_working_status WHERE ticket_id = '00000000-0000-0000-0000-00000000aaa3'), 'TT25 new ticket starts "Not started"');
