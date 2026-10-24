@@ -5,8 +5,18 @@ import { MessageSquare, CheckCircle2, Lightbulb, Reply } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { addBrdComment, setBrdCommentStatus, type BrdCommentRow } from '@/lib/brd/api';
+import { addBrdComment, setBrdCommentStatus, type BrdCommentRow, type BrdResult } from '@/lib/brd/api';
 import { contactDetailsInText } from '../../../supabase/functions/_shared/assignmentInfo';
+
+/** Where comments are stored: the BRD functions by default; architecture documents pass their own sa_* calls. */
+export interface CommentApi {
+  add: (version: number, section: string, body: string, parent: string | null, kind: 'comment' | 'suggestion', suggested: string | null) => Promise<BrdResult<string>>;
+  setStatus: (id: string, status: BrdCommentRow['status']) => Promise<BrdResult<boolean>>;
+}
+const brdApi = (ticketId: string): CommentApi => ({
+  add: (v, s, b, p, k, sug) => addBrdComment(ticketId, v, s, b, p, k, sug),
+  setStatus: (id, st) => setBrdCommentStatus(id, st),
+});
 
 interface Props {
   ticketId: string;
@@ -19,11 +29,13 @@ interface Props {
   onChanged: () => void;
   onAcceptSuggestion?: (c: BrdCommentRow) => void;
   dir: 'ltr' | 'rtl';
+  api?: CommentApi;
 }
 
 /** Threaded comments for one section of one version. Contact details are refused (same rule as the rest of the portal). */
-export default function BrdComments({ ticketId, version, section, comments, canSuggest, canDecide, onChanged, onAcceptSuggestion, dir }: Props) {
+export default function BrdComments({ ticketId, version, section, comments, canSuggest, canDecide, onChanged, onAcceptSuggestion, dir, api }: Props) {
   const { t } = useTranslation();
+  const store = api ?? brdApi(ticketId);
   const mine = comments.filter((c) => c.section_key === section && c.version === version);
   const roots = mine.filter((c) => !c.parent_id);
   const [open, setOpen] = useState(false);
@@ -36,7 +48,7 @@ export default function BrdComments({ ticketId, version, section, comments, canS
 
   const send = async () => {
     setBusy(true);
-    const r = await addBrdComment(ticketId, version, section, text.trim(), replyTo, mode, mode === 'suggestion' ? suggest.trim() : null);
+    const r = await store.add(version, section, text.trim(), replyTo, mode, mode === 'suggestion' ? suggest.trim() : null);
     setBusy(false);
     if (r.error) { toast.error(r.error.message); return; }
     setText(''); setSuggest(''); setReplyTo(null); setOpen(false); setMode('comment');
