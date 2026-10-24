@@ -20,7 +20,7 @@ export function ticketStatusText(t: Translate, s: unknown): string {
 }
 
 export function actorText(t: Translate, role: string | null | undefined): string {
-  const r = ['client', 'consultant', 'admin', 'both', 'system'].includes(String(role)) ? String(role) : 'system';
+  const r = ['client', 'consultant', 'admin', 'both', 'system', 'third_party', 'none'].includes(String(role)) ? String(role) : 'system';
   return t(`tracking.actor.${r}`);
 }
 
