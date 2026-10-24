@@ -172,7 +172,7 @@ CREATE TABLE IF NOT EXISTS public.ticket_brd_approval_requests (
   carried_from uuid REFERENCES public.ticket_brd_approval_requests(id) ON DELETE SET NULL,
   submit_note text NOT NULL DEFAULT '' CHECK (char_length(submit_note) <= 500),
   submitted_by uuid NOT NULL,
-  submitted_at timestamptz NOT NULL DEFAULT now(),
+  submitted_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   due_at timestamptz,
   approved_at timestamptz,
   closed_at timestamptz,
@@ -397,7 +397,7 @@ DECLARE
   _first timestamptz; _appr_v integer; _ok boolean := false; _state text := 'not_requested';
 BEGIN
   SELECT * INTO w FROM public.ticket_brd_approval_waivers x WHERE x.ticket_id = _ticket AND x.revoked_at IS NULL LIMIT 1;
-  SELECT * INTO r FROM public.ticket_brd_approval_requests x WHERE x.ticket_id = _ticket ORDER BY x.submitted_at DESC LIMIT 1;
+  SELECT * INTO r FROM public.ticket_brd_approval_requests x WHERE x.ticket_id = _ticket ORDER BY (x.closed_at IS NULL) DESC, x.submitted_at DESC LIMIT 1;
   IF r.id IS NOT NULL THEN st := public.brd_round_state(r.id); _state := st ->> 'state'; END IF;
   SELECT min(x.approved_at) INTO _first FROM public.ticket_brd_approval_requests x WHERE x.ticket_id = _ticket AND x.approved_at IS NOT NULL;
   SELECT x.version INTO _appr_v FROM public.ticket_brd_approval_requests x
