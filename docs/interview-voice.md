@@ -107,7 +107,7 @@ App tests: `src/lib/voice/voiceServer.test.ts`, `src/lib/voice/voiceClient.test.
 9. Ticket form: dictate into the description after typing a sentence: the sentence is kept and the spoken text added once.
 10. Admin › Voice: the interview appears with minutes, pieces and the raw text audit.
 
-## Learning loop (prepared, not applied)
+## Learning loop (applied 2026-10-24 with the defaults below)
 
 The speech model is never retrained. The app learns around it, from what consultants correct, and every change is versioned, tested and reversible.
 
