@@ -469,7 +469,7 @@ export default function CaseDetailPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {!clientProfile ? (
-              <p className="text-xs text-muted-foreground">The client's system details are not shown here yet. Use the ticket messages or files to get what you need.</p>
+              <p className="text-xs text-muted-foreground">The client's system details are not shown here yet.</p>
             ) : (<>
             {/* Company & SAP Overview */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
