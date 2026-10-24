@@ -11930,6 +11930,108 @@ export type Database = {
           },
         ]
       }
+      voice_answer_events: {
+        Row: {
+          chars: number
+          context: string
+          created_at: string
+          edited: boolean
+          engine: string
+          fallback: string | null
+          id: string
+          interview_id: string | null
+          segments: number
+          user_id: string
+        }
+        Insert: {
+          chars?: number
+          context: string
+          created_at?: string
+          edited?: boolean
+          engine: string
+          fallback?: string | null
+          id?: string
+          interview_id?: string | null
+          segments?: number
+          user_id: string
+        }
+        Update: {
+          chars?: number
+          context?: string
+          created_at?: string
+          edited?: boolean
+          engine?: string
+          fallback?: string | null
+          id?: string
+          interview_id?: string | null
+          segments?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      voice_transcription_segments: {
+        Row: {
+          audio_path: string | null
+          audio_seconds: number
+          bytes: number
+          context: string
+          corrected: boolean
+          corrections: Json | null
+          created_at: string
+          error_code: string | null
+          finished_at: string | null
+          id: string
+          interview_id: string | null
+          language: string | null
+          latency_ms: number | null
+          model: string
+          raw_text: string | null
+          segment_index: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          audio_path?: string | null
+          audio_seconds: number
+          bytes?: number
+          context: string
+          corrected?: boolean
+          corrections?: Json | null
+          created_at?: string
+          error_code?: string | null
+          finished_at?: string | null
+          id?: string
+          interview_id?: string | null
+          language?: string | null
+          latency_ms?: number | null
+          model: string
+          raw_text?: string | null
+          segment_index?: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          audio_path?: string | null
+          audio_seconds?: number
+          bytes?: number
+          context?: string
+          corrected?: boolean
+          corrections?: Json | null
+          created_at?: string
+          error_code?: string | null
+          finished_at?: string | null
+          id?: string
+          interview_id?: string | null
+          language?: string | null
+          latency_ms?: number | null
+          model?: string
+          raw_text?: string | null
+          segment_index?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       vouchers: {
         Row: {
           code: string
@@ -12564,6 +12666,43 @@ export type Database = {
           question_source: Json
           sap_module: string
           score: number
+        }[]
+      }
+      admin_interview_voice_metrics: {
+        Args: { _days?: number }
+        Returns: {
+          answers: number
+          audio_minutes: number
+          avg_latency_ms: number
+          consultant_name: string
+          corrected_segments: number
+          edited_answers: number
+          failed_segments: number
+          fallback_answers: number
+          interview_id: string
+          model: string
+          segments: number
+          server_answers: number
+          started_at: string
+          typed_answers: number
+          voice_answers: number
+          webspeech_answers: number
+        }[]
+      }
+      admin_interview_voice_segments: {
+        Args: { _interview_id: string }
+        Returns: {
+          audio_seconds: number
+          corrected: boolean
+          corrections: Json
+          created_at: string
+          error_code: string
+          has_audio: boolean
+          language: string
+          latency_ms: number
+          raw_text: string
+          segment_index: number
+          status: string
         }[]
       }
       admin_list_client_approvals: {
@@ -15106,6 +15245,46 @@ export type Database = {
         Args: { _a: string; _b: string }
         Returns: boolean
       }
+      voice_claim_segment: {
+        Args: {
+          _bytes: number
+          _context: string
+          _interview_id: string
+          _model: string
+          _seconds: number
+          _segment: number
+          _user_id: string
+        }
+        Returns: Json
+      }
+      voice_finish_segment: {
+        Args: {
+          _audio_path: string
+          _corrected: boolean
+          _corrections: Json
+          _error: string
+          _id: string
+          _language: string
+          _latency_ms: number
+          _raw_text: string
+          _seconds: number
+          _status: string
+        }
+        Returns: boolean
+      }
+      voice_log_answer: {
+        Args: {
+          _chars: number
+          _context: string
+          _edited: boolean
+          _engine: string
+          _fallback: string
+          _interview_id: string
+          _segments: number
+        }
+        Returns: boolean
+      }
+      voice_settings: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "client" | "consultant" | "admin" | "super_admin"
