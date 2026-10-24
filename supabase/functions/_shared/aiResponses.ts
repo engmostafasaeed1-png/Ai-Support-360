@@ -56,6 +56,8 @@ export interface ResponsesCallOptions {
   toolChoice?: unknown;
   stream?: boolean;
   effort?: "low" | "medium" | "high";
+  /** Optional: cancels the upstream call when the person stops waiting. */
+  signal?: AbortSignal;
 }
 
 /**
@@ -84,6 +86,7 @@ export function responsesRequest(opts: ResponsesCallOptions): Promise<Response> 
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
+    signal: opts.signal,
   });
 }
 
