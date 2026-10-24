@@ -221,7 +221,9 @@ Deno.serve(async (req) => {
     console.warn("voice provider status:", status);
     if (status === 499) return fail(499, "aborted");
     const code = status === 429 ? "rate_limited" : status === 402 ? "credits" : status === 403 ? "provider_denied" : status === 400 ? "bad_audio" : status === 0 ? "provider_unreachable" : "provider_error";
-    return fail(status === 429 || status === 402 || status === 403 || status === 400 ? status : 502, code, {}, { ...main.gatewayHeaders, ...(status === 429 ? { "Retry-After": main.retryAfter ?? "20" } : {}) });
+    // Provider status semantics are kept (402/403/429/400), with the provider's safe reason; never retried or switched to another model here.
+    const extra = main.providerMessage && status >= 400 && status < 500 ? { message: main.providerMessage } : {};
+    return fail(status === 429 || status === 402 || status === 403 || status === 400 ? status : 502, code, extra, { ...main.gatewayHeaders, ...(status === 429 ? { "Retry-After": main.retryAfter ?? "20" } : {}) });
   }
 
   const raw = normalizeArabic(main.text.trim());
