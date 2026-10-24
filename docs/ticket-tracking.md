@@ -51,8 +51,8 @@ The "what happens next + who must act" line follows `team_next_step` for team-en
 - **Details complete time**: no "details became complete" record. Shown with the ticket creation time when the
   details were complete at creation, otherwise "Time not recorded". Smallest fix if wanted: one
   `ticket_tracking_stage_events(ticket_id, step, at)` row written by a tiny trigger when SAP area + description first pass the check.
-- **BRD attached**: the BRD SQL (`docs/sql/ticket-brd.sql`) is not applied either. Until then the BRD is recognised
-  by its file name `BRD_<ticket>_v<N>_<date>.pdf`; after it is applied this should switch to `doc_type = 'brd'`.
+- **BRD attached**: the BRD update is applied (Oct 24), but the tracking stage still recognises a BRD by its file name
+  `BRD_<ticket>_v<N>_<date>.pdf` (which the BRD feature always uses); a later tidy-up can switch to `doc_type = 'brd'`.
 - **Who triggered a step**: shown as a role (client / consultant / both / system), never a name.
 
 ## 3. Working status (manual, new data)
