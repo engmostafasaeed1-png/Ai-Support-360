@@ -21,7 +21,11 @@ export interface BrdPdfMeta {
   version: number | null;
   versions: VersionMeta[];
   generatedAt?: Date;
+  /** Optional last page "Approval record": every consultant decision up to this version, with the version hash. */
+  approvalRecord?: ApprovalRecordRow[];
 }
+
+export interface ApprovalRecordRow { version: number; who: string; role: string; decision: string; at: string; note: string; hash: string }
 
 export interface BrdPdfFonts { regular: string; bold: string }
 
@@ -55,6 +59,10 @@ const L = {
     st: { proposed: 'Proposed', agreed: 'Agreed', in_progress: 'In progress', done: 'Done', rejected: 'Rejected' },
     generated: (d: string) => `Generated on ${d} on AI Support 360.`, tbc: (n: number) => `${n} item(s) are marked "${TBC_LABEL.en}" and still need an answer.`,
     archived: 'archived', notSet: '—',
+    record: 'Approval record', recordIntro: 'Consultant decisions on this BRD. Each approval binds the exact version and its content fingerprint.',
+    recordCols: ['Version', 'Consultant', 'Role', 'Decision', 'Date', 'Fingerprint', 'Comment'],
+    roles: { lead: 'Lead', support: 'Support' } as Record<string, string>,
+    decisions: { approved: 'Approved', changes_requested: 'Changes requested', declined: 'Declined' } as Record<string, string>,
   },
   ar: {
     doc: 'وثيقة متطلبات الأعمال', control: 'بيانات الوثيقة', title: 'العنوان', ticket: 'التذكرة', company: 'شركة العميل',
@@ -67,6 +75,10 @@ const L = {
     st: { proposed: 'مقترح', agreed: 'متفق عليه', in_progress: 'قيد التنفيذ', done: 'منجز', rejected: 'مرفوض' },
     generated: (d: string) => `أُنشئت في ${d} على منصة AI Support 360.`, tbc: (n: number) => `${n} بند/بنود معلّمة بـ "${TBC_LABEL.ar}" وما زالت تحتاج إلى إجابة.`,
     archived: 'مؤرشف', notSet: '—',
+    record: 'سجل الاعتماد', recordIntro: 'قرارات المستشارين بشأن هذه الوثيقة. كل اعتماد مرتبط بالإصدار نفسه وببصمة محتواه.',
+    recordCols: ['الإصدار', 'المستشار', 'الدور', 'القرار', 'التاريخ', 'البصمة', 'التعليق'],
+    roles: { lead: 'رئيسي', support: 'مساند' } as Record<string, string>,
+    decisions: { approved: 'معتمد', changes_requested: 'طُلبت تعديلات', declined: 'مرفوض' } as Record<string, string>,
   },
 };
 
@@ -316,6 +328,16 @@ export function buildBrdPdf(JsPDF: JsPdfCtor, content: BrdContent, meta: BrdPdfM
       if (!content.requirements.length) w.paragraph(plain(pick('noReq')), { base, color: C.muted });
       else w.table([0.1, 0.27, 0.1, 0.11, 0.12, 0.3], t.req.map((x, i) => plain(both ? `${L.en.req[i]} / ${L.ar.req[i]}` : x)), requirementRows(content.requirements, lang, both), base, 8.6);
     }
+  }
+
+  // ---- approval record (optional last page)
+  if (meta.approvalRecord?.length) {
+    w.newPage();
+    w.heading(both ? `${L.en.record} / ${L.ar.record}` : t.record, base, 2);
+    w.paragraph(plain(t.recordIntro), { base, size: 9.5, color: C.muted, gapAfter: 6 });
+    w.table([0.08, 0.17, 0.09, 0.14, 0.15, 0.13, 0.24], t.recordCols.map((x) => plain(x)),
+      meta.approvalRecord.map((r) => [plain(`v${r.version}`, { bold: true }), plain(r.who || '—'), plain(t.roles[r.role] ?? r.role),
+        plain(t.decisions[r.decision] ?? r.decision), plain(r.at.slice(0, 16).replace('T', ' ')), plain(r.hash.slice(0, 12)), plain(r.note || '—')]), base, 8.4);
   }
 
   // ---- contents
