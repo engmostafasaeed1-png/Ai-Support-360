@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "note": "Reference texts for the interview speech-to-text benchmark. The owner records each sentence as NN.wav (any format; see README). Digits are written 0-9 and SAP terms in Latin script, exactly as the transcript should read.",
+  "sentences": [
+    { "id": "01", "category": "sap_en", "lang": "en", "modules": ["SAP FI"], "text": "I posted the vendor invoice in MIRO and checked the line items in ACDOCA." },
+    { "id": "02", "category": "sap_en", "lang": "en", "modules": ["SAP MM"], "text": "The release strategy blocked the purchase requisition until the cost center owner approved it." },
+    { "id": "03", "category": "sap_en", "lang": "en", "modules": ["ABAP"], "text": "We implemented a BAdI in the enhancement spot and replaced the old user exit." },
+    { "id": "04", "category": "sap_en", "lang": "en", "modules": ["ABAP"], "text": "The CDS view exposes the sales data as an OData service for the Fiori app." },
+    { "id": "05", "category": "sap_en", "lang": "en", "modules": ["SAP SD"], "text": "The pricing procedure uses condition technique with access sequences for customer specific discounts." },
+    { "id": "06", "category": "sap_en", "lang": "en", "modules": ["SAP FI", "SAP CO"], "text": "During the S/4HANA migration we moved from new GL to the Universal Journal with document splitting." },
+    { "id": "07", "category": "sap_en", "lang": "en", "modules": ["Basis"], "text": "I checked the dumps in ST22 and the background jobs in SM37 before importing the transport request." },
+    { "id": "08", "category": "sap_en", "lang": "en", "modules": ["SAP BTP"], "text": "The interface runs on SAP Integration Suite and sends IDocs to the ECC system through RFC." },
+    { "id": "09", "category": "sap_en", "lang": "en", "modules": ["SuccessFactors"], "text": "We configured Employee Central and replicated the employee data to Employee Central Payroll." },
+    { "id": "10", "category": "sap_en", "lang": "en", "modules": ["SAP PP"], "text": "MRP Live created planned orders and we converted them to production orders in CO40." },
+    { "id": "11", "category": "sap_en", "lang": "en", "modules": ["SAP EWM"], "text": "The warehouse task confirmation updated the handling unit and the storage bin in EWM." },
+    { "id": "12", "category": "sap_en", "lang": "en", "modules": ["SAP FI"], "text": "The automatic payment run in F110 picked the open items and created the payment medium file." },
+
+    { "id": "13", "category": "ar_eg", "lang": "ar", "dialect": "Egyptian", "modules": ["SAP FI"], "text": "أنا اشتغلت على المشروع ده حوالي سنتين وكنت مسؤول عن الحسابات العامة والإقفال الشهري." },
+    { "id": "14", "category": "ar_eg", "lang": "ar", "dialect": "Egyptian", "modules": ["SAP MM"], "text": "المشكلة كانت إن الموردين بيبعتوا الفواتير متأخر فعملنا تقرير يومي للمتابعة." },
+    { "id": "15", "category": "ar_eg", "lang": "ar", "dialect": "Egyptian", "modules": [], "text": "بصراحة أصعب حاجة كانت تدريب المستخدمين لأن أغلبهم أول مرة يستخدموا النظام." },
+    { "id": "16", "category": "ar_eg", "lang": "ar", "dialect": "Egyptian", "modules": ["SAP SD"], "text": "العميل كان عايز يغير طريقة التسعير في نص المشروع فعملنا تحليل للأثر قبل ما نوافق." },
+    { "id": "17", "category": "ar_eg", "lang": "ar", "dialect": "Egyptian", "modules": [], "text": "إحنا كنا فريق من خمس استشاريين وكل واحد مسؤول عن موديول مختلف." },
+    { "id": "18", "category": "ar_eg", "lang": "ar", "dialect": "Egyptian", "modules": ["SAP FI"], "text": "لما لقينا فرق في الأرصدة رجعنا لكل القيود اليدوية اللي اتعملت في آخر الشهر." },
+
+    { "id": "19", "category": "ar_gulf", "lang": "ar", "dialect": "Gulf", "modules": ["SAP FI"], "text": "اشتغلت مع شركة كبيرة في الرياض وكنا نطبق النظام على ثلاث شركات تابعة." },
+    { "id": "20", "category": "ar_gulf", "lang": "ar", "dialect": "Gulf", "modules": ["SAP MM"], "text": "وايد مشاكل كانت في المخزون لأن البيانات القديمة ما كانت نظيفة." },
+    { "id": "21", "category": "ar_gulf", "lang": "ar", "dialect": "Gulf", "modules": [], "text": "الحين أشتغل على مشروع ترقية وإن شاء الله نخلص المرحلة الأولى الشهر الجاي." },
+    { "id": "22", "category": "ar_gulf", "lang": "ar", "dialect": "Gulf", "modules": ["SuccessFactors"], "text": "كنت مسؤول عن الرواتب وكنا نتأكد إن كل البدلات تنحسب صح قبل الإغلاق." },
+    { "id": "23", "category": "ar_gulf", "lang": "ar", "dialect": "Gulf", "modules": [], "text": "أهم شي عندي إن المستخدم يفهم ليش نسوي التغيير مو بس كيف يسويه." },
+    { "id": "24", "category": "ar_gulf", "lang": "ar", "dialect": "Gulf", "modules": ["SAP SD"], "text": "العميل طلب تقرير للمبيعات حسب المنطقة وسويناه بطريقة يقدر يعدل عليه بنفسه." },
+
+    { "id": "25", "category": "mixed", "lang": "mixed", "dialect": "Egyptian", "modules": ["ABAP", "SAP FI"], "text": "في المشروع اللي فات عملت implementation لـ BAdI في S/4HANA 2023 وبعدين راجعت الـ entries في ACDOCA." },
+    { "id": "26", "category": "mixed", "lang": "mixed", "dialect": "Egyptian", "modules": ["SAP MM"], "text": "لما الفاتورة اتعملت في MIRO الـ GR/IR clearing كان بيتعمل كل شهر يدوي." },
+    { "id": "27", "category": "mixed", "lang": "mixed", "dialect": "Egyptian", "modules": ["SAP SD"], "text": "الـ pricing procedure كان فيه condition type جديد للخصم بتاع العملاء الكبار." },
+    { "id": "28", "category": "mixed", "lang": "mixed", "dialect": "Gulf", "modules": ["Basis"], "text": "سوينا upgrade للـ kernel وبعدها شيكنا الـ dumps في ST22." },
+    { "id": "29", "category": "mixed", "lang": "mixed", "dialect": "Gulf", "modules": ["SAP BTP"], "text": "الـ interface يرسل IDoc للنظام عن طريق Integration Suite وأحيانا يوقف بسبب الـ mapping." },
+    { "id": "30", "category": "mixed", "lang": "mixed", "dialect": "Egyptian", "modules": ["ABAP"], "text": "عملت CDS view وطلعتها OData service واستخدمناها في Fiori app للمدراء." },
+    { "id": "31", "category": "mixed", "lang": "mixed", "dialect": "Gulf", "modules": ["SAP FI"], "text": "الـ payment run في F110 كان يطلع خطأ لأن الـ house bank مو معرف صح." },
+    { "id": "32", "category": "mixed", "lang": "mixed", "dialect": "Egyptian", "modules": ["SAP PP"], "text": "الـ planned orders اتحولت production orders والـ BOM كان فيه مشكلة في الـ routing." },
+    { "id": "33", "category": "mixed", "lang": "mixed", "dialect": "Egyptian", "modules": ["SuccessFactors"], "text": "عملنا replication من Employee Central للـ payroll وكانت فيه مشكلة في الـ wage types." },
+    { "id": "34", "category": "mixed", "lang": "mixed", "dialect": "Gulf", "modules": ["SAP MM"], "text": "الـ release strategy كانت توقف الـ purchase order لين المدير يوافق عليه." },
+
+    { "id": "35", "category": "numbers_tcodes", "lang": "en", "modules": ["SAP FI"], "text": "Use FB60 for vendor invoices, FB70 for customer invoices and F-02 for general postings." },
+    { "id": "36", "category": "numbers_tcodes", "lang": "en", "modules": ["SAP MM"], "text": "We created the purchase order in ME21N and posted the goods receipt with movement type 101 in MIGO." },
+    { "id": "37", "category": "numbers_tcodes", "lang": "en", "modules": ["SAP SD"], "text": "The sales order in VA01 had 25 items worth 48,500 dollars and was billed in VF01." },
+    { "id": "38", "category": "numbers_tcodes", "lang": "en", "modules": ["Basis"], "text": "Users were created in SU01, roles in PFCG and the missing authorization was found in SU53." },
+    { "id": "39", "category": "numbers_tcodes", "lang": "mixed", "dialect": "Egyptian", "modules": ["SAP FI"], "text": "فتحنا الفترة 12 لسنة 2024 في OB52 وبعدها عملنا الإقفال." },
+    { "id": "40", "category": "numbers_tcodes", "lang": "mixed", "dialect": "Gulf", "modules": ["SAP MM"], "text": "حركة 261 في MIGO تصرف المواد لأمر الإنتاج رقم 1000234." }
+  ]
+}
