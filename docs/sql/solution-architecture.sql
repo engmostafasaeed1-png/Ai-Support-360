@@ -788,7 +788,7 @@ DECLARE uid uuid := auth.uid(); lim integer := LEAST(GREATEST(COALESCE(_limit, 2
 BEGIN
   IF NOT public.sa_can_read_scope(_tenant, uid) THEN RAISE EXCEPTION 'not_allowed' USING ERRCODE = '42501'; END IF;
   RETURN COALESCE((
-    SELECT jsonb_agg(x ORDER BY (x ->> 'at') DESC) FROM (
+    SELECT jsonb_agg(q.x ORDER BY (q.x ->> 'at') DESC) FROM (SELECT u.x FROM (
       SELECT jsonb_build_object('at', e.created_at, 'kind', 'doc', 'action', e.action, 'doc_id', d.id, 'doc_title', d.title, 'doc_type', d.type,
                'version', e.version, 'ticket_id', NULL, 'ticket_ref', NULL, 'ticket_title', NULL,
                'actor', CASE WHEN e.actor_id IS NULL THEN NULL ELSE public.brd_person_name(e.actor_id, public.brd_consultant_of(e.actor_id), uid) END) AS x
@@ -809,7 +809,7 @@ BEGIN
           WHERE be.ticket_id = t.id AND be.action IN ('version', 'final', 'attach')
       ) s
       WHERE public.brd_role_for(t.id, uid) IN ('admin', 'client', 'company')
-      ORDER BY 1 DESC LIMIT lim) q), '[]'::jsonb);
+    ) u ORDER BY (u.x ->> 'at') DESC LIMIT lim) q), '[]'::jsonb);
 END
 $$;
 
