@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] AI interview voice, maximum accuracy (Oct 24): server speech-to-text with SAP hints, browser fallback, shared recogniser on every mic, admin Voice tab (built); now adding: model benchmark (40 sentences) + pluggable primary/secondary model, 48 kHz AudioWorklet capture with trim/normalise/clipping+SNR checks and 300 ms overlap stitching, admin SAP vocabulary (+ import from documents, suggestions from corrections), constrained correction pass with diff, cross-model confidence + highlighted words + "please repeat", confirm step, per-segment language + Arabic normalisation, live partial text + offline queue, WER per model/language/browser + top mis-heard terms + 7-day alert, mic help (silent mic detection, 10 s read-aloud score); scoring sees confirmed text. SQL docs/sql/interview-voice.sql prepared, NOT applied.
+- [ ] Switch on interview voice: awaits owner applying docs/sql/interview-voice.sql and recording the benchmark sentences.
+
 - [x] Admin referral Dashboard (Oct 22): invitations sent, rewards issued, payout due dates, waiting-for-payout, 6-month forecast (already earned / trend estimate / approved unpaid work); admin-only read RPC applied (0089); EN/AR; tests
 
 - [x] Refer & earn notices + invitation (Oct 22): (A) in-app referral cards per type, shared bilingual referral e-mail layout + per-type blocks (HTML + text), admin e-mail preview (EN/AR, light/dark) + "Send test to me"; (B) Users console "Send Refer & earn invitation" (selected / all eligible) with confirmation, server-side eligibility, dedupe per version, resend rules, caps, kill switch OFF, per-recipient report + CSV, "Invited on" in rows; docs/sql/referral-invitations.sql + test file passed on a scratch database (NOT applied, nothing sent); functions deployed
