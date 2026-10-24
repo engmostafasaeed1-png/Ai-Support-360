@@ -303,7 +303,9 @@ BEGIN
       (SELECT min(x.created_at) FROM public.ticket_team_messages x WHERE x.ticket_id = _ticket AND x.created_at >= _floor),
       (SELECT min(m.created_at) FROM public.messages m JOIN public.sessions s ON s.id = m.session_id
         WHERE s.ticket_id = _ticket AND m.created_at >= _floor AND t.consultant_id IS NOT NULL),
-      (SELECT x.at FROM public.tt_last_transition(_ticket, ARRAY['in_progress'], ARRAY['in_progress']) x));
+      (SELECT min(a.created_at) FROM public.audit_logs a
+        WHERE a.entity_type = 'tickets' AND a.entity_id = _ticket AND a.action = 'tickets.updated'
+          AND a.metadata #>> '{new,status}' = 'in_progress' AND a.created_at >= _floor));
   END IF;
 
   SELECT x.at, x.by_user INTO _deliv, _deliv_by FROM public.tt_last_transition(_ticket, ARRAY['resolved'], ARRAY['resolved']) x;
