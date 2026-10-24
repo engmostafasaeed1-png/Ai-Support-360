@@ -661,7 +661,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $
     'created_at', _d.created_at, 'updated_at', _d.updated_at, 'archived_at', _d.archived_at,
     'links', COALESCE((SELECT jsonb_agg(jsonb_build_object('ticket_id', t.id, 'ref', public.brd_ref(t.id), 'title', t.title, 'status', t.status) ORDER BY t.created_at DESC)
                        FROM public.sa_links l JOIN public.tickets t ON t.id = l.ticket_id WHERE l.doc_id = _d.id), '[]'::jsonb),
-    'projects', COALESCE((SELECT jsonb_agg(jsonb_build_object('project_id', p.id, 'title', p.name) ORDER BY p.created_at DESC)
+    'projects', COALESCE((SELECT jsonb_agg(jsonb_build_object('project_id', p.id, 'title', p.title) ORDER BY p.created_at DESC)
                           FROM public.sa_project_links pl JOIN public.projects p ON p.id = pl.project_id WHERE pl.doc_id = _d.id), '[]'::jsonb),
     'open_comments', (SELECT count(*) FROM public.sa_comments c WHERE c.doc_id = _d.id AND c.status = 'open' AND c.parent_id IS NULL))
 $$;
