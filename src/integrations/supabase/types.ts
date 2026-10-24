@@ -9600,6 +9600,403 @@ export type Database = {
           },
         ]
       }
+      ticket_brd_access_log: {
+        Row: {
+          action: string
+          brd_id: string
+          created_at: string
+          id: string
+          ticket_id: string
+          version: number
+          viewer_consultant_id: string | null
+          viewer_id: string
+          viewer_role: string
+        }
+        Insert: {
+          action: string
+          brd_id: string
+          created_at?: string
+          id?: string
+          ticket_id: string
+          version: number
+          viewer_consultant_id?: string | null
+          viewer_id: string
+          viewer_role: string
+        }
+        Update: {
+          action?: string
+          brd_id?: string
+          created_at?: string
+          id?: string
+          ticket_id?: string
+          version?: number
+          viewer_consultant_id?: string | null
+          viewer_id?: string
+          viewer_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_brd_access_log_brd_id_fkey"
+            columns: ["brd_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_brds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_brd_access_log_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_brd_ai_usage: {
+        Row: {
+          actor_id: string
+          client_id: string
+          created_at: string
+          finished_at: string | null
+          id: string
+          input_tokens: number | null
+          kind: string
+          model: string | null
+          output_tokens: number | null
+          reason: string | null
+          status: string
+          ticket_id: string
+        }
+        Insert: {
+          actor_id: string
+          client_id: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          input_tokens?: number | null
+          kind: string
+          model?: string | null
+          output_tokens?: number | null
+          reason?: string | null
+          status?: string
+          ticket_id: string
+        }
+        Update: {
+          actor_id?: string
+          client_id?: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          input_tokens?: number | null
+          kind?: string
+          model?: string | null
+          output_tokens?: number | null
+          reason?: string | null
+          status?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_brd_ai_usage_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_brd_comments: {
+        Row: {
+          author_consultant_id: string | null
+          author_id: string
+          author_role: string
+          body: string
+          brd_id: string
+          created_at: string
+          id: string
+          kind: string
+          parent_id: string | null
+          section_key: string
+          status: string
+          status_at: string | null
+          status_by: string | null
+          suggested_text: string | null
+          ticket_id: string
+          version: number
+        }
+        Insert: {
+          author_consultant_id?: string | null
+          author_id: string
+          author_role: string
+          body: string
+          brd_id: string
+          created_at?: string
+          id?: string
+          kind?: string
+          parent_id?: string | null
+          section_key: string
+          status?: string
+          status_at?: string | null
+          status_by?: string | null
+          suggested_text?: string | null
+          ticket_id: string
+          version: number
+        }
+        Update: {
+          author_consultant_id?: string | null
+          author_id?: string
+          author_role?: string
+          body?: string
+          brd_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          parent_id?: string | null
+          section_key?: string
+          status?: string
+          status_at?: string | null
+          status_by?: string | null
+          suggested_text?: string | null
+          ticket_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_brd_comments_brd_id_fkey"
+            columns: ["brd_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_brds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_brd_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_brd_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_brd_comments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_brd_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          brd_id: string | null
+          created_at: string
+          detail: Json
+          id: string
+          ticket_id: string
+          version: number | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          brd_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          ticket_id: string
+          version?: number | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          brd_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          ticket_id?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_brd_events_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_brd_notices: {
+        Row: {
+          created_at: string
+          created_by: string
+          document_id: string
+          emailed_at: string | null
+          id: string
+          ticket_id: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          document_id: string
+          emailed_at?: string | null
+          id?: string
+          ticket_id: string
+          user_id: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          document_id?: string
+          emailed_at?: string | null
+          id?: string
+          ticket_id?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_brd_notices_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_brd_notices_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_brd_versions: {
+        Row: {
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
+          brd_id: string
+          change_note: string
+          content: Json
+          created_at: string
+          created_by: string
+          id: string
+          restored_from: number | null
+          status: string
+          ticket_id: string
+          version: number
+        }
+        Insert: {
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
+          brd_id: string
+          change_note?: string
+          content: Json
+          created_at?: string
+          created_by: string
+          id?: string
+          restored_from?: number | null
+          status: string
+          ticket_id: string
+          version: number
+        }
+        Update: {
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
+          brd_id?: string
+          change_note?: string
+          content?: Json
+          created_at?: string
+          created_by?: string
+          id?: string
+          restored_from?: number | null
+          status?: string
+          ticket_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_brd_versions_brd_id_fkey"
+            columns: ["brd_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_brds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_brd_versions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_brds: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string
+          draft: Json
+          draft_rev: number
+          draft_saved_at: string | null
+          draft_saved_by: string | null
+          edit_unlocked: boolean
+          id: string
+          language: string
+          latest_version: number
+          shared_version: number | null
+          template: string
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by: string
+          draft?: Json
+          draft_rev?: number
+          draft_saved_at?: string | null
+          draft_saved_by?: string | null
+          edit_unlocked?: boolean
+          id?: string
+          language?: string
+          latest_version?: number
+          shared_version?: number | null
+          template?: string
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          draft?: Json
+          draft_rev?: number
+          draft_saved_at?: string | null
+          draft_saved_by?: string | null
+          edit_unlocked?: boolean
+          id?: string
+          language?: string
+          latest_version?: number
+          shared_version?: number | null
+          template?: string
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_brds_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_business_processes: {
         Row: {
           business_process_id: string
@@ -9731,38 +10128,53 @@ export type Database = {
       }
       ticket_documents: {
         Row: {
+          brd_version: number | null
           comment: string | null
           created_at: string
+          doc_type: string
           file_name: string
           file_size: number | null
           file_url: string
           id: string
           mime_type: string | null
+          superseded_at: string | null
           ticket_id: string
+          unattached_at: string | null
+          unattached_by: string | null
           uploaded_by: string
           version: number
         }
         Insert: {
+          brd_version?: number | null
           comment?: string | null
           created_at?: string
+          doc_type?: string
           file_name: string
           file_size?: number | null
           file_url: string
           id?: string
           mime_type?: string | null
+          superseded_at?: string | null
           ticket_id: string
+          unattached_at?: string | null
+          unattached_by?: string | null
           uploaded_by: string
           version?: number
         }
         Update: {
+          brd_version?: number | null
           comment?: string | null
           created_at?: string
+          doc_type?: string
           file_name?: string
           file_size?: number | null
           file_url?: string
           id?: string
           mime_type?: string | null
+          superseded_at?: string | null
           ticket_id?: string
+          unattached_at?: string | null
+          unattached_by?: string | null
           uploaded_by?: string
           version?: number
         }
@@ -13440,6 +13852,12 @@ export type Database = {
       }
       admin_assignment_reminder_stats: { Args: never; Returns: Json }
       admin_audit_search: { Args: { _p?: Json }; Returns: Json }
+      admin_brd_overview: { Args: never; Returns: Json }
+      admin_brd_set_settings: { Args: { _value: Json }; Returns: Json }
+      admin_brd_unlock: {
+        Args: { _reason: string; _ticket: string; _unlocked: boolean }
+        Returns: boolean
+      }
       admin_bulk_undo: { Args: { _run_id: string }; Returns: Json }
       admin_can: { Args: { _perm: string; _uid: string }; Returns: boolean }
       admin_client_approval_counts: { Args: never; Returns: Json }
@@ -14274,6 +14692,162 @@ export type Database = {
       bm_settings: { Args: never; Returns: Json }
       bp_matches_ticket_client: {
         Args: { _bp_id: string; _ticket_id: string }
+        Returns: boolean
+      }
+      brd_add_comment: {
+        Args: {
+          _body: string
+          _kind?: string
+          _parent?: string
+          _section: string
+          _suggested?: string
+          _ticket: string
+          _version: number
+        }
+        Returns: string
+      }
+      brd_ai_claim: {
+        Args: { _actor: string; _kind: string; _ticket: string }
+        Returns: Json
+      }
+      brd_ai_finish: {
+        Args: {
+          _id: string
+          _input: number
+          _output: number
+          _reason?: string
+          _status: string
+        }
+        Returns: undefined
+      }
+      brd_archive_version: {
+        Args: { _reason: string; _ticket: string; _version: number }
+        Returns: boolean
+      }
+      brd_attach: {
+        Args: {
+          _notify?: boolean
+          _path: string
+          _size: number
+          _ticket: string
+          _version: number
+        }
+        Returns: Json
+      }
+      brd_can_write_for: {
+        Args: { _ticket: string; _uid: string }
+        Returns: boolean
+      }
+      brd_claim_notices: {
+        Args: { _caller: string; _document_id: string }
+        Returns: {
+          ticket_id: string
+          ticket_title: string
+          user_id: string
+          version: number
+        }[]
+      }
+      brd_consultant_of: { Args: { _uid: string }; Returns: string }
+      brd_consultant_readers: {
+        Args: { _ticket: string }
+        Returns: {
+          consultant_id: string
+          user_id: string
+        }[]
+      }
+      brd_default_settings: { Args: never; Returns: Json }
+      brd_doc_visible: {
+        Args: { _ticket: string; _unattached_at: string }
+        Returns: boolean
+      }
+      brd_file_readable: { Args: { _name: string }; Returns: boolean }
+      brd_get: { Args: { _ticket: string }; Returns: Json }
+      brd_get_version: {
+        Args: { _ticket: string; _version: number }
+        Returns: Json
+      }
+      brd_is_admin: { Args: { _uid: string }; Returns: boolean }
+      brd_log_access: {
+        Args: { _action: string; _ticket: string; _version: number }
+        Returns: boolean
+      }
+      brd_log_event: {
+        Args: {
+          _action: string
+          _actor: string
+          _brd: string
+          _detail?: Json
+          _ticket: string
+          _version: number
+        }
+        Returns: undefined
+      }
+      brd_mask_jsonb: { Args: { _j: Json }; Returns: Json }
+      brd_person_name: {
+        Args: { _consultant: string; _uid: string; _viewer: string }
+        Returns: string
+      }
+      brd_ref: { Args: { _ticket: string }; Returns: string }
+      brd_restore_version: {
+        Args: { _note?: string; _ticket: string; _version: number }
+        Returns: Json
+      }
+      brd_role: { Args: { _ticket: string }; Returns: string }
+      brd_role_for: { Args: { _ticket: string; _uid: string }; Returns: string }
+      brd_save_draft: {
+        Args: { _content: Json; _rev?: number; _ticket: string }
+        Returns: Json
+      }
+      brd_save_version: {
+        Args: {
+          _content: Json
+          _note: string
+          _rev?: number
+          _status?: string
+          _ticket: string
+        }
+        Returns: Json
+      }
+      brd_set_comment_status: {
+        Args: { _comment: string; _status: string }
+        Returns: boolean
+      }
+      brd_settings: { Args: never; Returns: Json }
+      brd_storage_can_insert: { Args: { _name: string }; Returns: boolean }
+      brd_store_draft: {
+        Args: { _content: Json; _rev: number; _ticket: string; _uid: string }
+        Returns: {
+          client_id: string
+          created_at: string
+          created_by: string
+          draft: Json
+          draft_rev: number
+          draft_saved_at: string | null
+          draft_saved_by: string | null
+          edit_unlocked: boolean
+          id: string
+          language: string
+          latest_version: number
+          shared_version: number | null
+          template: string
+          ticket_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ticket_brds"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      brd_ticket_of_path: { Args: { _name: string }; Returns: string }
+      brd_unattach: {
+        Args: { _document_id: string; _reason?: string }
+        Returns: boolean
+      }
+      brd_validate_content: { Args: { _c: Json }; Returns: undefined }
+      brd_version_attached: {
+        Args: { _ticket: string; _version: number }
         Returns: boolean
       }
       can_bootstrap_tenant_membership: {
