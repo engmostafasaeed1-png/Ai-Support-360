@@ -1,5 +1,5 @@
 -- Two-layer ticket tracking: AUTOMATIC stage (derived, read-only) + MANUAL working status (new data).
--- PREPARED ONLY - NOT APPLIED. Review, then apply once; re-running is safe (IF NOT EXISTS / CREATE OR REPLACE).
+-- APPLIED 2026-10-24 (migrations 0096-0099, owner approved). Re-running is safe (IF NOT EXISTS / CREATE OR REPLACE).
 -- Afterwards run docs/sql/ticket-tracking.test.sql (one rolled-back transaction) on a scratch copy.
 --
 -- Compatibility: nothing here renames, removes or repurposes tickets.status, close_outcome or any existing function.
@@ -994,3 +994,8 @@ WITH ins AS (
 )
 INSERT INTO public.ticket_working_status_events (ticket_id, from_key, to_key, actor_role, backfill, created_at)
 SELECT ins.ticket_id, NULL, ins.status_key, 'system', true, ins.set_at FROM ins;
+
+-- Tighten table privileges (the project's default privileges give new tables full rights to anon/authenticated;
+-- RLS already blocks writes, this removes the rights themselves). The browser only reads through the tt_* RPCs.
+REVOKE ALL ON public.ticket_working_status, public.ticket_working_status_events, public.ticket_tracking_email_queue FROM anon, authenticated;
+GRANT SELECT ON public.ticket_working_status, public.ticket_working_status_events TO authenticated;

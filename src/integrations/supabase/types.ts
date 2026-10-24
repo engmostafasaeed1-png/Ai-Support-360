@@ -11083,6 +11083,59 @@ export type Database = {
           },
         ]
       }
+      ticket_tracking_email_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          dedupe_key: string
+          failed_at: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          lease_until: string | null
+          payload: Json
+          sent_at: string | null
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          dedupe_key: string
+          failed_at?: string | null
+          id?: string
+          kind: string
+          last_error?: string | null
+          lease_until?: string | null
+          payload?: Json
+          sent_at?: string | null
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string
+          failed_at?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          lease_until?: string | null
+          payload?: Json
+          sent_at?: string | null
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_tracking_email_queue_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_watchers: {
         Row: {
           created_at: string
@@ -11182,6 +11235,112 @@ export type Database = {
           },
           {
             foreignKeyName: "ticket_work_logs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_working_status: {
+        Row: {
+          expected_date: string | null
+          last_reminder_on: string | null
+          note: string | null
+          overdue_reminders: number
+          responsible: string | null
+          review_reminded_on: string | null
+          review_reminders: number
+          set_at: string
+          set_by: string | null
+          set_by_role: string
+          status_key: string
+          ticket_id: string
+          version: number
+        }
+        Insert: {
+          expected_date?: string | null
+          last_reminder_on?: string | null
+          note?: string | null
+          overdue_reminders?: number
+          responsible?: string | null
+          review_reminded_on?: string | null
+          review_reminders?: number
+          set_at?: string
+          set_by?: string | null
+          set_by_role?: string
+          status_key?: string
+          ticket_id: string
+          version?: number
+        }
+        Update: {
+          expected_date?: string | null
+          last_reminder_on?: string | null
+          note?: string | null
+          overdue_reminders?: number
+          responsible?: string | null
+          review_reminded_on?: string | null
+          review_reminders?: number
+          set_at?: string
+          set_by?: string | null
+          set_by_role?: string
+          status_key?: string
+          ticket_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_working_status_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_working_status_events: {
+        Row: {
+          actor_id: string | null
+          actor_role: string
+          backfill: boolean
+          created_at: string
+          expected_date: string | null
+          from_key: string | null
+          id: string
+          note: string | null
+          responsible: string | null
+          ticket_id: string
+          to_key: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role: string
+          backfill?: boolean
+          created_at?: string
+          expected_date?: string | null
+          from_key?: string | null
+          id?: string
+          note?: string | null
+          responsible?: string | null
+          ticket_id: string
+          to_key: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string
+          backfill?: boolean
+          created_at?: string
+          expected_date?: string | null
+          from_key?: string | null
+          id?: string
+          note?: string | null
+          responsible?: string | null
+          ticket_id?: string
+          to_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_working_status_events_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
@@ -15966,6 +16125,127 @@ export type Database = {
       timesheet_vat_percent: { Args: never; Returns: number }
       try_timestamptz: { Args: { _t: string }; Returns: string }
       ts_num: { Args: { _n: number }; Returns: string }
+      tt_actor_role: {
+        Args: { _ticket: string; _uid: string }
+        Returns: string
+      }
+      tt_admin_overview: { Args: { _days?: number }; Returns: Json }
+      tt_admin_set_settings: {
+        Args: { _reason?: string; _value: Json }
+        Returns: Json
+      }
+      tt_can_read: { Args: { _ticket: string }; Returns: boolean }
+      tt_claim_emails: {
+        Args: { _limit?: number }
+        Returns: {
+          dedupe_key: string
+          id: string
+          kind: string
+          payload: Json
+          ticket_id: string
+          user_id: string
+        }[]
+      }
+      tt_default_settings: { Args: never; Returns: Json }
+      tt_facts: { Args: { _ticket: string }; Returns: Json }
+      tt_finish_email: {
+        Args: { _error?: string; _id: string; _ok: boolean }
+        Returns: undefined
+      }
+      tt_is_admin: { Args: { _uid: string }; Returns: boolean }
+      tt_lang: { Args: { _user: string }; Returns: string }
+      tt_last_transition: {
+        Args: {
+          _from_in?: string[]
+          _from_not: string[]
+          _ticket: string
+          _to: string[]
+        }
+        Returns: {
+          at: string
+          by_user: string
+        }[]
+      }
+      tt_list_facts: {
+        Args: { _tickets: string[] }
+        Returns: {
+          facts: Json
+          role: string
+          ticket_id: string
+        }[]
+      }
+      tt_notify_change: {
+        Args: {
+          _actor: string
+          _actor_role: string
+          _note: string
+          _ticket: string
+          _to: string
+          _version: number
+        }
+        Returns: undefined
+      }
+      tt_push_notice: {
+        Args: {
+          _body: string
+          _role: string
+          _ticket: string
+          _title: string
+          _user: string
+        }
+        Returns: undefined
+      }
+      tt_queue_email: {
+        Args: {
+          _dedupe: string
+          _kind: string
+          _payload: Json
+          _role: string
+          _ticket: string
+          _user: string
+        }
+        Returns: undefined
+      }
+      tt_recipients: {
+        Args: { _ticket: string }
+        Returns: {
+          role: string
+          user_id: string
+        }[]
+      }
+      tt_reminder_sweep: { Args: never; Returns: number }
+      tt_set_working_status: {
+        Args: {
+          _expected_date?: string
+          _expected_version?: number
+          _note?: string
+          _responsible?: string
+          _status: string
+          _ticket: string
+        }
+        Returns: Json
+      }
+      tt_settings: { Args: never; Returns: Json }
+      tt_status_label: {
+        Args: { _key: string; _lang: string }
+        Returns: string
+      }
+      tt_ticket_tracking: { Args: { _ticket: string }; Returns: Json }
+      tt_timeline: {
+        Args: { _ticket: string }
+        Returns: {
+          actor_role: string
+          event_at: string
+          kind: string
+          params: Json
+          source: string
+        }[]
+      }
+      tt_viewer_role: {
+        Args: { _ticket: string; _uid: string }
+        Returns: string
+      }
+      tt_wake: { Args: never; Returns: undefined }
       ui_translations_get: { Args: { _lang: string }; Returns: Json }
       ui_translations_version: { Args: { _lang: string }; Returns: string }
       um_apply_roles: {
