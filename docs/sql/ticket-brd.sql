@@ -1,5 +1,5 @@
 -- ============================================================================================================
--- Business Requirements Document (BRD) from a ticket.                      PREPARED FOR REVIEW - NOT APPLIED.
+-- Business Requirements Document (BRD) from a ticket.   APPLIED 2026-10-24 (migrations 0100-0102, owner approved).
 -- Run once in a transaction; safe to re-run (IF NOT EXISTS / CREATE OR REPLACE / DROP POLICY IF EXISTS).
 -- Then run docs/sql/ticket-brd.test.sql (it rolls back).
 --
