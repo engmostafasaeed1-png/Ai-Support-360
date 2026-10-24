@@ -121,7 +121,7 @@ export async function assetUrl(path: string): Promise<string | null> {
 
 /** Same flow as the BRD: upload the PDF under <ticket>/architecture/ and record it as a ticket document. */
 export async function attachArchPdf(doc: string, ticket: string, version: number, pdf: Blob, notify: boolean): Promise<ArchResult<{ document_id: string; file_name: string; notified: number }>> {
-  const path = `${ticket}/architecture/ARCH_${randomName()}.pdf`;
+  const path = `${ticket}/architecture/${doc}/ARCH_${randomName()}.pdf`;
   try {
     const { error } = await supabase.storage.from(ARCH_BUCKET).upload(path, pdf, { contentType: 'application/pdf', upsert: false });
     if (error) return { data: null, error: { message: error.message } };
