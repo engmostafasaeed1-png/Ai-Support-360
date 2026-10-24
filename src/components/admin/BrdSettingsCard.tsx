@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { adminBrdOverview, adminBrdSetSettings } from '@/lib/brd/api';
+import BrdApprovalSettings, { APPROVAL_NUMBERS, APPROVAL_SWITCHES } from './BrdApprovalSettings';
 
 const NUMBERS = ['ai_calls_per_ticket_per_day', 'ai_calls_per_client_per_day', 'deep_calls_per_ticket_per_day', 'max_attachments', 'max_attachment_chars', 'comments_per_user_per_day'] as const;
 
@@ -18,6 +19,7 @@ export default function BrdSettingsCard() {
   const [notReady, setNotReady] = useState(false);
   const [draft, setDraft] = useState<Record<string, any>>({});
   const [busy, setBusy] = useState(false);
+  const [approvalReady, setApprovalReady] = useState(false);
 
   const load = async () => {
     const r = await adminBrdOverview();
@@ -30,6 +32,12 @@ export default function BrdSettingsCard() {
     setBusy(true);
     const value: Record<string, unknown> = { enabled: !!draft.enabled, require_nda: draft.require_nda !== false, draft_model: draft.draft_model, deep_model: draft.deep_model };
     for (const k of NUMBERS) value[k] = Math.max(0, Math.floor(Number(draft[k]) || 0));
+    // Approval keys only once docs/sql/ticket-brd-approval.sql is applied (older settings rules refuse unknown keys).
+    if (approvalReady) {
+      value.approval_gate = ['off', 'recommended', 'required'].includes(draft.approval_gate) ? draft.approval_gate : 'recommended';
+      for (const k of APPROVAL_SWITCHES) value[k] = k === 'approval_email' ? draft[k] !== false : !!draft[k];
+      for (const k of APPROVAL_NUMBERS) value[k] = Math.max(k === 'approval_max_reminders' ? 0 : 1, Math.floor(Number(draft[k]) || 0));
+    }
     const r = await adminBrdSetSettings(value);
     setBusy(false);
     if (r.error) { toast.error(r.error.message); return; }
@@ -65,6 +73,7 @@ export default function BrdSettingsCard() {
                 </div>
               ))}
             </div>
+            <BrdApprovalSettings draft={draft} setDraft={setDraft} onReady={setApprovalReady} />
             <p className="text-xs text-muted-foreground">{t('brd.admin.usage', {
               docs: ov.documents ?? 0, versions: ov.versions ?? 0, attached: ov.attached ?? 0, today: ov.ai_today ?? 0, refused: ov.ai_refused_today ?? 0,
               tin: ov.tokens_30d?.input ?? 0, tout: ov.tokens_30d?.output ?? 0,
