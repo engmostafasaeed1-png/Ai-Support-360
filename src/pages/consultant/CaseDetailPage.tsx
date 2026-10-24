@@ -595,6 +595,7 @@ export default function CaseDetailPage() {
                 <p className="text-xs text-muted-foreground">{clientProfile.sap_landscape}</p>
               </div>
             )}
+            </>)}
           </CardContent>
         </Card>
       )}
