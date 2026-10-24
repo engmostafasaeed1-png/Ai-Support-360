@@ -69,9 +69,9 @@ BEGIN
   -- TT02 settings validation (admin only)
   s := pg_temp.try(C, $q$SELECT public.tt_admin_set_settings('{"enabled": true}'::jsonb)$q$);
   PERFORM pg_temp.check(s = '42501', 'TT02 a client can not change the settings');
-  s := pg_temp.try(A, $q$SELECT public.tt_admin_set_settings(jsonb_build_object('statuses', (public.tt_default_settings() -> 'statuses') - 10))$q$);
+  s := pg_temp.try(A, format('SELECT public.tt_admin_set_settings(%L::jsonb)', jsonb_build_object('statuses', (public.tt_default_settings() -> 'statuses') - 10)));
   PERFORM pg_temp.check(s = '22023', 'TT02b required status "completed" can not be removed');
-  s := pg_temp.try(A, $q$SELECT public.tt_admin_set_settings(jsonb_build_object('statuses', jsonb_set(public.tt_default_settings() -> 'statuses', '{1,color}', '"#ff0000"')))$q$);
+  s := pg_temp.try(A, format('SELECT public.tt_admin_set_settings(%L::jsonb)', jsonb_build_object('statuses', jsonb_set(public.tt_default_settings() -> 'statuses', '{1,color}', '"#ff0000"'))));
   PERFORM pg_temp.check(s = '22023', 'TT02c only design colours are accepted');
   s := pg_temp.try(A, $q$SELECT public.tt_admin_set_settings('{"rate_limit_per_hour": 0}'::jsonb)$q$);
   PERFORM pg_temp.check(s = '22023', 'TT02d numbers are range-checked');
