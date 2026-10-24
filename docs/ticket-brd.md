@@ -1,6 +1,6 @@
 # Business Requirements Document (BRD) from a ticket
 
-Status: built, **database part prepared but not applied** (`docs/sql/ticket-brd.sql` + `docs/sql/ticket-brd.test.sql`).
+Status: **applied 2026-10-24 (migrations 0100-0102) and switched on** (`docs/sql/ticket-brd.sql`; `docs/sql/ticket-brd.test.sql` passed 22/22 on a copy of the live structure).
 Until it is applied the "Create BRD" button stays hidden and `/…/tickets/:id/brd` says the feature is not switched on.
 After applying, the admin switch **Admin › Settings › Business Requirements Documents** starts OFF.
 
