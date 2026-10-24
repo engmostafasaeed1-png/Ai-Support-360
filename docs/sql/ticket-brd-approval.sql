@@ -67,6 +67,8 @@ DECLARE
   merged jsonb := public.brd_settings();
   k text;
   v jsonb;
+  lo integer;
+  hi integer;
 BEGIN
   IF NOT public.brd_is_admin(uid) THEN RAISE EXCEPTION 'not_allowed' USING ERRCODE = '42501'; END IF;
   IF _value IS NULL OR jsonb_typeof(_value) <> 'object' THEN RAISE EXCEPTION 'brd_invalid_settings' USING ERRCODE = '22023'; END IF;
@@ -82,10 +84,10 @@ BEGIN
         RAISE EXCEPTION 'brd_invalid_setting %', k USING ERRCODE = '22023';
       END IF;
     ELSIF k IN ('approval_remind_days', 'approval_client_days', 'approval_escalate_days', 'approval_max_reminders', 'approval_decisions_per_hour') THEN
+      lo := (k = 'approval_max_reminders')::int # 1;
+      hi := (ARRAY[30, 60, 90, 20, 200])[array_position(ARRAY['approval_remind_days', 'approval_client_days', 'approval_escalate_days', 'approval_max_reminders', 'approval_decisions_per_hour'], k)];
       IF jsonb_typeof(v) <> 'number' OR (v #>> '{}')::numeric <> floor((v #>> '{}')::numeric)
-         OR (v #>> '{}')::integer < CASE WHEN k = 'approval_max_reminders' THEN 0 ELSE 1 END
-         OR (v #>> '{}')::integer > CASE k WHEN 'approval_remind_days' THEN 30 WHEN 'approval_client_days' THEN 60
-                                           WHEN 'approval_escalate_days' THEN 90 WHEN 'approval_max_reminders' THEN 20 ELSE 200 END THEN
+         OR (v #>> '{}')::integer < lo OR (v #>> '{}')::integer > hi THEN
         RAISE EXCEPTION 'brd_invalid_setting %', k USING ERRCODE = '22023';
       END IF;
     ELSIF k = 'approval_gate' THEN
