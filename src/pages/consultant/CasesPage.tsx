@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useConsultantCases } from '@/hooks/useConsultantCases';
+import { useTrackingList } from '@/hooks/useTrackingList';
+import TrackingListControls, { TrackingRowChips } from '@/components/tracking/TrackingListControls';
 import { Search, Filter, ArrowUpRight, Clock, FileSignature, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -33,6 +35,7 @@ export default function CasesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const { data: cases, isLoading, refetch } = useConsultantCases();
+  const tt = useTrackingList(cases || [], 'consultant');
 
   // NDA state
   const [consultantId, setConsultantId] = useState<string | null>(null);
@@ -77,11 +80,11 @@ export default function CasesPage() {
     }
   };
 
-  const filtered = (cases || []).filter((c) => {
+  const filtered = tt.apply((cases || []).filter((c) => {
     const matchSearch = c.title.toLowerCase().includes(search.toLowerCase()) || c.client.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'all' || c.status === statusFilter;
     return matchSearch && matchStatus;
-  });
+  }));
 
   const statuses = ['all', 'new', 'matched', 'in_progress', 'resolved', 'closed'];
 
@@ -111,6 +114,10 @@ export default function CasesPage() {
           ))}
         </div>
       </div>
+      {tt.active && tt.settings && (
+        <TrackingListControls settings={tt.settings} filter={tt.filter} setFilter={tt.setFilter} needsCount={tt.needsCount}
+          saved={tt.saved} saveCurrent={tt.saveCurrent} removeSaved={tt.removeSaved} />
+      )}
 
       <div className="space-y-3">
         {isLoading ? (
@@ -152,6 +159,8 @@ export default function CasesPage() {
                           {isOverdue && ' (Overdue)'}
                         </div>
                       )}
+
+                      {tt.active && <div className="mt-2"><TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} /></div>}
 
                       {/* NDA Status */}
                       {clientId && (

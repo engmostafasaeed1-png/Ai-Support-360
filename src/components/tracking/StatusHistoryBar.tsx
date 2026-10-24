@@ -4,13 +4,8 @@ import { cn } from '@/lib/utils';
 import { durations, stageDurations, statusDef, statusLabel, type DerivedStage, type TrackingSettings } from '@/lib/ticketTracking';
 import type { TrackingEvent } from '@/lib/tracking/api';
 import { BAR } from './trackingStyles';
+import { formatDuration } from '@/lib/tracking/timelineText';
 
-export function formatDuration(ms: number, t: (k: string, o?: Record<string, unknown>) => string): string {
-  const h = ms / 3_600_000;
-  if (h < 1) return t('tracking.dur.minutes', { n: Math.max(1, Math.round(ms / 60_000)) });
-  if (h < 48) return t('tracking.dur.hours', { n: Math.round(h) });
-  return t('tracking.dur.days', { n: Math.round(h / 24) });
-}
 
 const COURT_BAR: Record<string, string> = { client: 'bg-warning', consultant: 'bg-accent', both: 'bg-info', third_party: 'bg-muted-foreground/60', none: 'bg-border' };
 

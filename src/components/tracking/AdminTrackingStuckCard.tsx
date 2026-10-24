@@ -41,6 +41,11 @@ export default function AdminTrackingStuckCard() {
             ))}
           </ul>
         )}
+        {Object.keys(data.counts ?? {}).length > 0 && (
+          <ul className="flex flex-wrap gap-x-3 gap-y-1 border-t border-border/60 pt-2 text-[11px] text-muted-foreground" aria-label={t('tracking.admin.counts')}>
+            {Object.entries(data.counts).sort((a, b) => b[1] - a[1]).map(([k, n]) => <li key={k}>{statusLabel(settings, k, lang)}: <strong className="text-foreground">{n}</strong></li>)}
+          </ul>
+        )}
         <p className="text-[11px] text-muted-foreground">{t('tracking.admin.changes7d', { n: data.changes_7d })}</p>
       </CardContent>
     </Card>

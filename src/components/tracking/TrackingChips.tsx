@@ -52,6 +52,3 @@ export function WorkingStatusChip({ working, settings, withMeta, className }: { 
   );
 }
 
-export function WorkingStatusChipLite({ working, settings }: { working: WorkingRow | null | undefined; settings: TrackingSettings }) {
-  return <WorkingStatusChip working={working} settings={settings} />;
-}

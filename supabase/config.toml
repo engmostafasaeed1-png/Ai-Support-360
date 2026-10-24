@@ -61,8 +61,6 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = false
   [functions.availability-run]
     verify_jwt = false
-  [functions.ticket-tracking-run]
-    verify_jwt = false
   [functions.referral-run]
     verify_jwt = false
   [functions.referral-email-test]

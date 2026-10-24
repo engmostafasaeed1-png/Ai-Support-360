@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAdminTickets } from '@/hooks/useAdminData';
 import { Send, ExternalLink } from 'lucide-react';
 import SendMatchDialog from '@/components/admin/SendMatchDialog';
+import { useTrackingList } from '@/hooks/useTrackingList';
+import TrackingListControls, { TrackingRowChips } from '@/components/tracking/TrackingListControls';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-green-500/10 text-green-600 border-green-500/20',
@@ -30,6 +32,8 @@ export default function TicketKanbanPage() {
   const [matchDialog, setMatchDialog] = useState<{ open: boolean; ticketId: string; ticketTitle: string; sapModule: string }>({ open: false, ticketId: '', ticketTitle: '', sapModule: '' });
 
   const ticketData = kanbanTickets || { new: [], under_review: [], matched: [], in_progress: [], waiting_for_client: [], resolved: [], closed: [] };
+  const allTickets = useMemo(() => Object.values(ticketData as Record<string, Array<{ id: string }>>).flat(), [ticketData]);
+  const tt = useTrackingList(allTickets, 'admin');
 
   return (
     <div className="space-y-6">
@@ -37,6 +41,10 @@ export default function TicketKanbanPage() {
         <h1 className="text-2xl font-bold text-foreground">{t('ticket_board.title')}</h1>
         <p className="text-sm text-muted-foreground">{t('ticket_board.subtitle')}</p>
       </div>
+      {tt.active && tt.settings && (
+        <TrackingListControls settings={tt.settings} filter={tt.filter} setFilter={tt.setFilter} needsCount={0} showNeedsMe={false}
+          saved={tt.saved} saveCurrent={tt.saveCurrent} removeSaved={tt.removeSaved} />
+      )}
 
       {isLoading ? (
         <div className="flex gap-4 overflow-x-auto pb-4">
@@ -50,7 +58,7 @@ export default function TicketKanbanPage() {
       ) : (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {columns.map((col) => {
-            const tickets = (ticketData as any)[col.key] || [];
+            const tickets = tt.apply((ticketData as any)[col.key] || []);
             return (
               <div key={col.key} className="min-w-[260px] flex-1">
                 <div className="flex items-center gap-2 mb-3 px-1">
@@ -74,6 +82,7 @@ export default function TicketKanbanPage() {
                           <span className="text-[10px] text-muted-foreground">{ticket.created}</span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">{ticket.client}</p>
+                        {tt.active && <div className="mt-2"><TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} /></div>}
                         <div className="flex gap-1.5 mt-2">
                           <Button
                             size="sm"

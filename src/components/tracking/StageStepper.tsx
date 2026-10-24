@@ -16,7 +16,7 @@ export default function StageStepper({ derived, role }: { derived: DerivedStage;
     <div className="space-y-3">
       <ol className="flex snap-x gap-1 overflow-x-auto pb-2" aria-label={t('tracking.stepperLabel')}>
         {derived.steps.map((s, i) => (
-          <li key={s.key} className="min-w-[96px] flex-1 snap-start" aria-current={s.state === 'current' ? 'step' : undefined}>
+          <li key={s.key} className="min-w-[84px] flex-1 snap-start" aria-current={s.state === 'current' ? 'step' : undefined}>
             <div className="flex items-center gap-1">
               <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-[11px] font-semibold', STAGE_DOT[s.state])} aria-hidden>
                 {s.state === 'done' ? <Check className="h-3.5 w-3.5" /> : s.state === 'skipped' ? <Minus className="h-3.5 w-3.5" /> : i + 1}
