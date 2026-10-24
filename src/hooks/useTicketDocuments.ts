@@ -16,6 +16,11 @@ export interface TicketDocument {
   comment: string | null;
   created_at: string;
   uploader_name?: string;
+  /** 'brd' rows are Business Requirements Document PDFs (written only by the BRD functions; never deleted here). */
+  doc_type?: string | null;
+  brd_version?: number | null;
+  superseded_at?: string | null;
+  unattached_at?: string | null;
 }
 
 export function useTicketDocuments(ticketId: string | undefined) {

@@ -138,7 +138,12 @@ export default function TicketDocuments({ ticketId }: { ticketId: string }) {
                       <Icon className="w-4 h-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{fileName}</p>
+                      <p className="text-sm font-medium text-foreground truncate flex items-center gap-1.5">
+                        {latest.doc_type === 'brd' && <Badge variant="secondary" className="text-[10px] shrink-0">BRD</Badge>}
+                        {latest.doc_type === 'brd' && latest.unattached_at && <Badge variant="outline" className="text-[10px] shrink-0">{t('brd.attach.unattached')}</Badge>}
+                        {latest.doc_type === 'brd' && !latest.unattached_at && latest.superseded_at && <Badge variant="outline" className="text-[10px] shrink-0">{t('brd.attach.superseded')}</Badge>}
+                        <span className="truncate">{fileName}</span>
+                      </p>
                       <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                         <span>v{latest.version}</span>
                         <span>·</span>
@@ -172,14 +177,16 @@ export default function TicketDocuments({ ticketId }: { ticketId: string }) {
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDownload(latest)}>
                         <Download className="w-3.5 h-3.5" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive"
-                        onClick={() => deleteMutation.mutate(latest)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
+                      {latest.doc_type !== 'brd' && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive"
+                          onClick={() => deleteMutation.mutate(latest)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </div>
 
