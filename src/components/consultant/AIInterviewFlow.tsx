@@ -17,6 +17,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { TrustBadge } from './TrustBadge';
 import { classifyStartError, ERROR_TEXT, logStartErrorOnce } from '@/lib/interviewStart';
 import InterviewBasisNotice from './InterviewBasisNotice';
+import { useVoiceRecognizer } from '@/hooks/useVoiceRecognizer';
+import { joinText } from '@/lib/voice/transcriptAssembler';
+import { logVoiceAnswer } from '@/lib/voice/voiceMetrics';
+import VoiceLevelMeter from '@/components/voice/VoiceLevelMeter';
+import MicCheck from '@/components/voice/MicCheck';
+import VoiceConsentNote from '@/components/voice/VoiceConsentNote';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -56,8 +62,6 @@ interface Props {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-interview-chat`;
 const BODY_LANG_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-body-language`;
-
-const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
 function SpeakingIndicator() {
   return (
@@ -232,7 +236,6 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   const [micOn, setMicOn] = useState(!textOnly);
   const [camOn, setCamOn] = useState(!textOnly);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [isListening, setIsListening] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const [interimTranscript, setInterimTranscript] = useState('');
   const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('male');
@@ -250,13 +253,44 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const recognitionRef = useRef<any>(null);
   const lastSpokenRef = useRef('');
-  const silenceTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const pendingTextRef = useRef('');
   const shouldAutoResumeRef = useRef(true);
   const messagesRef = useRef<ChatMessage[]>([]);
   const [voicesReady, setVoicesReady] = useState(false);
+  // Voice answers: one shared recogniser (server transcription with SAP vocabulary, browser fallback).
+  const inputLatestRef = useRef('');
+  inputLatestRef.current = input;
+  const voiceBaseRef = useRef('');
+  const lastVoiceTextRef = useRef('');
+  const voice = useVoiceRecognizer({
+    context: 'interview',
+    interviewId,
+    lang: interviewLang,
+    // Hands-free: the answer is sent after 2 seconds of silence, once everything said has been written down.
+    idleMs: conversationMode ? 2000 : 0,
+    onText: (spoken) => {
+      const full = joinText(voiceBaseRef.current, spoken);
+      pendingTextRef.current = full;
+      lastVoiceTextRef.current = full;
+      setInput(full);
+    },
+    onIdle: () => {
+      if (conversationMode) sendVoiceAnswerRef.current?.();
+    },
+  });
+  const voiceRef = useRef(voice);
+  voiceRef.current = voice;
+  const sendVoiceAnswerRef = useRef<() => void>();
+  const isListening = voice.listening;
+  useEffect(() => {
+    if (voice.notice) setMicNotice(t(voice.notice.key, voice.notice.text));
+  }, [voice.notice, t]);
+  // Never record while the interviewer is talking or thinking, so its voice is not taken as the answer.
+  useEffect(() => {
+    if (isSpeaking) voiceRef.current.pause();
+    else if (voiceRef.current.status === 'paused') voiceRef.current.resume();
+  }, [isSpeaking]);
 
   // Preload voices — some browsers load them asynchronously
   useEffect(() => {
@@ -385,35 +419,28 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
 
   useEffect(() => {
     return () => {
-      if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch {}
-      }
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      voiceRef.current.cancel();
       window.speechSynthesis.cancel();
       stopCamera();
     };
   }, []);
 
-  const scheduleSilenceSend = useCallback(() => {
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    silenceTimerRef.current = setTimeout(() => {
-      const text = pendingTextRef.current.trim();
-      if (text) {
-        pendingTextRef.current = '';
-        setInput('');
-        setInterimTranscript('');
-        if (recognitionRef.current) {
-          try { recognitionRef.current.stop(); } catch {}
-          recognitionRef.current = null;
-        }
-        setIsListening(false);
-        const userMsg: ChatMessage = { role: 'user', content: text };
-        const newHistory = [...messagesRef.current, userMsg];
-        setMessages(newHistory);
-        sendToAIRef.current?.(newHistory);
-      }
-    }, 1200);
-  }, []);
+  /** Hands-free send: everything said has been written down and the consultant has paused. */
+  sendVoiceAnswerRef.current = () => {
+    const text = pendingTextRef.current.trim();
+    if (!text || isStreaming) return;
+    const meta = voiceRef.current.answerMeta();
+    logVoiceAnswer({ context: 'interview', interviewId, meta, edited: false, chars: text.length });
+    pendingTextRef.current = '';
+    lastVoiceTextRef.current = '';
+    setInput('');
+    setInterimTranscript('');
+    voiceRef.current.cancel();
+    const userMsg: ChatMessage = { role: 'user', content: text };
+    const newHistory = [...messagesRef.current, userMsg];
+    setMessages(newHistory);
+    sendToAIRef.current?.(newHistory);
+  };
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -468,8 +495,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => {
       setIsSpeaking(false);
-      if (conversationMode && shouldAutoResumeRef.current && SpeechRecognition) {
-        setTimeout(() => startListening(), 100);
+      if (conversationMode && shouldAutoResumeRef.current && voiceRef.current.supported) {
+        setTimeout(() => startListeningRef.current?.(), 100);
       }
     };
     utterance.onerror = () => setIsSpeaking(false);
@@ -477,59 +504,27 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   }, [ttsEnabled, speechRate, voiceGender, interviewLang]);
 
   const startListening = useCallback(() => {
-    if (!SpeechRecognition || isListening) return;
+    const v = voiceRef.current;
+    if (!v.supported || v.listening) return;
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    const sttLangMap: Record<string, string> = { 'en': 'en-US', 'fr': 'fr-FR', 'ar': 'ar-EG', 'es': 'es-ES', 'de': 'de-DE', 'ar-SA': 'ar-SA' };
-    recognition.lang = sttLangMap[interviewLang] || 'en-US';
-
-    recognition.onresult = (event: any) => {
-      let interim = '';
-      let final = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) final += transcript;
-        else interim += transcript;
-      }
-      if (final) {
-        pendingTextRef.current = (pendingTextRef.current + ' ' + final).trim();
-        setInput(pendingTextRef.current);
-        setInterimTranscript('');
-        if (conversationMode) scheduleSilenceSend();
-      } else {
-        setInterimTranscript(interim);
-        if (conversationMode && silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      }
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
-      if (event.error !== 'no-speech') setIsListening(false);
-      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-        setMicNotice('Microphone access is blocked, so voice answers are off. To turn it on, click the microphone or lock icon in the address bar and allow the microphone. You can answer by typing.');
-      }
-    };
-    recognition.onend = () => { setIsListening(false); setInterimTranscript(''); };
-
-    recognitionRef.current = recognition;
+    // Spoken words are added after anything already typed in the answer box.
+    voiceBaseRef.current = inputLatestRef.current;
     setMicNotice('');
-    recognition.start();
-    setIsListening(true);
-  }, [isListening, interviewLang]);
+    void v.start();
+  }, []);
+  const startListeningRef = useRef(startListening);
+  startListeningRef.current = startListening;
 
+  /** Stops the microphone and keeps the text (the last words still arrive). */
   const stopListening = useCallback(() => {
-    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
-    setIsListening(false);
+    void voiceRef.current.stop();
     setInterimTranscript('');
   }, []);
 
   const toggleListening = useCallback(() => {
-    if (isListening) stopListening(); else startListening();
-  }, [isListening, startListening, stopListening]);
+    if (voiceRef.current.listening) stopListening(); else startListening();
+  }, [startListening, stopListening]);
 
   const sendToAI = async (chatHistory: ChatMessage[]) => {
     setIsStreaming(true);
@@ -611,7 +606,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
       if (!ttsEnabled) {
         setTimeout(() => {
           setIsSpeaking(false);
-          if (conversationMode && shouldAutoResumeRef.current && SpeechRecognition) startListening();
+          if (conversationMode && shouldAutoResumeRef.current && voiceRef.current.supported) startListeningRef.current?.();
         }, 150);
       }
     }
@@ -622,11 +617,13 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   const handleSend = async () => {
     const text = input.trim();
     if (!text || isStreaming) return;
+    const usedVoice = !!lastVoiceTextRef.current;
+    logVoiceAnswer({ context: 'interview', interviewId, meta: usedVoice ? voiceRef.current.answerMeta() : null, edited: usedVoice && text !== lastVoiceTextRef.current.trim(), chars: text.length });
+    lastVoiceTextRef.current = '';
     setInput('');
     setInterimTranscript('');
     pendingTextRef.current = '';
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    if (isListening) stopListening();
+    voiceRef.current.cancel();
     const userMsg: ChatMessage = { role: 'user', content: text };
     const newHistory = [...messages, userMsg];
     setMessages(newHistory);
@@ -658,8 +655,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     shouldAutoResumeRef.current = false;
     setPhase('evaluating');
     clearInterval(timerRef.current);
-    if (isListening) stopListening();
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    voiceRef.current.cancel();
     window.speechSynthesis.cancel();
 
     // Capture one last frame before analysis
@@ -928,6 +924,13 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
 
           <InterviewBasisNotice />
 
+          {!textOnly && (
+            <div className="w-full space-y-2">
+              <MicCheck context="interview" interviewId={interviewId} lang={interviewLang} className="bg-white/5 border-white/10 text-white" />
+              <VoiceConsentNote className="text-gray-400" />
+            </div>
+          )}
+
           {/* Disclaimer */}
           <div className="w-full bg-white/5 rounded-xl p-4 text-left space-y-3 border border-white/10">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
@@ -1180,10 +1183,29 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                   <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" /> {notice}
                 </div>
               ))}
-              {interimTranscript && (
-                <div className="flex items-center gap-2 text-xs text-blue-300/70 mb-2 italic">
-                  <Mic className="w-3 h-3 animate-pulse" /> {interimTranscript}
+              {(voice.listening || voice.pending > 0) && (
+                <div role="status" aria-live="polite" className="flex items-center gap-2 text-xs text-blue-300/80 mb-2">
+                  <VoiceLevelMeter level={voice.level} active={voice.status === 'listening'} />
+                  <span>
+                    {voice.status === 'paused'
+                      ? t('voice.paused', 'Paused while the interviewer speaks')
+                      : voice.status === 'starting'
+                        ? t('voice.starting', 'Starting the microphone…')
+                        : voice.pending > 0
+                          ? t('voice.transcribing', 'Writing down what you said…')
+                          : t('voice.listening', 'Listening… you can pause to think.')}
+                  </span>
+                  {voice.pending > 0 && <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />}
+                  {voice.engine === 'webspeech' && <span className="text-white/40">· {t('voice.engine_browser_short', 'browser recognition')}</span>}
                 </div>
+              )}
+              {voice.interim && (
+                <div className="flex items-center gap-2 text-xs text-blue-300/70 mb-2 italic" dir="auto">
+                  <Mic className="w-3 h-3 animate-pulse" /> {voice.interim}
+                </div>
+              )}
+              {!!input && !!lastVoiceTextRef.current && !voice.listening && (
+                <p className="text-[11px] text-white/50 mb-1">{t('voice.edit_hint', 'Check the text and correct anything misheard before sending.')}</p>
               )}
               {/* Quick action buttons */}
               <div className="flex gap-1.5 mb-2">
@@ -1218,8 +1240,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                   value={input}
                   onChange={e => {
                     // Typing takes over: stop the mic and keep exactly what the user typed
-                    if (isListening) stopListening();
-                    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+                    if (voiceRef.current.listening || voiceRef.current.pending > 0) voiceRef.current.cancel();
                     pendingTextRef.current = '';
                     setInput(e.target.value);
                   }}
@@ -1228,7 +1249,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                   rows={2}
                   className="flex-1 resize-none bg-white/5 border border-white/10 text-white placeholder:text-white/30 text-sm rounded-xl p-3 focus:outline-none focus:border-primary/50 disabled:opacity-50"
                 />
-                {SpeechRecognition && (
+                {voice.supported && (
                   <Button
                     size="icon"
                     onClick={toggleListening}
