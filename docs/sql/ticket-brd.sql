@@ -953,7 +953,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   uid uuid := auth.uid();
   before jsonb := public.brd_settings();
-  next jsonb := public.brd_settings();
+  merged jsonb := public.brd_settings();
   k text;
   v jsonb;
 BEGIN
@@ -977,13 +977,13 @@ BEGIN
     ELSE
       RAISE EXCEPTION 'brd_unknown_setting %', k USING ERRCODE = '22023';
     END IF;
-    next := next || jsonb_build_object(k, v);
+    merged := merged || jsonb_build_object(k, v);
   END LOOP;
-  INSERT INTO public.platform_settings (key, value) VALUES ('ticket_brd', next)
+  INSERT INTO public.platform_settings (key, value) VALUES ('ticket_brd', merged)
   ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
   INSERT INTO public.audit_logs (user_id, action, entity_type, entity_id, metadata)
-  VALUES (uid, 'brd_settings_changed', 'platform_settings', NULL, jsonb_build_object('before', before, 'after', next));
-  RETURN next;
+  VALUES (uid, 'brd_settings_changed', 'platform_settings', NULL, jsonb_build_object('before', before, 'after', merged));
+  RETURN merged;
 END
 $$;
 
