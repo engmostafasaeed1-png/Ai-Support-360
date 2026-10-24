@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getListFacts, getTimeline, getTracking, setWorkingStatus, type TrackingState } from '@/lib/tracking/api';
+import { getListFacts, getTimeline, getTracking, getTrackingSettings, setWorkingStatus, type TrackingState } from '@/lib/tracking/api';
 import { deriveStage, normalizeSettings, type TrackingSettings, type TrackingSummary } from '@/lib/ticketTracking';
 
 /** Tracking of one ticket for the signed-in person. `visible` is false while the feature is off or not installed. */
@@ -79,7 +79,6 @@ export function useTrackingSettings() {
   return useQuery({
     queryKey: ['ticket-tracking-settings'],
     queryFn: async () => {
-      const { getTrackingSettings } = await import('@/lib/tracking/api');
       const r = await getTrackingSettings();
       return { settings: normalizeSettings(r.data), notReady: r.notReady || !!r.error };
     },
