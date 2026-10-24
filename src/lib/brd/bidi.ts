@@ -116,6 +116,21 @@ export function mirrored(text: string, rtlContext: boolean): string {
 
 /** Greedy line breaking in logical order. `measure` returns the width of one token. */
 export function breakLines(tokens: readonly Token[], width: number, measure: (t: Token) => number): Token[][] {
+  // Lines break only at spaces and forced breaks: a word and the punctuation stuck to it stay together.
+  type Item = { kind: 'word'; parts: Token[]; w: number } | { kind: 'space'; t: Token; w: number } | { kind: 'br' };
+  const items: Item[] = [];
+  let word: Token[] = [];
+  const endWord = () => {
+    if (word.length) items.push({ kind: 'word', parts: word, w: word.reduce((s, t) => s + measure(t), 0) });
+    word = [];
+  };
+  for (const t of tokens) {
+    if (t.newline) { endWord(); items.push({ kind: 'br' }); continue; }
+    if (t.space) { endWord(); items.push({ kind: 'space', t, w: measure(t) }); continue; }
+    word.push(t);
+  }
+  endWord();
+
   const lines: Token[][] = [];
   let line: Token[] = [];
   let w = 0;
@@ -125,27 +140,32 @@ export function breakLines(tokens: readonly Token[], width: number, measure: (t:
     line = [];
     w = 0;
   };
-  for (const t of tokens) {
-    if (t.newline) { flush(); continue; }
-    if (t.space && line.length === 0) continue;
-    const tw = measure(t);
-    if (w + tw <= width || line.length === 0) {
-      if (tw > width && !t.space && line.length === 0) {
-        // A single word wider than the line (a long code): cut it by characters.
+  let pendingSpace: { t: Token; w: number } | null = null;
+  for (const it of items) {
+    if (it.kind === 'br') { flush(); pendingSpace = null; continue; }
+    if (it.kind === 'space') { if (line.length) pendingSpace = { t: it.t, w: it.w }; continue; }
+    const sw = pendingSpace && line.length ? pendingSpace.w : 0;
+    if (line.length && w + sw + it.w > width) { flush(); pendingSpace = null; }
+    if (line.length && pendingSpace) { line.push(pendingSpace.t); w += pendingSpace.w; }
+    pendingSpace = null;
+    if (it.w > width && line.length === 0) {
+      // One word wider than the whole line (a long code): cut it by characters.
+      for (const part of it.parts) {
         let chunk = '';
-        for (const c of t.text) {
-          const next = { ...t, text: chunk + c };
-          if (measure(next) > width && chunk) { line.push({ ...t, text: chunk }); flush(); chunk = c; } else chunk += c;
+        for (const c of part.text) {
+          const next = { ...part, text: chunk + c };
+          if (w + measure(next) > width && (chunk || line.length)) {
+            if (chunk) line.push({ ...part, text: chunk });
+            flush();
+            chunk = c;
+          } else chunk += c;
         }
-        if (chunk) { line.push({ ...t, text: chunk }); w = measure({ ...t, text: chunk }); }
-        continue;
+        if (chunk) { const tok = { ...part, text: chunk }; line.push(tok); w += measure(tok); }
       }
-      line.push(t);
-      w += tw;
-    } else {
-      flush();
-      if (!t.space) { line.push(t); w = tw; }
+      continue;
     }
+    line.push(...it.parts);
+    w += it.w;
   }
   if (line.length) flush();
   return lines.length ? lines : [[]];
