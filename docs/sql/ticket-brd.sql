@@ -346,7 +346,7 @@ BEGIN
   IF char_length(COALESCE(_c #>> '{control,title}', '')) > 200 THEN RAISE EXCEPTION 'brd_title_too_long' USING ERRCODE = '22023'; END IF;
   -- Markup allowlist: no scripts, frames, images, links, styles or event handlers can be stored.
   IF _c::text ~* '<\s*/?\s*(script|iframe|frame|object|embed|style|link|meta|svg|math|img|video|audio|source|form|input|button|a|base)\M'
-     OR _c::text ~* '\son[a-z]+\s*=' OR _c::text ~* '(java|vb)script\s*:' OR _c::text ~* 'data\s*:\s*text/html' THEN
+     OR _c::text ~* '<[^>]*\son[a-z]+\s*=' OR _c::text ~* '<[^>]*(java|vb)script\s*:' OR _c::text ~* '<[^>]*data\s*:\s*text/html' THEN
     RAISE EXCEPTION 'brd_markup_not_allowed' USING ERRCODE = '22023';
   END IF;
 END
