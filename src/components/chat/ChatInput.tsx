@@ -125,6 +125,7 @@ export default function ChatInput({ onSend, onTyping, onFileUpload, disabled }: 
         />
 
         <VoiceInput
+          value={text}
           onTranscript={(t) => setText(t)}
           disabled={disabled}
         />
