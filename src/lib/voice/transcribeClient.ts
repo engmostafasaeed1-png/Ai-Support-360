@@ -87,7 +87,7 @@ export async function transcribeSegment(args: {
     const headers = await authHeaders();
     if (!headers) throw new VoiceServerError('unauthorized', 401, null);
     const form = new FormData();
-    form.append('file', new Blob([args.wav], { type: 'audio/wav' }), `segment-${args.segment}.wav`);
+    form.append('file', new Blob([new Uint8Array(args.wav)], { type: 'audio/wav' }), `segment-${args.segment}.wav`);
     form.append('context', args.context);
     if (args.interviewId) form.append('interview_id', args.interviewId);
     form.append('segment', String(args.segment));
