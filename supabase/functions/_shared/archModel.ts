@@ -373,7 +373,7 @@ export interface LandscapeSystem {
 }
 
 /** Words that announce a credential. Mirror of public.sa_text_has_secret (the database refuses the same). */
-const SECRET_WORDS = /\b(pass(?:word|wort|wd|phrase)?|pwd|kennwort|secret|token|api[ _-]?key|private[ _-]?key|access[ _-]?key|client[ _-]?secret|credentials?|login\s*[:=]|user(?:name)?\s*[:=]|logon\s*[:=])/i;
+const SECRET_WORDS = /\b(?:pass(?:word|wort|wd|phrase)s?|pwd|kennwort|secrets?|tokens?|api[ _-]?keys?|private[ _-]?keys?|access[ _-]?keys?|client[ _-]?secrets?|credentials?)\b|\b(?:login|logon|user(?:name)?)\s*[:=]/i;
 const SECRET_ARABIC = /(كلمة\s*(?:ال)?(?:مرور|سر|السر)|الرقم\s*السري|رمز\s*(?:الدخول|المرور))/;
 const CONN_STRING = /[a-z][a-z0-9+.-]*:\/\/[^\s:@/]+:[^\s@/]+@/i;
 
