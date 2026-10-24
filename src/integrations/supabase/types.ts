@@ -14692,18 +14692,53 @@ export type Database = {
         Args: { _ticket: string; _uid: string }
         Returns: boolean
       }
+      brd_consultant_of: { Args: { _uid: string }; Returns: string }
+      brd_consultant_readers: {
+        Args: { _ticket: string }
+        Returns: {
+          consultant_id: string
+          user_id: string
+        }[]
+      }
       brd_default_settings: { Args: never; Returns: Json }
       brd_doc_visible: {
         Args: { _ticket: string; _unattached_at: string }
         Returns: boolean
       }
       brd_file_readable: { Args: { _name: string }; Returns: boolean }
+      brd_get: { Args: { _ticket: string }; Returns: Json }
+      brd_get_version: {
+        Args: { _ticket: string; _version: number }
+        Returns: Json
+      }
       brd_is_admin: { Args: { _uid: string }; Returns: boolean }
+      brd_log_access: {
+        Args: { _action: string; _ticket: string; _version: number }
+        Returns: boolean
+      }
+      brd_log_event: {
+        Args: {
+          _action: string
+          _actor: string
+          _brd: string
+          _detail?: Json
+          _ticket: string
+          _version: number
+        }
+        Returns: undefined
+      }
+      brd_mask_jsonb: { Args: { _j: Json }; Returns: Json }
+      brd_person_name: {
+        Args: { _consultant: string; _uid: string; _viewer: string }
+        Returns: string
+      }
+      brd_ref: { Args: { _ticket: string }; Returns: string }
       brd_role: { Args: { _ticket: string }; Returns: string }
       brd_role_for: { Args: { _ticket: string; _uid: string }; Returns: string }
       brd_settings: { Args: never; Returns: Json }
       brd_storage_can_insert: { Args: { _name: string }; Returns: boolean }
       brd_ticket_of_path: { Args: { _name: string }; Returns: string }
+      brd_validate_content: { Args: { _c: Json }; Returns: undefined }
       brd_version_attached: {
         Args: { _ticket: string; _version: number }
         Returns: boolean
