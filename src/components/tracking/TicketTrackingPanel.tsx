@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, History, ListChecks, Pencil, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,14 +26,14 @@ export function TrackingHeaderChips({ ticketId }: { ticketId: string }) {
 }
 
 /** Two-layer tracking of one ticket: stepper (automatic), working status (manual), durations and the timeline. */
-export default function TicketTrackingPanel({ ticketId, ticketTitle }: { ticketId: string; ticketTitle: string }) {
+export default function TicketTrackingPanel({ ticketId, ticketTitle, fallback = null }: { ticketId: string; ticketTitle: string; fallback?: ReactNode }) {
   const { t } = useTranslation();
   const { visible, derived, state, settings } = useTicketTracking(ticketId);
   const [open, setOpen] = useState(false);
   const [preset, setPreset] = useState<string | null>(null);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const quick = useSetWorkingStatus(ticketId);
-  if (!visible || !derived || !state?.facts || !state.role) return null;
+  if (!visible || !derived || !state?.facts || !state.role) return <>{fallback}</>;
   const facts = state.facts;
   const working = facts.working ?? null;
   const allowed = state.allowed ?? [];

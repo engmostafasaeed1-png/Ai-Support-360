@@ -64,6 +64,7 @@ import { isolateDates } from '@/lib/bidi';
 import { ticketContextBadges } from '@/lib/ticketContext';
 import { splitBadge } from '@/components/client/ContextFitBadges';
 import BrdButton from '@/components/brd/BrdButton';
+import TicketTrackingPanel, { TrackingHeaderChips } from '@/components/tracking/TicketTrackingPanel';
 
 function TicketFileLink({ fileUrl, fileName }: { fileUrl: string | null; fileName: string | null }) {
   const href = useChatFileUrl(fileUrl);
@@ -273,6 +274,7 @@ export default function TicketDetailPage() {
                 {(ticket as any).bid_deadline && <span>· {bidDeadline.text}</span>}
               </Badge>
             )}
+            <TrackingHeaderChips ticketId={ticket.id} />
           </div>
         </div>
       </div>
@@ -290,12 +292,18 @@ export default function TicketDetailPage() {
         <CriticalRequestPanel ticketId={ticket.id} role={isAdmin ? 'admin' : isConsultant ? 'consultant' : 'client'} />
       )}
 
-      {/* ─── Status Stepper ─── */}
-      <Card className="rounded-2xl border-border/50">
-        <CardContent className="p-3">
-          <TicketStatusStepper currentStatus={ticket.status} />
-        </CardContent>
-      </Card>
+      {/* ─── Two-layer tracking (automatic stage + working status); the official stepper while it is off ─── */}
+      <TicketTrackingPanel
+        ticketId={ticket.id}
+        ticketTitle={ticket.title}
+        fallback={(
+          <Card className="rounded-2xl border-border/50">
+            <CardContent className="p-3">
+              <TicketStatusStepper currentStatus={ticket.status} />
+            </CardContent>
+          </Card>
+        )}
+      />
 
       {/* ─── Quick Actions (visible once consultant assigned) ─── */}
       {ticket.consultant_id && (
