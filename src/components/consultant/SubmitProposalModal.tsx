@@ -162,7 +162,7 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
             <div>
               <div className="flex items-center justify-between">
                 <Label className="text-xs">Cover Letter</Label>
-                <VoiceInput size="sm" onTranscript={(t) => setForm(f => ({ ...f, cover_letter: f.cover_letter + t }))} />
+                <VoiceInput size="sm" value={form.cover_letter} onTranscript={(t) => setForm(f => ({ ...f, cover_letter: t }))} />
               </div>
               <Textarea
                 value={form.cover_letter}

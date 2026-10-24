@@ -9,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { ArrowLeft, Lock, Send, Lightbulb, Loader2, Mic, Square, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Lock, Send, Lightbulb, Loader2, CheckCircle } from 'lucide-react';
+import VoiceInput from '@/components/ui/voice-input';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import LiveInterviewMeetingBar from '@/components/interview/LiveInterviewMeetingBar';
@@ -30,8 +31,6 @@ const PARTICIPANT_COLUMNS = 'user_id, role, display_name, rsvp_status, rsvp_note
 
 type Msg = { id: string; sender_id: string; sender_name: string | null; content: string; is_private: boolean; created_at: string };
 
-const SR: any = typeof window !== 'undefined' ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition : null;
-
 export default function LiveInterviewPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -47,11 +46,9 @@ export default function LiveInterviewPage() {
   const [sending, setSending] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [suggesting, setSuggesting] = useState(false);
-  const [listening, setListening] = useState(false);
   const [scores, setScores] = useState({ technical: 70, soft: 70 });
   const [summary, setSummary] = useState('');
   const [finishing, setFinishing] = useState(false);
-  const recRef = useRef<any>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   const isInterviewer = role === 'interviewer' || role === 'admin';
@@ -122,20 +119,6 @@ export default function LiveInterviewPage() {
     setSending(true);
     if (await post(input, false)) setInput('');
     setSending(false);
-  };
-
-  const toggleMic = () => {
-    if (!SR) { toast.error('Voice input is not supported in this browser'); return; }
-    if (listening) { recRef.current?.stop(); return; }
-    const rec = new SR();
-    rec.continuous = true; rec.interimResults = false; rec.lang = 'en-US';
-    rec.onresult = (e: any) => {
-      let t = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) t += e.results[i][0].transcript;
-      if (t) setInput((prev) => (prev ? prev + ' ' : '') + t.trim());
-    };
-    rec.onend = () => setListening(false);
-    rec.start(); recRef.current = rec; setListening(true);
   };
 
   const getSuggestions = async () => {
@@ -267,9 +250,7 @@ export default function LiveInterviewPage() {
                   className="min-h-[44px] max-h-32 resize-none"
                   aria-label="Message"
                 />
-                <Button variant={listening ? 'destructive' : 'outline'} size="icon" onClick={toggleMic} aria-label={listening ? 'Stop voice input' : 'Speak'}>
-                  {listening ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                </Button>
+                <VoiceInput value={input} onTranscript={(t) => setInput(t.slice(0, 4000))} />
                 <Button size="icon" onClick={send} disabled={sending || !input.trim()} aria-label="Send"><Send className="w-4 h-4" /></Button>
               </div>
             )}
