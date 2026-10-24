@@ -59,7 +59,7 @@ async function interviewGlossaryInput(db: Db, consultantId: string, interviewId:
   try {
     const { data: plan, error } = await db.from("interview_plans").select("questions").eq("interview_id", interviewId).maybeSingle();
     if (!error && Array.isArray(plan?.questions)) {
-      planText = plan.questions.map((q: { question?: string; key_points?: string }) => `${q?.question ?? ""} ${q?.key_points ?? ""}`).join("\n").slice(0, 12000);
+      planText = plan.questions.map((q: { question?: unknown; key_points?: unknown }) => `${typeof q?.question === "string" ? q.question : ""} ${Array.isArray(q?.key_points) ? q.key_points.join(" ") : typeof q?.key_points === "string" ? q.key_points : ""}`).join("\n").slice(0, 12000);
     }
   } catch { /* optional */ }
   return {
