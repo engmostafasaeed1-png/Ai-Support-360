@@ -59,39 +59,39 @@ export async function runVoicePipeline(a: PipelineArgs): Promise<PipelineResult>
   const second = a.secondaryModel && a.secondaryModel !== a.primaryModel && VOICE_MODELS[a.secondaryModel] ? a.secondaryModel : null;
   const call = (model: string, onDelta?: (t: string) => void) =>
     transcribeAudio({ apiKey: a.apiKey, model, wav: a.wav, hints: a.hints, signal: a.signal, onDelta });
+  type Run = { model: string; out: TranscribeOutcome };
+  const runs: Run[] = [];
 
-  const parallel = second && a.crossCheck === "always";
-  let [primary, secondary] = await Promise.all([
-    call(a.primaryModel, a.onDelta),
-    parallel ? call(second!) : Promise.resolve(null as TranscribeOutcome | null),
-  ]);
-  // Primary failed: the second model answers alone (fallback), so the consultant is not dropped to browser recognition.
-  if (!primary.ok && second) {
-    if (!secondary) secondary = await call(second, a.onDelta);
-    if (secondary.ok) { [primary, secondary] = [secondary, null]; }
+  const parallel = !!second && a.crossCheck === "always";
+  const [pOut, sOut] = await Promise.all([call(a.primaryModel, a.onDelta), parallel ? call(second!) : Promise.resolve(null)]);
+  let primaryRun: Run = { model: a.primaryModel, out: pOut };
+  runs.push(primaryRun);
+  let secondaryRun: Run | null = sOut ? { model: second!, out: sOut } : null;
+  if (secondaryRun) runs.push(secondaryRun);
+  // Primary failed: the second model answers alone, so the consultant is not dropped to browser recognition.
+  if (!pOut.ok && second) {
+    if (!secondaryRun) { secondaryRun = { model: second, out: await call(second, a.onDelta) }; runs.push(secondaryRun); }
+    if (secondaryRun.out.ok) { primaryRun = secondaryRun; secondaryRun = null; }
   }
-  if (!primary.ok) {
+  const usage = () => runs.map((r) => ({ model: r.model, usage: r.out.usage, seconds: r.out.seconds, ok: r.out.ok, latencyMs: r.out.latencyMs }));
+  if (!primaryRun.out.ok) {
     return {
-      ok: false, status: primary.status, error: primary.error, text: "", raw: "", rawSecondary: null, modelUsed: a.primaryModel, secondaryUsed: null,
+      ok: false, status: primaryRun.out.status, error: primaryRun.out.error, text: "", raw: "", rawSecondary: null, modelUsed: a.primaryModel, secondaryUsed: null,
       changes: [], ruleChanges: [], uncertain: [], confidence: { score: 0, level: "low", reasons: ["failed"], agreement: null }, language: null,
-      latencyMs: Date.now() - started, billedSeconds: null, usage: [{ model: a.primaryModel, usage: null, seconds: null, ok: false, latencyMs: primary.latencyMs }],
-      gatewayHeaders: primary.gatewayHeaders, correctionCalled: false,
+      latencyMs: Date.now() - started, billedSeconds: null, usage: usage(), gatewayHeaders: primaryRun.out.gatewayHeaders, correctionCalled: false,
     };
   }
-  const primaryModel = primary === secondary ? second! : (primary.ok && parallel === false && !secondary && a.primaryModel) || a.primaryModel;
-  let usedPrimary = primaryModel;
-  if (!parallel && second && a.crossCheck === "low_confidence" && !secondary) {
-    const first = segmentConfidence({ text: primary.text, seconds: a.seconds, snrDb: a.snrDb, clipped: a.clipped });
-    if (first.level !== "high") secondary = await call(second);
+  if (!parallel && second && a.crossCheck === "low_confidence" && !secondaryRun && primaryRun.model === a.primaryModel) {
+    const first = segmentConfidence({ text: primaryRun.out.text, seconds: a.seconds, snrDb: a.snrDb, clipped: a.clipped }, a.lowBelow ?? 0.45);
+    if (first.level !== "high") { secondaryRun = { model: second, out: await call(second) }; runs.push(secondaryRun); }
   }
-  const secondOk = secondary?.ok ? secondary : null;
-  const pick = secondOk ? chooseText(primary, secondOk, a.seconds) : "primary";
-  const base = pick === "primary" ? primary : secondOk!;
-  const other = pick === "primary" ? secondOk : primary;
-  if (pick === "secondary") usedPrimary = second!;
+  const secondOk = secondaryRun?.out.ok ? secondaryRun : null;
+  const pick = secondOk ? chooseText(primaryRun.out, secondOk.out, a.seconds) : "primary";
+  const baseRun = pick === "primary" ? primaryRun : secondOk!;
+  const otherRun = pick === "primary" ? secondOk : primaryRun;
 
-  const raw = normalizeArabic(base.text);
-  const otherText = other ? normalizeArabic(other.text) : null;
+  const raw = normalizeArabic(baseRun.out.text);
+  const otherText = otherRun ? normalizeArabic(otherRun.out.text) : null;
   const rule = correctTranscript(raw, a.glossary);
   let text = rule.text;
   let changes: Change[] = [];
@@ -111,13 +111,9 @@ export async function runVoicePipeline(a: PipelineArgs): Promise<PipelineResult>
     .map((w) => ({ word: w, index: words.findIndex((x) => x.replace(/[.,،;:!?؟]+$/u, "") === w), alternative: null }))
     .filter((u) => u.index >= 0 && !fromModels.some((f) => f.index === u.index));
   const uncertain = [...fromModels, ...extra].sort((x, y) => x.index - y.index).slice(0, 15);
-  const usage = [primary, secondary].filter((o): o is TranscribeOutcome => !!o).map((o, i) => ({
-    model: i === 0 ? usedPrimary === second && pick === "secondary" ? a.primaryModel : primaryModel : second!,
-    usage: o.usage, seconds: o.seconds, ok: o.ok, latencyMs: o.latencyMs,
-  }));
   return {
-    ok: true, status: 200, text, raw, rawSecondary: otherText, modelUsed: usedPrimary, secondaryUsed: secondOk ? (usedPrimary === second ? a.primaryModel : second) : null,
-    changes, ruleChanges: rule.changes, uncertain, confidence, language: detectLanguage(text, (base.languages ?? []).map((code) => ({ code }))),
-    latencyMs: Date.now() - started, billedSeconds: primary.seconds, usage, gatewayHeaders: primary.gatewayHeaders, correctionCalled,
+    ok: true, status: 200, text, raw, rawSecondary: otherText, modelUsed: baseRun.model, secondaryUsed: otherRun?.model ?? null,
+    changes, ruleChanges: rule.changes, uncertain, confidence, language: detectLanguage(text, (baseRun.out.languages ?? []).map((code) => ({ code }))),
+    latencyMs: Date.now() - started, billedSeconds: baseRun.out.seconds, usage: usage(), gatewayHeaders: primaryRun.out.gatewayHeaders, correctionCalled,
   };
 }

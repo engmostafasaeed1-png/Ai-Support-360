@@ -26,7 +26,7 @@ export interface VoiceGlossary {
 
 export const MAX_KEYWORDS = 50;
 export const MAX_KEYWORD_LENGTH = 40;
-export const MAX_PROMPT_LENGTH = 700;
+export const MAX_PROMPT_LENGTH = 900;
 
 /** Terms every SAP interview may contain. */
 export const SAP_CORE_TERMS: readonly string[] = [
