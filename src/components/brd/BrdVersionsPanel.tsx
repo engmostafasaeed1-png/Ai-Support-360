@@ -12,6 +12,9 @@ import BrdDocumentView from './BrdDocumentView';
 import BrdDiffView from './BrdDiffView';
 import { diffContents } from '../../../supabase/functions/_shared/brdDiff';
 import { normalizeContent, type BrdContent } from '../../../supabase/functions/_shared/brdModel';
+import { useBrdApproval } from '@/hooks/useBrdApproval';
+import { roundForVersion } from '@/lib/brdApproval';
+import { BrdApprovalChip } from './approval/BrdApprovalChip';
 
 interface Props {
   state: BrdState;
@@ -28,6 +31,7 @@ const fmt = (iso: string, lang: string) => new Date(iso).toLocaleString(lang.sta
 export default function BrdVersionsPanel({ state, canWrite, isAdmin, onRestored, onChanged, onAttach }: Props) {
   const { t, i18n } = useTranslation();
   const ticketId = state.ticket!.id;
+  const { data: approval } = useBrdApproval(ticketId);
   const versions = state.versions ?? [];
   const [picked, setPicked] = useState<number[]>([]);
   const [view, setView] = useState<{ version: number; content: BrdContent } | null>(null);
@@ -74,6 +78,7 @@ export default function BrdVersionsPanel({ state, canWrite, isAdmin, onRestored,
                 {v.attached && state.brd?.shared_version !== v.version && <Badge variant="outline" className="text-[10px]">{t('brd.versions.attachedOld')}</Badge>}
                 {v.restored_from && <Badge variant="outline" className="text-[10px]">{t('brd.versions.restoredFrom', { v: v.restored_from })}</Badge>}
                 {v.archived_at && <Badge variant="outline" className="text-[10px]">{t('brd.versions.archived')}</Badge>}
+                {(() => { const r = roundForVersion(approval?.rounds, v.version); return r ? <BrdApprovalChip state={r.state} prefix={false} /> : null; })()}
               </div>
               <p className="text-xs text-muted-foreground">{v.author} · {fmt(v.created_at, i18n.language)}</p>
               {v.change_note && <p className="text-sm mt-0.5 break-words">{v.change_note}</p>}

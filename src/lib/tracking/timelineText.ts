@@ -41,6 +41,19 @@ export function eventText(row: TimelineRow, t: Translate, lang: string, settings
       return { title: t(String(p.status) === 'approved' ? 'tracking.ev.rate_approved' : 'tracking.ev.rate_not_approved'), detail: null };
     case 'brd_attached':
       return { title: p.version ? t('tracking.ev.brd_attached_v', { v: p.version }) : t('tracking.ev.brd_attached'), detail: null };
+    case 'brd_submitted':
+    case 'brd_approved':
+    case 'brd_changes':
+    case 'brd_declined':
+    case 'brd_superseded':
+    case 'brd_withdrawn':
+      return {
+        title: t(`tracking.ev.${row.kind}${row.kind === 'brd_submitted' && p.no_change ? '_carried' : ''}`, { v: p.version ?? '', who: typeof p.who === 'string' ? p.who : actorText(t, row.actor_role) }),
+        detail: typeof p.note === 'string' && p.note ? p.note : null,
+      };
+    case 'brd_waived':
+    case 'brd_waiver_revoked':
+      return { title: t(`tracking.ev.${row.kind}`), detail: null };
     case 'document_added':
       return { title: t('tracking.ev.document_added'), detail: typeof p.name === 'string' ? p.name : null };
     case 'timesheet_submitted':

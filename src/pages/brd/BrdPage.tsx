@@ -9,6 +9,7 @@ import { useBrd, useRefreshBrd } from '@/hooks/useBrd';
 import BrdWizard from '@/components/brd/BrdWizard';
 import BrdWorkspace from '@/components/brd/BrdWorkspace';
 import BrdReader from '@/components/brd/BrdReader';
+import BrdApprovalPanel from '@/components/brd/approval/BrdApprovalPanel';
 import { announceReport } from '@/components/brd/aiFeedback';
 import { normalizeContent, type BrdContent } from '../../../supabase/functions/_shared/brdModel';
 
@@ -51,6 +52,7 @@ export default function BrdPage() {
     <div className="space-y-4 max-w-5xl mx-auto">
       {header}
       {!data.enabled && data.role === 'admin' && <p className="text-xs rounded-lg bg-warning/15 p-2">{t('brd.off.adminNote')}</p>}
+      {ticketId && data.ticket && <BrdApprovalPanel ticketId={ticketId} state={data} />}
       {writerRole && !data.brd && !created && data.can_write && (
         <BrdWizard state={data} onCreated={(c, report) => { announceReport(t, report); setCreated(c); }} />
       )}

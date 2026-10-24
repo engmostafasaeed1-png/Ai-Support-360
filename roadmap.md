@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] BRD approval by the assigned consultant (Oct 24): rounds per version + fingerprint, approve (read tick) / request changes / decline, superseded/withdrawn, lead-only or all members, no-material-change carry-over, Off/Recommended (default)/Required gate on confirmation, work logs and timesheets, admin waiver, team step + stage step + timeline, header/list chips and filters, notices + e-mails (EN/AR, previews, test send), reminders/client notice/escalation, approval record PDF, tests. docs/sql/ticket-brd-approval.sql + test (26/26 on a private copy), NOT applied.
+- [ ] Switch on BRD approval: awaits the owner applying docs/sql/ticket-brd-approval.sql and choosing the approval rule.
+
 - [x] Two-layer ticket tracking (Oct 24, built and OFF; SQL waits for owner review): inventory of ticket status model; automatic stage (10 steps + side states, derived, reuse team gates) + manual working status (admin list/matrix, notes, M60, notify with throttle, expected date/responsible, overdue reminders, review reminder), header chips, unified timeline (filters, PDF/CSV), durations + "waiting on whom", list chips/filters/needs-my-action/saved filters, admin stuck card + settings (default OFF), EN/AR, tests. SQL docs/sql/ticket-tracking.sql + test, NOT applied.
 - [ ] Switch on ticket tracking: database applied Oct 24 (0096-0099); awaits the owner turning it on in Admin › Settings › Ticket tracking.
 

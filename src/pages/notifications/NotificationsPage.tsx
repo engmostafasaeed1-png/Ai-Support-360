@@ -17,6 +17,7 @@ import { BroadcastMessageDialog } from '@/components/messages/BroadcastMessages'
 import { BROADCAST_TYPES } from '@/lib/bulkMessaging';
 import { isReferralNotice, referralNoticeView } from '@/lib/referralNotice';
 import { ReferralNoticeContent, ReferralNoticeIcon } from '@/components/notifications/ReferralNotice';
+import { NoticeBody, NoticeTitle } from '@/components/notifications/BrdApprovalNoticeText';
 
 const isBroadcast = (type: string | null | undefined) => (BROADCAST_TYPES as readonly string[]).includes(String(type ?? ''));
 
@@ -316,7 +317,7 @@ export default function NotificationsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className={cn('text-sm', !n.is_read && 'font-semibold')}>{n.title}</p>
+                    <p className={cn('text-sm', !n.is_read && 'font-semibold')}><NoticeTitle n={n} /></p>
                     {!n.is_read && (
                       <Badge className="text-[9px] px-1.5 py-0">{t('notifications.new')}</Badge>
                     )}
@@ -335,7 +336,7 @@ export default function NotificationsPage() {
                     )}
                   </div>
                   {n.body && (
-                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.body}</p>
+                    <NoticeBody n={n} className="text-xs text-muted-foreground mt-0.5 line-clamp-2" />
                   )}
                   {(n as any).delivery_status === 'failed' && (n as any).delivery_error && (
                     <p className="text-[10px] text-destructive/80 mt-1 line-clamp-1" title={(n as any).delivery_error}>

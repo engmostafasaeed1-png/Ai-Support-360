@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSetWorkingStatus, useTicketTracking } from '@/hooks/useTicketTracking';
+import { statusLabel } from '@/lib/ticketTracking';
 import { toast } from 'sonner';
 import StageStepper from './StageStepper';
 import { StageChip, WorkingStatusChip } from './TrackingChips';
@@ -27,7 +28,7 @@ export function TrackingHeaderChips({ ticketId }: { ticketId: string }) {
 
 /** Two-layer tracking of one ticket: stepper (automatic), working status (manual), durations and the timeline. */
 export default function TicketTrackingPanel({ ticketId, ticketTitle, fallback = null }: { ticketId: string; ticketTitle: string; fallback?: ReactNode }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { visible, derived, state, settings } = useTicketTracking(ticketId);
   const [open, setOpen] = useState(false);
   const [preset, setPreset] = useState<string | null>(null);
@@ -86,6 +87,20 @@ export default function TicketTrackingPanel({ ticketId, ticketTitle, fallback = 
           {role === 'observer' && <p className="text-xs text-muted-foreground">{t('tracking.observerNote')}</p>}
           <p className="text-[11px] text-muted-foreground">{t('tracking.officialNote')}</p>
         </section>
+
+        {facts.brd_approval?.blocks && !closed && (
+          <div className="rounded-xl border border-warning/50 bg-warning/10 p-3 text-xs" role="status">
+            <p className="font-medium text-foreground">{t('brd.approval.blocker')}</p>
+            {facts.brd_approval.state === 'pending' && working?.key !== 'waiting_consultant' && (
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
+                {t('brd.approval.suggestWorking', { status: statusLabel(settings, 'waiting_consultant', i18n.language?.startsWith('ar') ? 'ar' : 'en') })}
+                {allowed.includes('waiting_consultant') && (
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => openWith('waiting_consultant')}>{t('brd.approval.useSuggestion')}</Button>
+                )}
+              </p>
+            )}
+          </div>
+        )}
 
         {askConfirm && (
           <div className="rounded-xl border border-success/40 bg-success/10 p-3 text-sm" role="status">
