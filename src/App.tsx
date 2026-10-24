@@ -107,6 +107,7 @@ const ConfirmEmailPage = lazyWithRetry(() => import("./pages/auth/ConfirmEmailPa
 const ConsultantDashboard = lazyWithRetry(() => import("./pages/consultant/ConsultantDashboard.tsx"), 'ConsultantDashboard');
 const CasesPage = lazyWithRetry(() => import("./pages/consultant/CasesPage.tsx"), 'CasesPage');
 const CaseDetailPage = lazyWithRetry(() => import("./pages/consultant/CaseDetailPage.tsx"), 'CaseDetailPage');
+const BrdPage = lazyWithRetry(() => import("./pages/brd/BrdPage.tsx"), 'BrdPage');
 const RequestsPage = lazyWithRetry(() => import("./pages/consultant/RequestsPage.tsx"), 'RequestsPage');
 const ResponsivenessPage = lazyWithRetry(() => import("./pages/consultant/ResponsivenessPage.tsx"), 'ResponsivenessPage');
 const ResponsivenessAdminPage = lazyWithRetry(() => import("./pages/admin/ResponsivenessAdminPage.tsx"), 'ResponsivenessAdminPage');
@@ -377,6 +378,7 @@ const App = () => (
               <Route index element={<ConsultantDashboard />} />
               <Route path="cases" element={<CasesPage />} />
               <Route path="cases/:caseId" element={<CaseDetailPage />} />
+              <Route path="cases/:caseId/brd" element={<BrdPage />} />
               <Route path="requests" element={<RequestsPage />} />
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="earnings" element={<EarningsPage />} />
@@ -397,6 +399,7 @@ const App = () => (
               <Route path="proposals" element={<ProposalsPage />} />
               <Route path="open-tickets" element={<OpenTicketsPage />} />
               <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
+              <Route path="tickets/:ticketId/brd" element={<BrdPage />} />
               <Route path="work-diary" element={<WorkDiaryPage />} />
               <Route path="reports" element={<ConsultantReportsPage />} />
               <Route path="referrals" element={<ReferAndEarnPage />} />
@@ -411,6 +414,7 @@ const App = () => (
               <Route path="new-request" element={<ApprovalGate><NewRequestPage /></ApprovalGate>} />
               <Route path="tickets" element={<TicketsPage />} />
               <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
+              <Route path="tickets/:ticketId/brd" element={<BrdPage />} />
               <Route path="consultants" element={<ConsultantsPage />} />
               <Route path="consultants/:id" element={<ConsultantProfilePage />} />
               <Route path="responsiveness" element={<ConsultantResponsivenessPage />} />
@@ -497,6 +501,7 @@ const App = () => (
               <Route path="messages" element={<MessagesPage />} />
               <Route path="tickets" element={<TicketKanbanPage />} />
               <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
+              <Route path="tickets/:ticketId/brd" element={<BrdPage />} />
               <Route path="approvals" element={<ConsultantApprovalsPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="integrations" element={<AdminIntegrationsPage />} />

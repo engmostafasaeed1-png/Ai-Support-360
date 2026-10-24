@@ -33,7 +33,7 @@ export interface Token {
   newline?: boolean;
 }
 
-const EDGE_PUNCT = /^([(\[{«"'“‘]*)([\s\S]*?)([.,:;!?)\]}»"'”’،؛؟…]*)$/u;
+const EDGE_PUNCT = /^([([{«"'“‘]*)([\s\S]*?)([.,:;!?)\]}»"'”’،؛؟…]*)$/u;
 
 /**
  * Words, spaces and line breaks. Opening and closing punctuation around a word becomes its own neutral token, so it

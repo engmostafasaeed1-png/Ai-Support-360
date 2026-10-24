@@ -63,6 +63,7 @@ import { cleanNoteList } from '@/lib/sapNotes';
 import { isolateDates } from '@/lib/bidi';
 import { ticketContextBadges } from '@/lib/ticketContext';
 import { splitBadge } from '@/components/client/ContextFitBadges';
+import BrdButton from '@/components/brd/BrdButton';
 
 function TicketFileLink({ fileUrl, fileName }: { fileUrl: string | null; fileName: string | null }) {
   const href = useChatFileUrl(fileUrl);
@@ -231,8 +232,12 @@ export default function TicketDetailPage() {
               size="sm"
             />
           </div>
+          {isConsultant && (
+            <div className="flex flex-wrap items-center gap-2 mt-2"><BrdButton ticketId={ticket.id} area="consultant" /></div>
+          )}
           {!isConsultant && !isColleague && (
             <div className="flex flex-wrap items-center gap-2 mt-2">
+              <BrdButton ticketId={ticket.id} area={isAdmin ? 'admin' : 'client'} />
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setEditOpen(true)}>
                 <Pencil className="w-3.5 h-3.5" /> Edit
               </Button>

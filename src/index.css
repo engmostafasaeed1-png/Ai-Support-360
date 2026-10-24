@@ -719,3 +719,18 @@ textarea:focus-visible {
     .success-star-shine { animation: none; }
   }
 }
+
+/* Business Requirements Document: editor / viewer typography (semantic tokens only). */
+@layer components {
+  .brd-prose p { margin: 0 0 0.5rem; line-height: 1.6; }
+  .brd-prose h3, .brd-prose h4 { font-weight: 600; margin: 0.75rem 0 0.25rem; color: hsl(var(--foreground)); }
+  .brd-prose ul { list-style: disc; padding-inline-start: 1.25rem; margin: 0 0 0.5rem; }
+  .brd-prose ol { list-style: decimal; padding-inline-start: 1.25rem; margin: 0 0 0.5rem; }
+  .brd-prose li { margin: 0.125rem 0; }
+  .brd-prose mark, .brd-prose mark[data-tbc] { background: hsl(var(--warning) / 0.25); color: hsl(var(--foreground)); border-radius: 0.25rem; padding: 0 0.2rem; }
+  .brd-prose table, .brd-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; margin: 0.25rem 0 0.5rem; }
+  .brd-prose th, .brd-prose td, .brd-table th, .brd-table td { border: 1px solid hsl(var(--border)); padding: 0.375rem 0.5rem; text-align: start; vertical-align: top; }
+  .brd-prose th, .brd-table th { background: hsl(var(--muted)); font-weight: 600; }
+  .brd-diff-add { background: hsl(var(--success) / 0.2); text-decoration: none; }
+  .brd-diff-del { background: hsl(var(--destructive) / 0.15); text-decoration: line-through; }
+}

@@ -346,7 +346,7 @@ BEGIN
   IF char_length(COALESCE(_c #>> '{control,title}', '')) > 200 THEN RAISE EXCEPTION 'brd_title_too_long' USING ERRCODE = '22023'; END IF;
   -- Markup allowlist: no scripts, frames, images, links, styles or event handlers can be stored.
   IF _c::text ~* '<\s*/?\s*(script|iframe|frame|object|embed|style|link|meta|svg|math|img|video|audio|source|form|input|button|a|base)\M'
-     OR _c::text ~* '\son[a-z]+\s*=' OR _c::text ~* '(java|vb)script\s*:' OR _c::text ~* 'data\s*:\s*text/html' THEN
+     OR _c::text ~* '<[^>]*\son[a-z]+\s*=' OR _c::text ~* '<[^>]*(java|vb)script\s*:' OR _c::text ~* '<[^>]*data\s*:\s*text/html' THEN
     RAISE EXCEPTION 'brd_markup_not_allowed' USING ERRCODE = '22023';
   END IF;
 END
@@ -953,7 +953,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   uid uuid := auth.uid();
   before jsonb := public.brd_settings();
-  next jsonb := public.brd_settings();
+  merged jsonb := public.brd_settings();
   k text;
   v jsonb;
 BEGIN
@@ -977,13 +977,13 @@ BEGIN
     ELSE
       RAISE EXCEPTION 'brd_unknown_setting %', k USING ERRCODE = '22023';
     END IF;
-    next := next || jsonb_build_object(k, v);
+    merged := merged || jsonb_build_object(k, v);
   END LOOP;
-  INSERT INTO public.platform_settings (key, value) VALUES ('ticket_brd', next)
+  INSERT INTO public.platform_settings (key, value) VALUES ('ticket_brd', merged)
   ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
   INSERT INTO public.audit_logs (user_id, action, entity_type, entity_id, metadata)
-  VALUES (uid, 'brd_settings_changed', 'platform_settings', NULL, jsonb_build_object('before', before, 'after', next));
-  RETURN next;
+  VALUES (uid, 'brd_settings_changed', 'platform_settings', NULL, jsonb_build_object('before', before, 'after', merged));
+  RETURN merged;
 END
 $$;
 
