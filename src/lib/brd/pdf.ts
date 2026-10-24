@@ -26,19 +26,19 @@ export interface BrdPdfMeta {
 export interface BrdPdfFonts { regular: string; bold: string }
 
 // deno-lint-ignore no-explicit-any
-type JsPdfCtor = new (opts?: any) => jsPDF;
+export type JsPdfCtor = new (opts?: any) => jsPDF;
 type RGB = [number, number, number];
 
-const W = 595.28;
-const H = 841.89;
-const ML = 56;
-const MR = 56;
-const MT = 74;
-const MB = 68;
-const CW = W - ML - MR;
-const FONT = 'BrdPlex';
+export const W = 595.28;
+export const H = 841.89;
+export const ML = 56;
+export const MR = 56;
+export const MT = 74;
+export const MB = 68;
+export const CW = W - ML - MR;
+export const FONT = 'BrdPlex';
 
-const C: Record<string, RGB> = {
+export const C: Record<string, RGB> = {
   brand: [27, 37, 89], accent: [59, 130, 246], text: [30, 41, 59], muted: [100, 116, 139], border: [203, 213, 225],
   headBg: [238, 242, 255], zebra: [248, 250, 252], markBg: [254, 243, 199], markText: [146, 64, 14], white: [255, 255, 255], soft: [241, 245, 249],
 };
@@ -71,9 +71,10 @@ const L = {
 };
 
 type Lang = 'en' | 'ar';
-const plain = (text: string, extra: Partial<Inline> = {}): Inline[] => [{ text, ...extra }];
+export const plain = (text: string, extra: Partial<Inline> = {}): Inline[] => [{ text, ...extra }];
 
-class Writer {
+/** Shared with other bilingual PDFs (ticket tracking timeline). */
+export class Writer {
   y = MT;
   constructor(readonly doc: jsPDF) {}
 
