@@ -11,6 +11,7 @@ import { hasWebSpeech, startWebSpeech, type WebSpeechHandle } from '@/lib/voice/
 import { classifyMicError, MIC_PROBLEM_TEXT, type MicProblem } from '@/lib/voice/micErrors';
 import { joinText, TranscriptAssembler } from '@/lib/voice/transcriptAssembler';
 import { probeServerVoice, transcribeSegment, VoiceServerError, type FallbackReason, type VoiceContext } from '@/lib/voice/transcribeClient';
+import { deviceClass } from '../../supabase/functions/_shared/voiceRouting';
 
 export type VoiceStatus = 'idle' | 'starting' | 'listening' | 'paused' | 'error';
 export type VoiceEngine = 'server' | 'webspeech';
@@ -35,7 +36,13 @@ export interface VoiceOptions {
   onIdle?: (text: string) => void;
 }
 
-export interface AnswerMeta { engine: VoiceEngine | null; fallback: FallbackReason | null; segments: number }
+export interface AnswerMeta {
+  engine: VoiceEngine | null; fallback: FallbackReason | null; segments: number;
+  /** Server engine only: raw text per speech model for this listening session (learning loop), model, vocabulary version. */
+  rawByModel?: Record<string, string>; model?: string | null; vocabVersion?: number | null; device?: string;
+}
+
+const DEVICE = typeof navigator !== 'undefined' ? deviceClass(navigator.userAgent) : 'desktop-other';
 
 export function useVoiceRecognizer(options: VoiceOptions) {
   const optsRef = useRef(options);
@@ -63,6 +70,8 @@ export function useVoiceRecognizer(options: VoiceOptions) {
   const segments = useRef(0);
   const abort = useRef<AbortController | null>(null);
   const lastLevelAt = useRef(0);
+  const lastModel = useRef<string | null>(null);
+  const lastVersion = useRef<number | null>(null);
 
   const supported = canRecordAudio() || hasWebSpeech();
 
@@ -130,10 +139,12 @@ export function useVoiceRecognizer(options: VoiceOptions) {
     segments.current += 1;
     setPending(asm.current.pending);
     const o = optsRef.current;
-    transcribeSegment({ wav, context: o.context, interviewId: o.interviewId, segment: index, lang: o.lang, signal: abort.current?.signal })
+    transcribeSegment({ wav, context: o.context, interviewId: o.interviewId, segment: index, lang: o.lang, device: DEVICE, signal: abort.current?.signal })
       .then((r) => {
         if (sid !== session.current) return;
-        asm.current.resolve(index, r.text, r.rawText);
+        if (r.model) lastModel.current = r.model;
+        if (r.vocabVersion != null) lastVersion.current = r.vocabVersion;
+        asm.current.resolve(index, r.text, r.rawText, r.rawByModel);
         emit();
       })
       .catch((e: unknown) => {
@@ -263,7 +274,10 @@ export function useVoiceRecognizer(options: VoiceOptions) {
     if (engineRef.current === 'webspeech' && !web.current && status === 'paused') startWeb(session.current);
   }, [startWeb, status]);
 
-  const answerMeta = useCallback((): AnswerMeta => ({ engine: engineRef.current, fallback: fallbackRef.current, segments: segments.current }), []);
+  const answerMeta = useCallback((): AnswerMeta => ({
+    engine: engineRef.current, fallback: fallbackRef.current, segments: segments.current,
+    ...(engineRef.current === 'server' ? { rawByModel: asm.current.rawByModel, model: lastModel.current, vocabVersion: lastVersion.current, device: DEVICE } : {}),
+  }), []);
 
   useEffect(() => () => { session.current += 1; abort.current?.abort(); clearTimeout(idleTimer.current); rec.current?.stop(); web.current?.stop(); }, []);
 
