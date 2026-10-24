@@ -24,8 +24,7 @@ const statusCfg: Record<string, { color: string; icon: typeof CheckCircle2 }> = 
  * ticket also lists the documents linked to it.
  */
 export default function TicketReferences({ searchQuery, docsByTicket }: { searchQuery: string; docsByTicket?: Map<string, ArchListRow[]> | null }) {
-  const { t, i18n } = useTranslation();
-  const ar = i18n.language?.startsWith('ar');
+  const { t } = useTranslation();
   const { data: tickets, isLoading } = useClientTickets();
   const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState('all');
@@ -113,7 +112,7 @@ export default function TicketReferences({ searchQuery, docsByTicket }: { search
                       ))}
                     </ul>
                   )}
-                  {docsByTicket && docs.length === 0 && <p className="text-[11px] text-muted-foreground ps-13">{t('arch.refs.noDocs', { lng: ar ? 'ar' : undefined })}</p>}
+                  {docsByTicket && docs.length === 0 && <p className="text-[11px] text-muted-foreground ps-13">{t('arch.refs.noDocs')}</p>}
                 </CardContent>
               </Card>
             );
