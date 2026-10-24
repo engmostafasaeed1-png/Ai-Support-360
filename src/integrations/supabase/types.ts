@@ -16133,6 +16133,7 @@ export type Database = {
       tt_default_settings: { Args: never; Returns: Json }
       tt_facts: { Args: { _ticket: string }; Returns: Json }
       tt_is_admin: { Args: { _uid: string }; Returns: boolean }
+      tt_lang: { Args: { _user: string }; Returns: string }
       tt_last_transition: {
         Args: {
           _from_in?: string[]
@@ -16145,6 +16146,46 @@ export type Database = {
           by_user: string
         }[]
       }
+      tt_list_facts: {
+        Args: { _tickets: string[] }
+        Returns: {
+          facts: Json
+          role: string
+          ticket_id: string
+        }[]
+      }
+      tt_notify_change: {
+        Args: {
+          _actor: string
+          _actor_role: string
+          _note: string
+          _ticket: string
+          _to: string
+          _version: number
+        }
+        Returns: undefined
+      }
+      tt_push_notice: {
+        Args: {
+          _body: string
+          _role: string
+          _ticket: string
+          _title: string
+          _user: string
+        }
+        Returns: undefined
+      }
+      tt_queue_email: {
+        Args: {
+          _dedupe: string
+          _kind: string
+          _payload: Json
+          _role: string
+          _ticket: string
+          _user: string
+        }
+        Returns: undefined
+      }
       tt_recipients: {
         Args: { _ticket: string }
         Returns: {
@@ -16152,11 +16193,38 @@ export type Database = {
           user_id: string
         }[]
       }
+      tt_set_working_status: {
+        Args: {
+          _expected_date?: string
+          _expected_version?: number
+          _note?: string
+          _responsible?: string
+          _status: string
+          _ticket: string
+        }
+        Returns: Json
+      }
       tt_settings: { Args: never; Returns: Json }
+      tt_status_label: {
+        Args: { _key: string; _lang: string }
+        Returns: string
+      }
+      tt_ticket_tracking: { Args: { _ticket: string }; Returns: Json }
+      tt_timeline: {
+        Args: { _ticket: string }
+        Returns: {
+          actor_role: string
+          event_at: string
+          kind: string
+          params: Json
+          source: string
+        }[]
+      }
       tt_viewer_role: {
         Args: { _ticket: string; _uid: string }
         Returns: string
       }
+      tt_wake: { Args: never; Returns: undefined }
       ui_translations_get: { Args: { _lang: string }; Returns: Json }
       ui_translations_version: { Args: { _lang: string }; Returns: string }
       um_apply_roles: {
