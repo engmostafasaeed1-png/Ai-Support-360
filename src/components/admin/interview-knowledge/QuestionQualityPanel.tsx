@@ -84,7 +84,7 @@ export default function QuestionQualityPanel({ reason }: { reason: string }) {
               </div>
               {!!hints.length && (
                 <ul className="list-disc ps-5 text-xs text-foreground">
-                  {hints.map((h) => <li key={h.key}>{t(`voice.qq.hint_${h.key}`, h.text)}</li>)}
+                  {hints.map((h) => <li key={h.key}>{String(t(`voice.qq.hint_${h.key}`, h.text, { n: r.question.split(/\s+/).filter(Boolean).length }))}</li>)}
                 </ul>
               )}
               {draft?.key === r.question_key ? (
