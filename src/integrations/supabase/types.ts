@@ -13852,6 +13852,12 @@ export type Database = {
       }
       admin_assignment_reminder_stats: { Args: never; Returns: Json }
       admin_audit_search: { Args: { _p?: Json }; Returns: Json }
+      admin_brd_overview: { Args: never; Returns: Json }
+      admin_brd_set_settings: { Args: { _value: Json }; Returns: Json }
+      admin_brd_unlock: {
+        Args: { _reason: string; _ticket: string; _unlocked: boolean }
+        Returns: boolean
+      }
       admin_bulk_undo: { Args: { _run_id: string }; Returns: Json }
       admin_can: { Args: { _perm: string; _uid: string }; Returns: boolean }
       admin_client_approval_counts: { Args: never; Returns: Json }
@@ -14688,9 +14694,58 @@ export type Database = {
         Args: { _bp_id: string; _ticket_id: string }
         Returns: boolean
       }
+      brd_add_comment: {
+        Args: {
+          _body: string
+          _kind?: string
+          _parent?: string
+          _section: string
+          _suggested?: string
+          _ticket: string
+          _version: number
+        }
+        Returns: string
+      }
+      brd_ai_claim: {
+        Args: { _actor: string; _kind: string; _ticket: string }
+        Returns: Json
+      }
+      brd_ai_finish: {
+        Args: {
+          _id: string
+          _input: number
+          _output: number
+          _reason?: string
+          _status: string
+        }
+        Returns: undefined
+      }
+      brd_archive_version: {
+        Args: { _reason: string; _ticket: string; _version: number }
+        Returns: boolean
+      }
+      brd_attach: {
+        Args: {
+          _notify?: boolean
+          _path: string
+          _size: number
+          _ticket: string
+          _version: number
+        }
+        Returns: Json
+      }
       brd_can_write_for: {
         Args: { _ticket: string; _uid: string }
         Returns: boolean
+      }
+      brd_claim_notices: {
+        Args: { _caller: string; _document_id: string }
+        Returns: {
+          ticket_id: string
+          ticket_title: string
+          user_id: string
+          version: number
+        }[]
       }
       brd_consultant_of: { Args: { _uid: string }; Returns: string }
       brd_consultant_readers: {
@@ -14733,11 +14788,63 @@ export type Database = {
         Returns: string
       }
       brd_ref: { Args: { _ticket: string }; Returns: string }
+      brd_restore_version: {
+        Args: { _note?: string; _ticket: string; _version: number }
+        Returns: Json
+      }
       brd_role: { Args: { _ticket: string }; Returns: string }
       brd_role_for: { Args: { _ticket: string; _uid: string }; Returns: string }
+      brd_save_draft: {
+        Args: { _content: Json; _rev?: number; _ticket: string }
+        Returns: Json
+      }
+      brd_save_version: {
+        Args: {
+          _content: Json
+          _note: string
+          _rev?: number
+          _status?: string
+          _ticket: string
+        }
+        Returns: Json
+      }
+      brd_set_comment_status: {
+        Args: { _comment: string; _status: string }
+        Returns: boolean
+      }
       brd_settings: { Args: never; Returns: Json }
       brd_storage_can_insert: { Args: { _name: string }; Returns: boolean }
+      brd_store_draft: {
+        Args: { _content: Json; _rev: number; _ticket: string; _uid: string }
+        Returns: {
+          client_id: string
+          created_at: string
+          created_by: string
+          draft: Json
+          draft_rev: number
+          draft_saved_at: string | null
+          draft_saved_by: string | null
+          edit_unlocked: boolean
+          id: string
+          language: string
+          latest_version: number
+          shared_version: number | null
+          template: string
+          ticket_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ticket_brds"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       brd_ticket_of_path: { Args: { _name: string }; Returns: string }
+      brd_unattach: {
+        Args: { _document_id: string; _reason?: string }
+        Returns: boolean
+      }
       brd_validate_content: { Args: { _c: Json }; Returns: undefined }
       brd_version_attached: {
         Args: { _ticket: string; _version: number }
