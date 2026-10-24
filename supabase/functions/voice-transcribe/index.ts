@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
   const apiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!apiKey) { await finish({ _error: "config" }); return fail(500, "config"); }
 
-  const glossary = buildVoiceGlossary(glossaryInput.modules?.length || glossaryInput.question ? glossaryInput : { ...glossaryInput, modules: [] });
+  const glossary = buildVoiceGlossary(glossaryInput);
   const upstream = new FormData();
   upstream.append("model", VOICE_MODEL);
   upstream.append("file", new Blob([bytes], { type: "audio/wav" }), `segment-${segment}.wav`);
