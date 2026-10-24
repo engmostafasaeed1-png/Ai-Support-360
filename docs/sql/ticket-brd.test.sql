@@ -6,6 +6,11 @@ BEGIN;
 -- bidder B has no assignment; team member M is "ready" on the team but has no NDA; admin A; outsider O.
 --   A  00..a1        C  00..c1        K user 00..d1 / consultant 00..dc01
 --   B user 00..b1 / consultant 00..bc01    M user 00..e1 / consultant 00..ec01    O 00..f9    T 00..aaa1
+INSERT INTO auth.users (id, email) VALUES
+  ('00000000-0000-0000-0000-0000000000a1', 'a@example.test'), ('00000000-0000-0000-0000-0000000000c1', 'c@example.test'),
+  ('00000000-0000-0000-0000-0000000000d1', 'k@example.test'), ('00000000-0000-0000-0000-0000000000b1', 'b@example.test'),
+  ('00000000-0000-0000-0000-0000000000e1', 'm@example.test'), ('00000000-0000-0000-0000-0000000000f9', 'o@example.test')
+ON CONFLICT DO NOTHING;
 INSERT INTO public.user_roles (user_id, role) VALUES ('00000000-0000-0000-0000-0000000000a1', 'admin');
 INSERT INTO public.consultants (id, user_id) VALUES
   ('00000000-0000-0000-0000-00000000dc01', '00000000-0000-0000-0000-0000000000d1'),
