@@ -74,3 +74,11 @@ export type TimelineFilter = 'all' | 'system' | 'manual' | 'comment';
 export function filterTimeline(rows: readonly TimelineRow[], f: TimelineFilter): TimelineRow[] {
   return f === 'all' ? [...rows] : rows.filter((r) => r.source === f);
 }
+
+/** Short duration ("45 min", "5 h", "3 d") for the history bars. */
+export function formatDuration(ms: number, t: Translate): string {
+  const h = ms / 3_600_000;
+  if (h < 1) return t('tracking.dur.minutes', { n: Math.max(1, Math.round(ms / 60_000)) });
+  if (h < 48) return t('tracking.dur.hours', { n: Math.round(h) });
+  return t('tracking.dur.days', { n: Math.round(h / 24) });
+}
