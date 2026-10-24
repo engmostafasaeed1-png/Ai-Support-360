@@ -33,27 +33,34 @@ export interface Token {
   newline?: boolean;
 }
 
-/** Words, spaces and line breaks; punctuation around Arabic words becomes its own neutral token. */
+const EDGE_PUNCT = /^([(\[{«"'“‘]*)([\s\S]*?)([.,:;!?)\]}»"'”’،؛؟…]*)$/u;
+
+/**
+ * Words, spaces and line breaks. Opening and closing punctuation around a word becomes its own neutral token, so it
+ * lands on the correct side in right-to-left lines ("REQ-001:", "(MIRO)", "2023.").
+ */
 export function tokenize(runs: readonly Inline[]): Token[] {
   const out: Token[] = [];
   for (const r of runs) {
     const style = { bold: !!r.bold, mark: !!r.mark };
+    const neutral = (c: string) => out.push({ text: c, dir: 'N', space: false, ...style });
     for (const part of r.text.match(/\n|[^\S\n]+|[^\s]+/g) ?? []) {
       if (part === '\n') { out.push({ text: '', dir: 'N', space: false, newline: true, ...style }); continue; }
       if (/^\s+$/.test(part)) { out.push({ text: ' ', dir: 'N', space: true, ...style }); continue; }
-      if (ARABIC.test(part)) {
-        const m = part.match(ARABIC_EDGE);
-        const [lead, core, trail] = m ? [m[1], m[2], m[3]] : ['', part, ''];
-        for (const c of lead) out.push({ text: c, dir: wordDir(c), space: false, ...style });
-        if (core) out.push({ text: core, dir: 'R', space: false, ...style });
-        // Keep trailing digits/letters together ("الإصدار3" is rare); split punctuation one by one.
-        if (trail) {
-          if (STRONG_L.test(trail)) out.push({ text: trail, dir: 'L', space: false, ...style });
-          else for (const c of trail) out.push({ text: c, dir: 'N', space: false, ...style });
-        }
-        continue;
+      const m = part.match(EDGE_PUNCT);
+      const [lead, core, trail] = m ? [m[1], m[2], m[3]] : ['', part, ''];
+      if (!core) { for (const c of part) neutral(c); continue; }
+      for (const c of lead) neutral(c);
+      if (ARABIC.test(core)) {
+        const e = core.match(ARABIC_EDGE);
+        const [l2, c2, t2] = e ? [e[1], e[2], e[3]] : ['', core, ''];
+        if (l2) out.push({ text: l2, dir: wordDir(l2), space: false, ...style });
+        if (c2) out.push({ text: c2, dir: 'R', space: false, ...style });
+        if (t2) out.push({ text: t2, dir: wordDir(t2), space: false, ...style });
+      } else {
+        out.push({ text: core, dir: wordDir(core), space: false, ...style });
       }
-      out.push({ text: part, dir: wordDir(part), space: false, ...style });
+      for (const c of trail) neutral(c);
     }
   }
   return out;
