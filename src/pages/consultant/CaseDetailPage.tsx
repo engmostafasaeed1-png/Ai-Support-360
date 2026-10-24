@@ -407,8 +407,9 @@ export default function CaseDetailPage() {
       {/* What the client chose and wrote: every area, details about the areas, SAP Notes already tried */}
       <TicketAreasNotes areas={caseAreas} other={ticket.sap_module_other} details={ticket.area_details} notes={triedNotes} />
 
-      {/* Client System Landscape — gated behind NDA */}
-      {clientProfile && !ndaSigned && (
+      {/* Client System Landscape — gated behind NDA. The sign prompt must not depend on the client's
+          company details: consultants cannot read those before signing, which hid the prompt. */}
+      {ticket?.client_id && consultantData?.id && ndaStatus && !ndaSigned && (
         <Card className="rounded-2xl border-border/50 border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-10 text-center space-y-3">
             <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -431,14 +432,14 @@ export default function CaseDetailPage() {
           </CardContent>
         </Card>
       )}
-      {clientProfile && ndaSigned && (
+      {ndaSigned && (
         <Card className="rounded-2xl border-border/50 border-green-500/30">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2 flex-wrap">
               <Building2 className="w-4 h-4 text-primary" />
               Client System Landscape
               <Badge variant="outline" className="text-[10px] gap-1 text-green-600 border-green-500/30"><ShieldCheck className="w-3 h-3" /> NDA Signed</Badge>
-              {clientProfile.company_name && <span className="text-muted-foreground font-normal">— {clientProfile.company_name}</span>}
+              {clientProfile?.company_name && <span className="text-muted-foreground font-normal">— {clientProfile.company_name}</span>}
               <Button
                 variant="ghost"
                 size="sm"
@@ -467,6 +468,9 @@ export default function CaseDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {!clientProfile ? (
+              <p className="text-xs text-muted-foreground">The client's system details are not shown here yet.</p>
+            ) : (<>
             {/* Company & SAP Overview */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {clientProfile.industry && (
@@ -591,6 +595,7 @@ export default function CaseDetailPage() {
                 <p className="text-xs text-muted-foreground">{clientProfile.sap_landscape}</p>
               </div>
             )}
+            </>)}
           </CardContent>
         </Card>
       )}
