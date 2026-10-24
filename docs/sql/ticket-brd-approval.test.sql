@@ -207,7 +207,7 @@ BEGIN
   PERFORM public.admin_brd_set_settings('{"approval_all_members": true}');
   SELECT count(*) INTO n FROM public.brd_approval_required(t);
   IF n <> 3 THEN RAISE EXCEPTION 'BA15 required % (lead + 2 readers, no observer)', n; END IF;
-  IF NOT public.brd_gate_blocks(t, sc) THEN RAISE EXCEPTION 'BA15 support not blocked'; END IF;
+  IF NOT public.brd_gate_blocks(t, sc) THEN RAISE EXCEPTION 'BA15 support not blocked %', public.brd_gate_state(t, sc); END IF;
   IF public.brd_gate_blocks(t, kc) THEN RAISE EXCEPTION 'BA15 lead blocked again'; END IF;
   PERFORM pg_temp.as_user(s);
   PERFORM public.brd_decide_approval(t, 2, 'approved', NULL, true);
