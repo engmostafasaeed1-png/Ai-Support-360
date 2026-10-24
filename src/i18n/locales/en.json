@@ -3499,6 +3499,196 @@
       "unlocked": "Editing is reopened on this closed ticket.",
       "reopen": "Reopen editing",
       "relock": "Lock again"
+    },
+    "approval": {
+      "title": "Consultant approval",
+      "blocker": "Waiting for BRD approval",
+      "blockerPending": "Work can start after the assigned consultant approves BRD v{{v}}.",
+      "blockerUpdate": "The consultant asked for changes or declined BRD v{{v}}. Update the BRD and ask again, or withdraw the request.",
+      "waived": "An administrator waived the BRD approval for this ticket.",
+      "waivedReason": "Reason: {{reason}} ({{who}})",
+      "waivedChip": "Approval waived",
+      "none": "No BRD has been sent for approval yet. Approval is optional: work can also start without a BRD.",
+      "withdrawnNote": "The approval request was withdrawn. Work continues without an approved BRD.",
+      "who": "Who must approve v{{v}}",
+      "role": {
+        "lead": "Lead consultant",
+        "support": "Team member"
+      },
+      "waiting": "Waiting for decision",
+      "noAccessYet": "Can open the BRD once the NDA is signed by both",
+      "due": "Please decide by {{date}}",
+      "clientNote": "Note from the client",
+      "youDecided": "You recorded your decision on v{{v}}: {{decision}}.",
+      "decision": {
+        "approved": "Approved",
+        "changes_requested": "Changes requested",
+        "declined": "Declined"
+      },
+      "ask": "Ask the consultant to approve v{{v}}",
+      "withdraw": "Withdraw - proceed without BRD",
+      "waive": "Waive approval (admin)",
+      "revokeWaiver": "Revoke the waiver",
+      "nextRejected": "The consultant declined. Choose another consultant on the ticket page, or update the BRD and ask again.",
+      "nextChanges": "Edit the BRD, save a new version, attach it and ask for approval again.",
+      "record": "Download BRD v{{v}} with approval record (PDF)",
+      "history": "Approval history ({{count}})",
+      "withdrawTitle": "Withdraw the approval request?",
+      "withdrawIntro": "Nothing will block the work afterwards. The consultant is told that no approval is needed now.",
+      "withdrawn": "The approval request was withdrawn.",
+      "waiveIntro": "Work may start without an approved BRD. Your reason is saved in the audit log.",
+      "revokeIntro": "The approval rule applies again from now on. Your reason is saved in the audit log.",
+      "decideTitle": "Your decision on BRD v{{v}}",
+      "decideIntro": "Read the whole document first. Your decision is recorded for this exact version (fingerprint {{hash}}).",
+      "changedSince": "What changed since v{{v}} (the version you approved)",
+      "action": {
+        "approved": "Approve",
+        "changes_requested": "Request changes",
+        "declined": "Decline"
+      },
+      "commentTip": "Tip: you can also leave comments or suggested wording on any section below.",
+      "noChangeBadge": "No material change since v{{v}}",
+      "submittedBy": "Sent for approval by {{who}} · {{when}}",
+      "hash": "Fingerprint",
+      "closed": {
+        "superseded": "Replaced by a newer version · {{when}}",
+        "withdrawn": "Withdrawn · {{when}}"
+      },
+      "carried": "BRD v{{v}} shared as \"no material change\": the earlier approval still applies.",
+      "asked": "Approval requested for v{{v}} ({{count}} consultant told).",
+      "waitingAccess_one": "{{count}} consultant can open the BRD only after the NDA is signed by both; they will see it then.",
+      "waitingAccess_other": "{{count}} consultants can open the BRD only after the NDA is signed by both; they will see it then.",
+      "waitingAccess": "{{count}} consultants can open the BRD only after the NDA is signed by both; they will see it then.",
+      "askTitle": "Ask for approval of BRD v{{v}}",
+      "askIntro": "The assigned consultant is told in the app and by e-mail. Their approval binds this exact version.",
+      "askNote": "Note for the consultant (optional)",
+      "noChange": "No material change (typo or formatting only): keep the earlier approval and only inform the consultant.",
+      "askConfirm": "Send for approval",
+      "attachAsk": "Ask the assigned consultant to approve this version",
+      "suggestWorking": "Suggested working status: {{status}}.",
+      "useSuggestion": "Use it",
+      "state": {
+        "not_requested": "No approval requested",
+        "pending": "Pending consultant approval",
+        "approved": "Approved by consultant",
+        "changes_requested": "Changes requested",
+        "rejected": "Declined",
+        "superseded": "Superseded",
+        "withdrawn": "Withdrawn"
+      },
+      "mode": {
+        "off": "Approval off",
+        "recommended": "Recommended",
+        "required": "Required"
+      },
+      "modeHint": {
+        "off": "Consultant approval of the BRD is not used.",
+        "recommended": "The approval state is shown to everyone; work is never blocked.",
+        "required": "When a BRD is sent for approval, the engagement confirmation, work logs and timesheets wait until it is approved."
+      },
+      "err": {
+        "brd_approval_superseded": "A newer version was submitted. Please review the latest BRD.",
+        "brd_already_decided": "You already recorded a different decision on this version.",
+        "brd_confirm_read_required": "Please tick that you have read the BRD.",
+        "brd_note_required": "Please write at least 10 characters.",
+        "brd_note_too_long": "The comment is too long.",
+        "contact_details_not_allowed": "Please remove phone numbers, e-mail addresses and messenger links.",
+        "brd_not_an_approver": "You are not one of the consultants who approve this BRD.",
+        "brd_approval_not_open": "This version is no longer waiting for approval.",
+        "brd_attach_first": "Attach this version to the ticket first.",
+        "brd_approval_off": "BRD approval is switched off.",
+        "brd_no_change_not_allowed": "\"No material change\" is not allowed by the platform settings.",
+        "brd_no_approved_version": "There is no approved version to keep.",
+        "brd_reason_required": "Please give a reason (at least 5 characters).",
+        "rate_limited": "Too many requests. Please wait a little and try again.",
+        "not_allowed": "You cannot do this on this ticket.",
+        "gate": "Waiting for BRD approval: the assigned consultant must approve the latest BRD before work can start.",
+        "generic": "Something went wrong. Please try again."
+      },
+      "done": {
+        "approved": "You approved BRD v{{v}}. The client was told.",
+        "changes_requested": "Your change request was sent to the client.",
+        "declined": "You declined BRD v{{v}}. The client and the support team were told."
+      },
+      "dialog": {
+        "title_approved": "Approve BRD v{{v}}",
+        "title_changes_requested": "Request changes on BRD v{{v}}",
+        "title_declined": "Decline BRD v{{v}}",
+        "intro_approved": "By approving you agree that this document describes the work you will do.",
+        "intro_changes_requested": "Tell the client what is missing or unclear. The client edits the BRD and asks again.",
+        "intro_declined": "Decline if you cannot do this work. The client and the support team are told.",
+        "noteOptional": "Comment (optional)",
+        "reason": "Reason",
+        "comment": "What should change?",
+        "commentHelp": "Be specific: section, requirement and what you expect.",
+        "reasonHelp": "A short, polite reason helps the client find another consultant.",
+        "noteHelp": "For example what you understood or any assumption.",
+        "visible": "The client sees this text.",
+        "confirmRead": "I have read BRD v{{v}} in full and agree it describes the work."
+      },
+      "problem": {
+        "confirm_read": "Please tick that you have read the BRD.",
+        "note_required": "Please write at least {{min}} characters.",
+        "note_too_long": "Please keep it under {{max}} characters.",
+        "contact_details": "Please remove phone numbers, e-mail addresses and messenger links."
+      },
+      "list": {
+        "needsMe": "Needs my approval",
+        "waiting": "Awaiting consultant approval",
+        "yourTurn": "Your approval"
+      },
+      "notice": {
+        "yourTicket": "your ticket",
+        "brd_approval_request": "Please approve BRD v{{v}}",
+        "brd_approval_reminder": "Reminder: please approve BRD v{{v}}",
+        "brd_approval_approved": "BRD v{{v}} approved - work can start",
+        "brd_approval_changes": "Changes requested on BRD v{{v}}",
+        "brd_approval_declined": "BRD v{{v}} declined",
+        "brd_approval_waiting": "Still waiting for BRD v{{v}} approval",
+        "brd_approval_escalated": "BRD approval overdue",
+        "brd_approval_info": "BRD update"
+      },
+      "noticeBody": {
+        "brd_approval_request": "BRD v{{v}} of \"{{ticket}}\" is ready for your approval.",
+        "brd_approval_reminder": "BRD v{{v}} of \"{{ticket}}\" is still waiting for your approval.",
+        "brd_approval_approved": "The consultant approved BRD v{{v}} of \"{{ticket}}\".",
+        "brd_approval_changes": "The consultant asked for changes to BRD v{{v}}.",
+        "brd_approval_declined": "The consultant declined BRD v{{v}}.",
+        "brd_approval_waiting": "The consultant has not yet approved BRD v{{v}} of \"{{ticket}}\".",
+        "brd_approval_escalated": "BRD v{{v}} has waited too long for consultant approval.",
+        "brd_approval_info": "There is news about the BRD of \"{{ticket}}\"."
+      },
+      "admin": {
+        "notReady": "Consultant approval of the BRD becomes available once its database update is applied.",
+        "title": "Consultant approval of the BRD",
+        "gate": "Approval rule",
+        "approval_all_members": "Every team member must approve (off: only the lead consultant)",
+        "approval_allow_no_change": "Allow \"no material change\" to keep an earlier approval",
+        "approval_email": "Send approval e-mails",
+        "approval_remind_days": "Remind the consultant every N days",
+        "approval_client_days": "Tell the client after N days",
+        "approval_escalate_days": "Escalate to administrators after N days",
+        "approval_max_reminders": "Maximum reminders per consultant",
+        "approval_decisions_per_hour": "Decisions per consultant per hour",
+        "counts": "Waiting now: {{open}} · overdue: {{overdue}} · approved (30 days): {{approved_30d}} · changes requested: {{changes_30d}} · declined: {{declined_30d}} · active waivers: {{waivers}}",
+        "emails": "E-mail designs (sample data)",
+        "sendTest": "Send test to me",
+        "testSent": "Test e-mail sent to your own address.",
+        "testFailed": "The test e-mail could not be sent. {{reason}}",
+        "previewTitle": "E-mail preview",
+        "previewNote": "Sample data only. Real e-mails use the ticket's own details and the reader's language."
+      },
+      "email": {
+        "request": "Approval request (consultant)",
+        "reminder": "Reminder (consultant)",
+        "fyi": "No material change (consultant)",
+        "approved": "Approved (client)",
+        "changes_requested": "Changes requested (client)",
+        "declined": "Declined (client)",
+        "client_waiting": "Still waiting (client)",
+        "admin_declined": "Declined (administrators)",
+        "admin_escalation": "Overdue (administrators)"
+      }
     }
   },
   "tracking": {
@@ -3539,7 +3729,8 @@
       "work": "Work in progress",
       "delivered": "Delivered / awaiting client",
       "closed": "Resolved / closed",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "brd": "BRD approved by consultant"
     },
     "side": {
       "on_hold": "On hold",
@@ -3547,7 +3738,8 @@
       "reopened": "Reopened",
       "blocked_client": "Blocked: waiting for the client",
       "blocked_consultant": "Blocked: waiting for the consultant",
-      "blocked_third_party": "Blocked: waiting for a third party"
+      "blocked_third_party": "Blocked: waiting for a third party",
+      "brd_waiting": "Waiting for BRD approval"
     },
     "outcome": {
       "solved": "Solved",
@@ -3579,7 +3771,11 @@
       "team_propose_rate": "Waiting for {{who}} to propose a rate.",
       "team_sign_nda": "Waiting for {{who}} to sign the NDA.",
       "team_prepare_confirmation": "Waiting for {{who}} to prepare the engagement confirmation.",
-      "team_confirm": "Waiting for {{who}} to confirm the engagement."
+      "team_confirm": "Waiting for {{who}} to confirm the engagement.",
+      "approve_brd": "The assigned consultant reviews and approves the BRD.",
+      "update_brd": "The client updates the BRD and asks for approval again.",
+      "team_approve_brd": "The consultant reviews and approves the BRD.",
+      "team_update_brd": "The client updates the BRD and asks for approval again."
     },
     "actor": {
       "client": "the client",
@@ -3745,7 +3941,16 @@
       "engagement_confirmed": "Engagement confirmed",
       "invoice_sent": "Invoice sent",
       "meeting_completed": "Meeting held",
-      "timesheet_comment": "Timesheet comment"
+      "timesheet_comment": "Timesheet comment",
+      "brd_submitted": "BRD v{{v}} sent for consultant approval",
+      "brd_submitted_carried": "BRD v{{v}} shared with no material change (earlier approval kept)",
+      "brd_approved": "BRD v{{v}} approved by {{who}}",
+      "brd_changes": "{{who}} requested changes on BRD v{{v}}",
+      "brd_declined": "{{who}} declined BRD v{{v}}",
+      "brd_superseded": "BRD v{{v}} approval replaced by a newer version",
+      "brd_withdrawn": "BRD v{{v}} approval request withdrawn",
+      "brd_waived": "BRD approval waived by an administrator",
+      "brd_waiver_revoked": "BRD approval waiver revoked"
     },
     "list": {
       "needsMe": "Needs my action",
