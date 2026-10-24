@@ -52,6 +52,7 @@ import { Link } from 'react-router-dom';
 import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { Sparkline } from '@/components/ui/sparkline';
 import AIInsightsButton from '@/components/ai/AIInsightsButton';
+import AdminTrackingStuckCard from '@/components/tracking/AdminTrackingStuckCard';
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
@@ -176,6 +177,8 @@ export default function AdminDashboard() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      <AdminTrackingStuckCard />
     </div>
     </PullToRefresh>
   );

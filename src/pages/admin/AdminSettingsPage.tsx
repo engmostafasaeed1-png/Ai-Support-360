@@ -5,6 +5,7 @@ import AssignmentRemindersCard from '@/components/admin/AssignmentRemindersCard'
 import NotificationPauseAdminCard from '@/components/admin/NotificationPauseAdminCard';
 import SocialSigninSettingsCard from '@/components/admin/SocialSigninSettingsCard';
 import BrdSettingsCard from '@/components/admin/BrdSettingsCard';
+import TrackingSettingsCard from '@/components/tracking/TrackingSettingsCard';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe, Layout, Mail } from 'lucide-react';
@@ -121,6 +122,7 @@ export default function AdminSettingsPage() {
 
         <SocialSigninSettingsCard settings={settings} loading={loading} updateSetting={updateSetting} />
         <BrdSettingsCard />
+        <TrackingSettingsCard />
 
         {/* Portal Layout Card */}
         <Card>
