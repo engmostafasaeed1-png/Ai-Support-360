@@ -24,8 +24,10 @@ INSERT INTO public.ticket_team_members (id, ticket_id, consultant_id, status, te
   ('00000000-0000-0000-0000-00000001bb02', '00000000-0000-0000-0000-00000001aaa1', '00000000-0000-0000-0000-00000001ec01', 'ready', 'support', false, false),
   ('00000000-0000-0000-0000-00000001bb03', '00000000-0000-0000-0000-00000001aaa1', '00000000-0000-0000-0000-00000001fc01', 'nda_signed', 'support', false, false);
 UPDATE public.tickets SET consultant_id = '00000000-0000-0000-0000-00000001dc01' WHERE id = '00000000-0000-0000-0000-00000001aaa1';
+SET LOCAL session_replication_role = replica;  -- plain fixture row: skip the assignment notice triggers
 INSERT INTO public.ticket_assignments (ticket_id, consultant_id, role, status)
   VALUES ('00000000-0000-0000-0000-00000001aaa1', '00000000-0000-0000-0000-00000001bc01', 'observer', 'active');
+SET LOCAL session_replication_role = origin;
 INSERT INTO public.nda_agreements (consultant_id, client_id, signature_data, nda_content, signed_at, client_signed_at)
   SELECT c, '00000000-0000-0000-0000-0000000001c1', 'sig', 'nda', now(), now()
     FROM unnest(ARRAY['00000000-0000-0000-0000-00000001dc01', '00000000-0000-0000-0000-00000001ec01',
