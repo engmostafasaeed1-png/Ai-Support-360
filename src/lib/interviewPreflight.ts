@@ -12,6 +12,8 @@ type Env = {
   onLine?: boolean;
   hasMediaDevices: boolean;
   hasSpeechRecognition: boolean;
+  /** Can record audio for server transcription (microphone + Web Audio). Optional for older callers. */
+  hasAudioRecording?: boolean;
   hasSpeechSynthesis: boolean;
   secure: boolean;
 };
@@ -23,6 +25,7 @@ export function readEnv(): Env {
     onLine: nav?.onLine,
     hasMediaDevices: !!nav?.mediaDevices?.getUserMedia,
     hasSpeechRecognition: !!(w.SpeechRecognition || w.webkitSpeechRecognition),
+    hasAudioRecording: !!nav?.mediaDevices?.getUserMedia && !!(w.AudioContext || w.webkitAudioContext),
     hasSpeechSynthesis: !!w.speechSynthesis,
     secure: typeof window === 'undefined' ? true : window.isSecureContext !== false,
   };
@@ -33,7 +36,8 @@ export function basicChecks(env: Env): PreflightResult {
   return {
     network: env.onLine === false ? 'fail' : 'ok',
     browser: env.hasMediaDevices && env.secure ? 'ok' : 'warn',
-    voice: env.hasSpeechRecognition && env.hasSpeechSynthesis ? 'ok' : 'warn',
+    // Voice answers work with either the browser's recogniser or recorded audio sent for server transcription.
+    voice: (env.hasSpeechRecognition || env.hasAudioRecording) && env.hasSpeechSynthesis ? 'ok' : 'warn',
     camera: env.hasMediaDevices ? 'unknown' : 'warn',
     microphone: env.hasMediaDevices ? 'unknown' : 'warn',
   };
