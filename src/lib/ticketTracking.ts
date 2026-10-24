@@ -346,7 +346,7 @@ export function deriveStage(f: TicketFacts): DerivedStage {
   let current: StageKey | null = null;
   if (!closed && !cancelled) {
     const first = b?.blocks ? brdStep
-      : steps.find((s) => s.state === 'pending' && !(s.key === 'brd' && !b?.blocks && laterDone));
+      : steps.find((s) => s.state === 'pending' && s.key !== 'brd');
     if (first) { first.state = 'current'; current = first.key; }
   }
 
