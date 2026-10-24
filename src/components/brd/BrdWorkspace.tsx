@@ -339,7 +339,7 @@ export default function BrdWorkspace({ state, initial, initialRev, fresh, isAdmi
                             <button type="button" className="flex-1 min-w-0 flex items-center gap-2 text-start px-1 py-1 rounded focus-visible:ring-2 focus-visible:ring-ring">
                               <ChevronDown className="h-4 w-4 shrink-0 transition-transform [[data-state=closed]_&]:-rotate-90 rtl:[[data-state=closed]_&]:rotate-90" />
                               <span className="font-medium text-sm truncate">{SECTION_TITLES[s.key][uiLang]}</span>
-                              {tbc > 0 && <Badge variant="secondary" className="text-[10px] bg-warning/20">{t('brd.tbcShort', { count: tbc })}</Badge>}
+                              {tbc > 0 && <Badge variant="secondary" className="text-[10px] bg-warning/20 whitespace-nowrap shrink-0">{t('brd.tbcShort', { count: tbc })}</Badge>}
                               {(commentsBySection.get(s.key) ?? 0) > 0 && <Badge variant="outline" className="text-[10px]">{t('brd.comments.count', { count: commentsBySection.get(s.key) })}</Badge>}
                               {s.hidden && <Badge variant="outline" className="text-[10px]">{t('brd.editor.hidden')}</Badge>}
                             </button>
