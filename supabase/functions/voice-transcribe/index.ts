@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
   if (req.method === "GET") {
     const settings = await loadSettings(db);
     const ready = settings.server_stt && (await voiceTablesReady(db));
-    return jsonResponse(req, { ready, reason: !settings.server_stt ? "disabled" : ready ? null : "not_ready", model: VOICE_MODEL });
+    return jsonResponse(req, { ready, reason: !settings.server_stt ? "disabled" : ready ? null : "not_ready", model: VOICE_MODEL, max_segment_seconds: settings.max_segment_seconds });
   }
   if (req.method !== "POST") return new Response(null, { status: 405, headers: { ...corsHeaders(req), Allow: "GET, POST, OPTIONS" } });
 
