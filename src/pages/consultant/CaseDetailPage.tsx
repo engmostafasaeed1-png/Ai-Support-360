@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import BrdButton from '@/components/brd/BrdButton';
 import TicketTrackingPanel, { TrackingHeaderChips } from '@/components/tracking/TicketTrackingPanel';
+import { BrdApprovalHeaderChip } from '@/components/brd/approval/BrdApprovalChip';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -293,7 +294,7 @@ export default function CaseDetailPage() {
           <BrdButton ticketId={ticket.id} area="consultant" />
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2"><TrackingHeaderChips ticketId={ticket.id} /></div>
+      <div className="flex flex-wrap items-center gap-2"><TrackingHeaderChips ticketId={ticket.id} /><BrdApprovalHeaderChip ticketId={ticket.id} /></div>
 
       {/* Two-layer tracking: automatic stage + the working status set by client and consultant */}
       <TicketTrackingPanel ticketId={ticket.id} ticketTitle={ticket.title ?? ''} />

@@ -65,6 +65,7 @@ import { ticketContextBadges } from '@/lib/ticketContext';
 import { splitBadge } from '@/components/client/ContextFitBadges';
 import BrdButton from '@/components/brd/BrdButton';
 import TicketTrackingPanel, { TrackingHeaderChips } from '@/components/tracking/TicketTrackingPanel';
+import { BrdApprovalHeaderChip } from '@/components/brd/approval/BrdApprovalChip';
 
 function TicketFileLink({ fileUrl, fileName }: { fileUrl: string | null; fileName: string | null }) {
   const href = useChatFileUrl(fileUrl);
@@ -275,6 +276,7 @@ export default function TicketDetailPage() {
               </Badge>
             )}
             <TrackingHeaderChips ticketId={ticket.id} />
+            <BrdApprovalHeaderChip ticketId={ticket.id} />
           </div>
         </div>
       </div>

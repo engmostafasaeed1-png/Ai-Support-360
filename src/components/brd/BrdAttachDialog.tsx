@@ -10,6 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { attachBrdPdf, getBrdVersion, notifyBrdByEmail, type BrdState } from '@/lib/brd/api';
 import { brdPdfBlob } from '@/lib/brd/pdf';
 import { normalizeContent } from '../../../supabase/functions/_shared/brdModel';
+import { useBrdApproval, useRefreshBrdApproval } from '@/hooks/useBrdApproval';
+import { submitBrdForApproval } from '@/lib/brd/approvalApi';
+import { approvalErrorKey } from '@/lib/brdApproval';
 
 interface Props {
   open: boolean;
@@ -26,6 +29,10 @@ export default function BrdAttachDialog({ open, onOpenChange, state, initialVers
   const [version, setVersion] = useState<number | null>(initialVersion);
   const [notify, setNotify] = useState(true);
   const [busy, setBusy] = useState(false);
+  const { data: approval } = useBrdApproval(state.ticket?.id);
+  const refreshApproval = useRefreshBrdApproval(state.ticket?.id);
+  const approvalOn = !!approval?.me?.can_submit && approval.settings?.mode !== 'off';
+  const [ask, setAsk] = useState(true);
   useEffect(() => { if (open) setVersion(initialVersion ?? versions[0]?.version ?? null); }, [open, initialVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const go = async () => {
@@ -43,6 +50,15 @@ export default function BrdAttachDialog({ open, onOpenChange, state, initialVers
       if (notify && r.data.notified > 0) void notifyBrdByEmail(r.data.document_id);
       toast.success(t('brd.attach.done', { v: version, name: r.data.file_name }));
       if (notify) toast.info(r.data.notified > 0 ? t('brd.attach.notified', { count: r.data.notified }) : t('brd.attach.nobody'));
+      if (approvalOn && ask) {
+        const a = await submitBrdForApproval(state.ticket!.id, version, false, null);
+        if (a.error || !a.data) toast.error(t(approvalErrorKey(a.error?.message)));
+        else {
+          toast.success(t('brd.approval.asked', { v: version, count: a.data.notified }));
+          if (a.data.waiting_access > 0) toast.info(t('brd.approval.waitingAccess', { count: a.data.waiting_access }));
+        }
+      }
+      refreshApproval();
       onOpenChange(false);
       onDone();
     } catch (e) {
@@ -73,6 +89,15 @@ export default function BrdAttachDialog({ open, onOpenChange, state, initialVers
               <Label htmlFor="brd-notify" className="font-normal text-sm leading-snug">{t('brd.attach.notify')}</Label>
             </div>
             <p className="text-xs text-muted-foreground">{t('brd.attach.who')}</p>
+            {approvalOn && (
+              <div className="flex items-start gap-2">
+                <Checkbox id="brd-ask-approval" checked={ask} onCheckedChange={(v) => setAsk(v === true)} />
+                <Label htmlFor="brd-ask-approval" className="font-normal text-sm leading-snug">
+                  {t('brd.approval.attachAsk')}
+                  <span className="block text-xs text-muted-foreground">{t(`brd.approval.modeHint.${approval?.settings?.mode ?? 'recommended'}`)}</span>
+                </Label>
+              </div>
+            )}
           </div>
         )}
         <DialogFooter className="gap-2">
