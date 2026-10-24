@@ -12,11 +12,10 @@ import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
 import { buildVoiceGlossary } from "../../supabase/functions/_shared/voiceGlossary.ts";
 import { languageHints } from "../../supabase/functions/_shared/voiceSettings.ts";
-import { transcribeAudio, VOICE_MODELS } from "../../supabase/functions/_shared/voiceProviders.ts";
-import { normalizeArabic, wer } from "../../supabase/functions/_shared/voiceText.ts";
-import { correctTranscript } from "../../supabase/functions/_shared/voiceGlossary.ts";
-import { correctWithModel } from "../../supabase/functions/_shared/voiceCorrection.ts";
-import { segmentConfidence } from "../../supabase/functions/_shared/voiceConfidence.ts";
+import { VOICE_MODELS } from "../../supabase/functions/_shared/voiceProviders.ts";
+import { wer } from "../../supabase/functions/_shared/voiceText.ts";
+import { correctionGlossary } from "../../supabase/functions/_shared/voiceGlossary.ts";
+import { runVoicePipeline, type CrossCheck } from "../../supabase/functions/_shared/voicePipeline.ts";
 
 type Sentence = { id: string; category: string; lang: string; dialect?: string; modules: string[]; text: string };
 const here = dirname(new URL(import.meta.url).pathname);
@@ -33,9 +32,21 @@ const ttsDir = arg("tts");
 const audioDir = arg("audio") ?? ttsDir;
 if (!audioDir) { console.error("Pass --audio <dir> (owner recordings) or --tts <dir> (synthetic)"); process.exit(1); }
 const outDir = arg("out", "/tmp/voice-benchmark-report")!;
-const models = (arg("models") ?? Object.keys(VOICE_MODELS).join(",")).split(",").filter(Boolean);
+// A configuration = primary model, second model, cross-check mode, correction pass. Same pipeline as production.
+type Config = { name: string; primary: string; secondary: string | null; crossCheck: CrossCheck; correction: boolean; hints: boolean };
+const GPT = "openai/gpt-transcribe", GEM = "google/gemini-3.5-transcribe";
+const CONFIGS: Config[] = [
+  { name: "GPT alone, no hints", primary: GPT, secondary: null, crossCheck: "off", correction: false, hints: false },
+  { name: "GPT alone + SAP hints", primary: GPT, secondary: null, crossCheck: "off", correction: false, hints: true },
+  { name: "Gemini alone", primary: GEM, secondary: null, crossCheck: "off", correction: false, hints: true },
+  { name: "GPT + hints + correction", primary: GPT, secondary: null, crossCheck: "off", correction: true, hints: true },
+  { name: "Gemini + correction", primary: GEM, secondary: null, crossCheck: "off", correction: true, hints: true },
+  { name: "GPT primary + Gemini check + correction", primary: GPT, secondary: GEM, crossCheck: "always", correction: true, hints: true },
+  { name: "Gemini primary + GPT check + correction", primary: GEM, secondary: GPT, crossCheck: "always", correction: true, hints: true },
+];
+const configNames = arg("configs")?.split("|");
+const configs = configNames ? CONFIGS.filter((c) => configNames.includes(c.name)) : CONFIGS;
 const concurrency = Number(arg("concurrency", "3"));
-const runCorrection = flag("correct");
 const only = arg("only")?.split(",");
 mkdirSync(outDir, { recursive: true });
 mkdirSync(audioDir, { recursive: true });
@@ -78,20 +89,19 @@ function credits(model: string, seconds: number, usage: Record<string, unknown> 
   return inTok ? inTok * 0.000008 + outTok * 0.000048 : seconds * (VOICE_MODELS[model]?.creditsPerMinute ?? 0) / 60;
 }
 
-async function runOne(s: Sentence, wav: Uint8Array, model: string, variant: "hints" | "no_hints"): Promise<Row> {
-  const info = VOICE_MODELS[model];
+async function runOne(s: Sentence, wav: Uint8Array, c: Config): Promise<Row> {
   const g = buildVoiceGlossary({ modules: s.modules, lang: s.lang === "en" ? "en" : "ar" });
-  const hints = variant === "hints" ? { prompt: g.prompt, keywords: g.keywords, languages: languageHints(s.lang === "en" ? "en" : "ar") } : {};
-  const out = await transcribeAudio({ apiKey: apiKey!, model, wav, hints, fileName: `${s.id}.wav` });
-  const seconds = out.seconds ?? (wav.length - 44) / 48000;
-  const raw = normalizeArabic(out.text);
-  let corrected = correctTranscript(raw, g.keywords).text;
-  if (runCorrection && out.ok) corrected = (await correctWithModel({ apiKey: apiKey!, raw: corrected, glossary: g.keywords })).text;
-  const conf = segmentConfidence({ text: raw, seconds });
+  const seconds = (wav.length - 44) / 48000;
+  const r = await runVoicePipeline({
+    apiKey: apiKey!, wav, seconds, primaryModel: c.primary, secondaryModel: c.secondary, crossCheck: c.crossCheck, correction: c.correction,
+    hints: c.hints ? { prompt: g.prompt, keywords: g.keywords, languages: languageHints(s.lang === "en" ? "en" : "ar") } : {},
+    glossary: correctionGlossary(g.keywords, s.modules),
+  });
+  const cost = r.usage.reduce((sum, u) => sum + credits(u.model, u.seconds ?? seconds, u.usage), 0);
   return {
-    id: s.id, category: s.category, lang: s.lang, model: info?.label ?? model, variant: info?.hints ? variant : "auto", ok: out.ok, seconds,
-    latency_ms: out.latencyMs, credits: credits(model, seconds, out.usage), wer_raw: out.ok ? wer(s.text, raw) : 1, wer_corrected: out.ok ? wer(s.text, corrected) : 1,
-    confidence: conf.level, reference: s.text, raw, corrected, error: out.error,
+    id: s.id, category: s.category, lang: s.lang, model: c.name, variant: r.modelUsed, ok: r.ok, seconds,
+    latency_ms: r.latencyMs, credits: cost, wer_raw: r.ok ? wer(s.text, r.raw) : 1, wer_corrected: r.ok ? wer(s.text, r.text) : 1,
+    confidence: r.confidence.level, reference: s.text, raw: r.raw, corrected: r.text, error: r.error,
   };
 }
 
@@ -109,29 +119,25 @@ for (const s of chosen) {
   if (!file && ttsDir) { file = join(ttsDir, `${s.id}.wav`); await synthesize(s, file); }
   if (!file) { console.warn(`missing recording for ${s.id}, skipped`); continue; }
   const wav = toWav24k(file);
-  for (const m of models) {
-    const variants: Array<"hints" | "no_hints"> = VOICE_MODELS[m]?.hints ? ["hints", "no_hints"] : ["no_hints"];
-    for (const v of variants) jobs.push(() => runOne(s, wav, m, v));
-  }
+  for (const c of configs) jobs.push(() => runOne(s, wav, c));
 }
-console.log(`running ${jobs.length} transcriptions (${models.join(", ")})…`);
+console.log(`running ${jobs.length} pipeline runs (${configs.length} configurations)…`);
 const rows = await pool(jobs, concurrency);
 
 // ----- report -----
 const groups = new Map<string, Row[]>();
-for (const r of rows) { const k = `${r.model} | ${r.variant}`; groups.set(k, [...(groups.get(k) ?? []), r]); }
+for (const r of rows) { const k = r.model; groups.set(k, [...(groups.get(k) ?? []), r]); }
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 const pct = (x: number) => `${(x * 100).toFixed(1)} %`;
 const categories = [...new Set(rows.map((r) => r.category))];
 let md = `# Speech-to-text benchmark\n\nSource: ${ttsDir ? "synthetic voices (gateway text-to-speech) — compares models, does not measure real accents" : `recordings in ${audioDir}`}\n`;
-md += `Sentences: ${chosen.length} · Correction pass: ${runCorrection ? "on" : "rule-based only"} · Date: ${new Date().toISOString()}\n\n`;
-md += `| Model | Hints | WER raw | WER corrected | ${categories.map((c) => `WER ${c}`).join(" | ")} | Avg wait | Credits/min | Failed |\n|---|---|---|---|${categories.map(() => "---|").join("")}---|---|---|\n`;
+md += `Sentences: ${chosen.length} · Date: ${new Date().toISOString()}\n\n`;
+md += `| Configuration | WER raw | WER final | ${categories.map((c) => `WER ${c}`).join(" | ")} | Avg wait | Credits/min | Low confidence | Failed |\n|---|---|---|${categories.map(() => "---|").join("")}---|---|---|\n`;
 for (const [k, rs] of groups) {
-  const [model, variant] = k.split(" | ");
   const secs = rs.reduce((a, r) => a + r.seconds, 0);
-  md += `| ${model} | ${variant} | ${pct(mean(rs.map((r) => r.wer_raw)))} | ${pct(mean(rs.map((r) => r.wer_corrected)))} | ${categories.map((c) => pct(mean(rs.filter((r) => r.category === c).map((r) => r.wer_corrected)))).join(" | ")} | ${Math.round(mean(rs.map((r) => r.latency_ms)))} ms | ${(rs.reduce((a, r) => a + r.credits, 0) / Math.max(1, secs / 60)).toFixed(4)} | ${rs.filter((r) => !r.ok).length} |\n`;
+  md += `| ${k} | ${pct(mean(rs.map((r) => r.wer_raw)))} | ${pct(mean(rs.map((r) => r.wer_corrected)))} | ${categories.map((c) => pct(mean(rs.filter((r) => r.category === c).map((r) => r.wer_corrected)))).join(" | ")} | ${Math.round(mean(rs.map((r) => r.latency_ms)))} ms | ${(rs.reduce((a, r) => a + r.credits, 0) / Math.max(1, secs / 60)).toFixed(4)} | ${rs.filter((r) => r.confidence === "low").length} | ${rs.filter((r) => !r.ok).length} |\n`;
 }
-md += `\nWER = word error rate against the reference (0 % = perfect). "corrected" = after the SAP spelling fixes.\n\n## Worst sentences per model\n`;
+md += `\nWER = word error rate against the reference (0 % = perfect). "raw" = the chosen model text; "final" = after spelling fixes and the correction pass (what the consultant sees). Credits/min include every model call except the correction text model.\n\n## Worst sentences per model\n`;
 for (const [k, rs] of groups) {
   md += `\n### ${k}\n`;
   for (const r of [...rs].sort((a, b) => b.wer_corrected - a.wer_corrected).slice(0, 5)) md += `- ${r.id} (${pct(r.wer_corrected)}): ${r.corrected || r.error}\n  - expected: ${r.reference}\n`;

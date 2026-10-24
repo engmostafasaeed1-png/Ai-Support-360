@@ -14,10 +14,10 @@ Egyptian Arabic, Gulf Arabic, mixed Arabic/English, numbers and T-codes. No real
 ## Run
 
 ```bash
-LOVABLE_API_KEY=… bun scripts/voice-benchmark/run.ts --audio ./recordings/speaker1 --out ./report-speaker1 --correct
+LOVABLE_API_KEY=… bun scripts/voice-benchmark/run.ts --audio ./recordings/speaker1 --out ./report-speaker1
 ```
 
-Options: `--models openai/gpt-transcribe,google/gemini-3.5-transcribe` · `--correct` (adds the text-model correction pass) ·
+Options: `--configs "Gemini alone|GPT alone + SAP hints"` (default: all seven configurations, see run.ts) ·
 `--only 01,25` · `--concurrency 3` · `--tts <dir>` (synthetic voices instead of recordings: compares models, does not
 measure real accents). Needs `ffmpeg`.
 
