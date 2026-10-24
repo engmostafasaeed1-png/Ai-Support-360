@@ -1,7 +1,7 @@
 // AI Interviewer Training › Voice: speech-to-text settings and quality per interview (no audio, no answer text in the
 // summary; the per-interview audit shows the raw transcript and the SAP spelling fixes). Reads only through the
 // administrators-only database functions in docs/sql/interview-voice.sql; shows a notice until that file is applied.
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -227,8 +227,8 @@ export default function VoiceMetricsPanel() {
                   {rows.map((r) => {
                     const key = r.interview_id ?? 'dictation';
                     return (
-                      <>
-                        <tr key={key} className="border-t border-border/50">
+                      <Fragment key={key}>
+                        <tr className="border-t border-border/50">
                           <td className="py-2 pe-2">
                             <div className="font-medium text-foreground">{r.interview_id ? (r.consultant_name || t('voice.admin.consultant', 'Consultant')) : t('voice.admin.dictation', 'Dictation (ticket text, chat, proposals)')}</div>
                             <div className="text-muted-foreground">{r.started_at ? new Date(r.started_at).toLocaleString() : ''}</div>
@@ -249,9 +249,9 @@ export default function VoiceMetricsPanel() {
                           </td>
                         </tr>
                         {open === key && r.interview_id && (
-                          <tr key={`${key}-d`}><td colSpan={8} className="pb-3"><Segments interviewId={r.interview_id} /></td></tr>
+                          <tr><td colSpan={8} className="pb-3"><Segments interviewId={r.interview_id} /></td></tr>
                         )}
-                      </>
+                      </Fragment>
                     );
                   })}
                 </tbody>

@@ -22,6 +22,7 @@ import KnowledgeDocumentsPanel from '@/components/admin/interview-knowledge/Know
 import KnowledgeCoveragePanel from '@/components/admin/interview-knowledge/KnowledgeCoveragePanel';
 import KnowledgePreviewPanel from '@/components/admin/interview-knowledge/KnowledgePreviewPanel';
 import KnowledgeSettingsPanel from '@/components/admin/interview-knowledge/KnowledgeSettingsPanel';
+import VoiceMetricsPanel from '@/components/admin/interview-knowledge/VoiceMetricsPanel';
 import { useKnowledgeReady, useKnowledgeSettings } from '@/hooks/useInterviewKnowledge';
 
 interface TrainingConfig {
@@ -253,12 +254,14 @@ export default function InterviewTrainingPage() {
             <TabsTrigger value="coverage">{t('ik.tabs.coverage', 'Coverage')}</TabsTrigger>
             <TabsTrigger value="preview">{t('ik.tabs.preview', 'Preview for a consultant')}</TabsTrigger>
             <TabsTrigger value="settings">{t('ik.tabs.settings', 'Settings')}</TabsTrigger>
+            <TabsTrigger value="voice">{t('ik.tabs.voice', 'Voice')}</TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="documents"><KnowledgeDocumentsPanel ready={ready} /></TabsContent>
         <TabsContent value="coverage"><KnowledgeCoveragePanel ready={ready} /></TabsContent>
         <TabsContent value="preview"><KnowledgePreviewPanel ready={ready} /></TabsContent>
         <TabsContent value="settings"><KnowledgeSettingsPanel ready={ready} /></TabsContent>
+        <TabsContent value="voice"><VoiceMetricsPanel /></TabsContent>
         <TabsContent value="configs" className="space-y-6">
         {!isEditing && (
           <div className="flex justify-end">
