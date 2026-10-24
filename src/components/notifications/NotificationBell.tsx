@@ -17,6 +17,7 @@ import { ar, enUS } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { isReferralNotice, referralNoticeView } from '@/lib/referralNotice';
 import { ReferralNoticeContent, ReferralNoticeIcon } from './ReferralNotice';
+import { NoticeBody, NoticeTitle } from './BrdApprovalNoticeText';
 
 interface NotificationBellProps {
   basePath: string; // e.g. '/client', '/consultant', '/admin'
@@ -118,8 +119,8 @@ export default function NotificationBell({ basePath }: NotificationBellProps) {
                 <div className="flex items-start gap-2">
                   {!n.is_read && <span className="mt-1.5 w-2 h-2 rounded-full bg-primary shrink-0" />}
                   <div className={cn('flex-1 min-w-0', n.is_read && 'ms-4')}>
-                    <p className="text-sm font-medium truncate">{n.title}</p>
-                    {n.body && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{n.body}</p>}
+                    <p className="text-sm font-medium truncate"><NoticeTitle n={n} /></p>
+                    <NoticeBody n={n} className="text-xs text-muted-foreground line-clamp-2 mt-0.5" />
                     <p className="text-[10px] text-muted-foreground/70 mt-1">
                       {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale })}
                     </p>
