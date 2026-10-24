@@ -3,7 +3,7 @@
 // buildVoiceGlossary turns the consultant's profile modules and releases, the current question and the interview
 // plan (knowledge base) into keyword hints for the speech model, so "ACDOCA", "BAdI", "Fiori", "S/4HANA 2023" and
 // T-codes such as "MIRO" or "FB60" come back spelled correctly. correctTranscript then fixes only the spelling of
-// glossary terms that were still heard in another form ("a doc a", "s4 hana", "fb 60"); it never adds, removes or
+// glossary terms that were still heard in another form ("ac doca", "s4 hana", "fb 60"); it never adds, removes or
 // reorders words, so the meaning of the answer cannot change. The raw text is kept by the caller for audit.
 
 export interface GlossaryInput {
@@ -172,7 +172,7 @@ export interface Correction { from: string; to: string }
 // Proper names that are written with one capital only; other terms are case-fixed only when their spelling is technical.
 const PROPER_NAMES = new Set(["fiori", "ariba", "successfactors", "concur", "datasphere", "kyma", "signavio", "fieldglass"]);
 // Lower-case forms that are ordinary English words; never re-cased.
-const PLAIN_WORDS = new Set(["network", "settlement", "routing", "billing", "learning", "recruiting", "onboarding", "compensation", "sourcing", "equipment", "kernel", "sum", "rap", "cap", "sod", "ara", "img", "bom", "ale", "spam", "sap"]);
+const PLAIN_WORDS = new Set(["network", "settlement", "routing", "billing", "learning", "recruiting", "onboarding", "compensation", "sourcing", "equipment", "kernel", "sum", "rap", "cap", "sod", "ara", "img", "bom", "ale", "spam"]);
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const isTechnical = (term: string) => /[A-Z].*[A-Z]|\d|\//.test(term.slice(1)) || /^[A-Z]{2,}$/.test(term) || PROPER_NAMES.has(term.toLowerCase());
@@ -191,7 +191,7 @@ const ALIASES: ReadonlyArray<[RegExp, string]> = [
 
 /**
  * Fixes how glossary terms are written, without changing the meaning: only the spelling, case or spacing of a term that
- * is already there changes ("a doc a" -> "ACDOCA", "fb 60" -> "FB60", "s4 hana 2023" -> "S/4HANA 2023"). Arabic text,
+ * is already there changes ("ac doca" -> "ACDOCA", "fb 60" -> "FB60", "s4 hana 2023" -> "S/4HANA 2023"). Arabic text,
  * word order and every other word stay exactly as transcribed.
  */
 export function correctTranscript(text: string, glossary: ReadonlyArray<string>): { text: string; changes: Correction[] } {
@@ -205,17 +205,13 @@ export function correctTranscript(text: string, glossary: ReadonlyArray<string>)
       return next;
     });
   };
-  const lowerGlossary = new Set(glossary.map((g) => g.toLowerCase()));
-  for (const [re, to] of ALIASES) {
-    const target = to.replace("$1", "").toLowerCase();
-    if (target === "s/4hana" || target === "bw/4hana" || lowerGlossary.has(target) || SAP_CORE_TERMS.some((c) => c.toLowerCase() === target)) apply(new RegExp(re.source, re.flags), to);
-  }
+  for (const [re, to] of ALIASES) apply(new RegExp(re.source, re.flags), to);
   const terms = [...new Set(glossary)].filter((t) => isTechnical(t) && !PLAIN_WORDS.has(t.toLowerCase())).sort((a, b) => b.length - a.length);
   for (const term of terms) {
     const compact = term.replace(/\s+/g, "");
     const hasDigit = /\d/.test(compact);
     const chars = [...compact].map(escapeRe);
-    // T-codes and long codes may be heard with spaces or dots between their parts ("f b 60", "me 21 n", "a doc a").
+    // T-codes and long codes may be heard with spaces or dots between their parts ("f b 60", "me 21 n", "ac doca").
     const spaced = (hasDigit && compact.length <= 10) || (/^[A-Z]{6,}$/.test(compact));
     const body = spaced ? chars.join("[\\s.-]?") : term.split(/\s+/).map(escapeRe).join("\\s+");
     const re = new RegExp(`(?<![\\p{L}\\p{N}/_-])${body}(?![\\p{L}\\p{N}/_])`, "giu");
