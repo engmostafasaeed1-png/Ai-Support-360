@@ -9,7 +9,11 @@ export type VoiceContext = 'interview' | 'dictation';
 export type FallbackReason = 'server_failed' | 'rate_limited' | 'quota' | 'disabled' | 'not_ready' | 'unsupported' | 'permission' | 'device';
 
 export interface ServerVoiceStatus { ready: boolean; reason: FallbackReason | null; maxSegmentSeconds: number }
-export interface TranscribeResult { text: string; rawText: string; language: string | null; seconds: number; corrections: number; latencyMs: number }
+export interface TranscribeResult {
+  text: string; rawText: string; language: string | null; seconds: number; corrections: number; latencyMs: number;
+  /** Raw text per speech model (the model used, plus the other one on comparison pieces). */
+  rawByModel: Record<string, string>; model: string | null; vocabVersion: number | null;
+}
 
 export class VoiceServerError extends Error {
   constructor(public code: string, public status: number, public retryAfterMs: number | null) { super(code); }
@@ -79,8 +83,14 @@ export function isRetryable(status: number, code: string): boolean {
 
 export const MAX_RETRIES = 2;
 
+/** Only short model ids with string texts (exported for tests). */
+export function parseRawByModel(v: unknown): Record<string, string> {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+  return Object.fromEntries(Object.entries(v as Record<string, unknown>).filter(([k, t]) => /^[a-z0-9-]+\/[a-z0-9.-]+$/.test(k) && typeof t === 'string').slice(0, 3)) as Record<string, string>;
+}
+
 export async function transcribeSegment(args: {
-  wav: Uint8Array; context: VoiceContext; interviewId?: string | null; segment: number; lang?: string; signal?: AbortSignal;
+  wav: Uint8Array; context: VoiceContext; interviewId?: string | null; segment: number; lang?: string; device?: string; signal?: AbortSignal;
 }): Promise<TranscribeResult> {
   let lastError: VoiceServerError | null = null;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -92,6 +102,7 @@ export async function transcribeSegment(args: {
     if (args.interviewId) form.append('interview_id', args.interviewId);
     form.append('segment', String(args.segment));
     if (args.lang) form.append('lang', args.lang);
+    if (args.device) form.append('device', args.device);
     let resp: Response;
     try {
       resp = await fetch(URL_BASE, { method: 'POST', headers, body: form, signal: args.signal });
@@ -106,6 +117,8 @@ export async function transcribeSegment(args: {
       return {
         text: String(b?.text ?? ''), rawText: String(b?.raw_text ?? b?.text ?? ''), language: typeof b?.language === 'string' ? b.language : null,
         seconds: Number(b?.seconds) || 0, corrections: Number(b?.corrections) || 0, latencyMs: Number(b?.latency_ms) || 0,
+        rawByModel: parseRawByModel(b?.raw_by_model), model: typeof b?.model === 'string' ? b.model : null,
+        vocabVersion: Number.isInteger(b?.vocab_version) ? b.vocab_version : null,
       };
     }
     let code = 'server_error';

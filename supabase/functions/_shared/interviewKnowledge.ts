@@ -282,6 +282,9 @@ export async function buildPlanAndQuestions(db: Db, args: {
   });
   const { data: askedRows } = await db.from("interview_question_log").select("question_hash").eq("consultant_id", args.consultantId).limit(2000);
   const asked = new Set<string>((askedRows || []).map((r: any) => String(r.question_hash)));
+  // Questions an administrator retired (AI Interviewer Training › Learning) are never planned again for anyone.
+  const { data: retiredRows, error: retiredError } = await db.from("interview_question_stats").select("question_key").eq("status", "retired").limit(2000);
+  if (!retiredError) for (const r of retiredRows || []) if (/^[0-9a-f]{8,32}$/.test(String((r as any).question_key))) asked.add(String((r as any).question_key));
   const pool = await collectSources(db, profile, plan, settings, seed, asked);
   let slots = questionSlots(plan, seed);
   if (args.sampleSize) slots = sampleSlots(slots, args.sampleSize);

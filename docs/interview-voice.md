@@ -106,3 +106,29 @@ App tests: `src/lib/voice/voiceServer.test.ts`, `src/lib/voice/voiceClient.test.
 8. Firefox: voice answers work (server engine).
 9. Ticket form: dictate into the description after typing a sentence: the sentence is kept and the spoken text added once.
 10. Admin › Voice: the interview appears with minutes, pieces and the raw text audit.
+
+## Learning loop (prepared, not applied)
+
+The speech model is never retrained. The app learns around it, from what consultants correct, and every change is versioned, tested and reversible.
+
+Files: `docs/sql/interview-voice-learning.sql` (apply after `interview-voice.sql`), test `docs/sql/interview-voice-learning.test.sql` (checks L01–L18), rules mirrored in `supabase/functions/_shared/voiceLearning.ts`, `voiceRouting.ts`, `questionQuality.ts`; worker `voice-learning-run` (job token only); browser helper `src/lib/voice/learning.ts`; admin tab AI Interviewer Training › Learning; consultant card Settings › "Words we learned from you".
+
+What is stored after each interview answer: short word pairs (heard → final, at most 3 words, 40 characters) that pass the privacy filter (no e-mail, phone, link, long number, secret, profanity or instruction-like text), per-model word and error counts, answer timing, device class and vocabulary version. Typed answers store timing only. No audio.
+
+Defaults (all editable in the Learning tab, every change needs a reason and is logged):
+
+| Setting | Default |
+|---|---|
+| Learning from corrections | ON |
+| Automatic promotion | ON, needs 3 different consultants + SAP-term check + passing test |
+| Automatic model choice | OFF (needs 30 answers, 600 words, 3 consultants, 2-point margin, benchmark confirmation; max 20 answers per consultant) |
+| Training recordings ("keep my recording for 90 days") | OFF; only with consent; withdrawal deletes; private `voice-training` storage must be created first |
+| Regression gate | new vocabulary may be at most 0.5 points worse; needs at least 20 test sentences |
+| Personal words | learned after 2 repeats, max 30 per consultant, deleted with the account or on request |
+| Question flags | after 10 answers, at 40 % misunderstood/skipped/corrected |
+| Nightly run | 03:17 UTC, single run at a time |
+
+Rejected words go on a block list and are never suggested again. Any earlier vocabulary version can be restored in one click; removed terms are blocked. Retired interview questions are never planned again. The evaluation prompt tells the scorer never to lower a score for transcription artefacts.
+
+Switch-on checklist: apply `interview-voice.sql`, then `interview-voice-learning.sql`; run both test files on a copy first; upload the owner's benchmark `results.csv` in the Learning tab; leave automatic model choice and training recordings OFF until the owner decides; update the privacy notice before offering training recordings.
+

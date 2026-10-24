@@ -60,6 +60,27 @@ export interface TranscribeOutcome {
   gatewayHeaders: Record<string, string>;
   error?: string;
   retryAfter?: string | null;
+  /** Safe, shortened reason from the provider's error body (no audio or transcript), forwarded to the caller. */
+  providerMessage?: string | null;
+}
+
+type DoneEvent = { text?: string; languages?: Array<{ code?: string } | string>; usage?: Record<string, unknown> };
+
+/** Reads `{ error: { message } }` / `{ message }` from an error response, capped and stripped of control characters. */
+export async function safeProviderMessage(resp: Response): Promise<string | null> {
+  try {
+    const raw = (await resp.text()).slice(0, 4000);
+    let msg: unknown = raw;
+    try {
+      const j = JSON.parse(raw) as { error?: { message?: unknown } | string; message?: unknown };
+      msg = typeof j.error === "object" && j.error ? j.error.message : typeof j.error === "string" ? j.error : j.message;
+    } catch { /* plain text body */ }
+    if (typeof msg !== "string") return null;
+    const clean = msg.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 300);
+    return clean || null;
+  } catch {
+    return null;
+  }
 }
 
 /** Sends one recording and reads the SSE stream to the end. `onDelta` receives text as it arrives. */
@@ -82,13 +103,13 @@ export async function transcribeAudio(args: {
   }
   resp.headers.forEach((v, k) => { if (k.toLowerCase().startsWith("x-lovable-aig-")) gatewayHeaders[k] = v; });
   if (!resp.ok || !resp.body) {
-    await resp.body?.cancel().catch(() => undefined);
-    return { ok: false, status: resp.status, text: "", languages: [], seconds: null, usage: null, latencyMs: Date.now() - started, gatewayHeaders, error: `http_${resp.status}`, retryAfter: resp.headers.get("Retry-After") };
+    const providerMessage = resp.ok ? null : await safeProviderMessage(resp);
+    return { ok: false, status: resp.status, text: "", languages: [], seconds: null, usage: null, latencyMs: Date.now() - started, gatewayHeaders, error: `http_${resp.status}`, retryAfter: resp.headers.get("Retry-After"), providerMessage };
   }
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "", text = "";
-  let done: { text?: string; languages?: Array<{ code?: string } | string>; usage?: Record<string, unknown> } | null = null;
+  const state: { done: DoneEvent | null } = { done: null };
   try {
     for (;;) {
       const { value, done: end } = await reader.read();
@@ -104,7 +125,7 @@ export async function transcribeAudio(args: {
         let ev: Record<string, unknown>;
         try { ev = JSON.parse(payload); } catch { continue; }
         if (ev.type === "transcript.text.delta" && typeof ev.delta === "string") { text += ev.delta; args.onDelta?.(text); }
-        else if (ev.type === "transcript.text.done") done = ev as typeof done;
+        else if (ev.type === "transcript.text.done") state.done = ev as DoneEvent;
         else if (ev.type === "error" || ev.error) throw new Error("stream_error");
       }
     }
@@ -112,10 +133,11 @@ export async function transcribeAudio(args: {
     const aborted = (e as Error)?.name === "AbortError";
     return { ok: false, status: aborted ? 499 : 502, text, languages: [], seconds: null, usage: null, latencyMs: Date.now() - started, gatewayHeaders, error: aborted ? "aborted" : "stream_error" };
   }
+  const done = state.done;
   if (!done) return { ok: false, status: 502, text, languages: [], seconds: null, usage: null, latencyMs: Date.now() - started, gatewayHeaders, error: "stream_incomplete" };
   const usage = (done.usage ?? null) as Record<string, unknown> | null;
   const langs = (Array.isArray(done.languages) ? done.languages : [])
-    .map((l) => (typeof l === "string" ? l : l?.code || "")).map((c) => c.toLowerCase().split(/[-_]/)[0]).filter((c) => /^[a-z]{2}$/.test(c));
+    .map((l: { code?: string } | string) => (typeof l === "string" ? l : l?.code || "")).map((c: string) => c.toLowerCase().split(/[-_]/)[0]).filter((c: string) => /^[a-z]{2}$/.test(c));
   return {
     ok: true, status: 200, text: typeof done.text === "string" ? done.text : text, languages: [...new Set(langs)],
     seconds: typeof usage?.seconds === "number" ? (usage.seconds as number) : null, usage, latencyMs: Date.now() - started, gatewayHeaders,

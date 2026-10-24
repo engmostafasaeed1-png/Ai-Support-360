@@ -23,6 +23,8 @@ import { logVoiceAnswer } from '@/lib/voice/voiceMetrics';
 import VoiceLevelMeter from '@/components/voice/VoiceLevelMeter';
 import MicCheck from '@/components/voice/MicCheck';
 import VoiceConsentNote from '@/components/voice/VoiceConsentNote';
+import VoiceTrainingConsent from '@/components/voice/VoiceTrainingConsent';
+import { learnFromAnswer } from '@/lib/voice/learning';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -263,6 +265,9 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   inputLatestRef.current = input;
   const voiceBaseRef = useRef('');
   const lastVoiceTextRef = useRef('');
+  // Learning loop: when the current question appeared and whether typed text preceded the spoken words.
+  const questionAtRef = useRef<number | null>(null);
+  const partialVoiceRef = useRef(false);
   const voice = useVoiceRecognizer({
     context: 'interview',
     interviewId,
@@ -431,6 +436,11 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     if (!text || isStreaming) return;
     const meta = voiceRef.current.answerMeta();
     logVoiceAnswer({ context: 'interview', interviewId, meta, edited: false, chars: text.length });
+    learnFromAnswer({
+      interviewId, answerOrder: messagesRef.current.filter((m) => m.role === 'user').length + 1,
+      answerMs: questionAtRef.current ? Date.now() - questionAtRef.current : null,
+      shown: text, final: text, meta, language: interviewLang, partialVoice: partialVoiceRef.current,
+    });
     pendingTextRef.current = '';
     lastVoiceTextRef.current = '';
     setInput('');
@@ -510,6 +520,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     setIsSpeaking(false);
     // Spoken words are added after anything already typed in the answer box.
     voiceBaseRef.current = inputLatestRef.current;
+    partialVoiceRef.current = !!inputLatestRef.current.trim();
     setMicNotice('');
     void v.start();
   }, []);
@@ -581,6 +592,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
       }
       if (assistantText) {
         messagesRef.current = [...chatHistory, { role: 'assistant', content: assistantText }];
+        questionAtRef.current = Date.now();
         setMessages(messagesRef.current);
         if (!interviewStarted) {
           setInterviewStarted(true);
@@ -618,7 +630,13 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     const text = input.trim();
     if (!text || isStreaming) return;
     const usedVoice = !!lastVoiceTextRef.current;
-    logVoiceAnswer({ context: 'interview', interviewId, meta: usedVoice ? voiceRef.current.answerMeta() : null, edited: usedVoice && text !== lastVoiceTextRef.current.trim(), chars: text.length });
+    const answerMeta = usedVoice ? voiceRef.current.answerMeta() : null;
+    logVoiceAnswer({ context: 'interview', interviewId, meta: answerMeta, edited: usedVoice && text !== lastVoiceTextRef.current.trim(), chars: text.length });
+    learnFromAnswer({
+      interviewId, answerOrder: messages.filter((m) => m.role === 'user').length + 1,
+      answerMs: questionAtRef.current ? Date.now() - questionAtRef.current : null,
+      shown: usedVoice ? lastVoiceTextRef.current : '', final: text, meta: answerMeta, language: interviewLang, partialVoice: partialVoiceRef.current,
+    });
     lastVoiceTextRef.current = '';
     setInput('');
     setInterimTranscript('');
@@ -928,6 +946,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
             <div className="w-full space-y-2">
               <MicCheck context="interview" interviewId={interviewId} lang={interviewLang} className="bg-white/5 border-white/10 text-white" />
               <VoiceConsentNote className="text-gray-400" />
+              <VoiceTrainingConsent interviewId={interviewId} className="text-white/80" />
             </div>
           )}
 
