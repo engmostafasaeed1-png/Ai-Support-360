@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ function formatFileSize(bytes: number | null) {
 }
 
 export default function TicketDocuments({ ticketId }: { ticketId: string }) {
+  const { t } = useTranslation();
   const { data: docs, isLoading } = useTicketDocuments(ticketId);
   const uploadMutation = useUploadTicketDocument(ticketId);
   const deleteMutation = useDeleteTicketDocument(ticketId);
