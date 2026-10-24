@@ -10,6 +10,8 @@ import { formatRemaining } from '@/lib/bidding';
 import { useClientTickets } from '@/hooks/useClientTickets';
 import { useTrackingList } from '@/hooks/useTrackingList';
 import TrackingListControls, { TrackingRowChips } from '@/components/tracking/TrackingListControls';
+import { useBrdApprovalList } from '@/hooks/useBrdApproval';
+import { BrdApprovalFilterButton, BrdApprovalRowChip } from '@/components/brd/approval/BrdApprovalListControls';
 import {
   Search, TicketPlus, Ticket, ChevronDown, ChevronUp,
   Clock, User, Calendar, Tag, Video, MessageSquare, Monitor,
@@ -60,6 +62,9 @@ export default function TicketsPage() {
   const { data: bidCounts } = useClientBidSummary((tickets || []).map(t => t.id));
   const bidNow = useBiddingClock();
   const tt = useTrackingList(tickets || [], 'client');
+  const ticketIds = useMemo(() => (tickets || []).map((t) => t.id), [tickets]);
+  const approvals = useBrdApprovalList(ticketIds);
+  const [awaitingApproval, setAwaitingApproval] = useState(false);
   const navigate = useNavigate();
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -69,7 +74,7 @@ export default function TicketsPage() {
       t.sap_module.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       (t.description || '').toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchStatus = statusFilter === 'all' || t.status === statusFilter;
-    return matchSearch && matchStatus;
+    return matchSearch && matchStatus && (!awaitingApproval || !!approvals.get(t.id)?.waiting_consultant);
   }));
 
   const virtualizer = useVirtualizer({
@@ -121,6 +126,7 @@ export default function TicketsPage() {
         <TrackingListControls settings={tt.settings} filter={tt.filter} setFilter={tt.setFilter} needsCount={tt.needsCount}
           saved={tt.saved} saveCurrent={tt.saveCurrent} removeSaved={tt.removeSaved} />
       )}
+      <BrdApprovalFilterButton rows={approvals} kind="waiting_consultant" active={awaitingApproval} onToggle={() => setAwaitingApproval((v) => !v)} />
 
       {isLoading ? (
         <div className="space-y-3">
@@ -181,6 +187,7 @@ export default function TicketsPage() {
                               <Badge variant="outline" className="text-[10px] gap-0.5"><Users className="w-2.5 h-2.5" /> Colleague</Badge>
                             )}
                             <TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} />
+                            <BrdApprovalRowChip row={approvals.get(ticket.id)} />
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">

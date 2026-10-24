@@ -6,9 +6,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useConsultantCases } from '@/hooks/useConsultantCases';
 import { useTrackingList } from '@/hooks/useTrackingList';
 import TrackingListControls, { TrackingRowChips } from '@/components/tracking/TrackingListControls';
+import { useBrdApprovalList } from '@/hooks/useBrdApproval';
+import { BrdApprovalFilterButton, BrdApprovalRowChip } from '@/components/brd/approval/BrdApprovalListControls';
+import { sortByApproval } from '@/lib/brdApproval';
 import { Search, Filter, ArrowUpRight, Clock, FileSignature, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import NDASigningModal from '@/components/consultant/NDASigningModal';
@@ -36,6 +39,9 @@ export default function CasesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const { data: cases, isLoading, refetch } = useConsultantCases();
   const tt = useTrackingList(cases || [], 'consultant');
+  const caseIds = useMemo(() => (cases || []).map((c) => c.id), [cases]);
+  const approvals = useBrdApprovalList(caseIds);
+  const [needsApproval, setNeedsApproval] = useState(false);
 
   // NDA state
   const [consultantId, setConsultantId] = useState<string | null>(null);
@@ -80,11 +86,11 @@ export default function CasesPage() {
     }
   };
 
-  const filtered = tt.apply((cases || []).filter((c) => {
+  const filtered = sortByApproval(tt.apply((cases || []).filter((c) => {
     const matchSearch = c.title.toLowerCase().includes(search.toLowerCase()) || c.client.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'all' || c.status === statusFilter;
-    return matchSearch && matchStatus;
-  }));
+    return matchSearch && matchStatus && (!needsApproval || !!approvals.get(c.id)?.needs_me);
+  })), approvals);
 
   const statuses = ['all', 'new', 'matched', 'in_progress', 'resolved', 'closed'];
 
@@ -118,6 +124,7 @@ export default function CasesPage() {
         <TrackingListControls settings={tt.settings} filter={tt.filter} setFilter={tt.setFilter} needsCount={tt.needsCount}
           saved={tt.saved} saveCurrent={tt.saveCurrent} removeSaved={tt.removeSaved} />
       )}
+      <BrdApprovalFilterButton rows={approvals} kind="needs_me" active={needsApproval} onToggle={() => setNeedsApproval((v) => !v)} />
 
       <div className="space-y-3">
         {isLoading ? (
@@ -160,7 +167,12 @@ export default function CasesPage() {
                         </div>
                       )}
 
-                      {tt.active && <div className="mt-2"><TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} /></div>}
+                      {(tt.active || approvals.get(ticket.id)) && (
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          {tt.active && <TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} />}
+                          <BrdApprovalRowChip row={approvals.get(ticket.id)} />
+                        </div>
+                      )}
 
                       {/* NDA Status */}
                       {clientId && (
