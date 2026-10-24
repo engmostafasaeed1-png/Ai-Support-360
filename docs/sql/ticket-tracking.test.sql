@@ -195,6 +195,7 @@ BEGIN
   PERFORM public.tt_admin_set_settings('{"rate_limit_per_hour": 1}'::jsonb, 'test');
   s := pg_temp.try(K, format('SELECT public.tt_set_working_status(%L, %L, NULL, NULL, NULL, 7)', T, 'in_testing'));
   PERFORM pg_temp.check(s = '54000', 'TT16 rate limit per user');
+  PERFORM pg_temp.as_user(A);
   PERFORM public.tt_admin_set_settings('{"rate_limit_per_hour": 30}'::jsonb, 'test');
 
   -- TT17 closed tickets are read-only for participants
