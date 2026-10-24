@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import BrdButton from '@/components/brd/BrdButton';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -284,9 +285,12 @@ export default function CaseDetailPage() {
             </div>
           )}
         </div>
-        <Badge className={`${statusColors[ticket.status || 'new']} text-xs`}>
-          {(ticket.status || 'new').replace(/_/g, ' ')}
-        </Badge>
+        <div className="flex flex-col items-end gap-2">
+          <Badge className={`${statusColors[ticket.status || 'new']} text-xs`}>
+            {(ticket.status || 'new').replace(/_/g, ' ')}
+          </Badge>
+          <BrdButton ticketId={ticket.id} area="consultant" />
+        </div>
       </div>
 
       {/* Quick Actions: Documents · Remote Access · Request Meeting */}
