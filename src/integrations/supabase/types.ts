@@ -16129,9 +16129,29 @@ export type Database = {
         Args: { _ticket: string; _uid: string }
         Returns: string
       }
+      tt_admin_overview: { Args: { _days?: number }; Returns: Json }
+      tt_admin_set_settings: {
+        Args: { _reason?: string; _value: Json }
+        Returns: Json
+      }
       tt_can_read: { Args: { _ticket: string }; Returns: boolean }
+      tt_claim_emails: {
+        Args: { _limit?: number }
+        Returns: {
+          dedupe_key: string
+          id: string
+          kind: string
+          payload: Json
+          ticket_id: string
+          user_id: string
+        }[]
+      }
       tt_default_settings: { Args: never; Returns: Json }
       tt_facts: { Args: { _ticket: string }; Returns: Json }
+      tt_finish_email: {
+        Args: { _error?: string; _id: string; _ok: boolean }
+        Returns: undefined
+      }
       tt_is_admin: { Args: { _uid: string }; Returns: boolean }
       tt_lang: { Args: { _user: string }; Returns: string }
       tt_last_transition: {
@@ -16193,6 +16213,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      tt_reminder_sweep: { Args: never; Returns: number }
       tt_set_working_status: {
         Args: {
           _expected_date?: string
