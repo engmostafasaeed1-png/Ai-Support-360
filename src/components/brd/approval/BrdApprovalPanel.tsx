@@ -226,7 +226,7 @@ function ConsultantDecisionBar({ ticketId, round, rounds, onPick, lang }: { tick
   );
 }
 
-function RoundItem({ r, lang }: { r: ApprovalRound; lang: string }) {
+function RoundItem({ r, lang }: { r: ApprovalRound; lang: 'en' | 'ar' }) {
   const { t } = useTranslation();
   return (
     <li className="rounded-xl border border-border p-3 text-xs">
