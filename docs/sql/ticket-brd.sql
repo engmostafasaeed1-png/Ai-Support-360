@@ -35,7 +35,16 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path = public AS $$
     'deep_model', 'openai/gpt-6-astra',
     'max_attachments', 3,
     'max_attachment_chars', 6000,
-    'comments_per_user_per_day', 60
+    'comments_per_user_per_day', 60,
+    'approval_gate', 'recommended',
+    'approval_all_members', false,
+    'approval_allow_no_change', false,
+    'approval_email', true,
+    'approval_remind_days', 2,
+    'approval_client_days', 3,
+    'approval_escalate_days', 5,
+    'approval_max_reminders', 5,
+    'approval_decisions_per_hour', 20
   )
 $$;
 
@@ -204,15 +213,16 @@ BEGIN
   IF public.brd_is_admin(_uid) THEN RETURN 'admin'; END IF;
   IF t.client_id = _uid THEN RETURN 'client'; END IF;
   IF t.tenant_id IS NOT NULL AND public.is_tenant_member(_uid, t.tenant_id) THEN RETURN 'company'; END IF;
-  -- The ticket-document reader rule for consultants: the ticket's consultant, or a started (ready/active) team
-  -- member on a team-gated ticket. Plain match requests, bids and support assignments are not readers.
+  -- The ticket-document reader rule for consultants: the ticket's consultant, or a team member on a team-gated
+  -- ticket once the NDA is signed by both (nda_signed) or started (ready/active), so the BRD can be approved before
+  -- the engagement confirmation. Plain match requests, bids and support assignments are not readers.
   SELECT c.id INTO cid
   FROM public.consultants c
   WHERE c.user_id = _uid
     AND (c.id = t.consultant_id
          OR (public.team_ticket_gated(_ticket) AND EXISTS (
                SELECT 1 FROM public.ticket_team_members tm
-               WHERE tm.ticket_id = _ticket AND tm.consultant_id = c.id AND tm.status IN ('ready', 'active'))))
+               WHERE tm.ticket_id = _ticket AND tm.consultant_id = c.id AND tm.status IN ('nda_signed', 'ready', 'active'))))
   LIMIT 1;
   IF cid IS NULL THEN RETURN NULL; END IF;
   IF COALESCE((public.brd_settings() ->> 'require_nda')::boolean, true) AND NOT EXISTS (
@@ -492,7 +502,7 @@ RETURNS TABLE (user_id uuid, consultant_id uuid) LANGUAGE sql STABLE SECURITY DE
   SELECT DISTINCT c.user_id, c.id
   FROM public.consultants c
   WHERE (c.id = (SELECT consultant_id FROM public.tickets WHERE id = _ticket)
-         OR c.id IN (SELECT tm.consultant_id FROM public.ticket_team_members tm WHERE tm.ticket_id = _ticket AND tm.status IN ('ready', 'active')))
+         OR c.id IN (SELECT tm.consultant_id FROM public.ticket_team_members tm WHERE tm.ticket_id = _ticket AND tm.status IN ('nda_signed', 'ready', 'active')))
     AND public.brd_role_for(_ticket, c.user_id) = 'consultant'
 $$;
 
@@ -956,11 +966,13 @@ DECLARE
   merged jsonb := public.brd_settings();
   k text;
   v jsonb;
+  lo integer;
+  hi integer;
 BEGIN
   IF NOT public.brd_is_admin(uid) THEN RAISE EXCEPTION 'not_allowed' USING ERRCODE = '42501'; END IF;
   IF _value IS NULL OR jsonb_typeof(_value) <> 'object' THEN RAISE EXCEPTION 'brd_invalid_settings' USING ERRCODE = '22023'; END IF;
   FOR k, v IN SELECT * FROM jsonb_each(_value) LOOP
-    IF k IN ('enabled', 'require_nda') THEN
+    IF k IN ('enabled', 'require_nda', 'approval_all_members', 'approval_allow_no_change', 'approval_email') THEN
       IF jsonb_typeof(v) <> 'boolean' THEN RAISE EXCEPTION 'brd_invalid_setting %', k USING ERRCODE = '22023'; END IF;
     ELSIF k IN ('ai_calls_per_ticket_per_day', 'ai_calls_per_client_per_day', 'deep_calls_per_ticket_per_day', 'max_attachments', 'max_attachment_chars', 'comments_per_user_per_day') THEN
       IF jsonb_typeof(v) <> 'number' OR (v #>> '{}')::numeric <> floor((v #>> '{}')::numeric)
@@ -968,6 +980,17 @@ BEGIN
          OR (k = 'max_attachment_chars' AND (v #>> '{}')::integer > 20000)
          OR (k = 'max_attachments' AND (v #>> '{}')::integer > 10)
          OR (k LIKE '%per_day' AND (v #>> '{}')::integer > 1000) THEN
+        RAISE EXCEPTION 'brd_invalid_setting %', k USING ERRCODE = '22023';
+      END IF;
+    ELSIF k IN ('approval_remind_days', 'approval_client_days', 'approval_escalate_days', 'approval_max_reminders', 'approval_decisions_per_hour') THEN
+      lo := (k = 'approval_max_reminders')::int # 1;
+      hi := (ARRAY[30, 60, 90, 20, 200])[array_position(ARRAY['approval_remind_days', 'approval_client_days', 'approval_escalate_days', 'approval_max_reminders', 'approval_decisions_per_hour'], k)];
+      IF jsonb_typeof(v) <> 'number' OR (v #>> '{}')::numeric <> floor((v #>> '{}')::numeric)
+         OR (v #>> '{}')::integer < lo OR (v #>> '{}')::integer > hi THEN
+        RAISE EXCEPTION 'brd_invalid_setting %', k USING ERRCODE = '22023';
+      END IF;
+    ELSIF k = 'approval_gate' THEN
+      IF jsonb_typeof(v) <> 'string' OR (v #>> '{}') NOT IN ('off', 'recommended', 'required') THEN
         RAISE EXCEPTION 'brd_invalid_setting %', k USING ERRCODE = '22023';
       END IF;
     ELSIF k IN ('draft_model', 'deep_model') THEN

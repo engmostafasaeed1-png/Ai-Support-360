@@ -233,6 +233,21 @@ AS $$
 $$;
 REVOKE ALL ON FUNCTION public.tt_last_transition(uuid, text[], text[], text[]) FROM PUBLIC, anon, authenticated;
 
+-- Hooks for docs/sql/ticket-brd-approval.sql: no-op stubs, created only while that file is not applied, so this file
+-- and that one can be applied in any order without dropping the BRD approval gate.
+DO $stub$
+BEGIN
+  IF to_regprocedure('public.tt_brd_approval_fact(uuid)') IS NULL THEN
+    EXECUTE $f$CREATE FUNCTION public.tt_brd_approval_fact(_ticket uuid) RETURNS jsonb LANGUAGE sql STABLE SET search_path = public AS $b$ SELECT NULL::jsonb $b$$f$;
+    EXECUTE 'REVOKE ALL ON FUNCTION public.tt_brd_approval_fact(uuid) FROM PUBLIC, anon, authenticated';
+  END IF;
+  IF to_regprocedure('public.tt_brd_approval_events(uuid,uuid)') IS NULL THEN
+    EXECUTE $f$CREATE FUNCTION public.tt_brd_approval_events(_ticket uuid, _viewer uuid) RETURNS TABLE (event_at timestamptz, source text, kind text, actor_role text, params jsonb) LANGUAGE sql STABLE SET search_path = public AS $b$ SELECT NULL::timestamptz, NULL::text, NULL::text, NULL::text, NULL::jsonb WHERE false $b$$f$;
+    EXECUTE 'REVOKE ALL ON FUNCTION public.tt_brd_approval_events(uuid, uuid) FROM PUBLIC, anon, authenticated';
+  END IF;
+END
+$stub$;
+
 -- Internal: the facts the stepper is derived from. No permission check here (callers check first).
 CREATE OR REPLACE FUNCTION public.tt_facts(_ticket uuid)
  RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public'
@@ -338,8 +353,10 @@ BEGIN
     'gated', _gated, 'confirmed_at', _conf,
     'work_at', _work, 'delivered_at', _deliv, 'closed_at', _closed, 'reopened_at', _reopen,
     'team_next', _next,
+    -- BRD approval gate (docs/sql/ticket-brd-approval.sql; a no-op stub returns NULL before that file is applied).
+    'brd_approval', public.tt_brd_approval_fact(_ticket),
     'actors', jsonb_build_object('submitted', 'client', 'rate', CASE WHEN _rate_by IS NULL THEN 'client' ELSE public.tt_actor_role(_ticket, _rate_by) END,
-      'nda', 'both', 'confirmed', 'both', 'work', 'consultant',
+      'nda', 'both', 'brd', 'consultant', 'confirmed', 'both', 'work', 'consultant',
       'delivered', CASE WHEN _deliv IS NULL THEN NULL ELSE public.tt_actor_role(_ticket, _deliv_by) END,
       'closed', CASE WHEN _closed IS NULL THEN NULL ELSE public.tt_actor_role(_ticket, _closed_by) END,
       'reopened', CASE WHEN _reopen IS NULL THEN NULL ELSE public.tt_actor_role(_ticket, _reopen_by) END),
@@ -479,6 +496,9 @@ BEGIN
            public.tt_actor_role(_ticket, d.uploaded_by),
            jsonb_build_object('version', substring(d.file_name FROM '_v([0-9]+)_'), 'name', left(d.file_name, 120))
       FROM public.ticket_documents d WHERE d.ticket_id = _ticket
+    UNION ALL
+    -- BRD approval rounds and decisions (docs/sql/ticket-brd-approval.sql; a no-op stub returns no rows before that).
+    SELECT h.event_at, h.source, h.kind, h.actor_role, h.params FROM public.tt_brd_approval_events(_ticket, _uid) h
     UNION ALL
     SELECT s.submitted_at, 'system', 'timesheet_submitted', 'consultant', jsonb_build_object('hours', s.total_hours)
       FROM public.ticket_timesheet_submissions s WHERE s.ticket_id = _ticket AND (_full OR s.submitted_by = _uid)

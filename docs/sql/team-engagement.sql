@@ -253,6 +253,17 @@ BEGIN
                                                                                WHEN public.team_is_admin() THEN 'admin' ELSE 'user' END));
 END $$;
 
+-- Hooks for docs/sql/ticket-brd-approval.sql: no-op stubs, created only while that file is not applied, so this file
+-- and that one can be applied in any order without dropping the BRD approval gate.
+DO $stub$
+BEGIN
+  IF to_regprocedure('public.team_brd_gate(uuid,uuid)') IS NULL THEN
+    EXECUTE $f$CREATE FUNCTION public.team_brd_gate(_ticket uuid, _consultant uuid) RETURNS jsonb LANGUAGE sql STABLE SET search_path = public AS $b$ SELECT NULL::jsonb $b$$f$;
+    EXECUTE 'REVOKE ALL ON FUNCTION public.team_brd_gate(uuid, uuid) FROM PUBLIC, anon, authenticated';
+  END IF;
+END
+$stub$;
+
 -- Gate state of one member, read from the source tables.
 CREATE OR REPLACE FUNCTION public.team_gates(_member_id uuid)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
@@ -262,6 +273,7 @@ DECLARE
   _rate_id uuid; _rate_proposed boolean;
   _nda_id uuid; _nda_cons timestamptz; _nda_client timestamptz;
   _conf_id uuid; _conf_rate uuid; _conf_c timestamptz; _conf_k timestamptz;
+  _brd jsonb;
 BEGIN
   SELECT m.ticket_id, m.consultant_id, t.client_id INTO _ticket, _cons, _client
     FROM public.ticket_team_members m JOIN public.tickets t ON t.id = m.ticket_id WHERE m.id = _member_id;
@@ -287,6 +299,9 @@ BEGIN
   SELECT c.id, c.rate_id, c.consultant_confirmed_at, c.client_confirmed_at INTO _conf_id, _conf_rate, _conf_c, _conf_k
     FROM public.engagement_confirmations c WHERE c.member_id = _member_id AND c.superseded_at IS NULL;
 
+  -- BRD approval gate (docs/sql/ticket-brd-approval.sql; a no-op stub before that file is applied).
+  _brd := public.team_brd_gate(_ticket, _cons);
+
   RETURN jsonb_build_object(
     'accepted', _match_acc OR _bid_pending OR _bid_acc,
     'bid_pending', _bid_pending,
@@ -296,6 +311,8 @@ BEGIN
     'rate_proposed', _rate_proposed,
     'nda', _nda_id IS NOT NULL AND _nda_cons IS NOT NULL AND _nda_client IS NOT NULL,
     'nda_state', CASE WHEN _nda_id IS NULL THEN 'none' WHEN _nda_client IS NULL THEN 'consultant_signed' ELSE 'signed' END,
+    'brd_blocks', COALESCE((_brd ->> 'blocks')::boolean, false),
+    'brd_state', _brd ->> 'state',
     'confirmation_id', _conf_id,
     'consultant_confirmed', _conf_c IS NOT NULL,
     'client_confirmed', _conf_k IS NOT NULL,
@@ -322,6 +339,9 @@ BEGIN
   ELSIF NOT (g ->> 'nda')::boolean THEN
     IF g ->> 'nda_state' = 'consultant_signed' THEN RETURN jsonb_build_object('actor', 'client', 'step', 'sign_nda'); END IF;
     RETURN jsonb_build_object('actor', 'consultant', 'step', 'sign_nda');
+  ELSIF COALESCE((g ->> 'brd_blocks')::boolean, false) THEN
+    IF g ->> 'brd_state' IN ('changes_requested', 'rejected') THEN RETURN jsonb_build_object('actor', 'client', 'step', 'update_brd'); END IF;
+    RETURN jsonb_build_object('actor', 'consultant', 'step', 'approve_brd');
   ELSIF g ->> 'confirmation_id' IS NULL THEN
     RETURN jsonb_build_object('actor', 'client', 'step', 'prepare_confirmation');
   ELSIF NOT (g ->> 'consultant_confirmed')::boolean THEN
@@ -341,6 +361,8 @@ RETURNS text LANGUAGE sql IMMUTABLE SET search_path = public AS $$
     WHEN 'propose_rate' THEN 'propose an hourly rate'
     WHEN 'approve_rate' THEN 'approve or decline the proposed hourly rate'
     WHEN 'sign_nda' THEN 'sign the NDA'
+    WHEN 'approve_brd' THEN 'review and approve the BRD'
+    WHEN 'update_brd' THEN 'update the BRD and submit it again'
     WHEN 'prepare_confirmation' THEN 'prepare the engagement confirmation'
     WHEN 'confirm' THEN 'confirm the engagement summary'
     ELSE 'review the request' END
