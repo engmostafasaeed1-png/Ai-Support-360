@@ -506,7 +506,9 @@ $$;
 -- Plain-text excerpt of the Purpose section (already masked by the BRD save rules) for the request e-mail.
 CREATE OR REPLACE FUNCTION public.brd_approval_summary(_content jsonb)
 RETURNS text LANGUAGE sql IMMUTABLE SET search_path = public AS $$
-  SELECT left(btrim(regexp_replace(regexp_replace(COALESCE(_content #>> '{sections,purpose,html}', _content #>> '{sections,purpose}', ''),
+  SELECT left(btrim(regexp_replace(regexp_replace(COALESCE(
+           (SELECT x ->> 'html' FROM jsonb_array_elements(CASE WHEN jsonb_typeof(_content -> 'sections') = 'array' THEN _content -> 'sections' ELSE '[]'::jsonb END) x
+             WHERE x ->> 'key' = 'purpose' LIMIT 1), ''),
          '<[^>]*>', ' ', 'g'), '\s+', ' ', 'g')), 240)
 $$;
 
