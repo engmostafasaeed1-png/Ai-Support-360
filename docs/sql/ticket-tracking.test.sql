@@ -50,7 +50,6 @@ BEGIN
 END $$;
 CREATE OR REPLACE FUNCTION pg_temp.check(_ok boolean, _name text) RETURNS void LANGUAGE plpgsql AS $$
 BEGIN IF NOT COALESCE(_ok, false) THEN RAISE EXCEPTION 'FAILED %', _name; END IF; RAISE NOTICE 'ok %', _name; END $$;
-GRANT USAGE ON SCHEMA pg_temp TO authenticated;
 
 DO $$
 DECLARE
