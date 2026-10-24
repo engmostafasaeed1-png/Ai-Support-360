@@ -13,8 +13,11 @@ export function DiffOps({ ops, dir }: { ops: DiffOp[]; dir?: 'ltr' | 'rtl' }) {
   );
 }
 
+/** Any per-section diff (BRD versions, architecture document versions). */
+export type DiffSection = Pick<SectionDiff, 'title' | 'ops' | 'opsAr' | 'changed' | 'visibility' | 'moved'> & { key: string };
+
 /** Per-section comparison (only changed sections are shown, with added / removed word counts). */
-export default function BrdDiffView({ diffs, dir }: { diffs: SectionDiff[]; dir: 'ltr' | 'rtl' }) {
+export default function BrdDiffView({ diffs, dir }: { diffs: DiffSection[]; dir: 'ltr' | 'rtl' }) {
   const { t } = useTranslation();
   const changed = diffs.filter((d) => d.changed || d.moved);
   if (changed.length === 0) return <p className="text-sm text-muted-foreground">{t('brd.diff.none')}</p>;

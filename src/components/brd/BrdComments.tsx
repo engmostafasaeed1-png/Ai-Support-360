@@ -59,8 +59,8 @@ export default function BrdComments({ ticketId, version, section, comments, canS
     <div className="rounded-xl bg-muted/40 p-2 space-y-2">
       {roots.map((c) => (
         <div key={c.id} className="space-y-1">
-          <Item c={c} canDecide={canDecide} onReply={() => { setReplyTo(c.id); setOpen(true); setMode('comment'); }} onAccept={onAcceptSuggestion} onChanged={onChanged} dir={dir} />
-          {mine.filter((x) => x.parent_id === c.id).map((r) => <div key={r.id} className="ms-6"><Item c={r} canDecide={canDecide} onChanged={onChanged} dir={dir} /></div>)}
+          <Item c={c} store={store} canDecide={canDecide} onReply={() => { setReplyTo(c.id); setOpen(true); setMode('comment'); }} onAccept={onAcceptSuggestion} onChanged={onChanged} dir={dir} />
+          {mine.filter((x) => x.parent_id === c.id).map((r) => <div key={r.id} className="ms-6"><Item c={r} store={store} canDecide={canDecide} onChanged={onChanged} dir={dir} /></div>)}
         </div>
       ))}
       {!open ? (
@@ -95,12 +95,12 @@ export default function BrdComments({ ticketId, version, section, comments, canS
   );
 }
 
-function Item({ c, canDecide, onReply, onAccept, onChanged, dir }: {
-  c: BrdCommentRow; canDecide: boolean; onReply?: () => void; onAccept?: (c: BrdCommentRow) => void; onChanged: () => void; dir: 'ltr' | 'rtl';
+function Item({ c, store, canDecide, onReply, onAccept, onChanged, dir }: {
+  c: BrdCommentRow; store: CommentApi; canDecide: boolean; onReply?: () => void; onAccept?: (c: BrdCommentRow) => void; onChanged: () => void; dir: 'ltr' | 'rtl';
 }) {
   const { t, i18n } = useTranslation();
   const status = async (s: BrdCommentRow['status']) => {
-    const r = await setBrdCommentStatus(c.id, s);
+    const r = await store.setStatus(c.id, s);
     if (r.error) toast.error(r.error.message); else onChanged();
   };
   return (
