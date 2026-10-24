@@ -76,6 +76,26 @@ const MODULE_ALIASES: Readonly<Record<string, string[]>> = {
 };
 
 /** Module families for a profile module label ("SAP FI/CO" -> fi, co). Unknown labels give an empty list. */
+/** English words SAP consultants say inside Arabic sentences. Used only by the correction pass (never as model hints), so an
+ * Arabic-script rendering such as "المابينج" can be written back in Latin script ("mapping") when it clearly sounds alike. */
+export const SPOKEN_ENGLISH_TERMS: readonly string[] = [
+  "implementation", "configuration", "customizing", "interface", "mapping", "integration", "migration", "upgrade", "go-live", "cutover",
+  "testing", "UAT", "master data", "workflow", "report", "change request", "ticket", "deployment", "entries", "posting", "clearing",
+  "payment run", "house bank", "purchase order", "purchase requisition", "release strategy", "planned orders", "production orders",
+  "routing", "kernel", "dumps", "replication", "payroll", "wage types", "condition type", "pricing procedure", "sales order", "delivery",
+  "billing", "invoice", "goods receipt", "cost center", "profit center", "fiscal year", "period", "company code", "plant", "storage location",
+  "business partner", "vendor", "customer", "material", "batch", "transport", "authorization", "role", "user exit", "enhancement",
+];
+
+/** Terms the correction pass may write: the hint keywords, every term of the consultant's module families, core SAP terms,
+ * admin vocabulary and spoken English words. */
+export function correctionGlossary(keywords: readonly string[], modules: ReadonlyArray<string | null | undefined> = [], extra: readonly string[] = []): string[] {
+  const fams = [...new Set(modules.flatMap((m) => normalizeModule(m)))];
+  const all = [...keywords, ...extra, ...fams.flatMap((f) => MODULE_TERMS[f] ?? []), ...SAP_CORE_TERMS, ...SPOKEN_ENGLISH_TERMS];
+  const seen = new Set<string>();
+  return all.map((t) => sanitizeKeyword(t)).filter((t): t is string => !!t && !seen.has(t.toLowerCase()) && !!seen.add(t.toLowerCase())).slice(0, 400);
+}
+
 export function normalizeModule(label: string | null | undefined): string[] {
   const text = String(label || "").toLowerCase().replace(/\bsap\b/g, " ");
   const out = new Set<string>();
@@ -158,6 +178,7 @@ export function buildVoiceGlossary(input: GlossaryInput): VoiceGlossary {
     `Spoken answer in a job interview for an SAP consultant${moduleText ? ` (modules: ${moduleText}${versionText ? `; releases: ${versionText}` : ""})` : ""}.`,
     "The speaker may mix English and Arabic (Egyptian, Gulf or Levantine dialect) in one answer, and may have an Indian, British or Arabic accent.",
     "Write Arabic words in Arabic script and English words, SAP terms and transaction codes in Latin script, exactly as spoken.",
+    "Write all numbers, years, amounts, movement types and transaction codes with the digits 0-9.",
     question ? `The interviewer asked: "${question}"` : "",
   ].filter(Boolean);
   return { keywords: out, prompt: parts.join(" ").slice(0, MAX_PROMPT_LENGTH) };

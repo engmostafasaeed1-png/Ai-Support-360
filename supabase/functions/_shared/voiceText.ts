@@ -33,6 +33,7 @@ export function tokenize(text: string): string[] {
   return normalizeArabic(text)
     .replace(/([\u0600-\u06FF])([A-Za-z])/g, "$1 $2")
     .replace(/([A-Za-z])([\u0600-\u06FF])/g, "$1 $2")
+    .replace(/([A-Za-z])-(?=[A-Za-z])/g, "$1 ")
     .split(/[\s,،.;؛:!?؟()"“”«»\[\]{}]+/)
     .map(normToken)
     .filter(Boolean);
@@ -152,7 +153,8 @@ export function soundKey(text: string): string {
   if (!k) return "";
   const first = k[0];
   const rest = k.slice(1).replace(/[aeiouyw]/g, "");
-  return (first + rest).replace(/(.)\1+/g, "$1").replace(/^[aeiouyw](?=[^aeiouyw])/, "");
+  // Arabic has no p or v: "بادي" may be "padi", "فيو" may be "view".
+  return (first + rest).replace(/^[aeiouyw](?=[^aeiouyw])/, "").replace(/p/g, "b").replace(/v/g, "f").replace(/(.)\1+/g, "$1");
 }
 
 function levenshtein(a: string, b: string): number {
@@ -167,7 +169,8 @@ export function soundsLike(heard: string, term: string): boolean {
   const target = latinKey(term);
   const targetSkeleton = soundKey(term);
   if (!target) return false;
-  const variants = heard.trim().split(/\s+/).length === 1 ? stripArabicPrefix(heard) : [heard];
+  const words = heard.trim().split(/\s+/);
+  const variants = stripArabicPrefix(words[0]).map((first) => [first, ...words.slice(1)].join(" "));
   for (const v of variants) {
     const k = latinKey(v);
     if (!k) continue;
@@ -175,7 +178,7 @@ export function soundsLike(heard: string, term: string): boolean {
     const sk = soundKey(v);
     const fullRatio = levenshtein(k, target) / Math.max(k.length, target.length);
     const skelRatio = targetSkeleton && sk ? levenshtein(sk, targetSkeleton) / Math.max(sk.length, targetSkeleton.length) : 1;
-    if (fullRatio <= 0.34 || (skelRatio <= 0.34 && Math.abs(k.length - target.length) <= 3)) return true;
+    if (fullRatio <= 0.34 || (skelRatio <= 0.4 && Math.abs(k.length - target.length) <= 3)) return true;
   }
   return false;
 }
