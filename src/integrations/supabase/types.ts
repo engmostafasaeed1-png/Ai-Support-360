@@ -4472,6 +4472,78 @@ export type Database = {
           },
         ]
       }
+      interview_question_stats: {
+        Row: {
+          admin_note: string | null
+          answers: number
+          avg_answer_ms: number | null
+          avg_score: number | null
+          computed_at: string
+          confusions: number
+          edited: number
+          first_seen: string | null
+          flags: string[]
+          last_seen: string | null
+          library_candidate: boolean
+          library_id: string | null
+          question: string
+          question_key: string
+          sap_module: string | null
+          skips: number
+          source_type: string | null
+          status: string
+          updated_at: string | null
+          updated_by: string | null
+          voice_answers: number
+        }
+        Insert: {
+          admin_note?: string | null
+          answers?: number
+          avg_answer_ms?: number | null
+          avg_score?: number | null
+          computed_at?: string
+          confusions?: number
+          edited?: number
+          first_seen?: string | null
+          flags?: string[]
+          last_seen?: string | null
+          library_candidate?: boolean
+          library_id?: string | null
+          question: string
+          question_key: string
+          sap_module?: string | null
+          skips?: number
+          source_type?: string | null
+          status?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          voice_answers?: number
+        }
+        Update: {
+          admin_note?: string | null
+          answers?: number
+          avg_answer_ms?: number | null
+          avg_score?: number | null
+          computed_at?: string
+          confusions?: number
+          edited?: number
+          first_seen?: string | null
+          flags?: string[]
+          last_seen?: string | null
+          library_candidate?: boolean
+          library_id?: string | null
+          question?: string
+          question_key?: string
+          sap_module?: string | null
+          skips?: number
+          source_type?: string | null
+          status?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          voice_answers?: number
+        }
+        Relationships: []
+      }
       interview_sessions: {
         Row: {
           ai_summary: string | null
@@ -11969,6 +12041,471 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_answer_learning: {
+        Row: {
+          accent: string | null
+          answer_ms: number | null
+          answer_order: number
+          created_at: string
+          device: string | null
+          edited: boolean
+          engine: string
+          id: string
+          interview_id: string
+          language: string | null
+          models: Json
+          user_id: string
+          vocab_version: number | null
+        }
+        Insert: {
+          accent?: string | null
+          answer_ms?: number | null
+          answer_order: number
+          created_at?: string
+          device?: string | null
+          edited?: boolean
+          engine?: string
+          id?: string
+          interview_id: string
+          language?: string | null
+          models?: Json
+          user_id: string
+          vocab_version?: number | null
+        }
+        Update: {
+          accent?: string | null
+          answer_ms?: number | null
+          answer_order?: number
+          created_at?: string
+          device?: string | null
+          edited?: boolean
+          engine?: string
+          id?: string
+          interview_id?: string
+          language?: string | null
+          models?: Json
+          user_id?: string
+          vocab_version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_answer_learning_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "voice_answer_learning_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      voice_audio_consents: {
+        Row: {
+          created_at: string
+          id: string
+          interview_id: string | null
+          user_id: string
+          version: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interview_id?: string | null
+          user_id: string
+          version: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interview_id?: string | null
+          user_id?: string
+          version?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_audio_consents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "voice_audio_consents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      voice_correction_pairs: {
+        Row: {
+          created_at: string
+          device: string | null
+          final: string
+          final_key: string
+          heard: string
+          heard_key: string
+          id: string
+          interview_id: string | null
+          language: string | null
+          model: string | null
+          module: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device?: string | null
+          final: string
+          final_key: string
+          heard: string
+          heard_key: string
+          id?: string
+          interview_id?: string | null
+          language?: string | null
+          model?: string | null
+          module?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device?: string | null
+          final?: string
+          final_key?: string
+          heard?: string
+          heard_key?: string
+          id?: string
+          interview_id?: string | null
+          language?: string | null
+          model?: string | null
+          module?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_correction_pairs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "voice_correction_pairs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      voice_eval_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          external_id: string | null
+          id: string
+          language: string | null
+          model: string | null
+          raw: string
+          raws: Json | null
+          reference: string
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          language?: string | null
+          model?: string | null
+          raw?: string
+          raws?: Json | null
+          reference: string
+          source: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          language?: string | null
+          model?: string | null
+          raw?: string
+          raws?: Json | null
+          reference?: string
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_eval_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "voice_eval_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      voice_learning_events: {
+        Row: {
+          action: string
+          actor: string | null
+          after: Json | null
+          at: string
+          before: Json | null
+          id: string
+          reason: string | null
+          target: string | null
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          after?: Json | null
+          at?: string
+          before?: Json | null
+          id?: string
+          reason?: string | null
+          target?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          after?: Json | null
+          at?: string
+          before?: Json | null
+          id?: string
+          reason?: string | null
+          target?: string | null
+        }
+        Relationships: []
+      }
+      voice_learning_runs: {
+        Row: {
+          finished_at: string | null
+          id: string
+          kind: string
+          result: Json | null
+          started_at: string
+        }
+        Insert: {
+          finished_at?: string | null
+          id?: string
+          kind: string
+          result?: Json | null
+          started_at?: string
+        }
+        Update: {
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          result?: Json | null
+          started_at?: string
+        }
+        Relationships: []
+      }
+      voice_personal_terms: {
+        Row: {
+          count: number
+          heard: string
+          heard_key: string
+          last_seen: string
+          term: string
+          term_key: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          heard: string
+          heard_key: string
+          last_seen?: string
+          term: string
+          term_key: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          heard?: string
+          heard_key?: string
+          last_seen?: string
+          term?: string
+          term_key?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_personal_terms_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "voice_personal_terms_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      voice_route_recommendations: {
+        Row: {
+          accent: string
+          computed_at: string
+          current_model: string
+          device: string
+          language: string
+          reason: string
+          recommended_model: string
+          stats: Json
+        }
+        Insert: {
+          accent: string
+          computed_at?: string
+          current_model: string
+          device: string
+          language: string
+          reason: string
+          recommended_model: string
+          stats?: Json
+        }
+        Update: {
+          accent?: string
+          computed_at?: string
+          current_model?: string
+          device?: string
+          language?: string
+          reason?: string
+          recommended_model?: string
+          stats?: Json
+        }
+        Relationships: []
+      }
+      voice_routes: {
+        Row: {
+          accent: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          device: string
+          eval: Json | null
+          id: string
+          language: string
+          model: string
+          previous_model: string | null
+          reason: string | null
+          stats: Json | null
+          status: string
+        }
+        Insert: {
+          accent: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          device: string
+          eval?: Json | null
+          id?: string
+          language: string
+          model: string
+          previous_model?: string | null
+          reason?: string | null
+          stats?: Json | null
+          status?: string
+        }
+        Update: {
+          accent?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          device?: string
+          eval?: Json | null
+          id?: string
+          language?: string
+          model?: string
+          previous_model?: string | null
+          reason?: string | null
+          stats?: Json | null
+          status?: string
+        }
+        Relationships: []
+      }
+      voice_sap_terms: {
+        Row: {
+          term_key: string
+        }
+        Insert: {
+          term_key: string
+        }
+        Update: {
+          term_key?: string
+        }
+        Relationships: []
+      }
+      voice_training_audio: {
+        Row: {
+          bytes: number
+          consent_id: string
+          created_at: string
+          delete_reason: string | null
+          delete_requested_at: string | null
+          deleted_at: string | null
+          expires_at: string
+          id: string
+          path: string
+          seconds: number | null
+          segment_id: string | null
+          user_id: string
+        }
+        Insert: {
+          bytes?: number
+          consent_id: string
+          created_at?: string
+          delete_reason?: string | null
+          delete_requested_at?: string | null
+          deleted_at?: string | null
+          expires_at: string
+          id?: string
+          path: string
+          seconds?: number | null
+          segment_id?: string | null
+          user_id: string
+        }
+        Update: {
+          bytes?: number
+          consent_id?: string
+          created_at?: string
+          delete_reason?: string | null
+          delete_requested_at?: string | null
+          deleted_at?: string | null
+          expires_at?: string
+          id?: string
+          path?: string
+          seconds?: number | null
+          segment_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       voice_transcription_segments: {
         Row: {
           audio_path: string | null
@@ -12029,6 +12566,201 @@ export type Database = {
           segment_index?: number
           status?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      voice_user_prefs: {
+        Row: {
+          accent_group: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accent_group?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accent_group?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_user_prefs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profile_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "voice_user_prefs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      voice_vocab_blocklist: {
+        Row: {
+          final_key: string
+          reason: string | null
+          rejected_at: string
+          rejected_by: string | null
+          term: string
+        }
+        Insert: {
+          final_key: string
+          reason?: string | null
+          rejected_at?: string
+          rejected_by?: string | null
+          term: string
+        }
+        Update: {
+          final_key?: string
+          reason?: string | null
+          rejected_at?: string
+          rejected_by?: string | null
+          term?: string
+        }
+        Relationships: []
+      }
+      voice_vocab_suggestions: {
+        Row: {
+          consultants: number
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string | null
+          final_key: string
+          final_term: string
+          first_seen: string | null
+          gate_blocked_at: string | null
+          heard_key: string
+          id: string
+          last_seen: string | null
+          module: string | null
+          problem: string | null
+          sap_ok: boolean
+          status: string
+          total_count: number
+          updated_at: string
+          version_added: number | null
+        }
+        Insert: {
+          consultants?: number
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          final_key: string
+          final_term: string
+          first_seen?: string | null
+          gate_blocked_at?: string | null
+          heard_key: string
+          id?: string
+          last_seen?: string | null
+          module?: string | null
+          problem?: string | null
+          sap_ok?: boolean
+          status?: string
+          total_count?: number
+          updated_at?: string
+          version_added?: number | null
+        }
+        Update: {
+          consultants?: number
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          final_key?: string
+          final_term?: string
+          first_seen?: string | null
+          gate_blocked_at?: string | null
+          heard_key?: string
+          id?: string
+          last_seen?: string | null
+          module?: string | null
+          problem?: string | null
+          sap_ok?: boolean
+          status?: string
+          total_count?: number
+          updated_at?: string
+          version_added?: number | null
+        }
+        Relationships: []
+      }
+      voice_vocab_versions: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          created_at: string
+          created_by: string | null
+          eval: Json | null
+          kind: string
+          parent_version: number | null
+          reason: string | null
+          status: string
+          terms: Json
+          version: number
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          eval?: Json | null
+          kind: string
+          parent_version?: number | null
+          reason?: string | null
+          status?: string
+          terms?: Json
+          version?: number
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          eval?: Json | null
+          kind?: string
+          parent_version?: number | null
+          reason?: string | null
+          status?: string
+          terms?: Json
+          version?: number
+        }
+        Relationships: []
+      }
+      voice_wer_daily: {
+        Row: {
+          answers: number
+          day: string
+          errors: number
+          language: string
+          model: string
+          vocab_version: number
+          words: number
+        }
+        Insert: {
+          answers?: number
+          day: string
+          errors?: number
+          language: string
+          model: string
+          vocab_version?: number
+          words?: number
+        }
+        Update: {
+          answers?: number
+          day?: string
+          errors?: number
+          language?: string
+          model?: string
+          vocab_version?: number
+          words?: number
         }
         Relationships: []
       }
@@ -12658,6 +13390,10 @@ export type Database = {
           verification_status: string
         }[]
       }
+      admin_interview_question_action: {
+        Args: { _action: string; _key: string; _reason: string; _text: string }
+        Returns: Json
+      }
       admin_interview_question_sources: {
         Args: { _interview_id: string }
         Returns: {
@@ -12667,6 +13403,38 @@ export type Database = {
           sap_module: string
           score: number
         }[]
+      }
+      admin_interview_question_stats: {
+        Args: { _filter?: string; _limit?: number }
+        Returns: {
+          admin_note: string | null
+          answers: number
+          avg_answer_ms: number | null
+          avg_score: number | null
+          computed_at: string
+          confusions: number
+          edited: number
+          first_seen: string | null
+          flags: string[]
+          last_seen: string | null
+          library_candidate: boolean
+          library_id: string | null
+          question: string
+          question_key: string
+          sap_module: string | null
+          skips: number
+          source_type: string | null
+          status: string
+          updated_at: string | null
+          updated_by: string | null
+          voice_answers: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "interview_question_stats"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       admin_interview_voice_metrics: {
         Args: { _days?: number }
@@ -13111,6 +13879,64 @@ export type Database = {
       }
       admin_users_search: { Args: { _p?: Json }; Returns: Json }
       admin_users_stats: { Args: never; Returns: Json }
+      admin_voice_benchmark_import: {
+        Args: { _items: Json; _reason: string }
+        Returns: number
+      }
+      admin_voice_learning_decide: {
+        Args: {
+          _action: string
+          _id: string
+          _module: string
+          _reason: string
+          _term: string
+        }
+        Returns: Json
+      }
+      admin_voice_learning_overview: { Args: never; Returns: Json }
+      admin_voice_learning_set_settings: {
+        Args: { _patch: Json; _reason: string }
+        Returns: Json
+      }
+      admin_voice_learning_suggestions: {
+        Args: { _limit?: number; _status?: string }
+        Returns: {
+          consultants: number
+          decided_at: string
+          decision_reason: string
+          final_term: string
+          first_seen: string
+          heard_key: string
+          id: string
+          last_seen: string
+          module: string
+          sap_ok: boolean
+          status: string
+          total_count: number
+          version_added: number
+        }[]
+      }
+      admin_voice_route_retire: {
+        Args: {
+          _accent: string
+          _device: string
+          _language: string
+          _reason: string
+        }
+        Returns: Json
+      }
+      admin_voice_vocab_activate: {
+        Args: { _reason: string; _version: number }
+        Returns: Json
+      }
+      admin_voice_vocab_remove_term: {
+        Args: { _heard: string; _reason: string }
+        Returns: Json
+      }
+      admin_voice_vocab_rollback: {
+        Args: { _reason: string; _version: number }
+        Returns: Json
+      }
       answer_ticket_question: {
         Args: { _answer: string; _question_id: string }
         Returns: undefined
@@ -15245,6 +16071,8 @@ export type Database = {
         Args: { _a: string; _b: string }
         Returns: boolean
       }
+      voice_allowed_model: { Args: { _m: string }; Returns: boolean }
+      voice_answer_class: { Args: { _t: string }; Returns: string }
       voice_claim_segment: {
         Args: {
           _bytes: number
@@ -15257,6 +16085,9 @@ export type Database = {
         }
         Returns: Json
       }
+      voice_clean_term: { Args: { _t: string }; Returns: string }
+      voice_default_model: { Args: never; Returns: string }
+      voice_delete_my_terms: { Args: { _term_key: string }; Returns: number }
       voice_finish_segment: {
         Args: {
           _audio_path: string
@@ -15272,6 +16103,47 @@ export type Database = {
         }
         Returns: boolean
       }
+      voice_is_admin: { Args: never; Returns: boolean }
+      voice_learn_from_answer: {
+        Args: {
+          _answer_ms: number
+          _answer_order: number
+          _device: string
+          _edited: boolean
+          _engine?: string
+          _final: string
+          _interview_id: string
+          _language: string
+          _models: Json
+          _pairs: Json
+          _raw: string
+          _vocab_version: number
+        }
+        Returns: Json
+      }
+      voice_learning_audio_deleted: {
+        Args: { _ids: string[] }
+        Returns: number
+      }
+      voice_learning_context: { Args: { _user_id: string }; Returns: Json }
+      voice_learning_gate_result: {
+        Args: { _eval: Json; _id: string; _kind: string }
+        Returns: string
+      }
+      voice_learning_log: {
+        Args: {
+          _action: string
+          _after: Json
+          _before: Json
+          _reason: string
+          _target: string
+        }
+        Returns: undefined
+      }
+      voice_learning_nightly: { Args: never; Returns: Json }
+      voice_learning_settings: { Args: never; Returns: Json }
+      voice_learning_wake: { Args: never; Returns: undefined }
+      voice_learning_work: { Args: never; Returns: Json }
       voice_log_answer: {
         Args: {
           _chars: number
@@ -15284,7 +16156,47 @@ export type Database = {
         }
         Returns: boolean
       }
+      voice_my_learning: { Args: never; Returns: Json }
+      voice_record_auto_corrections: {
+        Args: {
+          _device: string
+          _interview_id: string
+          _language: string
+          _model: string
+          _pairs: Json
+          _source: string
+          _user_id: string
+        }
+        Returns: number
+      }
+      voice_scrub_text: { Args: { _t: string }; Returns: string }
+      voice_set_audio_consent: {
+        Args: { _granted: boolean; _interview_id: string; _version: string }
+        Returns: Json
+      }
+      voice_set_my_accent: { Args: { _accent: string }; Returns: boolean }
       voice_settings: { Args: never; Returns: Json }
+      voice_store_training_audio: {
+        Args: {
+          _bytes: number
+          _path: string
+          _seconds: number
+          _segment_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      voice_term_key: { Args: { _t: string }; Returns: string }
+      voice_term_problem: { Args: { _t: string }; Returns: string }
+      voice_term_sap_ok: { Args: { _t: string }; Returns: boolean }
+      voice_vocab_add_to_candidate: {
+        Args: { _kind: string; _reason: string; _terms: Json }
+        Returns: number
+      }
+      voice_vocab_make_active: {
+        Args: { _reason: string; _version: number; _why: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "client" | "consultant" | "admin" | "super_admin"
