@@ -55,16 +55,16 @@ SELECT pg_temp.check(pg_temp.claim((SELECT v FROM t WHERE k = 'a'), (SELECT v FR
 
 -- V05 failed segments do not use minutes; a segment is finished only once
 DO $$
-DECLARE r jsonb; id uuid;
+DECLARE r jsonb; sid uuid;
 BEGIN
   UPDATE public.voice_transcription_segments SET status = 'failed' WHERE interview_id = (SELECT v FROM t WHERE k = 'ia')
-    AND id IN (SELECT id FROM public.voice_transcription_segments WHERE interview_id = (SELECT v FROM t WHERE k = 'ia') LIMIT 1);
+    AND voice_transcription_segments.id IN (SELECT g.id FROM public.voice_transcription_segments g WHERE g.interview_id = (SELECT v FROM t WHERE k = 'ia') LIMIT 1);
   r := pg_temp.claim((SELECT v FROM t WHERE k = 'a'), (SELECT v FROM t WHERE k = 'ia'), 'interview', 30);
   PERFORM pg_temp.check((r->>'ok')::boolean, 'V05 freed minutes after a failure');
-  id := (r->>'id')::uuid;
-  PERFORM pg_temp.check(public.voice_finish_segment(id, 'ok', 900, 'en', true, 29.5, NULL, NULL, 'we post with miro', '[{"from":"miro","to":"MIRO"}]'), 'V05 first finish');
-  PERFORM pg_temp.check(NOT public.voice_finish_segment(id, 'failed', 1, NULL, false, NULL, 'late', NULL, NULL, NULL), 'V05 second finish ignored');
-  PERFORM pg_temp.check((SELECT status = 'ok' AND audio_seconds = 29.5 AND corrected FROM public.voice_transcription_segments WHERE voice_transcription_segments.id = id), 'V05 stored result');
+  sid := (r->>'id')::uuid;
+  PERFORM pg_temp.check(public.voice_finish_segment(sid, 'ok', 900, 'en', true, 29.5, NULL, NULL, 'we post with miro', '[{"from":"miro","to":"MIRO"}]'), 'V05 first finish');
+  PERFORM pg_temp.check(NOT public.voice_finish_segment(sid, 'failed', 1, NULL, false, NULL, 'late', NULL, NULL, NULL), 'V05 second finish ignored');
+  PERFORM pg_temp.check((SELECT status = 'ok' AND audio_seconds = 29.5 AND corrected FROM public.voice_transcription_segments WHERE voice_transcription_segments.id = sid), 'V05 stored result');
 END $$;
 
 -- V06 day cap across interviews and dictation (10 minutes): B uses 9.5 min of dictation-free interview time, then 60 s more is refused
