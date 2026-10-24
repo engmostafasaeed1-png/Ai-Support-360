@@ -8,6 +8,8 @@ import { useClientBidSummary, useBiddingClock } from '@/hooks/useClientBids';
 import { biddingIsOpen } from '@/lib/clientBidding';
 import { formatRemaining } from '@/lib/bidding';
 import { useClientTickets } from '@/hooks/useClientTickets';
+import { useTrackingList } from '@/hooks/useTrackingList';
+import TrackingListControls, { TrackingRowChips } from '@/components/tracking/TrackingListControls';
 import {
   Search, TicketPlus, Ticket, ChevronDown, ChevronUp,
   Clock, User, Calendar, Tag, Video, MessageSquare, Monitor,
@@ -57,17 +59,18 @@ export default function TicketsPage() {
   const { data: tickets, isLoading } = useClientTickets();
   const { data: bidCounts } = useClientBidSummary((tickets || []).map(t => t.id));
   const bidNow = useBiddingClock();
+  const tt = useTrackingList(tickets || [], 'client');
   const navigate = useNavigate();
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const filtered = (tickets || []).filter((t) => {
+  const filtered = tt.apply((tickets || []).filter((t) => {
     const matchSearch =
       t.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       t.sap_module.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       (t.description || '').toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchStatus = statusFilter === 'all' || t.status === statusFilter;
     return matchSearch && matchStatus;
-  });
+  }));
 
   const virtualizer = useVirtualizer({
     count: filtered.length,
@@ -114,6 +117,10 @@ export default function TicketsPage() {
           <ScrollBar orientation="horizontal" className="h-1" />
         </ScrollArea>
       </div>
+      {tt.active && tt.settings && (
+        <TrackingListControls settings={tt.settings} filter={tt.filter} setFilter={tt.setFilter} needsCount={tt.needsCount}
+          saved={tt.saved} saveCurrent={tt.saveCurrent} removeSaved={tt.removeSaved} />
+      )}
 
       {isLoading ? (
         <div className="space-y-3">
@@ -173,6 +180,7 @@ export default function TicketsPage() {
                             {ticket.is_own === false && (
                               <Badge variant="outline" className="text-[10px] gap-0.5"><Users className="w-2.5 h-2.5" /> Colleague</Badge>
                             )}
+                            <TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} />
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
