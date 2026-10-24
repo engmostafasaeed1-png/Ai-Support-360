@@ -52,8 +52,11 @@ const IGNORED_MESSAGES: RegExp[] = [
   /was released because another request stole it/i,
   // A lazy page file that failed to load; the visitor can reload (see src/lib/lazyWithRetry.ts).
   CHUNK_LOAD_ERROR,
-  // Content-security-policy reports about the editor's hot-reload socket, browser extensions and antivirus scripts.
-  /^\[diag:csp\].*(?:wss?:\/\/localhost|(?:chrome|moz|safari|safari-web|ms-browser)-extension:|kaspersky-labs\.com)/i,
+  // Content-security-policy reports about the editor's hot-reload socket, browser extensions, antivirus scripts and the script the
+  // Facebook / Instagram in-app browser injects into every page it opens (connect.facebook.net). The site never loads that script.
+  /^\[diag:csp\].*(?:wss?:\/\/localhost|(?:chrome|moz|safari|safari-web|ms-browser)-extension:|kaspersky-labs\.com|connect\.facebook\.net)/i,
+  // Crypto-wallet browser extensions writing to window.ethereum on every page.
+  /window\.ethereum/i,
 ];
 
 export function isIgnoredHost(hostname: string): boolean {

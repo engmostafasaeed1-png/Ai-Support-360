@@ -49,6 +49,9 @@ describe('error report noise filters', () => {
       'Script error.',
       '[diag:csp] CSP violation: connect-src blocked wss://localhost:8080/?token=[redacted]',
       '[diag:csp] CSP violation: script-src-elem blocked https://gc.kis.v2.scr.kaspersky-labs.com/x.js',
+      // Facebook in-app browser injection and crypto-wallet extensions.
+      '[diag:csp] CSP violation: script-src-elem blocked https://connect.facebook.net/en_US/pcm.js',
+      "undefined is not an object (evaluating 'window.ethereum.selectedAddress = undefined')",
     ]) {
       expect(isIgnoredMessage(message), message).toBe(true);
     }
