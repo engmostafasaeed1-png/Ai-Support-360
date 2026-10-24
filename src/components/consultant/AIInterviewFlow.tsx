@@ -23,6 +23,7 @@ import { logVoiceAnswer } from '@/lib/voice/voiceMetrics';
 import VoiceLevelMeter from '@/components/voice/VoiceLevelMeter';
 import MicCheck from '@/components/voice/MicCheck';
 import VoiceConsentNote from '@/components/voice/VoiceConsentNote';
+import VoiceTrainingConsent from '@/components/voice/VoiceTrainingConsent';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -928,6 +929,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
             <div className="w-full space-y-2">
               <MicCheck context="interview" interviewId={interviewId} lang={interviewLang} className="bg-white/5 border-white/10 text-white" />
               <VoiceConsentNote className="text-gray-400" />
+              <VoiceTrainingConsent interviewId={interviewId} className="text-white/80" />
             </div>
           )}
 

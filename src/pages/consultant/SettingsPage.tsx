@@ -12,6 +12,7 @@ import TelegramAlertsCard from '@/components/consultant/TelegramAlertsCard';
 import PushAlertsCard from '@/components/consultant/PushAlertsCard';
 import NotificationPauseCard from '@/components/notifications/NotificationPauseCard';
 import NameFormatPicker from '@/components/consultant/NameFormatPicker';
+import MyVoiceLearningCard from '@/components/voice/MyVoiceLearningCard';
 
 type PrefKey = 'new_case_alerts' | 'profile_visible' | 'show_availability';
 type Prefs = Record<PrefKey, boolean>;
@@ -107,6 +108,7 @@ export default function ConsultantSettingsPage() {
           <NotificationPauseCard />
           <TelegramAlertsCard />
           <PushAlertsCard />
+          <MyVoiceLearningCard />
         </div>
       )}
     </div>
