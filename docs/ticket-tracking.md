@@ -1,9 +1,8 @@
 # Two-layer ticket tracking
 
-Status: **built, switched OFF, database part prepared but NOT applied**
-(`docs/sql/ticket-tracking.sql` + `docs/sql/ticket-tracking.test.sql`, for owner review).
-Until the SQL is applied nothing changes for clients and consultants: the ticket page keeps the old status stepper,
-lists show no new chips, the admin settings card says "not installed".
+Status: **database applied 2026-10-24 (migrations 0096-0099), feature switched OFF.**
+While off, clients and consultants see nothing new (the ticket page keeps the old status stepper); administrators
+see the tracking card as a preview. Switch on in Admin › Settings › Ticket tracking.
 
 ## 1. Current status model (inventory)
 
