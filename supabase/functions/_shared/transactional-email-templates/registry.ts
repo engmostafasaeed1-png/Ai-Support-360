@@ -39,6 +39,7 @@ import { template as meetingInvitation } from './meeting-invitation.tsx'
 import { template as referralNotice } from './referral-notice.tsx'
 import { template as brdAttached } from './brd-attached.tsx'
 import { template as ticketTracking } from './ticket-tracking.tsx'
+import { template as brdApproval } from './brd-approval.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'admin-notification': adminNotification,
@@ -68,4 +69,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'referral-notice': referralNotice,
   'brd-attached': brdAttached,
   'ticket-tracking': ticketTracking,
+  'brd-approval': brdApproval,
 }
