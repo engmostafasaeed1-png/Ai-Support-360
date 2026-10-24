@@ -151,7 +151,7 @@ CREATE INDEX IF NOT EXISTS audit_logs_ticket_updates_idx ON public.audit_logs (e
 -- ------------------------------------------------------------------ who is who on a ticket
 
 -- admin | client (owner) | consultant (the ticket's consultant, a ready/active team member, an active lead/support
--- assignment) | observer (active observer assignment: read only) | NULL (bidders, invited-but-not-ready, outsiders,
+-- assignment) | observer (active observer assignment, also when mirrored into the team table: read only) | NULL (bidders, invited-but-not-ready, outsiders,
 -- company colleagues).
 CREATE OR REPLACE FUNCTION public.tt_viewer_role(_ticket uuid, _uid uuid)
  RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public'
@@ -162,12 +162,13 @@ AS $$
     WHEN EXISTS (SELECT 1 FROM public.tickets t WHERE t.id = _ticket AND t.client_id = _uid) THEN 'client'
     WHEN EXISTS (SELECT 1 FROM public.tickets t JOIN public.consultants c ON c.id = t.consultant_id
                   WHERE t.id = _ticket AND c.user_id = _uid) THEN 'consultant'
+    -- An observer assignment is mirrored into the team table as a legacy row, so it is checked first.
+    WHEN EXISTS (SELECT 1 FROM public.ticket_assignments a JOIN public.consultants c ON c.id = a.consultant_id
+                  WHERE a.ticket_id = _ticket AND c.user_id = _uid AND a.status::text = 'active' AND a.role::text = 'observer') THEN 'observer'
     WHEN EXISTS (SELECT 1 FROM public.ticket_team_members m JOIN public.consultants c ON c.id = m.consultant_id
                   WHERE m.ticket_id = _ticket AND c.user_id = _uid AND m.status IN ('ready', 'active')) THEN 'consultant'
     WHEN EXISTS (SELECT 1 FROM public.ticket_assignments a JOIN public.consultants c ON c.id = a.consultant_id
                   WHERE a.ticket_id = _ticket AND c.user_id = _uid AND a.status::text = 'active' AND a.role::text IN ('lead', 'support')) THEN 'consultant'
-    WHEN EXISTS (SELECT 1 FROM public.ticket_assignments a JOIN public.consultants c ON c.id = a.consultant_id
-                  WHERE a.ticket_id = _ticket AND c.user_id = _uid AND a.status::text = 'active' AND a.role::text = 'observer') THEN 'observer'
   END
 $$;
 REVOKE ALL ON FUNCTION public.tt_viewer_role(uuid, uuid) FROM PUBLIC, anon, authenticated;
@@ -209,6 +210,8 @@ AS $$
   UNION
   SELECT c.user_id, 'consultant' FROM public.ticket_team_members m JOIN public.consultants c ON c.id = m.consultant_id
    WHERE m.ticket_id = _ticket AND m.status IN ('ready', 'active') AND c.user_id IS NOT NULL
+     AND NOT EXISTS (SELECT 1 FROM public.ticket_assignments a WHERE a.ticket_id = _ticket AND a.consultant_id = m.consultant_id
+                      AND a.status::text = 'active' AND a.role::text = 'observer')
   UNION
   SELECT c.user_id, 'consultant' FROM public.ticket_assignments a JOIN public.consultants c ON c.id = a.consultant_id
    WHERE a.ticket_id = _ticket AND a.status::text = 'active' AND a.role::text IN ('lead', 'support') AND c.user_id IS NOT NULL
