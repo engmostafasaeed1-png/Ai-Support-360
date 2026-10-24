@@ -73,3 +73,17 @@ export function useTrackingSummaries(ids: string[]) {
     retry: false,
   });
 }
+
+/** The working status list and rules (labels, colours, matrix); shared by lists and the admin screens. */
+export function useTrackingSettings() {
+  return useQuery({
+    queryKey: ['ticket-tracking-settings'],
+    queryFn: async () => {
+      const { getTrackingSettings } = await import('@/lib/tracking/api');
+      const r = await getTrackingSettings();
+      return { settings: normalizeSettings(r.data), notReady: r.notReady || !!r.error };
+    },
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+}
