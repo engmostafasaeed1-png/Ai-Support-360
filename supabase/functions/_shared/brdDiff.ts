@@ -34,7 +34,8 @@ function lcsOps(a: string[], b: string[]): DiffOp[] {
   const dp = new Uint32Array(rows * cols);
   for (let i = A.length - 1; i >= 0; i--) {
     for (let j = B.length - 1; j >= 0; j--) {
-      dp[i * cols + j] = A[i] === B[j] ? dp[(i + 1) * cols + j + 1] + 1 : Math.max(dp[(i + 1) * cols + j], dp[i * cols + j + 1]);
+      // Words weigh more than whitespace, so the diff keeps real words in common instead of spaces.
+      dp[i * cols + j] = A[i] === B[j] ? dp[(i + 1) * cols + j + 1] + (/\S/.test(A[i]) ? 2 : 1) : Math.max(dp[(i + 1) * cols + j], dp[i * cols + j + 1]);
     }
   }
   const ops: DiffOp[] = [];
