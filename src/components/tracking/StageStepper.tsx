@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Check, Minus, ArrowRight, PauseCircle, Ban, RotateCcw, ShieldAlert } from 'lucide-react';
+import { Check, Minus, ArrowRight, PauseCircle, Ban, RotateCcw, ShieldAlert, FileClock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDateTime } from '@/lib/formatters';
 import type { DerivedStage, ViewerRole } from '@/lib/ticketTracking';
@@ -29,7 +29,7 @@ export default function StageStepper({ derived, role }: { derived: DerivedStage;
             <p className="sr-only">{t(`tracking.state.${s.state}`)}</p>
             <p className="text-[10px] leading-tight text-muted-foreground">
               {s.state === 'done' ? (s.at ? formatDateTime(s.at, lang) : t('tracking.timeNotRecorded'))
-                : s.state === 'skipped' ? t(s.key === 'confirmed' ? 'tracking.notUsed' : 'tracking.state.skipped')
+                : s.state === 'skipped' ? t(s.key === 'confirmed' || s.key === 'brd' ? 'tracking.notUsed' : 'tracking.state.skipped')
                 : s.state === 'current' ? t('tracking.state.current') : ''}
             </p>
             {s.state === 'done' && s.by && s.by !== 'system' && <p className="text-[10px] leading-tight text-muted-foreground">{actorText(t, s.by)}</p>}
@@ -40,7 +40,7 @@ export default function StageStepper({ derived, role }: { derived: DerivedStage;
       {derived.side.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {derived.side.map((s) => {
-            const Icon = s.kind === 'on_hold' ? PauseCircle : s.kind === 'cancelled' ? Ban : s.kind === 'reopened' ? RotateCcw : ShieldAlert;
+            const Icon = s.kind === 'on_hold' ? PauseCircle : s.kind === 'cancelled' ? Ban : s.kind === 'reopened' ? RotateCcw : s.kind === 'brd_waiting' ? FileClock : ShieldAlert;
             return (
               <span key={s.kind + ('by' in s ? s.by : '')} className="inline-flex items-center gap-1 rounded-full border border-warning/50 bg-warning/10 px-2 py-0.5 text-[11px] text-foreground">
                 <Icon className="h-3 w-3 text-warning" aria-hidden />

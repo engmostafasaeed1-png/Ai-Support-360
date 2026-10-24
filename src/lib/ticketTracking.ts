@@ -235,7 +235,7 @@ export function validateChange(input: ChangeInput, settings: TrackingSettings): 
 
 // ------------------------------------------------------------------ automatic stage
 
-export const STAGES = ['submitted', 'details', 'matching', 'selected', 'rate', 'nda', 'confirmed', 'work', 'delivered', 'closed'] as const;
+export const STAGES = ['submitted', 'details', 'matching', 'selected', 'rate', 'nda', 'brd', 'confirmed', 'work', 'delivered', 'closed'] as const;
 export type StageKey = typeof STAGES[number];
 export type StageState = 'done' | 'current' | 'pending' | 'skipped';
 export type Actor = 'client' | 'consultant' | 'both' | 'admin' | 'system' | 'third_party' | 'none';
@@ -264,8 +264,22 @@ export interface TicketFacts {
   reopened_at: string | null;
   /** team_next_step of the furthest pre-ready team member (gated tickets only). */
   team_next: { actor: string; step: string } | null;
+  /** BRD approval gate (brd_gate_state); absent/null before docs/sql/ticket-brd-approval.sql is applied. */
+  brd_approval?: BrdApprovalFact | null;
   actors?: Partial<Record<StageKey | 'reopened', string | null>>;
   working?: WorkingRow | null;
+}
+
+export interface BrdApprovalFact {
+  enabled: boolean;
+  mode: 'off' | 'recommended' | 'required';
+  waived: boolean;
+  waived_at?: string | null;
+  state: 'not_requested' | 'pending' | 'approved' | 'changes_requested' | 'rejected' | 'superseded' | 'withdrawn';
+  version: number | null;
+  open: boolean;
+  approved_at: string | null;
+  blocks: boolean;
 }
 
 export interface WorkingRow {
@@ -279,7 +293,7 @@ export interface WorkingRow {
 }
 
 export interface StageStep { key: StageKey; state: StageState; at: string | null; by: string | null }
-export type SideState = { kind: 'on_hold' } | { kind: 'blocked'; by: 'client' | 'consultant' | 'third_party' } | { kind: 'cancelled' } | { kind: 'reopened'; at: string };
+export type SideState = { kind: 'on_hold' } | { kind: 'blocked'; by: 'client' | 'consultant' | 'third_party' } | { kind: 'cancelled' } | { kind: 'reopened'; at: string } | { kind: 'brd_waiting' };
 
 export interface NextAction { actor: Actor; key: string }
 
@@ -298,6 +312,11 @@ export function deriveStage(f: TicketFacts): DerivedStage {
   const cancelled = f.close_outcome === 'cancelled';
   const closed = f.status === 'closed';
   const deliveredDone = (f.status === 'resolved' || closed) || after(f.delivered_at, f.reopened_at);
+  // BRD approval (optional step): done when approved or waived; "not used" when approval is off, no BRD was submitted
+  // or it was withdrawn; an open round is shown as pending, and only blocks (current step) in "required" mode.
+  const b = f.brd_approval && f.brd_approval.enabled && f.brd_approval.mode !== 'off' ? f.brd_approval : null;
+  const brdDone = !!b && (!!b.approved_at || b.waived);
+  const brdOpen = !!b && !brdDone && b.open && ['pending', 'changes_requested', 'rejected'].includes(b.state);
   const raw: Record<StageKey, { done: boolean; at: string | null; skippable?: boolean }> = {
     submitted: { done: true, at: f.created_at },
     details: { done: f.details_ok, at: f.details_at },
@@ -305,6 +324,7 @@ export function deriveStage(f: TicketFacts): DerivedStage {
     selected: { done: !!f.selected_at || f.has_consultant, at: f.selected_at },
     rate: { done: !!f.rate_at, at: f.rate_at },
     nda: { done: !!f.nda_at || f.nda_state === 'signed', at: f.nda_at },
+    brd: { done: brdDone, at: brdDone ? (b?.approved_at ?? b?.waived_at ?? null) : null },
     confirmed: { done: f.gated && !!f.confirmed_at, at: f.confirmed_at },
     work: { done: !!f.work_at, at: f.work_at },
     delivered: { done: deliveredDone, at: deliveredDone ? f.delivered_at : null },
@@ -314,15 +334,19 @@ export function deriveStage(f: TicketFacts): DerivedStage {
   // Legacy tickets (no team engagement) have no engagement confirmation step.
   const conf = steps.find((s) => s.key === 'confirmed')!;
   if (!f.gated && conf.state !== 'done') conf.state = 'skipped';
-  // A step that was never reached but a later one was is skipped (e.g. a direct assignment without bids).
+  const brdStep = steps.find((s) => s.key === 'brd')!;
+  if (!brdDone && !brdOpen) brdStep.state = 'skipped';
+  // A step that was never reached but a later one was is skipped (e.g. a direct assignment without bids). An open BRD
+  // round stays visible as pending.
   let laterDone = false;
   for (let i = steps.length - 1; i >= 0; i--) {
     if (steps[i].state === 'done') laterDone = true;
-    else if (laterDone) steps[i].state = 'skipped';
+    else if (laterDone && !(steps[i].key === 'brd' && brdOpen)) steps[i].state = 'skipped';
   }
   let current: StageKey | null = null;
   if (!closed && !cancelled) {
-    const first = steps.find((s) => s.state === 'pending');
+    const first = b?.blocks ? brdStep
+      : steps.find((s) => s.state === 'pending' && !(s.key === 'brd' && !b?.blocks && laterDone));
     if (first) { first.state = 'current'; current = first.key; }
   }
 
@@ -331,6 +355,7 @@ export function deriveStage(f: TicketFacts): DerivedStage {
   if (cancelled) side.push({ kind: 'cancelled' });
   if (f.reopened_at && !closed && f.status !== 'resolved') side.push({ kind: 'reopened', at: f.reopened_at });
   if (!closed && !cancelled) {
+    if (b?.blocks) side.push({ kind: 'brd_waiting' });
     if (w?.key === 'on_hold') side.push({ kind: 'on_hold' });
     if (f.status === 'waiting_for_client' || w?.key === 'waiting_client_info') side.push({ kind: 'blocked', by: 'client' });
     else if (w?.key === 'waiting_consultant') side.push({ kind: 'blocked', by: 'consultant' });
@@ -348,7 +373,7 @@ export function deriveStage(f: TicketFacts): DerivedStage {
 
 const TEAM_STEP_KEYS: Record<string, string> = {
   send_bid: 'send_bid', respond: 'respond', choose_bid: 'choose_bid', approve_rate: 'approve_rate', propose_rate: 'propose_rate',
-  sign_nda: 'sign_nda', prepare_confirmation: 'prepare_confirmation', confirm: 'confirm',
+  sign_nda: 'sign_nda', prepare_confirmation: 'prepare_confirmation', confirm: 'confirm', approve_brd: 'approve_brd', update_brd: 'update_brd',
 };
 
 /** "What happens next + who must act". Gated tickets before "ready" follow team_next_step exactly. */
@@ -359,7 +384,7 @@ export function nextAction(f: TicketFacts, current: StageKey | null, side: SideS
   if (side.some((s) => s.kind === 'on_hold')) return { actor: 'none', key: 'on_hold' };
   if (blocked) return { actor: blocked.by, key: `blocked_${blocked.by}` };
   if (f.gated && f.team_next && TEAM_STEP_KEYS[f.team_next.step] && ['client', 'consultant'].includes(f.team_next.actor)
-      && ['matching', 'selected', 'rate', 'nda', 'confirmed'].includes(current)) {
+      && ['matching', 'selected', 'rate', 'nda', 'brd', 'confirmed'].includes(current)) {
     return { actor: f.team_next.actor as Actor, key: `team_${TEAM_STEP_KEYS[f.team_next.step]}` };
   }
   switch (current) {
@@ -368,6 +393,7 @@ export function nextAction(f: TicketFacts, current: StageKey | null, side: SideS
     case 'selected': return f.bids_open ? { actor: 'client', key: 'choose_bid' } : { actor: 'client', key: 'choose_consultant' };
     case 'rate': return f.rate_proposed ? { actor: 'client', key: 'approve_rate' } : { actor: 'consultant', key: 'propose_rate' };
     case 'nda': return f.nda_state === 'consultant_signed' ? { actor: 'client', key: 'client_sign_nda' } : { actor: 'consultant', key: 'consultant_sign_nda' };
+    case 'brd': return ['changes_requested', 'rejected'].includes(f.brd_approval?.state ?? '') ? { actor: 'client', key: 'update_brd' } : { actor: 'consultant', key: 'approve_brd' };
     case 'confirmed': return { actor: 'both', key: 'confirm_engagement' };
     case 'work': return { actor: 'consultant', key: 'start_work' };
     case 'delivered': return { actor: 'consultant', key: 'deliver' };
