@@ -224,8 +224,8 @@ function ConsultantDecisionBar({ ticketId, round, rounds, onPick, lang }: { tick
           </CollapsibleContent>
         </Collapsible>
       )}
-      <div className="flex flex-wrap gap-2">
-        <Button size="sm" className="h-9 gap-1.5" reason={readBlock} hint="inline" onClick={() => onPick('approved')}><CheckCircle2 className="h-4 w-4" /> {t('brd.approval.action.approved')}</Button>
+      <div className="flex flex-wrap items-start gap-2">
+        <Button size="sm" className="h-9 gap-1.5" wrapperClassName="max-w-xs" reason={readBlock} hint="inline" onClick={() => onPick('approved')}><CheckCircle2 className="h-4 w-4" /> {t('brd.approval.action.approved')}</Button>
         <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={() => onPick('changes_requested')}><PencilLine className="h-4 w-4" /> {t('brd.approval.action.changes_requested')}</Button>
         <Button size="sm" variant="outline" className="h-9 gap-1.5 text-destructive" onClick={() => onPick('declined')}><XCircle className="h-4 w-4" /> {t('brd.approval.action.declined')}</Button>
       </div>
