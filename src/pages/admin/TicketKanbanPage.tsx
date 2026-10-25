@@ -10,6 +10,7 @@ import { Send, ExternalLink } from 'lucide-react';
 import SendMatchDialog from '@/components/admin/SendMatchDialog';
 import { useTrackingList } from '@/hooks/useTrackingList';
 import TrackingListControls, { TrackingRowChips } from '@/components/tracking/TrackingListControls';
+import { SlaFilterBar, SlaRowChip, useSlaList } from '@/components/sla/SlaListControls';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-green-500/10 text-green-600 border-green-500/20',
@@ -34,6 +35,7 @@ export default function TicketKanbanPage() {
   const ticketData = kanbanTickets || { new: [], under_review: [], matched: [], in_progress: [], waiting_for_client: [], resolved: [], closed: [] };
   const allTickets = useMemo(() => Object.values(ticketData as Record<string, Array<{ id: string }>>).flat(), [ticketData]);
   const tt = useTrackingList(allTickets, 'admin');
+  const sla = useSlaList(allTickets);
 
   return (
     <div className="space-y-6">
@@ -45,6 +47,7 @@ export default function TicketKanbanPage() {
         <TrackingListControls settings={tt.settings} filter={tt.filter} setFilter={tt.setFilter} needsCount={0} showNeedsMe={false}
           saved={tt.saved} saveCurrent={tt.saveCurrent} removeSaved={tt.removeSaved} />
       )}
+      <SlaFilterBar ctl={sla} />
 
       {isLoading ? (
         <div className="flex gap-4 overflow-x-auto pb-4">
@@ -58,7 +61,7 @@ export default function TicketKanbanPage() {
       ) : (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {columns.map((col) => {
-            const tickets = tt.apply((ticketData as any)[col.key] || []);
+            const tickets = sla.apply(tt.apply((ticketData as any)[col.key] || []));
             return (
               <div key={col.key} className="min-w-[260px] flex-1">
                 <div className="flex items-center gap-2 mb-3 px-1">
@@ -83,6 +86,7 @@ export default function TicketKanbanPage() {
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">{ticket.client}</p>
                         {tt.active && <div className="mt-2"><TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} /></div>}
+                        {sla.on && <div className="mt-1"><SlaRowChip state={sla.map.get(ticket.id)} atRiskPct={sla.atRisk} /></div>}
                         <div className="flex gap-1.5 mt-2">
                           <Button
                             size="sm"

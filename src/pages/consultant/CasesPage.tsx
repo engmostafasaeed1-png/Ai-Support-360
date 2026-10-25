@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useConsultantCases } from '@/hooks/useConsultantCases';
 import { useTrackingList } from '@/hooks/useTrackingList';
 import TrackingListControls, { TrackingRowChips } from '@/components/tracking/TrackingListControls';
+import { SlaFilterBar, SlaRowChip, useSlaList } from '@/components/sla/SlaListControls';
 import { useBrdApprovalList } from '@/hooks/useBrdApproval';
 import { BrdApprovalFilterButton, BrdApprovalRowChip } from '@/components/brd/approval/BrdApprovalListControls';
 import { sortByApproval } from '@/lib/brdApproval';
@@ -86,11 +87,12 @@ export default function CasesPage() {
     }
   };
 
-  const filtered = sortByApproval(tt.apply((cases || []).filter((c) => {
+  const sla = useSlaList(cases || []);
+  const filtered = sla.apply(sortByApproval(tt.apply((cases || []).filter((c) => {
     const matchSearch = c.title.toLowerCase().includes(search.toLowerCase()) || c.client.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'all' || c.status === statusFilter;
     return matchSearch && matchStatus && (!needsApproval || !!approvals.get(c.id)?.needs_me);
-  })), approvals);
+  })), approvals));
 
   const statuses = ['all', 'new', 'matched', 'in_progress', 'resolved', 'closed'];
 
@@ -125,6 +127,7 @@ export default function CasesPage() {
           saved={tt.saved} saveCurrent={tt.saveCurrent} removeSaved={tt.removeSaved} />
       )}
       <BrdApprovalFilterButton rows={approvals} kind="needs_me" active={needsApproval} onToggle={() => setNeedsApproval((v) => !v)} />
+      <SlaFilterBar ctl={sla} />
 
       <div className="space-y-3">
         {isLoading ? (
@@ -170,6 +173,7 @@ export default function CasesPage() {
                       {(tt.active || approvals.get(ticket.id)) && (
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
                           {tt.active && <TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} />}
+                          {sla.on && <SlaRowChip state={sla.map.get(ticket.id)} atRiskPct={sla.atRisk} />}
                           <BrdApprovalRowChip row={approvals.get(ticket.id)} />
                         </div>
                       )}
