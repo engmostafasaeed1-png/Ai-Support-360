@@ -64,8 +64,8 @@ export default function PartnerPortalPage() {
   };
 
   const nothingChosen = !status && cap === '' && !holdFrom;
-  const availReason = sel.size === 0 ? { key: 'select_first', message: t('partner.select_first', 'Select at least one resource first.') }
-    : nothingChosen ? { key: 'fill_first', message: t('partner.fill_first', 'Choose an availability, capacity or hold to apply.') } : undefined;
+  const availReason = sel.size === 0 ? { key: 'fix_errors_first' as const, message: t('partner.select_first', 'Select at least one resource first.') }
+    : nothingChosen ? { key: 'fix_errors_first' as const, message: t('partner.fill_first', 'Choose an availability, capacity or hold to apply.') } : undefined;
 
   return (
     <div className="space-y-5">
@@ -88,7 +88,7 @@ export default function PartnerPortalPage() {
         <TabsContent value="resources" className="space-y-3">
           <Card className="rounded-2xl"><CardContent className="flex flex-col gap-2 p-4 sm:flex-row">
             <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('partner.invite_ph', 'Consultant e-mail')} aria-label={t('partner.invite_ph', 'Consultant e-mail')} />
-            <Button onClick={invite} busy={inviting} reason={!/^\S+@\S+\.\S+$/.test(email.trim()) && { key: 'email_first', message: t('partner.email_first', 'Enter the consultant\'s e-mail address first.') }}>
+            <Button onClick={invite} busy={inviting} reason={!/^\S+@\S+\.\S+$/.test(email.trim()) && { key: 'fix_errors_first' as const, message: t('partner.email_first', 'Enter the consultant\'s e-mail address first.') }}>
               <UserPlus className="me-1 h-4 w-4" />{t('partner.invite', 'Invite consultant')}
             </Button>
           </CardContent></Card>
