@@ -62,7 +62,7 @@ $$;
 
 -- ------------------------------------------------------------------------------------------------ tables
 CREATE TABLE IF NOT EXISTS public.sa_agreements (
-  new_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id uuid,
   client_id uuid NOT NULL,
   name text NOT NULL CHECK (char_length(name) BETWEEN 1 AND 120),
