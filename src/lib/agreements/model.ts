@@ -1,7 +1,7 @@
 // Support agreements in the browser: the shared rules (one source with the database mirror and tests) plus form
 // defaults and small display helpers. Nothing here decides money; the database functions do.
 export * from '../../../supabase/functions/_shared/supportAgreements';
-import type { BankTerms, SaModel, SaStatus, SaTerms } from '../../../supabase/functions/_shared/supportAgreements';
+import type { BankTerms, CrewEntry, CrewRole, SaModel, SaStatus, SaTerms } from '../../../supabase/functions/_shared/supportAgreements';
 import { formatMinutes, SEVERITY_KEYS, type PolicyBody } from '@/lib/sla/policy';
 
 export interface SaRequest {
@@ -33,6 +33,9 @@ export function emptyTerms(model: SaModel = 'payg', start = plusDays(today(), 14
     rate: { hourly_rate: 0, currency: 'USD', s1_multiplier: null, ooh_multiplier: null, overage_rate: null },
     sla: { policy_id: null, version: null, summary: '' },
     reporting: 'monthly',
+    statement_email: false,
+    statement_recipients: [],
+    escalation_contacts: [],
     language: 'en',
     timezone: null,
     nda_required: true,
@@ -42,6 +45,24 @@ export function emptyTerms(model: SaModel = 'payg', start = plusDays(today(), 14
 
 export const emptyRequest = (): SaRequest => ({
   expected_hours_per_month: 20, duration_months: 12, budget: null, show_budget: false, language: 'en', timezone: null, notes: '',
+});
+
+/** Fill fields that older drafts do not have yet (crew, contacts), so every screen can rely on them. */
+export function normalizeTerms(t: SaTerms): SaTerms {
+  return {
+    ...t,
+    team: Array.isArray(t.team) ? t.team : [],
+    statement_email: t.statement_email === true,
+    statement_recipients: Array.isArray(t.statement_recipients) ? t.statement_recipients : [],
+    escalation_contacts: Array.isArray(t.escalation_contacts) ? t.escalation_contacts : [],
+    sla: t.sla ?? { policy_id: null, version: null, summary: '' },
+  };
+}
+
+export const CREW_PICK_ROLES: CrewRole[] = ['functional', 'technical', 'basis', 'backup'];
+export const newCrewEntry = (consultantId: string, role: CrewRole = 'functional'): CrewEntry => ({
+  consultant_id: consultantId, role, capacity_hours_per_week: 8, required: role !== 'backup',
+  working_hours: { days: [1, 2, 3, 4, 5], from: '08:00', to: '17:00' }, backup_for: null,
 });
 
 /** Switching model keeps everything else and fills the model's own part with defaults. */
