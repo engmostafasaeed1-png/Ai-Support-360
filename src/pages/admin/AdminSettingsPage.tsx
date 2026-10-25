@@ -42,6 +42,12 @@ const GENERAL = [
     label: 'Open registration',
     hint: 'Off: nobody can create a new account and the sign-up page says that registration is closed. People who already have an account can still sign in.',
   },
+  {
+    key: 'solution_architecture_visible',
+    labelKey: 'admin.settings_solution_architecture',
+    label: 'Show Solution Architecture to clients',
+    hint: 'Off (default): the page is hidden from client menus and search, and its address leads to the client dashboard. Administrators can still open it by address for review; it shows example data only.',
+  },
 ] as const;
 
 export default function AdminSettingsPage() {

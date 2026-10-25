@@ -3,11 +3,14 @@ import PortalSidebar from '@/components/sidebar/PortalSidebar';
 import { clientNavGroups, clientPrimaryAction } from '@/components/sidebar/navConfig';
 import { useTenant } from '@/contexts/TenantContext';
 import { usePricingTerms } from '@/hooks/usePricingTerms';
+import { usePageVisibility } from '@/hooks/usePageVisibility';
+import { filterNavGroups } from '@/lib/pageVisibility';
 
 export default function ClientSidebar() {
   const { t } = useTranslation();
   const { tenant, membership } = useTenant();
   const { data: terms } = usePricingTerms();
+  const { visible } = usePageVisibility();
 
   // the plan is only shown while subscription plans are offered; otherwise the sidebar shows the role of the user in the company
   const plansOn = terms?.plansEnabled === true;
@@ -36,7 +39,7 @@ export default function ClientSidebar() {
       rootPath="/client"
       subtitleKey="sidebar.portal_client"
       subtitleFallback="Client portal"
-      groups={clientNavGroups}
+      groups={filterNavGroups(clientNavGroups, visible)}
       primaryAction={clientPrimaryAction}
       workspace={workspace}
       profileRole="client"
