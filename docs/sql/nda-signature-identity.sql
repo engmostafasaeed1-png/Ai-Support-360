@@ -434,13 +434,6 @@ BEGIN
     IF _cons.verification_status IS DISTINCT FROM 'verified' THEN RAISE EXCEPTION 'nda_consultant_not_verified' USING ERRCODE = '42501'; END IF;
     _client := NULLIF(_p ->> 'client_id', '')::uuid;
     IF _client IS NULL OR _client = _actor THEN RAISE EXCEPTION 'nda_not_your_party' USING ERRCODE = '42501'; END IF;
-    IF NOT (public.consultant_related_to_client(_cons.id, _client, true)
-            OR public.consultant_has_environment_for_client(_cons.id, _client)
-            OR (to_regclass('public.sa_members') IS NOT NULL AND EXISTS (
-                  SELECT 1 FROM public.sa_members m JOIN public.sa_agreements a ON a.id = m.agreement_id
-                  WHERE m.consultant_id = _cons.id AND a.client_id = _client AND m.status IN ('invited', 'active')))) THEN
-      RAISE EXCEPTION 'nda_no_relation' USING ERRCODE = '42501';
-    END IF;
     PERFORM pg_advisory_xact_lock(hashtext('nda-pair:' || _cons.id::text || ':' || _client::text));
     SELECT * INTO _nda FROM public.nda_agreements WHERE consultant_id = _cons.id AND client_id = _client AND revoked_at IS NULL FOR UPDATE;
     IF FOUND THEN
@@ -449,6 +442,13 @@ BEGIN
         RETURN jsonb_build_object('signature_id', _existing, 'nda_id', _nda.id, 'party', 'consultant', 'idempotent', true);
       END IF;
       RAISE EXCEPTION 'nda_already_signed' USING ERRCODE = '22023', HINT = 'Signed before the stricter signing step: use "Add my signature details".';
+    END IF;
+    IF NOT (public.consultant_related_to_client(_cons.id, _client, true)
+            OR public.consultant_has_environment_for_client(_cons.id, _client)
+            OR (to_regclass('public.sa_members') IS NOT NULL AND EXISTS (
+                  SELECT 1 FROM public.sa_members m JOIN public.sa_agreements a ON a.id = m.agreement_id
+                  WHERE m.consultant_id = _cons.id AND a.client_id = _client AND m.status IN ('invited', 'active')))) THEN
+      RAISE EXCEPTION 'nda_no_relation' USING ERRCODE = '42501';
     END IF;
     _content := COALESCE(_p ->> 'nda_content', '');
     IF length(btrim(_content)) < 20 OR length(_content) > 200000 THEN RAISE EXCEPTION 'nda_content_invalid' USING ERRCODE = '22023'; END IF;
