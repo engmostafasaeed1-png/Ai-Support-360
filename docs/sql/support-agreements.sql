@@ -2095,9 +2095,11 @@ BEGIN
         IF public.sa_try_activate(a.id) THEN n_act := n_act + 1; END IF;
         CONTINUE;
       END IF;
-      -- monthly settlement of the previous month (hours bank)
+      -- monthly settlement of the previous month (hours bank); the other models get the monthly statement notice
       IF a.terms ->> 'model' = 'hours_bank' AND a.started_at IS NOT NULL THEN
         IF public.sa_settle_month(a.id, (date_trunc('month', current_date) - interval '1 month')::date) IS NOT NULL THEN n_set := n_set + 1; END IF;
+      ELSIF a.started_at IS NOT NULL AND a.started_at < date_trunc('month', current_date) THEN
+        PERFORM public.sa_statement_notice(a.id, (date_trunc('month', current_date) - interval '1 month')::date);
       END IF;
       IF a.status = 'suspended' AND a.suspended_until IS NOT NULL AND a.suspended_until <= current_date THEN
         UPDATE public.sa_agreements SET suspended_until = NULL WHERE id = a.id;
