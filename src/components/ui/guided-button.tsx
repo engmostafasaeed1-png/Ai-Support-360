@@ -115,42 +115,28 @@ export const GuidedButton = React.forwardRef<HTMLButtonElement, GuidedButtonProp
     const clear = () => { if (timer.current) window.clearTimeout(timer.current); timer.current = undefined; };
     const closeSoon = () => { clear(); timer.current = window.setTimeout(() => setOpen(false), CLOSE_DELAY); };
     React.useEffect(() => clear, []);
-    React.useEffect(() => { if (!block) setOpen(false); }, [block]);
+    const isBlocked = !!block;
+    React.useEffect(() => { if (!isBlocked) setOpen(false); }, [isBlocked]);
 
-    // ------------------------------------------------------------------ busy / plain
-    if (!block) {
-      const inline = hint === "inline";
-      const btn = (
-        <ButtonBase
-          ref={ref}
-          {...rest}
-          className={className}
-          disabled={busy || disabled}
-          aria-busy={busy ? true : undefined}
-          onClick={onClick}
-        >
-          {children}
-          {busy && <span className="sr-only">{busyLabel ?? BUSY_LABEL[lang]}</span>}
-        </ButtonBase>
-      );
-      return inline ? <span className={cn("inline-flex flex-col items-start gap-1", wrapperClassName)}>{btn}</span> : btn;
-    }
+    const blocked = !!block;
+    const sentence = block ? blockedSentence(block, lang) : "";
+    const describedBy = [rest["aria-describedby"], blocked ? descId : undefined].filter(Boolean).join(" ") || undefined;
 
-    // ------------------------------------------------------------------ blocked
-    const sentence = blockedSentence(block, lang);
-    const describedBy = [rest["aria-describedby"], descId].filter(Boolean).join(" ");
-
-    const trigger = (
+    // One element tree for every state (ready, busy, blocked) so the button keeps focus when its state changes.
+    const button = (
       <PopoverPrimitive.Anchor asChild>
         <ButtonBase
           ref={ref}
           {...rest}
-          className={cn(className, BLOCKED_CLASSES)}
-          aria-disabled="true"
+          className={blocked ? cn(className, BLOCKED_CLASSES) : className}
+          disabled={!blocked && (busy || disabled) ? true : undefined}
+          aria-busy={busy ? true : undefined}
+          aria-disabled={blocked ? "true" : rest["aria-disabled"]}
           aria-describedby={describedBy}
-          aria-expanded={open}
-          data-blocked={block.first.key}
+          aria-expanded={blocked ? open : rest["aria-expanded"]}
+          data-blocked={block?.first.key}
           onClick={(e) => {
+            if (!blocked) { onClick?.(e); return; }
             // a blocked button never runs its action and never submits a form
             e.preventDefault();
             e.stopPropagation();
@@ -159,53 +145,56 @@ export const GuidedButton = React.forwardRef<HTMLButtonElement, GuidedButtonProp
             // keyboard activation (Enter/Space has detail 0): move into the panel so the next step is reachable
             nextRef.current = e.detail === 0;
           }}
-          onPointerEnter={(e) => { rest.onPointerEnter?.(e); if (e.pointerType === "mouse") { clear(); setOpen(true); } }}
-          onPointerLeave={(e) => { rest.onPointerLeave?.(e); if (e.pointerType === "mouse") closeSoon(); }}
-          onFocus={(e) => { rest.onFocus?.(e); clear(); setOpen(true); }}
+          onPointerEnter={(e) => { rest.onPointerEnter?.(e); if (blocked && e.pointerType === "mouse") { clear(); setOpen(true); } }}
+          onPointerLeave={(e) => { rest.onPointerLeave?.(e); if (blocked && e.pointerType === "mouse") closeSoon(); }}
+          onFocus={(e) => { rest.onFocus?.(e); if (blocked) { clear(); setOpen(true); } }}
           onBlur={(e) => {
             rest.onBlur?.(e);
-            if (!contentRef.current?.contains(e.relatedTarget as Node | null)) closeSoon();
+            if (blocked && !contentRef.current?.contains(e.relatedTarget as Node | null)) closeSoon();
           }}
           onKeyDown={(e) => {
             rest.onKeyDown?.(e);
-            if (e.key === "Escape" && open) { e.stopPropagation(); setOpen(false); }
+            if (blocked && e.key === "Escape" && open) { e.stopPropagation(); setOpen(false); }
           }}
         >
           {children}
-          {hint !== "inline" && <span id={descId} hidden>{sentence}</span>}
+          {busy && <span className="sr-only">{busyLabel ?? BUSY_LABEL[lang]}</span>}
+          {blocked && hint !== "inline" && <span id={descId} hidden>{sentence}</span>}
         </ButtonBase>
       </PopoverPrimitive.Anchor>
     );
 
     const popover = (
-      <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
-        {trigger}
-        <PopoverPrimitive.Portal>
-          <PopoverPrimitive.Content
-            ref={contentRef}
-            side="top"
-            align="center"
-            sideOffset={6}
-            collisionPadding={8}
-            dir={lang === "ar" ? "rtl" : "ltr"}
-            data-testid="blocked-popover"
-            className="z-[60] max-w-[min(18rem,calc(100vw-1rem))] rounded-lg border border-border/60 bg-popover px-3 py-2.5 text-xs text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
-            onOpenAutoFocus={(e) => {
-              e.preventDefault();
-              if (nextRef.current) {
-                nextRef.current = false;
-                window.setTimeout(() => contentRef.current?.querySelector<HTMLElement>("[data-testid=blocked-next-step]")?.focus(), 0);
-              }
-            }}
-            onCloseAutoFocus={(e) => e.preventDefault()}
-            onPointerEnter={clear}
-            onPointerLeave={(e) => { if (e.pointerType === "mouse") closeSoon(); }}
-            onFocus={clear}
-            onBlur={(e) => { if (!contentRef.current?.contains(e.relatedTarget as Node | null)) closeSoon(); }}
-          >
-            <BlockedPanel block={block} lang={lang} onDone={() => setOpen(false)} />
-          </PopoverPrimitive.Content>
-        </PopoverPrimitive.Portal>
+      <PopoverPrimitive.Root open={blocked && open} onOpenChange={setOpen}>
+        {button}
+        {block && (
+          <PopoverPrimitive.Portal>
+            <PopoverPrimitive.Content
+              ref={contentRef}
+              side="top"
+              align="center"
+              sideOffset={6}
+              collisionPadding={8}
+              dir={lang === "ar" ? "rtl" : "ltr"}
+              data-testid="blocked-popover"
+              className="z-[60] max-w-[min(18rem,calc(100vw-1rem))] rounded-lg border border-border/60 bg-popover px-3 py-2.5 text-xs text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+              onOpenAutoFocus={(e) => {
+                e.preventDefault();
+                if (nextRef.current) {
+                  nextRef.current = false;
+                  window.setTimeout(() => contentRef.current?.querySelector<HTMLElement>("[data-testid=blocked-next-step]")?.focus(), 0);
+                }
+              }}
+              onCloseAutoFocus={(e) => e.preventDefault()}
+              onPointerEnter={clear}
+              onPointerLeave={(e) => { if (e.pointerType === "mouse") closeSoon(); }}
+              onFocus={clear}
+              onBlur={(e) => { if (!contentRef.current?.contains(e.relatedTarget as Node | null)) closeSoon(); }}
+            >
+              <BlockedPanel block={block} lang={lang} onDone={() => setOpen(false)} />
+            </PopoverPrimitive.Content>
+          </PopoverPrimitive.Portal>
+        )}
       </PopoverPrimitive.Root>
     );
 
@@ -213,11 +202,13 @@ export const GuidedButton = React.forwardRef<HTMLButtonElement, GuidedButtonProp
     return (
       <span className={cn("inline-flex flex-col items-start gap-1", wrapperClassName)}>
         {popover}
-        <span id={descId} role="note" data-testid="blocked-hint" className={cn("flex max-w-md flex-wrap items-start gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground", hintClassName)}>
-          <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-          <span>{block.first.message}{block.more.length > 0 ? ` (${moreStepsText(block.more.length, lang)})` : ""}</span>
-          <NextStep step={block.first} />
-        </span>
+        {block && (
+          <span id={descId} role="note" data-testid="blocked-hint" className={cn("flex max-w-md flex-wrap items-start gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground", hintClassName)}>
+            <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+            <span>{block.first.message}{block.more.length > 0 ? ` (${moreStepsText(block.more.length, lang)})` : ""}</span>
+            <NextStep step={block.first} />
+          </span>
+        )}
       </span>
     );
   },
