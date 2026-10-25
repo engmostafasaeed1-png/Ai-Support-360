@@ -21,6 +21,7 @@ import { normalizeContent } from '../../../../supabase/functions/_shared/brdMode
 import BrdDiffView from '../BrdDiffView';
 import { BrdApprovalChip } from './BrdApprovalChip';
 import BrdDecisionDialog from './BrdDecisionDialog';
+import { approveReadReason, onReadChange, progressFor, requestGoto } from '@/lib/brdSectionsRead';
 
 /**
  * Consultant approval of the BRD (docs/sql/ticket-brd-approval.sql): state, who must approve, the consultant's
@@ -191,6 +192,13 @@ function ConsultantDecisionBar({ ticketId, round, rounds, onPick, lang }: { tick
   const prev = lastApprovedBefore(rounds, round.version);
   const [diffOpen, setDiffOpen] = useState(false);
   const [diffs, setDiffs] = useState<ReturnType<typeof diffContents> | null>(null);
+  // Approve stays dimmed until every section of this exact version was opened in the reader below.
+  const [read, setRead] = useState(() => progressFor(ticketId, round.version));
+  useEffect(() => {
+    setRead(progressFor(ticketId, round.version));
+    return onReadChange((d) => { if (d.ticketId === ticketId && d.version === round.version) setRead(progressFor(ticketId, round.version)); });
+  }, [ticketId, round.version]);
+  const readBlock = approveReadReason(read, () => requestGoto(ticketId, round.version, read.nextKey));
   useEffect(() => {
     if (!diffOpen || !prev || diffs) return;
     let live = true;
@@ -217,7 +225,7 @@ function ConsultantDecisionBar({ ticketId, round, rounds, onPick, lang }: { tick
         </Collapsible>
       )}
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" className="h-9 gap-1.5" onClick={() => onPick('approved')}><CheckCircle2 className="h-4 w-4" /> {t('brd.approval.action.approved')}</Button>
+        <Button size="sm" className="h-9 gap-1.5" reason={readBlock} hint="inline" onClick={() => onPick('approved')}><CheckCircle2 className="h-4 w-4" /> {t('brd.approval.action.approved')}</Button>
         <Button size="sm" variant="outline" className="h-9 gap-1.5" onClick={() => onPick('changes_requested')}><PencilLine className="h-4 w-4" /> {t('brd.approval.action.changes_requested')}</Button>
         <Button size="sm" variant="outline" className="h-9 gap-1.5 text-destructive" onClick={() => onPick('declined')}><XCircle className="h-4 w-4" /> {t('brd.approval.action.declined')}</Button>
       </div>
