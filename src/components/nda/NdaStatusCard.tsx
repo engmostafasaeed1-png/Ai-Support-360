@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNdaStatus, useRefreshNda } from '@/hooks/useNdaSigning';
-import { errorKey, ndaView, sendNdaReminder, type NdaEvidence, type NdaParty } from '@/lib/nda/api';
+import { errorKey, ndaView, sendNdaReminder, type NdaEvidence, type NdaParty, type NdaStatus } from '@/lib/nda/api';
 import { downloadNdaById } from '@/lib/nda/download';
 import NdaSignDialog from './NdaSignDialog';
 
@@ -17,7 +17,7 @@ interface Props {
   consultantName?: string;
   clientName?: string;
   /** Opens the signing step for the party who still has to sign (consultant first signature / client countersignature). */
-  onReviewAndSign?: () => void;
+  onReviewAndSign?: (s: NdaStatus) => void;
   /** Shown when the stricter signing is not installed (legacy box). */
   fallback?: React.ReactNode;
   className?: string;
@@ -89,7 +89,7 @@ export default function NdaStatusCard({ ndaId, consultantId, clientId, consultan
               : t('ndaSign.card.signFirst')}
           </p>
           {onReviewAndSign && (
-            <Button size="lg" className="w-full gap-2 sm:w-auto" onClick={onReviewAndSign}><PenTool className="h-4 w-4" aria-hidden /> {t('ndaSign.card.reviewAndSign')}</Button>
+            <Button size="lg" className="w-full gap-2 sm:w-auto" onClick={() => onReviewAndSign(s)}><PenTool className="h-4 w-4" aria-hidden /> {t('ndaSign.card.reviewAndSign')}</Button>
           )}
         </div>
       )}
@@ -127,7 +127,7 @@ export default function NdaStatusCard({ ndaId, consultantId, clientId, consultan
       {v.kind === 'revoked' && (
         <div className="space-y-2 rounded-xl bg-destructive/10 p-3" role="status">
           <p className="flex items-center gap-2 text-sm font-medium text-destructive"><ShieldX className="h-4 w-4" aria-hidden /> {t('ndaSign.card.revoked', { date: fmt(s.revoked_at, lang) })}</p>
-          {v.me === 'consultant' && onReviewAndSign && <Button size="sm" onClick={onReviewAndSign}>{t('ndaSign.card.signNew')}</Button>}
+          {v.me === 'consultant' && onReviewAndSign && <Button size="sm" onClick={() => onReviewAndSign(s)}>{t('ndaSign.card.signNew')}</Button>}
         </div>
       )}
 
