@@ -66,6 +66,8 @@ import { splitBadge } from '@/components/client/ContextFitBadges';
 import BrdButton from '@/components/brd/BrdButton';
 import TicketTrackingPanel, { TrackingHeaderChips } from '@/components/tracking/TicketTrackingPanel';
 import { BrdApprovalHeaderChip } from '@/components/brd/approval/BrdApprovalChip';
+import { SlaHeaderChips } from '@/components/sla/SlaChips';
+import SlaTicketPanel from '@/components/sla/SlaTicketPanel';
 
 function TicketFileLink({ fileUrl, fileName }: { fileUrl: string | null; fileName: string | null }) {
   const href = useChatFileUrl(fileUrl);
@@ -277,6 +279,7 @@ export default function TicketDetailPage() {
             )}
             <TrackingHeaderChips ticketId={ticket.id} />
             <BrdApprovalHeaderChip ticketId={ticket.id} />
+            <SlaHeaderChips ticketId={ticket.id} />
           </div>
         </div>
       </div>
@@ -306,6 +309,9 @@ export default function TicketDetailPage() {
           </Card>
         )}
       />
+
+      {/* ─── SLA policy snapshot, clocks and actions (only while SLA policies are on) ─── */}
+      <SlaTicketPanel ticketId={ticket.id} />
 
       {/* ─── Quick Actions (visible once consultant assigned) ─── */}
       {ticket.consultant_id && (

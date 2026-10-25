@@ -190,6 +190,7 @@ const EnvironmentsPage = lazyWithRetry(() => import("./pages/admin/EnvironmentsP
 const EnvironmentLogsPage = lazyWithRetry(() => import("./pages/admin/EnvironmentLogsPage.tsx"), 'EnvironmentLogsPage');
 const MeetingJoinEventsExportPage = lazyWithRetry(() => import("./pages/admin/MeetingJoinEventsExportPage.tsx"), 'MeetingJoinEventsExportPage');
 const AdminSettingsPage = lazyWithRetry(() => import("./pages/admin/AdminSettingsPage.tsx"), 'AdminSettingsPage');
+const AdminSlaPage = lazyWithRetry(() => import("./pages/admin/AdminSlaPage.tsx"), 'AdminSlaPage');
 const NDAManagementPage = lazyWithRetry(() => import("./pages/admin/NDAManagementPage.tsx"), 'NDAManagementPage');
 const InterviewTrainingPage = lazyWithRetry(() => import("./pages/admin/InterviewTrainingPage.tsx"), 'InterviewTrainingPage');
 const QuestionLibraryPage = lazyWithRetry(() => import("./pages/admin/QuestionLibraryPage.tsx"), 'QuestionLibraryPage');
@@ -511,6 +512,7 @@ const App = () => (
               <Route path="environment-logs" element={<EnvironmentLogsPage />} />
               <Route path="meeting-join-events" element={<MeetingJoinEventsExportPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
+              <Route path="sla" element={<AdminSlaPage />} />
               <Route path="nda-management" element={<NDAManagementPage />} />
               <Route path="landing-editor" element={<LandingEditorPage />} />
               <Route path="interview-training" element={<InterviewTrainingPage />} />

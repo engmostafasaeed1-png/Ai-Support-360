@@ -265,6 +265,7 @@ export const adminNavGroups: NavGroup[] = [
     items: [
       { key: 'landing_editor', icon: PanelTop, path: '/admin/landing-editor' },
       { key: 'console', icon: Shield, path: '/admin/console' },
+      { key: 'sla_policies', icon: Timer, path: '/admin/sla', fallback: 'SLA policies' },
       { key: 'settings', icon: Settings, path: '/admin/settings' },
       // Only offered to super admins (AdminSidebar filters it out for everyone else).
       { key: 'super_admin', icon: Crown, path: '/super-admin' },

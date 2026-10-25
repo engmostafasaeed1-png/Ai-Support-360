@@ -53,6 +53,7 @@ import ContextFitBadges from '@/components/client/ContextFitBadges';
 import { buildTicketContext, withTicketContext, type TicketContextInput } from '@/lib/ticketContext';
 import { useClientProfileData } from '@/hooks/useClientProfile';
 import { NO_CRITICAL_CHOICE, choiceSummary, criticalColumns, type CriticalChoice } from '@/lib/criticalService';
+import SeverityGuide from '@/components/sla/SeverityGuide';
 
 const ticketSchema = z.object({
   sap_module: z.string().min(1, 'Please select an SAP module'),
@@ -1205,6 +1206,8 @@ export default function NewRequestPage() {
                 ))}
               </div>
             </div>
+
+            <SeverityGuide urgency={form.urgency} />
 
             <CriticalRequestOption urgency={form.urgency} value={critical} onChange={setCritical} />
 
