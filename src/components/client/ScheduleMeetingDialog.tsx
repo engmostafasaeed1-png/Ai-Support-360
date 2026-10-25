@@ -18,7 +18,8 @@ import { format, addMinutes, setHours, setMinutes } from 'date-fns';
 import { validateMeetingUrl } from '@/lib/meetingUrlValidation';
 import { useTranslation } from 'react-i18next';
 import { addInvitees, inviteStatusText, MAX_EXTERNAL_INVITEES, meetingErrorText, type InviteResult } from '@/lib/meetingInvite';
-import { scheduleMeeting } from '@/lib/scheduleMeeting';
+import { scheduleMeeting, meetingOptions, DEFAULT_MEETING_OPTIONS } from '@/lib/scheduleMeeting';
+import { findConflicts, formProblems, formProblemText, timeZoneLabel } from '@/lib/meetingSchedule';
 import {
   CalendarDays, Clock, Video, MessageSquare, Monitor, Bell,
   Loader2, CheckCircle2, X, UserPlus, Users, Mail, Search, AlertTriangle, Copy,
@@ -40,13 +41,15 @@ interface ConsultantOption {
   display_name: string;
   avatar_url: string | null;
   isAssigned?: boolean;
+  /** the client of the ticket is this consultant (same person): a meeting with yourself is refused */
+  isSelf?: boolean;
 }
 
 interface ExternalInvitee {
   email: string;
 }
 
-type InviteeSource = 'assigned' | 'external';
+type InviteeSource = 'assigned' | 'colleagues' | 'external';
 
 const SESSION_TYPES = [
   { value: 'video', icon: Video, label: 'Video Call' },
@@ -113,12 +116,18 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
   const [externalInput, setExternalInput] = useState('');
   const [consultantSearch, setConsultantSearch] = useState('');
 
-  // Pre-select assigned consultant
-  useEffect(() => {
-    if (consultantId && inviteeSource === 'assigned') {
-      setSelectedConsultantIds([consultantId]);
-    }
-  }, [consultantId, inviteeSource]);
+  const [selectedColleagueIds, setSelectedColleagueIds] = useState<string[]>([]);
+  const [preselected, setPreselected] = useState(false);
+  useEffect(() => { if (open) { setPreselected(false); setSelectedColleagueIds([]); } }, [open]);
+
+  // External switch, colleagues of the company and busy times of the assigned consultants (server decides again on submit).
+  const { data: options = DEFAULT_MEETING_OPTIONS } = useQuery({
+    queryKey: ['meeting-options', ticketId],
+    queryFn: () => meetingOptions(ticketId),
+    enabled: open,
+    staleTime: 60_000,
+  });
+  const primaryId = consultantId ?? options.primary_consultant_id;
 
   // The meeting is always with a consultant assigned to THIS ticket: the ticket's consultant and the active assignments of the ticket. There is no list of all consultants.
   const { data: assignedConsultants = [] } = useQuery({
@@ -153,11 +162,21 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
           display_name: p?.display_name || 'Consultant',
           avatar_url: p?.avatar_url,
           isAssigned: true,
+          isSelf: c.user_id === clientId,
         } as ConsultantOption;
       });
     },
     enabled: open,
   });
+
+  // Pre-select the assigned consultant(s) once the list is known (never the client himself).
+  useEffect(() => {
+    if (!open || preselected || assignedConsultants.length === 0) return;
+    const usable = assignedConsultants.filter(c => !c.isSelf);
+    const primary = usable.find(c => c.id === primaryId);
+    setSelectedConsultantIds(primary ? [primary.id] : usable.map(c => c.id));
+    setPreselected(true);
+  }, [open, preselected, assignedConsultants, primaryId]);
 
   const displayedConsultants = assignedConsultants;
   const filteredConsultants = displayedConsultants.filter(c =>
@@ -192,7 +211,24 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
     .filter(c => selectedConsultantIds.includes(c.id))
     .map(c => c.display_name);
 
-  const totalInvitees = selectedConsultantIds.length + externalEmails.length;
+  const totalInvitees = selectedConsultantIds.length + externalEmails.length + selectedColleagueIds.length;
+  const toggleColleague = (id: string) => setSelectedColleagueIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  // Start of the meeting in the person's own time zone, the conflict check and every reason the button is disabled.
+  const startsAt = (() => {
+    if (!date) return null;
+    const [h, m] = time.split(':').map(Number);
+    return setMinutes(setHours(new Date(date), h), m);
+  })();
+  const conflicts = startsAt ? findConflicts(options.busy, selectedConsultantIds, startsAt, parseInt(duration)) : [];
+  const conflictNames = Array.from(new Set(conflicts.map(c => displayedConsultants.find(d => d.id === c.consultant_id)?.display_name || 'Consultant')));
+  const linkNeeded = needsPastedLink(platform, sessionType);
+  const linkCheck = linkNeeded ? validateMeetingUrl(pastedUrl) : null;
+  const problems = formProblems({
+    date, startsAt, participants: totalInvitees, externalCount: externalEmails.length, externalAllowed: options.external_allowed,
+    needsLink: linkNeeded, linkOk: !!linkCheck?.ok && linkCheck.provider === PROVIDER_OF_PLATFORM[platform], conflicts: conflicts.length,
+  });
+  const tzLabel = timeZoneLabel(startsAt ?? new Date());
 
   const handleSchedule = async () => {
     if (!date) { toast.error('Please select a date'); return; }
@@ -207,13 +243,15 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
       }
     }
 
+    if (problems.length) { toast.error(formProblemText(problems[0], lang)); return; }
+
     setSaving(true);
     setServerError(null);
-    const [h, m] = time.split(':').map(Number);
-    const scheduledAt = setMinutes(setHours(date, h), m);
+    const scheduledAt = startsAt!;
     const res = await scheduleMeeting({
       ticket_id: ticketId,
       consultant_ids: selectedConsultantIds,
+      colleague_ids: selectedColleagueIds,
       external_emails: externalEmails.map(e => e.email),
       session_type: sessionType,
       platform,
@@ -231,8 +269,10 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
       toast.error(text);
       return;
     }
-    downloadICS(scheduledAt, parseInt(duration), ticketTitle, res.join_url, selectedConsultantNames, externalEmails.map(e => e.email));
-    queryClient.invalidateQueries({ queryKey: ['ticket-sessions', ticketId] });
+    downloadICS(scheduledAt, parseInt(duration), ticketTitle, res.join_url, selectedConsultantNames, externalEmails.map(e => e.email), parseInt(reminder));
+    for (const key of [['ticket-sessions', ticketId], ['ticket-meetings', ticketId], ['meeting-options', ticketId], ['client-sessions'], ['client-video-sessions'], ['consultant-calendar-sessions']]) {
+      queryClient.invalidateQueries({ queryKey: key });
+    }
     setPastedUrl('');
     const sent = res.invitations.filter(r => r.status === 'sent').length;
     toast.success(lang === 'ar'
@@ -263,8 +303,9 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
             </Label>
             <RadioGroup value={inviteeSource} onValueChange={(v) => setInviteeSource(v as InviteeSource)} className="flex gap-2">
               {[
-                { value: 'assigned', label: 'Assigned', icon: CheckCircle2 },
-                { value: 'external', label: 'External', icon: Mail },
+                { value: 'assigned', label: lang === 'ar' ? 'المستشارون المعيّنون' : 'Assigned', icon: CheckCircle2 },
+                ...(options.can_invite_colleagues ? [{ value: 'colleagues', label: lang === 'ar' ? 'زملاء الشركة' : 'Colleagues', icon: Users }] : []),
+                { value: 'external', label: lang === 'ar' ? 'خارجي' : 'External', icon: Mail },
               ].map(opt => (
                 <Label
                   key={opt.value}
@@ -286,7 +327,9 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
               <ScrollArea className="max-h-36 rounded-lg border border-border/50">
                 <div className="p-2 space-y-1">
                   {filteredConsultants.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-3">No consultants found</p>
+                    <p className="text-xs text-muted-foreground text-center py-3">
+                      {lang === 'ar' ? 'لا يوجد مستشار معيّن على هذا الطلب بعد. يمكنك دعوة زملاء أو عناوين خارجية، أو إرسال الطلب إلى مستشار أولًا.' : 'No consultant is assigned to this request yet. You can invite colleagues or external addresses, or send the request to a consultant first.'}
+                    </p>
                   ) : filteredConsultants.map(c => (
                     <label
                       key={c.id}
@@ -297,12 +340,15 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
                       <Checkbox
                         checked={selectedConsultantIds.includes(c.id)}
                         onCheckedChange={() => toggleConsultant(c.id)}
+                        disabled={c.isSelf && !selectedConsultantIds.includes(c.id)}
+                        aria-label={c.display_name}
                       />
                       <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center text-[10px] font-semibold text-accent">
                         {c.display_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                       </div>
                       <span className="flex-1 truncate">{c.display_name}</span>
-                      {c.isAssigned && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Primary</Badge>}
+                      {c.isSelf && <span className="text-[10px] text-muted-foreground">{lang === 'ar' ? '(أنت)' : '(you)'}</span>}
+                      {c.id === primaryId && <Badge variant="outline" className="text-[10px] px-1.5 py-0">{lang === 'ar' ? 'رئيسي' : 'Primary'}</Badge>}
                     </label>
                   ))}
                 </div>
@@ -323,8 +369,33 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
             </div>
           )}
 
+          {/* Colleagues of the same company */}
+          {inviteeSource === 'colleagues' && (
+            <div className="space-y-2" data-testid="colleague-list">
+              <ScrollArea className="max-h-36 rounded-lg border border-border/50">
+                <div className="p-2 space-y-1">
+                  {options.colleagues.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-3">{lang === 'ar' ? 'لا يوجد زملاء آخرون في شركتك على البوابة.' : 'No other colleagues of your company are on the portal.'}</p>
+                  ) : options.colleagues.map(c => (
+                    <label key={c.user_id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-muted/50 text-xs">
+                      <Checkbox checked={selectedColleagueIds.includes(c.user_id)} onCheckedChange={() => toggleColleague(c.user_id)} aria-label={c.name} />
+                      <span className="flex-1 truncate">{c.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </ScrollArea>
+              <p className="text-[10px] text-muted-foreground">{lang === 'ar' ? 'يصل كل زميل إشعار في البوابة ورسالة دعوة.' : 'Each colleague gets a portal notice and an invitation e-mail.'}</p>
+            </div>
+          )}
+
+          {inviteeSource === 'external' && !options.external_allowed && (
+            <p role="note" className="rounded-lg border border-border/60 bg-muted/40 p-2 text-[11px] text-muted-foreground" data-testid="external-disabled">
+              {lang === 'ar' ? 'دعوة عناوين بريد خارجية متوقفة من قبل المسؤول. يمكنك دعوة المستشارين المعيّنين وزملاء شركتك.' : 'Inviting external e-mail addresses is switched off by the administrator. You can invite the assigned consultants and colleagues of your company.'}
+            </p>
+          )}
+
           {/* External email input */}
-          {inviteeSource === 'external' && (
+          {inviteeSource === 'external' && options.external_allowed && (
             <div className="space-y-2">
               <div className="flex gap-2">
                 <Input
@@ -465,6 +536,18 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
             </div>
           </div>
 
+          <p className="text-[10px] text-muted-foreground -mt-2" data-testid="meeting-timezone">
+            {lang === 'ar' ? `الأوقات بمنطقتك الزمنية: ${tzLabel}. يرى كل مشارك الموعد بمنطقته الزمنية.` : `Times are in your time zone: ${tzLabel}. Every participant sees the time in their own time zone.`}
+          </p>
+          {conflicts.length > 0 && (
+            <div role="alert" className="flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10 p-2 text-[11px] text-foreground" data-testid="meeting-conflict">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" aria-hidden="true" />
+              {lang === 'ar'
+                ? `${conflictNames.join('، ')} ${conflicts.some(c => c.kind === 'unavailable') ? 'غير متاح' : 'لديه اجتماع'} في هذا الوقت. اختر وقتًا آخر.`
+                : `${conflictNames.join(', ')} ${conflicts.some(c => c.kind === 'unavailable') ? 'is unavailable' : 'already has a meeting'} at this time. Pick another time.`}
+            </div>
+          )}
+
           {/* Reminder */}
           <div className="space-y-2">
             <Label className="text-xs font-medium flex items-center gap-1">
@@ -482,8 +565,10 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
 
           {/* Notes */}
           <div className="space-y-2">
-            <Label className="text-xs font-medium">Meeting Notes (optional)</Label>
+            <Label htmlFor="meeting-agenda" className="text-xs font-medium">{lang === 'ar' ? 'جدول الأعمال (اختياري)' : 'Agenda (optional)'}</Label>
             <Textarea
+              id="meeting-agenda"
+              maxLength={2000}
               placeholder="Agenda, topics to discuss..."
               value={notes}
               onChange={e => setNotes(e.target.value)}
@@ -524,6 +609,11 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
           )}
         </div>
 
+        {!results && problems.length > 0 && (
+          <ul id="schedule-meeting-missing" className="space-y-0.5 text-[11px] text-muted-foreground" data-testid="schedule-meeting-missing" aria-live="polite">
+            {problems.map(p => <li key={p} className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />{formProblemText(p, lang)}</li>)}
+          </ul>
+        )}
         {serverError && (
           <div role="alert" className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-foreground" data-testid="schedule-meeting-error">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />{serverError}
@@ -549,7 +639,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
         <DialogFooter className="gap-2">
           {results ? <Button onClick={() => onOpenChange(false)}>{lang === 'ar' ? 'تم' : 'Done'}</Button> : <>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button className="gradient-primary border-0 gap-2" onClick={handleSchedule} disabled={saving || !date || totalInvitees === 0}>
+          <Button className="gradient-primary border-0 gap-2" onClick={handleSchedule} disabled={saving || problems.length > 0} aria-describedby={problems.length ? 'schedule-meeting-missing' : undefined}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
             Schedule Meeting
           </Button>
@@ -561,7 +651,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
 }
 
 /** Generate and download a .ics calendar file with attendees */
-function downloadICS(start: Date, durationMin: number, title: string, url: string, attendees: string[], externalEmails: string[]) {
+function downloadICS(start: Date, durationMin: number, title: string, url: string, attendees: string[], externalEmails: string[], reminderMin = 15) {
   const end = addMinutes(start, durationMin);
   const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
@@ -583,7 +673,7 @@ function downloadICS(start: Date, durationMin: number, title: string, url: strin
     `URL:${url}`,
     ...attendeeLines,
     'BEGIN:VALARM',
-    'TRIGGER:-PT15M',
+    `TRIGGER:-PT${Math.max(0, reminderMin)}M`,
     'ACTION:DISPLAY',
     'DESCRIPTION:Meeting reminder',
     'END:VALARM',
