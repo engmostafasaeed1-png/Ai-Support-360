@@ -53,6 +53,11 @@ export interface SaSettings {
   allow_prepayment: boolean;
   allow_forfeit: boolean;
   application_limit_per_day: number;
+  /** Crew size (lead included), company contacts per list, document size and count limits. */
+  crew_max: number;
+  contacts_max: number;
+  doc_max_mb: number;
+  docs_per_agreement: number;
 }
 
 export const SA_DEFAULT_SETTINGS: SaSettings = {
@@ -72,6 +77,10 @@ export const SA_DEFAULT_SETTINGS: SaSettings = {
   allow_prepayment: false,
   allow_forfeit: false,
   application_limit_per_day: 10,
+  crew_max: 6,
+  contacts_max: 5,
+  doc_max_mb: 20,
+  docs_per_agreement: 50,
 };
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -103,6 +112,10 @@ export function normalizeSaSettings(raw: unknown): SaSettings {
     allow_prepayment: s.allow_prepayment === true,
     allow_forfeit: s.allow_forfeit === true,
     application_limit_per_day: num(s.application_limit_per_day, d.application_limit_per_day, 1, 100),
+    crew_max: num(s.crew_max, d.crew_max, 1, 20),
+    contacts_max: num(s.contacts_max, d.contacts_max, 1, 20),
+    doc_max_mb: num(s.doc_max_mb, d.doc_max_mb, 1, 100),
+    docs_per_agreement: num(s.docs_per_agreement, d.docs_per_agreement, 1, 500),
   };
 }
 
@@ -244,21 +257,139 @@ export function dailyStatus(a: { status: SaStatus; end_date: string | null; auto
   return { status: a.status, end_date: a.end_date };
 }
 
+// ------------------------------------------------------------------------------------------------ crew
+export const CREW_ROLES = ['lead', 'functional', 'technical', 'basis', 'backup', 'support'] as const;
+export type CrewRole = (typeof CREW_ROLES)[number];
+export interface WorkingHours { timezone?: string; days?: number[]; from?: string; to?: string }
+export interface CrewEntry {
+  consultant_id: string;
+  role: CrewRole;
+  capacity_hours_per_week?: number | null;
+  working_hours?: WorkingHours;
+  backup_for?: string | null;
+  required?: boolean;
+}
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/** Crew rules the browser can check (mirror of sa_crew_problems; verification and client blocks are server-only). */
+export function crewProblems(team: CrewEntry[], lead: string | null, s: Pick<SaSettings, 'crew_max'>): string[] {
+  const out = new Set<string>();
+  if (team.length > s.crew_max) out.add('crew_size');
+  const ids = new Set<string>();
+  for (const e of team) {
+    if (!e.consultant_id) { out.add('crew_member'); continue; }
+    if (ids.has(e.consultant_id)) out.add('crew_duplicate');
+    ids.add(e.consultant_id);
+    if (!(CREW_ROLES as readonly string[]).includes(e.role) || (e.role === 'lead') !== (!!lead && e.consultant_id === lead)) out.add('crew_role');
+    if (e.capacity_hours_per_week != null && !(e.capacity_hours_per_week >= 0 && e.capacity_hours_per_week <= 60)) out.add('crew_capacity');
+    const w = e.working_hours ?? {};
+    if ((w.timezone?.length ?? 0) > 64 || (w.from !== undefined && !HHMM.test(w.from)) || (w.to !== undefined && !HHMM.test(w.to))
+      || (w.days !== undefined && !w.days.every((d) => Number.isInteger(d) && d >= 1 && d <= 7))) out.add('crew_hours');
+  }
+  for (const e of team) {
+    if (!e.backup_for) continue;
+    if (e.backup_for === e.consultant_id || !(ids.has(e.backup_for) || e.backup_for === lead)) out.add('crew_backup');
+  }
+  return [...out];
+}
+
+export interface CrewMemberState {
+  consultant_id: string; role: CrewRole | string; required: boolean; status: 'invited' | 'active' | 'declined' | 'ended' | string;
+  sla_accepted_at?: string | null; nda_ok?: boolean | null;
+}
+
+/**
+ * Team confirmation (mirror of sa_confirmation): nobody works under the agreement until the terms are accepted, the
+ * lead and every REQUIRED member accepted the place + SLA, the NDA is signed by both sides for each working member
+ * (when required), the admin review is done and the start date has come.
+ */
+export function confirmationState(a: { agreed: boolean; nda_required: boolean; admin_review: string; start_date: string | null; members: CrewMemberState[] }, today: string) {
+  const lead = a.members.find((m) => m.role === 'lead');
+  const crew = !!lead && lead.status === 'active' && !!lead.sla_accepted_at
+    && !a.members.some((m) => m.required && (m.status === 'invited' || m.status === 'declined' || (m.status === 'active' && !m.sla_accepted_at)));
+  const nda = !a.nda_required || !a.members.some((m) => m.status === 'active' && (m.required || m.role === 'lead') && !m.nda_ok);
+  const review = a.admin_review === 'not_needed' || a.admin_review === 'approved';
+  const start = !!a.start_date && a.start_date <= today;
+  return { ready: a.agreed && crew && nda && review && start, items: { terms: a.agreed, crew, nda, admin_review: review, start_date: start } };
+}
+
+// ------------------------------------------------------------------------------------------------ contacts, secrets, documents
+export interface EscalationContact { email: string; level: 1 | 2 | 3; title?: string }
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+/** Count / format / level checks; "inside the company only" is checked by the database (sa_contact_problems). */
+export function contactProblems(t: Pick<SaTerms, 'statement_recipients' | 'escalation_contacts'>, s: Pick<SaSettings, 'contacts_max'>): string[] {
+  const out = new Set<string>();
+  const rec = t.statement_recipients ?? [];
+  if (rec.length > s.contacts_max) out.add('recipients_max');
+  if (rec.some((e) => !EMAIL.test(e))) out.add('recipient_outside');
+  const esc = t.escalation_contacts ?? [];
+  if (esc.length > s.contacts_max) out.add('escalation_max');
+  for (const e of esc) {
+    if (!EMAIL.test(e.email)) out.add('escalation_outside');
+    if (![1, 2, 3].includes(Number(e.level))) out.add('escalation_level');
+    if ((e.title ?? '').length > 80) out.add('escalation_title');
+  }
+  return [...out];
+}
+
+/** No passwords or access secrets in texts ("password: ...", "api key = ...", private keys). Mirror of sa_secret_ok. */
+export function secretOk(text: string | null | undefined): boolean {
+  if (!text) return true;
+  if (/(^|[^\p{L}\p{N}_])(pass(word|wort|wd)?|pwd|kennwort|secret|api[ _-]?key|access[ _-]?key|token|client[ _-]?secret)\s*[:=]/iu.test(text)) return false;
+  if (/كلمة\s*(المرور|السر)\s*[:=]/u.test(text)) return false;
+  return !/-----BEGIN [A-Z ]*PRIVATE KEY/.test(text);
+}
+
+export const DOC_KINDS = ['sow', 'scope_annex', 'access_plan', 'escalation_matrix', 'other'] as const;
+export type DocKind = (typeof DOC_KINDS)[number];
+export const DOC_TYPES: Record<string, string> = {
+  pdf: 'application/pdf',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp',
+};
+/** Allow-list: extension and type must belong together (mirror of sa_doc_type_ok). */
+export function docTypeOk(fileName: string, mime: string): boolean {
+  const ext = /\.([A-Za-z0-9]+)$/.exec(fileName)?.[1]?.toLowerCase() ?? '';
+  return !!DOC_TYPES[ext] && DOC_TYPES[ext] === (mime ?? '').toLowerCase();
+}
+export const docSizeOk = (bytes: number, s: Pick<SaSettings, 'doc_max_mb'>) => bytes > 0 && bytes <= s.doc_max_mb * 1048576;
+
+/** "SA-2026-000012" */
+export const REFERENCE_RE = /^SA-\d{4}-\d{6}$/;
+export const agreementLabel = (a: { name: string; reference?: string | null }) => (a.reference ? `${a.name} (${a.reference})` : a.name);
+
 // ------------------------------------------------------------------------------------------------ terms + hash
+export interface SaSla {
+  policy_id: string | null;
+  version: number | null;
+  summary: string;
+  /** Filled by the database: policy name, 'platform' | 'template' | 'client', version hash and the version body. */
+  name?: string | null;
+  source?: string;
+  hash?: string | null;
+  body?: unknown;
+}
+
 export interface SaTerms {
   name: string;
+  reference?: string;
   scope: { modules: string[]; versions: string[]; systems: string[]; covered: string; not_covered: string };
   term: { start_date: string; end_date: string | null; notice_days: number; auto_renew: boolean; renew_months: number };
   model: SaModel;
   bank: BankTerms | null;
   capacity_hours_per_week: number | null;
   rate: { hourly_rate: number; currency: string; s1_multiplier: number | null; ooh_multiplier: number | null; overage_rate: number | null };
-  sla: { policy_id: string | null; version: number | null; summary: string };
+  sla: SaSla;
   reporting: 'weekly' | 'monthly';
+  /** Monthly statement e-mails to people inside the client company only. */
+  statement_email?: boolean;
+  statement_recipients?: string[];
+  escalation_contacts?: EscalationContact[];
   language: string;
   timezone: string | null;
   nda_required: boolean;
-  team: Array<{ consultant_id: string; role: 'lead' | 'support' }>;
+  team: CrewEntry[];
 }
 
 /** Canonical JSON (sorted keys) so both parties accept the same bytes; the database stores md5 of the same text. */
@@ -266,6 +397,49 @@ export function canonicalJson(v: unknown): string {
   if (Array.isArray(v)) return `[${v.map(canonicalJson).join(',')}]`;
   if (isObj(v)) return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonicalJson(v[k])}`).join(',')}}`;
   return JSON.stringify(v ?? null);
+}
+
+export type ChecklistState = 'done' | 'todo' | 'optional' | 'error';
+export const SETTINGS_SECTIONS = ['basics', 'term', 'rates', 'commitment', 'sla', 'crew', 'reporting', 'escalation', 'documents', 'review'] as const;
+export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
+const SECTION_OF: Record<string, SettingsSection> = {
+  name: 'basics', modules: 'basics', start_past: 'term', end_before_start: 'term', term_short: 'term', notice: 'term',
+  model_disabled: 'commitment', bank_hours: 'commitment', forfeit_disabled: 'commitment', prepay_disabled: 'commitment', capacity: 'commitment',
+  rate_low: 'rates', rate_high: 'rates', multiplier: 'rates', overage_low: 'rates', currency: 'rates',
+  crew_size: 'crew', crew_member: 'crew', crew_duplicate: 'crew', crew_role: 'crew', crew_capacity: 'crew', crew_hours: 'crew', crew_backup: 'crew', crew_blocked: 'crew',
+  recipients_max: 'reporting', recipient_outside: 'reporting', escalation_max: 'escalation', escalation_outside: 'escalation', escalation_level: 'escalation', escalation_title: 'escalation',
+  sla_invalid: 'sla',
+};
+export const sectionOfProblem = (p: string): SettingsSection => SECTION_OF[p] ?? 'review';
+
+/**
+ * Progress checklist of the "Agreement settings" form. Rates are optional before applications arrive (applicants
+ * propose them), crew/escalation/documents are optional. The draft can be saved at any time; publishing needs no errors.
+ */
+export function draftChecklist(t: SaTerms, s: SaSettings, today: string, extra: string[] = []) {
+  const probs = [...termsProblems({ ...t, rate: { ...t.rate, hourly_rate: t.rate.hourly_rate > 0 ? t.rate.hourly_rate : s.rate_min } }, s, today),
+    ...crewProblems(t.team ?? [], null, s), ...contactProblems(t, s), ...extra];
+  const by = new Map<SettingsSection, string[]>();
+  for (const p of probs) by.set(sectionOfProblem(p), [...(by.get(sectionOfProblem(p)) ?? []), p]);
+  const state = (k: SettingsSection, filled: boolean, optional = false): ChecklistState =>
+    by.get(k)?.length ? 'error' : filled ? 'done' : optional ? 'optional' : 'todo';
+  const sections: Record<SettingsSection, ChecklistState> = {
+    basics: state('basics', !!t.name.trim() && t.scope.modules.length > 0),
+    term: state('term', !!t.term.start_date),
+    rates: state('rates', t.rate.hourly_rate > 0, true),
+    commitment: state('commitment', !!t.model),
+    sla: state('sla', true),
+    crew: state('crew', (t.team ?? []).length > 0, true),
+    reporting: state('reporting', !!t.reporting),
+    escalation: state('escalation', (t.escalation_contacts ?? []).length > 0, true),
+    documents: 'optional',
+    review: 'todo',
+  };
+  const blocking = probs.filter((p) => !['rate_low', 'rate_high', 'overage_low', 'currency'].includes(p) || t.rate.hourly_rate > 0);
+  sections.review = blocking.length ? 'error' : 'done';
+  const required = SETTINGS_SECTIONS.filter((k) => !['rates', 'crew', 'escalation', 'documents'].includes(k));
+  const done = required.filter((k) => sections[k] === 'done').length;
+  return { sections, problems: [...new Set(blocking)], percent: Math.round((done / required.length) * 100), canPublish: blocking.length === 0 };
 }
 
 export function termsProblems(t: SaTerms, s: SaSettings, today: string): string[] {
