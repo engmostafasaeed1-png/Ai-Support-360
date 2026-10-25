@@ -25,22 +25,16 @@ export default function AdminAgreementsPage() {
   const refresh = useRefreshAgreements();
   const [status, setStatus] = useState<string | null>(null);
   const rows = useAdminAgreements(status);
-  const settingsQ = useQuery({
+  const adminQ = useQuery({
     queryKey: ['sa-admin-settings'], retry: false,
     queryFn: async () => {
-      const { data, error } = await safeRpc<Record<string, unknown>>('sa_list_mine', { _tenant: null });
+      const { data, error } = await safeRpc<{ settings: unknown; fees: { service_fee_percent: number; processing_fee_percent: number; vat_percent: number } }>('sa_admin_settings');
       if (error || !data) return null;
-      const { data: full } = await safeRpc<Record<string, unknown>>('sa_settings');
-      return normalizeSaSettings(full ?? data.settings);
+      return { settings: normalizeSaSettings(data.settings), fees: { service: Number(data.fees?.service_fee_percent ?? 10), processing: Number(data.fees?.processing_fee_percent ?? 5), vat: Number(data.fees?.vat_percent ?? 15) } };
     },
   });
-  const fees = useQuery({
-    queryKey: ['sa-admin-fees'], retry: false,
-    queryFn: async () => {
-      const [s, p, v] = await Promise.all(['payment_service_fee_percent', 'payment_processing_fee_percent', 'payment_vat_percent'].map((f) => safeRpc<number>(f)));
-      return { service: Number(s.data ?? 10), processing: Number(p.data ?? 5), vat: Number(v.data ?? 15) };
-    },
-  });
+  const settingsQ = { isLoading: adminQ.isLoading, data: adminQ.data?.settings ?? null, refetch: adminQ.refetch };
+  const fees = { data: adminQ.data?.fees ?? null };
   const [draft, setDraft] = useState<SaSettings | null>(null);
   const [reason, setReason] = useState('');
   const [caps, setCaps] = useState('');

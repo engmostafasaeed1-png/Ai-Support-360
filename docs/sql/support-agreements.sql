@@ -1309,6 +1309,15 @@ BEGIN
   RETURN public.sa_settings();
 END $$;
 
+-- Full settings (incl. per-module rate caps) and today's fee percentages for the administrator screen.
+CREATE OR REPLACE FUNCTION public.sa_admin_settings()
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NOT public.sa_is_admin(auth.uid()) THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
+  RETURN jsonb_build_object('settings', public.sa_settings(), 'fees', jsonb_build_object('service_fee_percent', public.payment_service_fee_percent(),
+    'processing_fee_percent', public.payment_processing_fee_percent(), 'vat_percent', public.payment_vat_percent(), 'agreement_fee_percent', public.sa_service_fee_percent()));
+END $$;
+
 CREATE OR REPLACE FUNCTION public.sa_admin_list(_status text DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 DECLARE uid uuid := auth.uid();
@@ -1550,7 +1559,7 @@ GRANT EXECUTE ON FUNCTION
   public.sa_suspend(uuid, date, text), public.sa_resume(uuid), public.sa_set_auto_renew(uuid, boolean), public.sa_invite_member(uuid, uuid),
   public.sa_member_respond(uuid, boolean), public.sa_request_replacement(uuid, uuid, text), public.sa_admin_decide_replacement(uuid, boolean, text),
   public.sa_replacement_accept(uuid, boolean), public.sa_post_message(uuid, uuid, text), public.sa_usable(uuid), public.sa_attach_ticket(uuid, uuid), public.sa_ticket_tags(uuid[]),
-  public.sa_get(uuid), public.sa_list_mine(uuid), public.sa_admin_set_settings(jsonb, text), public.sa_admin_list(text), public.sa_admin_review(uuid, boolean, text)
+  public.sa_get(uuid), public.sa_list_mine(uuid), public.sa_admin_set_settings(jsonb, text), public.sa_admin_settings(), public.sa_admin_list(text), public.sa_admin_review(uuid, boolean, text)
 TO authenticated;
 -- The SLA hook must stay callable from the SLA functions (they run as the owner; no browser grant needed).
 
