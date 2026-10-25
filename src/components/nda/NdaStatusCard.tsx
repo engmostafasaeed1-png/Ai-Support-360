@@ -21,6 +21,8 @@ interface Props {
   /** Shown when the stricter signing is not installed (legacy box). */
   fallback?: React.ReactNode;
   className?: string;
+  /** Element id for in-page links (ticket pages use "nda"). */
+  anchorId?: string;
 }
 
 const fmt = (iso: string | null | undefined, lang: string) =>
@@ -31,7 +33,7 @@ const fmt = (iso: string | null | undefined, lang: string) =>
  * for the party who still has to sign, "You signed on ..." + download for the signer, "Waiting for ... to sign" with a
  * rate-limited reminder, "Fully signed" + download for both, legacy marks and "Add my signature details".
  */
-export default function NdaStatusCard({ ndaId, consultantId, clientId, consultantName, clientName, onReviewAndSign, fallback = null, className }: Props) {
+export default function NdaStatusCard({ ndaId, consultantId, clientId, consultantName, clientName, onReviewAndSign, fallback = null, className, anchorId }: Props) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
   const q = useNdaStatus({ ndaId, consultantId, clientId });
@@ -75,7 +77,7 @@ export default function NdaStatusCard({ ndaId, consultantId, clientId, consultan
 
   const tone = v.kind === 'fully_signed' ? 'border-success/40' : v.kind === 'revoked' ? 'border-destructive/40' : 'border-warning/40';
   return (
-    <div className={`space-y-3 rounded-2xl border bg-card p-4 ${tone} ${className ?? ''}`} data-testid="nda-status-card" id="nda">
+    <div className={`space-y-3 rounded-2xl border bg-card p-4 ${tone} ${className ?? ''}`} data-testid="nda-status-card" id={anchorId}>
       <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
         <FileSignature className="h-4 w-4 text-primary" aria-hidden /> {t('ndaSign.card.title')}
       </div>

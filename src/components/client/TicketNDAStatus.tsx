@@ -33,6 +33,7 @@ export default function TicketNDAStatus(props: TicketNDAStatusProps) {
           clientName={props.clientName}
           onReviewAndSign={(s) => s.nda_id && setSignOpen({ ndaId: s.nda_id, content: null })}
           fallback={<LegacyTicketNDAStatus {...props} />}
+          anchorId="nda"
         />
         {signOpen && (
           <NdaSignDialog open onOpenChange={(o) => { if (!o) setSignOpen(null); }} party="client" action="sign"

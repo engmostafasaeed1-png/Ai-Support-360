@@ -429,7 +429,7 @@ export default function CaseDetailPage() {
       {/* NDA box (stricter signing): who signed, waiting / reminder, downloads, legacy marks */}
       {strictNda && ticket?.client_id && consultantData?.id && (
         <NdaStatusCard consultantId={consultantData.id} clientId={ticket.client_id} clientName={clientProfile?.company_name || undefined}
-          onReviewAndSign={() => setNdaModalOpen(true)} />
+          onReviewAndSign={() => setNdaModalOpen(true)} anchorId="nda" />
       )}
 
       {/* Client System Landscape — gated behind NDA. The sign prompt must not depend on the client's
