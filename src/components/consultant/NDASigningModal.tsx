@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FileSignature, PenTool, Type, AlertTriangle } from 'lucide-react';
+import { FileSignature, PenTool, Type, AlertTriangle, Loader2 } from 'lucide-react';
 import { useNDATemplate, useNDAAgreement } from '@/hooks/useNDA';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,7 +34,8 @@ export default function NDASigningModal({
   const { template, loading: templateLoading } = useNDATemplate();
   const { signNDA, wasRevoked } = useNDAAgreement(consultantId, clientId);
   // stricter signing (signature + full name + ID + authorisation) once docs/sql/nda-signature-identity.sql is applied
-  const strict = useNdaSigningSettings().data ?? null;
+  const strictQ = useNdaSigningSettings();
+  const strict = strictQ.data ?? null;
 
   const [step, setStep] = useState<'preview' | 'sign'>('preview');
   const [consultantName, setConsultantName] = useState('');
@@ -348,6 +349,8 @@ export default function NDASigningModal({
               </Button>
             </DialogFooter>
           </>
+        ) : strictQ.isLoading ? (
+          <div className="flex flex-1 items-center justify-center py-10" role="status"><Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden /><span className="sr-only">{t('ndaSign.loading')}</span></div>
         ) : strict ? (
           /* ========== SIGN STEP (signature + full legal name + ID document + authorisation) ========== */
           <div className="flex-1 space-y-4 overflow-y-auto pe-1">

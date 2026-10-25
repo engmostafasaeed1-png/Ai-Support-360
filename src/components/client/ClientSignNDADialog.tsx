@@ -23,6 +23,8 @@ interface Props {
 
 export default function ClientSignNDADialog(props: Props) {
   const strict = useNdaSigningSettings();
+  // never offer the old signing form while we still find out whether the stricter one is installed
+  if (strict.isLoading) return null;
   if (strict.data) {
     return (
       <NdaSignDialog open={props.open} onOpenChange={props.onOpenChange} party="client" action="sign" ndaId={props.ndaId}
