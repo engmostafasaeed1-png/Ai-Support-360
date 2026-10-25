@@ -8,6 +8,7 @@ import {
   Save, FileDown, Share2, Sparkles, GripVertical, ChevronDown, Eye, EyeOff, Lock, Loader2, CheckCircle2, AlertTriangle, Wand2, Scissors, Brain,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BlockedHint } from '@/components/ui/guided-button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -349,6 +350,7 @@ export default function BrdWorkspace({ state, initial, initialRev, fresh, isAdmi
                               <DropdownMenuTrigger asChild><Button size="sm" variant="ghost" className="h-8 gap-1"><Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">{t('brd.ai.menu')}</span></Button></DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => setAi({ section: s.key, mode: 'regenerate', deep: false })}><Sparkles className="h-4 w-4 me-2" /> {t('brd.ai.mode_regenerate')}</DropdownMenuItem>
+                                {!s.html && <BlockedHint className="px-2 py-1.5" reason="fill_required_fields" />}
                                 <DropdownMenuItem disabled={!s.html} onClick={() => setAi({ section: s.key, mode: 'improve', deep: false })}><Wand2 className="h-4 w-4 me-2" /> {t('brd.ai.mode_improve')}</DropdownMenuItem>
                                 <DropdownMenuItem disabled={!s.html} onClick={() => setAi({ section: s.key, mode: 'shorter', deep: false })}><Scissors className="h-4 w-4 me-2" /> {t('brd.ai.mode_shorter')}</DropdownMenuItem>
                                 <DropdownMenuSeparator />

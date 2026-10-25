@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { BlockedHint } from '@/components/ui/guided-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -145,6 +146,7 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
             <DropdownMenuTrigger asChild><Button size="sm" variant="ghost" aria-label={t('um.more_actions', 'More actions')}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(u.email); toast.success(t('um.email_copied', 'E-mail copied')); }}><Copy className="me-2 h-4 w-4" />{t('um.copy_email', 'Copy e-mail')}</DropdownMenuItem>
+              {can('users.edit') && !idReady && <BlockedHint className="px-2 py-1.5" reason="auth_user_id_missing" />}
               {can('users.edit') && !lockedBySuper && <DropdownMenuItem disabled={!idReady} onClick={() => setDialog('password_reset')}><KeyRound className="me-2 h-4 w-4" />{t('um.password_reset', 'Send password reset')}</DropdownMenuItem>}
               {can('users.edit') && !u.email_verified && <DropdownMenuItem disabled={!idReady} onClick={() => setDialog('resend_verification')}><Mail className="me-2 h-4 w-4" />{t('um.resend_verification', 'Resend verification e-mail')}</DropdownMenuItem>}
               {can('users.sessions') && !self && !lockedBySuper && <DropdownMenuItem onClick={() => setDialog('force_sign_out')}><LogOut className="me-2 h-4 w-4" />{t('um.force_sign_out', 'Sign out everywhere')}</DropdownMenuItem>}
