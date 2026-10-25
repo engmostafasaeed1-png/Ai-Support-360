@@ -62,7 +62,7 @@ $$;
 
 -- ------------------------------------------------------------------------------------------------ tables
 CREATE TABLE IF NOT EXISTS public.sa_agreements (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  new_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id uuid,
   client_id uuid NOT NULL,
   name text NOT NULL CHECK (char_length(name) BETWEEN 1 AND 120),
@@ -614,7 +614,7 @@ $$;
 -- New draft (request details shown to applicants + the draft terms). Company owner/admin or own-account client.
 CREATE OR REPLACE FUNCTION public.sa_create(_tenant uuid, _request jsonb, _terms jsonb)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); id uuid;
+DECLARE uid uuid := auth.uid(); new_id uuid;
 BEGIN
   IF NOT public.sa_enabled() THEN RAISE EXCEPTION 'sa_disabled' USING ERRCODE = '55000'; END IF;
   IF NOT public.sa_can_manage(uid, _tenant, CASE WHEN _tenant IS NULL THEN uid END) THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
@@ -624,10 +624,10 @@ BEGIN
   END IF;
   INSERT INTO public.sa_agreements (tenant_id, client_id, name, request, terms, created_by)
   VALUES (_tenant, uid, left(COALESCE(NULLIF(btrim(_terms ->> 'name'), ''), 'Support agreement'), 120), COALESCE(_request, '{}'::jsonb), COALESCE(_terms, '{}'::jsonb), uid)
-  RETURNING sa_agreements.id INTO id;
+  RETURNING sa_agreements.id INTO new_id;
   PERFORM public.sa_event(id, 'created', uid);
   PERFORM public.sa_audit_log(uid, 'create', id);
-  RETURN id;
+  RETURN new_id;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.sa_save_draft(_id uuid, _request jsonb, _terms jsonb)
@@ -682,7 +682,7 @@ END $$;
 
 CREATE OR REPLACE FUNCTION public.sa_apply(_id uuid, _rate numeric, _currency text, _model text, _capacity numeric, _availability text, _sla_accepted boolean, _message text)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); a public.sa_agreements; cid uuid := public.sa_consultant_of(uid); probs text[]; id uuid; s jsonb := public.sa_settings();
+DECLARE uid uuid := auth.uid(); a public.sa_agreements; cid uuid := public.sa_consultant_of(uid); probs text[]; new_id uuid; s jsonb := public.sa_settings();
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
   IF a.id IS NULL OR public.sa_role(_id, uid) NOT IN ('candidate', 'applicant') OR a.status <> 'open' THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
@@ -699,11 +699,11 @@ BEGIN
   ON CONFLICT (agreement_id, consultant_id) DO UPDATE SET hourly_rate = EXCLUDED.hourly_rate, currency = EXCLUDED.currency, model = EXCLUDED.model,
     capacity_hours_per_week = EXCLUDED.capacity_hours_per_week, availability_note = EXCLUDED.availability_note, sla_accepted_at = now(), message = EXCLUDED.message,
     status = CASE WHEN sa_applications.status IN ('withdrawn', 'declined') THEN 'pending' ELSE sa_applications.status END, updated_at = now()
-  RETURNING sa_applications.id INTO id;
+  RETURNING sa_applications.id INTO new_id;
   PERFORM public.sa_event(_id, 'applied', uid);
   PERFORM public.sa_notify(_id, a.client_id, 'New application: ' || a.name, 'طلب جديد: ' || a.name, 'A consultant applied for your support agreement.',
-    'تقدّم استشاري لاتفاقية الدعم الخاصة بك.', 'client', false, 'applied:' || id || ':' || extract(epoch FROM now())::bigint / 3600);
-  RETURN id;
+    'تقدّم استشاري لاتفاقية الدعم الخاصة بك.', 'client', false, 'applied:' || new_id || ':' || extract(epoch FROM now())::bigint / 3600);
+  RETURN new_id;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.sa_withdraw_application(_id uuid)
@@ -755,7 +755,7 @@ END $$;
 -- ------------------------------------------------------------------------------------------------ negotiation
 CREATE OR REPLACE FUNCTION public.sa_offer(_id uuid, _patch jsonb, _note text DEFAULT '')
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); a public.sa_agreements; r text := public.sa_role(_id, uid); probs text[]; id uuid;
+DECLARE uid uuid := auth.uid(); a public.sa_agreements; r text := public.sa_role(_id, uid); probs text[]; new_id uuid;
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id FOR UPDATE;
   IF r NOT IN ('client', 'lead') OR a.status <> 'negotiating' THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
@@ -765,17 +765,17 @@ BEGIN
   IF cardinality(probs) > 0 THEN RAISE EXCEPTION 'sa_terms_invalid: %', array_to_string(probs, ',') USING ERRCODE = '22023'; END IF;
   UPDATE public.sa_offers SET status = 'superseded' WHERE agreement_id = _id AND status = 'open';
   INSERT INTO public.sa_offers (agreement_id, by_role, by_user, patch, note) VALUES (_id, public.sa_party(r), uid, _patch, left(COALESCE(_note, ''), 1000))
-  RETURNING sa_offers.id INTO id;
+  RETURNING sa_offers.id INTO new_id;
   PERFORM public.sa_event(_id, 'offer', uid, jsonb_build_object('patch', _patch));
   PERFORM public.sa_audit_log(uid, 'counter', _id, jsonb_build_object('patch', _patch));
   IF r = 'client' THEN
     PERFORM public.sa_notify(_id, public.sa_user_of(a.consultant_id), 'Counter-offer: ' || a.name, 'عرض مقابل: ' || a.name,
-      'The client proposes different terms. Please accept or counter.', 'يقترح العميل شروطاً مختلفة. يرجى القبول أو تقديم عرض مقابل.', 'consultant', true, 'offer:' || id);
+      'The client proposes different terms. Please accept or counter.', 'يقترح العميل شروطاً مختلفة. يرجى القبول أو تقديم عرض مقابل.', 'consultant', true, 'offer:' || new_id);
   ELSE
     PERFORM public.sa_notify(_id, a.client_id, 'Counter-offer: ' || a.name, 'عرض مقابل: ' || a.name,
-      'The consultant proposes different terms. Please accept or counter.', 'يقترح الاستشاري شروطاً مختلفة. يرجى القبول أو تقديم عرض مقابل.', 'client', true, 'offer:' || id);
+      'The consultant proposes different terms. Please accept or counter.', 'يقترح الاستشاري شروطاً مختلفة. يرجى القبول أو تقديم عرض مقابل.', 'client', true, 'offer:' || new_id);
   END IF;
-  RETURN id;
+  RETURN new_id;
 END $$;
 
 -- Only the OTHER party may accept or decline an offer; acceptance creates a new terms version (acceptances reset).
@@ -862,7 +862,7 @@ END $$;
 -- ------------------------------------------------------------------------------------------------ rate changes (annual review)
 CREATE OR REPLACE FUNCTION public.sa_propose_rate_change(_id uuid, _rate numeric, _s1 numeric, _ooh numeric, _overage numeric, _effective date, _reason text)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); a public.sa_agreements; r text := public.sa_role(_id, uid); probs text[]; id uuid;
+DECLARE uid uuid := auth.uid(); a public.sa_agreements; r text := public.sa_role(_id, uid); probs text[]; new_id uuid;
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
   IF r NOT IN ('client', 'lead') OR a.status NOT IN ('agreed', 'active', 'suspended', 'renewal_due') THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
@@ -872,12 +872,12 @@ BEGIN
   probs := public.sa_rate_problems(_rate, _s1, _ooh, _overage, public.sa_modules(a));
   IF cardinality(probs) > 0 THEN RAISE EXCEPTION 'sa_rate_out_of_bounds: %', array_to_string(probs, ',') USING ERRCODE = '22023'; END IF;
   INSERT INTO public.sa_rate_changes (agreement_id, proposed_by, proposed_role, hourly_rate, s1_multiplier, ooh_multiplier, overage_rate, effective_from, reason)
-  VALUES (_id, uid, public.sa_party(r), round(_rate, 2), _s1, _ooh, _overage, _effective, left(_reason, 500)) RETURNING sa_rate_changes.id INTO id;
+  VALUES (_id, uid, public.sa_party(r), round(_rate, 2), _s1, _ooh, _overage, _effective, left(_reason, 500)) RETURNING sa_rate_changes.id INTO new_id;
   PERFORM public.sa_event(_id, 'rate_change_proposed', uid, jsonb_build_object('effective_from', _effective));
   PERFORM public.sa_audit_log(uid, 'rate_change_proposed', _id, jsonb_build_object('rate', _rate, 'effective_from', _effective));
   PERFORM public.sa_notify_parties(_id, 'Rate change proposed: ' || a.name, 'اقتراح تغيير السعر: ' || a.name,
-    'A new hourly rate from ' || _effective || ' was proposed. The other party must approve it.', 'اقتُرح سعر جديد اعتباراً من ' || _effective || '. يجب أن يوافق الطرف الآخر.', true, 'ratechange:' || id);
-  RETURN id;
+    'A new hourly rate from ' || _effective || ' was proposed. The other party must approve it.', 'اقتُرح سعر جديد اعتباراً من ' || _effective || '. يجب أن يوافق الطرف الآخر.', true, 'ratechange:' || new_id);
+  RETURN new_id;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.sa_decide_rate_change(_change uuid, _accept boolean)
@@ -997,16 +997,16 @@ END $$;
 -- Replacing the lead mid-term: client asks -> admin approves -> new consultant accepts; the rate is kept.
 CREATE OR REPLACE FUNCTION public.sa_request_replacement(_id uuid, _to uuid, _reason text)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); a public.sa_agreements; id uuid;
+DECLARE uid uuid := auth.uid(); a public.sa_agreements; new_id uuid;
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
   IF public.sa_role(_id, uid) <> 'client' OR a.status NOT IN ('active', 'suspended', 'renewal_due') THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
   IF NOT public.sa_text_ok(_reason) THEN RAISE EXCEPTION 'sa_contact_details' USING ERRCODE = '22023'; END IF;
   INSERT INTO public.sa_replacements (agreement_id, from_consultant, to_consultant, reason, requested_by) VALUES (_id, a.consultant_id, _to, left(_reason, 1000), uid)
-  RETURNING sa_replacements.id INTO id;
+  RETURNING sa_replacements.id INTO new_id;
   PERFORM public.sa_event(_id, 'replacement_requested', uid);
-  PERFORM public.sa_notify_admins(_id, 'Consultant replacement requested', a.name || ': the client asks to replace the lead consultant.', 'replace:' || id);
-  RETURN id;
+  PERFORM public.sa_notify_admins(_id, 'Consultant replacement requested', a.name || ': the client asks to replace the lead consultant.', 'replace:' || new_id);
+  RETURN new_id;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.sa_admin_decide_replacement(_replacement uuid, _approve boolean, _note text)
@@ -1043,7 +1043,7 @@ END $$;
 -- Q&A between the client and one applicant / the parties (contact-details filter M60).
 CREATE OR REPLACE FUNCTION public.sa_post_message(_id uuid, _consultant uuid, _body text)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); r text := public.sa_role(_id, uid); cid uuid; id uuid; a public.sa_agreements;
+DECLARE uid uuid := auth.uid(); r text := public.sa_role(_id, uid); cid uuid; new_id uuid; a public.sa_agreements;
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
   IF r IN ('candidate', 'applicant', 'lead', 'team') THEN cid := public.sa_consultant_of(uid);
@@ -1053,13 +1053,13 @@ BEGIN
   IF NOT public.sa_text_ok(_body) THEN RAISE EXCEPTION 'sa_contact_details' USING ERRCODE = '22023'; END IF;
   IF NOT public.sa_rate_ok('sa_msg:' || uid, 60, 3600) THEN RAISE EXCEPTION 'sa_rate_limited' USING ERRCODE = '53400'; END IF;
   INSERT INTO public.sa_messages (agreement_id, consultant_id, sender_id, sender_role, body)
-  VALUES (_id, cid, uid, CASE WHEN r = 'client' THEN 'client' ELSE 'consultant' END, left(btrim(_body), 2000)) RETURNING sa_messages.id INTO id;
+  VALUES (_id, cid, uid, CASE WHEN r = 'client' THEN 'client' ELSE 'consultant' END, left(btrim(_body), 2000)) RETURNING sa_messages.id INTO new_id;
   IF r = 'client' THEN
-    PERFORM public.sa_notify(_id, public.sa_user_of(cid), 'New message: ' || a.name, 'رسالة جديدة: ' || a.name, 'The client replied about the support agreement.', 'ردّ العميل بخصوص اتفاقية الدعم.', 'consultant', false, 'msg:' || id);
+    PERFORM public.sa_notify(_id, public.sa_user_of(cid), 'New message: ' || a.name, 'رسالة جديدة: ' || a.name, 'The client replied about the support agreement.', 'ردّ العميل بخصوص اتفاقية الدعم.', 'consultant', false, 'msg:' || new_id);
   ELSE
-    PERFORM public.sa_notify(_id, a.client_id, 'New question: ' || a.name, 'سؤال جديد: ' || a.name, 'A consultant wrote about your support agreement.', 'كتب استشاري بخصوص اتفاقية الدعم.', 'client', false, 'msg:' || id);
+    PERFORM public.sa_notify(_id, a.client_id, 'New question: ' || a.name, 'سؤال جديد: ' || a.name, 'A consultant wrote about your support agreement.', 'كتب استشاري بخصوص اتفاقية الدعم.', 'client', false, 'msg:' || new_id);
   END IF;
-  RETURN id;
+  RETURN new_id;
 END $$;
 
 -- ------------------------------------------------------------------------------------------------ tickets under an agreement
