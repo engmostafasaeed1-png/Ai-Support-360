@@ -1142,7 +1142,7 @@ END $$;
 -- accepted the same version the agreement is Agreed: immutable agreed rate record, other applications declined.
 CREATE OR REPLACE FUNCTION public.sa_accept_terms(_id uuid, _version integer, _hash text, _typed_name text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); a public.sa_agreements; r text := public.sa_role(_id, uid); v public.sa_versions; probs text[]; first_pair boolean; rid uuid; s jsonb := public.sa_settings(); e jsonb;
+DECLARE uid uuid := auth.uid(); a public.sa_agreements; r text := public.sa_role(_id, uid); v public.sa_versions; probs text[]; first_pair boolean; rid uuid; s jsonb := public.sa_settings(); te jsonb;
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id FOR UPDATE;
   IF r NOT IN ('client', 'lead') OR a.status <> 'negotiating' THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
@@ -1186,13 +1186,13 @@ BEGIN
   SELECT _id, a.consultant_id, x.user_id, 'lead', a.version, x.content_hash, NULLIF(a.terms -> 'sla' ->> 'policy_id', '')::uuid, NULLIF(a.terms -> 'sla' ->> 'version', '')::int,
          a.terms -> 'sla' ->> 'hash', COALESCE(a.terms -> 'sla' ->> 'summary', ''), x.typed_name, x.legal_draft
     FROM public.sa_acceptances x WHERE x.agreement_id = _id AND x.version = a.version AND x.party = 'consultant';
-  FOR e IN SELECT jsonb_array_elements(COALESCE(a.terms -> 'team', '[]'::jsonb)) LOOP
-    CONTINUE WHEN e ->> 'consultant_id' = a.consultant_id::text;
+  FOR te IN SELECT jsonb_array_elements(COALESCE(a.terms -> 'team', '[]'::jsonb)) LOOP
+    CONTINUE WHEN tte ->> 'consultant_id' = a.consultant_id::text;
     INSERT INTO public.sa_members (agreement_id, consultant_id, member_role, status, required, capacity_hours_per_week, working_hours, backup_for, invited_by)
-    VALUES (_id, (e ->> 'consultant_id')::uuid, e ->> 'role', 'invited', COALESCE((e ->> 'required')::boolean, true), NULLIF(e ->> 'capacity_hours_per_week', '')::numeric,
-            COALESCE(e -> 'working_hours', '{}'::jsonb), NULLIF(e ->> 'backup_for', '')::uuid, a.client_id)
+    VALUES (_id, (tte ->> 'consultant_id')::uuid, tte ->> 'role', 'invited', COALESCE((tte ->> 'required')::boolean, true), NULLIF(tte ->> 'capacity_hours_per_week', '')::numeric,
+            COALESCE(te -> 'working_hours', '{}'::jsonb), NULLIF(tte ->> 'backup_for', '')::uuid, a.client_id)
     ON CONFLICT DO NOTHING;
-    PERFORM public.sa_notify_member_invite(_id, (e ->> 'consultant_id')::uuid);
+    PERFORM public.sa_notify_member_invite(_id, (tte ->> 'consultant_id')::uuid);
   END LOOP;
   UPDATE public.sa_applications SET status = 'declined', updated_at = now() WHERE agreement_id = _id AND id <> a.application_id AND status IN ('pending', 'shortlisted');
   PERFORM public.sa_set_status(_id, 'agreed', uid, jsonb_build_object('version', a.version, 'rate_record', rid));
