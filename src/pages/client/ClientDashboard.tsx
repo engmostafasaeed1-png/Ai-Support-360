@@ -1,4 +1,5 @@
 import ClientCollaborationRatingCard from '@/components/client/ClientCollaborationRatingCard';
+import SlaComplianceCards from '@/components/sla/SlaComplianceCards';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -258,6 +259,8 @@ export default function ClientDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      <SlaComplianceCards compact />
 
       <div className="grid gap-6 lg:grid-cols-3 [&>*]:min-w-0">
         {/* Recent Tickets */}

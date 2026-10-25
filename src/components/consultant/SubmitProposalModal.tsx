@@ -17,6 +17,7 @@ import { LocationBlockedNotice, useLocationBlocked } from '@/components/consulta
 import { PolicyBlockedNotice, usePolicyBlocked } from '@/components/consultant/policy/PolicyBanner';
 import { useQueryClient } from '@tanstack/react-query';
 import { bidCountdown, bidsSoFar, toneClass } from '@/lib/bidding';
+import SlaAcceptanceBox from '@/components/sla/SlaAcceptanceBox';
 
 interface SubmitProposalModalProps {
   ticketId: string;
@@ -41,6 +42,7 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
   const submit = useSubmitProposal();
   const locationBlocked = useLocationBlocked();
   const policyBlocked = usePolicyBlocked();
+  const [slaReady, setSlaReady] = useState(true);
   const { data: versions } = useProposalVersions(ticketId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -268,7 +270,8 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
         <div className="pt-2 border-t border-border/50">
           <LocationBlockedNotice />
           <PolicyBlockedNotice />
-          <Button onClick={handleSubmit} disabled={submit.isPending || locationBlocked || policyBlocked} className="w-full gradient-primary border-0 h-10">
+          <div className="mb-2"><SlaAcceptanceBox ticketId={ticketId} context="bid" onReadyChange={setSlaReady} /></div>
+          <Button onClick={handleSubmit} disabled={submit.isPending || locationBlocked || policyBlocked || !slaReady} className="w-full gradient-primary border-0 h-10">
             {submit.isPending ? 'Sending...' : isRevision ? `Send revised bid (v${nextVersion})` : 'Send bid'}
           </Button>
         </div>

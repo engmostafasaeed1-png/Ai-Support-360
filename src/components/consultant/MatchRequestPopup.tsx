@@ -19,6 +19,7 @@ import RequestInfoDialog from '@/components/consultant/assignment/RequestInfoDia
 import DeclineReasonDialog from '@/components/consultant/assignment/DeclineReasonDialog';
 import { useAssignmentInfoReady, useInfoRequests } from '@/hooks/useAssignmentInfo';
 import { Button } from '@/components/ui/button';
+import SlaAcceptanceBox from '@/components/sla/SlaAcceptanceBox';
 import { useNotificationPause } from '@/hooks/useNotificationPause';
 import { popupHeldByPause } from '@/lib/notificationPause';
 import { nextPopup, popupKey, type PopupRequest } from '../../../supabase/functions/_shared/assignmentPolicy';
@@ -92,6 +93,7 @@ export default function MatchRequestPopup() {
   const respond = useRespondToMatch();
   const locationBlocked = useLocationBlocked();
   const policyBlocked = usePolicyBlocked();
+  const [slaReady, setSlaReady] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [acked, setAcked] = useState<Set<string>>(new Set());
   const [now, setNow] = useState(() => Date.now());
@@ -208,7 +210,7 @@ export default function MatchRequestPopup() {
       <Button variant="outline" disabled={!!askBlockedText} title={askBlockedText ?? undefined} onClick={() => setSub({ kind: 'ask', id: current.id })}>
         {t('assignment_info.ask_button', 'Request more information')}
       </Button>
-      <Button className="gradient-primary border-0" disabled={respond.isPending || checkingNda || locationBlocked || policyBlocked} onClick={() => { setSub(null); void accept(); }}>
+      <Button className="gradient-primary border-0" disabled={respond.isPending || checkingNda || locationBlocked || policyBlocked || !slaReady} onClick={() => { setSub(null); void accept(); }}>
         {t('assignment_policy.accept', 'Accept')}
       </Button>
     </>
@@ -234,7 +236,7 @@ export default function MatchRequestPopup() {
       now={now}
       waitingCount={waiting}
       busy={respond.isPending || checkingNda}
-      acceptDisabled={locationBlocked || policyBlocked}
+      acceptDisabled={locationBlocked || policyBlocked || !slaReady}
       onAccept={() => void accept()}
       onDecline={() => (infoReady && current ? setSub({ kind: 'decline', id: current.id }) : answer('rejected'))}
       onView={view}
@@ -242,6 +244,7 @@ export default function MatchRequestPopup() {
     >
       <LocationBlockedNotice />
       <PolicyBlockedNotice />
+      <SlaAcceptanceBox ticketId={current?.ticket_id} context="assignment" onReadyChange={setSlaReady} />
     </AssignmentRequestDialog>
     </>
   );

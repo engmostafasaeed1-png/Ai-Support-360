@@ -331,9 +331,11 @@ BEGIN
     IF pg_trigger_depth() > 1 THEN RETURN OLD; END IF;
     RAISE EXCEPTION 'sla_immutable: % rows cannot be deleted', TG_TABLE_NAME USING ERRCODE = '42501';
   END IF;
-  IF TG_TABLE_NAME = 'sla_ticket_snapshots' AND OLD.superseded_at IS NULL AND NEW.superseded_at IS NOT NULL
-     AND (to_jsonb(NEW) - 'superseded_at') = (to_jsonb(OLD) - 'superseded_at') THEN
-    RETURN NEW;
+  IF TG_TABLE_NAME = 'sla_ticket_snapshots' THEN
+    IF (to_jsonb(OLD) ->> 'superseded_at') IS NULL AND (to_jsonb(NEW) ->> 'superseded_at') IS NOT NULL
+       AND (to_jsonb(NEW) - 'superseded_at') = (to_jsonb(OLD) - 'superseded_at') THEN
+      RETURN NEW;
+    END IF;
   END IF;
   RAISE EXCEPTION 'sla_immutable: % rows cannot be changed', TG_TABLE_NAME USING ERRCODE = '42501';
 END $$;
@@ -1708,7 +1710,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.sla_ticket_view(_ticket uuid)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); role text := public.sla_ticket_role(_ticket, uid); sn public.sla_ticket_snapshots; t record; cid uuid; e record; data jsonb;
+DECLARE uid uuid := auth.uid(); role text := public.sla_ticket_role(_ticket, uid); sn public.sla_ticket_snapshots; t record; cid uuid; e_pid uuid; e_ver integer; e_name text; data jsonb;
 BEGIN
   IF role IS NULL THEN RAISE EXCEPTION 'sla_forbidden' USING ERRCODE = '42501'; END IF;
   SELECT tk.sla_response_deadline, tk.sla_deadline, tk.first_response_at, tk.sla_breached, tk.urgency::text AS urgency INTO t FROM public.tickets tk WHERE tk.id = _ticket;
@@ -1721,7 +1723,7 @@ BEGIN
   data := sn.data;
   IF role NOT IN ('admin', 'client', 'client_manager') THEN data := data - 'extra_contacts'; END IF;
   IF role IN ('client', 'client_manager', 'admin') THEN
-    SELECT * INTO e FROM public.sla_effective_policy(_ticket);
+    SELECT x.policy_id, x.version, x.name INTO e_pid, e_ver, e_name FROM public.sla_effective_policy(_ticket) x;
   END IF;
   RETURN jsonb_build_object(
     'enabled', public.sla_enabled(), 'role', role,
@@ -1740,8 +1742,8 @@ BEGIN
                    FROM public.sla_counter_proposals k WHERE k.ticket_id = _ticket AND k.consultant_id = cid), '[]'::jsonb) END,
     'reclass', (SELECT jsonb_build_object('id', r.id, 'from', r.from_severity, 'to', r.to_severity, 'reason', r.reason, 'created_at', r.created_at)
                   FROM public.sla_reclass_requests r WHERE r.ticket_id = _ticket AND r.status = 'pending' AND role <> 'candidate'),
-    'newer_policy', CASE WHEN e.policy_id IS NOT NULL AND (e.policy_id IS DISTINCT FROM sn.policy_id OR e.version IS DISTINCT FROM sn.policy_version)
-                         THEN jsonb_build_object('policy_id', e.policy_id, 'version', e.version, 'name', e.name) END,
+    'newer_policy', CASE WHEN e_pid IS NOT NULL AND (e_pid IS DISTINCT FROM sn.policy_id OR e_ver IS DISTINCT FROM sn.policy_version)
+                         THEN jsonb_build_object('policy_id', e_pid, 'version', e_ver, 'name', e_name) END,
     'can', jsonb_build_object(
       'acknowledge', role = 'consultant', 'workaround', role = 'consultant', 'propose_reclass', role = 'consultant',
       'accept', role IN ('candidate', 'consultant') AND cid IS NOT NULL, 'counter', role = 'candidate',

@@ -10,6 +10,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, Clock, CheckCircle2, AlertTriangle, Settings2, BarChart3 } from 'lucide-react';
 import SLAPolicyManager from '@/components/client/SLAPolicyManager';
+import SlaPolicyCenter from '@/components/sla/SlaPolicyCenter';
+import SlaComplianceCards from '@/components/sla/SlaComplianceCards';
+import { useSlaEnabled } from '@/hooks/useSla';
 import { slaState, summarize, formatHours, type SlaState, type SlaTicket } from '@/lib/slaOverview';
 
 const stateStyle: Record<SlaState, { label: string; className: string }> = {
@@ -51,6 +54,7 @@ function useSlaTickets() {
 export default function SLAPage() {
   const { t } = useTranslation();
   const { data: tickets = [], isLoading } = useSlaTickets();
+  const slaOn = useSlaEnabled();
   const now = Date.now();
   const summary = summarize(tickets, now);
   const tracked = tickets.filter((x) => x.sla_deadline).slice(0, 50);
@@ -82,6 +86,26 @@ export default function SLAPage() {
       ok: true,
     },
   ];
+
+  // SLA policies on: guided policies with versions, compliance from the measured clocks. Off: today's page unchanged.
+  if (slaOn) {
+    return (
+      <div className="p-4 md:p-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">{t('sidebar.sla', 'Service Level Agreements')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('sla.center.intro')}</p>
+        </div>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="overview" className="gap-1.5"><BarChart3 className="w-3.5 h-3.5" /> {t('sla.center.tabOverview')}</TabsTrigger>
+            <TabsTrigger value="policies" className="gap-1.5"><Settings2 className="w-3.5 h-3.5" /> {t('sla.center.tabPolicies')}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="overview"><SlaComplianceCards /></TabsContent>
+          <TabsContent value="policies"><SlaPolicyCenter /></TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 space-y-6">

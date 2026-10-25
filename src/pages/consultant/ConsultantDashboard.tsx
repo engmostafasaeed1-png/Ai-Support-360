@@ -29,6 +29,7 @@ import GettingStartedCard from '@/components/consultant/GettingStartedCard';
 import LocationBanner from '@/components/consultant/LocationBanner';
 import AvailabilityUrgentBanner from '@/components/consultant/AvailabilityUrgent';
 import PolicyBanner from '@/components/consultant/policy/PolicyBanner';
+import { ConsultantSlaCard } from '@/components/sla/SlaComplianceCards';
 
 const sessionTypeIcons: Record<string, typeof Video> = {
   video: Video,
@@ -289,6 +290,8 @@ export default function ConsultantDashboard() {
           </Link>
         ))}
       </div>
+
+      <ConsultantSlaCard />
 
       <div className="grid gap-6 lg:grid-cols-3 [&>*]:min-w-0">
         {/* Earnings Chart */}

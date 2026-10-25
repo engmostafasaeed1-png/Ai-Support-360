@@ -31,6 +31,8 @@ import { areasOf, areaLabel } from '@/lib/sapAreas';
 import { cleanNoteList } from '@/lib/sapNotes';
 import RateClientCard from '@/components/consultant/RateClientCard';
 import ClientRatingChip from '@/components/consultant/ClientRatingChip';
+import { SlaHeaderChips } from '@/components/sla/SlaChips';
+import SlaTicketPanel from '@/components/sla/SlaTicketPanel';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -294,10 +296,13 @@ export default function CaseDetailPage() {
           <BrdButton ticketId={ticket.id} area="consultant" />
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2"><TrackingHeaderChips ticketId={ticket.id} /><BrdApprovalHeaderChip ticketId={ticket.id} /></div>
+      <div className="flex flex-wrap items-center gap-2"><TrackingHeaderChips ticketId={ticket.id} /><BrdApprovalHeaderChip ticketId={ticket.id} /><SlaHeaderChips ticketId={ticket.id} /></div>
 
       {/* Two-layer tracking: automatic stage + the working status set by client and consultant */}
       <TicketTrackingPanel ticketId={ticket.id} ticketTitle={ticket.title ?? ''} />
+
+      {/* SLA of this ticket (snapshot, clocks, acknowledge with ETA) - only while SLA policies are on */}
+      <SlaTicketPanel ticketId={ticket.id} />
 
       {/* Quick Actions: Documents · Remote Access · Request Meeting */}
       {ticket.consultant_id && (
