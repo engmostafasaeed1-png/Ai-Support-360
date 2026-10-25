@@ -82,7 +82,7 @@ export default function RequirementsTable({ rows, onChange, bilingual, readOnly,
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold">{t('brd.req.heading', { count: rows.length })}</h4>
         {!readOnly && (
-          <Button type="button" size="sm" variant="outline" className="h-8 gap-1" disabled={rows.length >= LIMITS.requirements}
+          <Button type="button" size="sm" variant="outline" className="h-8 gap-1" reason={rows.length >= LIMITS.requirements && { key: 'limit_reached', params: { max: LIMITS.requirements } }}
             onClick={() => onChange([...rows, { ...emptyRequirement(rows.length + 1), ...(bilingual ? { description_ar: '', acceptance_ar: '' } : {}) }])}>
             <Plus className="h-3.5 w-3.5" /> {t('brd.req.add')}
           </Button>

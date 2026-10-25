@@ -88,7 +88,7 @@ export default function CriticalServiceSettingsCard() {
 
             {problem && <p role="alert" className="text-xs text-destructive">{problem}</p>}
             <div className="flex items-center gap-3">
-              <Button busy={save.isPending} disabled={!!problem || !changed} onClick={() => terms && save.mutate(terms)}>
+              <Button busy={save.isPending} reason={[!!problem && 'fix_errors_first', !changed && 'nothing_changed']} onClick={() => terms && save.mutate(terms)}>
                 {save.isPending ? 'Saving...' : 'Save'}
               </Button>
               {!changed && !problem && <span className="text-xs text-muted-foreground">Nothing to save.</span>}

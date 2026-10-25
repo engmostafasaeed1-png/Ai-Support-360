@@ -25,7 +25,7 @@ export default function BidCounterDialog({ bid, hasCounter, open, onOpenChange }
       <Label htmlFor="counter-message">Message</Label><Textarea id="counter-message" value={message} maxLength={1000} onChange={e => setMessage(e.target.value)} />
       <p className="text-xs text-muted-foreground">{contactHelp}</p>
       {problem && <p role="alert" className="text-xs text-destructive">{problem}</p>}
-      <Button type="submit" busy={send.isPending} disabled={!!problem}>Send counter-offer</Button>
+      <Button type="submit" busy={send.isPending} reason={!!problem && { key: hasCounter ? 'already_done' : message.trim().length > 1000 ? 'text_too_long' : 'invalid_value', message: problem }}>Send counter-offer</Button>
     </form>
   </DialogContent></Dialog>;
 }

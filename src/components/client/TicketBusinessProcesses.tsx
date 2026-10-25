@@ -144,7 +144,7 @@ function LinkProcessDialog({ ticketId, open, onOpenChange, existingIds }: { tick
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleLink} busy={saving} disabled={!selectedId} className="gradient-primary border-0 gap-1.5">
+          <Button onClick={handleLink} busy={saving} reason={!selectedId && 'choose_option_first'} className="gradient-primary border-0 gap-1.5">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Network className="w-4 h-4" />} Link
           </Button>
         </DialogFooter>

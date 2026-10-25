@@ -150,7 +150,7 @@ export default function LogoCropDialog({ imageSrc, open, onCancel, onConfirm }: 
           <Button variant="outline" onClick={onCancel} busy={busy}>
             Cancel
           </Button>
-          <Button onClick={handleConfirm} disabled={!canConfirm}>
+          <Button onClick={handleConfirm} busy={busy || measuring} reason={[(!pixels || sizeBytes === null) && 'crop_not_ready', overLimit && 'crop_too_large']}>
             {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             {overLimit ? 'Too large' : 'Save crop'}
           </Button>

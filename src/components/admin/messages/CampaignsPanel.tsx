@@ -150,7 +150,7 @@ function ManualHelper({ campaign, onClose }: { campaign: Campaign; onClose: () =
         </DialogHeader>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => copy(textFor({ lang: 'en', first_name: '', company: '' } as ManualContact))}><ClipboardCopy className="me-1 h-4 w-4" />{t('bmsg.copy_message', 'Copy message')}</Button>
-          <Button variant="outline" size="sm" onClick={exportCsv} disabled={!contacts.data?.length}><Download className="me-1 h-4 w-4" />{t('bmsg.export_numbers', 'Numbers as CSV')}</Button>
+          <Button variant="outline" size="sm" onClick={exportCsv} reason={!contacts.data?.length && 'nothing_to_export'}><Download className="me-1 h-4 w-4" />{t('bmsg.export_numbers', 'Numbers as CSV')}</Button>
         </div>
         {contacts.isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : contacts.error ? <p className="text-sm text-destructive">{(contacts.error as Error).message}</p> : (
           <ul className="divide-y rounded-xl border">

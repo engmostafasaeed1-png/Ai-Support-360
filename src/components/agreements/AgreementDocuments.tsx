@@ -99,10 +99,10 @@ export default function AgreementDocuments({ a, settings }: { a: api.SaDetail; s
       <Card className="rounded-2xl"><CardHeader><CardTitle className="text-base">{t('agreements.docs.generated')}</CardTitle></CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <GenTile title={t('agreements.docs.summary')} text={a.version ? t('agreements.docs.summaryText', { v: a.version, hash: (a.content_hash ?? '').slice(0, 12) }) : t('agreements.docs.notYet')}
-            disabled={!a.version || !terms} busy={busy === 'summary'} onClick={summaryPdf} label={t('agreements.detail.pdf')} />
-          <GenTile title={t('agreements.docs.sla')} text={terms?.sla.name ? `${terms.sla.name} v${terms.sla.version ?? '—'}` : t('agreements.f.slaDefault')} disabled={!terms} busy={busy === 'sla'} onClick={slaPdf} label={t('agreements.docs.download')} />
+            reason={(!a.version || !terms) && 'no_data_yet'} busy={busy === 'summary'} onClick={summaryPdf} label={t('agreements.detail.pdf')} />
+          <GenTile title={t('agreements.docs.sla')} text={terms?.sla.name ? `${terms.sla.name} v${terms.sla.version ?? '—'}` : t('agreements.f.slaDefault')} reason={!terms && 'no_data_yet'} busy={busy === 'sla'} onClick={slaPdf} label={t('agreements.docs.download')} />
           <GenTile title={t('agreements.docs.statement')} text={a.usage?.months.length ? t('agreements.docs.statementText', { count: a.usage.months.length }) : t('agreements.usage.noMonths')}
-            disabled={!a.usage} busy={busy === 'stmt'} onClick={statementPdf} label={t('agreements.docs.download')} />
+            reason={!a.usage && 'no_data_yet'} busy={busy === 'stmt'} onClick={statementPdf} label={t('agreements.docs.download')} />
         </CardContent></Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -179,7 +179,7 @@ export default function AgreementDocuments({ a, settings }: { a: api.SaDetail; s
             </div>
           )}
           <DialogFooter><Button variant="ghost" onClick={() => setDlg(null)}>{t('agreements.cancel')}</Button>
-            <Button busy={busy === 'upload'} disabled={!file || !!fileProblem || !!textProblem || !noSecrets || (!dlg?.documentId && !dlg?.title.trim())} onClick={upload}>
+            <Button busy={busy === 'upload'} reason={[!file && 'upload_file_first', !!fileProblem && { key: 'fix_errors_first', message: t(`agreements.err.${fileProblem}`, { mb: settings.doc_max_mb }) }, !!textProblem && { key: 'fix_errors_first', message: t(`agreements.err.${textProblem}`) }, !noSecrets && 'tick_confirmation_first', (!dlg?.documentId && !dlg?.title.trim()) && 'fill_required_fields']} onClick={upload}>
               {busy === 'upload' && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('agreements.docs.uploadCta')}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
@@ -191,7 +191,7 @@ function GenTile({ title, text, onClick, disabled, busy, label }: { title: strin
   return (
     <div className="flex flex-col justify-between gap-2 rounded-xl border p-3">
       <div><p className="text-sm font-medium">{title}</p><p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">{text}</p></div>
-      <Button size="sm" variant="outline" busy={busy} disabled={disabled} onClick={onClick}>{busy ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Download className="me-1 h-4 w-4" />}{label}</Button>
+      <Button size="sm" variant="outline" busy={busy} reason={reason} onClick={onClick}>{busy ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Download className="me-1 h-4 w-4" />}{label}</Button>
     </div>
   );
 }

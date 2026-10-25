@@ -363,7 +363,7 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
               </Button>
             )}
             {isConsultantView && (
-              <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => setSubmitOpen(true)} disabled={!!blockReason} title={blockReason ?? undefined}>
+              <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => setSubmitOpen(true)} reason={!!blockReason && { key: myWaiting ? 'already_done' : myOpenEntries.length === 0 ? 'no_work_logged' : myOpenEntries.some(e => (e.description ?? '').trim().length < 3) ? 'fill_required_fields' : 'rate_not_approved', message: blockReason }} hint="inline" title={blockReason ?? undefined}>
                 <Send className="h-3.5 w-3.5" /> {resubmit ? 'Submit again' : 'Submit for approval'}
               </Button>
             )}

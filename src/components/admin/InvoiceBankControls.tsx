@@ -161,7 +161,7 @@ export default function InvoiceBankControls({ invoice, onClose }: { invoice: Inv
                   )}
                   <Button
                     size="sm"
-                    busy={setAccount.isPending} disabled={!canSave}
+                    busy={setAccount.isPending} reason={!canSave && 'fill_required_fields'}
                     onClick={() => { if (invoiceId) setAccount.mutate({ paymentId: invoiceId, details: clean, note: accountNote }); }}
                   >
                     Save the account of this invoice

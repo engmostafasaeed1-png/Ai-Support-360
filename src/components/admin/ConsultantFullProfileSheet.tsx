@@ -101,7 +101,7 @@ export function ConsultantFullProfileBody({ data }: { data: FullConsultantProfil
     <TabsContent value="Payout" className="space-y-5">
       {fields([['Bank details status', label(bankStatus)], ['Disclaimer accepted on',date(pay.acknowledged_at)], ['Disclaimer version', pay.acknowledged_version], ['Account holder',pay.account_holder], ['Bank',pay.bank_name], ['Country',pay.country], ['Currency',pay.currency], ['Notes',pay.notes]])}
       <div className="space-y-3">{(['iban','account_number','swift_bic'] as const).map((key, i) => <div key={key}><p className="text-xs text-muted-foreground">{label(['IBAN','Account number','SWIFT'][i])}</p><p className="font-mono text-sm break-all" dir="ltr">{pay[key] ? reveal ? content(pay[key]) : key === 'iban' ? maskIban(content(pay[key])) : maskAccount(content(pay[key])) : text(null)}</p></div>)}</div>
-      <Button size="sm" variant="outline" onClick={() => setReveal(v => !v)} disabled={!pay.iban && !pay.account_number && !pay.swift_bic}>{label(reveal ? 'Hide' : 'Show')}</Button>
+      <Button size="sm" variant="outline" onClick={() => setReveal(v => !v)} reason={!pay.iban && !pay.account_number && !pay.swift_bic && 'no_data_yet'}>{label(reveal ? 'Hide' : 'Show')}</Button>
       <p className="text-xs text-muted-foreground">{label('Viewing this profile is recorded in the audit log.')}</p>
     </TabsContent>
   </Tabs>;

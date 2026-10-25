@@ -48,7 +48,7 @@ export default function InterviewWeightCard() {
         <div className="flex items-center gap-2">
           <Input id="interview-weight" type="number" inputMode="numeric" min={0} max={MAX_INTERVIEW_WEIGHT} step={1} className="w-24"
             value={value} onChange={e => setValue(e.target.value)} aria-invalid={!valid} />
-          <Button size="sm" busy={save.isPending} disabled={!valid || n === saved} onClick={() => save.mutate()}>
+          <Button size="sm" busy={save.isPending} reason={[!valid && 'invalid_value', n === saved && 'nothing_changed']} onClick={() => save.mutate()}>
             {t('admin.profileFields.weightSave', 'Save')}
           </Button>
         </div>

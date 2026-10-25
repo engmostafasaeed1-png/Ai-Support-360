@@ -225,7 +225,7 @@ export default function DirectoryFilterPanel({ filters: f, consultants, ctx, onC
               <Label htmlFor="f-save" className="text-xs font-medium text-muted-foreground">{t('directory.save_name', 'Save these filters as')}</Label>
               <Input id="f-save" value={saveName} maxLength={40} placeholder={t('directory.save_placeholder', 'e.g. FI Saudi')} className="h-9 w-44 rounded-xl text-xs" onChange={(e) => setSaveName(e.target.value)} />
             </div>
-            <Button type="submit" size="sm" variant="outline" className="h-9 gap-1 text-xs" disabled={!saveName.trim()}>
+            <Button type="submit" size="sm" variant="outline" className="h-9 gap-1 text-xs" reason={!saveName.trim() && { key: 'field_required', params: { field: t('directory.save_name', 'Save these filters as') } }}>
               <Bookmark className="h-3.5 w-3.5" aria-hidden /> {t('directory.save', 'Save filters')}
             </Button>
           </form>

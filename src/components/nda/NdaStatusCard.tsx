@@ -101,7 +101,7 @@ export default function NdaStatusCard({ ndaId, consultantId, clientId, consultan
           {v.mySignedAt && (
             <div className="flex flex-col gap-2 rounded-xl bg-success/10 p-3 sm:flex-row sm:items-center sm:justify-between" role="status">
               <p className="flex items-center gap-2 text-sm font-medium text-foreground"><CheckCircle2 className="h-4 w-4 text-success" aria-hidden /> {t('ndaSign.card.youSigned', { date: fmt(v.mySignedAt, lang) })}</p>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={download} busy={downloading} disabled={!s.nda_id}>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={download} busy={downloading} reason={!s.nda_id && 'no_data_yet'}>
                 {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Download className="h-3.5 w-3.5" aria-hidden />} {t('ndaSign.card.downloadMine')}
               </Button>
             </div>
@@ -109,7 +109,7 @@ export default function NdaStatusCard({ ndaId, consultantId, clientId, consultan
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4 text-warning" aria-hidden />
               {otherName ? t('ndaSign.card.waitingNamed', { role: roleLabel(v.other), name: otherName }) : t('ndaSign.card.waiting', { role: roleLabel(v.other) })}</p>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={remind} disabled={!v.canRemind || reminding}>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={remind} reason={!v.canRemind && { key: 'rate_limit_soon', message: v.nextReminderAt ? t('ndaSign.card.nextReminder', { date: fmt(v.nextReminderAt, lang) }) : undefined }} busy={reminding}>
               {reminding ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <BellRing className="h-3.5 w-3.5" aria-hidden />} {t('ndaSign.card.remind')}
             </Button>
           </div>

@@ -242,7 +242,7 @@ export default function ScheduleLiveInterviewDialog({ open, onOpenChange, consul
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} busy={saving}>Cancel</Button>
-          <Button onClick={save} busy={saving} disabled={noInterviewerAvailable}>{saving && <Loader2 className="w-4 h-4 animate-spin me-1" />} Schedule</Button>
+          <Button onClick={save} busy={saving} reason={noInterviewerAvailable && 'no_interviewer_available'} hint="inline">{saving && <Loader2 className="w-4 h-4 animate-spin me-1" />} Schedule</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

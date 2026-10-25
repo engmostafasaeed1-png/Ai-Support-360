@@ -176,7 +176,7 @@ export default function VoiceMetricsPanel() {
           <p className="text-xs text-muted-foreground">
             {t('voice.admin.model', 'Model: {{model}} · {{rate}} credits per audio minute · no data kept by the provider.', { model: VOICE_MODEL, rate: (VOICE_CREDITS_PER_SECOND * 60).toFixed(3) })}
           </p>
-          <Button onClick={() => void save()} busy={saving} disabled={!ready}><Save className="h-4 w-4 me-1" />{t('voice.admin.save', 'Save voice settings')}</Button>
+          <Button onClick={() => void save()} busy={saving} reason={!ready && 'feature_not_ready'}><Save className="h-4 w-4 me-1" />{t('voice.admin.save', 'Save voice settings')}</Button>
         </CardContent>
       </Card>
 

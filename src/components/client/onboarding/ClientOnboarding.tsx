@@ -232,12 +232,12 @@ export default function ClientOnboarding() {
       </Card>
 
       <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={() => setCurrentStep(s => s - 1)} disabled={currentStep === 0} className="gap-1.5">
+        <Button variant="outline" onClick={() => setCurrentStep(s => s - 1)} reason={currentStep === 0 && 'first_page'} className="gap-1.5">
           <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
           {t('onboarding.back')}
         </Button>
         {currentStep < steps.length - 1 ? (
-          <Button onClick={() => setCurrentStep(s => s + 1)} disabled={!canNext()} className="gap-1.5">
+          <Button onClick={() => setCurrentStep(s => s + 1)} reason={!canNext() && 'select_items_first'} className="gap-1.5">
             {t('onboarding.next')}
             <ChevronRight className="w-4 h-4 rtl:rotate-180" />
           </Button>

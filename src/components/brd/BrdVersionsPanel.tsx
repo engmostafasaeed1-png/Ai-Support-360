@@ -61,7 +61,7 @@ export default function BrdVersionsPanel({ state, canWrite, isAdmin, onRestored,
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-xs text-muted-foreground flex-1">{t('brd.versions.pickTwo')}</p>
-        <Button size="sm" variant="outline" className="gap-1.5" busy={busy} disabled={picked.length !== 2} onClick={doCompare}>
+        <Button size="sm" variant="outline" className="gap-1.5" busy={busy} reason={picked.length !== 2 && 'choose_two_versions'} onClick={doCompare}>
           <GitCompare className="h-4 w-4" /> {t('brd.versions.compare')}
         </Button>
       </div>
@@ -135,7 +135,7 @@ function ArchiveButton({ ticketId, version, onDone }: { ticketId: string; versio
           <Input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={300} aria-label={t('brd.reason')} placeholder={t('brd.reason')} />
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setOpen(false)}>{t('common.cancel', 'Cancel')}</Button>
-            <Button disabled={reason.trim().length < 3} onClick={async () => {
+            <Button reason={reason.trim().length < 3 && { key: 'reason_required', params: { min: 3 } }} onClick={async () => {
               const r = await archiveBrdVersion(ticketId, version, reason);
               if (r.error) { toast.error(r.error.message); return; }
               setOpen(false); onDone();

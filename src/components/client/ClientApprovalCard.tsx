@@ -102,7 +102,7 @@ export default function ClientApprovalCard() {
 
         {status === 'changes_requested' ? (
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => setOpen(true)} disabled={!ready} className="gap-2">
+            <Button onClick={() => setOpen(true)} reason={[!checklist[0].ok && { key: 'field_required', params: { field: checklist[0].label }, to: checklist[0].to }, !checklist[1].ok && { key: 'select_items_first', to: checklist[1].to }]} className="gap-2">
               <Send aria-hidden="true" className="h-4 w-4" /> {t('client_approval.send_again', 'Send again')}
             </Button>
             {!ready ? (

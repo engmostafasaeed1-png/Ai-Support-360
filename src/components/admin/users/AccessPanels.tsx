@@ -315,9 +315,9 @@ export function AdminAuditPanel({ me, onOpenUser }: { me: MyAdminPermissions; on
           </ol>
         )}
         <div className="flex items-center justify-end gap-2 text-sm">
-          <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>{t('um.prev', 'Previous')}</Button>
+          <Button size="sm" variant="outline" reason={page <= 1 && 'first_page'} onClick={() => setPage(page - 1)}>{t('um.prev', 'Previous')}</Button>
           <span aria-live="polite">{t('um.page_of', 'Page {{p}} of {{n}}', { p: page, n: pages })}</span>
-          <Button size="sm" variant="outline" disabled={page >= pages} onClick={() => setPage(page + 1)}>{t('um.next', 'Next')}</Button>
+          <Button size="sm" variant="outline" reason={page >= pages && 'last_page'} onClick={() => setPage(page + 1)}>{t('um.next', 'Next')}</Button>
         </div>
       </CardContent>
     </Card>

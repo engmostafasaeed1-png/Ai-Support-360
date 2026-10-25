@@ -209,7 +209,7 @@ export default function SlaPolicyEditor({ policyId, tenantId, onClose }: { polic
             <CardContent className="space-y-3 text-xs">
               <div className="flex flex-wrap gap-2">
                 {(['24x7', 'business'] as const).map((m) => (
-                  <Button key={m} type="button" size="sm" variant={cov.mode === m ? 'default' : 'outline'} disabled={!bounds.allowed_coverage.includes(m)}
+                  <Button key={m} type="button" size="sm" variant={cov.mode === m ? 'default' : 'outline'} reason={!bounds.allowed_coverage.includes(m) && 'coverage_not_allowed'}
                     onClick={() => setBody({ ...body, coverage: { ...cov, mode: m, ...(m === '24x7' ? {} : { days: cov.days.length === 7 ? [0, 1, 2, 3, 4] : cov.days, start: cov.start === '00:00' ? '09:00' : cov.start, end: cov.end === '23:59' ? '17:00' : cov.end }) } })}>
                     {t(`sla.coverage.${m === '24x7' ? 'mode24' : 'modeBusiness'}`)}
                   </Button>
@@ -236,7 +236,7 @@ export default function SlaPolicyEditor({ policyId, tenantId, onClose }: { polic
                       ))}</div>
                     )}
                     <div className="flex gap-2"><Input type="date" className="h-8 w-40" value={newHoliday} onChange={(e) => setNewHoliday(e.target.value)} aria-label={t('sla.editor.addHoliday')} />
-                      <Button type="button" size="sm" variant="outline" disabled={!newHoliday} onClick={() => { setBody({ ...body, coverage: { ...cov, holidays: [...new Set([...cov.holidays, newHoliday])].sort() } }); setNewHoliday(''); }}><Plus className="h-3.5 w-3.5" aria-hidden /> {t('sla.editor.addHoliday')}</Button></div>
+                      <Button type="button" size="sm" variant="outline" reason={!newHoliday && 'choose_date_first'} onClick={() => { setBody({ ...body, coverage: { ...cov, holidays: [...new Set([...cov.holidays, newHoliday])].sort() } }); setNewHoliday(''); }}><Plus className="h-3.5 w-3.5" aria-hidden /> {t('sla.editor.addHoliday')}</Button></div>
                     <div className="flex flex-wrap gap-1">{cov.holidays.map((h) => (
                       <Badge key={h} variant="secondary" className="gap-1">{h}<button type="button" aria-label={t('sla.editor.remove')} onClick={() => setBody({ ...body, coverage: { ...cov, holidays: cov.holidays.filter((x) => x !== h) } })}>×</button></Badge>
                     ))}</div>
@@ -314,7 +314,7 @@ export default function SlaPolicyEditor({ policyId, tenantId, onClose }: { polic
                   </div>
                 ))}
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" size="sm" variant="outline" disabled={sev.escalations.length >= bounds.max_escalations} onClick={() => setSevField(sevTab, { escalations: [...sev.escalations, newStep()] })}><Plus className="me-1 h-3.5 w-3.5" aria-hidden /> {t('sla.editor.addStep')}</Button>
+                  <Button type="button" size="sm" variant="outline" reason={sev.escalations.length >= bounds.max_escalations && { key: 'limit_reached', params: { max: bounds.max_escalations } }} onClick={() => setSevField(sevTab, { escalations: [...sev.escalations, newStep()] })}><Plus className="me-1 h-3.5 w-3.5" aria-hidden /> {t('sla.editor.addStep')}</Button>
                   <Button type="button" size="sm" variant="ghost" onClick={() => setBody({ ...body, severities: Object.fromEntries(SEVERITY_KEYS.map((k) => [k, { ...body.severities[k], escalations: k === 'S1' ? sev.escalations : sev.escalations.map((s) => ({ ...s, unpausable: false })) }])) as PolicyBody['severities'] })}>{t('sla.editor.copyAll')}</Button>
                 </div>
                 <p className="text-[11px] text-muted-foreground">{t('sla.editor.noSms')}</p>
@@ -323,7 +323,7 @@ export default function SlaPolicyEditor({ policyId, tenantId, onClose }: { polic
             <div className="space-y-1 text-xs">
               <Label htmlFor="sla-extra">{t('sla.editor.extra')}</Label>
               <div className="flex gap-2"><Input id="sla-extra" type="email" className="h-8" value={contact} onChange={(e) => setContact(e.target.value)} placeholder={p.company_domain ? `name@${p.company_domain}` : ''} />
-                <Button type="button" size="sm" variant="outline" disabled={!contact.includes('@')} onClick={() => { setBody({ ...body, extra_contacts: [...new Set([...body.extra_contacts, contact.trim().toLowerCase()])] }); setContact(''); }}>{t('sla.editor.add')}</Button></div>
+                <Button type="button" size="sm" variant="outline" reason={!contact.includes('@') && 'invalid_email'} onClick={() => { setBody({ ...body, extra_contacts: [...new Set([...body.extra_contacts, contact.trim().toLowerCase()])] }); setContact(''); }}>{t('sla.editor.add')}</Button></div>
               <div className="flex flex-wrap gap-1">{body.extra_contacts.map((e) => <Badge key={e} variant="secondary" className="gap-1">{e}<button type="button" aria-label={t('sla.editor.remove')} onClick={() => setBody({ ...body, extra_contacts: body.extra_contacts.filter((x) => x !== e) })}>×</button></Badge>)}</div>
               <p className="text-muted-foreground">{t('sla.editor.extraHint')}</p>
             </div>
@@ -368,8 +368,8 @@ export default function SlaPolicyEditor({ policyId, tenantId, onClose }: { polic
       {!readOnly && (
         <div className="sticky bottom-0 z-10 flex flex-wrap items-end gap-2 rounded-2xl border border-border/60 bg-background/95 p-3 backdrop-blur">
           <div className="min-w-[200px] flex-1"><Label htmlFor="sla-note" className="text-xs">{t('sla.editor.changeNote')}</Label><Input id="sla-note" className="h-8" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} /></div>
-          <Button variant="outline" busy={busy} disabled={!dirty} onClick={save}><Save className="me-1 h-4 w-4" aria-hidden /> {t('sla.editor.saveDraft')}</Button>
-          <Button busy={busy} disabled={dirty || errors} onClick={() => setActivateOpen(true)} title={dirty ? t('sla.editor.saveFirst') : errors ? t('sla.editor.fixFirst') : undefined}>{t('sla.editor.activate')}</Button>
+          <Button variant="outline" busy={busy} reason={!dirty && 'nothing_changed'} onClick={save}><Save className="me-1 h-4 w-4" aria-hidden /> {t('sla.editor.saveDraft')}</Button>
+          <Button busy={busy} reason={[dirty && 'save_changes_first', errors && 'fix_errors_first']} hint="inline" onClick={() => setActivateOpen(true)} title={dirty ? t('sla.editor.saveFirst') : errors ? t('sla.editor.fixFirst') : undefined}>{t('sla.editor.activate')}</Button>
           {p.scope !== 'platform' && p.status !== 'archived' && (
             <Button variant="ghost" className="text-destructive" busy={busy} onClick={async () => {
               try { await api.archivePolicy(p.id, ''); invalidate(); toast.success(t('sla.editor.archived')); onClose(); } catch (e) { toast.error(slaErrorText(t, e)); }

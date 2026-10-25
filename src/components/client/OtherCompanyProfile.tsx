@@ -112,7 +112,7 @@ export default function OtherCompanyProfile() {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={save} busy={saving} disabled={!isOwnerOrAdmin || !changed || !name.trim()} className="gradient-primary border-0 gap-2">
+        <Button onClick={save} busy={saving} reason={[!isOwnerOrAdmin && { key: 'permission_missing', params: { role: t('company_profile_page.non_owner', 'non-owner') } }, !changed && 'nothing_changed', !name.trim() && { key: 'field_required', params: { field: t('company_profile_page.company_name', 'Company Name') } }]} className="gradient-primary border-0 gap-2">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Save company details
         </Button>

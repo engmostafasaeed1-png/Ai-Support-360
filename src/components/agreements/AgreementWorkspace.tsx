@@ -135,7 +135,7 @@ export default function AgreementWorkspace({ a, settings, portal }: { a: api.SaD
             <div className="mt-2 space-y-2">
               <Label htmlFor="sa-ho">{t('agreements.detail.handoverNote')}</Label>
               <Textarea id="sa-ho" rows={3} maxLength={4000} value={handover} onChange={(e) => setHandover(e.target.value)} />
-              <Button size="sm" busy={!!busy} disabled={!handover.trim()} onClick={() => run('ho', () => api.saveHandoverNote(a.id, handover), t('agreements.saved'))}>{t('agreements.save')}</Button>
+              <Button size="sm" busy={!!busy} reason={!handover.trim() && 'type_message_first'} onClick={() => run('ho', () => api.saveHandoverNote(a.id, handover), t('agreements.saved'))}>{t('agreements.save')}</Button>
             </div>
           )}
           {!isLead && a.termination.handover_note && <p className="mt-2 whitespace-pre-wrap">{a.termination.handover_note}</p>}
@@ -157,7 +157,7 @@ export default function AgreementWorkspace({ a, settings, portal }: { a: api.SaD
 
         <TabsContent value="overview" className="space-y-4">
           <Card className="rounded-2xl"><CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2"><CardTitle className="text-base">{t('agreements.detail.terms')} {a.version ? `· v${a.version}` : ''}</CardTitle>
-            {a.version ? <Button size="sm" variant="outline" disabled={pdfBusy} onClick={downloadPdf}>{pdfBusy ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Download className="me-1 h-4 w-4" />}{t('agreements.detail.pdf')}</Button> : null}</CardHeader>
+            {a.version ? <Button size="sm" variant="outline" busy={pdfBusy} onClick={downloadPdf}>{pdfBusy ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Download className="me-1 h-4 w-4" />}{t('agreements.detail.pdf')}</Button> : null}</CardHeader>
             <CardContent className="space-y-4">
               {terms && <TermsSummary terms={terms} />}
               {a.consultant_name && <p className="text-sm"><span className="text-muted-foreground">{t('agreements.role.lead')}:</span> <span className="font-medium">{a.consultant_name}</span></p>}
@@ -243,7 +243,7 @@ export default function AgreementWorkspace({ a, settings, portal }: { a: api.SaD
                   <div className="space-y-1.5"><Label htmlFor="c-end">{t('agreements.f.end')}</Label><Input id="c-end" type="date" defaultValue={terms.term.end_date ?? ''} onChange={(e) => setCounter((c) => ({ ...c, end_date: e.target.value || null }))} /></div>
                   <div className="space-y-1.5"><Label htmlFor="c-notice">{t('agreements.f.noticeDays')}</Label><Input id="c-notice" type="number" defaultValue={terms.term.notice_days} onChange={(e) => setCounter((c) => ({ ...c, notice_days: Number(e.target.value) }))} /></div>
                   <div className="space-y-1.5 sm:col-span-3"><Label htmlFor="c-note">{t('agreements.neg.note')}</Label><Textarea id="c-note" rows={2} maxLength={1000} value={counterNote} onChange={(e) => setCounterNote(e.target.value)} /></div>
-                  <div className="sm:col-span-3"><Button size="sm" busy={!!busy} disabled={!Object.keys(offerPatch(terms, counter)).length}
+                  <div className="sm:col-span-3"><Button size="sm" busy={!!busy} reason={!Object.keys(offerPatch(terms, counter)).length && 'nothing_changed'}
                     onClick={() => run('offer', () => api.makeOffer(a.id, offerPatch(terms, counter), counterNote), t('agreements.neg.sent')).then((ok) => ok && (setCounter({}), setCounterNote('')))}>{t('agreements.neg.send')}</Button></div>
                 </CardContent></Card>
             )}
@@ -258,7 +258,7 @@ export default function AgreementWorkspace({ a, settings, portal }: { a: api.SaD
                     <>
                       <label className="flex items-start gap-2"><Checkbox checked={accept} onCheckedChange={(v) => setAccept(!!v)} className="mt-0.5" /> {t('agreements.acc.check')}</label>
                       <div className="max-w-sm space-y-1.5"><Label htmlFor="acc-name">{t('agreements.acc.name')}</Label><Input id="acc-name" value={typedName} maxLength={120} onChange={(e) => setTypedName(e.target.value)} autoComplete="name" /></div>
-                      <Button busy={!!busy} disabled={!accept || typedName.trim().length < 3} onClick={() => run('acc', () => api.acceptTerms(a.id, a.version!, a.content_hash!, typedName.trim()), t('agreements.acc.saved'))}>
+                      <Button busy={!!busy} reason={[!accept && 'tick_confirmation_first', typedName.trim().length < 3 && { key: 'text_too_short', params: { min: 3 } }]} onClick={() => run('acc', () => api.acceptTerms(a.id, a.version!, a.content_hash!, typedName.trim()), t('agreements.acc.saved'))}>
                         <FileSignature className="me-1 h-4 w-4" />{t('agreements.acc.cta')}</Button>
                     </>
                   )}
@@ -339,7 +339,7 @@ export default function AgreementWorkspace({ a, settings, portal }: { a: api.SaD
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={close}>{t('agreements.cancel')}</Button>
-            <Button variant={dialog === 'terminate' ? 'destructive' : 'default'} busy={!!busy} disabled={text.trim().length < (dialog === 'rate' ? 0 : 5) || ((dialog === 'rate' || dialog === 'suspend') && !dateVal) || (dialog === 'replace' && !msgTo)}
+            <Button variant={dialog === 'terminate' ? 'destructive' : 'default'} busy={!!busy} reason={[text.trim().length < (dialog === 'rate' ? 0 : 5) && { key: 'reason_required', params: { min: 5 } }, ((dialog === 'rate' || dialog === 'suspend') && !dateVal) && 'choose_date_first', (dialog === 'replace' && !msgTo) && 'no_consultant_selected']}
               onClick={async () => {
                 const ok = dialog === 'terminate' ? await run('d', () => api.requestTermination(a.id, text), t('agreements.dlg.terminate.done'))
                   : dialog === 'suspend' ? await run('d', () => api.suspend(a.id, dateVal, text), t('agreements.saved'))
@@ -455,7 +455,7 @@ function Messages({ a, msg, setMsg, send, busy, to, setTo }: { a: api.SaDetail; 
         <Label htmlFor="sa-msg" className="sr-only">{t('agreements.msg.write')}</Label>
         <Textarea id="sa-msg" rows={2} maxLength={2000} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder={t('agreements.msg.write')} />
         <div className="flex items-center justify-between gap-2"><p className="text-xs text-muted-foreground">{t('agreements.form.contactHint')}</p>
-          <Button size="sm" busy={busy} disabled={!msg.trim() || (!!setTo && a.status === 'open' && !to)} onClick={send}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('agreements.msg.send')}</Button></div>
+          <Button size="sm" busy={busy} reason={[!msg.trim() && 'type_message_first', (!!setTo && a.status === 'open' && !to) && 'no_recipients']} onClick={send}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('agreements.msg.send')}</Button></div>
       </CardContent></Card>
   );
 }

@@ -346,7 +346,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
               size="sm"
               className="gap-1.5 h-9 text-xs border-accent/30 text-accent hover:bg-accent/10"
               onClick={handleAiRecommend}
-              disabled={aiLoading}
+              busy={aiLoading}
             >
               {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
               {aiRecommendations ? 'Re-run matching' : 'Find best matches'}

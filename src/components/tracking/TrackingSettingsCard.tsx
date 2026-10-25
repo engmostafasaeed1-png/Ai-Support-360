@@ -118,8 +118,8 @@ export default function TrackingSettingsCard() {
                     <tr key={s.key} className="border-t border-border/50">
                       <td className="p-1">
                         <div className="flex items-center gap-0.5">
-                          <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={t('tracking.admin.up')} onClick={() => move(i, -1)} disabled={i === 0}><ArrowUp className="h-3.5 w-3.5" /></Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={t('tracking.admin.down')} onClick={() => move(i, 1)} disabled={i === draft.statuses.length - 1}><ArrowDown className="h-3.5 w-3.5" /></Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={t('tracking.admin.up')} onClick={() => move(i, -1)} reason={i === 0 && 'already_first'}><ArrowUp className="h-3.5 w-3.5" /></Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" aria-label={t('tracking.admin.down')} onClick={() => move(i, 1)} reason={i === draft.statuses.length - 1 && 'already_last'}><ArrowDown className="h-3.5 w-3.5" /></Button>
                           <span className={`ms-1 inline-flex h-6 w-6 items-center justify-center rounded-full border ${CHIP[s.color]}`}><Icon className={`h-3 w-3 ${ICON[s.color]}`} aria-hidden /></span>
                         </div>
                       </td>

@@ -120,7 +120,7 @@ export default function WorkingStatusDialog({ open, onOpenChange, ticketId, tick
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>{t('tracking.dialog.cancel')}</Button>
-          <Button onClick={submit} busy={save.isPending} disabled={!key}>{save.isPending ? t('tracking.dialog.saving') : t('tracking.dialog.save')}</Button>
+          <Button onClick={submit} busy={save.isPending} reason={!key && 'choose_option_first'}>{save.isPending ? t('tracking.dialog.saving') : t('tracking.dialog.save')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

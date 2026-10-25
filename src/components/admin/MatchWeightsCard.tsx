@@ -75,7 +75,7 @@ export default function MatchWeightsCard() {
           {runs.data != null && <> · {ar ? `عمليات مطابقة مسجلة: ${runs.data}` : `Logged match runs: ${runs.data}`}</>}
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => save(parsed)} busy={busy || q.isPending} disabled={!valid}>{ar ? 'حفظ' : 'Save'}</Button>
+          <Button onClick={() => save(parsed)} busy={busy || q.isPending} reason={!valid && 'invalid_value'}>{ar ? 'حفظ' : 'Save'}</Button>
           <Button variant="outline" onClick={() => save({ ...MATCH_WEIGHT_DEFAULTS })} busy={busy || q.isPending}>{ar ? 'استعادة الافتراضي' : 'Reset to defaults'}</Button>
         </div>
       </CardContent>

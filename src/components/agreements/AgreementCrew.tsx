@@ -136,7 +136,7 @@ export function CrewEditor({ value, onChange, settings, applicants = [] }: {
             <SelectTrigger className="h-9" aria-label={t('agreements.crew.add')}><SelectValue placeholder={free.length ? t('agreements.crew.pick') : t('agreements.crew.noCandidates')} /></SelectTrigger>
             <SelectContent>{free.map((c) => <SelectItem key={c.id} value={c.id}>{names[c.id] ?? '…'} · {c.sources.map((s) => t(`agreements.crew.src.${s}`)).join(', ')}</SelectItem>)}</SelectContent>
           </Select></div>
-        <Button type="button" variant="outline" disabled={!pick || value.length >= settings.crew_max - 1} onClick={() => { onChange([...value, newCrewEntry(pick)]); setPick(''); }}>
+        <Button type="button" variant="outline" reason={[!pick && 'no_consultant_selected', value.length >= settings.crew_max - 1 && 'team_full']} onClick={() => { onChange([...value, newCrewEntry(pick)]); setPick(''); }}>
           <Plus className="me-1 h-4 w-4" />{t('agreements.crew.addCta')}</Button>
       </div>
       {problems.length > 0 && <ul className="text-xs text-destructive">{problems.map((p) => <li key={p}>• {t(`agreements.problem.${p}`, { defaultValue: p, max: settings.crew_max })}</li>)}</ul>}
@@ -253,7 +253,7 @@ export function CrewPanel({ a, settings }: { a: api.SaDetail; settings: SaSettin
             <label className="flex items-start gap-2"><Checkbox checked={slaOk} onCheckedChange={(v) => setSlaOk(!!v)} className="mt-0.5" /> {t('agreements.crew.acceptCheck')}</label>
             <div className="max-w-sm space-y-1.5"><Label htmlFor="crew-name">{t('agreements.acc.name')}</Label><Input id="crew-name" value={typed} maxLength={120} autoComplete="name" onChange={(e) => setTyped(e.target.value)} /></div>
             <div className="flex flex-wrap gap-2">
-              <Button busy={busy} disabled={!slaOk || typed.trim().length < 2} onClick={() => run(() => api.memberRespond(a.id, true, true, typed.trim()), t('agreements.crew.accepted'))}>
+              <Button busy={busy} reason={[!slaOk && 'sla_not_accepted', typed.trim().length < 2 && { key: 'text_too_short', params: { min: 2 } }]} onClick={() => run(() => api.memberRespond(a.id, true, true, typed.trim()), t('agreements.crew.accepted'))}>
                 {busy && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('agreements.crew.acceptCta')}</Button>
               <Button variant="ghost" busy={busy} onClick={() => run(() => api.memberRespond(a.id, false, false, ''), t('agreements.crew.declined'))}>{t('agreements.decline')}</Button>
             </div>
@@ -262,7 +262,7 @@ export function CrewPanel({ a, settings }: { a: api.SaDetail; settings: SaSettin
       )}
 
       <Card className="rounded-2xl"><CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2"><CardTitle className="flex items-center gap-2 text-base"><Users className="h-4 w-4" aria-hidden />{t('agreements.crew.title')}</CardTitle>
-        {canManage && <Button size="sm" variant="outline" disabled={!free.length || members.length >= settings.crew_max} onClick={() => setEdit({ entry: newCrewEntry(free[0]?.id ?? ''), isNew: true, lead: false })}><Plus className="me-1 h-4 w-4" />{t('agreements.crew.addCta')}</Button>}</CardHeader>
+        {canManage && <Button size="sm" variant="outline" reason={[!free.length && 'no_data_yet', members.length >= settings.crew_max && 'team_full']} onClick={() => setEdit({ entry: newCrewEntry(free[0]?.id ?? ''), isNew: true, lead: false })}><Plus className="me-1 h-4 w-4" />{t('agreements.crew.addCta')}</Button>}</CardHeader>
         <CardContent className="space-y-2">
           {!members.length && <p className="text-sm text-muted-foreground">{t('agreements.crew.none')}</p>}
           {members.map((m) => (
@@ -301,7 +301,7 @@ export function CrewPanel({ a, settings }: { a: api.SaDetail; settings: SaSettin
             </div>
           )}
           <DialogFooter><Button variant="ghost" onClick={() => setEdit(null)}>{t('agreements.cancel')}</Button>
-            <Button busy={busy} disabled={!edit?.entry.consultant_id} onClick={async () => {
+            <Button busy={busy} reason={!edit?.entry.consultant_id && 'no_consultant_selected'} onClick={async () => {
               if (!edit) return;
               const ok = await run(() => (edit.isNew ? api.inviteMember(a.id, edit.entry.consultant_id, details(edit.entry)) : api.updateMember(a.id, edit.entry.consultant_id, details(edit.entry))),
                 edit.isNew ? t('agreements.crew.invited') : t('agreements.saved'));
@@ -315,7 +315,7 @@ export function CrewPanel({ a, settings }: { a: api.SaDetail; settings: SaSettin
           <DialogHeader><DialogTitle>{removeId === 'self' ? t('agreements.crew.leave') : t('agreements.crew.remove')}</DialogTitle><DialogDescription>{t('agreements.crew.removeText')}</DialogDescription></DialogHeader>
           <div className="space-y-1.5"><Label htmlFor="crew-reason">{t('agreements.dlg.reason')}</Label><Textarea id="crew-reason" rows={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} /></div>
           <DialogFooter><Button variant="ghost" onClick={() => setRemoveId(null)}>{t('agreements.cancel')}</Button>
-            <Button variant="destructive" busy={busy} disabled={reason.trim().length < 5} onClick={async () => {
+            <Button variant="destructive" busy={busy} reason={reason.trim().length < 5 && { key: 'reason_required', params: { min: 5 } }} onClick={async () => {
               const target = removeId === 'self' ? (a.my_member?.consultant_id ?? '') : removeId!;
               const ok = await run(() => api.removeMember(a.id, target, reason.trim()), t('agreements.saved'));
               if (ok) { setRemoveId(null); setReason(''); }

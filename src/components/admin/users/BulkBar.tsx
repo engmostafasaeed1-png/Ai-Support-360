@@ -86,11 +86,11 @@ export default function BulkBar({ ids, total, installed, perms, onClear, onSelec
       {ids.length < Math.min(total, BULK_LIMIT) && <Button size="sm" variant="link" className="h-7 px-1" onClick={onSelectMatching}>{t('um.select_matching', 'Select all {{n}} matching', { n: Math.min(total, BULK_LIMIT) })}</Button>}
       {over && <span className="text-xs text-destructive">{t('um.bulk_limit', 'At most {{n}} per run', { n: BULK_LIMIT })}</span>}
       <div className="ms-auto flex flex-wrap gap-1.5">
-        {installed && can('users.edit') && <Button size="sm" variant="outline" disabled={over} onClick={() => open('tag_add')}><Tag className="me-1 h-4 w-4" />{t('um.tag', 'Tag')}</Button>}
-        {installed && can('users.edit') && <Button size="sm" variant="outline" disabled={over} onClick={() => open('tag_remove')}>{t('um.untag', 'Untag')}</Button>}
-        {installed && can('users.message') && <Button size="sm" variant="outline" disabled={over} onClick={() => open('remind')}><Bell className="me-1 h-4 w-4" />{t('um.remind', 'Remind')}</Button>}
-        {installed && can('users.suspend') && <Button size="sm" variant="outline" disabled={over} onClick={() => open('bulk_suspend')}><Ban className="me-1 h-4 w-4" />{t('um.suspend', 'Suspend')}</Button>}
-        {installed && can('users.suspend') && <Button size="sm" variant="outline" disabled={over} onClick={() => open('bulk_reactivate')}><CheckCircle2 className="me-1 h-4 w-4" />{t('um.reactivate', 'Reactivate')}</Button>}
+        {installed && can('users.edit') && <Button size="sm" variant="outline" reason={over && { key: 'too_many_recipients', params: { max: BULK_LIMIT } }} onClick={() => open('tag_add')}><Tag className="me-1 h-4 w-4" />{t('um.tag', 'Tag')}</Button>}
+        {installed && can('users.edit') && <Button size="sm" variant="outline" reason={over && { key: 'too_many_recipients', params: { max: BULK_LIMIT } }} onClick={() => open('tag_remove')}>{t('um.untag', 'Untag')}</Button>}
+        {installed && can('users.message') && <Button size="sm" variant="outline" reason={over && { key: 'too_many_recipients', params: { max: BULK_LIMIT } }} onClick={() => open('remind')}><Bell className="me-1 h-4 w-4" />{t('um.remind', 'Remind')}</Button>}
+        {installed && can('users.suspend') && <Button size="sm" variant="outline" reason={over && { key: 'too_many_recipients', params: { max: BULK_LIMIT } }} onClick={() => open('bulk_suspend')}><Ban className="me-1 h-4 w-4" />{t('um.suspend', 'Suspend')}</Button>}
+        {installed && can('users.suspend') && <Button size="sm" variant="outline" reason={over && { key: 'too_many_recipients', params: { max: BULK_LIMIT } }} onClick={() => open('bulk_reactivate')}><CheckCircle2 className="me-1 h-4 w-4" />{t('um.reactivate', 'Reactivate')}</Button>}
         {messaging.state === 'ready' && <Button size="sm" variant="outline" onClick={messageSelected}><Megaphone className="me-1 h-4 w-4" />{t('bmsg.message_users', 'Message users')}</Button>}
         {onReferralInvite && <Button size="sm" variant="outline" onClick={onReferralInvite}><Gift className="me-1 h-4 w-4" />{t('rinv.bulk_button', 'Send Refer & earn invitation')}</Button>}
         {can('users.export') && <Button size="sm" variant="outline" onClick={onExport}><Download className="me-1 h-4 w-4" />{t('um.export', 'Export')}</Button>}
@@ -116,7 +116,7 @@ export default function BulkBar({ ids, total, installed, perms, onClear, onSelec
             </div>
           )}
           <DialogFooter><Button variant="outline" onClick={() => setKind(null)}>{t('common.cancel', 'Cancel')}</Button>
-            <Button busy={busy} disabled={((kind === 'tag_add' || kind === 'tag_remove') && !tags.trim())} onClick={() => dryRun()}>{t('um.preview', 'Preview')}</Button></DialogFooter>
+            <Button busy={busy} reason={((kind === 'tag_add' || kind === 'tag_remove') && !tags.trim()) && 'fill_required_fields'} onClick={() => dryRun()}>{t('um.preview', 'Preview')}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 

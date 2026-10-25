@@ -83,18 +83,18 @@ export default function CertificateReview({ certificates, readOnly = false, onCh
               <Badge variant="secondary" className="text-[10px]">Not verified yet</Badge>
             )}
             {hasFile ? (
-              <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" disabled={busy === `open-${certificate.id}`} onClick={() => void openFile(certificate)}>
+              <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" busy={busy === `open-${certificate.id}`} onClick={() => void openFile(certificate)}>
                 {busy === `open-${certificate.id}` ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" aria-hidden="true" />} Open file <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </Button>
             ) : (
               <span className="text-xs text-muted-foreground">No file</span>
             )}
             {certificate.verified ? (
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" disabled={readOnly || busy === `verify-${certificate.id}`} onClick={() => void setVerified(certificate, false)}>
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" busy={busy === `verify-${certificate.id}`} reason={readOnly && 'demo_read_only'} onClick={() => void setVerified(certificate, false)}>
                 Remove verification
               </Button>
             ) : (
-              <Button size="sm" className="h-7 px-2 text-xs" disabled={readOnly || busy === `verify-${certificate.id}`} onClick={() => void setVerified(certificate, true)}>
+              <Button size="sm" className="h-7 px-2 text-xs" busy={busy === `verify-${certificate.id}`} reason={readOnly && 'demo_read_only'} onClick={() => void setVerified(certificate, true)}>
                 Verify
               </Button>
             )}

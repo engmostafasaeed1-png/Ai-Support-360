@@ -88,7 +88,7 @@ export default function ApplyDialog({ open, onOpenChange, agreementId, name, mod
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>{t('agreements.cancel')}</Button>
-          <Button busy={busy} disabled={!slaOk || rateBad || !/^[A-Z]{3}$/.test(currency)} onClick={submit}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{existing ? t('agreements.apply.update') : t('agreements.apply.send')}</Button>
+          <Button busy={busy} reason={[!slaOk && 'sla_not_accepted', rateBad && 'invalid_value', !/^[A-Z]{3}$/.test(currency) && 'invalid_value']} onClick={submit}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{existing ? t('agreements.apply.update') : t('agreements.apply.send')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -74,7 +74,7 @@ function EmailList({ id, value, onChange, max, placeholder }: { id: string; valu
   return (
     <div className="space-y-2">
       <div className="flex gap-2"><Input id={id} type="email" value={v} placeholder={placeholder} onChange={(e) => setV(e.target.value)} />
-        <Button type="button" variant="outline" disabled={!v.includes('@') || value.length >= max} onClick={() => { onChange([...new Set([...value, v.trim().toLowerCase()])]); setV(''); }}>{t('agreements.form.add')}</Button></div>
+        <Button type="button" variant="outline" reason={[!v.includes('@') && 'invalid_email', value.length >= max && { key: 'limit_reached', params: { max } }]} onClick={() => { onChange([...new Set([...value, v.trim().toLowerCase()])]); setV(''); }}>{t('agreements.form.add')}</Button></div>
       <div className="flex flex-wrap gap-1">{value.map((e) => <Badge key={e} variant="secondary" className="gap-1">{e}
         <button type="button" aria-label={t('agreements.form.remove')} onClick={() => onChange(value.filter((x) => x !== e))}><X className="h-3 w-3" /></button></Badge>)}</div>
     </div>
@@ -374,7 +374,7 @@ export default function AgreementRequestForm({ settings, agreementId, status = '
               <Button type="button" variant="ghost" size="icon" aria-label={t('agreements.form.remove')} onClick={() => setEsc(esc.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4" /></Button>
             </div>
           ))}
-          <Button type="button" variant="outline" size="sm" disabled={esc.length >= settings.contacts_max} onClick={() => setEsc([...esc, { email: '', level: (Math.min(3, esc.length + 1)) as 1, title: '' }])}><Plus className="me-1 h-4 w-4" />{t('agreements.form.addContact')}</Button>
+          <Button type="button" variant="outline" size="sm" reason={esc.length >= settings.contacts_max && { key: 'limit_reached', params: { max: settings.contacts_max } }} onClick={() => setEsc([...esc, { email: '', level: (Math.min(3, esc.length + 1)) as 1, title: '' }])}><Plus className="me-1 h-4 w-4" />{t('agreements.form.addContact')}</Button>
           <Problems s="escalation" />
         </Section>
 
@@ -394,7 +394,7 @@ export default function AgreementRequestForm({ settings, agreementId, status = '
             <Button variant="ghost" onClick={onCancel}>{t('agreements.cancel')}</Button>
             <Button variant="outline" busy={busy} onClick={async () => { const nid = await save(); if (nid) { toast.success(t('agreements.form.saved')); onSaved(nid, false); } }}>
               {busy ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}{t('agreements.form.saveDraft')}</Button>
-            {status === 'draft' && <Button busy={busy} disabled={!check.canPublish} onClick={() => setPublishOpen(true)}><Send className="me-1 h-4 w-4" />{t('agreements.form.publish')}</Button>}
+            {status === 'draft' && <Button busy={busy} reason={!check.canPublish && 'fix_errors_first'} onClick={() => setPublishOpen(true)}><Send className="me-1 h-4 w-4" />{t('agreements.form.publish')}</Button>}
           </div>
         </Section>
       </div>
@@ -423,7 +423,7 @@ export default function AgreementRequestForm({ settings, agreementId, status = '
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setPublishOpen(false)}>{t('agreements.cancel')}</Button>
-            <Button busy={busy} disabled={(inviteOnly && !invite.length)} onClick={doPublish}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('agreements.form.publishNow')}</Button>
+            <Button busy={busy} reason={inviteOnly && !invite.length && 'no_recipients'} onClick={doPublish}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('agreements.form.publishNow')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -75,7 +75,7 @@ export default function BrdComments({ ticketId, version, section, comments, canS
           {blocked && <p className="text-xs text-destructive" role="alert">{t('brd.comments.noContacts')}</p>}
           <div className="flex gap-1.5 justify-end">
             <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setOpen(false); setReplyTo(null); }}>{t('common.cancel', 'Cancel')}</Button>
-            <Button size="sm" className="h-7 text-xs" busy={busy} disabled={!text.trim() || blocked || (mode === 'suggestion' && !suggest.trim())} onClick={send}>{t('brd.comments.send')}</Button>
+            <Button size="sm" className="h-7 text-xs" busy={busy} reason={[!text.trim() && 'type_message_first', blocked && { key: 'fix_errors_first', message: t('brd.comments.noContacts') }, (mode === 'suggestion' && !suggest.trim()) && 'type_message_first']} onClick={send}>{t('brd.comments.send')}</Button>
           </div>
         </div>
       )}

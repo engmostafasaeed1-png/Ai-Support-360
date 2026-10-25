@@ -87,8 +87,8 @@ export default function BulkInviteDialog({ open, onOpenChange }: { open: boolean
             )}
             <DialogFooter>
               <Button variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel', 'Cancel')}</Button>
-              {check ? <Button busy={busy} disabled={!ready.length} onClick={send}>{t('um.send_n', 'Send {{n}} invitations', { n: ready.length })}</Button>
-                : <Button busy={busy} disabled={!parsed.rows.length} onClick={preview}>{t('um.preview', 'Preview')}</Button>}
+              {check ? <Button busy={busy} reason={!ready.length && 'no_recipients'} hint="inline" onClick={send}>{t('um.send_n', 'Send {{n}} invitations', { n: ready.length })}</Button>
+                : <Button busy={busy} reason={!parsed.rows.length && 'no_recipients'} onClick={preview}>{t('um.preview', 'Preview')}</Button>}
             </DialogFooter>
           </div>
         )}

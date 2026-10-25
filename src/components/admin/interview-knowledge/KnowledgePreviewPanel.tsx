@@ -92,7 +92,7 @@ export default function KnowledgePreviewPanel({ ready }: { ready: boolean }) {
           <div className="flex gap-1" role="group" aria-label={t('ik.preview.language', 'Question language')}>
             {(['en', 'ar'] as const).map((l) => <Button key={l} type="button" size="sm" variant={lang === l ? 'default' : 'outline'} aria-pressed={lang === l} onClick={() => setLang(l)}>{l === 'en' ? 'English' : 'العربية'}</Button>)}
           </div>
-          <Button onClick={run} busy={busy} disabled={!picked || !ready}>{busy && <Loader2 className="h-4 w-4 me-1.5 animate-spin" />}{t('ik.preview.run', 'Build preview')}</Button>
+          <Button onClick={run} busy={busy} reason={[!picked && 'choose_option_first', !ready && 'feature_not_ready']}>{busy && <Loader2 className="h-4 w-4 me-1.5 animate-spin" />}{t('ik.preview.run', 'Build preview')}</Button>
         </div>
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 

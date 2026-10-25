@@ -163,7 +163,7 @@ export default function ProfileFieldsSection() {
             <Button variant="outline" size="sm" onClick={() => setDraft(Object.fromEntries(rules.map(r => [r.field_key, r.default_mode])))}>
               {t('admin.profileFields.reset', 'Reset to defaults')}
             </Button>
-            <Button size="sm" busy={save.isPending} disabled={!dirty} onClick={() => save.mutate()}>
+            <Button size="sm" busy={save.isPending} reason={!dirty && 'nothing_changed'} onClick={() => save.mutate()}>
               {t('admin.profileFields.save', 'Save changes')}
             </Button>
           </div>

@@ -151,7 +151,7 @@ export default function UsersToolbar({ filters, onChange, installed, searchRef, 
                 <form className="flex gap-1 p-1" onSubmit={async (e) => { e.preventDefault(); try { await saveView(viewName, currentParams()); setViewName(''); qc.invalidateQueries({ queryKey: ['um', 'views'] }); toast.success(t('um.view_saved', 'View saved')); } catch (err) { toast.error((err as Error).message); } }}
                   onKeyDown={(e) => e.stopPropagation()}>
                   <Input value={viewName} maxLength={60} onChange={(e) => setViewName(e.target.value)} placeholder={t('um.view_name', 'Name this view')} className="h-8" aria-label={t('um.view_name', 'Name this view')} />
-                  <Button type="submit" size="sm" className="h-8" disabled={!viewName.trim()}>{t('common.save', 'Save')}</Button>
+                  <Button type="submit" size="sm" className="h-8" reason={!viewName.trim() && 'fill_required_fields'}>{t('common.save', 'Save')}</Button>
                 </form>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -52,11 +52,11 @@ function LinkRow({ icon: Icon, label, href, state, busy, readOnly, onCheck }: Ro
           </a>
           <LinkStatus state={state} label={label} />
           {state === 'checked' ? (
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" busy={busy} disabled={readOnly} onClick={() => onCheck(false)}>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" busy={busy} reason={readOnly && 'demo_read_only'} onClick={() => onCheck(false)}>
               Remove check
             </Button>
           ) : (
-            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" busy={busy} disabled={readOnly} onClick={() => onCheck(true)}>
+            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" busy={busy} reason={readOnly && 'demo_read_only'} onClick={() => onCheck(true)}>
               {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Mark as checked'}
             </Button>
           )}

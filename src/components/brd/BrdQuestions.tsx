@@ -33,7 +33,7 @@ export default function BrdQuestions({ questions, onChange, onUseAnswers, busy, 
               <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('brd.questions.options')}>
                 {q.options.map((o) => (
                   <Button key={o} type="button" size="sm" variant={q.answer === o ? 'default' : 'outline'} className="h-7 text-xs rounded-full"
-                    aria-pressed={q.answer === o} disabled={readOnly} onClick={() => set(i, q.answer === o ? '' : o)}>{o}</Button>
+                    aria-pressed={q.answer === o} reason={readOnly && 'not_editable_now'} onClick={() => set(i, q.answer === o ? '' : o)}>{o}</Button>
                 ))}
               </div>
             )}
@@ -43,7 +43,7 @@ export default function BrdQuestions({ questions, onChange, onUseAnswers, busy, 
         ))}
       </ol>
       {onUseAnswers && !readOnly && (
-        <Button type="button" size="sm" className="gap-1.5" busy={busy} disabled={answered === 0} onClick={onUseAnswers}>
+        <Button type="button" size="sm" className="gap-1.5" busy={busy} reason={answered === 0 && 'answer_required'} onClick={onUseAnswers}>
           <Sparkles className="h-3.5 w-3.5" /> {t('brd.questions.update')}
         </Button>
       )}

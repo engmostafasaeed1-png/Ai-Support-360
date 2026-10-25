@@ -99,7 +99,7 @@ export default function KnowledgeSettingsPanel({ ready }: { ready: boolean }) {
               <div key={fam.key} className="rounded-xl border border-border/60 p-3 space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-medium">{fam.label}</p>
-                  {!rows.length && <Button size="sm" variant="outline" disabled={!ready} onClick={() => customize(fam.key)}>{t('ik.versions.customize', 'Edit this list')}</Button>}
+                  {!rows.length && <Button size="sm" variant="outline" reason={!ready && 'feature_not_ready'} onClick={() => customize(fam.key)}>{t('ik.versions.customize', 'Edit this list')}</Button>}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {rows.length

@@ -239,7 +239,7 @@ export default function NdaSignForm(p: NdaSignFormProps) {
         <div className="flex flex-wrap items-center justify-end gap-2">
           {p.secondaryAction}
           {p.onCancel && <Button type="button" variant="outline" onClick={p.onCancel} busy={busy}>{t('common.cancel', 'Cancel')}</Button>}
-          <Button type="submit" busy={busy} disabled={problems.length > 0} className="gap-1.5">
+          <Button type="submit" busy={busy} reason={problems.length > 0 && { key: 'signature_incomplete', message: t(`ndaSign.problem.${problems[0]}`), onNext: () => document.getElementById(`nda-${FIELD_OF[problems[0]]}`)?.focus() }} hint="inline" className="gap-1.5">
             {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
             {busy ? t('ndaSign.signing') : p.action === 'supplement' ? t('ndaSign.addDetailsButton') : t('ndaSign.signButton')}
           </Button>
