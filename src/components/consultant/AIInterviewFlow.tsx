@@ -1228,7 +1228,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
               )}
               {/* Quick action buttons */}
               <div className="flex gap-1.5 mb-2">
-                <button
+                <Button type="button" variant="ghost"
                   onClick={() => {
                     const clarifyMsg: ChatMessage = { role: 'user', content: 'Can you please clarify or rephrase the last question? I want to make sure I understand it correctly.' };
                     const newHistory = [...messages, clarifyMsg];
@@ -1236,11 +1236,11 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                     sendToAI(newHistory);
                   }}
                   busy={isStreaming} reason={messages.length === 0 && 'no_data_yet'}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white/90 hover:bg-white/10 text-[10px] transition-colors disabled:opacity-30"
+                  className="flex items-center gap-1 px-2.5 py-1 h-auto rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white/90 hover:bg-white/10 text-[10px] transition-colors"
                 >
                   <HelpCircle className="w-3 h-3" /> Clarify Question
-                </button>
-                <button
+                </Button>
+                <Button type="button" variant="ghost"
                   onClick={() => {
                     const repeatMsg: ChatMessage = { role: 'user', content: 'Could you repeat the question please?' };
                     const newHistory = [...messages, repeatMsg];
@@ -1248,10 +1248,10 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                     sendToAI(newHistory);
                   }}
                   busy={isStreaming} reason={messages.length === 0 && 'no_data_yet'}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white/90 hover:bg-white/10 text-[10px] transition-colors disabled:opacity-30"
+                  className="flex items-center gap-1 px-2.5 py-1 h-auto rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white/90 hover:bg-white/10 text-[10px] transition-colors"
                 >
                   <RefreshCw className="w-3 h-3" /> Repeat
-                </button>
+                </Button>
               </div>
               <div className="flex gap-2">
                 <textarea

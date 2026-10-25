@@ -2,6 +2,7 @@
 // records, crew list, NDA references, monthly statements, change/renewal/termination notices) and the uploaded
 // supporting files (SOW, scope annex, access plan, escalation matrix) with versions and the download log.
 // Access, type/size checks and logging are decided by the database (sa_document_* in docs/sql/support-agreements.sql).
+import type { BlockedInput } from '@/lib/blockedReasons';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -187,7 +188,7 @@ export default function AgreementDocuments({ a, settings }: { a: api.SaDetail; s
   );
 }
 
-function GenTile({ title, text, onClick, disabled, busy, label }: { title: string; text: string; onClick: () => void; disabled?: boolean; busy?: boolean; label: string }) {
+function GenTile({ title, text, onClick, reason, busy, label }: { title: string; text: string; onClick: () => void; reason?: BlockedInput; busy?: boolean; label: string }) {
   return (
     <div className="flex flex-col justify-between gap-2 rounded-xl border p-3">
       <div><p className="text-sm font-medium">{title}</p><p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">{text}</p></div>

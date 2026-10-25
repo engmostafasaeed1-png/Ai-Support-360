@@ -256,9 +256,9 @@ export default function KnowledgeDocumentsPanel({ ready }: { ready: boolean }) {
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" reason={deleteReason.trim().length < 3 && { key: 'reason_required', params: { min: 3 } }} onClick={(e) => { e.preventDefault(); void remove(); }}>
+            <Button variant="destructive" reason={deleteReason.trim().length < 3 && { key: 'reason_required', params: { min: 3 } }} onClick={(e) => { e.preventDefault(); void remove(); }}>
               {t('ik.docs.delete', 'Delete')}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

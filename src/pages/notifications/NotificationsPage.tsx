@@ -182,7 +182,7 @@ export default function NotificationsPage() {
               id="select-all-unread"
               checked={allUnreadSelected}
               onCheckedChange={(v) => (v ? selectAllUnread() : setSelectedIds(new Set()))}
-              reason={unreadSelectableIds.length === 0 && 'no_data_yet'}
+              disabled={unreadSelectableIds.length === 0}
             />
             <label htmlFor="select-all-unread" className="cursor-pointer">
               {selectedCount > 0
