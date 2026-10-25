@@ -1128,7 +1128,7 @@ BEGIN
   SELECT * INTO d FROM public.sa_documents WHERE id = _doc FOR UPDATE;
   IF NOT EXISTS (SELECT 1 FROM public.sa_links WHERE doc_id = _doc AND ticket_id = _ticket) THEN RAISE EXCEPTION 'sa_ticket_not_linked' USING ERRCODE = '22023'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.sa_versions WHERE doc_id = _doc AND version = _version) THEN RAISE EXCEPTION 'sa_version_not_found' USING ERRCODE = 'P0002'; END IF;
-  IF _path IS NULL OR _path !~ ('^' || _ticket::text || '/consultant/architecture/' || _doc::text || '/[A-Za-z0-9_.-]{1,120}\.pdf$') THEN
+  IF _path IS NULL OR _path !~ ('^' || _ticket::text || '/architecture/' || _doc::text || '/[A-Za-z0-9_.-]{1,120}\.pdf$') THEN
     RAISE EXCEPTION 'sa_invalid_path' USING ERRCODE = '22023';
   END IF;
   IF _size IS NULL OR _size < 100 OR _size > 20 * 1024 * 1024 THEN RAISE EXCEPTION 'sa_invalid_size' USING ERRCODE = '22023'; END IF;
