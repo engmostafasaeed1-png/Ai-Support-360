@@ -18,7 +18,7 @@ import { useInvalidatePolicies, usePolicy, useSlaSettings } from '@/hooks/useSla
 import * as api from '@/lib/sla/api';
 import {
   APPLIES_KINDS, CHANNELS, CLOCK_KINDS, diffPolicies, hasErrors, hoursPerDay, normalizeBody, PAUSE_KEYS, policyProblems, previewDue, RECIPIENTS,
-  resolveCalendar, SEVERITY_KEYS, START_RULES, STEP_TEMPLATES, STOP_RULES, type EscalationStep, type PolicyBody, type PolicyMeta, type PolicyProblem,
+  resolveCalendar, SEVERITY_KEYS, START_RULES, STEP_TEMPLATES, STOP_RULES, zonedToUtc, type EscalationStep, type PolicyBody, type PolicyMeta, type PolicyProblem,
   type SeverityKey, DEFAULT_BOUNDS,
 } from '@/lib/sla/policy';
 import { coverageText, dayLabel, fmtAt, langOf, slaErrorText } from './slaUi';
@@ -45,7 +45,7 @@ function DurationInput({ id, value, onChange, mode, hpd, allowEmpty }: {
           if (Number.isFinite(n) && n >= 0) onChange(Math.round(n * factor));
         }} />
       <Select value={unit} onValueChange={(u) => setUnit(u as Unit)}>
-        <SelectTrigger className="h-8 w-24 text-xs" aria-label={t('sla.editor.unit')}><SelectValue /></SelectTrigger>
+        <SelectTrigger className="h-8 w-32 text-xs" aria-label={t('sla.editor.unit')}><SelectValue /></SelectTrigger>
         <SelectContent>
           <SelectItem value="min">{t('sla.unit.min')}</SelectItem>
           <SelectItem value="h">{t('sla.unit.h')}</SelectItem>
@@ -117,7 +117,9 @@ export default function SlaPolicyEditor({ policyId, tenantId, onClose }: { polic
     return `${k} · ${d ? (lang === 'ar' ? d.label_ar : d.label_en) : ''}`;
   };
 
-  const opened = Date.parse(prevAt);
+  // The preview time is a wall-clock time in the policy's counting time zone (not the browser's).
+  const pm = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(prevAt);
+  const opened = pm ? zonedToUtc(+pm[1], +pm[2], +pm[3], +pm[4], +pm[5], cal.tz) : NaN;
   const due = Number.isFinite(opened) ? previewDue(body, prevSev, opened, cal) : null;
 
   const save = async () => {
