@@ -1521,13 +1521,51 @@ RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT st.agreement_id FROM public.sa_tickets st JOIN public.sa_agreements a ON a.id = st.agreement_id WHERE st.ticket_id = _ticket LIMIT 1
 $$;
 
--- SLA hook used by sla_effective_policy (docs/sql/sla-policies.sql): the policy version attached to the agreement.
+-- SLA hook used by sla_effective_policy (docs/sql/sla-policies.sql): the policy version attached to the agreement,
+-- ONLY while the agreement is live (Active / Renewal due = crew confirmed). Before that, or after it ended, tickets
+-- use the normal flow (client policy or platform default SLA).
 CREATE OR REPLACE FUNCTION public.sa_ticket_sla(_ticket uuid)
 RETURNS TABLE (policy_id uuid, version integer) LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT NULLIF(a.terms -> 'sla' ->> 'policy_id', '')::uuid, NULLIF(a.terms -> 'sla' ->> 'version', '')::int
     FROM public.sa_tickets st JOIN public.sa_agreements a ON a.id = st.agreement_id
-   WHERE st.ticket_id = _ticket AND NULLIF(a.terms -> 'sla' ->> 'policy_id', '') IS NOT NULL LIMIT 1
+   WHERE st.ticket_id = _ticket AND NULLIF(a.terms -> 'sla' ->> 'policy_id', '') IS NOT NULL
+     AND a.status IN ('active', 'renewal_due') AND a.started_at IS NOT NULL LIMIT 1
 $$;
+
+-- True when the ticket's current SLA snapshot is the agreement's SLA version (header chip "Agreement SLA").
+CREATE OR REPLACE FUNCTION public.sa_ticket_uses_agreement_sla(_ticket uuid, _policy uuid, _version integer)
+RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE ok boolean;
+BEGIN
+  IF _policy IS NULL OR to_regclass('public.sla_ticket_snapshots') IS NULL THEN RETURN false; END IF;
+  EXECUTE 'SELECT EXISTS (SELECT 1 FROM public.sla_ticket_snapshots s WHERE s.ticket_id = $1 AND s.superseded_at IS NULL AND s.policy_id = $2 AND s.policy_version = $3)'
+    INTO ok USING _ticket, _policy, _version;
+  RETURN COALESCE(ok, false);
+END $$;
+
+-- The lead accepted the agreement's SLA snapshot when the crew was confirmed: on a ticket under the agreement whose
+-- SLA snapshot is exactly that version, the lead's per-ticket SLA acceptance (sla_acceptances) is recorded for him,
+-- so the assignment request is not blocked by the SLA acceptance rule. Any other SLA still needs the normal box.
+CREATE OR REPLACE FUNCTION public.sa_record_crew_sla(_ticket uuid)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE a public.sa_agreements; m public.sa_members; pol uuid; ver int;
+BEGIN
+  IF to_regclass('public.sla_acceptances') IS NULL THEN RETURN; END IF;
+  SELECT ag.* INTO a FROM public.sa_tickets st JOIN public.sa_agreements ag ON ag.id = st.agreement_id WHERE st.ticket_id = _ticket;
+  IF a.id IS NULL OR a.status NOT IN ('active', 'renewal_due') THEN RETURN; END IF;
+  pol := NULLIF(a.terms -> 'sla' ->> 'policy_id', '')::uuid; ver := NULLIF(a.terms -> 'sla' ->> 'version', '')::int;
+  IF NOT public.sa_ticket_uses_agreement_sla(_ticket, pol, ver) THEN RETURN; END IF;
+  SELECT * INTO m FROM public.sa_members x WHERE x.agreement_id = a.id AND x.consultant_id = a.consultant_id AND x.status = 'active' AND x.sla_accepted_at IS NOT NULL
+     AND x.sla_policy_id IS NOT DISTINCT FROM pol AND x.sla_version IS NOT DISTINCT FROM ver;
+  IF m.id IS NULL THEN RETURN; END IF;
+  EXECUTE $q$INSERT INTO public.sla_acceptances (ticket_id, consultant_id, user_id, snapshot_id, policy_id, policy_version, summary, context)
+             SELECT s.ticket_id, $2, $3, s.id, s.policy_id, s.policy_version, left('Accepted with support agreement ' || $4 || ' on ' || to_char($5, 'YYYY-MM-DD'), 500), 'assignment'
+               FROM public.sla_ticket_snapshots s WHERE s.ticket_id = $1 AND s.superseded_at IS NULL
+             ON CONFLICT (ticket_id, consultant_id, snapshot_id) DO NOTHING$q$
+    USING _ticket, m.consultant_id, public.sa_user_of(m.consultant_id), a.reference, m.sla_accepted_at;
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'Agreement SLA acceptance not recorded for ticket %: %', _ticket, SQLERRM;
+END $$;
 
 -- Links a ticket to a live agreement of the same client / company whose scope covers the module: approved agreement
 -- rate (S1 multiplier for critical tickets) and a direct assignment request to the lead consultant (no bidding).
