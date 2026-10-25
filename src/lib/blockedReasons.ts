@@ -216,14 +216,15 @@ export function interpolate(text: string, params?: ReasonParams): string {
 export function resolveReason(reason: BlockedReason, lang: Lang = 'en'): ResolvedReason {
   const def: ReasonDef = BLOCKED_REASONS[reason.key];
   const message = reason.message?.trim() || interpolate(def.message[lang], reason.params);
+  const to = reason.onNext ? reason.to : (reason.to ?? def.to);
   const nextLabel = reason.nextLabel ?? def.next?.[lang];
-  const to = reason.to ?? def.to;
+  // a next-step label is only shown when there is somewhere to go (never a dead link)
   const hasStep = !!(reason.onNext || to);
   return {
     key: reason.key,
     message,
     ...(hasStep && nextLabel ? { nextLabel } : {}),
-    ...(reason.to || (!reason.onNext && def.to) ? { to } : {}),
+    ...(to ? { to } : {}),
     ...(reason.onNext ? { onNext: reason.onNext } : {}),
   };
 }
