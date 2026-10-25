@@ -573,7 +573,7 @@ BEGIN
     'document_hash', CASE WHEN _found THEN public.nda_doc_hash(_row.nda_content) END,
     'my_party', _party,
     'consultant', jsonb_build_object('signed_at', CASE WHEN _found THEN _row.signed_at END,
-                                     'legacy', _found AND NOT (COALESCE(ev, '{}'::jsonb) ? 'consultant'),
+                                     'legacy', _found AND _row.signed_at IS NOT NULL AND NOT (COALESCE(ev, '{}'::jsonb) ? 'consultant'),
                                      'evidence', COALESCE(ev, '{}'::jsonb) -> 'consultant'),
     'client', jsonb_build_object('signed_at', CASE WHEN _found THEN _row.client_signed_at END,
                                  'legacy', _found AND _row.client_signed_at IS NOT NULL AND NOT (COALESCE(ev, '{}'::jsonb) ? 'client'),
