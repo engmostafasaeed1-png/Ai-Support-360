@@ -850,10 +850,44 @@ END $$;
 
 CREATE OR REPLACE FUNCTION public.sa_nda_ok(_a public.sa_agreements)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT NOT COALESCE((_a.terms ->> 'nda_required')::boolean, true) OR EXISTS (
-    SELECT 1 FROM public.nda_agreements n WHERE n.consultant_id = _a.consultant_id AND n.client_id = _a.client_id
-       AND n.revoked_at IS NULL AND n.signed_at IS NOT NULL AND n.client_signed_at IS NOT NULL)
+  SELECT NOT COALESCE((_a.terms ->> 'nda_required')::boolean, true) OR public.sa_member_nda_ok(_a.client_id, _a.consultant_id)
 $$;
+
+-- "Team confirmation" checklist: nobody works under the agreement until the terms are accepted by the client and the
+-- lead, every REQUIRED crew member accepted the place and the SLA snapshot, the NDA is signed by both sides for every
+-- working member (when required), the admin review is done (pilot setting) and the start date has come.
+CREATE OR REPLACE FUNCTION public.sa_confirmation(_id uuid)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE a public.sa_agreements; nda_req boolean; members jsonb; crew_ok boolean; nda_all boolean; terms_ok boolean; review_ok boolean; start_ok boolean; sd date;
+BEGIN
+  SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
+  IF a.id IS NULL THEN RETURN NULL; END IF;
+  nda_req := COALESCE((a.terms ->> 'nda_required')::boolean, true);
+  SELECT COALESCE(jsonb_agg(jsonb_build_object('consultant_id', m.consultant_id, 'name', public.consultant_public_name(m.consultant_id), 'role', m.member_role,
+           'required', m.required, 'status', m.status, 'capacity_hours_per_week', m.capacity_hours_per_week, 'working_hours', m.working_hours,
+           'backup_for', m.backup_for, 'accepted_at', m.accepted_at, 'sla_accepted_at', m.sla_accepted_at, 'sla_version', m.sla_version,
+           'nda_ok', public.sa_member_nda_ok(a.client_id, m.consultant_id),
+           'nda_signed_at', (SELECT max(GREATEST(n.signed_at, n.client_signed_at)) FROM public.nda_agreements n WHERE n.consultant_id = m.consultant_id AND n.client_id = a.client_id
+                               AND n.revoked_at IS NULL AND n.signed_at IS NOT NULL AND n.client_signed_at IS NOT NULL))
+         ORDER BY (m.member_role = 'lead') DESC, m.added_at), '[]'::jsonb)
+    INTO members FROM public.sa_members m WHERE m.agreement_id = _id AND m.status IN ('invited', 'active', 'declined');
+  terms_ok := a.agreed_at IS NOT NULL;
+  crew_ok := EXISTS (SELECT 1 FROM public.sa_members m WHERE m.agreement_id = _id AND m.member_role = 'lead' AND m.status = 'active' AND m.sla_accepted_at IS NOT NULL)
+         AND NOT EXISTS (SELECT 1 FROM public.sa_members m WHERE m.agreement_id = _id AND m.required AND (m.status IN ('invited', 'declined') OR (m.status = 'active' AND m.sla_accepted_at IS NULL)));
+  nda_all := NOT nda_req OR NOT EXISTS (SELECT 1 FROM public.sa_members m WHERE m.agreement_id = _id AND m.status = 'active' AND (m.required OR m.member_role = 'lead')
+                                          AND NOT public.sa_member_nda_ok(a.client_id, m.consultant_id));
+  review_ok := a.admin_review IN ('not_needed', 'approved');
+  sd := COALESCE(a.start_date, NULLIF(a.terms -> 'term' ->> 'start_date', '')::date);
+  start_ok := sd IS NOT NULL AND sd <= current_date;
+  RETURN jsonb_build_object('ready', terms_ok AND crew_ok AND nda_all AND review_ok AND start_ok,
+    'items', jsonb_build_array(
+      jsonb_build_object('key', 'terms', 'ok', terms_ok),
+      jsonb_build_object('key', 'crew', 'ok', crew_ok),
+      jsonb_build_object('key', 'nda', 'ok', nda_all, 'needed', nda_req),
+      jsonb_build_object('key', 'admin_review', 'ok', review_ok, 'needed', a.admin_review <> 'not_needed'),
+      jsonb_build_object('key', 'start_date', 'ok', start_ok, 'date', sd)),
+    'members', members);
+END $$;
 
 -- Rate in force on a day (latest agreed record whose effective date has come).
 CREATE OR REPLACE FUNCTION public.sa_rate_on(_id uuid, _day date)
@@ -861,17 +895,19 @@ RETURNS public.sa_rate_records LANGUAGE sql STABLE SECURITY DEFINER SET search_p
   SELECT r.* FROM public.sa_rate_records r WHERE r.agreement_id = _id AND r.effective_from <= _day ORDER BY r.effective_from DESC, r.seq DESC LIMIT 1
 $$;
 
+-- New immutable terms version. The agreement's name and reference are written into the versioned terms (part of the
+-- hash both sides accept); a terms change never renames the agreement.
 CREATE OR REPLACE FUNCTION public.sa_new_version(_id uuid, _terms jsonb, _actor uuid, _note text)
 RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v int;
+DECLARE v int; t jsonb;
 BEGIN
-  UPDATE public.sa_agreements SET terms = _terms, version = version + 1, name = left(COALESCE(NULLIF(btrim(_terms ->> 'name'), ''), name), 120), updated_at = now()
-   WHERE id = _id RETURNING version INTO v;
-  INSERT INTO public.sa_versions (agreement_id, version, terms, content_hash, note, created_by) VALUES (_id, v, _terms, md5(_terms::text), left(COALESCE(_note, ''), 300), _actor);
+  SELECT _terms || jsonb_build_object('name', a.name, 'reference', a.reference) INTO t FROM public.sa_agreements a WHERE a.id = _id;
+  UPDATE public.sa_agreements SET terms = t, version = version + 1, updated_at = now() WHERE id = _id RETURNING version INTO v;
+  INSERT INTO public.sa_versions (agreement_id, version, terms, content_hash, note, created_by) VALUES (_id, v, t, md5(t::text), left(COALESCE(_note, ''), 300), _actor);
   RETURN v;
 END $$;
 
--- Merge an offer patch (rate / bank / term / capacity keys only) into the terms.
+-- Merge an offer patch (rate / bank / term / capacity / crew keys only) into the terms.
 CREATE OR REPLACE FUNCTION public.sa_apply_patch(_terms jsonb, _patch jsonb)
 RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path = public AS $$
   SELECT _terms
@@ -882,40 +918,62 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path = public AS $$
     || CASE WHEN _patch ? 'term' THEN jsonb_build_object('term', COALESCE(_terms -> 'term', '{}'::jsonb) || (
          SELECT COALESCE(jsonb_object_agg(k, v), '{}'::jsonb) FROM jsonb_each(_patch -> 'term') e(k, v) WHERE k IN ('start_date', 'end_date', 'notice_days'))) ELSE '{}'::jsonb END
     || CASE WHEN _patch ? 'capacity_hours_per_week' THEN jsonb_build_object('capacity_hours_per_week', _patch -> 'capacity_hours_per_week') ELSE '{}'::jsonb END
+    || CASE WHEN jsonb_typeof(_patch -> 'team') = 'array' THEN jsonb_build_object('team', _patch -> 'team') ELSE '{}'::jsonb END
 $$;
+
+-- Draft terms as the database keeps them: SLA snapshot resolved on the server (never the browser's copy), crew and
+-- company contacts checked, free text through the contact-details and secrets filters.
+CREATE OR REPLACE FUNCTION public.sa_prepare_terms(_tenant uuid, _client uuid, _terms jsonb, _request jsonb, _lead uuid)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE t jsonb := COALESCE(_terms, '{}'::jsonb); probs text[]; txt text;
+BEGIN
+  txt := concat_ws(' ', t ->> 'name', t -> 'scope' ->> 'covered', t -> 'scope' ->> 'not_covered', _request ->> 'notes');
+  IF NOT public.sa_text_ok(txt) THEN RAISE EXCEPTION 'sa_contact_details' USING ERRCODE = '22023'; END IF;
+  IF NOT public.sa_secret_ok(txt) THEN RAISE EXCEPTION 'sa_secret_details' USING ERRCODE = '22023'; END IF;
+  probs := public.sa_crew_problems(_tenant, _client, t -> 'team', _lead) || public.sa_contact_problems(_tenant, _client, t);
+  IF cardinality(probs) > 0 THEN RAISE EXCEPTION 'sa_terms_invalid: %', array_to_string(probs, ',') USING ERRCODE = '22023'; END IF;
+  RETURN t || jsonb_build_object('sla', public.sa_resolve_sla(_tenant, _client, t -> 'sla'));
+END $$;
 
 -- ------------------------------------------------------------------------------------------------ client: request
 -- New draft (request details shown to applicants + the draft terms). Company owner/admin or own-account client.
+-- The name is required and unique per client company; the reference number is assigned automatically.
 CREATE OR REPLACE FUNCTION public.sa_create(_tenant uuid, _request jsonb, _terms jsonb)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); new_id uuid;
+DECLARE uid uuid := auth.uid(); new_id uuid; nm text := left(btrim(COALESCE(_terms ->> 'name', '')), 120); t jsonb;
 BEGIN
   IF NOT public.sa_enabled() THEN RAISE EXCEPTION 'sa_disabled' USING ERRCODE = '55000'; END IF;
   IF NOT public.sa_can_manage(uid, _tenant, CASE WHEN _tenant IS NULL THEN uid END) THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
   IF NOT public.sa_rate_ok('sa_create:' || uid, 20, 86400) THEN RAISE EXCEPTION 'sa_rate_limited' USING ERRCODE = '53400'; END IF;
-  IF NOT public.sa_text_ok(concat_ws(' ', _terms ->> 'name', _terms -> 'scope' ->> 'covered', _terms -> 'scope' ->> 'not_covered', _request ->> 'notes')) THEN
-    RAISE EXCEPTION 'sa_contact_details' USING ERRCODE = '22023';
-  END IF;
+  IF char_length(nm) < 1 THEN RAISE EXCEPTION 'sa_terms_invalid: name' USING ERRCODE = '22023'; END IF;
+  IF public.sa_name_taken(_tenant, uid, nm, NULL) THEN RAISE EXCEPTION 'sa_name_taken' USING ERRCODE = '23505'; END IF;
+  t := public.sa_prepare_terms(_tenant, uid, _terms, _request, NULL);
   INSERT INTO public.sa_agreements (tenant_id, client_id, name, request, terms, created_by)
-  VALUES (_tenant, uid, left(COALESCE(NULLIF(btrim(_terms ->> 'name'), ''), 'Support agreement'), 120), COALESCE(_request, '{}'::jsonb), COALESCE(_terms, '{}'::jsonb), uid)
+  VALUES (_tenant, uid, nm, COALESCE(_request, '{}'::jsonb), t || jsonb_build_object('name', nm), uid)
   RETURNING sa_agreements.id INTO new_id;
+  UPDATE public.sa_agreements SET terms = terms || jsonb_build_object('reference', reference) WHERE id = new_id;
   PERFORM public.sa_event(new_id, 'created', uid);
   PERFORM public.sa_audit_log(uid, 'create', new_id);
   RETURN new_id;
 END $$;
 
+-- Save the draft at any time. The name can change only while the agreement is a Draft (unique per company).
 CREATE OR REPLACE FUNCTION public.sa_save_draft(_id uuid, _request jsonb, _terms jsonb)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); a public.sa_agreements;
+DECLARE uid uuid := auth.uid(); a public.sa_agreements; nm text := left(btrim(COALESCE(_terms ->> 'name', '')), 120); t jsonb;
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id FOR UPDATE;
   IF a.id IS NULL OR public.sa_role(_id, uid) <> 'client' THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
   IF a.status NOT IN ('draft', 'open') THEN RAISE EXCEPTION 'sa_locked: terms change through offers once negotiation starts' USING ERRCODE = '55000'; END IF;
-  IF NOT public.sa_text_ok(concat_ws(' ', _terms ->> 'name', _terms -> 'scope' ->> 'covered', _terms -> 'scope' ->> 'not_covered', _request ->> 'notes')) THEN
-    RAISE EXCEPTION 'sa_contact_details' USING ERRCODE = '22023';
+  IF nm = '' THEN nm := a.name; END IF;
+  IF nm IS DISTINCT FROM a.name THEN
+    IF a.status <> 'draft' THEN RAISE EXCEPTION 'sa_name_locked: the name can only change in Draft' USING ERRCODE = '55000'; END IF;
+    IF public.sa_name_taken(a.tenant_id, a.client_id, nm, _id) THEN RAISE EXCEPTION 'sa_name_taken' USING ERRCODE = '23505'; END IF;
   END IF;
-  UPDATE public.sa_agreements SET request = COALESCE(_request, request), terms = COALESCE(_terms, terms),
-         name = left(COALESCE(NULLIF(btrim(_terms ->> 'name'), ''), name), 120), updated_at = now() WHERE id = _id;
+  t := public.sa_prepare_terms(a.tenant_id, a.client_id, COALESCE(_terms, a.terms), _request, NULL);
+  UPDATE public.sa_agreements SET request = COALESCE(_request, request), terms = t || jsonb_build_object('name', nm, 'reference', a.reference),
+         name = nm, updated_at = now() WHERE id = _id;
+  PERFORM public.sa_audit_log(uid, 'save_draft', _id);
 END $$;
 
 -- Open for applications (all matched consultants, or only invited favourites).
