@@ -1654,7 +1654,7 @@ export default function NewRequestPage() {
       {/* Navigation */}
       {!submitSteps && (
         <div className="flex justify-between">
-          <Button variant="outline" onClick={() => setStep(step - 1)} busy={submitting} reason={step === 0 && 'already_first'}>
+          <Button variant="outline" onClick={() => setStep(step - 1)} busy={submitting} reason={step === 0 && 'first_page'}>
             <ArrowLeft className="w-4 h-4 me-1 rtl:rotate-180" /> {t('onboarding.back')}
           </Button>
           {step < steps.length - 1 ? (

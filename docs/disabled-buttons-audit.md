@@ -147,7 +147,7 @@ Condition = what the button shows (reason keys from the catalogue) or the loadin
 | src/pages/client/MyConsultantsPage.tsx:373 | (icon) | busy | `busy` |
 | src/pages/client/MyConsultantsPage.tsx:400 | fav.unblock | busy | `busy` |
 | src/pages/client/NewRequestPage.tsx:1158 | ticket_create.ai_analyze | busy | `aiLoading === 'categorize'` |
-| src/pages/client/NewRequestPage.tsx:1657 | onboarding.back | reason + busy | `step === 0 && 'already_first'` |
+| src/pages/client/NewRequestPage.tsx:1657 | onboarding.back | reason + busy | `step === 0 && 'first_page'` |
 | src/pages/client/NewRequestPage.tsx:1665 | ticket_create.submit_request | busy | `submitting` |
 | src/pages/client/NewRequestPage.tsx:1779 | (icon) | reason | `!picked && pickDisabled && { key: 'limit_reached', params: { max: MAX_INVITED_EXPERTS } }` |
 | src/pages/client/ProblemManagementPage.tsx:177 | Create | busy | `saving` |
@@ -626,8 +626,8 @@ Condition = what the button shows (reason keys from the catalogue) or the loadin
 
 | File | Label | Type | Condition |
 |---|---|---|---|
-| src/components/ui/carousel.tsx:173 | (icon) | reason | `!canScrollPrev && 'already_first'` |
-| src/components/ui/carousel.tsx:201 | (icon) | reason | `!canScrollNext && 'already_last'` |
+| src/components/ui/carousel.tsx:173 | (icon) | reason | `!canScrollPrev && 'first_page'` |
+| src/components/ui/carousel.tsx:201 | (icon) | reason | `!canScrollNext && 'last_page'` |
 | src/components/ui/TimeSlotPicker.tsx:176 | Add This Slot | reason | `!selectedDate && 'choose_date_first'` |
 | src/components/ui/voice-input.tsx:69 | {`${t('voice.language', 'Voice language')}: ${current.label}`} | reason | `[disabled && 'another_action_running', voice.listening && 'recording_in_progress']` |
 | src/components/ui/voice-input.tsx:96 | {voice.listening ? t('voice.stop', 'Stop recording') : t('voice.start', 'Start voice input')} | reason + busy | `disabled && 'another_action_running'` |
@@ -873,7 +873,7 @@ Shared texts (`src/lib/blockedReasons.ts`):
 | English | Arabic |
 |---|---|
 | Next step: {step}. | الخطوة التالية: {step}. |
-| 1 more step / {n} more steps | see `moreStepsText` (Arabic plural forms) |
+| 1 more step / {n} more steps | وخطوة أخرى / وخطوتان أخريان / و{n} خطوات أخرى |
 | {done} of {total} steps done | تم إنجاز {done} من {total} خطوات |
 | Please wait… | يرجى الانتظار… |
 | Saving… | جارٍ الحفظ… |
