@@ -8497,6 +8497,1092 @@ export type Database = {
         }
         Relationships: []
       }
+      sa_acceptances: {
+        Row: {
+          accepted_at: string
+          agreement_id: string
+          content_hash: string
+          id: string
+          legal_draft: boolean
+          party: string
+          typed_name: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          accepted_at?: string
+          agreement_id: string
+          content_hash: string
+          id?: string
+          legal_draft?: boolean
+          party: string
+          typed_name: string
+          user_id: string
+          version: number
+        }
+        Update: {
+          accepted_at?: string
+          agreement_id?: string
+          content_hash?: string
+          id?: string
+          legal_draft?: boolean
+          party?: string
+          typed_name?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_acceptances_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_agreements: {
+        Row: {
+          admin_note: string | null
+          admin_review: string
+          agreed_at: string | null
+          application_id: string | null
+          auto_renew_client_at: string | null
+          auto_renew_consultant_at: string | null
+          client_id: string
+          consultant_id: string | null
+          created_at: string
+          created_by: string | null
+          current_rate_id: string | null
+          deadline: string | null
+          end_date: string | null
+          handover_note: string | null
+          handover_until: string | null
+          id: string
+          inactivity_alerted_at: string | null
+          invite_only: boolean
+          last_activity_at: string | null
+          name: string
+          reference: string | null
+          request: Json
+          start_date: string | null
+          started_at: string | null
+          status: string
+          suspended_until: string | null
+          tenant_id: string | null
+          termination_end: string | null
+          termination_reason: string | null
+          termination_requested_at: string | null
+          termination_requested_by: string | null
+          terms: Json
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          admin_note?: string | null
+          admin_review?: string
+          agreed_at?: string | null
+          application_id?: string | null
+          auto_renew_client_at?: string | null
+          auto_renew_consultant_at?: string | null
+          client_id: string
+          consultant_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_rate_id?: string | null
+          deadline?: string | null
+          end_date?: string | null
+          handover_note?: string | null
+          handover_until?: string | null
+          id?: string
+          inactivity_alerted_at?: string | null
+          invite_only?: boolean
+          last_activity_at?: string | null
+          name: string
+          reference?: string | null
+          request?: Json
+          start_date?: string | null
+          started_at?: string | null
+          status?: string
+          suspended_until?: string | null
+          tenant_id?: string | null
+          termination_end?: string | null
+          termination_reason?: string | null
+          termination_requested_at?: string | null
+          termination_requested_by?: string | null
+          terms?: Json
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          admin_note?: string | null
+          admin_review?: string
+          agreed_at?: string | null
+          application_id?: string | null
+          auto_renew_client_at?: string | null
+          auto_renew_consultant_at?: string | null
+          client_id?: string
+          consultant_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_rate_id?: string | null
+          deadline?: string | null
+          end_date?: string | null
+          handover_note?: string | null
+          handover_until?: string | null
+          id?: string
+          inactivity_alerted_at?: string | null
+          invite_only?: boolean
+          last_activity_at?: string | null
+          name?: string
+          reference?: string | null
+          request?: Json
+          start_date?: string | null
+          started_at?: string | null
+          status?: string
+          suspended_until?: string | null
+          tenant_id?: string | null
+          termination_end?: string | null
+          termination_reason?: string | null
+          termination_requested_at?: string | null
+          termination_requested_by?: string | null
+          terms?: Json
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      sa_applications: {
+        Row: {
+          agreement_id: string
+          availability_note: string
+          capacity_hours_per_week: number | null
+          consultant_id: string
+          created_at: string
+          currency: string
+          hourly_rate: number
+          id: string
+          message: string
+          model: string
+          sla_accepted_at: string
+          sla_summary: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agreement_id: string
+          availability_note?: string
+          capacity_hours_per_week?: number | null
+          consultant_id: string
+          created_at?: string
+          currency: string
+          hourly_rate: number
+          id?: string
+          message?: string
+          model: string
+          sla_accepted_at: string
+          sla_summary?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agreement_id?: string
+          availability_note?: string
+          capacity_hours_per_week?: number | null
+          consultant_id?: string
+          created_at?: string
+          currency?: string
+          hourly_rate?: number
+          id?: string
+          message?: string
+          model?: string
+          sla_accepted_at?: string
+          sla_summary?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_applications_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          agreement_id: string | null
+          created_at: string
+          detail: Json
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          agreement_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          agreement_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+        }
+        Relationships: []
+      }
+      sa_document_access: {
+        Row: {
+          actor_role: string
+          agreement_id: string
+          created_at: string
+          document_id: string
+          id: string
+          storage_path: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          actor_role: string
+          agreement_id: string
+          created_at?: string
+          document_id: string
+          id?: string
+          storage_path: string
+          user_id: string
+          version: number
+        }
+        Update: {
+          actor_role?: string
+          agreement_id?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          storage_path?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_document_access_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_document_uploads: {
+        Row: {
+          agreement_id: string
+          created_at: string
+          document_id: string | null
+          expires_at: string
+          file_name: string
+          finished_at: string | null
+          id: string
+          kind: string
+          mime_type: string
+          note: string
+          size_bytes: number
+          storage_path: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          agreement_id: string
+          created_at?: string
+          document_id?: string | null
+          expires_at: string
+          file_name: string
+          finished_at?: string | null
+          id?: string
+          kind: string
+          mime_type: string
+          note?: string
+          size_bytes: number
+          storage_path: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          agreement_id?: string
+          created_at?: string
+          document_id?: string | null
+          expires_at?: string
+          file_name?: string
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          mime_type?: string
+          note?: string
+          size_bytes?: number
+          storage_path?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_document_uploads_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_document_versions: {
+        Row: {
+          agreement_id: string
+          document_id: string
+          file_name: string
+          mime_type: string
+          note: string
+          size_bytes: number
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string
+          uploaded_role: string
+          version: number
+        }
+        Insert: {
+          agreement_id: string
+          document_id: string
+          file_name: string
+          mime_type: string
+          note?: string
+          size_bytes: number
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by: string
+          uploaded_role: string
+          version: number
+        }
+        Update: {
+          agreement_id?: string
+          document_id?: string
+          file_name?: string
+          mime_type?: string
+          note?: string
+          size_bytes?: number
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string
+          uploaded_role?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "sa_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_documents: {
+        Row: {
+          agreement_id: string
+          archived_at: string | null
+          archived_by: string | null
+          created_at: string
+          created_by: string | null
+          current_version: number
+          id: string
+          kind: string
+          title: string
+        }
+        Insert: {
+          agreement_id: string
+          archived_at?: string | null
+          archived_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_version?: number
+          id?: string
+          kind: string
+          title: string
+        }
+        Update: {
+          agreement_id?: string
+          archived_at?: string | null
+          archived_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_version?: number
+          id?: string
+          kind?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_documents_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_email_queue: {
+        Row: {
+          agreement_id: string
+          attempts: number
+          created_at: string
+          dedupe_key: string
+          failed_at: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          lease_until: string | null
+          payload: Json
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          agreement_id: string
+          attempts?: number
+          created_at?: string
+          dedupe_key: string
+          failed_at?: string | null
+          id?: string
+          kind: string
+          last_error?: string | null
+          lease_until?: string | null
+          payload?: Json
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          agreement_id?: string
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string
+          failed_at?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          lease_until?: string | null
+          payload?: Json
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_email_queue_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_events: {
+        Row: {
+          actor_id: string | null
+          actor_role: string | null
+          agreement_id: string
+          created_at: string
+          data: Json
+          id: string
+          kind: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role?: string | null
+          agreement_id: string
+          created_at?: string
+          data?: Json
+          id?: string
+          kind: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string | null
+          agreement_id?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_events_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_invites: {
+        Row: {
+          agreement_id: string
+          consultant_id: string
+          created_at: string
+        }
+        Insert: {
+          agreement_id: string
+          consultant_id: string
+          created_at?: string
+        }
+        Update: {
+          agreement_id?: string
+          consultant_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_invites_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_member_acceptances: {
+        Row: {
+          accepted_at: string
+          agreement_id: string
+          consultant_id: string
+          id: string
+          legal_draft: boolean
+          member_role: string
+          sla_hash: string | null
+          sla_policy_id: string | null
+          sla_summary: string
+          sla_version: number | null
+          terms_hash: string | null
+          terms_version: number | null
+          typed_name: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          agreement_id: string
+          consultant_id: string
+          id?: string
+          legal_draft?: boolean
+          member_role: string
+          sla_hash?: string | null
+          sla_policy_id?: string | null
+          sla_summary?: string
+          sla_version?: number | null
+          terms_hash?: string | null
+          terms_version?: number | null
+          typed_name: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          agreement_id?: string
+          consultant_id?: string
+          id?: string
+          legal_draft?: boolean
+          member_role?: string
+          sla_hash?: string | null
+          sla_policy_id?: string | null
+          sla_summary?: string
+          sla_version?: number | null
+          terms_hash?: string | null
+          terms_version?: number | null
+          typed_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_member_acceptances_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_members: {
+        Row: {
+          accepted_at: string | null
+          added_at: string
+          agreement_id: string
+          backup_for: string | null
+          capacity_hours_per_week: number | null
+          consultant_id: string
+          end_reason: string | null
+          ended_at: string | null
+          id: string
+          invited_by: string | null
+          member_role: string
+          required: boolean
+          sla_accepted_at: string | null
+          sla_hash: string | null
+          sla_policy_id: string | null
+          sla_version: number | null
+          status: string
+          working_hours: Json
+        }
+        Insert: {
+          accepted_at?: string | null
+          added_at?: string
+          agreement_id: string
+          backup_for?: string | null
+          capacity_hours_per_week?: number | null
+          consultant_id: string
+          end_reason?: string | null
+          ended_at?: string | null
+          id?: string
+          invited_by?: string | null
+          member_role: string
+          required?: boolean
+          sla_accepted_at?: string | null
+          sla_hash?: string | null
+          sla_policy_id?: string | null
+          sla_version?: number | null
+          status?: string
+          working_hours?: Json
+        }
+        Update: {
+          accepted_at?: string | null
+          added_at?: string
+          agreement_id?: string
+          backup_for?: string | null
+          capacity_hours_per_week?: number | null
+          consultant_id?: string
+          end_reason?: string | null
+          ended_at?: string | null
+          id?: string
+          invited_by?: string | null
+          member_role?: string
+          required?: boolean
+          sla_accepted_at?: string | null
+          sla_hash?: string | null
+          sla_policy_id?: string | null
+          sla_version?: number | null
+          status?: string
+          working_hours?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_members_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_messages: {
+        Row: {
+          agreement_id: string
+          body: string
+          consultant_id: string
+          created_at: string
+          id: string
+          sender_id: string
+          sender_role: string
+        }
+        Insert: {
+          agreement_id: string
+          body: string
+          consultant_id: string
+          created_at?: string
+          id?: string
+          sender_id: string
+          sender_role: string
+        }
+        Update: {
+          agreement_id?: string
+          body?: string
+          consultant_id?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          sender_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_messages_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_months: {
+        Row: {
+          agreement_id: string
+          base_amount: number
+          carried_in: Json
+          carried_out: Json
+          charge_hours: number
+          committed: number
+          expired_hours: number
+          month: string
+          overage_hours: number
+          payment_id: string | null
+          settled_at: string
+          used_hours: number
+        }
+        Insert: {
+          agreement_id: string
+          base_amount: number
+          carried_in?: Json
+          carried_out?: Json
+          charge_hours: number
+          committed: number
+          expired_hours: number
+          month: string
+          overage_hours: number
+          payment_id?: string | null
+          settled_at?: string
+          used_hours: number
+        }
+        Update: {
+          agreement_id?: string
+          base_amount?: number
+          carried_in?: Json
+          carried_out?: Json
+          charge_hours?: number
+          committed?: number
+          expired_hours?: number
+          month?: string
+          overage_hours?: number
+          payment_id?: string | null
+          settled_at?: string
+          used_hours?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_months_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_notices: {
+        Row: {
+          created_at: string
+          dedupe_key: string
+        }
+        Insert: {
+          created_at?: string
+          dedupe_key: string
+        }
+        Update: {
+          created_at?: string
+          dedupe_key?: string
+        }
+        Relationships: []
+      }
+      sa_offers: {
+        Row: {
+          agreement_id: string
+          by_role: string
+          by_user: string
+          created_at: string
+          id: string
+          note: string
+          patch: Json
+          responded_at: string | null
+          responded_by: string | null
+          status: string
+        }
+        Insert: {
+          agreement_id: string
+          by_role: string
+          by_user: string
+          created_at?: string
+          id?: string
+          note?: string
+          patch: Json
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+        }
+        Update: {
+          agreement_id?: string
+          by_role?: string
+          by_user?: string
+          created_at?: string
+          id?: string
+          note?: string
+          patch?: Json
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_offers_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_rate_changes: {
+        Row: {
+          agreement_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          effective_from: string
+          hourly_rate: number
+          id: string
+          ooh_multiplier: number | null
+          overage_rate: number | null
+          proposed_by: string
+          proposed_role: string
+          rate_record_id: string | null
+          reason: string
+          s1_multiplier: number | null
+          status: string
+        }
+        Insert: {
+          agreement_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          effective_from: string
+          hourly_rate: number
+          id?: string
+          ooh_multiplier?: number | null
+          overage_rate?: number | null
+          proposed_by: string
+          proposed_role: string
+          rate_record_id?: string | null
+          reason: string
+          s1_multiplier?: number | null
+          status?: string
+        }
+        Update: {
+          agreement_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          effective_from?: string
+          hourly_rate?: number
+          id?: string
+          ooh_multiplier?: number | null
+          overage_rate?: number | null
+          proposed_by?: string
+          proposed_role?: string
+          rate_record_id?: string | null
+          reason?: string
+          s1_multiplier?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_rate_changes_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_rate_records: {
+        Row: {
+          accepted_at: string
+          accepted_by: string | null
+          agreement_id: string
+          currency: string
+          effective_from: string
+          hourly_rate: number
+          id: string
+          ooh_multiplier: number | null
+          overage_rate: number | null
+          previous_id: string | null
+          proposed_by: string | null
+          proposed_role: string | null
+          s1_multiplier: number | null
+          seq: number
+          source: string
+          terms_version: number | null
+        }
+        Insert: {
+          accepted_at?: string
+          accepted_by?: string | null
+          agreement_id: string
+          currency: string
+          effective_from: string
+          hourly_rate: number
+          id?: string
+          ooh_multiplier?: number | null
+          overage_rate?: number | null
+          previous_id?: string | null
+          proposed_by?: string | null
+          proposed_role?: string | null
+          s1_multiplier?: number | null
+          seq: number
+          source: string
+          terms_version?: number | null
+        }
+        Update: {
+          accepted_at?: string
+          accepted_by?: string | null
+          agreement_id?: string
+          currency?: string
+          effective_from?: string
+          hourly_rate?: number
+          id?: string
+          ooh_multiplier?: number | null
+          overage_rate?: number | null
+          previous_id?: string | null
+          proposed_by?: string | null
+          proposed_role?: string | null
+          s1_multiplier?: number | null
+          seq?: number
+          source?: string
+          terms_version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_rate_records_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_replacements: {
+        Row: {
+          admin_at: string | null
+          admin_by: string | null
+          agreement_id: string
+          created_at: string
+          done_at: string | null
+          from_consultant: string
+          id: string
+          reason: string
+          requested_by: string
+          status: string
+          to_consultant: string
+        }
+        Insert: {
+          admin_at?: string | null
+          admin_by?: string | null
+          agreement_id: string
+          created_at?: string
+          done_at?: string | null
+          from_consultant: string
+          id?: string
+          reason: string
+          requested_by: string
+          status?: string
+          to_consultant: string
+        }
+        Update: {
+          admin_at?: string | null
+          admin_by?: string | null
+          agreement_id?: string
+          created_at?: string
+          done_at?: string | null
+          from_consultant?: string
+          id?: string
+          reason?: string
+          requested_by?: string
+          status?: string
+          to_consultant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_replacements_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_tickets: {
+        Row: {
+          agreement_id: string
+          linked_at: string
+          ticket_id: string
+        }
+        Insert: {
+          agreement_id: string
+          linked_at?: string
+          ticket_id: string
+        }
+        Update: {
+          agreement_id?: string
+          linked_at?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_tickets_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sa_tickets_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sa_versions: {
+        Row: {
+          agreement_id: string
+          content_hash: string
+          created_at: string
+          created_by: string | null
+          note: string
+          terms: Json
+          version: number
+        }
+        Insert: {
+          agreement_id: string
+          content_hash: string
+          created_at?: string
+          created_by?: string | null
+          note?: string
+          terms: Json
+          version: number
+        }
+        Update: {
+          agreement_id?: string
+          content_hash?: string
+          created_at?: string
+          created_by?: string | null
+          note?: string
+          terms?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sa_versions_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "sa_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sap_doc_chunks: {
         Row: {
           body: string
@@ -16972,6 +18058,170 @@ export type Database = {
       ri_parse_ids: { Args: { _payload: Json }; Returns: string[] }
       ri_rate_text: { Args: { _n: number }; Returns: string }
       ri_run_summary: { Args: { _run: string }; Returns: Json }
+      sa_apply_patch: { Args: { _patch: Json; _terms: Json }; Returns: Json }
+      sa_audit_log: {
+        Args: { _action: string; _actor: string; _detail?: Json; _id: string }
+        Returns: undefined
+      }
+      sa_bank_month: {
+        Args: {
+          _bank: Json
+          _carried: Json
+          _committed: number
+          _month: string
+          _used: number
+        }
+        Returns: Json
+      }
+      sa_can_manage: {
+        Args: { _client: string; _tenant: string; _uid: string }
+        Returns: boolean
+      }
+      sa_company_user: {
+        Args: { _client: string; _email: string; _tenant: string }
+        Returns: string
+      }
+      sa_confirmation: { Args: { _id: string }; Returns: Json }
+      sa_consultant_of: { Args: { _uid: string }; Returns: string }
+      sa_contact_problems: {
+        Args: { _client: string; _t: Json; _tenant: string }
+        Returns: string[]
+      }
+      sa_crew_problems: {
+        Args: { _client: string; _lead: string; _team: Json; _tenant: string }
+        Returns: string[]
+      }
+      sa_default_settings: { Args: never; Returns: Json }
+      sa_enabled: { Args: never; Returns: boolean }
+      sa_event: {
+        Args: { _actor: string; _data?: Json; _id: string; _kind: string }
+        Returns: undefined
+      }
+      sa_fmt_min: { Args: { _m: number }; Returns: string }
+      sa_is_admin: { Args: { _uid: string }; Returns: boolean }
+      sa_label: { Args: { _id: string }; Returns: string }
+      sa_lang: { Args: { _user: string }; Returns: string }
+      sa_member_nda_ok: {
+        Args: { _client: string; _consultant: string }
+        Returns: boolean
+      }
+      sa_modules: {
+        Args: { _a: Database["public"]["Tables"]["sa_agreements"]["Row"] }
+        Returns: string[]
+      }
+      sa_name_taken: {
+        Args: {
+          _client: string
+          _except: string
+          _name: string
+          _tenant: string
+        }
+        Returns: boolean
+      }
+      sa_nda_ok: {
+        Args: { _a: Database["public"]["Tables"]["sa_agreements"]["Row"] }
+        Returns: boolean
+      }
+      sa_new_version: {
+        Args: { _actor: string; _id: string; _note: string; _terms: Json }
+        Returns: number
+      }
+      sa_notify: {
+        Args: {
+          _body_ar: string
+          _body_en: string
+          _dedupe: string
+          _email: boolean
+          _id: string
+          _role: string
+          _title_ar: string
+          _title_en: string
+          _user: string
+        }
+        Returns: undefined
+      }
+      sa_notify_admins: {
+        Args: { _body: string; _id: string; _key: string; _title: string }
+        Returns: undefined
+      }
+      sa_notify_parties: {
+        Args: {
+          _body_ar: string
+          _body_en: string
+          _email: boolean
+          _id: string
+          _key: string
+          _title_ar: string
+          _title_en: string
+        }
+        Returns: undefined
+      }
+      sa_party: { Args: { _role: string }; Returns: string }
+      sa_prepare_terms: {
+        Args: {
+          _client: string
+          _lead: string
+          _request: Json
+          _tenant: string
+          _terms: Json
+        }
+        Returns: Json
+      }
+      sa_rate_ok: {
+        Args: { _bucket: string; _limit: number; _seconds: number }
+        Returns: boolean
+      }
+      sa_rate_on: {
+        Args: { _day: string; _id: string }
+        Returns: {
+          accepted_at: string
+          accepted_by: string | null
+          agreement_id: string
+          currency: string
+          effective_from: string
+          hourly_rate: number
+          id: string
+          ooh_multiplier: number | null
+          overage_rate: number | null
+          previous_id: string | null
+          proposed_by: string | null
+          proposed_role: string | null
+          s1_multiplier: number | null
+          seq: number
+          source: string
+          terms_version: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sa_rate_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      sa_rate_problems: {
+        Args: {
+          _modules: string[]
+          _ooh: number
+          _overage: number
+          _rate: number
+          _s1: number
+        }
+        Returns: string[]
+      }
+      sa_resolve_sla: {
+        Args: { _client: string; _sla: Json; _tenant: string }
+        Returns: Json
+      }
+      sa_role: { Args: { _id: string; _uid: string }; Returns: string }
+      sa_secret_ok: { Args: { _t: string }; Returns: boolean }
+      sa_service_fee_percent: { Args: never; Returns: number }
+      sa_set_status: {
+        Args: { _actor: string; _data?: Json; _id: string; _to: string }
+        Returns: undefined
+      }
+      sa_settings: { Args: never; Returns: Json }
+      sa_terms_problems: { Args: { _t: Json }; Returns: string[] }
+      sa_text_ok: { Args: { _t: string }; Returns: boolean }
       sa_ticket_sla: {
         Args: { _ticket: string }
         Returns: {
@@ -16979,6 +18229,12 @@ export type Database = {
           version: number
         }[]
       }
+      sa_transition_allowed: {
+        Args: { _from: string; _to: string }
+        Returns: boolean
+      }
+      sa_user_label: { Args: { _uid: string }; Returns: string }
+      sa_user_of: { Args: { _consultant: string }; Returns: string }
       safe_insert_notification: {
         Args: {
           _body: string
