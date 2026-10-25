@@ -146,6 +146,13 @@ BEGIN
   INSERT INTO public.tickets (client_id, tenant_id, title, sap_module, status, urgency, ticket_context)
   VALUES (oa, ta, 'MM question', 'MM', 'new', 'low', jsonb_build_object('support_agreement_id', aid)) RETURNING id INTO t2;
   IF EXISTS (SELECT 1 FROM public.sa_tickets WHERE ticket_id = t2) THEN RAISE EXCEPTION 'SA12 out of scope'; END IF;
+  -- The browser path: a plain ticket attached right after creation by its own client.
+  PERFORM pg_temp.as_user(oa);
+  INSERT INTO public.tickets (client_id, tenant_id, title, sap_module, status, urgency) VALUES (oa, ta, 'Payment run', 'FI', 'new', 'medium') RETURNING id INTO t2;
+  IF NOT (public.sa_attach_ticket(t2, aid) ->> 'linked')::boolean THEN RAISE EXCEPTION 'SA12 attach'; END IF;
+  PERFORM pg_temp.as_user(ob);
+  IF pg_temp.err(format('SELECT public.sa_attach_ticket(%L, %L)', t2, aid)) NOT LIKE '%sa_forbidden%' THEN RAISE EXCEPTION 'SA12 attach other'; END IF;
+  PERFORM pg_temp.as_user(NULL);
   -- Company B cannot attach its ticket to company A's agreement.
   INSERT INTO public.tickets (client_id, title, sap_module, status, urgency, ticket_context)
   VALUES (ob, 'Steal', 'FI', 'new', 'low', jsonb_build_object('support_agreement_id', aid)) RETURNING id INTO t2;

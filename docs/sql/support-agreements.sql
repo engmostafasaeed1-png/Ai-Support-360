@@ -1076,49 +1076,78 @@ RETURNS TABLE (policy_id uuid, version integer) LANGUAGE sql STABLE SECURITY DEF
    WHERE st.ticket_id = _ticket AND NULLIF(a.terms -> 'sla' ->> 'policy_id', '') IS NOT NULL LIMIT 1
 $$;
 
--- ticket_context.support_agreement_id -> link (live agreement of the same client / company whose scope covers the
--- module), approved agreement rate (S1 multiplier for critical tickets), direct request to the lead consultant.
--- Never raises: a wrong or stale agreement id leaves a normal ticket.
+-- Links a ticket to a live agreement of the same client / company whose scope covers the module: approved agreement
+-- rate (S1 multiplier for critical tickets) and a direct assignment request to the lead consultant (no bidding).
+-- Returns false (and changes nothing) when the agreement does not apply. Never raises.
+CREATE OR REPLACE FUNCTION public.sa_link_ticket(_ticket uuid, _agreement uuid, _actor uuid)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE t record; a public.sa_agreements; rr public.sa_rate_records; rate numeric;
+BEGIN
+  IF NOT public.sa_enabled() OR _agreement IS NULL THEN RETURN false; END IF;
+  SELECT tk.id, tk.client_id, tk.tenant_id, tk.sap_module, tk.sap_modules, tk.critical_response, tk.urgency::text AS urgency INTO t FROM public.tickets tk WHERE tk.id = _ticket;
+  IF t.id IS NULL OR EXISTS (SELECT 1 FROM public.sa_tickets x WHERE x.ticket_id = _ticket) THEN RETURN false; END IF;
+  SELECT * INTO a FROM public.sa_agreements WHERE id = _agreement;
+  IF a.id IS NULL OR a.status NOT IN ('active', 'renewal_due') OR a.termination_end < current_date THEN RETURN false; END IF;
+  IF NOT ((a.tenant_id IS NOT NULL AND a.tenant_id = t.tenant_id) OR (a.client_id = t.client_id)) THEN RETURN false; END IF;
+  IF NOT (t.sap_module = ANY (public.sa_modules(a)) OR COALESCE(t.sap_modules, '{}') && public.sa_modules(a)) THEN RETURN false; END IF;
+  INSERT INTO public.sa_tickets (ticket_id, agreement_id) VALUES (_ticket, _agreement);
+  rr := public.sa_rate_on(_agreement, current_date);
+  IF rr.id IS NOT NULL THEN
+    rate := round(rr.hourly_rate * CASE WHEN COALESCE(t.critical_response, false) OR t.urgency = 'critical' THEN COALESCE(rr.s1_multiplier, 1) ELSE 1 END, 2);
+    UPDATE public.ticket_rates SET status = 'replaced' WHERE ticket_id = _ticket AND consultant_id = a.consultant_id AND status IN ('proposed', 'approved');
+    INSERT INTO public.ticket_rates (ticket_id, consultant_id, hourly_rate, currency, status, source, proposed_by, decided_by, decided_at, decision_note, base_rate, surcharge_percent)
+    VALUES (_ticket, a.consultant_id, rate, rr.currency, 'approved', 'agreement', public.sa_user_of(a.consultant_id), t.client_id, now(),
+            left('Support agreement "' || a.name || '" (rate record ' || rr.seq || ')', 500),
+            CASE WHEN rate <> rr.hourly_rate THEN rr.hourly_rate END, CASE WHEN rate <> rr.hourly_rate THEN round((rate / rr.hourly_rate - 1) * 100, 2) END);
+  END IF;
+  BEGIN
+    INSERT INTO public.ticket_match_requests (ticket_id, consultant_id, sent_by, status, message)
+    VALUES (_ticket, a.consultant_id, t.client_id, 'pending', left('Support agreement: ' || a.name, 500));
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'Agreement request to the lead consultant skipped: %', SQLERRM;
+  END;
+  UPDATE public.sa_agreements SET last_activity_at = now() WHERE id = _agreement;
+  PERFORM public.sa_event(_agreement, 'ticket_linked', _actor, jsonb_build_object('ticket', _ticket));
+  RETURN true;
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'Support agreement link skipped for ticket %: %', _ticket, SQLERRM;
+  RETURN false;
+END $$;
+
+-- Trusted (server) inserts may pass ticket_context.support_agreement_id; the browser cannot (guard_ticket_context
+-- accepts only matching keys) and uses sa_attach_ticket right after creating the ticket.
 CREATE OR REPLACE FUNCTION public.sa_on_ticket_insert()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE aid uuid; a public.sa_agreements; rr public.sa_rate_records; rate numeric; cur text;
+DECLARE aid uuid;
 BEGIN
-  IF NOT public.sa_enabled() THEN RETURN NULL; END IF;
   BEGIN
     aid := NULLIF(NEW.ticket_context ->> 'support_agreement_id', '')::uuid;
   EXCEPTION WHEN OTHERS THEN RETURN NULL;
   END;
-  IF aid IS NULL THEN RETURN NULL; END IF;
-  BEGIN
-    SELECT * INTO a FROM public.sa_agreements WHERE id = aid;
-    IF a.id IS NULL OR a.status NOT IN ('active', 'renewal_due') OR a.termination_end < current_date THEN RETURN NULL; END IF;
-    IF NOT ((a.tenant_id IS NOT NULL AND a.tenant_id = NEW.tenant_id) OR (a.client_id = NEW.client_id)) THEN RETURN NULL; END IF;
-    IF NOT (NEW.sap_module = ANY (public.sa_modules(a)) OR COALESCE(NEW.sap_modules, '{}') && public.sa_modules(a)) THEN RETURN NULL; END IF;
-    INSERT INTO public.sa_tickets (ticket_id, agreement_id) VALUES (NEW.id, aid) ON CONFLICT DO NOTHING;
-    rr := public.sa_rate_on(aid, current_date);
-    IF rr.id IS NOT NULL THEN
-      rate := round(rr.hourly_rate * CASE WHEN COALESCE(NEW.critical_response, false) OR NEW.urgency::text = 'critical' THEN COALESCE(rr.s1_multiplier, 1) ELSE 1 END, 2);
-      cur := rr.currency;
-      INSERT INTO public.ticket_rates (ticket_id, consultant_id, hourly_rate, currency, status, source, proposed_by, decided_by, decided_at, decision_note, base_rate, surcharge_percent)
-      VALUES (NEW.id, a.consultant_id, rate, cur, 'approved', 'agreement', public.sa_user_of(a.consultant_id), NEW.client_id, now(),
-              left('Support agreement "' || a.name || '" (rate record ' || rr.seq || ')', 500),
-              CASE WHEN rate <> rr.hourly_rate THEN rr.hourly_rate END, CASE WHEN rate <> rr.hourly_rate THEN round((rate / rr.hourly_rate - 1) * 100, 2) END);
-    END IF;
-    BEGIN
-      INSERT INTO public.ticket_match_requests (ticket_id, consultant_id, sent_by, status, message)
-      VALUES (NEW.id, a.consultant_id, NEW.client_id, 'pending', left('Support agreement: ' || a.name, 500));
-    EXCEPTION WHEN OTHERS THEN
-      RAISE WARNING 'Agreement request to the lead consultant skipped: %', SQLERRM;
-    END;
-    UPDATE public.sa_agreements SET last_activity_at = now() WHERE id = aid;
-    PERFORM public.sa_event(aid, 'ticket_linked', NEW.client_id, jsonb_build_object('ticket', NEW.id));
-  EXCEPTION WHEN OTHERS THEN
-    RAISE WARNING 'Support agreement link skipped for ticket %: %', NEW.id, SQLERRM;
-  END;
+  IF aid IS NOT NULL THEN PERFORM public.sa_link_ticket(NEW.id, aid, NEW.client_id); END IF;
   RETURN NULL;
 END $$;
 DROP TRIGGER IF EXISTS sa_ticket_link ON public.tickets;   -- runs before sla_ticket_insert (name order), so the SLA hook sees the link
 CREATE TRIGGER sa_ticket_link AFTER INSERT ON public.tickets FOR EACH ROW EXECUTE FUNCTION public.sa_on_ticket_insert();
+
+-- New-request form switch "Use my support agreement": the ticket's own client (or a company member who may use the
+-- agreement) attaches a just-created, still unassigned ticket. The SLA snapshot is re-applied with the agreement's policy.
+CREATE OR REPLACE FUNCTION public.sa_attach_ticket(_ticket uuid, _agreement uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE uid uuid := auth.uid(); t record; ok boolean; pol uuid; ver int;
+BEGIN
+  SELECT tk.id, tk.client_id, tk.consultant_id, tk.created_at INTO t FROM public.tickets tk WHERE tk.id = _ticket;
+  IF t.id IS NULL OR t.client_id <> uid OR public.sa_role(_agreement, uid) NOT IN ('client', 'client_member') THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
+  IF t.consultant_id IS NOT NULL OR t.created_at < now() - interval '30 minutes' THEN RAISE EXCEPTION 'sa_too_late: attach right after creating the ticket' USING ERRCODE = '55000'; END IF;
+  ok := public.sa_link_ticket(_ticket, _agreement, uid);
+  IF ok AND to_regprocedure('public.sla_apply_snapshot(uuid,text,uuid,text,text,text,uuid,integer,jsonb)') IS NOT NULL THEN
+    SELECT x.policy_id, x.version INTO pol, ver FROM public.sa_ticket_sla(_ticket) x;
+    IF pol IS NOT NULL AND EXISTS (SELECT 1 FROM public.sla_ticket_snapshots s WHERE s.ticket_id = _ticket AND s.superseded_at IS NULL AND (s.policy_id IS DISTINCT FROM pol OR s.policy_version IS DISTINCT FROM ver)) THEN
+      EXECUTE 'SELECT public.sla_apply_snapshot($1, ''new_policy'', $2, ''fresh'', NULL, ''Support agreement SLA'', $3, $4)' USING _ticket, uid, pol, ver;
+    END IF;
+  END IF;
+  RETURN jsonb_build_object('linked', ok);
+END $$;
 
 -- Timesheet activity keeps the agreement "active" for the bypass check.
 CREATE OR REPLACE FUNCTION public.sa_on_activity()
@@ -1512,7 +1541,7 @@ GRANT EXECUTE ON FUNCTION
   public.sa_decide_rate_change(uuid, boolean), public.sa_request_termination(uuid, text), public.sa_handover_note(uuid, text),
   public.sa_suspend(uuid, date, text), public.sa_resume(uuid), public.sa_set_auto_renew(uuid, boolean), public.sa_invite_member(uuid, uuid),
   public.sa_member_respond(uuid, boolean), public.sa_request_replacement(uuid, uuid, text), public.sa_admin_decide_replacement(uuid, boolean, text),
-  public.sa_replacement_accept(uuid, boolean), public.sa_post_message(uuid, uuid, text), public.sa_usable(uuid), public.sa_ticket_tags(uuid[]),
+  public.sa_replacement_accept(uuid, boolean), public.sa_post_message(uuid, uuid, text), public.sa_usable(uuid), public.sa_attach_ticket(uuid, uuid), public.sa_ticket_tags(uuid[]),
   public.sa_get(uuid), public.sa_list_mine(uuid), public.sa_admin_set_settings(jsonb, text), public.sa_admin_list(text), public.sa_admin_review(uuid, boolean, text)
 TO authenticated;
 -- The SLA hook must stay callable from the SLA functions (they run as the owner; no browser grant needed).
