@@ -12,7 +12,7 @@ import { scheduleBlock, scheduleBlockText, type ScheduleBlock } from '@/lib/meet
 interface TicketChoice {
   id: string;
   title: string;
-  status: string;
+  status: string | null;
   client_id: string;
   consultant_id: string | null;
   block: ScheduleBlock | null;
