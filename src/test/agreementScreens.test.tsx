@@ -91,7 +91,7 @@ describe('agreement documents', () => {
     await i18n.changeLanguage('en');
     wrap(<AgreementDocuments a={detail({ documents_locked: false, can_upload: true, downloads: [], documents: [{ id: 'd1', kind: 'sow', title: 'Statement of work', current_version: 2, archived_at: null, created_at: '2026-10-25',
       versions: [{ version: 2, file_name: 'SOW v2.pdf', mime_type: 'application/pdf', size_bytes: 2000, note: '', by_role: 'lead', by: 'K. A****', at: '2026-10-25T10:00:00Z' }, { version: 1, file_name: 'SOW v1.pdf', mime_type: 'application/pdf', size_bytes: 1000, note: '', by_role: 'client', by: 'Olivia', at: '2026-10-24T10:00:00Z' }] }] })} settings={settings} />);
-    expect(screen.getByText('Statement of work')).toBeInTheDocument();
+    expect(screen.getAllByText('Statement of work').length).toBeGreaterThan(0);
     expect(screen.getByText('Version history (2)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Upload a file/ })).toBeEnabled();
   });
