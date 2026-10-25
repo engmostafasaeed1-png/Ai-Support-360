@@ -195,7 +195,7 @@ export default function TicketsPage() {
                             <TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} />
                             <BrdApprovalRowChip row={approvals.get(ticket.id)} />
                             {sla.on && <SlaRowChip state={sla.map.get(ticket.id)} atRiskPct={sla.atRisk} />}
-                            {agreementTags.get(ticket.id) && <AgreementTagChip name={agreementTags.get(ticket.id)!.name} />}
+                            {agreementTags.get(ticket.id) && <AgreementTagChip name={agreementTags.get(ticket.id)!.name} reference={agreementTags.get(ticket.id)!.reference} />}
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
