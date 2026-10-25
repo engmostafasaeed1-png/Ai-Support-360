@@ -10,6 +10,7 @@ import NDAStatsCards from '@/components/admin/nda/NDAStatsCards';
 import NDATable from '@/components/admin/nda/NDATable';
 import NDAViewDialog from '@/components/admin/nda/NDAViewDialog';
 import NDARevokeDialog from '@/components/admin/nda/NDARevokeDialog';
+import NdaSignaturesPanel from '@/components/admin/nda/NdaSignaturesPanel';
 
 export default function NDAManagementPage() {
   const { t } = useTranslation();
@@ -162,6 +163,8 @@ export default function NDAManagementPage() {
         onDownload={downloadSignature}
         onRevoke={setRevokeNda}
       />
+
+      <NdaSignaturesPanel />
 
       <NDAViewDialog nda={viewNda} onClose={() => setViewNda(null)} onDownload={downloadSignature} />
       <NDARevokeDialog nda={revokeNda} revoking={revoking} onClose={() => setRevokeNda(null)} onConfirm={handleRevoke} />
