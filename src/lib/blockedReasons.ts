@@ -143,6 +143,20 @@ export const BLOCKED_REASONS = {
   no_recipients: r('admin', 'Choose at least one recipient first.', 'اختر مستلمًا واحدًا على الأقل أولًا.'),
   too_many_recipients: r('admin', 'Too many recipients selected (maximum {{max}}).', 'تم اختيار عدد كبير من المستلمين (الحد الأقصى {{max}}).'),
   preview_first: r('admin', 'Preview the message first.', 'اعرض معاينة الرسالة أولًا.'),
+  // ------------------------------------------------------------------ screen-specific (from the Oct 25 audit)
+  auth_user_id_missing: r('admin', "The account ID is unavailable; reload the user details before trying again.", "معرّف الحساب غير متاح؛ أعد تحميل تفاصيل المستخدم قبل المحاولة مجددًا."),
+  signature_anonymised: r('nda', "This signature has been anonymised; its original details are no longer available.", "أُخفيت هوية صاحب هذا التوقيع؛ لم تعد تفاصيله الأصلية متاحة."),
+  demo_read_only: r('access', "This demo is read-only; open a live profile to make changes.", "هذا العرض التجريبي للقراءة فقط؛ افتح ملفًا فعليًا لإجراء تغييرات."),
+  no_interviewer_available: r('admin', "No interviewer is available; add another administrator or a verified consultant first.", "لا يوجد محاور متاح؛ أضف مسؤولًا آخر أو مستشارًا موثّقًا أولًا."),
+  crop_too_large: r('form', "The crop exceeds 2 MB; choose a smaller crop or image.", "يتجاوز حجم الصورة المقصوصة ٢ ميبيبايت؛ اختر اقتصاصًا أو صورة أصغر."),
+  crop_not_ready: r('form', "The crop is not ready; adjust the crop or choose another image.", "الاقتصاص غير جاهز؛ عدّل الاقتصاص أو اختر صورة أخرى."),
+  announcement_test_required: r('admin', "Send a test announcement first.", "أرسل إعلانًا تجريبيًا أولًا."),
+  no_eligible_recipients: r('admin', "No eligible recipients remain; check the recipient counts.", "لم يتبقّ مستلمون مؤهلون؛ تحقّق من أعداد المستلمين."),
+  client_information_not_submitted: r('admin', "Wait for the client to submit their information first.", "انتظر حتى يرسل العميل معلوماته أولًا."),
+  reply_recipient_unavailable: r('admin', "A reply needs a user account or consent to receive an email; check the contact details.", "يتطلب الرد حساب مستخدم أو موافقة على تلقي بريد إلكتروني؛ تحقّق من بيانات الاتصال."),
+  ai_learning_disabled: r('admin', "Enable AI learning before generating drafts.", "فعّل التعلّم بالذكاء الاصطناعي قبل إنشاء المسودات."),
+  choose_two_versions: r('form', "Select exactly two versions to compare.", "حدّد نسختين بالضبط للمقارنة."),
+  coverage_not_allowed: r('admin', "Choose a coverage mode allowed by the administrator.", "اختر نمط تغطية يسمح به المسؤول."),
 } satisfies Record<string, ReasonDef>;
 
 export type ReasonKey = keyof typeof BLOCKED_REASONS;
