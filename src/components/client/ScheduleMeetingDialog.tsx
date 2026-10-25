@@ -639,7 +639,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
         <DialogFooter className="gap-2">
           {results ? <Button onClick={() => onOpenChange(false)}>{lang === 'ar' ? 'تم' : 'Done'}</Button> : <>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button className="gradient-primary border-0 gap-2" onClick={handleSchedule} busy={saving} reason={problems.length > 0 && { key: 'fix_errors_first', message: problems.join(' ') }} hint="inline" aria-describedby={problems.length ? 'schedule-meeting-missing' : undefined}>
+          <Button className="gradient-primary border-0 gap-2" onClick={handleSchedule} busy={saving} reason={problems.length > 0 && { key: 'fix_errors_first', message: problems.map(p => formProblemText(p, lang)).join(' ') }} hint="inline" aria-describedby={problems.length ? 'schedule-meeting-missing' : undefined}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
             Schedule Meeting
           </Button>
